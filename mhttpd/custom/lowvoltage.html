@@ -36,6 +36,90 @@
 <div id="msidenav"></div>
 
 <div id="mmain">
+
+<div id="BoxButtons">
+    <h1>OFF Buttons</h1>
+    <p>This buttons can be used to switch off the power supplies of the individual detector subsystems or all of them at oncec </p>
+    <button class="button" onclick="SciFiOFF">SciFi</button>
+    <button class="button" onclick="PixelsOFF">Pixels</button>
+    <button class="butoon" onclick="FebOFF">FEB-SC</button>
+    <button class="button" onclick="AllOFF">ALL</button>
+
+</div>
+
+        <!--Tables for the FMBs-->
+   <table class="mtable">
+        <tr><th colspan="7" class="mtableheader">SciFi LV</th></tr>
+        <tr><th colspan="7">Upstream</th></tr>
+        <tr>
+            <th colspan="2" >Channel</th>
+            <th>State</th>
+            <th>Demand Voltage</th>
+            <th>Voltage</th>
+            <th>Current</th>
+            <th>Description</th>
+        </tr>
+        <tr>
+            <th>1</th>
+            <td style="text-align: center"><div class="modbbox" style="width: 20px; height: 20px;" data-odb-path="/Equipment/SciFi LV/Variables/ChState[0]" data-color="lightgreen" data-background-color="red"></div></td>
+            <td style="text-align: center"><input type="checkbox" name="CheckboxSciFi" class="modbcheckbox" data-odb-path="/Equipment/SciFi LV/Variables/ChState[0]"></input></td>
+            <td><div class="modbvalue" data-odb-path="/Equipment/SciFi LV/Variables/Demand[0]" data-odb-editable="1"></div></td>
+            <td><div class="modbvalue" data-odb-path="/Equipment/SciFi LV/Variables/Measured[0]"></div></td>
+            <td><div class="modbvalue" data-odb-path="/Equipment/SciFi LV/Variables/Current[0]"></div></td>
+            <td style="text-align: center">SMB1+ (25-1U)</td>
+        </tr>
+        <tr>
+            <th>2</th>
+            <td style="text-align: center"><div class="modbbox" style="width: 20px; height: 20px;" data-odb-path="/Equipment/SciFi LV/Variables/ChState[1]" data-color="lightgreen" data-background-color="red"></div></td>
+            <td style="text-align: center"><input type="checkbox" name="CheckboxSciFi" class="modbcheckbox" data-odb-path="/Equipment/SciFi LV/Variables/ChState[1]"></input></td>
+            <td><div class="modbvalue" data-odb-path="/Equipment/SciFi LV/Variables/Demand[1]" data-odb-editable="1"></div></td>
+            <td><div class="modbvalue" data-odb-path="/Equipment/SciFi LV/Variables/Measured[1]"></div></td>
+            <td><div class="modbvalue" data-odb-path="/Equipment/SciFi LV/Variables/Current[1]"></div></td>
+            <td style="text-align: center">SMB2+ (35-1U/2U)</td>
+        </tr>
+        <tr>
+            <th>3</th>
+            <td style="text-align: center"><div class="modbbox" style="width: 20px; height: 20px;" data-odb-path="/Equipment/SciFi LV/Variables/ChState[2]" data-color="lightgreen" data-background-color="red"></div></td>
+            <td style="text-align: center"><input type="checkbox" name="CheckboxSciFi" class="modbcheckbox" data-odb-path="/Equipment/SciFi LV/Variables/ChState[2]"></input></td>
+            <td><div class="modbvalue" data-odb-path="/Equipment/SciFi LV/Variables/Demand[2]" data-odb-editable="1"></div></td>
+            <td><div class="modbvalue" data-odb-path="/Equipment/SciFi LV/Variables/Measured[2]"></div></td>
+            <td><div class="modbvalue" data-odb-path="/Equipment/SciFi LV/Variables/Current[2]"></div></td>
+            <td style="text-align: center">SMB3+ (25-2U)</td>
+        </tr>
+               <tr>
+            <th>4</th>
+            <td style="text-align: center"><div class="modbbox" style="width: 20px; height: 20px;" data-odb-path="/Equipment/SciFi LV/Variables/ChState[3]" data-color="lightgreen" data-background-color="red"></div></td>
+            <td style="text-align: center"><input type="checkbox" name="CheckboxSciFi" class="modbcheckbox" data-odb-path="/Equipment/SciFi LV/Variables/ChState[3]"></input></td>
+            <td><div class="modbvalue" data-odb-path="/Equipment/SciFi LV/Variables/Demand[3]" data-odb-editable="1"></div></td>
+            <td><div class="modbvalue" data-odb-path="/Equipment/SciFi LV/Variables/Measured[3]"></div></td>
+            <td><div class="modbvalue" data-odb-path="/Equipment/SciFi LV/Variables/Current[3]"></div></td>
+            <td style="text-align: center">SMB4+ (25-2U)</td>
+        </tr>
+               <tr>
+            <th>5</th>
+            <td style="text-align: center"><div class="modbbox" style="width: 20px; height: 20px;" data-odb-path="/Equipment/SciFi LV/Variables/ChState[4]" data-color="lightgreen" data-background-color="red"></div></td>
+            <td style="text-align: center"><input type="checkbox" name="CheckboxSciFi" class="modbcheckbox" data-odb-path="/Equipment/SciFi LV/Variables/ChState[4]"></input></td>
+            <td><div class="modbvalue" data-odb-path="/Equipment/SciFi LV/Variables/Demand[4]" data-odb-editable="1"></div></td>
+            <td><div class="modbvalue" data-odb-path="/Equipment/SciFi LV/Variables/Measured[4]"></div></td>
+            <td><div class="modbvalue" data-odb-path="/Equipment/SciFi LV/Variables/Current[4]"></div></td>
+            <td style="text-align: center">SMB5+ (25-2U)</td>
+        </tr>
+             <tr>
+            <th>6</th>
+            <td style="text-align: center"><div class="modbbox" style="width: 20px; height: 20px;" data-odb-path="/Equipment/SciFi LV/Variables/ChState[5]" data-color="lightgreen" data-background-color="red"></div></td>
+            <td style="text-align: center"><input type="checkbox" name="CheckboxSciFi" class="modbcheckbox" data-odb-path="/Equipment/SciFi LV/Variables/ChState[5]"></input></td>
+            <td><div class="modbvalue" data-odb-path="/Equipment/SciFi LV/Variables/Demand[5]" data-odb-editable="1"></div></td>
+            <td><div class="modbvalue" data-odb-path="/Equipment/SciFi LV/Variables/Measured[5]"></div></td>
+            <td><div class="modbvalue" data-odb-path="/Equipment/SciFi LV/Variables/Current[5]"></div></td>
+            <td style="text-align: center">SMB6+ (25-2U)</td>
+        </tr>
+        <tr>
+            <td colspan="3">Switch all channels ON/OFF</td>
+            <td colspan="2"><button class="ButtonSciFiON" onclick="SciFiAllON"></button></td>
+            <td colspan="2"><button class="ButtonSciFiOFF" onclick="SciFiOFF"></button></td>
+        </tr>
+    </table> 
+    
 <!--Tables for the Pixels-->
     <table class="mtable">
         <tr><th colspan="8" class="mtableheader">HAMEG 1</th></tr>
@@ -52,7 +136,7 @@
         <tr>
             <th>1</th>
             <td style="text-align: center"><div class="modbbox" style="width: 20px; height: 20px;" data-odb-path="/Equipment/HAMEG1/Variables/State[0]" data-color="lightgreen" data-background-color="red"></div></td>
-            <td style="text-align: center"><input type="checkbox" class="modbcheckbox" data-odb-path="/Equipment/HAMEG1/Variables/Set State[0]"></input></td>
+            <td style="text-align: center"><input type="checkbox" name="CheckboxPixels" class="modbcheckbox" data-odb-path="/Equipment/HAMEG1/Variables/Set State[0]"></input></td>
             <td><div class="modbvalue" data-odb-path="/Equipment/HAMEG1/Variables/Demand Voltage[0]" data-odb-editable="1"></div></td>
             <td><div class="modbvalue" data-odb-path="/Equipment/HAMEG1/Variables/Voltage[0]"></div></td>
             <td><div class="modbvalue" data-odb-path="/Equipment/HAMEG1/Variables/Current Limit[0]" data-odb-editable="1"></div></td>
@@ -62,7 +146,7 @@
         <tr>
             <th>2</th>
             <td style="text-align: center"><div class="modbbox" style="width: 20px; height: 20px;" data-odb-path="/Equipment/HAMEG1/Variables/State[1]" data-color="lightgreen" data-background-color="red"></div></td>
-            <td style="text-align: center"><input type="checkbox" class="modbcheckbox" data-odb-path="/Equipment/HAMEG1/Variables/Set State[1]"></input></td>
+            <td style="text-align: center"><input type="checkbox" name="CheckboxPixels" class="modbcheckbox" data-odb-path="/Equipment/HAMEG1/Variables/Set State[1]"></input></td>
             <td><div class="modbvalue" data-odb-path="/Equipment/HAMEG1/Variables/Demand Voltage[1]" data-odb-editable="1"></div></td>
             <td><div class="modbvalue" data-odb-path="/Equipment/HAMEG1/Variables/Voltage[1]"></div></td>
             <td><div class="modbvalue" data-odb-path="/Equipment/HAMEG1/Variables/Current Limit[1]" data-odb-editable="1"></div></td>
@@ -72,7 +156,7 @@
         <tr>
             <th>3</th>
             <td style="text-align: center"><div class="modbbox" style="width: 20px; height: 20px;" data-odb-path="/Equipment/HAMEG1/Variables/State[2]" data-color="lightgreen" data-background-color="red"></div></td>
-            <td style="text-align: center"><input type="checkbox" class="modbcheckbox" data-odb-path="/Equipment/HAMEG1/Variables/Set State[2]"></input></td>
+            <td style="text-align: center"><input type="checkbox" name="CheckboxPixels" class="modbcheckbox" data-odb-path="/Equipment/HAMEG1/Variables/Set State[2]"></input></td>
             <td><div class="modbvalue" data-odb-path="/Equipment/HAMEG1/Variables/Demand Voltage[2]" data-odb-editable="1"></div></td>
             <td><div class="modbvalue" data-odb-path="/Equipment/HAMEG1/Variables/Voltage[2]"></div></td>
             <td><div class="modbvalue" data-odb-path="/Equipment/HAMEG1/Variables/Current Limit[2]" data-odb-editable="1"></div></td>
@@ -82,7 +166,7 @@
         <tr>
             <th>4</th>
             <td style="text-align: center"><div class="modbbox" style="width: 20px; height: 20px;" data-odb-path="/Equipment/HAMEG1/Variables/State[3]" data-color="lightgreen" data-background-color="red"></div></td>
-            <td style="text-align: center"><input type="checkbox" class="modbcheckbox" data-odb-path="/Equipment/HAMEG1/Variables/Set State[3]"></input></td>
+            <td style="text-align: center"><input type="checkbox" name="CheckboxPixels" class="modbcheckbox" data-odb-path="/Equipment/HAMEG1/Variables/Set State[3]"></input></td>
             <td><div class="modbvalue" data-odb-path="/Equipment/HAMEG1/Variables/Demand Voltage[3]" data-odb-editable="1"></div></td>
             <td><div class="modbvalue" data-odb-path="/Equipment/HAMEG1/Variables/Voltage[3]"></div></td>
             <td><div class="modbvalue" data-odb-path="/Equipment/HAMEG1/Variables/Current Limit[3]" data-odb-editable="1"></div></td>
@@ -107,7 +191,7 @@
         <tr>
             <th>1</th>
             <td style="text-align: center"><div class="modbbox" style="width: 20px; height: 20px;" data-odb-path="/Equipment/HAMEG2/Variables/State[0]" data-color="lightgreen" data-background-color="red"></div></td>
-            <td style="text-align: center"><input type="checkbox" class="modbcheckbox" data-odb-path="/Equipment/HAMEG2/Variables/Set State[0]"></input></td>
+            <td style="text-align: center"><input type="checkbox" name="CheckboxPixels" class="modbcheckbox" data-odb-path="/Equipment/HAMEG2/Variables/Set State[0]"></input></td>
             <td><div class="modbvalue" data-odb-path="/Equipment/HAMEG2/Variables/Demand Voltage[0]" data-odb-editable="1"></div></td>
             <td><div class="modbvalue" data-odb-path="/Equipment/HAMEG2/Variables/Voltage[0]"></div></td>
             <td><div class="modbvalue" data-odb-path="/Equipment/HAMEG2/Variables/Current Limit[0]" data-odb-editable="1"></div></td>
@@ -117,7 +201,7 @@
         <tr>
             <th>2</th>
             <td style="text-align: center"><div class="modbbox" style="width: 20px; height: 20px;" data-odb-path="/Equipment/HAMEG2/Variables/State[1]" data-color="lightgreen" data-background-color="red"></div></td>
-            <td style="text-align: center"><input type="checkbox" class="modbcheckbox" data-odb-path="/Equipment/HAMEG2/Variables/Set State[1]"></input></td>
+            <td style="text-align: center"><input type="checkbox" name="CheckboxPixels" class="modbcheckbox" data-odb-path="/Equipment/HAMEG2/Variables/Set State[1]"></input></td>
             <td><div class="modbvalue" data-odb-path="/Equipment/HAMEG2/Variables/Demand Voltage[1]" data-odb-editable="1"></div></td>
             <td><div class="modbvalue" data-odb-path="/Equipment/HAMEG2/Variables/Voltage[1]"></div></td>
             <td><div class="modbvalue" data-odb-path="/Equipment/HAMEG2/Variables/Current Limit[1]" data-odb-editable="1"></div></td>
@@ -127,7 +211,7 @@
         <tr>
             <th>3</th>
             <td style="text-align: center"><div class="modbbox" style="width: 20px; height: 20px;" data-odb-path="/Equipment/HAMEG2/Variables/State[2]" data-color="lightgreen" data-background-color="red"></div></td>
-            <td style="text-align: center"><input type="checkbox" class="modbcheckbox" data-odb-path="/Equipment/HAMEG2/Variables/Set State[2]"></input></td>
+            <td style="text-align: center"><input type="checkbox" name="CheckboxPixels" class="modbcheckbox" data-odb-path="/Equipment/HAMEG2/Variables/Set State[2]"></input></td>
             <td><div class="modbvalue" data-odb-path="/Equipment/HAMEG2/Variables/Demand Voltage[2]" data-odb-editable="1"></div></td>
             <td><div class="modbvalue" data-odb-path="/Equipment/HAMEG2/Variables/Voltage[2]"></div></td>
             <td><div class="modbvalue" data-odb-path="/Equipment/HAMEG2/Variables/Current Limit[2]" data-odb-editable="1"></div></td>
@@ -137,7 +221,7 @@
         <tr>
             <th>4</th>
             <td style="text-align: center"><div class="modbbox" style="width: 20px; height: 20px;" data-odb-path="/Equipment/HAMEG2/Variables/State[3]" data-color="lightgreen" data-background-color="red"></div></td>
-            <td style="text-align: center"><input type="checkbox" class="modbcheckbox" data-odb-path="/Equipment/HAMEG2/Variables/Set State[3]"></input></td>
+            <td style="text-align: center"><input type="checkbox" name="CheckboxPixels" class="modbcheckbox" data-odb-path="/Equipment/HAMEG2/Variables/Set State[3]"></input></td>
             <td><div class="modbvalue" data-odb-path="/Equipment/HAMEG2/Variables/Demand Voltage[3]" data-odb-editable="1"></div></td>
             <td><div class="modbvalue" data-odb-path="/Equipment/HAMEG2/Variables/Voltage[3]"></div></td>
             <td><div class="modbvalue" data-odb-path="/Equipment/HAMEG2/Variables/Current Limit[3]" data-odb-editable="1"></div></td>
@@ -161,7 +245,7 @@
         <tr>
             <th>1</th>
             <td style="text-align: center"><div class="modbbox" style="width: 20px; height: 20px;" data-odb-path="/Equipment/HAMEG3/Variables/State[0]" data-color="lightgreen" data-background-color="red"></div></td>
-            <td style="text-align: center"><input type="checkbox" class="modbcheckbox" data-odb-path="/Equipment/HAMEG3/Variables/Set State[0]"></input></td>
+            <td style="text-align: center"><input type="checkbox" name="CheckboxPixels" class="modbcheckbox" data-odb-path="/Equipment/HAMEG3/Variables/Set State[0]"></input></td>
             <td><div class="modbvalue" data-odb-path="/Equipment/HAMEG3/Variables/Demand Voltage[0]" data-odb-editable="1"></div></td>
             <td><div class="modbvalue" data-odb-path="/Equipment/HAMEG3/Variables/Voltage[0]"></div></td>
             <td><div class="modbvalue" data-odb-path="/Equipment/HAMEG3/Variables/Current Limit[0]" data-odb-editable="1"></div></td>
@@ -171,7 +255,7 @@
         <tr>
             <th>2</th>
             <td style="text-align: center"><div class="modbbox" style="width: 20px; height: 20px;" data-odb-path="/Equipment/HAMEG3/Variables/State[1]" data-color="lightgreen" data-background-color="red"></div></td>
-            <td style="text-align: center"><input type="checkbox" class="modbcheckbox" data-odb-path="/Equipment/HAMEG3/Variables/Set State[1]"></input></td>
+            <td style="text-align: center"><input type="checkbox" name="CheckboxPixels" class="modbcheckbox" data-odb-path="/Equipment/HAMEG3/Variables/Set State[1]"></input></td>
             <td><div class="modbvalue" data-odb-path="/Equipment/HAMEG3/Variables/Demand Voltage[1]" data-odb-editable="1"></div></td>
             <td><div class="modbvalue" data-odb-path="/Equipment/HAMEG3/Variables/Voltage[1]"></div></td>
             <td><div class="modbvalue" data-odb-path="/Equipment/HAMEG3/Variables/Current Limit[1]" data-odb-editable="1"></div></td>
@@ -181,7 +265,7 @@
         <tr>
             <th>3</th>
             <td style="text-align: center"><div class="modbbox" style="width: 20px; height: 20px;" data-odb-path="/Equipment/HAMEG3/Variables/State[2]" data-color="lightgreen" data-background-color="red"></div></td>
-            <td style="text-align: center"><input type="checkbox" class="modbcheckbox" data-odb-path="/Equipment/HAMEG3/Variables/Set State[2]"></input></td>
+            <td style="text-align: center"><input type="checkbox" name="CheckboxPixels" class="modbcheckbox" data-odb-path="/Equipment/HAMEG3/Variables/Set State[2]"></input></td>
             <td><div class="modbvalue" data-odb-path="/Equipment/HAMEG3/Variables/Demand Voltage[2]" data-odb-editable="1"></div></td>
             <td><div class="modbvalue" data-odb-path="/Equipment/HAMEG3/Variables/Voltage[2]"></div></td>
             <td><div class="modbvalue" data-odb-path="/Equipment/HAMEG3/Variables/Current Limit[2]" data-odb-editable="1"></div></td>
@@ -191,7 +275,7 @@
         <tr>
             <th>4</th>
             <td style="text-align: center"><div class="modbbox" style="width: 20px; height: 20px;" data-odb-path="/Equipment/HAMEG3/Variables/State[3]" data-color="lightgreen" data-background-color="red"></div></td>
-            <td style="text-align: center"><input type="checkbox" class="modbcheckbox" data-odb-path="/Equipment/HAMEG3/Variables/Set State[3]"></input></td>
+            <td style="text-align: center"><input type="checkbox" name="CheckboxPixels" class="modbcheckbox" data-odb-path="/Equipment/HAMEG3/Variables/Set State[3]"></input></td>
             <td><div class="modbvalue" data-odb-path="/Equipment/HAMEG3/Variables/Demand Voltage[3]" data-odb-editable="1"></div></td>
             <td><div class="modbvalue" data-odb-path="/Equipment/HAMEG3/Variables/Voltage[3]"></div></td>
             <td><div class="modbvalue" data-odb-path="/Equipment/HAMEG3/Variables/Current Limit[3]" data-odb-editable="1"></div></td>
@@ -215,7 +299,7 @@
         <tr>
             <th>1</th>
             <td style="text-align: center"><div class="modbbox" style="width: 20px; height: 20px;" data-odb-path="/Equipment/HAMEG4/Variables/State[0]" data-color="lightgreen" data-background-color="red"></div></td>
-            <td style="text-align: center"><input type="checkbox" class="modbcheckbox" data-odb-path="/Equipment/HAMEG4/Variables/Set State[0]"></input></td>
+            <td style="text-align: center"><input type="checkbox" name="CheckboxPixels" class="modbcheckbox" data-odb-path="/Equipment/HAMEG4/Variables/Set State[0]"></input></td>
             <td><div class="modbvalue" data-odb-path="/Equipment/HAMEG4/Variables/Demand Voltage[0]" data-odb-editable="1"></div></td>
             <td><div class="modbvalue" data-odb-path="/Equipment/HAMEG4/Variables/Voltage[0]"></div></td>
             <td><div class="modbvalue" data-odb-path="/Equipment/HAMEG4/Variables/Current Limit[0]" data-odb-editable="1"></div></td>
@@ -225,7 +309,7 @@
         <tr>
             <th>2</th>
             <td style="text-align: center"><div class="modbbox" style="width: 20px; height: 20px;" data-odb-path="/Equipment/HAMEG4/Variables/State[1]" data-color="lightgreen" data-background-color="red"></div></td>
-            <td style="text-align: center"><input type="checkbox" class="modbcheckbox" data-odb-path="/Equipment/HAMEG4/Variables/Set State[1]"></input></td>
+            <td style="text-align: center"><input type="checkbox" name="CheckboxPixels" class="modbcheckbox" data-odb-path="/Equipment/HAMEG4/Variables/Set State[1]"></input></td>
             <td><div class="modbvalue" data-odb-path="/Equipment/HAMEG4/Variables/Demand Voltage[1]" data-odb-editable="1"></div></td>
             <td><div class="modbvalue" data-odb-path="/Equipment/HAMEG4/Variables/Voltage[1]"></div></td>
             <td><div class="modbvalue" data-odb-path="/Equipment/HAMEG4/Variables/Current Limit[1]" data-odb-editable="1"></div></td>
@@ -235,7 +319,7 @@
         <tr>
             <th>3</th>
             <td style="text-align: center"><div class="modbbox" style="width: 20px; height: 20px;" data-odb-path="/Equipment/HAMEG4/Variables/State[2]" data-color="lightgreen" data-background-color="red"></div></td>
-            <td style="text-align: center"><input type="checkbox" class="modbcheckbox" data-odb-path="/Equipment/HAMEG4/Variables/Set State[2]"></input></td>
+            <td style="text-align: center"><input type="checkbox" name="CheckboxPixels" class="modbcheckbox" data-odb-path="/Equipment/HAMEG4/Variables/Set State[2]"></input></td>
             <td><div class="modbvalue" data-odb-path="/Equipment/HAMEG4/Variables/Demand Voltage[2]" data-odb-editable="1"></div></td>
             <td><div class="modbvalue" data-odb-path="/Equipment/HAMEG4/Variables/Voltage[2]"></div></td>
             <td><div class="modbvalue" data-odb-path="/Equipment/HAMEG4/Variables/Current Limit[2]" data-odb-editable="1"></div></td>
@@ -245,7 +329,7 @@
         <tr>
             <th>4</th>
             <td style="text-align: center"><div class="modbbox" style="width: 20px; height: 20px;" data-odb-path="/Equipment/HAMEG4/Variables/State[3]" data-color="lightgreen" data-background-color="red"></div></td>
-            <td style="text-align: center"><input type="checkbox" class="modbcheckbox" data-odb-path="/Equipment/HAMEG4/Variables/Set State[3]"></input></td>
+            <td style="text-align: center"><input type="checkbox" name="CheckboxPixels" class="modbcheckbox" data-odb-path="/Equipment/HAMEG4/Variables/Set State[3]"></input></td>
             <td><div class="modbvalue" data-odb-path="/Equipment/HAMEG4/Variables/Demand Voltage[3]" data-odb-editable="1"></div></td>
             <td><div class="modbvalue" data-odb-path="/Equipment/HAMEG4/Variables/Voltage[3]"></div></td>
             <td><div class="modbvalue" data-odb-path="/Equipment/HAMEG4/Variables/Current Limit[3]" data-odb-editable="1"></div></td>
@@ -269,7 +353,7 @@
         <tr>
             <th>1</th>
             <td style="text-align: center"><div class="modbbox" style="width: 20px; height: 20px;" data-odb-path="/Equipment/HAMEG5/Variables/State[0]" data-color="lightgreen" data-background-color="red"></div></td>
-            <td style="text-align: center"><input type="checkbox" class="modbcheckbox" data-odb-path="/Equipment/HAMEG5/Variables/Set State[0]"></input></td>
+            <td style="text-align: center"><input type="checkbox" name="CheckboxPixels" class="modbcheckbox" data-odb-path="/Equipment/HAMEG5/Variables/Set State[0]"></input></td>
             <td><div class="modbvalue" data-odb-path="/Equipment/HAMEG5/Variables/Demand Voltage[0]" data-odb-editable="1"></div></td>
             <td><div class="modbvalue" data-odb-path="/Equipment/HAMEG5/Variables/Voltage[0]"></div></td>
             <td><div class="modbvalue" data-odb-path="/Equipment/HAMEG5/Variables/Current Limit[0]" data-odb-editable="1"></div></td>
@@ -279,7 +363,7 @@
         <tr>
             <th>2</th>
             <td style="text-align: center"><div class="modbbox" style="width: 20px; height: 20px;" data-odb-path="/Equipment/HAMEG5/Variables/State[1]" data-color="lightgreen" data-background-color="red"></div></td>
-            <td style="text-align: center"><input type="checkbox" class="modbcheckbox" data-odb-path="/Equipment/HAMEG5/Variables/Set State[1]"></input></td>
+            <td style="text-align: center"><input type="checkbox" name="CheckboxPixels" class="modbcheckbox" data-odb-path="/Equipment/HAMEG5/Variables/Set State[1]"></input></td>
             <td><div class="modbvalue" data-odb-path="/Equipment/HAMEG5/Variables/Demand Voltage[1]" data-odb-editable="1"></div></td>
             <td><div class="modbvalue" data-odb-path="/Equipment/HAMEG5/Variables/Voltage[1]"></div></td>
             <td><div class="modbvalue" data-odb-path="/Equipment/HAMEG5/Variables/Current Limit[1]" data-odb-editable="1"></div></td>
@@ -290,7 +374,7 @@
         <tr>
             <th>3</th>
             <td style="text-align: center"><div class="modbbox" style="width: 20px; height: 20px;" data-odb-path="/Equipment/HAMEG5/Variables/State[2]" data-color="lightgreen" data-background-color="red"></div></td>
-            <td style="text-align: center"><input type="checkbox" class="modbcheckbox" data-odb-path="/Equipment/HAMEG5/Variables/Set State[2]"></input></td>
+            <td style="text-align: center"><input type="checkbox" name="CheckboxPixels" class="modbcheckbox" data-odb-path="/Equipment/HAMEG5/Variables/Set State[2]"></input></td>
             <td><div class="modbvalue" data-odb-path="/Equipment/HAMEG5/Variables/Demand Voltage[2]" data-odb-editable="1"></div></td>
             <td><div class="modbvalue" data-odb-path="/Equipment/HAMEG5/Variables/Voltage[2]"></div></td>
             <td><div class="modbvalue" data-odb-path="/Equipment/HAMEG5/Variables/Current Limit[2]" data-odb-editable="1"></div></td>
@@ -300,7 +384,7 @@
         <tr>
             <th>4</th>
             <td style="text-align: center"><div class="modbbox" style="width: 20px; height: 20px;" data-odb-path="/Equipment/HAMEG5/Variables/State[3]" data-color="lightgreen" data-background-color="red"></div></td>
-            <td style="text-align: center"><input type="checkbox" class="modbcheckbox" data-odb-path="/Equipment/HAMEG5/Variables/Set State[3]"></input></td>
+            <td style="text-align: center"><input type="checkbox" name="CheckboxPixels" class="modbcheckbox" data-odb-path="/Equipment/HAMEG5/Variables/Set State[3]"></input></td>
             <td><div class="modbvalue" data-odb-path="/Equipment/HAMEG5/Variables/Demand Voltage[3]" data-odb-editable="1"></div></td>
             <td><div class="modbvalue" data-odb-path="/Equipment/HAMEG5/Variables/Voltage[3]"></div></td>
             <td><div class="modbvalue" data-odb-path="/Equipment/HAMEG5/Variables/Current Limit[3]" data-odb-editable="1"></div></td>
@@ -324,7 +408,7 @@
         <tr>
             <th>1</th>
             <td style="text-align: center"><div class="modbbox" style="width: 20px; height: 20px;" data-odb-path="/Equipment/HAMEG6/Variables/State[0]" data-color="lightgreen" data-background-color="red"></div></td>
-            <td style="text-align: center"><input type="checkbox" class="modbcheckbox" data-odb-path="/Equipment/HAMEG6/Variables/Set State[0]"></input></td>
+            <td style="text-align: center"><input type="checkbox" name="CheckboxPixels" class="modbcheckbox" data-odb-path="/Equipment/HAMEG6/Variables/Set State[0]"></input></td>
             <td><div class="modbvalue" data-odb-path="/Equipment/HAMEG6/Variables/Demand Voltage[0]" data-odb-editable="1"></div></td>
             <td><div class="modbvalue" data-odb-path="/Equipment/HAMEG6/Variables/Voltage[0]"></div></td>
             <td><div class="modbvalue" data-odb-path="/Equipment/HAMEG6/Variables/Current Limit[0]" data-odb-editable="1"></div></td>
@@ -334,7 +418,7 @@
         <tr>
             <th>2</th>
             <td style="text-align: center"><div class="modbbox" style="width: 20px; height: 20px;" data-odb-path="/Equipment/HAMEG6/Variables/State[1]" data-color="lightgreen" data-background-color="red"></div></td>
-            <td style="text-align: center"><input type="checkbox" class="modbcheckbox" data-odb-path="/Equipment/HAMEG6/Variables/Set State[1]"></input></td>
+            <td style="text-align: center"><input type="checkbox" name="CheckboxPixels" class="modbcheckbox" data-odb-path="/Equipment/HAMEG6/Variables/Set State[1]"></input></td>
             <td><div class="modbvalue" data-odb-path="/Equipment/HAMEG6/Variables/Demand Voltage[1]" data-odb-editable="1"></div></td>
             <td><div class="modbvalue" data-odb-path="/Equipment/HAMEG6/Variables/Voltage[1]"></div></td>
             <td><div class="modbvalue" data-odb-path="/Equipment/HAMEG6/Variables/Current Limit[1]" data-odb-editable="1"></div></td>
@@ -344,7 +428,7 @@
         <tr>
             <th>3</th>
             <td style="text-align: center"><div class="modbbox" style="width: 20px; height: 20px;" data-odb-path="/Equipment/HAMEG6/Variables/State[2]" data-color="lightgreen" data-background-color="red"></div></td>
-            <td style="text-align: center"><input type="checkbox" class="modbcheckbox" data-odb-path="/Equipment/HAMEG6/Variables/Set State[2]"></input></td>
+            <td style="text-align: center"><input type="checkbox" name="CheckboxPixels" class="modbcheckbox" data-odb-path="/Equipment/HAMEG6/Variables/Set State[2]"></input></td>
             <td><div class="modbvalue" data-odb-path="/Equipment/HAMEG6/Variables/Demand Voltage[2]" data-odb-editable="1"></div></td>
             <td><div class="modbvalue" data-odb-path="/Equipment/HAMEG6/Variables/Voltage[2]"></div></td>
             <td><div class="modbvalue" data-odb-path="/Equipment/HAMEG6/Variables/Current Limit[2]" data-odb-editable="1"></div></td>
@@ -354,7 +438,7 @@
         <tr>
             <th>4</th>
             <td style="text-align: center"><div class="modbbox" style="width: 20px; height: 20px;" data-odb-path="/Equipment/HAMEG6/Variables/State[3]" data-color="lightgreen" data-background-color="red"></div></td>
-            <td style="text-align: center"><input type="checkbox" class="modbcheckbox" data-odb-path="/Equipment/HAMEG6/Variables/Set State[3]"></input></td>
+            <td style="text-align: center"><input type="checkbox" name="CheckboxPixels" class="modbcheckbox" data-odb-path="/Equipment/HAMEG6/Variables/Set State[3]"></input></td>
             <td><div class="modbvalue" data-odb-path="/Equipment/HAMEG6/Variables/Demand Voltage[3]" data-odb-editable="1"></div></td>
             <td><div class="modbvalue" data-odb-path="/Equipment/HAMEG6/Variables/Voltage[3]"></div></td>
             <td><div class="modbvalue" data-odb-path="/Equipment/HAMEG6/Variables/Current Limit[3]" data-odb-editable="1"></div></td>
@@ -378,7 +462,7 @@
         <tr>
             <th>1</th>
             <td style="text-align: center"><div class="modbbox" style="width: 20px; height: 20px;" data-odb-path="/Equipment/HAMEG7/Variables/State[0]" data-color="lightgreen" data-background-color="red"></div></td>
-            <td style="text-align: center"><input type="checkbox" class="modbcheckbox" data-odb-path="/Equipment/HAMEG7/Variables/Set State[0]"></input></td>
+            <td style="text-align: center"><input type="checkbox" name="CheckboxPixels" class="modbcheckbox" data-odb-path="/Equipment/HAMEG7/Variables/Set State[0]"></input></td>
             <td><div class="modbvalue" data-odb-path="/Equipment/HAMEG7/Variables/Demand Voltage[0]" data-odb-editable="1"></div></td>
             <td><div class="modbvalue" data-odb-path="/Equipment/HAMEG7/Variables/Voltage[0]"></div></td>
             <td><div class="modbvalue" data-odb-path="/Equipment/HAMEG7/Variables/Current Limit[0]" data-odb-editable="1"></div></td>
@@ -388,7 +472,7 @@
         <tr>
             <th>2</th>
             <td style="text-align: center"><div class="modbbox" style="width: 20px; height: 20px;" data-odb-path="/Equipment/HAMEG7/Variables/State[1]" data-color="lightgreen" data-background-color="red"></div></td>
-            <td style="text-align: center"><input type="checkbox" class="modbcheckbox" data-odb-path="/Equipment/HAMEG7/Variables/Set State[1]"></input></td>
+            <td style="text-align: center"><input type="checkbox" name="CheckboxPixels" class="modbcheckbox" data-odb-path="/Equipment/HAMEG7/Variables/Set State[1]"></input></td>
             <td><div class="modbvalue" data-odb-path="/Equipment/HAMEG7/Variables/Demand Voltage[1]" data-odb-editable="1"></div></td>
             <td><div class="modbvalue" data-odb-path="/Equipment/HAMEG7/Variables/Voltage[1]"></div></td>
             <td><div class="modbvalue" data-odb-path="/Equipment/HAMEG7/Variables/Current Limit[1]" data-odb-editable="1"></div></td>
@@ -398,7 +482,7 @@
         <tr>
             <th>3</th>
             <td style="text-align: center"><div class="modbbox" style="width: 20px; height: 20px;" data-odb-path="/Equipment/HAMEG7/Variables/State[2]" data-color="lightgreen" data-background-color="red"></div></td>
-            <td style="text-align: center"><input type="checkbox" class="modbcheckbox" data-odb-path="/Equipment/HAMEG7/Variables/Set State[2]"></input></td>
+            <td style="text-align: center"><input type="checkbox" name="CheckboxPixels" class="modbcheckbox" data-odb-path="/Equipment/HAMEG7/Variables/Set State[2]"></input></td>
             <td><div class="modbvalue" data-odb-path="/Equipment/HAMEG7/Variables/Demand Voltage[2]" data-odb-editable="1"></div></td>
             <td><div class="modbvalue" data-odb-path="/Equipment/HAMEG7/Variables/Voltage[2]"></div></td>
             <td><div class="modbvalue" data-odb-path="/Equipment/HAMEG7/Variables/Current Limit[2]" data-odb-editable="1"></div></td>
@@ -408,7 +492,7 @@
         <tr>
             <th>4</th>
             <td style="text-align: center"><div class="modbbox" style="width: 20px; height: 20px;" data-odb-path="/Equipment/HAMEG7/Variables/State[3]" data-color="lightgreen" data-background-color="red"></div></td>
-            <td style="text-align: center"><input type="checkbox" class="modbcheckbox" data-odb-path="/Equipment/HAMEG7/Variables/Set State[3]"></input></td>
+            <td style="text-align: center"><input type="checkbox" name="CheckboxPixels" class="modbcheckbox" data-odb-path="/Equipment/HAMEG7/Variables/Set State[3]"></input></td>
             <td><div class="modbvalue" data-odb-path="/Equipment/HAMEG7/Variables/Demand Voltage[3]" data-odb-editable="1"></div></td>
             <td><div class="modbvalue" data-odb-path="/Equipment/HAMEG7/Variables/Voltage[3]"></div></td>
             <td><div class="modbvalue" data-odb-path="/Equipment/HAMEG7/Variables/Current Limit[3]" data-odb-editable="1"></div></td>
@@ -432,7 +516,7 @@
         <tr>
             <th>1</th>
             <td style="text-align: center"><div class="modbbox" style="width: 20px; height: 20px;" data-odb-path="/Equipment/HAMEG8/Variables/State[0]" data-color="lightgreen" data-background-color="red"></div></td>
-            <td style="text-align: center"><input type="checkbox" class="modbcheckbox" data-odb-path="/Equipment/HAMEG8/Variables/Set State[0]"></input></td>
+            <td style="text-align: center"><input type="checkbox" name="CheckboxPixels" class="modbcheckbox" data-odb-path="/Equipment/HAMEG8/Variables/Set State[0]"></input></td>
             <td><div class="modbvalue" data-odb-path="/Equipment/HAMEG8/Variables/Demand Voltage[0]" data-odb-editable="1"></div></td>
             <td><div class="modbvalue" data-odb-path="/Equipment/HAMEG8/Variables/Voltage[0]"></div></td>
             <td><div class="modbvalue" data-odb-path="/Equipment/HAMEG8/Variables/Current Limit[0]" data-odb-editable="1"></div></td>
@@ -442,7 +526,7 @@
         <tr>
             <th>2</th>
             <td style="text-align: center"><div class="modbbox" style="width: 20px; height: 20px;" data-odb-path="/Equipment/HAMEG8/Variables/State[1]" data-color="lightgreen" data-background-color="red"></div></td>
-            <td style="text-align: center"><input type="checkbox" class="modbcheckbox" data-odb-path="/Equipment/HAMEG8/Variables/Set State[1]"></input></td>
+            <td style="text-align: center"><input type="checkbox" name="CheckboxPixels" class="modbcheckbox" data-odb-path="/Equipment/HAMEG8/Variables/Set State[1]"></input></td>
             <td><div class="modbvalue" data-odb-path="/Equipment/HAMEG8/Variables/Demand Voltage[1]" data-odb-editable="1"></div></td>
             <td><div class="modbvalue" data-odb-path="/Equipment/HAMEG8/Variables/Voltage[1]"></div></td>
             <td><div class="modbvalue" data-odb-path="/Equipment/HAMEG8/Variables/Current Limit[1]" data-odb-editable="1"></div></td>
@@ -452,7 +536,7 @@
         <tr>
             <th>3</th>
             <td style="text-align: center"><div class="modbbox" style="width: 20px; height: 20px;" data-odb-path="/Equipment/HAMEG8/Variables/State[2]" data-color="lightgreen" data-background-color="red"></div></td>
-            <td style="text-align: center"><input type="checkbox" class="modbcheckbox" data-odb-path="/Equipment/HAMEG8/Variables/Set State[2]"></input></td>
+            <td style="text-align: center"><input type="checkbox" name="CheckboxPixels" class="modbcheckbox" data-odb-path="/Equipment/HAMEG8/Variables/Set State[2]"></input></td>
             <td><div class="modbvalue" data-odb-path="/Equipment/HAMEG8/Variables/Demand Voltage[2]" data-odb-editable="1"></div></td>
             <td><div class="modbvalue" data-odb-path="/Equipment/HAMEG8/Variables/Voltage[2]"></div></td>
             <td><div class="modbvalue" data-odb-path="/Equipment/HAMEG8/Variables/Current Limit[2]" data-odb-editable="1"></div></td>
@@ -462,7 +546,7 @@
         <tr>
             <th>4</th>
             <td style="text-align: center"><div class="modbbox" style="width: 20px; height: 20px;" data-odb-path="/Equipment/HAMEG8/Variables/State[3]" data-color="lightgreen" data-background-color="red"></div></td>
-            <td style="text-align: center"><input type="checkbox" class="modbcheckbox" data-odb-path="/Equipment/HAMEG8/Variables/Set State[3]"></input></td>
+            <td style="text-align: center"><input type="checkbox" name="CheckboxPixels" class="modbcheckbox" data-odb-path="/Equipment/HAMEG8/Variables/Set State[3]"></input></td>
             <td><div class="modbvalue" data-odb-path="/Equipment/HAMEG8/Variables/Demand Voltage[3]" data-odb-editable="1"></div></td>
             <td><div class="modbvalue" data-odb-path="/Equipment/HAMEG8/Variables/Voltage[3]"></div></td>
             <td><div class="modbvalue" data-odb-path="/Equipment/HAMEG8/Variables/Current Limit[3]" data-odb-editable="1"></div></td>
@@ -486,7 +570,7 @@
         <tr>
             <th>1</th>
             <td style="text-align: center"><div class="modbbox" style="width: 20px; height: 20px;" data-odb-path="/Equipment/HAMEG9/Variables/State[0]" data-color="lightgreen" data-background-color="red"></div></td>
-            <td style="text-align: center"><input type="checkbox" class="modbcheckbox" data-odb-path="/Equipment/HAMEG9/Variables/Set State[0]"></input></td>
+            <td style="text-align: center"><input type="checkbox" name="CheckboxPixels" class="modbcheckbox" data-odb-path="/Equipment/HAMEG9/Variables/Set State[0]"></input></td>
             <td><div class="modbvalue" data-odb-path="/Equipment/HAMEG9/Variables/Demand Voltage[0]" data-odb-editable="1"></div></td>
             <td><div class="modbvalue" data-odb-path="/Equipment/HAMEG9/Variables/Voltage[0]"></div></td>
             <td><div class="modbvalue" data-odb-path="/Equipment/HAMEG9/Variables/Current Limit[0]" data-odb-editable="1"></div></td>
@@ -496,7 +580,7 @@
         <tr>
             <th>2</th>
             <td style="text-align: center"><div class="modbbox" style="width: 20px; height: 20px;" data-odb-path="/Equipment/HAMEG9/Variables/State[1]" data-color="lightgreen" data-background-color="red"></div></td>
-            <td style="text-align: center"><input type="checkbox" class="modbcheckbox" data-odb-path="/Equipment/HAMEG9/Variables/Set State[1]"></input></td>
+            <td style="text-align: center"><input type="checkbox" name="CheckboxPixels" class="modbcheckbox" data-odb-path="/Equipment/HAMEG9/Variables/Set State[1]"></input></td>
             <td><div class="modbvalue" data-odb-path="/Equipment/HAMEG9/Variables/Demand Voltage[1]" data-odb-editable="1"></div></td>
             <td><div class="modbvalue" data-odb-path="/Equipment/HAMEG9/Variables/Voltage[1]"></div></td>
             <td><div class="modbvalue" data-odb-path="/Equipment/HAMEG9/Variables/Current Limit[1]" data-odb-editable="1"></div></td>
@@ -506,7 +590,7 @@
         <tr>
             <th>3</th>
             <td style="text-align: center"><div class="modbbox" style="width: 20px; height: 20px;" data-odb-path="/Equipment/HAMEG9/Variables/State[2]" data-color="lightgreen" data-background-color="red"></div></td>
-            <td style="text-align: center"><input type="checkbox" class="modbcheckbox" data-odb-path="/Equipment/HAMEG9/Variables/Set State[2]"></input></td>
+            <td style="text-align: center"><input type="checkbox" name="CheckboxPixels" class="modbcheckbox" data-odb-path="/Equipment/HAMEG9/Variables/Set State[2]"></input></td>
             <td><div class="modbvalue" data-odb-path="/Equipment/HAMEG9/Variables/Demand Voltage[2]" data-odb-editable="1"></div></td>
             <td><div class="modbvalue" data-odb-path="/Equipment/HAMEG9/Variables/Voltage[2]"></div></td>
             <td><div class="modbvalue" data-odb-path="/Equipment/HAMEG9/Variables/Current Limit[2]" data-odb-editable="1"></div></td>
@@ -516,7 +600,7 @@
         <tr>
             <th>4</th>
             <td style="text-align: center"><div class="modbbox" style="width: 20px; height: 20px;" data-odb-path="/Equipment/HAMEG9/Variables/State[3]" data-color="lightgreen" data-background-color="red"></div></td>
-            <td style="text-align: center"><input type="checkbox" class="modbcheckbox" data-odb-path="/Equipment/HAMEG9/Variables/Set State[3]"></input></td>
+            <td style="text-align: center"><input type="checkbox" name="CheckboxPixels" class="modbcheckbox" data-odb-path="/Equipment/HAMEG9/Variables/Set State[3]"></input></td>
             <td><div class="modbvalue" data-odb-path="/Equipment/HAMEG9/Variables/Demand Voltage[3]" data-odb-editable="1"></div></td>
             <td><div class="modbvalue" data-odb-path="/Equipment/HAMEG9/Variables/Voltage[3]"></div></td>
             <td><div class="modbvalue" data-odb-path="/Equipment/HAMEG9/Variables/Current Limit[3]" data-odb-editable="1"></div></td>
@@ -525,74 +609,7 @@
         </tr>
     </table>
 
-    <!--Tables for the FMBs-->
-   <table class="mtable">
-        <tr><th colspan="7" class="mtableheader">SciFi LV</th></tr>
-        <tr><th colspan="7">Upstream</th></tr>
-        <tr>
-            <th colspan="2" >Channel</th>
-            <th>State</th>
-            <th>Demand Voltage</th>
-            <th>Voltage</th>
-            <th>Current</th>
-            <th>Description</th>
-        </tr>
-        <tr>
-            <th>1</th>
-            <td style="text-align: center"><div class="modbbox" style="width: 20px; height: 20px;" data-odb-path="/Equipment/SciFi LV/Variables/ChState[0]" data-color="lightgreen" data-background-color="red"></div></td>
-            <td style="text-align: center"><input type="checkbox" class="modbcheckbox" data-odb-path="/Equipment/SciFi LV/Variables/ChState[0]"></input></td>
-            <td><div class="modbvalue" data-odb-path="/Equipment/SciFi LV/Variables/Demand[0]" data-odb-editable="1"></div></td>
-            <td><div class="modbvalue" data-odb-path="/Equipment/SciFi LV/Variables/Measured[0]"></div></td>
-            <td><div class="modbvalue" data-odb-path="/Equipment/SciFi LV/Variables/Current[0]"></div></td>
-            <td style="text-align: center">SMB1+ (25-1U)</td>
-        </tr>
-        <tr>
-            <th>2</th>
-            <td style="text-align: center"><div class="modbbox" style="width: 20px; height: 20px;" data-odb-path="/Equipment/SciFi LV/Variables/ChState[1]" data-color="lightgreen" data-background-color="red"></div></td>
-            <td style="text-align: center"><input type="checkbox" class="modbcheckbox" data-odb-path="/Equipment/SciFi LV/Variables/ChState[1]"></input></td>
-            <td><div class="modbvalue" data-odb-path="/Equipment/SciFi LV/Variables/Demand[1]" data-odb-editable="1"></div></td>
-            <td><div class="modbvalue" data-odb-path="/Equipment/SciFi LV/Variables/Measured[1]"></div></td>
-            <td><div class="modbvalue" data-odb-path="/Equipment/SciFi LV/Variables/Current[1]"></div></td>
-            <td style="text-align: center">SMB2+ (35-1U/2U)</td>
-        </tr>
-        <tr>
-            <th>3</th>
-            <td style="text-align: center"><div class="modbbox" style="width: 20px; height: 20px;" data-odb-path="/Equipment/SciFi LV/Variables/ChState[2]" data-color="lightgreen" data-background-color="red"></div></td>
-            <td style="text-align: center"><input type="checkbox" class="modbcheckbox" data-odb-path="/Equipment/SciFi LV/Variables/ChState[2]"></input></td>
-            <td><div class="modbvalue" data-odb-path="/Equipment/SciFi LV/Variables/Demand[2]" data-odb-editable="1"></div></td>
-            <td><div class="modbvalue" data-odb-path="/Equipment/SciFi LV/Variables/Measured[2]"></div></td>
-            <td><div class="modbvalue" data-odb-path="/Equipment/SciFi LV/Variables/Current[2]"></div></td>
-            <td style="text-align: center">SMB3+ (25-2U)</td>
-        </tr>
-               <tr>
-            <th>4</th>
-            <td style="text-align: center"><div class="modbbox" style="width: 20px; height: 20px;" data-odb-path="/Equipment/SciFi LV/Variables/ChState[3]" data-color="lightgreen" data-background-color="red"></div></td>
-            <td style="text-align: center"><input type="checkbox" class="modbcheckbox" data-odb-path="/Equipment/SciFi LV/Variables/ChState[3]"></input></td>
-            <td><div class="modbvalue" data-odb-path="/Equipment/SciFi LV/Variables/Demand[3]" data-odb-editable="1"></div></td>
-            <td><div class="modbvalue" data-odb-path="/Equipment/SciFi LV/Variables/Measured[3]"></div></td>
-            <td><div class="modbvalue" data-odb-path="/Equipment/SciFi LV/Variables/Current[3]"></div></td>
-            <td style="text-align: center">SMB4+ (25-2U)</td>
-        </tr>
-               <tr>
-            <th>5</th>
-            <td style="text-align: center"><div class="modbbox" style="width: 20px; height: 20px;" data-odb-path="/Equipment/SciFi LV/Variables/ChState[4]" data-color="lightgreen" data-background-color="red"></div></td>
-            <td style="text-align: center"><input type="checkbox" class="modbcheckbox" data-odb-path="/Equipment/SciFi LV/Variables/ChState[4]"></input></td>
-            <td><div class="modbvalue" data-odb-path="/Equipment/SciFi LV/Variables/Demand[4]" data-odb-editable="1"></div></td>
-            <td><div class="modbvalue" data-odb-path="/Equipment/SciFi LV/Variables/Measured[4]"></div></td>
-            <td><div class="modbvalue" data-odb-path="/Equipment/SciFi LV/Variables/Current[4]"></div></td>
-            <td style="text-align: center">SMB5+ (25-2U)</td>
-        </tr>
-             <tr>
-            <th>6</th>
-            <td style="text-align: center"><div class="modbbox" style="width: 20px; height: 20px;" data-odb-path="/Equipment/SciFi LV/Variables/ChState[5]" data-color="lightgreen" data-background-color="red"></div></td>
-            <td style="text-align: center"><input type="checkbox" class="modbcheckbox" data-odb-path="/Equipment/SciFi LV/Variables/ChState[5]"></input></td>
-            <td><div class="modbvalue" data-odb-path="/Equipment/SciFi LV/Variables/Demand[5]" data-odb-editable="1"></div></td>
-            <td><div class="modbvalue" data-odb-path="/Equipment/SciFi LV/Variables/Measured[5]"></div></td>
-            <td><div class="modbvalue" data-odb-path="/Equipment/SciFi LV/Variables/Current[5]"></div></td>
-            <td style="text-align: center">SMB6+ (25-2U)</td>
-        </tr>
-    </table> 
-    
+
     
 
     <!--TDK for the FEB-SC-->
@@ -610,7 +627,7 @@
         <tr>
             <th>0</th>
             <td style="text-align: center"><div class="modbbox" style="width: 20px; height: 20px;" data-odb-path="/Equipment/Genesys/Variables/State[0]" data-color="lightgreen" data-background-color="red"></div></td>
-            <td style="text-align: center"><input type="checkbox" class="modbcheckbox" data-odb-path="/Equipment/Genesys/Variables/Set State[0]"></input></td>
+            <td style="text-align: center"><input type="checkbox" name="CheckboxFEB" class="modbcheckbox" data-odb-path="/Equipment/Genesys/Variables/Set State[0]"></input></td>
             <td><div class="modbvalue" data-odb-path="/Equipment/Genesys/Variables/Demand Voltage[0]" data-odb-editable="1"></div></td>
             <td><div class="modbvalue" data-odb-path="/Equipment/Genesys/Variables/Voltage[0]"></div></td>
             <td><div class="modbvalue" data-odb-path="/Equipment/Genesys/Variables/Current Limit[0]" data-odb-editable="1"></div></td>
@@ -620,7 +637,7 @@
         <tr>
             <th>1</th>
             <td style="text-align: center"><div class="modbbox" style="width: 20px; height: 20px;" data-odb-path="/Equipment/Genesys/Variables/State[1]" data-color="lightgreen" data-background-color="red"></div></td>
-            <td style="text-align: center"><input type="checkbox" class="modbcheckbox" data-odb-path="/Equipment/Genesys/Variables/Set State[1]"></input></td>
+            <td style="text-align: center"><input type="checkbox" name="CheckboxFEB" class="modbcheckbox" data-odb-path="/Equipment/Genesys/Variables/Set State[1]"></input></td>
             <td><div class="modbvalue" data-odb-path="/Equipment/Genesys/Variables/Demand Voltage[1]" data-odb-editable="1"></div></td>
             <td><div class="modbvalue" data-odb-path="/Equipment/Genesys/Variables/Voltage[1]"></div></td>
             <td><div class="modbvalue" data-odb-path="/Equipment/Genesys/Variables/Current Limit[1]" data-odb-editable="1"></div></td>
