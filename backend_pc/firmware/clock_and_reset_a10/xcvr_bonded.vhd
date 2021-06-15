@@ -8,21 +8,20 @@ use ieee.std_logic_1164.all;
 use ieee.numeric_std.all;
 use ieee.std_logic_unsigned.all;
 
-entity xcvr_enh is
+entity xcvr_bonded is
 generic (
     NUMBER_OF_CHANNELS_g : positive := 4;
     CHANNEL_WIDTH_g : positive := 32;
-    INPUT_CLOCK_FREQUENCY_g : positive := 125000000;
-    DATA_RATE_g : positive := 5000;
+    g_REFCLK_MHZ : real := 125.0;
+    g_RATE_MBPS : positive := 5000;
     K_g : std_logic_vector(7 downto 0) := work.util.D28_5;
-    CLK_MHZ_g : positive := 50--;
+    g_CLK_MHZ : real := 50.0--;
 );
 port (
     i_rx_serial         : in    std_logic_vector(NUMBER_OF_CHANNELS_g-1 downto 0);
     o_tx_serial         : out   std_logic_vector(NUMBER_OF_CHANNELS_g-1 downto 0);
 
-    i_pll_clk           : in    std_logic;
-    i_cdr_clk           : in    std_logic;
+    i_refclk            : in    std_logic;
 
     o_rx_data           : out   std_logic_vector(NUMBER_OF_CHANNELS_g*CHANNEL_WIDTH_g-1 downto 0);
     o_rx_datak          : out   std_logic_vector(NUMBER_OF_CHANNELS_g*CHANNEL_WIDTH_g/8-1 downto 0);
@@ -44,15 +43,12 @@ port (
     i_avs_writedata     : in    std_logic_vector(31 downto 0) := (others => '0');
     o_avs_waitrequest   : out   std_logic;
 
-    -- TODO: rename to i_reset_n
-    i_reset             : in    std_logic;
+    i_reset_n           : in    std_logic;
     i_clk               : in    std_logic--;
 );
 end entity;
 
-architecture arch of xcvr_enh is
-
-    signal reset, reset_n : std_logic;
+architecture arch of xcvr_bonded is
 
     signal ch : integer range 0 to NUMBER_OF_CHANNELS_g-1 := 0;
 
@@ -124,9 +120,6 @@ architecture arch of xcvr_enh is
 
 begin
 
-    reset <= i_reset;
-    reset_n <= not i_reset;
-
     gen_rx_data : for i in NUMBER_OF_CHANNELS_g-1 downto 0 generate
     begin
         o_rx_data(CHANNEL_WIDTH_g-1 + CHANNEL_WIDTH_g*i downto CHANNEL_WIDTH_g*i) <= rx(i).data;
@@ -177,7 +170,7 @@ begin
         );
 
         e_rx_rst_n : entity work.reset_sync
-        port map ( o_reset_n => rx(i).rst_n, i_reset_n => reset_n and rx_rst_n(i), i_clk => i_rx_clkin(i) );
+        port map ( o_reset_n => rx(i).rst_n, i_reset_n => i_reset_n and rx_rst_n(i), i_clk => i_rx_clkin(i) );
 
         e_rx_align : entity work.rx_align
         generic map (
@@ -231,9 +224,9 @@ begin
     end generate;
 
     -- av_ctrl process, avalon iface
-    process(i_clk, reset_n)
+    process(i_clk, i_reset_n)
     begin
-    if ( reset_n = '0' ) then
+    if ( i_reset_n = '0' ) then
         av_ctrl.waitrequest <= '1';
         ch <= 0;
         rx_seriallpbken <= (others => '0');
@@ -344,9 +337,9 @@ begin
 
         o_avs_waitrequest <= avs_waitrequest;
 
-        process(i_clk, reset_n)
+        process(i_clk, i_reset_n)
         begin
-        if ( reset_n = '0' ) then
+        if ( i_reset_n = '0' ) then
             avs_waitrequest <= '1';
             av_ctrl.read <= '0';
             av_ctrl.write <= '0';
@@ -404,7 +397,7 @@ begin
         tx_serial_data  => o_tx_serial,
         rx_serial_data  => i_rx_serial,
 
-        rx_cdr_refclk0          => i_cdr_clk,
+        rx_cdr_refclk0          => i_refclk,
 --        tx_serial_clk0          => (others => tx_serial_clk),
         tx_bonding_clocks       => tx_bonding_clocks,
 
@@ -444,20 +437,20 @@ begin
         reconfig_write(0)       => av_phy.write,
         reconfig_writedata      => av_phy.writedata,
         reconfig_waitrequest(0) => av_phy.waitrequest,
-        reconfig_reset(0)       => reset,
+        reconfig_reset(0)       => not i_reset_n,
         reconfig_clk(0)         => i_clk--,
     );
 
     e_fpll : component work.cmp.ip_xcvr_enh_fpll
     port map (
-        pll_refclk0     => i_pll_clk,
+        pll_refclk0     => i_refclk,
         pll_powerdown   => pll_powerdown(0),
         pll_cal_busy    => pll_cal_busy(0),
         pll_locked      => pll_locked(0),
         tx_serial_clk   => tx_serial_clk,
 
         tx_bonding_clocks       => tx_bonding_clocks(5 downto 0),
-        mcgb_rst                => reset,
+        mcgb_rst                => not i_reset_n,
 
         reconfig_address0       => av_pll.address(9 downto 0),
         reconfig_read0          => av_pll.read,
@@ -465,7 +458,7 @@ begin
         reconfig_write0         => av_pll.write,
         reconfig_writedata0     => av_pll.writedata,
         reconfig_waitrequest0   => av_pll.waitrequest,
-        reconfig_reset0         => reset,
+        reconfig_reset0         => not i_reset_n,
         reconfig_clk0           => i_clk--,
     );
 
@@ -500,7 +493,7 @@ begin
 
         pll_select => (others => '0'),
 
-        reset => reset,
+        reset => not i_reset_n,
         clock => i_clk--,
     );
 
