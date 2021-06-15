@@ -96,6 +96,8 @@ $(PREFIX)/components_pkg.vhd : $(SOPC_FILES) $(VHD_FILES)
 	# find and exec components_pkg.sh
 	$(lastword $(realpath $(addsuffix components_pkg.sh,$(dir $(MAKEFILE_LIST))))) "$(PREFIX)" > "$@"
 	if [ -x /bin/awk ] ; then awk -f $(lastword $(realpath $(addsuffix components_pkg.awk,$(dir $(MAKEFILE_LIST))))) "$@" ; fi
+	# patch generated "altera_pci_express.sdc" files
+	$(lastword $(realpath $(addsuffix altera_pci_express.sh,$(dir $(MAKEFILE_LIST))))) "$(PREFIX)"
 
 # include.qip - include all generated files
 $(PREFIX)/include.qip : $(PREFIX)/components_pkg.vhd $(QSYS_FILES)
