@@ -63,6 +63,8 @@ end entity;
 
 architecture arch of swb_data_path is
 
+    signal reset_250_n : std_logic;
+
     --! constant
     constant W : positive := g_NLINKS_FARM*32+g_NLINKS_FARM*6;
 
@@ -110,6 +112,9 @@ architecture arch of swb_data_path is
 
 begin
 
+        --! generate reset for 125 MHz
+    e_reset_250_n : entity work.reset_sync
+    port map ( o_reset_n => reset_250_n, i_reset_n => i_reset_n_250, i_clk => i_clk_250 );
 
     --! status counter
     --! ------------------------------------------------------------------------
@@ -212,7 +217,7 @@ begin
             i_reset_n_156   => i_reset_n_156,
             i_clk_156       => i_clk_156,
 
-            i_reset_n_250   => i_reset_n_250,
+            i_reset_n_250   => reset_250_n,
             i_clk_250       => i_clk_250--;
         );
   
@@ -249,7 +254,7 @@ begin
 
         o_counters  => stream_counters,
 
-        i_reset_n   => i_reset_n_250,
+        i_reset_n   => reset_250_n,
         i_clk       => i_clk_250--,
     );
 
@@ -287,7 +292,7 @@ begin
         o_trailer_debug => merger_trailer,
         o_error         => open,
 
-        i_reset_n       => i_reset_n_250,
+        i_reset_n       => reset_250_n,
         i_clk           => i_clk_250--,
     );
 
@@ -352,7 +357,7 @@ begin
 
         o_counters          => builder_counters,
 
-        i_reset_n_250       => i_reset_n_250,
+        i_reset_n_250       => reset_250_n,
         i_clk_250           => i_clk_250--,
     );
 
@@ -364,7 +369,7 @@ begin
     e_data_gen_merged : entity work.data_generator_merged_data
     port map(
         i_clk       => i_clk_250,
-        i_reset_n   => i_reset_n_250,
+        i_reset_n   => reset_250_n,
         i_en        => not gen_full,
         i_sd        => x"00000002",
         o_data      => gen_data,
@@ -386,7 +391,7 @@ begin
         q               => gen_q,
         full            => gen_full,
         empty           => gen_rempty,
-        sclr            => not i_reset_n_250--,
+        sclr            => not reset_250_n--,
     );
 
 
@@ -401,7 +406,7 @@ begin
         DATA_TYPE   => DATA_TYPE--;
     )
     port map (
-        i_reset_n   => i_reset_n_250,
+        i_reset_n   => reset_250_n,
         i_clk       => i_clk_250,
 
         i_data      => farm_data,
