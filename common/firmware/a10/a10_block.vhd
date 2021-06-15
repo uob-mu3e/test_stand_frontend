@@ -553,7 +553,7 @@ begin
         i_tx_datak          => i_xcvr0_tx_datak(i),
         i_clk               => i_xcvr0_clk,
 
-        i_reset_n           => i_reset_n--,
+        i_reset_n           => reset_156_n--,
     );
     end generate;
 
@@ -609,7 +609,7 @@ begin
         i_tx_datak          => i_xcvr1_tx_datak(i),
         i_clk               => i_xcvr1_clk,
 
-        i_reset_n           => i_reset_n--,
+        i_reset_n           => reset_250_n--,
     );
     end generate;
 
