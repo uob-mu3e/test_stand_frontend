@@ -326,7 +326,7 @@ begin
     port map(
         i_clk_156        => i_clk_156,
         i_clk_250        => i_clk_250,
-        
+
         i_reset_n_156    => i_resets_n_156(RESET_BIT_DATA_PATH),
         i_reset_n_250    => i_resets_n_250(RESET_BIT_DATA_PATH),
 

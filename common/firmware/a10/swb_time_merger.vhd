@@ -89,7 +89,7 @@ begin
         i_link                  => 1, -- which link should be taken to check ts etc.
         i_mask_n                => i_rmask_n,
         o_rack                  => o_rack,
-        
+
         -- output stream
         o_rdata                 => rdata_s,
         i_ren                   => ren,--not rempty and not wfull,

@@ -386,7 +386,7 @@ begin
         variable v_overflow : std_logic_vector(15 downto 0);
         variable TF : std_logic_vector(1 downto 0);
     begin
-    if ( i_reset_n /= '1' ) then
+    if ( i_reset_n = '0' ) then
         merge_state <= wait_for_pre;
         error_pre <= (others => '0');
         error_sh <= (others => '0');
