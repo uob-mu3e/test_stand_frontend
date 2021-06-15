@@ -14,34 +14,42 @@ char wait_key(useconds_t us = 100000);
 #include "altera_avalon_spi.h"
 #include "include/scifi_registers.h"
 
-//write slow control pattern over SPI, returns 0 if readback value matches written, otherwise -1. Does not include CSn line switching.
-int SMB_t::spi_write_pattern(alt_u32 spi_slave, const alt_u8* bitpattern) {
-    char tx_string[681];
-    char rx_string[681];
+int SMB_t::spi2_write_pattern(alt_u32 spi_slave, const alt_u8* bitpattern) {
+    volatile alt_u32* base = (alt_u32*)AVALON_SPI_MASTER_0_BASE;
+
+    // reset
+    base[3] |= 0x80000000;
+    base[3] &= ~0x80000000;
+    
+    // slave select
+    base[1] = 1 << spi_slave;
+    printf("base[1] = %08X\n", base[1]);
+    // clock divider
+    base[3] = 0x00080;
+    printf("base[3] = %08X\n", base[3]);
+    
+    printf("base[2] = %08X\n", base[2]);
+
     int result_i=0;
-	int status=0;
-	uint16_t rx_pre=0xff00;
+    int status=0;
+    uint16_t rx_pre=0xff00;
     uint16_t nb=MUTRIG_CONFIG_LEN_BYTES;
-    do{
+
+    // slave select override
+    base[2] |= 0x80000000;
+    do {
         nb--;
-//do spi transaction, one byte at a time
+        //do spi transaction, one byte at a time
         alt_u8 rx = 0xCC;
         alt_u8 tx = bitpattern[nb];
 
-        alt_avalon_spi_command(SPI_BASE, spi_slave, 1, &tx, 0, &rx, nb==0?0:ALT_AVALON_SPI_COMMAND_MERGE);
-        rx = IORD_8DIRECT(SPI_BASE, 0);
+        while((base[2] & 0x00000001) != 0); // wait for wfull == 0
+        base[0] = tx;
 
-        //printf("tx:%2.2X rx:%2.2x nb:%d\n",tx,rx,nb);
-        //Lchar result_hex[3];
-        //Lchar tx_hex[3];
-        //Lsprintf(result_hex,"%2.2X",rx);
-        //Lsprintf(tx_hex,"%2.2X",tx);
-        //Lrx_string[result_i] = result_hex[0];
-        //Ltx_string[result_i] = tx_hex[0];
-        //Lresult_i++;
-        //Lrx_string[result_i] = result_hex[1];
-        //Ltx_string[result_i] = tx_hex[1];
-        //Lresult_i++;
+        while((base[2] & 0x00000100) != 0); // wait for rempty == 0
+        rx = base[0];
+         
+//        printf("tx:%2.2X rx:%2.2x nb:%d\n",tx,rx,nb);
 
         //pattern is not in full units of bytes, so shift back while receiving to check the correct configuration state
         unsigned char rx_check= (rx_pre | rx ) >> (8-MUTRIG_CONFIG_LEN_BITS%8);
@@ -54,12 +62,58 @@ int SMB_t::spi_write_pattern(alt_u32 spi_slave, const alt_u8* bitpattern) {
             status=-1;
         }
         rx_pre=rx<<8;
-    }while(nb>0);
-    rx_string[680]=0;
-    tx_string[680]=0;
-    //printf("TX = %s\n", tx_string);
-    //printf("RX = %s\n", rx_string);
+    } while(nb > 0);
+    base[2] &= ~0x80000000;
+    base[1] = 1 << spi_slave;
     return status;
+}
+
+//write slow control pattern over SPI, returns 0 if readback value matches written, otherwise -1. Does not include CSn line switching.
+int SMB_t::spi_write_pattern(alt_u32 spi_slave, const alt_u8* bitpattern) {
+    	char tx_string[681];
+    	char rx_string[681];
+    	int result_i=0;
+	int status=0;
+	uint16_t rx_pre=0xff00;
+    	uint16_t nb=MUTRIG_CONFIG_LEN_BYTES;
+   	do{
+		nb--;
+		//do spi transaction, one byte at a time
+   	     	alt_u8 rx = 0xCC;
+   	     alt_u8 tx = bitpattern[nb];
+
+   	     alt_avalon_spi_command(SPI_BASE, spi_slave, 1, &tx, 0, &rx, nb==0?0:ALT_AVALON_SPI_COMMAND_MERGE);
+   	     rx = IORD_8DIRECT(SPI_BASE, 0);
+	      
+   	     //printf("tx:%2.2X rx:%2.2x nb:%d\n",tx,rx,nb);
+   	     //char result_hex[3];
+   	     //char tx_hex[3];
+   	     //sprintf(result_hex,"%2.2X",rx);
+   	     //sprintf(tx_hex,"%2.2X",tx);
+   	     //rx_string[result_i] = result_hex[0];
+   	     //tx_string[result_i] = tx_hex[0];
+   	     //result_i++;
+   	     //rx_string[result_i] = result_hex[1];
+   	     //tx_string[result_i] = tx_hex[1];
+   	     //result_i++;
+
+   	     //pattern is not in full units of bytes, so shift back while receiving to check the correct configuration state
+   	     unsigned char rx_check= (rx_pre | rx ) >> (8-MUTRIG_CONFIG_LEN_BITS%8);
+   	     if(nb==MUTRIG_CONFIG_LEN_BYTES-1){
+   	         rx_check &= 0xff>>(8-MUTRIG_CONFIG_LEN_BITS%8);
+   	     };
+
+   	     if(rx_check!=bitpattern[nb]){
+   	         //printf("Error in byte %d: received %2.2x expected %2.2x\n",nb,rx_check,bitpattern[nb]);
+   	         status=-1;
+   	     }
+   	     rx_pre=rx<<8;
+   	 }while(nb>0);
+   	 rx_string[680]=0;
+   	 tx_string[680]=0;
+   	 //printf("TX = %s\n", tx_string);
+   	 //printf("RX = %s\n", rx_string);
+   	 return status;
 }
 
 //=======
@@ -109,7 +163,7 @@ alt_u16 SMB_t::configure_asic(alt_u32 asic, const alt_u8* bitpattern) {
 
     int ret;
     ret = spi_write_pattern(asic, bitpattern);
-    usleep(0);
+//     usleep(1e5);
     ret = spi_write_pattern(asic, bitpattern);
 
     if(ret != 0) {
@@ -167,10 +221,9 @@ void SMB_t::menu_SMB_main() {
         printf("%c\n", cmd);
         switch(cmd) {
         case '0':
+            sc.ram->data[0xFF00|SCIFI_CNT_CTRL_REGISTER_W] = sc.ram->data[0xFF00|SCIFI_CNT_CTRL_REGISTER_W] & ~(1<<31);
             for(alt_u8 asic = 0; asic < 8; asic++)
                 sc_callback(0x0110 | asic, (alt_u32*) config_ALL_OFF, 0);
-            // disbale injext pin
-//            sc.ram->data[0xFF00|SCIFI_CNT_CTRL_REGISTER_W] = sc.ram->data[0xFF00|SCIFI_CNT_CTRL_REGISTER_W] & ~(1<<31);
             break;
         case '1':
             sc.ram->data[0xFF00|SCIFI_CNT_CTRL_REGISTER_W] = sc.ram->data[0xFF00|SCIFI_CNT_CTRL_REGISTER_W] & ~(1<<31); 
@@ -186,7 +239,6 @@ void SMB_t::menu_SMB_main() {
         case '2':
             for(alt_u8 asic = 0; asic < 8; asic++)
                 sc_callback(0x0110 | asic, (alt_u32*) config_plltest, 0);
-            // enable inject pin
             sc.ram->data[0xFF00|SCIFI_CNT_CTRL_REGISTER_W] = sc.ram->data[0xFF00|SCIFI_CNT_CTRL_REGISTER_W] | (1<<31);
             break;
         case '3':
@@ -442,22 +494,25 @@ void SMB_t::menu_counters(){
     char cmd;
     printf("Counters: press 'q' to end / 'r' to reset\n");
     while(1){
-	for(char selected=0;selected<5; selected++){
-		sc.ram->data[0xFF00|SCIFI_CNT_CTRL_REGISTER_W] = selected&0x7;
-		switch(selected){
-			case 0: printf("Events/Time  [8ns] "); break;
-			case 1: printf("Errors/Frame       "); break;
-			case 2: printf("PRBS: Errors/Words "); break;
-			case 3: printf("LVDS: Errors/Words "); break;
-			case 4: printf("SYNCLOSS: Count/-- "); break;
+	for (int j=0; j<2; j++) {
+		printf("ASIC %i to %i\n", j*4, 3+j*4);
+		for(char selected=0;selected<5; selected++){
+			sc.ram->data[0xFF00|SCIFI_CNT_CTRL_REGISTER_W] = selected&0x7;
+			switch(selected){
+				case 0: printf("Events/Time  [8ns] "); break;
+				case 1: printf("Errors/Frame       "); break;
+				case 2: printf("PRBS: Errors/Words "); break;
+				case 3: printf("LVDS: Errors/Words "); break;
+				case 4: printf("SYNCLOSS: Count/-- "); break;
+			}
+			for(int i=0+j*4;i<4+j*4;i++){
+				sc.ram->data[0xFF00|SCIFI_CNT_CTRL_REGISTER_W] = (sc.ram->data[0xFF00|SCIFI_CNT_CTRL_REGISTER_W] & 0x7) + (i<<3);
+        	    // FIXME: denominator probably won't work
+				printf("| %10u / %18lu |", sc.ram->data[0xFF00|SCIFI_CNT_NOM_REGISTER_REGISTER_R], 
+        	            (alt_u64) sc.ram->data[0xFF00|SCIFI_CNT_DENOM_LOWER_REGISTER_R]);
+			}
+			printf("\n");
 		}
-		for(int i=0;i<4;i++){
-			sc.ram->data[0xFF00|SCIFI_CNT_CTRL_REGISTER_W] = (sc.ram->data[0xFF00|SCIFI_CNT_CTRL_REGISTER_W] & 0x7) + (i<<3);
-            // FIXME: denominator probably won't work
-			printf("| %10u / %18lu |", sc.ram->data[0xFF00|SCIFI_CNT_NOM_REGISTER_REGISTER_R], 
-                    (alt_u64) sc.ram->data[0xFF00|SCIFI_CNT_DENOM_LOWER_REGISTER_R]);
-		}
-		printf("\n");
 	}
 	printf("\n");
 
