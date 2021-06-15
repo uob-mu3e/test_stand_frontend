@@ -15,14 +15,14 @@ architecture TB of tb_data_path_farm is
     signal reset		: std_logic;
 
     -- Input from merging (first board) or links (subsequent boards)
-    signal clk_156		: 		 std_logic;
-    signal dataclk		: 		 std_logic;
+    signal clk_156		: 		 std_logic := '0';
+    signal dataclk		: 		 std_logic := '0';
     signal data_en		:		 std_logic;
     signal data_in		:		 std_logic_vector(511 downto 0);
     signal ts_in		:		 std_logic_vector(31 downto 0);
 
     -- Input from PCIe demanding events
-    signal pcieclk		:		std_logic;
+    signal pcieclk		:		std_logic := '0';
     signal ts_req_A		:		std_logic_vector(31 downto 0);
     signal req_en_A		:		std_logic;
     signal ts_req_B		:		std_logic_vector(31 downto 0);
@@ -35,7 +35,7 @@ architecture TB of tb_data_path_farm is
     signal dma_eoe			:   std_logic;
 
     -- Interface to memory bank A
-    signal A_mem_clk		: std_logic;
+    signal A_mem_clk		: std_logic := '0';
     signal A_mem_ready		: std_logic;
     signal A_mem_calibrated	: std_logic;
     signal A_mem_addr		: std_logic_vector(25 downto 0);
@@ -46,7 +46,7 @@ architecture TB of tb_data_path_farm is
     signal A_mem_q_valid	: std_logic;
 
     -- Interface to memory bank B
-    signal B_mem_clk		: std_logic;
+    signal B_mem_clk		: std_logic := '0';
     signal B_mem_ready		: std_logic;
     signal B_mem_calibrated	: std_logic;
     signal B_mem_addr		: std_logic_vector(25 downto 0);
@@ -131,6 +131,7 @@ begin
 
     clk_156 <= not clk_156 after (0.5 us / CLK_MHZ);
     dataclk <= not dataclk after (0.1 us / CLK_MHZ);
+    pcieclk <= not dataclk after (0.1 us / CLK_MHZ);
     A_mem_clk <= not A_mem_clk after (0.1 us / CLK_MHZ);
     B_mem_clk <= not B_mem_clk after (0.1 us / CLK_MHZ);
 
@@ -165,95 +166,95 @@ begin
     --! ------------------------------------------------------------------------
     --! ------------------------------------------------------------------------
     --! ------------------------------------------------------------------------
-    --e_swb_pixel : entity work.swb_data_path
-    --generic map (
-    --    g_NLINKS_TOTL           => 64,
-    --    g_NLINKS_FARM           => NLINKS,
-    --    g_NLINKS_DATA           => 10,
-    --    LINK_FIFO_ADDR_WIDTH    => 8,
-    --    TREE_w                  => 10,
-    --    TREE_r                  => 10,
-    --    SWB_ID                  => x"01",
-    --    -- Data type: x"01" = pixel, x"02" = scifi, x"03" = tiles
-    --    DATA_TYPE               => x"01"--;
-    --)
-    --port map(
-    --    i_clk_156        => clk_156,
-    --    i_clk_250        => dataclk,
+    e_swb_pixel : entity work.swb_data_path
+    generic map (
+        g_NLINKS_TOTL           => 64,
+        g_NLINKS_FARM           => NLINKS,
+        g_NLINKS_DATA           => 10,
+        LINK_FIFO_ADDR_WIDTH    => 8,
+        TREE_w                  => 10,
+        TREE_r                  => 10,
+        SWB_ID                  => x"01",
+        -- Data type: x"01" = pixel, x"02" = scifi, x"03" = tiles
+        DATA_TYPE               => x"01"--;
+    )
+    port map(
+        i_clk_156        => clk_156,
+        i_clk_250        => dataclk,
 
-    --    i_reset_n_156    => reset_n,
-    --    i_reset_n_250    => reset_n,
+        i_reset_n_156    => reset_n,
+        i_reset_n_250    => reset_n,
 
-    --    i_resets_n_156   => resets_n_156,
-    --    i_resets_n_250   => resets_n_250,
+        i_resets_n_156   => resets_n_156,
+        i_resets_n_250   => resets_n_250,
 
-    --    i_rx             => (others => (others => '0')),
-    --    i_rx_k           => (others => (others => '0')),
-    --    i_rmask_n        => x"000003FF",
+        i_rx             => (others => (others => '0')),
+        i_rx_k           => (others => (others => '0')),
+        i_rmask_n        => x"00000000000003FF",
 
-    --    i_writeregs_156  => writeregs_156,
-    --    i_writeregs_250  => writeregs_250,
+        i_writeregs_156  => writeregs_156,
+        i_writeregs_250  => writeregs_250,
 
-    --    o_counter_156    => open,
-    --    o_counter_250    => open,
+        o_counter_156    => open,
+        o_counter_250    => open,
 
-    --    i_dmamemhalffull => '0',
+        i_dmamemhalffull => '0',
 
-    --    o_farm_data      => farm_data_pixel,
-    --    o_farm_data_valid=> farm_valid_pixel,
+        o_farm_data      => farm_data_pixel,
+        o_farm_data_valid=> farm_valid_pixel,
 
-    --    o_dma_wren       => open,
-    --    o_dma_done       => open,
-    --    o_endofevent     => open,
-    --    o_dma_data       => open--;
-    --);
+        o_dma_wren       => open,
+        o_dma_done       => open,
+        o_endofevent     => open,
+        o_dma_data       => open--;
+    );
 
-    ----! SWB Block Scifi
-    ----! ------------------------------------------------------------------------
-    ----! ------------------------------------------------------------------------
-    ----! ------------------------------------------------------------------------
-    --e_swb_scifi : entity work.swb_data_path
-    --generic map (
-    --    g_NLINKS_TOTL           => 64,
-    --    g_NLINKS_FARM           => NLINKS,
-    --    g_NLINKS_DATA           => 4,
-    --    LINK_FIFO_ADDR_WIDTH    => 8,
-    --    TREE_w                  => 10,
-    --    TREE_r                  => 10,
-    --    SWB_ID                  => x"01",
-    --    -- Data type: x"01" = pixel, x"02" = scifi, x"03" = tiles
-    --    DATA_TYPE               => x"02"--;
-    --)
-    --port map(
-    --    i_clk_156        => clk_156,
-    --    i_clk_250        => dataclk,
+    --! SWB Block Scifi
+    --! ------------------------------------------------------------------------
+    --! ------------------------------------------------------------------------
+    --! ------------------------------------------------------------------------
+    e_swb_scifi : entity work.swb_data_path
+    generic map (
+        g_NLINKS_TOTL           => 64,
+        g_NLINKS_FARM           => NLINKS,
+        g_NLINKS_DATA           => 4,
+        LINK_FIFO_ADDR_WIDTH    => 8,
+        TREE_w                  => 10,
+        TREE_r                  => 10,
+        SWB_ID                  => x"01",
+        -- Data type: x"01" = pixel, x"02" = scifi, x"03" = tiles
+        DATA_TYPE               => x"02"--;
+    )
+    port map(
+        i_clk_156        => clk_156,
+        i_clk_250        => dataclk,
 
-    --    i_reset_n_156    => reset_n,
-    --    i_reset_n_250    => reset_n,
+        i_reset_n_156    => reset_n,
+        i_reset_n_250    => reset_n,
 
-    --    i_resets_n_156   => resets_n_156,
-    --    i_resets_n_250   => resets_n_250,
+        i_resets_n_156   => resets_n_156,
+        i_resets_n_250   => resets_n_250,
 
-    --    i_rx             => (others => (others => '0')),
-    --    i_rx_k           => (others => (others => '0')),
-    --    i_rmask_n        => x"0000000F",
+        i_rx             => (others => (others => '0')),
+        i_rx_k           => (others => (others => '0')),
+        i_rmask_n        => x"000000000000000F",
 
-    --    i_writeregs_156  => writeregs_156,
-    --    i_writeregs_250  => writeregs_250,
+        i_writeregs_156  => writeregs_156,
+        i_writeregs_250  => writeregs_250,
 
-    --    o_counter_156    => open,
-    --    o_counter_250    => open,
+        o_counter_156    => open,
+        o_counter_250    => open,
 
-    --    i_dmamemhalffull => '0',
+        i_dmamemhalffull => '0',
 
-    --    o_farm_data      => farm_data_scifi,
-    --    o_farm_data_valid=> farm_valid_scifi,
+        o_farm_data      => farm_data_scifi,
+        o_farm_data_valid=> farm_valid_scifi,
 
-    --    o_dma_wren       => open,
-    --    o_dma_done       => open,
-    --    o_endofevent     => open,
-    --    o_dma_data       => open--;
-    --);
+        o_dma_wren       => open,
+        o_dma_done       => open,
+        o_endofevent     => open,
+        o_dma_data       => open--;
+    );
 
     
     gen_valid : FOR I in 0 to NLINKS - 1 GENERATE
@@ -261,10 +262,14 @@ begin
                        x"000000BC";
         farm_data_pixel_q(I) <= farm_data_pixel(I) when farm_valid_pixel(I) /= "00" else                   
                        x"000000BC";
-        farm_datak_pixel_q(I) <= farm_datak_pixel(I) when farm_valid_pixel(I) /= "00" else                   
-                       "0001";
-        farm_datak_scifi_q(I) <= farm_datak_scifi(I) when farm_valid_scifi(I) /= "00000" else                    
-                       "0001";
+        farm_datak_scifi_q(I) <= "0001" when farm_valid_scifi(I) = "10" else
+                                 "0001" when farm_valid_scifi(I) = "01" else
+                                 "0000" when farm_valid_scifi(I) = "11" else
+                                 "0001";
+        farm_datak_pixel_q(I) <= "0001" when farm_valid_pixel(I) = "10" else
+                                 "0001" when farm_valid_pixel(I) = "01" else
+                                 "0000" when farm_valid_pixel(I) = "11" else
+                                 "0001";
     END GENERATE;
 
     -- map links pixel

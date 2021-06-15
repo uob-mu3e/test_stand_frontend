@@ -43,6 +43,7 @@ architecture arch of swb_data_merger is
     signal hit_reg    : std_logic_vector(NLINKS * 38 - 1  downto 0);
     signal hit_reg_cnt : integer;
     signal header_state : std_logic_vector(5 downto 0);
+    signal TS : std_logic_vector(47 downto 0);
     
 begin
 
@@ -63,6 +64,7 @@ begin
             o_data_reg  <= (others => '0');
             o_data_valid<= (others => '0');
             hit_reg     <= (others => '0');
+            TS          <= (others => '0');
             merge_state <= wait_for_pre;
             hit_reg_cnt <= 0;
             --
@@ -76,9 +78,6 @@ begin
                 when wait_for_pre =>
                     if ( header_state(0) = '1' ) then
                         merge_state             <= get_ts_1;
-                        -- reg data
-                        -- SWB ID
-                        o_data_reg(7 downto 0)  <= SWB_ID;
                     end if;
 
                 when get_ts_1 =>
@@ -86,7 +85,7 @@ begin
                         merge_state             <= get_ts_2;
                         -- reg data
                         -- TS (47:16)
-                        o_data_reg(39 downto 8) <= i_data(31 downto 0);
+                        TS(47 downto 16) <= i_data(31 downto 0);
                     end if;
 
                 when get_ts_2 =>
@@ -96,7 +95,7 @@ begin
                         merge_state <= get_sh;
                         -- reg data
                         -- TS (15:0)
-                        o_data_reg(55 downto 40) <= i_data(31 downto 16);
+                        TS(15 downto 0) <= i_data(31 downto 16);
                     end if;
                     
                 when get_sh =>
@@ -104,27 +103,39 @@ begin
                     if ( header_state(3) = '1' ) then
                         merge_state              <= delay;
                         -- 1. link
+                        -- x"7C"
                         -- SWB ID
-                        o_data(15 downto 0)      <= o_data_reg(7 downto 0) & K28_3;
                         -- TS(31:16)
-                        o_data(31 downto 16)     <= o_data_reg(23 downto 8);
+                        o_data(15 downto 0)      <= SWB_ID & K28_3;
+                        o_data(31 downto 16)     <= TS(31 downto 16);
                         o_data_valid(1 downto 0) <= "10"; -- header
                         -- 2. link
+                        -- x"7C"
                         -- TS(47:32)
-                        o_data(63 downto 56)     <= DATA_TYPE;
-                        o_data(55 downto 40)     <= o_data_reg(39 downto 24);
+                        -- DT
                         o_data(39 downto 32)     <= K28_3;
+                        o_data(55 downto 40)     <= TS(47 downto 32);
+                        o_data(63 downto 56)     <= DATA_TYPE;
                         o_data_valid(3 downto 2) <= "10"; -- header
                         -- 3. link
+                        -- x"7C"
                         -- TS(15:0)
-                        o_data(95 downto 88)     <= (others => '0');
-                        -- get TS(15:10) from preamble TS
-                        o_data(87 downto 82)     <= o_data_reg(55 downto 50);
-                        -- get TS(9:4) from sub header
-                        o_data(81 downto 76)     <= i_data(21 downto 16);
-                        -- set TS(3:0) to zero
-                        o_data(75 downto 72)     <= "0000";
                         o_data(71 downto 64)     <= K28_3;
+                        -- lower 4 bit of hit data are zero
+                        o_data(75 downto 72)     <= "0000"; 
+                        -- TODO: add tiles
+                        if ( DATA_TYPE = x"01" ) then
+                            -- get TS(10:4)
+                            o_data(82 downto 76)     <= i_data(22 downto 16);
+                            -- set TS(15:11)
+                            o_data(87 downto 83)     <= TS(15 downto 11);
+                        elsif ( DATA_TYPE = x"02" ) then
+                            -- get TS(13:4)
+                            o_data(85 downto 76)     <= i_data(25 downto 16);
+                            -- set TS(15:14)
+                            o_data(87 downto 86)     <= i_data(15 downto 14);
+                        end if;
+                        o_data(95 downto 88)     <= (others => '0');
                         o_data_valid(5 downto 4) <= "10"; -- header
                         -- 4. link
                         -- set rest of the overflow to zero
@@ -155,13 +166,6 @@ begin
                 -- 4. hit  = 151 downto 114
                 -- 5. hit  = 189 downto 152
                 -- 6. hit  = 227 downto 190
-                -- 6.5 hit = 246 downto 228
-                -- 7. hit  = 265 downto 228
-                -- 8. hit  = 303 downto 266
-                -- marker => 10 -> 1/2 MSB
-                --           01 -> 1/2 LSB
-                --           00 -> error
-                --           11 -> no 1/2 hits
                 when hit =>
                     -- send out hits if fifo is not empty
                     if ( i_empty = '0' ) then

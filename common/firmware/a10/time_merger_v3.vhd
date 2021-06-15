@@ -63,9 +63,11 @@ architecture arch of time_merger_v3 is
     signal header_trailer : std_logic_vector(37 downto 0);
     signal sop_wait, shop_wait, eop_wait, time_wait : std_logic_vector(N - 1 downto 0);
     signal gtime1, gtime2 : work.util.slv34_array_t(N - 1 downto 0);
+    signal wait_cnt : std_logic_vector(3 downto 0);
 
     -- error signals
-    signal error_gtime1, error_gtime2, error_shtime, error_merger, header_trailer_we : std_logic;
+    signal error_gtime1, error_gtime2, error_shtime, error_merger : std_logic;
+    signal header_trailer_we : std_logic_vector(1 downto 0);
     signal error_pre, error_sh : std_logic_vector(N - 1 downto 0);
 
     -- merger tree
@@ -235,7 +237,7 @@ begin
         i_rdreq         => rdreq_1,
         i_merge_state   => merger_state_signal,
         i_mask_n        => i_mask_n,
-        i_wen_h_t       => '0',
+        i_wen_h_t       => "00",
         i_data_h_t      => (others => '0'),
 
         o_q             => q_1,
@@ -261,7 +263,7 @@ begin
         i_rdreq         => rdreq_2,
         i_merge_state   => merger_state_signal,
         i_mask_n        => mask_n_1,
-        i_wen_h_t       => '0',
+        i_wen_h_t       => "00",
         i_data_h_t      => (others => '0'),
 
         o_q             => q_2,
@@ -287,7 +289,7 @@ begin
         i_rdreq         => rdreq_3,
         i_merge_state   => merger_state_signal,
         i_mask_n        => mask_n_2,
-        i_wen_h_t       => '0',
+        i_wen_h_t       => "00",
         i_data_h_t      => (others => '0'),
 
         o_q             => q_3,
@@ -313,7 +315,7 @@ begin
         i_rdreq         => rdreq_4,
         i_merge_state   => merger_state_signal,
         i_mask_n        => mask_n_3,
-        i_wen_h_t       => '0',
+        i_wen_h_t       => "00",
         i_data_h_t      => (others => '0'),
 
         o_q             => q_4,
@@ -339,7 +341,7 @@ begin
         i_rdreq         => rdreq_5,
         i_merge_state   => merger_state_signal,
         i_mask_n        => mask_n_4,
-        i_wen_h_t       => '0',
+        i_wen_h_t       => "00",
         i_data_h_t      => (others => '0'),
 
         o_q             => q_5,
@@ -402,14 +404,15 @@ begin
         error_shtime <= '0';
         error_merger <= '0';
         header_trailer <= (others => '0');
-        header_trailer_we <= '0';
+        header_trailer_we <= "00";
         v_overflow := (others => '0');
+        wait_cnt <= (others => '0');
         TF := (others => '0');
         --
     elsif rising_edge(i_clk) then
 
         header_trailer      <= (others => '0');
-        header_trailer_we   <= '0';
+        header_trailer_we   <= "00";
         v_overflow  := (others => '0');
         TF          := (others => '0');
 
@@ -425,7 +428,7 @@ begin
                     header_trailer(37 downto 32) <= pre_marker;
                     header_trailer(31 downto 26) <= "111010";
                     header_trailer(7 downto 0) <= x"BC";
-                    header_trailer_we <= '1';
+                    header_trailer_we <= "10";
                 else
                     wait_cnt_pre <= wait_cnt_pre + '1';
                 end if;
@@ -461,7 +464,7 @@ begin
                     -- send gtime1
                     header_trailer(37 downto 32) <= ts1_marker;
                     header_trailer(31 downto 0) <= gtime1(i_link)(31 downto 0);
-                    header_trailer_we <= '1';
+                    header_trailer_we <= "10";
                 end if;
                 -- dont check at the moment
                 -- elsif ( error_gtime1 = '1' ) then
@@ -495,7 +498,7 @@ begin
                     -- send gtime2
                     header_trailer(37 downto 32) <= ts2_marker;
                     header_trailer(31 downto 0) <= gtime2(i_link)(31 downto 0);
-                    header_trailer_we <= '1';
+                    header_trailer_we <= "10";
                 end if;
                 -- dont check at the moment
                 --elsif ( error_gtime2 = '1' ) then
@@ -537,7 +540,7 @@ begin
                         v_overflow := v_overflow or i_rdata(I)(15 downto 0);
                     END LOOP;
                     header_trailer(15 downto 0) <= v_overflow;
-                    header_trailer_we <= '1';
+                    header_trailer_we <= "10";
                 else
                     wait_cnt_sh <= wait_cnt_sh + '1';
                 end if;
@@ -548,9 +551,17 @@ begin
                     merge_state <= error_state;
                 end if;
 
-            -- TODO: change this to one cycle
+            -- TODO: Change this to one cycle
+            -- NOTE: at the moment we wait here a view cycles to write the 
+            -- SubHeader to the 256 bit out
             when wait_for_sh_written =>
-                merge_state <= merge_hits;
+                header_trailer_we <= "01";
+                if ( wait_cnt = "1000"  ) then
+                    wait_cnt <= (others => '0');
+                    merge_state <= merge_hits;
+                else
+                    wait_cnt <= wait_cnt + '1';
+                end if;
 
             when merge_hits =>
                 if ( error_shtime = '1' ) then
@@ -601,7 +612,7 @@ begin
                         header_trailer(9 downto 8) <= TF;
                     end if;
                     header_trailer(7 downto 0) <= x"9C";
-                    header_trailer_we <= '1';
+                    header_trailer_we <= "10";
                 end if;
                 -- reset errors
                 error_shtime <= '0';
@@ -629,7 +640,7 @@ begin
                 if ( error_sh /= check_zeros ) then
                     header_trailer(17) <= '1';
                 end if;
-                header_trailer_we <= '1';
+                header_trailer_we <= "10";
                 merge_state <= trailer;
 
             when others =>

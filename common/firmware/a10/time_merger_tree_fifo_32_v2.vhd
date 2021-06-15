@@ -27,7 +27,8 @@ port (
     i_rdreq         : in  std_logic_vector(gen_fifos - 1 downto 0);
     i_merge_state   : in  std_logic;
     i_mask_n        : in  std_logic_vector(compare_fifos - 1 downto 0);
-    i_wen_h_t       : in  std_logic;
+    -- "10" = header / "01" = sh padding 
+    i_wen_h_t       : in  std_logic_vector(1 downto 0);
     i_data_h_t      : in  std_logic_vector(37 downto 0);
 
     -- output
@@ -293,7 +294,7 @@ begin
 
                           IDEL;
 
-        wrreq(i)        <=  '1' when layer_state(i) = last_layer_state and i_wen_h_t = '1' else
+        wrreq(i)        <=  '1' when layer_state(i) = last_layer_state and (i_wen_h_t = "01" or i_wen_h_t = "10" ) else
                             '1' when layer_state(i) = end_state else
                             '1' when layer_state(i) = second_input_not_mask_n or layer_state(i) = a_no_b_padding_state or layer_state(i) = b_no_a_padding_state or layer_state(i) = a_smaller_b or layer_state(i) = b_smaller_a else
                             '0';
@@ -304,7 +305,8 @@ begin
         o_rdreq(i+size) <=  '1' when layer_state(i) = first_input_not_mask_n or layer_state(i) = b_no_a_padding_state or layer_state(i) = b_smaller_a else
                             '0';
 
-        data(i)         <= i_data_h_t when layer_state(i) = last_layer_state else
+        data(i)         <= i_data_h_t when layer_state(i) = last_layer_state and i_wen_h_t = "10" else
+                           tree_padding when layer_state(i) = last_layer_state and i_wen_h_t = "01" else 
                            tree_padding when layer_state(i) = end_state else
                            a_h(i) when layer_state(i) = second_input_not_mask_n or layer_state(i) = a_no_b_padding_state or layer_state(i) = a_smaller_b else
                            b_h(i) when layer_state(i) = first_input_not_mask_n or layer_state(i) = b_no_a_padding_state or layer_state(i) = b_smaller_a else
