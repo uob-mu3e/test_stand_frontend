@@ -403,7 +403,7 @@ begin
 
             when bank_data_pixel_header =>
                 w_ram_data(31 downto 0)  <= i_farm_id;       -- reserved
-                w_ram_data(63 downto 32) <= (others => '0'); -- reserved
+                w_ram_data(63 downto 32) <= header_pixel(31 downto 16) & header_pixel(87 downto 72); --reserved (TS(31:0))
                 event_tagging_state     <= bank_data_pixel_one;
 
             when bank_data_pixel_one =>
@@ -455,7 +455,7 @@ begin
                 w_ram_scifi_data(159 downto 128) <= header_scifi(127 downto  96); -- overflow (24b) & 7C
                 w_ram_scifi_data(191 downto 160) <= header_scifi(159 downto 128); -- overflow (24b) & 7C
                 w_ram_scifi_data(223 downto 192) <= i_farm_id; -- reserved
-                w_ram_scifi_data(255 downto 224) <= (others => '0'); -- reserved
+                w_ram_scifi_data(255 downto 224) <= header_scifi(31 downto 16) & header_scifi(87 downto 72); --reserved (TS(31:0))
                 event_tagging_state              <= bank_data_scifi_one;
 
             when bank_data_scifi_one =>

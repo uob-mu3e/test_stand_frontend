@@ -54,7 +54,8 @@ begin
     header_state(4) <= '1' when i_data(37 downto 32) = tr_marker and i_data(7 downto 0) = x"9C" else '0';
     header_state(5) <= '1' when i_data(37 downto 32) = err_marker else '0';
 
-    o_ren <= '1' when or_reduce(header_state) = '1' and i_empty = '0' and merge_state /= hit else 
+    o_ren <= '1' when or_reduce(header_state) = '1' and i_empty = '0' and merge_state /= hit else
+             '0' when merge_state = hit and header_state(3) = '1' else
              '1' when merge_state = hit and hit_reg_cnt /= 6 and or_reduce(header_state) = '0' and i_empty = '0' else '0';
 
     process(i_clk, i_reset_n)
@@ -170,9 +171,7 @@ begin
                     -- send out hits if fifo is not empty
                     if ( i_empty = '0' ) then
                         o_data_valid<= (others => '1'); -- hits
-                        hit_reg <= (others => '0');
-                        -- marker 
-                        o_data(255 downto 254)      <= "11";
+                        hit_reg     <= (others => '0');
                         if ( header_state(3) = '1' ) then
                             merge_state <= get_sh;
                             hit_reg_cnt <= 0;

@@ -100,7 +100,7 @@ architecture arch of swb_data_path is
     signal merged_farm_data : std_logic_vector (g_NLINKS_FARM * 32 - 1  downto 0);
     signal merged_farm_data_valid : std_logic_vector (g_NLINKS_FARM * 2 - 1  downto 0);
     signal farm_data : std_logic_vector(W-1 downto 0);
-    signal farm_rack, farm_rempty : std_logic;
+    signal farm_rack, farm_rempty, all_padding : std_logic;
 
     --! switches
     signal link_idx : integer range 0 to g_NLINKS_TOTL;
@@ -310,8 +310,8 @@ begin
                         merger_trailer when i_writeregs_250(SWB_READOUT_STATE_REGISTER_W)(USE_BIT_MERGER) = '1' else
                         '0';
     stream_ren <= builder_rack when i_writeregs_250(SWB_READOUT_STATE_REGISTER_W)(USE_BIT_STREAM) = '1' else '0';
-    merger_ren <= builder_rack when i_writeregs_250(SWB_READOUT_STATE_REGISTER_W)(USE_BIT_MERGER) = '1' else 
-                  farm_rack when i_writeregs_250(SWB_READOUT_STATE_REGISTER_W)(USE_BIT_FARM) = '1' else 
+    merger_ren <= farm_rack when i_writeregs_250(SWB_READOUT_STATE_REGISTER_W)(USE_BIT_FARM) = '1' else 
+                  builder_rack when i_writeregs_250(SWB_READOUT_STATE_REGISTER_W)(USE_BIT_MERGER) = '1' else 
                   '0';
     rx_ren <=   stream_rack when i_writeregs_250(SWB_READOUT_STATE_REGISTER_W)(USE_BIT_STREAM) = '1' else
                 merger_rack when i_writeregs_250(SWB_READOUT_STATE_REGISTER_W)(USE_BIT_MERGER) = '1' else
@@ -413,9 +413,11 @@ begin
         o_data_valid=> merged_farm_data_valid--,
     );
 
+    all_padding <= '1' when work.util.and_reduce(merged_farm_data(227 downto 0)) = '1' else '0';
+
     gen_farm_out : FOR i in 0 to g_NLINKS_FARM - 1 GENERATE
         o_farm_data(i)          <= merged_farm_data(32 * i + 31 downto 32 * i);
-        o_farm_data_valid(i)    <= merged_farm_data_valid(2 * i + 1 downto 2 * i);
+        o_farm_data_valid(i)    <= "00" when all_padding = '1' else merged_farm_data_valid(2 * i + 1 downto 2 * i);
     END GENERATE gen_farm_out;
 
 

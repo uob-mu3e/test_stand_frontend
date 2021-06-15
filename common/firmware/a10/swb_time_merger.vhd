@@ -232,11 +232,9 @@ begin
                                 for i in 0 to 7 loop
                                     if ( i >= (sh_idx + 1) and rdata(i) /= tree_paddingk ) then
                                         wdata_reg(38 * i + 37 downto 38 * i) <= rdata(i);
-                                    else
-                                        wdata_reg(38 * i + 37 downto 38 * i) <= tree_padding;
+                                        wen_reg <= '1';
                                     end if;
                                 end loop;
-                                wen_reg <= '1';
                             end if;
 
                         when delay =>
