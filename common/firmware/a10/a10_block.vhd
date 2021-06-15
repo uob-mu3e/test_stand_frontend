@@ -334,7 +334,7 @@ begin
     --! generate reset regs for 250 MHz clk for pcie0
     e_reset_logic_pcie : entity work.reset_logic
     port map (
-        rst_n          => reset_250_n,
+        rst_n          => reset_pcie0_n,
         reset_register => pcie0_wregs_A(RESET_REGISTER_W),
         resets         => open,
         resets_n       => pcie0_resets_n_A,
