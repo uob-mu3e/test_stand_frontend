@@ -6,8 +6,8 @@
 package require qsys
 
 # module properties
-set_module_property NAME {a10_flash1616}
-set_module_property DISPLAY_NAME {a10_flash1616}
+set_module_property NAME {flash1616}
+set_module_property DISPLAY_NAME {flash1616}
 set_module_property GROUP {mu3e}
 
 # default module properties
