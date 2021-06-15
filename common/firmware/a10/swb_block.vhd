@@ -335,7 +335,7 @@ begin
 
         i_rx             => rx_data_pixel,
         i_rx_k           => rx_data_k_pixel,
-        i_rmask_n        => pixel_mask_n,
+        i_rmask_n        => pixel_mask_n(g_NLINKS_DATA_PIXEL-1 downto 0),
 
         i_writeregs_156  => i_writeregs_156,
         i_writeregs_250  => i_writeregs_250,
@@ -384,7 +384,7 @@ begin
 
         i_rx             => rx_data_scifi,
         i_rx_k           => rx_data_k_scifi,
-        i_rmask_n        => scifi_mask_n,
+        i_rmask_n        => scifi_mask_n(g_NLINKS_DATA_SCIFI-1 downto 0),
 
         i_writeregs_156  => i_writeregs_156,
         i_writeregs_250  => i_writeregs_250,

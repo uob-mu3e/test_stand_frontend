@@ -40,7 +40,7 @@ port(
     
     i_rx             : in  work.util.slv32_array_t(g_NLINKS_DATA-1 downto 0);
     i_rx_k           : in  work.util.slv4_array_t(g_NLINKS_DATA-1 downto 0);
-    i_rmask_n        : in  std_logic_vector(g_NLINKS_TOTL-1 downto 0);
+    i_rmask_n        : in  std_logic_vector(g_NLINKS_DATA-1 downto 0);
 
     i_writeregs_156  : in  work.util.slv32_array_t(63 downto 0);
     i_writeregs_250  : in  work.util.slv32_array_t(63 downto 0);
@@ -73,23 +73,23 @@ architecture arch of swb_data_path is
     signal gen_rempty, gen_re, gen_we, gen_full : std_logic;
 
     --! data link signals
-    signal rx : work.util.slv32_array_t(g_NLINKS_TOTL-1 downto 0);
-    signal rx_k : work.util.slv4_array_t(g_NLINKS_TOTL-1 downto 0);
-    signal rx_ren, rx_mask_n, rx_rdempty : std_logic_vector(g_NLINKS_TOTL-1 downto 0) := (others => '0');
-    signal rx_q : work.util.slv34_array_t(g_NLINKS_TOTL-1 downto 0) := (others => (others => '0'));
-    signal sop, eop, shop : std_logic_vector(g_NLINKS_TOTL-1 downto 0) := (others => '0');
+    signal rx : work.util.slv32_array_t(g_NLINKS_DATA-1 downto 0);
+    signal rx_k : work.util.slv4_array_t(g_NLINKS_DATA-1 downto 0);
+    signal rx_ren, rx_mask_n, rx_rdempty : std_logic_vector(g_NLINKS_DATA-1 downto 0) := (others => '0');
+    signal rx_q : work.util.slv34_array_t(g_NLINKS_DATA-1 downto 0) := (others => (others => '0'));
+    signal sop, eop, shop : std_logic_vector(g_NLINKS_DATA-1 downto 0) := (others => '0');
 
     --! stream merger
     signal stream_rdata : std_logic_vector(31 downto 0);
     signal stream_counters : work.util.slv32_array_t(0 downto 0);
     signal stream_rempty, stream_ren, stream_header, stream_trailer : std_logic;
-    signal stream_rack : std_logic_vector(g_NLINKS_TOTL-1 downto 0);
+    signal stream_rack : std_logic_vector(g_NLINKS_DATA-1 downto 0);
 
     --! timer merger
     signal merger_rdata : std_logic_vector(W-1 downto 0);
     signal merger_rdata_debug : std_logic_vector(31 downto 0);
     signal merger_rempty, merger_rempty_debug, merger_ren, merger_header, merger_trailer, merger_error : std_logic;
-    signal merger_rack : std_logic_vector (g_NLINKS_TOTL-1 downto 0);
+    signal merger_rack : std_logic_vector (g_NLINKS_DATA-1 downto 0);
     
     --! event builder
     signal builder_data : std_logic_vector(31 downto 0);
@@ -230,7 +230,7 @@ begin
     e_stream : entity work.swb_stream_merger
     generic map (
         W => 34,
-        N => g_NLINKS_TOTL--,
+        N => g_NLINKS_DATA--,
     )
     port map (
         i_rdata     => rx_q,
@@ -269,13 +269,13 @@ begin
         g_NLINKS        => g_NLINKS_TOTL--,
     )
     port map (
-        i_rx        => rx_q,
-        i_rsop      => sop,
-        i_reop      => eop,
-        i_rshop     => shop,
-        i_rempty    => rx_rdempty,
-        i_rmask_n   => i_rmask_n,
-        o_rack      => merger_rack,
+        i_rx(rx_q'range)            => rx_q,
+        i_rsop(sop'range)           => sop,
+        i_reop(eop'range)           => eop,
+        i_rshop(shop'range)         => shop,
+        i_rempty(rx_rdempty'range)  => rx_rdempty,
+        i_rmask_n(i_rmask_n'range)  => i_rmask_n,
+        o_rack(merger_rack'range)   => merger_rack,
 
         -- output strem
         o_q             => merger_rdata,
