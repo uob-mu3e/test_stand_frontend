@@ -153,7 +153,7 @@ begin
     if ( i_reset_n = '0' ) then
         avs_waitrequest <= '1';
         timeout <= (others => '0');
-        for i in 0 to g_XCVR_N-1 loop
+        for i in av'range loop
             av(i).read <= '0';
             av(i).write <= '0';
         end loop;

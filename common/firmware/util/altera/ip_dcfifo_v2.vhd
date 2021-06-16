@@ -1,5 +1,5 @@
 --
--- single clock fifo
+-- dual-clock fifo
 --
 -- author : Alexandr Kozlinskiy
 -- date : 2021-06-09

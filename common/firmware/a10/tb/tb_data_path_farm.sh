@@ -11,4 +11,4 @@ entity=$(basename "$0" .sh)
 
 ../../util/sim.sh "$entity" "$entity.vhd" \
     *.vhd ../*.vhd ../../util/*.vhd ../../util/altera/*.vhd \
-    ../../registers/*.vhd ../../s4/ip_ram_1_port.vhd ../../s4/ip_dcfifo_mixed_widths.vhd
+    ../../registers/*.vhd
