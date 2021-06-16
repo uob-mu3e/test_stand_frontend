@@ -42,9 +42,9 @@ architecture arch of ip_dcfifo_v2 is
 
     signal reset_n : std_logic;
 
-    signal rdata : std_logic_vector(o_rdata'range);
-    signal re : std_logic;
-    signal rempty : std_logic;
+    signal fifo_rdata : std_logic_vector(o_rdata'range);
+    signal fifo_re : std_logic;
+    signal fifo_rempty : std_logic;
 
 begin
 
@@ -92,9 +92,9 @@ begin
         wrusedw => o_wusedw,
         wrclk => i_wclk,
 
-        q => rdata,
-        rdreq => re,
-        rdempty => rempty,
+        q => fifo_rdata,
+        rdreq => fifo_re,
+        rdempty => fifo_rempty,
         rdusedw => o_rusedw,
         rdclk => i_rclk,
 
@@ -115,9 +115,9 @@ begin
         i_re => i_re,
         o_rempty => o_rempty,
 
-        i_rdata => rdata,
-        o_re => re,
-        i_rempty => rempty,
+        i_rdata => fifo_rdata,
+        o_re => fifo_re,
+        i_rempty => fifo_rempty,
 
         i_reset_n => reset_n,
         i_clk => i_rclk--,
