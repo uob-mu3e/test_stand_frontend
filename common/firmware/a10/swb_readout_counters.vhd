@@ -44,7 +44,8 @@ architecture arch of swb_readout_counters is
     signal rdempty_B                    : std_logic;
     signal data_rregs_B, q_rregs_B      : std_logic_vector((g_NLINKS_DATA_PIXEL + g_NLINKS_DATA_SCIFI) * 5 * 32 - 1 downto 0);
     signal s_counter_B                  : work.util.slv32_array_t((g_NLINKS_DATA_PIXEL + g_NLINKS_DATA_SCIFI) * 5 - 1 downto 0);
-    signal wregs_add_A_reg              : std_logic_vector(31 downto 0);
+
+    signal swb_counter_addr, link_id, link_counter_addr : integer;
 
 begin
 
@@ -60,50 +61,40 @@ begin
     --! sync FIFOs
     e_sync_fifo_pixel_B : entity work.ip_dcfifo
     generic map(
-        ADDR_WIDTH  => 4, DATA_WIDTH  => (g_NLINKS_DATA_PIXEL + g_NLINKS_DATA_SCIFI) * 5 * 32--,
-    ) port map ( data => data_rregs_B, wrreq => '1',
-             rdreq => not rdempty_B, wrclk => i_clk_B, rdclk => i_clk_A,
-             q => q_rregs_B, rdempty => rdempty_B, aclr => '0'--,
+        ADDR_WIDTH  => 4, DATA_WIDTH  => data_rregs_B'length--,
+    )
+    port map (
+        data => data_rregs_B, wrreq => '1',
+        rdreq => not rdempty_B, wrclk => i_clk_B, rdclk => i_clk_A,
+        q => q_rregs_B, rdempty => rdempty_B, aclr => '0'--,
     );
-    
-    gen_sync_cnt : FOR i in 0 to (g_NLINKS_DATA_PIXEL + g_NLINKS_DATA_SCIFI) * 5 - 1 GENERATE
+
+    gen_sync_cnt : FOR i in s_counter_B'range GENERATE
         s_counter_B(i) <= q_rregs_B(i * 32 + 31 downto i * 32);
     END GENERATE gen_sync_cnt;
 
-    --! map counters pixel
+    swb_counter_addr <= to_integer(unsigned(i_wregs_add_A(SWB_COUNTER_ADDR_RANGE)));
+    link_id <= to_integer(unsigned(i_wregs_add_A(SWB_LINK_RANGE)));
+    link_counter_addr <= swb_counter_addr + link_id * 5;
+
+        --! map counters pixel
     process(i_clk_A, i_reset_n_A)
-        variable link_id : integer;
     begin
     if ( i_reset_n_A = '0' ) then
-        o_pcie_data     <= (others => '0');
-        o_pcie_addr     <= (others => '0');
-        wregs_add_A_reg <= (others => '0');
+        o_pcie_data <= (others => '0');
+        o_pcie_addr <= (others => '0');
         --
-    elsif ( rising_edge(i_clk_A) ) then
-        wregs_add_A_reg <= i_wregs_add_A;
-        o_pcie_addr     <= i_wregs_add_A;
-        link_id         := to_integer(unsigned(i_wregs_add_A(SWB_LINK_RANGE)));
-        if ( i_wregs_add_A /= wregs_add_A_reg ) then
-            if ( to_integer(unsigned(i_wregs_add_A(SWB_COUNTER_ADDR_RANGE))) = SWB_STREAM_FIFO_FULL_PIXEL_CNT ) then
-                o_pcie_data <= i_counter_A(SWB_STREAM_FIFO_FULL_PIXEL_CNT);
-            elsif ( to_integer(unsigned(i_wregs_add_A(SWB_COUNTER_ADDR_RANGE))) = SWB_BANK_BUILDER_IDLE_NOT_HEADER_PIXEL_CNT ) then
-                o_pcie_data <= i_counter_A(SWB_BANK_BUILDER_IDLE_NOT_HEADER_PIXEL_CNT);
-            elsif ( to_integer(unsigned(i_wregs_add_A(SWB_COUNTER_ADDR_RANGE))) = SWB_BANK_BUILDER_RAM_FULL_PIXEL_CNT ) then
-                o_pcie_data <= i_counter_A(SWB_BANK_BUILDER_RAM_FULL_PIXEL_CNT);
-            elsif ( to_integer(unsigned(i_wregs_add_A(SWB_COUNTER_ADDR_RANGE))) = SWB_BANK_BUILDER_TAG_FIFO_FULL_PIXEL_CNT ) then
-                o_pcie_data <= i_counter_A(SWB_BANK_BUILDER_TAG_FIFO_FULL_PIXEL_CNT);
-            elsif ( to_integer(unsigned(i_wregs_add_A(SWB_COUNTER_ADDR_RANGE))) = SWB_LINK_FIFO_ALMOST_FULL_PIXEL_CNT ) then
-                o_pcie_data <= s_counter_B(SWB_LINK_FIFO_ALMOST_FULL_PIXEL_CNT + link_id * 5);
-            elsif ( to_integer(unsigned(i_wregs_add_A(SWB_COUNTER_ADDR_RANGE))) = SWB_LINK_FIFO_FULL_PIXEL_CNT ) then
-                o_pcie_data <= s_counter_B(SWB_LINK_FIFO_FULL_PIXEL_CNT + link_id * 5);
-            elsif ( to_integer(unsigned(i_wregs_add_A(SWB_COUNTER_ADDR_RANGE))) = SWB_SKIP_EVENT_PIXEL_CNT ) then
-                o_pcie_data <= s_counter_B(SWB_SKIP_EVENT_PIXEL_CNT + link_id * 5);
-            elsif ( to_integer(unsigned(i_wregs_add_A(SWB_COUNTER_ADDR_RANGE))) = SWB_EVENT_PIXEL_CNT ) then
-                o_pcie_data <= s_counter_B(SWB_EVENT_PIXEL_CNT + link_id * 5);
-            elsif ( to_integer(unsigned(i_wregs_add_A(SWB_COUNTER_ADDR_RANGE))) = SWB_SUB_HEADER_PIXEL_CNT ) then
-                o_pcie_data <= s_counter_B(SWB_SUB_HEADER_PIXEL_CNT + link_id * 5);
-            end if;
-        end if;
+    elsif rising_edge(i_clk_A) then
+        case swb_counter_addr is
+        when SWB_STREAM_FIFO_FULL_PIXEL_CNT | SWB_BANK_BUILDER_IDLE_NOT_HEADER_PIXEL_CNT | SWB_BANK_BUILDER_RAM_FULL_PIXEL_CNT | SWB_BANK_BUILDER_TAG_FIFO_FULL_PIXEL_CNT =>
+            o_pcie_data <= i_counter_A(swb_counter_addr);
+            o_pcie_addr <= i_wregs_add_A;
+        when SWB_LINK_FIFO_ALMOST_FULL_PIXEL_CNT | SWB_LINK_FIFO_FULL_PIXEL_CNT | SWB_SKIP_EVENT_PIXEL_CNT | SWB_EVENT_PIXEL_CNT | SWB_SUB_HEADER_PIXEL_CNT =>
+            o_pcie_data <= s_counter_B(link_counter_addr);
+            o_pcie_addr <= i_wregs_add_A;
+        when others =>
+            null;
+        end case;
     end if;
     end process;
 

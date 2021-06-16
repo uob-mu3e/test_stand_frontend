@@ -54,7 +54,7 @@
 library IEEE;
 use IEEE.STD_LOGIC_1164.all;
 
-entity dec_8b10b is	
+entity dec_8b10b_old is	
     port(
 		RESET : in std_logic ;	-- Global asynchronous reset (AH) 
 		RBYTECLK : in std_logic ;	-- Master synchronous receive byte clock
@@ -63,9 +63,9 @@ entity dec_8b10b is
 		KO : out std_logic ;	-- Control (K) character indicator (AH)
 		HO, GO, FO, EO, DO, CO, BO, AO : out std_logic 	-- Decoded out (MS..LS)
 	    );
-end dec_8b10b;
+end dec_8b10b_old;
 
-architecture behavioral of dec_8b10b is
+architecture behavioral of dec_8b10b_old is
 
 -- Signals to tie things together
 	signal ANEB, CNED, EEI, P13, P22, P31 : std_logic ;	-- Figure 10 Signals

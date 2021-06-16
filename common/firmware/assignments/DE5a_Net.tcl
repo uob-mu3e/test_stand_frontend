@@ -190,7 +190,7 @@ set_instance_assignment -name IO_STANDARD "1.5 V" -to DDR3A_EVENT_n
 set_instance_assignment -name IO_STANDARD "SSTL-15 CLASS I" -to DDR3A_ODT[0]
 set_instance_assignment -name IO_STANDARD "SSTL-15 CLASS I" -to DDR3A_ODT[1]
 set_instance_assignment -name IO_STANDARD "SSTL-15 CLASS I" -to DDR3A_RAS_n
-set_instance_assignment -name IO_STANDARD LVDS -to DDR3A_REFCLK_p
+set_instance_assignment -name IO_STANDARD "LVDS" -to DDR3A_REFCLK_p
 set_instance_assignment -name IO_STANDARD "1.5 V" -to DDR3A_RESET_n
 set_instance_assignment -name IO_STANDARD "1.5 V" -to DDR3A_SCL
 set_instance_assignment -name IO_STANDARD "1.5 V" -to DDR3A_SDA
@@ -444,7 +444,7 @@ set_instance_assignment -name IO_STANDARD "1.5 V" -to DDR3B_EVENT_n
 set_instance_assignment -name IO_STANDARD "SSTL-15 CLASS I" -to DDR3B_ODT[0]
 set_instance_assignment -name IO_STANDARD "SSTL-15 CLASS I" -to DDR3B_ODT[1]
 set_instance_assignment -name IO_STANDARD "SSTL-15 CLASS I" -to DDR3B_RAS_n
-set_instance_assignment -name IO_STANDARD LVDS -to DDR3B_REFCLK_p
+set_instance_assignment -name IO_STANDARD "LVDS" -to DDR3B_REFCLK_p
 set_instance_assignment -name IO_STANDARD "1.5 V" -to DDR3B_RESET_n
 set_instance_assignment -name IO_STANDARD "1.5 V" -to DDR3B_SCL
 set_instance_assignment -name IO_STANDARD "1.5 V" -to DDR3B_SDA
@@ -786,7 +786,7 @@ set_instance_assignment -name IO_STANDARD "1.8 V" -to LED_BRACKET[3]
 # PCIe On-Board Ref Clock
 #============================================================
 set_location_assignment PIN_AK40 -to OB_PCIE_REFCLK_p
-set_instance_assignment -name IO_STANDARD LVDS -to OB_PCIE_REFCLK_p
+set_instance_assignment -name IO_STANDARD "LVDS" -to OB_PCIE_REFCLK_p
 
 #============================================================
 # PCIE
@@ -794,7 +794,7 @@ set_instance_assignment -name IO_STANDARD LVDS -to OB_PCIE_REFCLK_p
 set_location_assignment PIN_AT25 -to PCIE_PERST_n
 set_instance_assignment -name IO_STANDARD "1.8 V" -to PCIE_PERST_n
 set_location_assignment PIN_AH40 -to PCIE_REFCLK_p
-set_instance_assignment -name IO_STANDARD HCSL -to PCIE_REFCLK_p
+set_instance_assignment -name IO_STANDARD "HCSL" -to PCIE_REFCLK_p
 set_location_assignment PIN_AU42 -to PCIE_RX_p[0]
 set_instance_assignment -name IO_STANDARD "HSSI DIFFERENTIAL I/O" -to PCIE_RX_p[0]
 set_location_assignment PIN_AR42 -to PCIE_RX_p[1]
@@ -999,7 +999,7 @@ set_instance_assignment -name IO_STANDARD "1.8-V HSTL CLASS I" -to QDRIIA_Q[17]
 set_location_assignment PIN_T14 -to QDRIIA_QVLD
 set_instance_assignment -name IO_STANDARD "1.8-V HSTL CLASS I" -to QDRIIA_QVLD
 set_location_assignment PIN_L9 -to QDRIIA_REFCLK_p
-set_instance_assignment -name IO_STANDARD LVDS -to QDRIIA_REFCLK_p
+set_instance_assignment -name IO_STANDARD "LVDS" -to QDRIIA_REFCLK_p
 set_location_assignment PIN_U9 -to QDRIIA_RPS_n
 set_instance_assignment -name IO_STANDARD "1.8-V HSTL CLASS I" -to QDRIIA_RPS_n
 set_location_assignment PIN_U8 -to QDRIIA_WPS_n
@@ -1143,7 +1143,7 @@ set_instance_assignment -name IO_STANDARD "1.8-V HSTL CLASS I" -to QDRIIB_Q[17]
 set_location_assignment PIN_K22 -to QDRIIB_QVLD
 set_instance_assignment -name IO_STANDARD "1.8-V HSTL CLASS I" -to QDRIIB_QVLD
 set_location_assignment PIN_N18 -to QDRIIB_REFCLK_p
-set_instance_assignment -name IO_STANDARD LVDS -to QDRIIB_REFCLK_p
+set_instance_assignment -name IO_STANDARD "LVDS" -to QDRIIB_REFCLK_p
 set_location_assignment PIN_J16 -to QDRIIB_RPS_n
 set_instance_assignment -name IO_STANDARD "1.8-V HSTL CLASS I" -to QDRIIB_RPS_n
 set_location_assignment PIN_K16 -to QDRIIB_WPS_n
@@ -1287,7 +1287,7 @@ set_instance_assignment -name IO_STANDARD "1.8-V HSTL CLASS I" -to QDRIIC_Q[17]
 set_location_assignment PIN_U34 -to QDRIIC_QVLD
 set_instance_assignment -name IO_STANDARD "1.8-V HSTL CLASS I" -to QDRIIC_QVLD
 set_location_assignment PIN_G24 -to QDRIIC_REFCLK_p
-set_instance_assignment -name IO_STANDARD LVDS -to QDRIIC_REFCLK_p
+set_instance_assignment -name IO_STANDARD "LVDS" -to QDRIIC_REFCLK_p
 set_location_assignment PIN_E26 -to QDRIIC_RPS_n
 set_instance_assignment -name IO_STANDARD "1.8-V HSTL CLASS I" -to QDRIIC_RPS_n
 set_location_assignment PIN_F26 -to QDRIIC_WPS_n
@@ -1431,7 +1431,7 @@ set_instance_assignment -name IO_STANDARD "1.8-V HSTL CLASS I" -to QDRIID_Q[17]
 set_location_assignment PIN_P28 -to QDRIID_QVLD
 set_instance_assignment -name IO_STANDARD "1.8-V HSTL CLASS I" -to QDRIID_QVLD
 set_location_assignment PIN_M34 -to QDRIID_REFCLK_p
-set_instance_assignment -name IO_STANDARD LVDS -to QDRIID_REFCLK_p
+set_instance_assignment -name IO_STANDARD "LVDS" -to QDRIID_REFCLK_p
 set_location_assignment PIN_V33 -to QDRIID_RPS_n
 set_instance_assignment -name IO_STANDARD "1.8-V HSTL CLASS I" -to QDRIID_RPS_n
 set_location_assignment PIN_V32 -to QDRIID_WPS_n
@@ -1449,7 +1449,7 @@ set_instance_assignment -name IO_STANDARD "1.8 V" -to QSFPA_MOD_PRS_n
 set_location_assignment PIN_AC10 -to QSFPA_MOD_SEL_n
 set_instance_assignment -name IO_STANDARD "1.8 V" -to QSFPA_MOD_SEL_n
 set_location_assignment PIN_AH5 -to QSFPA_REFCLK_p
-set_instance_assignment -name IO_STANDARD LVDS -to QSFPA_REFCLK_p
+set_instance_assignment -name IO_STANDARD "LVDS" -to QSFPA_REFCLK_p
 set_location_assignment PIN_AA9 -to QSFPA_RST_n
 set_instance_assignment -name IO_STANDARD "1.8 V" -to QSFPA_RST_n
 set_location_assignment PIN_BB5 -to QSFPA_RX_p[0]
@@ -1485,7 +1485,7 @@ set_instance_assignment -name IO_STANDARD "1.8 V" -to QSFPB_MOD_PRS_n
 set_location_assignment PIN_AP6 -to QSFPB_MOD_SEL_n
 set_instance_assignment -name IO_STANDARD "1.8 V" -to QSFPB_MOD_SEL_n
 set_location_assignment PIN_AD5 -to QSFPB_REFCLK_p
-set_instance_assignment -name IO_STANDARD LVDS -to QSFPB_REFCLK_p
+set_instance_assignment -name IO_STANDARD "LVDS" -to QSFPB_REFCLK_p
 set_location_assignment PIN_AR6 -to QSFPB_RST_n
 set_instance_assignment -name IO_STANDARD "1.8 V" -to QSFPB_RST_n
 set_location_assignment PIN_AN3 -to QSFPB_RX_p[0]
@@ -1521,7 +1521,7 @@ set_instance_assignment -name IO_STANDARD "1.8 V" -to QSFPC_MOD_PRS_n
 set_location_assignment PIN_AL9 -to QSFPC_MOD_SEL_n
 set_instance_assignment -name IO_STANDARD "1.8 V" -to QSFPC_MOD_SEL_n
 set_location_assignment PIN_Y5 -to QSFPC_REFCLK_p
-set_instance_assignment -name IO_STANDARD LVDS -to QSFPC_REFCLK_p
+set_instance_assignment -name IO_STANDARD "LVDS" -to QSFPC_REFCLK_p
 set_location_assignment PIN_AJ9 -to QSFPC_RST_n
 set_instance_assignment -name IO_STANDARD "1.8 V" -to QSFPC_RST_n
 set_location_assignment PIN_AA3 -to QSFPC_RX_p[0]
@@ -1557,7 +1557,7 @@ set_instance_assignment -name IO_STANDARD "1.8 V" -to QSFPD_MOD_PRS_n
 set_location_assignment PIN_AA11 -to QSFPD_MOD_SEL_n
 set_instance_assignment -name IO_STANDARD "1.8 V" -to QSFPD_MOD_SEL_n
 set_location_assignment PIN_T5 -to QSFPD_REFCLK_p
-set_instance_assignment -name IO_STANDARD LVDS -to QSFPD_REFCLK_p
+set_instance_assignment -name IO_STANDARD "LVDS" -to QSFPD_REFCLK_p
 set_location_assignment PIN_Y11 -to QSFPD_RST_n
 set_instance_assignment -name IO_STANDARD "1.8 V" -to QSFPD_RST_n
 set_location_assignment PIN_J3 -to QSFPD_RX_p[0]

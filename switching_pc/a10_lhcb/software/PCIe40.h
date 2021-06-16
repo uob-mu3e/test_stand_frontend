@@ -48,6 +48,8 @@ void menu() {
 void init() {
     // write SI (clock chip) configuration
 
+    int need_reconfig = 0;
+
     const char* ID_SI5345_1 = "000efddf"; // `sha1sum Si5345-RevD-SI5345_1-Registers.h | cut -b 1-8`
     const char* ID_SI5345_2 = "f174722f"; // `sha1sum Si5345-RevD-SI5345_2-Registers.h | cut -b 1-8`
 
@@ -59,6 +61,7 @@ void init() {
         si5345.write_design_id(ID_SI5345_1);
         si5345.wait_sysincal();
         printf("+ DONE\n");
+        need_reconfig = 1;
     }
     else printf("+ OK\n");
 
@@ -70,10 +73,13 @@ void init() {
         si5345.write_design_id(ID_SI5345_2);
         si5345.wait_sysincal();
         printf("+ DONE\n");
+        need_reconfig = 1;
     }
     else printf("+ OK\n");
 
-    // TODO: reconfig
+    if(need_reconfig) {
+        // TODO: reconfigure xcvr0 and xcvr1
+    }
 }
 
 } // namespace PCIe40

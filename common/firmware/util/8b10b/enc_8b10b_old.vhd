@@ -48,7 +48,7 @@
 library IEEE;
 use IEEE.STD_LOGIC_1164.all;
 
-entity enc_8b10b is	
+entity enc_8b10b_old is	
     port(
 		RESET : in std_logic ;		-- Global asynchronous reset (active high) 
 		SBYTECLK : in std_logic ;	-- Master synchronous send byte clock
@@ -56,9 +56,9 @@ entity enc_8b10b is
 		input : in std_logic_vector(7 downto 0);--AI, BI, CI, DI, EI, FI, GI, HI : in std_logic ;	-- Unencoded input data
 		output : out std_logic_vector(9 downto 0)--JO, HO, GO, FO, IO, EO, DO, CO, BO, AO : out std_logic 	-- Encoded out 
 	    );
-end enc_8b10b;
+end enc_8b10b_old;
 
-architecture behavioral of enc_8b10b is
+architecture behavioral of enc_8b10b_old is
 
 -- Signals to tie things together
 	signal XLRESET, LRESET : std_logic ; -- Local synchronized RESET

@@ -22,7 +22,7 @@ port (
     i_rsop          : in    std_logic_vector(g_NLINKS-1 downto 0);
     i_reop          : in    std_logic_vector(g_NLINKS-1 downto 0);
     i_rshop         : in    std_logic_vector(g_NLINKS-1 downto 0);
-    i_rempty        : in    std_logic_vector(g_NLINKS-1 downto 0);
+    i_rempty        : in    std_logic_vector(g_NLINKS-1 downto 0) := (others => '1');
     i_rmask_n       : in    std_logic_vector(g_NLINKS-1 downto 0);
     o_rack          : out   std_logic_vector(g_NLINKS-1 downto 0);
     o_counters      : out   work.util.slv32_array_t(0 downto 0);
@@ -89,7 +89,7 @@ begin
         i_link                  => 1, -- which link should be taken to check ts etc.
         i_mask_n                => i_rmask_n,
         o_rack                  => o_rack,
-        
+
         -- output stream
         o_rdata                 => rdata_s,
         i_ren                   => ren,--not rempty and not wfull,

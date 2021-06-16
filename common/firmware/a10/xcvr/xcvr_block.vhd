@@ -72,16 +72,15 @@ begin
         e_xcvr_a10 : entity work.xcvr_a10
         generic map (
             NUMBER_OF_CHANNELS_g => g_CHANNELS,
-            INPUT_CLOCK_FREQUENCY_g => integer(g_REFCLK_MHZ * 1000000.0),
-            DATA_RATE_g => g_RATE_MBPS,
-            CLK_MHZ_g => integer(g_CLK_MHZ)--,
+            g_REFCLK_MHZ => g_REFCLK_MHZ,
+            g_RATE_MBPS => g_RATE_MBPS,
+            g_CLK_MHZ => g_CLK_MHZ--,
         )
         port map (
             i_rx_serial => i_rx_serial(g_CHANNELS*i + g_CHANNELS-1 downto 0 + g_CHANNELS*i),
             o_tx_serial => o_tx_serial(g_CHANNELS*i + g_CHANNELS-1 downto 0 + g_CHANNELS*i),
 
-            i_pll_clk   => i_refclk(i),
-            i_cdr_clk   => i_refclk(i),
+            i_refclk    => i_refclk(i),
 
             o_rx_data   => rx_data(i),
             o_rx_datak  => rx_datak(i),
@@ -100,7 +99,7 @@ begin
             i_avs_writedata   => av(i).writedata,
             o_avs_waitrequest => av(i).waitrequest,
 
-            i_reset     => not i_reset_n,
+            i_reset_n   => i_reset_n,
             i_clk       => i_clk--,
         );
         end generate;
@@ -109,16 +108,15 @@ begin
         e_xcvr_enh : entity work.xcvr_enh
         generic map (
             NUMBER_OF_CHANNELS_g => g_CHANNELS,
-            INPUT_CLOCK_FREQUENCY_g => integer(g_REFCLK_MHZ * 1000000.0),
-            DATA_RATE_g => g_RATE_MBPS,
-            CLK_MHZ_g => integer(g_CLK_MHZ)--,
+            g_REFCLK_MHZ => g_REFCLK_MHZ,
+            g_RATE_MBPS => g_RATE_MBPS,
+            g_CLK_MHZ => g_CLK_MHZ--,
         )
         port map (
             i_rx_serial => i_rx_serial(g_CHANNELS*i + g_CHANNELS-1 downto 0 + g_CHANNELS*i),
             o_tx_serial => o_tx_serial(g_CHANNELS*i + g_CHANNELS-1 downto 0 + g_CHANNELS*i),
 
-            i_pll_clk   => i_refclk(i),
-            i_cdr_clk   => i_refclk(i),
+            i_refclk    => i_refclk(i),
 
             o_rx_data   => rx_data(i),
             o_rx_datak  => rx_datak(i),
@@ -137,7 +135,7 @@ begin
             i_avs_writedata   => av(i).writedata,
             o_avs_waitrequest => av(i).waitrequest,
 
-            i_reset     => not i_reset_n,
+            i_reset_n   => i_reset_n,
             i_clk       => i_clk--,
         );
         end generate;
@@ -155,7 +153,7 @@ begin
     if ( i_reset_n = '0' ) then
         avs_waitrequest <= '1';
         timeout <= (others => '0');
-        for i in 0 to g_XCVR_N-1 loop
+        for i in av'range loop
             av(i).read <= '0';
             av(i).write <= '0';
         end loop;

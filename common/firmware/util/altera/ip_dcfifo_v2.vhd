@@ -1,5 +1,5 @@
 --
--- single clock fifo
+-- dual-clock fifo
 --
 -- author : Alexandr Kozlinskiy
 -- date : 2021-06-09
@@ -15,7 +15,6 @@ entity ip_dcfifo_v2 is
 generic (
     g_ADDR_WIDTH : positive := 8;
     g_DATA_WIDTH : positive := 8;
-    g_SHOWAHEAD : string := "ON";
     DEVICE_FAMILY : string := ""--;
 );
 port (
@@ -41,6 +40,12 @@ use altera_mf.altera_mf_components.all;
 
 architecture arch of ip_dcfifo_v2 is
 
+    signal reset_n : std_logic;
+
+    signal fifo_rdata : std_logic_vector(o_rdata'range);
+    signal fifo_re : std_logic;
+    signal fifo_rempty : std_logic;
+
 begin
 
     assert ( g_ADDR_WIDTH >= 2 ) report "" severity failure;
@@ -58,7 +63,7 @@ begin
         -- Specifies the width of the data and q ports for the SCFIFO function and DCFIFO function. 
         lpm_width => g_DATA_WIDTH,
         -- Specifies whether the FIFO is in normal mode (OFF) or show-ahead mode (ON).
-        lpm_showahead => g_SHOWAHEAD,
+        lpm_showahead => "ON",
         -- Specifies whether to register the q output.
 --        add_ram_output_register => "OFF",
         -- Specifies whether or not the FIFO Intel FPGA IP core is constructed using the RAM blocks.
@@ -87,15 +92,35 @@ begin
         wrusedw => o_wusedw,
         wrclk => i_wclk,
 
-        q => o_rdata,
-        rdreq => i_re,
-        rdempty => o_rempty,
+        q => fifo_rdata,
+        rdreq => fifo_re,
+        rdempty => fifo_rempty,
         rdusedw => o_rusedw,
         rdclk => i_rclk,
 
         -- Assert this signal to clear all the output status ports.
         -- There are no minimum number of clock cycles for aclr signals that must remain active.
         aclr => not i_reset_n--,
+    );
+
+    e_reset_n : entity work.reset_sync
+    port map ( o_reset_n => reset_n, i_reset_n => i_reset_n, i_clk => i_rclk );
+
+    e_fifo_rreg : entity work.fifo_rreg
+    generic map (
+        g_DATA_WIDTH => o_rdata'length--,
+    )
+    port map (
+        o_rdata => o_rdata,
+        i_re => i_re,
+        o_rempty => o_rempty,
+
+        i_rdata => fifo_rdata,
+        o_re => fifo_re,
+        i_rempty => fifo_rempty,
+
+        i_reset_n => reset_n,
+        i_clk => i_rclk--,
     );
 
 end architecture;

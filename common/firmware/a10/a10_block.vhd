@@ -334,7 +334,7 @@ begin
     --! generate reset regs for 250 MHz clk for pcie0
     e_reset_logic_pcie : entity work.reset_logic
     port map (
-        rst_n          => reset_250_n,
+        rst_n          => reset_pcie0_n,
         reset_register => pcie0_wregs_A(RESET_REGISTER_W),
         resets         => open,
         resets_n       => pcie0_resets_n_A,
@@ -553,7 +553,7 @@ begin
         i_tx_datak          => i_xcvr0_tx_datak(i),
         i_clk               => i_xcvr0_clk,
 
-        i_reset_n           => i_reset_n--,
+        i_reset_n           => reset_156_n--,
     );
     end generate;
 
@@ -609,7 +609,7 @@ begin
         i_tx_datak          => i_xcvr1_tx_datak(i),
         i_clk               => i_xcvr1_clk,
 
-        i_reset_n           => i_reset_n--,
+        i_reset_n           => reset_250_n--,
     );
     end generate;
 
@@ -618,16 +618,15 @@ begin
     generic map (
         NUMBER_OF_CHANNELS_g => g_SFP_CHANNELS,
         CHANNEL_WIDTH_g => 8,
-        INPUT_CLOCK_FREQUENCY_g => 125000000,
-        DATA_RATE_g => 1250,
-        CLK_MHZ_g => integer(g_CLK_MHZ)--,
+        g_REFCLK_MHZ => 125.0,
+        g_RATE_MBPS => 1250,
+        g_CLK_MHZ => g_CLK_MHZ--,
     )
     port map (
         i_rx_serial => i_sfp_rx,
         o_tx_serial => o_sfp_tx,
 
-        i_pll_clk => i_sfp_refclk,
-        i_cdr_clk => i_sfp_refclk,
+        i_refclk => i_sfp_refclk,
 
         i_tx_data => X"BC" & X"BC",
         i_tx_datak => "1" & "1",
@@ -642,7 +641,7 @@ begin
         i_avs_writedata     => av_sfp.writedata,
         o_avs_waitrequest   => av_sfp.waitrequest,
 
-        i_reset => not i_reset_n,
+        i_reset_n => i_reset_n,
         i_clk => i_clk--,
     );
     end generate;

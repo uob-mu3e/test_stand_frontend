@@ -23,8 +23,8 @@ begin
 
     e_fifo : entity work.fifo_sc
     generic map (
-        DATA_WIDTH_g => wd'length,
-        ADDR_WIDTH_g => 4--,
+        g_DATA_WIDTH => wd'length,
+        g_ADDR_WIDTH => 4--,
     )
     port map (
         o_wfull     => wfull,

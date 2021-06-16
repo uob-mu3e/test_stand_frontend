@@ -215,7 +215,7 @@ begin
         -- XCVR0 (6250 Mbps @ 156.25 MHz)
         i_xcvr0_rx                      => rx_gbt(23 downto 0),
         o_xcvr0_tx                      => tx_gbt(23 downto 0),
-        i_xcvr0_refclk                  => (others => clk_125),
+        i_xcvr0_refclk                  => A10_REFCLK_GBT_P_3 & A10_REFCLK_GBT_P_2 & A10_REFCLK_GBT_P_1 & A10_REFCLK_GBT_P_0,
 
         o_xcvr0_rx_data                 => rx_data_raw,
         o_xcvr0_rx_datak                => rx_datak_raw,
@@ -223,9 +223,10 @@ begin
         i_xcvr0_tx_datak                => tx_datak,
         i_xcvr0_clk                     => clk_156,
 
+        -- XCVR1 (10000 Mbps @ 250 MHz)
         i_xcvr1_rx                      => rx_gbt(47 downto 24),
         o_xcvr1_tx                      => tx_gbt(47 downto 24),
-        i_xcvr1_refclk                  => (others => clk_125),
+        i_xcvr1_refclk                  => A10_REFCLK_GBT_P_7 & A10_REFCLK_GBT_P_6 & A10_REFCLK_GBT_P_5 & A10_REFCLK_GBT_P_4,
 
         o_xcvr1_rx_data                 => farm_rx_data,
         o_xcvr1_rx_datak                => farm_rx_datak,
@@ -234,11 +235,11 @@ begin
         i_xcvr1_clk                     => pcie_fastclk_out,
 
         -- SFP
-        i_sfp_rx(0) => A10_SFP1_TFC_RX_P,
-        i_sfp_rx(1) => A10_SFP2_TFC_RX_P,
-        o_sfp_tx(0) => A10_SFP1_TFC_TX_P,
-        o_sfp_tx(1) => A10_SFP2_TFC_TX_P,
-        i_sfp_refclk => A10_REFCLK_TFC_CMU_P,
+        i_sfp_rx(0)                     => A10_SFP1_TFC_RX_P,
+        i_sfp_rx(1)                     => A10_SFP2_TFC_RX_P,
+        o_sfp_tx(0)                     => A10_SFP1_TFC_TX_P,
+        o_sfp_tx(1)                     => A10_SFP2_TFC_TX_P,
+        i_sfp_refclk                    => A10_REFCLK_TFC_CMU_P,
 
 
 

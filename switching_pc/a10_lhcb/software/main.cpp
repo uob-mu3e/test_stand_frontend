@@ -62,8 +62,12 @@ int main() {
             PCIe40::menu();
             break;
         case 'R':
-            xcvr0.reconfig.pll(AVM_XCVR1_BASE + 0x00000000);
-            xcvr1.reconfig.pll(AVM_XCVR1_BASE + 0x00000000);
+            for(int i = 0; i < AVM_XCVR0_SPAN; i += 0x10000) {
+                pod.reconfig.pll(AVM_XCVR0_BASE + i);
+            }
+            for(int i = 0; i < AVM_XCVR1_SPAN; i += 0x10000) {
+                pod.reconfig.pll(AVM_XCVR1_BASE + i);
+            }
             break;
         default:
             printf("invalid command: '%c'\n", cmd);

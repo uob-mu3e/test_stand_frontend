@@ -40,7 +40,7 @@ port(
     
     i_rx             : in  work.util.slv32_array_t(g_NLINKS_DATA-1 downto 0);
     i_rx_k           : in  work.util.slv4_array_t(g_NLINKS_DATA-1 downto 0);
-    i_rmask_n        : in  std_logic_vector(g_NLINKS_TOTL-1 downto 0);
+    i_rmask_n        : in  std_logic_vector(g_NLINKS_DATA-1 downto 0);
 
     i_writeregs_156  : in  work.util.slv32_array_t(63 downto 0);
     i_writeregs_250  : in  work.util.slv32_array_t(63 downto 0);
@@ -63,6 +63,8 @@ end entity;
 
 architecture arch of swb_data_path is
 
+    signal reset_250_n : std_logic;
+
     --! constant
     constant W : positive := g_NLINKS_FARM*32+g_NLINKS_FARM*6;
 
@@ -73,23 +75,23 @@ architecture arch of swb_data_path is
     signal gen_rempty, gen_re, gen_we, gen_full : std_logic;
 
     --! data link signals
-    signal rx : work.util.slv32_array_t(g_NLINKS_TOTL-1 downto 0);
-    signal rx_k : work.util.slv4_array_t(g_NLINKS_TOTL-1 downto 0);
-    signal rx_ren, rx_mask_n, rx_rdempty : std_logic_vector(g_NLINKS_TOTL-1 downto 0) := (others => '0');
-    signal rx_q : work.util.slv34_array_t(g_NLINKS_TOTL-1 downto 0) := (others => (others => '0'));
-    signal sop, eop, shop : std_logic_vector(g_NLINKS_TOTL-1 downto 0) := (others => '0');
+    signal rx : work.util.slv32_array_t(g_NLINKS_DATA-1 downto 0);
+    signal rx_k : work.util.slv4_array_t(g_NLINKS_DATA-1 downto 0);
+    signal rx_ren, rx_mask_n, rx_rdempty : std_logic_vector(g_NLINKS_DATA-1 downto 0) := (others => '0');
+    signal rx_q : work.util.slv34_array_t(g_NLINKS_DATA-1 downto 0) := (others => (others => '0'));
+    signal sop, eop, shop : std_logic_vector(g_NLINKS_DATA-1 downto 0) := (others => '0');
 
     --! stream merger
     signal stream_rdata : std_logic_vector(31 downto 0);
     signal stream_counters : work.util.slv32_array_t(0 downto 0);
     signal stream_rempty, stream_ren, stream_header, stream_trailer : std_logic;
-    signal stream_rack : std_logic_vector(g_NLINKS_TOTL-1 downto 0);
+    signal stream_rack : std_logic_vector(g_NLINKS_DATA-1 downto 0);
 
     --! timer merger
     signal merger_rdata : std_logic_vector(W-1 downto 0);
     signal merger_rdata_debug : std_logic_vector(31 downto 0);
     signal merger_rempty, merger_rempty_debug, merger_ren, merger_header, merger_trailer, merger_error : std_logic;
-    signal merger_rack : std_logic_vector (g_NLINKS_TOTL-1 downto 0);
+    signal merger_rack : std_logic_vector (g_NLINKS_DATA-1 downto 0);
     
     --! event builder
     signal builder_data : std_logic_vector(31 downto 0);
@@ -110,6 +112,9 @@ architecture arch of swb_data_path is
 
 begin
 
+        --! generate reset for 125 MHz
+    e_reset_250_n : entity work.reset_sync
+    port map ( o_reset_n => reset_250_n, i_reset_n => i_reset_n_250, i_clk => i_clk_250 );
 
     --! status counter
     --! ------------------------------------------------------------------------
@@ -212,7 +217,7 @@ begin
             i_reset_n_156   => i_reset_n_156,
             i_clk_156       => i_clk_156,
 
-            i_reset_n_250   => i_reset_n_250,
+            i_reset_n_250   => reset_250_n,
             i_clk_250       => i_clk_250--;
         );
   
@@ -230,7 +235,7 @@ begin
     e_stream : entity work.swb_stream_merger
     generic map (
         W => 34,
-        N => g_NLINKS_TOTL--,
+        N => g_NLINKS_DATA--,
     )
     port map (
         i_rdata     => rx_q,
@@ -249,7 +254,7 @@ begin
 
         o_counters  => stream_counters,
 
-        i_reset_n   => i_reset_n_250,
+        i_reset_n   => reset_250_n,
         i_clk       => i_clk_250--,
     );
 
@@ -269,13 +274,13 @@ begin
         g_NLINKS        => g_NLINKS_TOTL--,
     )
     port map (
-        i_rx        => rx_q,
-        i_rsop      => sop,
-        i_reop      => eop,
-        i_rshop     => shop,
-        i_rempty    => rx_rdempty,
-        i_rmask_n   => i_rmask_n,
-        o_rack      => merger_rack,
+        i_rx(rx_q'range)            => rx_q,
+        i_rsop(sop'range)           => sop,
+        i_reop(eop'range)           => eop,
+        i_rshop(shop'range)         => shop,
+        i_rempty(rx_rdempty'range)  => rx_rdempty,
+        i_rmask_n(i_rmask_n'range)  => i_rmask_n,
+        o_rack(merger_rack'range)   => merger_rack,
 
         -- output strem
         o_q             => merger_rdata,
@@ -287,7 +292,7 @@ begin
         o_trailer_debug => merger_trailer,
         o_error         => open,
 
-        i_reset_n       => i_reset_n_250,
+        i_reset_n       => reset_250_n,
         i_clk           => i_clk_250--,
     );
 
@@ -352,7 +357,7 @@ begin
 
         o_counters          => builder_counters,
 
-        i_reset_n_250       => i_reset_n_250,
+        i_reset_n_250       => reset_250_n,
         i_clk_250           => i_clk_250--,
     );
 
@@ -364,7 +369,7 @@ begin
     e_data_gen_merged : entity work.data_generator_merged_data
     port map(
         i_clk       => i_clk_250,
-        i_reset_n   => i_reset_n_250,
+        i_reset_n   => reset_250_n,
         i_en        => not gen_full,
         i_sd        => x"00000002",
         o_data      => gen_data,
@@ -386,7 +391,7 @@ begin
         q               => gen_q,
         full            => gen_full,
         empty           => gen_rempty,
-        sclr            => not i_reset_n_250--,
+        sclr            => not reset_250_n--,
     );
 
 
@@ -401,7 +406,7 @@ begin
         DATA_TYPE   => DATA_TYPE--;
     )
     port map (
-        i_reset_n   => i_reset_n_250,
+        i_reset_n   => reset_250_n,
         i_clk       => i_clk_250,
 
         i_data      => farm_data,
