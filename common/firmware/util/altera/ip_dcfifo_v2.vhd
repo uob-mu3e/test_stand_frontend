@@ -15,7 +15,6 @@ entity ip_dcfifo_v2 is
 generic (
     g_ADDR_WIDTH : positive := 8;
     g_DATA_WIDTH : positive := 8;
-    g_SHOWAHEAD : string := "ON";
     DEVICE_FAMILY : string := ""--;
 );
 port (
@@ -64,7 +63,7 @@ begin
         -- Specifies the width of the data and q ports for the SCFIFO function and DCFIFO function. 
         lpm_width => g_DATA_WIDTH,
         -- Specifies whether the FIFO is in normal mode (OFF) or show-ahead mode (ON).
-        lpm_showahead => g_SHOWAHEAD,
+        lpm_showahead => "ON",
         -- Specifies whether to register the q output.
 --        add_ram_output_register => "OFF",
         -- Specifies whether or not the FIFO Intel FPGA IP core is constructed using the RAM blocks.

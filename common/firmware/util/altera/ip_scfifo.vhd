@@ -160,7 +160,7 @@ BEGIN
 
     e_fifo_rreg : entity work.fifo_rreg
     generic map (
-        g_N => REGOUT,
+        g_N => work.util.value_if(SHOWAHEAD = "ON", REGOUT, 0),
         g_DATA_WIDTH => q'length--,
     )
     port map (
