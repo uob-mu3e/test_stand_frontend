@@ -15,20 +15,19 @@ generic (
     TREE_DEPTH_w : positive := 8;
     TREE_DEPTH_r : positive := 8;
     g_NLINKS_DATA : positive := 12;
-    N : positive := 34;
     -- Data type: x"01" = pixel, x"02" = scifi, x"03" = tiles
     DATA_TYPE : std_logic_vector(7 downto 0) := x"01"--;
 );
 port (
     -- input streams
-    i_rdata         : in    work.util.slv34_array_t(N - 1 downto 0);
-    i_rsop          : in    std_logic_vector(N-1 downto 0); -- start of packet (SOP)
-    i_reop          : in    std_logic_vector(N-1 downto 0); -- end of packet (EOP)
-    i_rshop         : in    std_logic_vector(N-1 downto 0); -- sub header of packet (SHOP)
-    i_rempty        : in    std_logic_vector(N-1 downto 0);
-    i_mask_n        : in    std_logic_vector(N-1 downto 0);
+    i_rdata         : in    work.util.slv34_array_t(g_NLINKS_DATA - 1 downto 0);
+    i_rsop          : in    std_logic_vector(g_NLINKS_DATA - 1 downto 0); -- start of packet (SOP)
+    i_reop          : in    std_logic_vector(g_NLINKS_DATA - 1 downto 0); -- end of packet (EOP)
+    i_rshop         : in    std_logic_vector(g_NLINKS_DATA - 1 downto 0); -- sub header of packet (SHOP)
+    i_rempty        : in    std_logic_vector(g_NLINKS_DATA - 1 downto 0);
+    i_mask_n        : in    std_logic_vector(g_NLINKS_DATA - 1 downto 0);
     i_link          : in    integer;
-    o_rack          : out   std_logic_vector(N-1 downto 0); -- read ACK
+    o_rack          : out   std_logic_vector(g_NLINKS_DATA - 1 downto 0); -- read ACK
 
     -- output stream
     o_rdata         : out   std_logic_vector(W-1 downto 0);
@@ -36,8 +35,8 @@ port (
     o_empty         : out   std_logic;
 
     -- error outputs
-    o_error_pre     : out std_logic_vector(N - 1 downto 0);
-    o_error_sh      : out std_logic_vector(N - 1 downto 0);
+    o_error_pre     : out std_logic_vector(g_NLINKS_DATA - 1 downto 0);
+    o_error_sh      : out std_logic_vector(g_NLINKS_DATA - 1 downto 0);
     o_error_gtime   : out std_logic_vector(1 downto 0);
     o_error_shtime  : out std_logic;
 
@@ -49,26 +48,26 @@ end entity;
 architecture arch of time_merger_v3 is
 
     -- constants
-    constant check_zeros : std_logic_vector(N - 1 downto 0) := (others => '0');
-    constant check_ones  : std_logic_vector(N - 1 downto 0) := (others => '1');
+    constant check_zeros : std_logic_vector(g_NLINKS_DATA - 1 downto 0) := (others => '0');
+    constant check_ones  : std_logic_vector(g_NLINKS_DATA - 1 downto 0) := (others => '1');
 
     -- state machine
     type merge_state_type is (wait_for_pre, compare_time1, compare_time2, wait_for_sh, error_state, merge_hits, get_time1, get_time2, trailer, wait_for_sh_written);
     signal merge_state : merge_state_type;
-    type sheader_time_array_t is array (N - 1 downto 0) of std_logic_vector(9 downto 0);
+    type sheader_time_array_t is array (g_NLINKS_DATA - 1 downto 0) of std_logic_vector(9 downto 0);
     signal sheader_time : sheader_time_array_t;
     signal merger_state_signal : std_logic;
     signal shtime : std_logic_vector(9 downto 0);
     signal wait_cnt_pre, wait_cnt_sh, wait_cnt_merger : std_logic_vector(31 downto 0);
     signal header_trailer : std_logic_vector(37 downto 0);
-    signal sop_wait, shop_wait, eop_wait, time_wait : std_logic_vector(N - 1 downto 0);
-    signal gtime1, gtime2 : work.util.slv34_array_t(N - 1 downto 0);
+    signal sop_wait, shop_wait, eop_wait, time_wait : std_logic_vector(g_NLINKS_DATA - 1 downto 0);
+    signal gtime1, gtime2 : work.util.slv34_array_t(g_NLINKS_DATA - 1 downto 0);
     signal wait_cnt : std_logic_vector(3 downto 0);
 
     -- error signals
     signal error_gtime1, error_gtime2, error_shtime, error_merger : std_logic;
     signal header_trailer_we : std_logic_vector(1 downto 0);
-    signal error_pre, error_sh : std_logic_vector(N - 1 downto 0);
+    signal error_pre, error_sh : std_logic_vector(g_NLINKS_DATA - 1 downto 0);
 
     -- merger tree
     type fifo_width_t is array (6 downto 0) of integer;
@@ -81,6 +80,7 @@ architecture arch of time_merger_v3 is
     signal rdreq_0, wrreq_0, rdempty_0, wrfull_0, reset_0 : std_logic_vector(generate_fifos(0) - 1 downto 0);
     signal rdreq_0_reg, rdempty_0_reg, wrfull_0_reg : std_logic_vector(generate_fifos(0) - 1 downto 0);
     signal rdreq_0_reg_reg, rdempty_0_reg_reg, wrfull_0_reg_reg : std_logic_vector(generate_fifos(0) - 1 downto 0);
+    signal mask_n_0 : std_logic_vector(generate_fifos(0) - 1 downto 0) := (others => '0');
     signal q_1 : work.util.slv38_array_t(generate_fifos(1) - 1 downto 0);
     signal q_2 : work.util.slv38_array_t(generate_fifos(2) - 1 downto 0);
     signal q_3 : work.util.slv38_array_t(generate_fifos(3) - 1 downto 0);
@@ -94,7 +94,7 @@ architecture arch of time_merger_v3 is
     signal full_6  : std_logic_vector(generate_fifos(6) - 1 downto 0);
     signal alignment_done : std_logic := '0';
     signal last_layer_state : std_logic_vector(7 downto 0);
-    signal merger_finish : std_logic_vector(N - 1 downto 0) := (others => '0');
+    signal merger_finish : std_logic_vector(g_NLINKS_DATA - 1 downto 0) := (others => '0');
 
     -- debug signals
     signal rdata_last_layer : std_logic_vector(W - 1 downto 0);
@@ -116,7 +116,7 @@ begin
     END GENERATE;
 
     -- TODO: ask Alex
-    gen_header_state : FOR i in 0 to N-1 GENERATE
+    gen_header_state : FOR i in 0 to g_NLINKS_DATA - 1 GENERATE
         sop_wait(i) <=  '1' when i_mask_n(i) = '0' else
                         i_rsop(i) when i_rempty(i) = '0' else '0';
         shop_wait(i)<=  '1' when i_mask_n(i) = '0' else
@@ -225,6 +225,7 @@ begin
 
     END GENERATE;
 
+    mask_n_0(g_NLINKS_DATA - 1 downto 0) <= i_mask_n;
     layer_1 : entity work.time_merger_tree_fifo_32_v2
     generic map (
         TREE_w => TREE_DEPTH_w, TREE_r => TREE_DEPTH_r, g_NLINKS_DATA => g_NLINKS_DATA,
@@ -236,7 +237,7 @@ begin
         i_rdempty       => rdempty_0_reg_reg,
         i_rdreq         => rdreq_1,
         i_merge_state   => merger_state_signal,
-        i_mask_n        => i_mask_n,
+        i_mask_n        => mask_n_0,
         i_wen_h_t       => "00",
         i_data_h_t      => (others => '0'),
 
@@ -449,7 +450,7 @@ begin
 
             when compare_time1 =>
                 -- compare MSB from FPGA time
-                FOR I in N - 1 downto 0 LOOP
+                FOR I in g_NLINKS_DATA - 1 downto 0 LOOP
                     if ( gtime1(I) /= gtime1(i_link) and i_mask_n(I) = '1' ) then
                         error_gtime1 <= '1';
                     end if;
@@ -483,7 +484,7 @@ begin
 
             when compare_time2 =>
                 -- compare LSB from FPGA time
-                FOR I in N - 1 downto 0 LOOP
+                FOR I in g_NLINKS_DATA - 1 downto 0 LOOP
                     if ( gtime2(I) /= gtime2(i_link) and i_mask_n(I) = '1' ) then
                         error_gtime2 <= '1';
                     end if;
@@ -528,7 +529,7 @@ begin
                     elsif ( DATA_TYPE = x"02" ) then
                         shtime <= i_rdata(i_link)(25 downto 16);
                     end if;
-                    FOR I in N - 1 downto 0 LOOP
+                    FOR I in g_NLINKS_DATA - 1 downto 0 LOOP
                         if ( i_mask_n(I) = '1' ) then
                             if ( DATA_TYPE = x"01" ) then
                                 sheader_time(I)(9 downto 7) <= (others => '0');
@@ -569,7 +570,7 @@ begin
                 end if;
 
                 -- check if sheader time is equal
-                FOR I in N - 1 downto 0 LOOP
+                FOR I in g_NLINKS_DATA - 1 downto 0 LOOP
                     if ( i_rempty(I) = '0' and i_mask_n(I) = '1' and sheader_time(I) /= shtime ) then
                         error_shtime <= '1';
                     end if;
@@ -606,7 +607,7 @@ begin
                     -- send trailer
                     header_trailer(37 downto 32) <= tr_marker;
                     if ( DATA_TYPE = x"02" ) then
-                        FOR I in N - 1 downto 0 LOOP
+                        FOR I in g_NLINKS_DATA - 1 downto 0 LOOP
                             TF := i_rdata(I)(9 downto 8);
                         END LOOP;
                         header_trailer(9 downto 8) <= TF;

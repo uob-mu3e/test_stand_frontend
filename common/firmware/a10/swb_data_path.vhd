@@ -104,9 +104,6 @@ architecture arch of swb_data_path is
     signal farm_data : std_logic_vector(W-1 downto 0);
     signal farm_rack, farm_rempty, all_padding : std_logic;
 
-    --! switches
-    signal link_idx : integer range 0 to g_NLINKS_TOTL;
-
     --! status counters
     signal link_to_fifo_cnt : work.util.slv32_array_t((g_NLINKS_DATA*5)-1 downto 0);
 
@@ -270,19 +267,18 @@ begin
         TREE_r          => TREE_r,
         DATA_TYPE       => DATA_TYPE,
         g_NLINKS_DATA   => g_NLINKS_DATA,
-        g_NLINKS_FARM   => g_NLINKS_FARM,
-        g_NLINKS        => g_NLINKS_TOTL--,
+        g_NLINKS_FARM   => g_NLINKS_FARM--,
     )
     port map (
-        i_rx(rx_q'range)            => rx_q,
-        i_rsop(sop'range)           => sop,
-        i_reop(eop'range)           => eop,
-        i_rshop(shop'range)         => shop,
-        i_rempty(rx_rdempty'range)  => rx_rdempty,
-        i_rmask_n(i_rmask_n'range)  => i_rmask_n,
-        o_rack(merger_rack'range)   => merger_rack,
+        i_rx            => rx_q,
+        i_rsop          => sop,
+        i_reop          => eop,
+        i_rshop         => shop,
+        i_rempty        => rx_rdempty,
+        i_rmask_n       => i_rmask_n,
+        o_rack          => merger_rack,
 
-        -- output strem
+        -- output stream
         o_q             => merger_rdata,
         o_q_debug       => merger_rdata_debug,
         o_rempty        => merger_rempty,
@@ -301,7 +297,6 @@ begin
     --! ------------------------------------------------------------------------
     --! ------------------------------------------------------------------------
     --! ------------------------------------------------------------------------
-    link_idx <= to_integer(unsigned(i_writeregs_250(SWB_READOUT_LINK_REGISTER_W)));
     builder_data  <=  stream_rdata when i_writeregs_250(SWB_READOUT_STATE_REGISTER_W)(USE_BIT_STREAM) = '1' else
                       merger_rdata_debug when i_writeregs_250(SWB_READOUT_STATE_REGISTER_W)(USE_BIT_MERGER) = '1' else
                       (others => '0');

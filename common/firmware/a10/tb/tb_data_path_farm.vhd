@@ -190,7 +190,7 @@ begin
 
         i_rx             => (others => (others => '0')),
         i_rx_k           => (others => (others => '0')),
-        i_rmask_n        => x"00000000000003FF",
+        i_rmask_n        => "1111111111",
 
         i_writeregs_156  => writeregs_156,
         i_writeregs_250  => writeregs_250,
@@ -237,7 +237,7 @@ begin
 
         i_rx             => (others => (others => '0')),
         i_rx_k           => (others => (others => '0')),
-        i_rmask_n        => x"000000000000000F",
+        i_rmask_n        => x"F",
 
         i_writeregs_156  => writeregs_156,
         i_writeregs_250  => writeregs_250,

@@ -13,18 +13,17 @@ generic (
     -- Data type: x"01" = pixel, x"02" = scifi, x"03" = tiles
     DATA_TYPE: std_logic_vector(7 downto 0) := x"01";
     g_NLINKS_DATA : positive := 12;
-    g_NLINKS_FARM : positive := 8;
-    g_NLINKS : positive := 16--;
+    g_NLINKS_FARM : positive := 8--;
 );
 port (
     -- input streams
-    i_rx            : in    work.util.slv34_array_t(g_NLINKS - 1 downto 0);
-    i_rsop          : in    std_logic_vector(g_NLINKS-1 downto 0);
-    i_reop          : in    std_logic_vector(g_NLINKS-1 downto 0);
-    i_rshop         : in    std_logic_vector(g_NLINKS-1 downto 0);
-    i_rempty        : in    std_logic_vector(g_NLINKS-1 downto 0) := (others => '1');
-    i_rmask_n       : in    std_logic_vector(g_NLINKS-1 downto 0);
-    o_rack          : out   std_logic_vector(g_NLINKS-1 downto 0);
+    i_rx            : in    work.util.slv34_array_t(g_NLINKS_DATA - 1 downto 0);
+    i_rsop          : in    std_logic_vector(g_NLINKS_DATA - 1 downto 0);
+    i_reop          : in    std_logic_vector(g_NLINKS_DATA - 1 downto 0);
+    i_rshop         : in    std_logic_vector(g_NLINKS_DATA - 1 downto 0);
+    i_rempty        : in    std_logic_vector(g_NLINKS_DATA - 1 downto 0) := (others => '1');
+    i_rmask_n       : in    std_logic_vector(g_NLINKS_DATA - 1 downto 0);
+    o_rack          : out   std_logic_vector(g_NLINKS_DATA - 1 downto 0);
     o_counters      : out   work.util.slv32_array_t(0 downto 0);
 
     -- output strem
@@ -76,8 +75,7 @@ begin
         TREE_DEPTH_w => TREE_w,
         TREE_DEPTH_r => TREE_r,
         g_NLINKS_DATA => g_NLINKS_DATA,
-        DATA_TYPE => DATA_TYPE,
-        N => g_NLINKS--,
+        DATA_TYPE => DATA_TYPE--,
     )
     port map (
         -- input streams
@@ -103,7 +101,7 @@ begin
         
         i_reset_n               => i_reset_n,
         i_clk                   => i_clk--,
-    );
+    );                                                       
 
 
     --! map data for time_merger

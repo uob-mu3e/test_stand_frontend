@@ -82,21 +82,21 @@ begin
     gen_hits:
     FOR i in 0 to gen_fifos - 1 GENERATE
         mupix_data : IF DATA_TYPE = x"01" GENERATE
-            a(i) <= i_data(i)(31 downto 28);
-            b(i) <= i_data(i + size)(31 downto 28);
+            a(i)    <= i_data(i)(31 downto 28);
+            b(i)    <= i_data(i + size)(31 downto 28);
         END GENERATE;
         scifi_data : IF DATA_TYPE = x"02" GENERATE
-            a(i) <= i_data(i)(9 downto 6);
-            b(i) <= i_data(i + size)(9 downto 6);
+            a(i)    <= i_data(i)(9 downto 6);
+            b(i)    <= i_data(i + size)(9 downto 6);
         END GENERATE;
 
-        a_h(i) <= i_data(i)(37 downto 0);
-        b_h(i) <= i_data(i + size)(37 downto 0);
+        a_h(i)      <= i_data(i)(37 downto 0);
+        b_h(i)      <= i_data(i + size)(37 downto 0);
 
         -- for debugging / simulation
-        t_q(i) <= q_reg_reg(i)(31 downto 28);
-        t_data(i) <= data(i)(31 downto 28);
-        l1(i) <= data(i)(37 downto 32);
+        t_q(i)      <= q_reg_reg(i)(31 downto 28);
+        t_data(i)   <= data(i)(31 downto 28);
+        l1(i)       <= data(i)(37 downto 32);
     END GENERATE;
 
     gen_last_layer : if last_layer = '1' generate
@@ -110,11 +110,11 @@ begin
         t_q_last( 3 downto  0) <= last_reg_reg(31 downto 28);
     end generate gen_last_layer;
 
-    o_layer_state <= layer_state;
-    o_wrfull <= wrfull;
-    o_q <= q_reg_reg;
-    o_last <= last_reg_reg;
-    o_rdempty <= rdempty_reg_reg;
+    o_layer_state   <= layer_state;
+    o_wrfull        <= wrfull;
+    o_q             <= q_reg_reg;
+    o_last          <= last_reg_reg;
+    o_rdempty       <= rdempty_reg_reg;
 
     gen_tree:
     FOR i in 0 to gen_fifos - 1 GENERATE
