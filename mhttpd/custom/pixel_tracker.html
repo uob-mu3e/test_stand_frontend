@@ -3,8 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <link rel="stylesheet" href="midas.css">
-    <!---link rel="stylesheet" href="mu3estyle.css"-->
-    <link rel="stylesheet" href="pixel_tracker.css">
+    <!--link rel="stylesheet" href="mu3estyle.css"-->
+    <link rel="stylesheet" type="text/css" href="pixel_tracker.css">
     <script src="controls.js"></script>
     <script src="midas.js"></script>
     <script src="mhttpd.js"></script>
@@ -63,9 +63,10 @@
 
                     </table>
                     <div id="ladder_lv_settings" style="visibility: hidden;">
-                        <h3>Voltage reading : </h3>
+                        <h3>Readings</h3>
+                        <h4>Voltage : </h4>
                         <div id = "ladder_lv_read_volt" class="modbvalue" data-odb-path="/Equipment/HAMEG0/Variables/Voltage[0]" style="display: table-cell;"></div>
-                        <h3>Current reading : </h3>
+                        <h4>Current : </h4>
                         <div id = "ladder_lv_read_curr" class="modbvalue" data-odb-path="/Equipment/HAMEG0/Variables/Current[0]" style="display: table-cell;"></div>
                     </div>
                 </div>
@@ -128,12 +129,13 @@
                     <div id="pixel_configure_update" style="visibility: hidden;">
 
                     </div>
-
+                    <div>
+                        <h1>Debug</h1>
+                        <p id="debug">
+                            Right side Data
+                        </p>
+                    </div>
                 </div>
-                <h1>Debug</h1>
-                <p id="debug">
-                    Right side Data
-                </p>
             </div>
         </div>
     </div>

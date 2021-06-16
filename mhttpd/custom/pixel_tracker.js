@@ -4,6 +4,10 @@ var states = [
     "ladder_power_on",
     "ladder_power_off"
 ]
+var states_chip = [
+    "chip_available",
+    "chip_broken"
+]
 
 var current_selected = ""
 var current_chip_selected = ""
@@ -132,6 +136,30 @@ var change_state = function(ladder, state) {
     }
 }
 
+var change_state_chip = function(chip, state) {
+    class_state = "ladder_" + state
+    if (state === "selected") {
+        if ( chip.classList.contains("chip_unselected") )
+            chip.classList.remove("chip_unselected")
+        chip.classList.add("chip_selected")
+    }
+    else if (state === "unselected") {
+        if ( chip.classList.contains("chip_selected") )
+            chip.classList.remove("chip_selected")
+        chip.classList.add("chip_unselected")
+    }
+    else {
+        if (states_chip.includes(class_state) == false) {
+            return;
+        }
+        for (var s = 0; s < states_chip.length; s++) {
+            if ( chip.classList.contains(states[s]) )
+                chip.classList.remove(states[s])
+        }
+    chip.classList.add(class_state)
+    }
+}
+
 var rotate_div = function(div, deg) {
 	div.style.webkitTransform = 'rotate('+deg+'deg)'; 
     div.style.mozTransform    = 'rotate('+deg+'deg)'; 
@@ -177,15 +205,20 @@ var chip_clicked = function (ladname, chip) {
     table.style["visibility"] = "visible"
     document.getElementById("debug").textContent ="AAAA"+ chip + JSON.stringify(lads[ladname]["json_node"]["Chips"]) 
     document.getElementById("debug").textContent = JSON.stringify(current_lad_chips[chip]["json_node"])
-    for (cch = 0; cch < 3; ++cch) {
-        if ( current_lad_chips[cch.toString()]["chip"].classList.contains("chip_selected") )
-            current_lad_chips[cch.toString()]["chip"].classList.remove("chip_selected")
+    //for (cch = 0; cch < 3; ++cch) {
+    //    if ( current_lad_chips[cch.toString()]["chip"].classList.contains("chip_selected") )
+    //        current_lad_chips[cch.toString()]["chip"].classList.remove("chip_selected")
+    //    change_state_chip(current_lad_chips[cch.toString()]["chip"], "unselected")
+    //}
+    if (current_chip_selected != "") {
+        if (current_chip_selected !== chip)
+            change_state_chip(current_lad_chips[current_chip_selected]["chip"], "unselected")
     }
-    current_lad_chips[chip]["chip"].classList.add("chip_selected")
+    change_state_chip(current_lad_chips[chip]["chip"], "selected")
+    current_chip_selected = chip
     reset_table("pixel_parameters")
     tab_fill = {"SpecBook ID:" : "SpecBookId", "MIDAS ID:" : "MIDAS_ID", "Event Display ID:" : "EventDisplayID"}
     fill_table_by_json("pixel_parameters", current_lad_chips[chip]["json_node"], tab_fill)
-    current_chip_selected = chip
     reset_table("Bias_tab")
     reset_table("Conf_tab")
     reset_table("VDAC_tab")
@@ -244,6 +277,9 @@ var ladder_clicked = function(ladname) {
         let chip = document.createElement("div")
         chip.type = "submit"
         chip.classList.add("chipDiv")
+        chip.classList.add("chip_available")
+        chip.classList.add("chip_unselected")
+        chip.textContent = "Chip " + ch.toString()
         let ch_num = ch.toString()
         chip.id = ch_num
         chip.onclick = function () {chip_clicked(ladname, ch_num)}
