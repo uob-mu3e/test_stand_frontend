@@ -88,7 +88,11 @@ var get_description = function(hameg, channel) {
         for (layer in node_js[direction]["Layers"]) {
             for (ladder in node_js[direction]["Layers"][layer]["Ladders"]) {
                 if (node_js[direction]["Layers"][layer]["Ladders"][ladder]["LV_parameters"]["Module"] === hameg && node_js[direction]["Layers"][layer]["Ladders"][ladder]["LV_parameters"]["Channel"] === channel) {
-                    descr = direction + ", Layer " + layer + ", Ladder " + ladder
+                    if (direction === "Upstream")
+                        descr = "US, "
+                    else
+                        descr = "DS, "
+                    descr += "Layer " + layer + ", Ladder " + ladder
                     if (found == true) {
                         descr += " : already found!"
                     }
