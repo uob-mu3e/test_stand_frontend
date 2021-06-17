@@ -7,22 +7,23 @@
 #define __UTIL_XCVR_H__
 
 struct xcvr_block_t {
-    volatile alt_u32* base;
+    static const alt_u32 XCVR_SPAN = 0x10000;
 
-    char id;
+    volatile alt_u32* base;
+    alt_u32 span;
+
+    char id = 'A';
 
     explicit
-    xcvr_block_t(volatile alt_u32* base, char id = 'A') : base(base), id(id) {
-        if(id < 'A') id = 'A';
-        if(id > 'Z') id = 'Z';
+    xcvr_block_t(volatile alt_u32* base, alt_u32 span = 0) : base(base), span(span) {
     }
 
     void menu() {
         while (1) {
-            volatile alt_u32* xcvr = base + (id - 'A') * 0x10000 / sizeof(alt_u32);
+            volatile alt_u32* xcvr = base + (id - 'A') * XCVR_SPAN / 4;
             if(menu(xcvr) != 0) return;
-            status(xcvr);
             status_table(xcvr);
+            status(xcvr);
             usleep(200000);
         }
     }
@@ -109,8 +110,10 @@ struct xcvr_block_t {
     }
 
     void status_table(volatile alt_u32* xcvr) {
-        printf("-- xcvr[%c] --\n", id);
         alt_u32 ch_prev = xcvr[0x00];
+        if(ch_prev == 0xCCCCCCCC) return;
+
+        printf("-- xcvr[0x%08X] --\n", xcvr);
 
         printf("  ch");
         for(alt_u32 ch = 0;;ch++) {
@@ -129,13 +132,19 @@ struct xcvr_block_t {
         }
         printf(" |\n");
 
+        printf("\n");
+
         xcvr[0x00] = ch_prev;
     }
 };
 
-void menu_xcvr(volatile alt_u32* base, char ID = 'A') {
-    xcvr_block_t xcvr_block(base, ID);
+void menu_xcvr(volatile alt_u32* base, alt_u32 span = 0) {
+    xcvr_block_t xcvr_block(base, span);
     xcvr_block.menu();
+}
+
+void menu_xcvr(alt_u32 base, alt_u32 span = 0) {
+    menu_xcvr((alt_u32*)(base | ALT_CPU_DCACHE_BYPASS_MASK), span);
 }
 
 #endif // __UTIL_XCVR_H__

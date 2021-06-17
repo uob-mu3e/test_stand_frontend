@@ -4,20 +4,6 @@
 #include "include/xcvr.h"
 #include "include/a10/reconfig.h"
 
-struct my_xcvr0_t : xcvr_block_t {
-    reconfig_t reconfig;
-    my_xcvr0_t() : xcvr_block_t((alt_u32*)(AVM_XCVR0_BASE | ALT_CPU_DCACHE_BYPASS_MASK)) {
-    }
-};
-my_xcvr0_t xcvr0;
-
-struct my_xcvr1_t : xcvr_block_t {
-    reconfig_t reconfig;
-    my_xcvr1_t() : xcvr_block_t((alt_u32*)(AVM_XCVR1_BASE | ALT_CPU_DCACHE_BYPASS_MASK)) {
-    }
-};
-my_xcvr1_t xcvr1;
-
 #include "include/i2c.h"
 #include "include/si534x.h"
 
@@ -48,10 +34,10 @@ int main() {
         case '0':
             break;
         case '1':
-            xcvr0.menu();
+            menu_xcvr(AVM_XCVR0_BASE, AVM_XCVR0_SPAN);
             break;
         case '2':
-            xcvr1.menu();
+            menu_xcvr(AVM_XCVR1_BASE, AVM_XCVR1_SPAN);
             break;
         case 's': {
             xcvr_block_t sfp((alt_u32*)(AVM_SFP_BASE | ALT_CPU_DCACHE_BYPASS_MASK));
@@ -61,14 +47,16 @@ int main() {
         case 'c':
             PCIe40::menu();
             break;
-        case 'R':
-            for(int i = 0; i < AVM_XCVR0_SPAN; i += 0x10000) {
-                pod.reconfig.pll(AVM_XCVR0_BASE + i);
+        case 'R': {
+            reconfig_t reconfig;
+            for(int i = 0; i < AVM_XCVR0_SPAN; i += xcvr_block_t::XCVR_SPAN) {
+                reconfig.pll(AVM_XCVR0_BASE + i);
             }
-            for(int i = 0; i < AVM_XCVR1_SPAN; i += 0x10000) {
-                pod.reconfig.pll(AVM_XCVR1_BASE + i);
+            for(int i = 0; i < AVM_XCVR1_SPAN; i += xcvr_block_t::XCVR_SPAN) {
+                reconfig.pll(AVM_XCVR1_BASE + i);
             }
             break;
+        }
         default:
             printf("invalid command: '%c'\n", cmd);
         }
