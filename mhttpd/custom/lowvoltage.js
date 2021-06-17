@@ -79,3 +79,33 @@ mjsonrpc_db_paste([PathSciFi + '[0]"', PathSciFi + '[1]"', PathSciFi + '[2]"', P
         });
 
 }
+
+var get_description = function(hameg, channel) {
+    var descr = "Finding"
+    var found = false
+    var node_js = json_configuration["Stations"]["Tracker"]["Direction"]
+    for (direction in node_js) {
+        for (layer in node_js[direction]["Layers"]) {
+            for (ladder in node_js[direction]["Layers"][layer]["Ladders"]) {
+                if (node_js[direction]["Layers"][layer]["Ladders"][ladder]["LV_parameters"]["Module"] === hameg && node_js[direction]["Layers"][layer]["Ladders"][ladder]["LV_parameters"]["Channel"] === channel) {
+                    descr = direction + ", Layer " + layer + ", Ladder " + ladder
+                    if (found == true) {
+                        descr += " : already found!"
+                    }
+                    found = true
+                }
+            }
+        }
+    }
+    return descr
+}
+
+//document.getElementById("hameg0_0").innerHTML = get_description(0,0)
+
+for (var hameg = 0; hameg < 9; ++hameg) {
+    var tab = document.getElementById("hameg" + hameg.toString())
+    for (var channel = 0; channel < 4; ++channel) {
+        tab.rows[2+channel].cells[7].innerHTML = get_description(hameg,channel)
+    }
+}
+

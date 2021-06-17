@@ -426,18 +426,18 @@ var create_octagon = function(ele, prefix, inversion) {
         lad.style = "width:70px;height:20px;position: relative;"
         lad.textContent = "Ladder " + i.toString()
         if (inversion == false) {
-            leftpos = 120*Math.cos((2*Math.PI*(i-4)/8)) +120
-            toppos = 120*(Math.sin((2*Math.PI*(i-4)/8))) -20*i + 130
+            leftpos = 120*Math.cos(Math.PI/8 + (2*Math.PI*(i-4)/8)) +120
+            toppos = 120*(Math.sin(Math.PI/8 + (2*Math.PI*(i-4)/8))) -20*i + 130
             lad.style.left = leftpos.toString() + "px"
             lad.style.top = toppos.toString() + "px"
-            rotate_div(lad, -90 + (360*i/8))
+            rotate_div(lad, -90 + 22.5 + (360*i/8))
         }
         else {
-            leftpos = 120*Math.cos(-(2*Math.PI*(i)/8)) +120
-            toppos = 120*(Math.sin(-(2*Math.PI*(i)/8))) -20*i + 130
+            leftpos = 120*Math.cos(-Math.PI/8-(2*Math.PI*(i)/8)) +120
+            toppos = 120*(Math.sin(-Math.PI/8-(2*Math.PI*(i)/8))) -20*i + 130
             lad.style.left = leftpos.toString() + "px"
             lad.style.top = toppos.toString() + "px"
-            rotate_div(lad, 90 - (360*i/8))
+            rotate_div(lad, 90 - 22.5 - (360*i/8))
         }
         /*if(lad.addEventListener) {
             lad.addEventListener("click", ladder_clicked(prefix + i.toString()));
@@ -465,18 +465,18 @@ var create_decagon = function(ele, prefix, inversion) {
         lad.style = "width:70px;height:20px;position: relative;"
         lad.textContent = "Ladder " + i.toString()
         if (inversion == false) {
-            leftpos = 120*Math.cos((2*Math.PI*(i-5)/10)) +120
-            toppos = 120*(Math.sin((2*Math.PI*(i-5)/10))) -20*i + 130
+            leftpos = 120*Math.cos(Math.PI/10 + (2*Math.PI*(i-5)/10)) +120
+            toppos = 120*(Math.sin(Math.PI/10 + (2*Math.PI*(i-5)/10))) -20*i + 130
             lad.style.left = leftpos.toString() + "px"
             lad.style.top = toppos.toString() + "px"
-            rotate_div(lad, -90 + (360*i/10))
+            rotate_div(lad, -72 + (360*i/10))
         }
         else {
-            leftpos = 120*Math.cos(-(2*Math.PI*(i)/10)) +120
-            toppos = 120*(Math.sin(-(2*Math.PI*(i)/10))) -20*i + 130
+            leftpos = 120*Math.cos(-Math.PI/10 -(2*Math.PI*(i)/10)) +120
+            toppos = 120*(Math.sin(-Math.PI/10 -(2*Math.PI*(i)/10))) -20*i + 130
             lad.style.left = leftpos.toString() + "px"
             lad.style.top = toppos.toString() + "px"
-            rotate_div(lad, 90 - (360*i/10))
+            rotate_div(lad, 72 - (360*i/10))
         }
         /*if(lad.addEventListener) {
             lad.addEventListener("click", ladder_clicked(prefix + i.toString()));
