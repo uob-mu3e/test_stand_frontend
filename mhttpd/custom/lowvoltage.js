@@ -80,6 +80,8 @@ mjsonrpc_db_paste([PathSciFi + '[0]"', PathSciFi + '[1]"', PathSciFi + '[2]"', P
 
 }
 
+var json_configuration = {}
+
 var get_description = function(hameg, channel) {
     var descr = "Finding"
     var found = false
@@ -104,12 +106,25 @@ var get_description = function(hameg, channel) {
     return descr
 }
 
-//document.getElementById("hameg0_0").innerHTML = get_description(0,0)
-
-for (var hameg = 0; hameg < 9; ++hameg) {
-    var tab = document.getElementById("hameg" + hameg.toString())
-    for (var channel = 0; channel < 4; ++channel) {
-        tab.rows[2+channel].cells[7].innerHTML = get_description(hameg,channel)
+var change_descriptions = function () {
+    for (var hameg = 0; hameg < 9; ++hameg) {
+        var tab = document.getElementById("hameg" + hameg.toString())
+        for (var channel = 0; channel < 4; ++channel) {
+            tab.rows[2+channel].cells[7].innerHTML = get_description(hameg,channel)
+        }
     }
 }
 
+var load_json = function () {
+    var xmlhttp = new XMLHttpRequest();
+    xmlhttp.onreadystatechange = function(){
+      if(xmlhttp.status==200 && xmlhttp.readyState==4){
+        var words = xmlhttp.responseText;//.split(' ');
+        json_configuration = JSON.parse(words);
+        change_descriptions()
+      }
+    }
+    xmlhttp.open("GET","mupix_configuration.json",true);
+    xmlhttp.send();
+}
+load_json()

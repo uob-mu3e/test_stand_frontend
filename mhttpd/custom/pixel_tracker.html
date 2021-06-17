@@ -63,11 +63,27 @@
 
                         </table>
                         <div id="ladder_lv_settings" style="visibility: hidden;">
+                            <h3>Status</h3>
+                            <table>
+                                <tr>
+                                    <td>Current Status : </td>
+                                    <td><div id="ladder_lv_status" class="modbbox" style="width: 20px; height: 20px; display: table-cell;" data-odb-path="/Equipment/HAMEG0/Variables/State[0]" data-color="lightgreen" data-background-color="red"></div></td>
+                                </tr>
+                                <tr>
+                                    <td>Turn On/Off : </td>
+                                    <td><input id="ladder_lv_set_status" type="checkbox" style="display: table-cell;" name="CheckboxLV" class="modbcheckbox" data-odb-path="/Equipment/HAMEG0/Variables/Set State[0]"></input></td>
+                                    </div>
+                                </tr>
+                            </table>
                             <h3>Readings</h3>
-                            <h4>Voltage : </h4>
-                            <div id = "ladder_lv_read_volt" class="modbvalue" data-odb-path="/Equipment/HAMEG0/Variables/Voltage[0]" style="display: table-cell;"></div>
-                            <h4>Current : </h4>
-                            <div id = "ladder_lv_read_curr" class="modbvalue" data-odb-path="/Equipment/HAMEG0/Variables/Current[0]" style="display: table-cell;"></div>
+                            <div>
+                                <h4 style="display: table-cell;">Voltage : </h4>
+                                <div id = "ladder_lv_read_volt" class="modbvalue" data-odb-path="/Equipment/HAMEG0/Variables/Voltage[0]" style="display: table-cell;"></div>
+                            </div>
+                            <div>
+                                <h4 style="display: table-cell;">Current : </h4>
+                                <div id = "ladder_lv_read_curr" class="modbvalue" data-odb-path="/Equipment/HAMEG0/Variables/Current[0]" style="display: table-cell;"></div>
+                            </div>
                         </div>
                     </div>
                     <div id="ladder_hv_header" style="visibility: hidden;">
@@ -125,9 +141,12 @@
                     </div>
                     <div id="configure_chip_div" style="visibility: hidden;" class="button_configure">
                         <button onclick="configureChip(event)">Configure</button>
+                        <button onclick="resetDACs(event)">Reset to Default</button>
                     </div>
                     <div id="pixel_configure_update" style="visibility: hidden;">
-
+                        <h3>Status</h3>
+                        <div id="pixel_configure_update_content">
+                        </div>
                     </div>
                     <div>
                         <h1>Debug</h1>
@@ -177,8 +196,7 @@
 </iframe-->
 
 </div>
-<script src="mupix_configuration.json"></script>
-<script src="mupix_dacs.json"></script>
+<!--script src="mupix_dacs.json"></script-->
 <script src="pixel_tracker.js"></script>
 </body>
 </html>
