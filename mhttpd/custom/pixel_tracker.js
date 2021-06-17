@@ -16,6 +16,8 @@ var current_lad_chips = {}
 
 var json_config = {}
 
+var multiple_chip_boxes = {}
+
 //var fileInput = document.querySelector('input[type="file"]');
 
 function receivedText(e) {
@@ -217,7 +219,7 @@ var chip_clicked = function (ladname, chip) {
     change_state_chip(current_lad_chips[chip]["chip"], "selected")
     current_chip_selected = chip
     reset_table("pixel_parameters")
-    tab_fill = {"SpecBook ID:" : "SpecBookId", "MIDAS ID:" : "MIDAS_ID", "Event Display ID:" : "EventDisplayID"}
+    tab_fill = {"SpecBook ID:" : "SpecBookId", "MIDAS ID:" : "MIDAS_ID", "Event Display ID:" : "EventDisplayID", "Link A number:": "LinkA", "Link B number:": "LinkB", "Link C number:": "LinkC"}
     fill_table_by_json("pixel_parameters", current_lad_chips[chip]["json_node"], tab_fill)
     reset_table("Bias_tab")
     reset_table("Conf_tab")
@@ -357,8 +359,8 @@ function openChipDacs(evt, dacName) {
 function configureChip(evt) {
     var mask_names = []
     var px_mask = []
+    var num = (parseInt(lads[current_selected]["json_node"]["FEB_ID"])*12 + parseInt(current_lad_chips[current_chip_selected]["json_node"]["MIDAS_ID"]))
     for (var i = 0; i < 128; ++i) {
-        num = (parseInt(lads[current_selected]["json_node"]["FEB_ID"])*12 + parseInt(current_lad_chips[current_chip_selected]["json_node"]["MIDAS_ID"]))
         mask_names.push("/Equipment/Mupix/Settings/Daq/mask[" + i + "]")
         if (i === num)
             px_mask.push(false);
@@ -367,6 +369,43 @@ function configureChip(evt) {
     }
     document.getElementById("pixel_configure_update").style["visibility"] = "visible"
     document.getElementById("pixel_configure_update").textContent = "Configuring chip number " + num
+    mjsonrpc_db_paste(mask_names, px_mask).then(function () {
+        mjsonrpc_db_paste(["/Equipment/Switching/Settings/MupixConfig"], [true])
+    }).catch(function(error) {
+        mjsonrpc_error_alert(error);
+     });
+}
+
+function configureMultipleChip(evt) {
+
+    var mask_names = []
+    var px_mask = []
+    document.getElementById("debug").textContent  = "Configuring : "
+    for (direction in multiple_chip_boxes) {
+        for (layer in multiple_chip_boxes[direction]) {
+            for (ladder in multiple_chip_boxes[direction][layer]) {
+                for (chip in multiple_chip_boxes[direction][layer][ladder]) {
+                    var lad_name = "L" + layer
+                    if (direction == "Upstream")
+                        lad_name += "_US"
+                    else if (direction == "Downstream")
+                        lad_name += "_DS"
+                    else
+                        return
+                    lad_name += "_L" +ladder
+                    num = (parseInt(lads[lad_name]["json_node"]["FEB_ID"])*12 + parseInt(lads[lad_name]["json_node"]["Chips"][chip]["MIDAS_ID"]))
+                    mask_names.push("/Equipment/Mupix/Settings/Daq/mask[" + num + "]")
+                    if (multiple_chip_boxes[direction][layer][ladder][chip].checked == true) {
+                        document.getElementById("debug").textContent += lad_name + " : " + num + " - "
+                        px_mask.push(false);
+                    }
+                    else
+                        px_mask.push(true);
+                }
+            }
+        }
+    }
+
     mjsonrpc_db_paste(mask_names, px_mask).then(function () {
         mjsonrpc_db_paste(["/Equipment/Switching/Settings/MupixConfig"], [true])
     }).catch(function(error) {
@@ -447,7 +486,33 @@ var create_decagon = function(ele, prefix, inversion) {
         }*/
         lad.onclick = function () {ladder_clicked(lad.id)}
         ele.appendChild(lad)
+        //TODO: nest it like the rest
         lads[prefix + i.toString()] = create_ladder_element(lad)
+    }
+}
+
+var list_chips_configuration = function (ele, direction) {
+    var node_us = json_config["Stations"]["Tracker"]["Direction"][direction]
+    multiple_chip_boxes[direction] = {}
+    for (layer in node_us["Layers"]) {
+        multiple_chip_boxes[direction][layer] = {}
+        for (ladder in node_us["Layers"][layer]["Ladders"]) {
+            multiple_chip_boxes[direction][layer][ladder] = {}
+            for (chip in node_us["Layers"][layer]["Ladders"][ladder]["Chips"]) {
+                var chip_cb_div = document.createElement("div")
+                var chip_line = document.createElement("input")
+                chip_line.type = "checkbox"
+                chip_line.id = direction + "_L" + layer + "_L" + ladder + "_C" + chip
+                chip_line.name = direction + "_L" + layer + "_L" + ladder + "_C" + chip
+                var chip_label = document.createElement("label")
+                chip_label.setAttribute("for", direction + "_L" + layer + "_L" + ladder + "_C" + chip)
+                chip_label.textContent = "Layer " + layer + " - Ladder " + ladder + " - Chip " + chip
+                multiple_chip_boxes[direction][layer][ladder][chip] = chip_line
+                chip_cb_div.appendChild(chip_line)
+                chip_cb_div.appendChild(chip_label)
+                ele.appendChild(chip_cb_div)
+            }
+        }
     }
 }
 
@@ -455,3 +520,6 @@ create_octagon(document.getElementById("L0_US"), "L0_US_L", false)
 create_decagon(document.getElementById("L1_US"), "L1_US_L", false)
 create_octagon(document.getElementById("L0_DS"), "L0_DS_L", true)
 create_decagon(document.getElementById("L1_DS"), "L1_DS_L", true)
+
+list_chips_configuration(document.getElementById("multiple_chip_configuration_us"), "Upstream")
+list_chips_configuration(document.getElementById("multiple_chip_configuration_ds"), "Downstream")

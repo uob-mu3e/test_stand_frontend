@@ -19,57 +19,57 @@
 
 <div id="mmain">
 
-<div class="container-fluid normal_text" id="main">
-    <div class="row" style="width: 700px">
-        <div class="col-xs-6 b-r padding_bottom_70" >
-            <div class="scrll_hide">
-                <div id="L0_US" style="position: relative;height: 350px">
-                    <h1 style="color: #5e9ca0;">Layer 0 Upstream</h1>
-                    <p>As seen from outside the cage</p>
+    <div class="container-fluid normal_text" id="main">
+        <div class="row" style="width: 1500px">
+            <div class="col-xs-4 b-r padding_bottom_70" >
+                <div class="scrll_hide">
+                    <div id="L0_US" style="position: relative;height: 350px">
+                        <h1 style="color: #5e9ca0;">Layer 0 Upstream</h1>
+                        <p>As seen from outside the cage</p>
 
-                </div>
-                <div id="L1_US" style="position: relative;height: 400px">
-                    <h1 style="color: #5e9ca0;">Layer 1 Upstream</h1>
-                    <p>As seen from outside the cage</p>
+                    </div>
+                    <div id="L1_US" style="position: relative;height: 400px">
+                        <h1 style="color: #5e9ca0;">Layer 1 Upstream</h1>
+                        <p>As seen from outside the cage</p>
 
-                </div>
-                <div id="L0_DS" style="position: relative;height: 350px">
-                    <h1 style="color: #5e9ca0;">Layer 0 Downstream</h1>
-                    <p>As seen from outside the cage</p>
+                    </div>
+                    <div id="L0_DS" style="position: relative;height: 350px">
+                        <h1 style="color: #5e9ca0;">Layer 0 Downstream</h1>
+                        <p>As seen from outside the cage</p>
 
-                </div>
-                <div id="L1_DS" style="position: relative;height: 400px">
-                    <h1 style="color: #5e9ca0;">Layer 1 Downstream</h1>
-                    <p>As seen from outside the cage</p>
+                    </div>
+                    <div id="L1_DS" style="position: relative;height: 400px">
+                        <h1 style="color: #5e9ca0;">Layer 1 Downstream</h1>
+                        <p>As seen from outside the cage</p>
 
+                    </div>
                 </div>
             </div>
-        </div>
-        <div class="col-xs-6 b-r padding_bottom_70" >
-            <div class="scrll_hide">
-                <div id="config_area">
-                    <div id="ladder_header" style="visibility: hidden;">
-                        <h1>Ladder Control</h1>
-                        <h3>Parameters</h3>
-                    </div>
-                    <table id="parameter_tab">
+            <div class="col-xs-4 b-r padding_bottom_70" >
+                <div class="scrll_hide">
+                    <div id="config_area">
+                        <div id="ladder_header" style="visibility: hidden;">
+                            <h1>Ladder Control</h1>
+                            <h3>Parameters</h3>
+                        </div>
+                        <table id="parameter_tab">
 
-                    </table>
-                    <div id="ladder_lv_header" style="visibility: hidden;">
-                        <h2>LV</h2>
-                        <h3>Settings</h3>
-                    </div>
-                    <table id="ladder_lv_tab">
+                        </table>
+                        <div id="ladder_lv_header" style="visibility: hidden;">
+                            <h2>LV</h2>
+                            <h3>Settings</h3>
+                        </div>
+                        <table id="ladder_lv_tab">
 
-                    </table>
-                    <div id="ladder_lv_settings" style="visibility: hidden;">
-                        <h3>Readings</h3>
-                        <h4>Voltage : </h4>
-                        <div id = "ladder_lv_read_volt" class="modbvalue" data-odb-path="/Equipment/HAMEG0/Variables/Voltage[0]" style="display: table-cell;"></div>
-                        <h4>Current : </h4>
-                        <div id = "ladder_lv_read_curr" class="modbvalue" data-odb-path="/Equipment/HAMEG0/Variables/Current[0]" style="display: table-cell;"></div>
+                        </table>
+                        <div id="ladder_lv_settings" style="visibility: hidden;">
+                            <h3>Readings</h3>
+                            <h4>Voltage : </h4>
+                            <div id = "ladder_lv_read_volt" class="modbvalue" data-odb-path="/Equipment/HAMEG0/Variables/Voltage[0]" style="display: table-cell;"></div>
+                            <h4>Current : </h4>
+                            <div id = "ladder_lv_read_curr" class="modbvalue" data-odb-path="/Equipment/HAMEG0/Variables/Current[0]" style="display: table-cell;"></div>
+                        </div>
                     </div>
-                </div>
                     <div id="ladder_hv_header" style="visibility: hidden;">
                         <h2>HV</h2>
                         <h3>Settings</h3>
@@ -109,12 +109,12 @@
 
                         </table>
                     </div>
-                      <div id="Conf" class="tabcontent">
-                        <h3>Conf</h3>
-                        <p id = "Conf_head">Shaka</p>
-                        <table id="Conf_tab">
+                    <div id="Conf" class="tabcontent">
+                    <h3>Conf</h3>
+                    <p id = "Conf_head">Shaka</p>
+                    <table id="Conf_tab">
 
-                        </table>
+                    </table>
                     </div>
                     <div id="VDAC" class="tabcontent">
                         <h3>VDACs</h3>
@@ -135,6 +135,37 @@
                             Right side Data
                         </p>
                     </div>
+                </div>
+            </div>
+            <div class="col-xs-4 b-r padding_bottom_70" >
+                <div class="scrll_hide">
+                <h1>Multiple Chip Configuration</h1>
+                <div style="width:265px; display: table-cell">
+                    <h2>Upstream<h2>
+                </div>
+                <div style="width:250px; display: table-cell">
+                    <h2>Downstream<h2>
+                </div>
+                <div id="multiple_chip_configuration">
+                    <div class="row" style="width: 500px; margin-left: 10px">
+                        <div class="col-xs-6 b-r padding_bottom_70" >
+                            <div class="scrll_hide">
+                                <div id = "multiple_chip_configuration_us">
+
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-xs-6 b-r padding_bottom_70" >
+                            <div class="scrll_hide">
+                                <div id = "multiple_chip_configuration_ds">
+
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div id="configure_multiple_chip_div" style="visibility: visible; display: flex; justify-content: center;" class="button_configure">
+                    <button onclick="configureMultipleChip(event)">Configure</button>
                 </div>
             </div>
         </div>
