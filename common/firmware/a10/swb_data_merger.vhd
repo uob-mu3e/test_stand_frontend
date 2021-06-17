@@ -61,17 +61,17 @@ begin
     process(i_clk, i_reset_n)
     begin
         if ( i_reset_n = '0' ) then
-            o_data      <= (others => '0');
-            o_data_reg  <= (others => '0');
+            o_data      <= (others => '1');
+            o_data_reg  <= (others => '1');
             o_data_valid<= (others => '0');
-            hit_reg     <= (others => '0');
+            hit_reg     <= (others => '1');
             TS          <= (others => '0');
             merge_state <= wait_for_pre;
             hit_reg_cnt <= 0;
             --
         elsif ( rising_edge(i_clk) ) then
 
-            o_data      <= (others => '0');
+            o_data      <= (others => '1');
             o_data_valid<= (others => '0'); -- idle
 
             case merge_state is
@@ -171,7 +171,7 @@ begin
                     -- send out hits if fifo is not empty
                     if ( i_empty = '0' ) then
                         o_data_valid<= (others => '1'); -- hits
-                        hit_reg     <= (others => '0');
+                        hit_reg     <= (others => '1');
                         if ( header_state(3) = '1' ) then
                             merge_state <= get_sh;
                             hit_reg_cnt <= 0;
@@ -228,7 +228,7 @@ begin
                     -- every link is getting K.28.4 = 9C for tr
                     merge_state             <= wait_for_pre;
                     -- reset reg data for next preamble
-                    o_data_reg               <= (others => '0');
+                    o_data_reg               <= (others => '1');
                     FOR I in NLINKS - 1 downto 0 LOOP
                         o_data(I * 32 + 31 downto I * 32)   <= x"000000" & K28_4;
                         o_data_valid(I * 2 + 1 downto I * 2)     <= "01"; -- trailer
@@ -250,7 +250,7 @@ begin
 
                 when others =>
                     merge_state <= wait_for_pre;
-                    o_data_reg  <= (others => '0');
+                    o_data_reg  <= (others => '1');
                     hit_reg     <= (others => '0');
                     hit_reg_cnt <= 0;
 
