@@ -22,6 +22,7 @@ struct xcvr_block_t {
             volatile alt_u32* xcvr = base + (id - 'A') * 0x10000 / sizeof(alt_u32);
             if(menu(xcvr) != 0) return;
             status(xcvr);
+            status_table(xcvr);
             usleep(200000);
         }
     }
@@ -31,8 +32,8 @@ struct xcvr_block_t {
         printf("XCVR 0x%08X:\n", base);
         printf("  [[,]] => select group\n");
         printf("  [0-7] => select channel\n");
-        printf("  [r] => reset\n");
-        printf("  [l] => loopback\n");
+        printf("  [r,R] => reset\n");
+        printf("  [l,L] => loopback\n");
         printf("\n");
 
         char cmd;
@@ -51,9 +52,28 @@ struct xcvr_block_t {
             xcvr[0x10] = 0x01; // tx
             xcvr[0x20] = 0x01; // rx
             break;
-        case 'l': // loopback
+        case 'R': { // reset (all channels)
+            alt_u32 ch_prev = xcvr[0x00];
+            for(alt_u32 ch = 0;;ch++) {
+                xcvr[0x00] = ch; if(xcvr[0x00] != ch) break;
+                xcvr[0x10] = 0x01; // tx
+                xcvr[0x20] = 0x01; // rx
+            }
+            xcvr[0x00] = ch_prev;
+            break;
+        }
+        case 'l': // toggle loopback
             xcvr[0x2F] ^= 0x01;
             break;
+        case 'L': { // toggle loopback (all channels)
+            alt_u32 ch_prev = xcvr[0x00];
+            for(alt_u32 ch = 0;;ch++) {
+                xcvr[0x00] = ch; if(xcvr[0x00] != ch) break;
+                xcvr[0x2F] ^= 0x01;
+            }
+            xcvr[0x00] = ch_prev;
+            break;
+        }
         case '?':
             wait_key();
             break;
@@ -86,6 +106,30 @@ struct xcvr_block_t {
         }
 
         printf("\n");
+    }
+
+    void status_table(volatile alt_u32* xcvr) {
+        printf("-- xcvr[%c] --\n", id);
+        alt_u32 ch_prev = xcvr[0x00];
+
+        printf("  ch");
+        for(alt_u32 ch = 0;;ch++) {
+            xcvr[0x00] = ch; if(xcvr[0x00] != ch) break;
+            int l = xcvr[0x2F];
+            int e = xcvr[0x23] > 0 || xcvr[0x24] > 0;
+            int E = xcvr[0x23] == 0xFF && xcvr[0x24] == 0xFFFF;
+            printf(" | %d [%s%s....]", ch, l ? "l" : ".", E ? "E" : e ? "e" : ".");
+        }
+        printf(" |\n");
+
+        printf("data");
+        for(alt_u32 ch = 0;;ch++) {
+            xcvr[0x00] = ch; if(xcvr[0x00] != ch) break;
+            printf(" | %08X/%01X", xcvr[0x2A], xcvr[0x2B]);
+        }
+        printf(" |\n");
+
+        xcvr[0x00] = ch_prev;
     }
 };
 
