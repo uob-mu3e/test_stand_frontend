@@ -10,8 +10,12 @@ entity a10_block is
 generic (
     g_XCVR0_CHANNELS    : integer := 16;
     g_XCVR0_N           : integer := 4;
+    g_XCVR0_RX_P        : work.util.integer_array_t := ( 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15 );
+    g_XCVR0_TX_P        : work.util.integer_array_t := ( 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15 );
     g_XCVR1_CHANNELS    : integer := 0;
     g_XCVR1_N           : integer := 0;
+    g_XCVR1_RX_P        : work.util.integer_array_t := ( 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15 );
+    g_XCVR1_TX_P        : work.util.integer_array_t := ( 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15 );
     g_SFP_CHANNELS      : integer := 0;
     g_PCIE0_X           : integer := 8;
     g_PCIE1_X           : integer := 0;
@@ -254,6 +258,27 @@ architecture arch of a10_block is
 
     --! debouncer signals
     signal button : std_logic_vector(i_button'range);
+
+    function f_xcvr0_rx_p ( i : integer ) return integer is
+    begin
+        if ( i < g_XCVR0_RX_P'length ) then return g_XCVR0_RX_P(i); end if;
+        return i;
+    end function;
+    function f_xcvr0_tx_p ( i : integer ) return integer is
+    begin
+        if ( i < g_XCVR0_TX_P'length ) then return g_XCVR0_TX_P(i); end if;
+        return i;
+    end function;
+    function f_xcvr1_rx_p ( i : integer ) return integer is
+    begin
+        if ( i < g_XCVR1_RX_P'length ) then return g_XCVR1_RX_P(i); end if;
+        return i;
+    end function;
+    function f_xcvr1_tx_p ( i : integer ) return integer is
+    begin
+        if ( i < g_XCVR1_TX_P'length ) then return g_XCVR1_TX_P(i); end if;
+        return i;
+    end function;
 
 begin
 
@@ -541,10 +566,11 @@ begin
     generate_xcvr0_fifo : for i in g_XCVR0_CHANNELS-1 downto 0 generate
     e_xcvr0_fifo : entity work.xcvr_fifo
     port map (
-        i_xcvr_rx_data      => xcvr0_rx_data(i),
-        i_xcvr_rx_datak     => xcvr0_rx_datak(i),
-        o_xcvr_tx_data      => xcvr0_tx_data(i),
-        o_xcvr_tx_datak     => xcvr0_tx_datak(i),
+        -- map logical channel rx(i) to physical channel g_XCVR0_RX_P(i)
+        i_xcvr_rx_data      => xcvr0_rx_data(f_xcvr0_rx_p(i)),
+        i_xcvr_rx_datak     => xcvr0_rx_datak(f_xcvr0_rx_p(i)),
+        o_xcvr_tx_data      => xcvr0_tx_data(f_xcvr0_tx_p(i)),
+        o_xcvr_tx_datak     => xcvr0_tx_datak(f_xcvr0_tx_p(i)),
         i_xcvr_clk          => clk_156,
 
         o_rx_data           => o_xcvr0_rx_data(i),
@@ -597,10 +623,10 @@ begin
     generate_xcvr1_fifo : for i in g_XCVR1_CHANNELS-1 downto 0 generate
     e_xcvr1_fifo : entity work.xcvr_fifo
     port map (
-        i_xcvr_rx_data      => xcvr1_rx_data(i),
-        i_xcvr_rx_datak     => xcvr1_rx_datak(i),
-        o_xcvr_tx_data      => xcvr1_tx_data(i),
-        o_xcvr_tx_datak     => xcvr1_tx_datak(i),
+        i_xcvr_rx_data      => xcvr1_rx_data(f_xcvr1_rx_p(i)),
+        i_xcvr_rx_datak     => xcvr1_rx_datak(f_xcvr1_rx_p(i)),
+        o_xcvr_tx_data      => xcvr1_tx_data(f_xcvr1_tx_p(i)),
+        o_xcvr_tx_datak     => xcvr1_tx_datak(f_xcvr1_tx_p(i)),
         i_xcvr_clk          => clk_250,
 
         o_rx_data           => o_xcvr1_rx_data(i),
