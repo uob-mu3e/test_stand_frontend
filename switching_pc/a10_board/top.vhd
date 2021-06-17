@@ -152,8 +152,8 @@ architecture rtl of top is
     signal dma_data_wren, dmamem_endofevent, pcie0_dma0_hfull : std_logic;
     signal dma_data : std_logic_vector(255 downto 0);
 
-    signal rx_data_raw, rx_data, tx_data : work.util.slv32_array_t(15 downto 0);
-    signal rx_datak_raw, rx_datak, tx_datak : work.util.slv4_array_t(15 downto 0);
+    signal rx_data_raw, rx_data, tx_data : work.util.slv32_array_t(15 downto 0) := (others => X"000000BC");
+    signal rx_datak_raw, rx_datak, tx_datak : work.util.slv4_array_t(15 downto 0) := (others => "0001");
 
 begin
 
