@@ -50,7 +50,7 @@ INT HMP4040Driver::Init()
 	client->SetDefaultWaitTime(50);
 	
 	//global reset if requested
-	if( settings["Global Reset On FE Start"] )
+	if( settings["Global Reset On FE Start"] == true)
 	{
 		cmd = "*RST\n";
 		if( !client->Write(cmd) ) cm_msg(MERROR, "Init HAMEG supply ... ", "could not global reset %s", ip.c_str());

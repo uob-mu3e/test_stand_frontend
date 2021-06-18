@@ -34,7 +34,7 @@ const char *frontend_name = "Power Frontend";
 const char *frontend_file_name = __FILE__;
 
 /* frontend_loop is called periodically if this variable is TRUE    */
-BOOL frontend_call_loop = FALSE;
+BOOL frontend_call_loop = TRUE;
 
 /* Overwrite equipment struct in ODB from values in code*/
 BOOL equipment_common_overwrite = FALSE;
@@ -480,10 +480,23 @@ INT read_hameg_power8(char *pevent, INT off)
 
 INT frontend_loop()
 {
+	std::cout << " fe loop call" << std::endl;
+
 	std::this_thread::sleep_for (std::chrono::milliseconds(100));
-	std::cout << " fe loop called " << std::endl;
 	
-	std::vector<std::future<int>> futures;
+	std::vector<std::thread> threads;
+	
+    for(auto& d: drivers)
+    {
+       threads.emplace_back( &PowerDriver::ReadAll,d );
+      //  d->ReverseSort();
+    }
+    
+    for(auto& t : threads) {    t.join(); }
+	
+	std::cout << " fe loop call finished" << std::endl;
+	
+	/*std::vector<std::future<int>> futures;
 	for(auto& d: drivers)
     {
 		if( !d->Initialized() ) continue;
@@ -494,7 +507,7 @@ INT frontend_loop()
     {
         INT error = f.get();
         if(error != FE_SUCCESS) cm_msg(MERROR, "frontend_loop power", "Read failed");
-    }	
+    }*/
 	
 	return SUCCESS;
 }

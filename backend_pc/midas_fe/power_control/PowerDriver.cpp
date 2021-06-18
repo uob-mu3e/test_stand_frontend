@@ -17,8 +17,9 @@ INT PowerDriver::ConnectODB()
 	settings.connect("/Equipment/"+name+"/Settings");
 	settings["IP"]("10.10.10.10");
 	settings["Use Hostname"](true);
+	settings["Hostname"]("");
 	settings["NChannels"](2);
-	settings["Global Reset On FE Start"](true);
+	settings["Global Reset On FE Start"](false);
 	settings["Read ESR"](false);
 
 	//variables
@@ -32,8 +33,18 @@ INT PowerDriver::ConnectODB()
 INT PowerDriver::Connect()
 {
 	std::string hostname = "";
-	std::transform( name.begin(), name.end(), name.begin(), [](unsigned char c){ return std::tolower(c); } );
-	if(settings["Use Hostname"] == true) hostname.append( name );
+	if(settings["Use Hostname"] == true)
+	{
+		hostname = settings["Hostname"];
+		//make a hostname from the eq name
+		if (hostname.length() < 2)
+		{
+			hostname = name;
+			std::transform( hostname.begin(), hostname.end(), hostname.begin(), [](unsigned char c){ return std::tolower(c); } );
+			settings["Hostname"] = hostname;
+			std::cout << " set hostname key as " << settings["Hostname"] << std::endl;
+		}
+	}
 	client = new TCPClient(settings["IP"],settings["port"],settings["reply timout"],hostname);
 	ss_sleep(100);
 	std::string ip = settings["IP"];
@@ -442,8 +453,8 @@ void PowerDriver::SetStateChanged()
 		}			
 	}
 	
-	if(nChannelsChanged < 1) cm_msg(MINFO, "Power ... ", "changing %s state request failed",name.c_str());
-	else // read changes back from device 
+	//if(nChannelsChanged < 1) cm_msg(MINFO, "Power ... ", "changing %s state request failed",name.c_str()); //this is triggered, even when it works. Maybe a double call or so? FW
+	//else // read changes back from device 
 	{
 		int nChannels = instrumentID.size();
 		for(int i = 0; i<nChannels; i++ ) 
