@@ -27,7 +27,7 @@ port (
     data_en         : in  std_logic;
     ts_in           : in  std_logic_vector(31 downto 0);
     o_ddr_ready     : out std_logic;
-    
+
     -- Input from PCIe demanding events
     pcieclk         : in  std_logic;
     -- request sub headers from DDR memory
@@ -47,8 +47,8 @@ port (
     i_num_req_events: in  std_logic_vector(31 downto 0);
     o_dma_done      : out std_logic;
     i_dma_wen       : in  std_logic;
-    
-    --! status counters 
+
+    --! status counters
     --! 0: cnt_skip_event_dma
     --! 1: A_almost_full
     --! 2: B_almost_full
@@ -93,8 +93,8 @@ architecture rtl of farm_data_path is
 
     signal A_writestate, B_writestate, A_readstate, B_readstate, A_done, B_done	: std_logic;
     signal tofifo_A, tofifo_B : dataplusts_type;
-    signal sync_A_q, sync_B_q : std_logic_vector(527 downto 0);
-    
+    signal sync_A_data, sync_B_data, sync_A_q, sync_B_q : std_logic_vector(527 downto 0);
+
     signal writefifo_A, writefifo_B, A_fifo_empty, B_fifo_empty, A_fifo_empty_last, B_fifo_empty_last :	std_logic;
     signal A_reqfifo_empty, B_reqfifo_empty, A_tagram_write, B_tagram_write	: std_logic;
     signal A_tagram_data, A_tagram_q, B_tagram_data, B_tagram_q	: std_logic_vector(31 downto 0);
@@ -116,60 +116,60 @@ architecture rtl of farm_data_path is
 
     signal A_memreadfifo_data, A_memreadfifo_q, B_memreadfifo_data, B_memreadfifo_q : std_logic_vector(21 downto 0);
     signal A_memreadfifo_write, A_memreadfifo_read, B_memreadfifo_write, B_memreadfifo_read: std_logic;
-    signal A_memreadfifo_empty, B_memreadfifo_empty: std_logic;		 
+    signal A_memreadfifo_empty, B_memreadfifo_empty: std_logic;
 
     signal A_memdatafifo_empty, B_memdatafifo_empty, A_memdatafifo_read, B_memdatafifo_read: std_logic;
-    signal A_memdatafifo_q, B_memdatafifo_q	 :  std_logic_vector(255 downto 0);	 
+    signal A_memdatafifo_q, B_memdatafifo_q	 :  std_logic_vector(255 downto 0);
 
     type output_write_type is (waiting, eventA, eventB, skip_event_A, skip_event_B, write_4kb_padding);
     signal output_write_state : output_write_type;
     signal nummemwords : std_logic_vector(6 downto 0);
     signal tagmemwait_3_state : std_logic_vector(3 downto 0);
-    
+
     signal sync_A_empty, sync_B_empty : std_logic;
-    
+
     signal ddr_ready_A, ddr_ready_B, sync_ddr_A_empty, sync_ddr_B_empty, sync_ddr_A_q, sync_ddr_B_q : std_logic;
-    
+
     signal ts_in_upper, ts_in_lower, ts_in_upper_A, ts_in_upper_B : tsrange_type;
-    
+
     signal A_almost_full, B_almost_full, A_disabled, B_disabled, cnt_4kb_done : std_logic;
     signal A_mem_word_cnt, B_mem_word_cnt : std_logic_vector(5 downto 0);
     signal cnt_skip_event_dma, cnt_num_req_events : std_logic_vector(31 downto 0);
     signal cnt_4kb : std_logic_vector(7 downto 0);
-    
+
 begin
 
     --! counters
     o_counters(0) <= cnt_skip_event_dma;
-    
+
     e_a_almost_full : entity work.counter
     generic map ( WRAP => true, W => 32 )
     port map ( o_cnt => o_counters(1), i_ena => A_almost_full, i_reset_n => reset_A_n, i_clk => A_mem_clk );
-    
+
     e_b_almost_full : entity work.counter
     generic map ( WRAP => true, W => 32 )
     port map ( o_cnt => o_counters(2), i_ena => B_almost_full, i_reset_n => reset_B_n, i_clk => B_mem_clk );
-    
+
     e_dmamemhalffull : entity work.counter
     generic map ( WRAP => true, W => 32 )
     port map ( o_cnt => o_counters(3), i_ena => i_dmamemhalffull, i_reset_n => reset_n, i_clk => pcieclk );
-    
+
     tsblocks <= x"0000" & B_tsrange & A_tsrange;
-    
+
     -- backpressure to bank builder
     A_almost_full <= '1' when A_mem_addr(25 downto 10) = x"FFFF" else '0';
     B_almost_full <= '1' when B_mem_addr(25 downto 10) = x"FFFF" else '0';
-    
+
     ddr_ready_A <= not A_almost_full when A_writestate = '1' else
-                 '0' when A_disabled = '1' else 
+                 '0' when A_disabled = '1' else
                  '0' when A_readstate = '1' else
                  '1';
-                 
+
     ddr_ready_B <= not B_almost_full when B_writestate = '1' else
-                 '0' when B_disabled = '1' else 
+                 '0' when B_disabled = '1' else
                  '0' when B_readstate = '1' else
                  '1';
-                 
+
     sync_ddr_ready_A : entity work.ip_dcfifo
     generic map(
         ADDR_WIDTH  => 4,
@@ -186,7 +186,7 @@ begin
         rdempty     => sync_ddr_A_empty,
         aclr        => reset--,
     );
-    
+
     sync_ddr_ready_B : entity work.ip_dcfifo
     generic map(
         ADDR_WIDTH  => 4,
@@ -203,7 +203,7 @@ begin
         rdempty     => sync_ddr_B_empty,
         aclr        => reset--,
     );
-    
+
     o_ddr_ready <= sync_ddr_A_q or sync_ddr_B_q;
 
     ts_in_upper <= ts_in(tsupper); -- 15 downto 8 from 35 downto 4 of the 48b TS
@@ -215,7 +215,8 @@ begin
     reset_A_n   <= reset_n_ddr3;
     e_reset_B_n : entity work.reset_sync
     port map ( o_reset_n => reset_B_n, i_reset_n => reset_n_ddr3, i_clk => B_mem_clk );
-    
+
+    sync_A_data <= ts_in_upper & ts_in_lower & data_in;
     sync_A : entity work.ip_dcfifo
     generic map(
         ADDR_WIDTH  => 4,
@@ -224,7 +225,7 @@ begin
     )
     port map (
         -- keep time and data
-        data        => ts_in_upper & ts_in_lower & data_in,
+        data        => sync_A_data,
         wrreq       => data_en,
         rdreq       => not sync_A_empty,
         wrclk       => dataclk,
@@ -236,9 +237,10 @@ begin
         wrusedw     => open,
         aclr        => reset--,
     );
-    
+
     ts_in_upper_A <= sync_A_q(527 downto 520);
-    
+
+    sync_B_data <= ts_in_upper & ts_in_lower & data_in;
     sync_B : entity work.ip_dcfifo
     generic map(
         ADDR_WIDTH  => 4,
@@ -247,7 +249,7 @@ begin
     )
     port map (
         -- keep time and data
-        data        => ts_in_upper & ts_in_lower & data_in,
+        data        => sync_B_data,
         wrreq       => data_en,
         rdreq       => not sync_B_empty,
         wrclk       => dataclk,
@@ -259,9 +261,9 @@ begin
         wrusedw     => open,
         aclr        => reset--,
     );
-    
+
     ts_in_upper_B <= sync_B_q(527 downto 520);
-    
+
     process(reset_A_n, A_mem_clk)
         variable tsupperchange : boolean;
     begin
@@ -274,14 +276,14 @@ begin
         tsupper_last_A <= (others => '1');
         --
     elsif ( A_mem_clk'event and A_mem_clk = '1' ) then
-    
+
         tofifo_A    <= sync_A_q(519 downto 0);
         writefifo_A <= '0';
         A_readstate <= '0';
         A_writestate<= '0';
-        
+
         -- start when data is ready
-        -- TODO: MK: can this break if calibration takes to long? 
+        -- TODO: MK: can this break if calibration takes to long?
         -- maybe the run should only start when calibration
         -- is done
         tsupperchange := false;
@@ -291,44 +293,44 @@ begin
                 tsupperchange := true;
             end if;
         end if;
-        
+
         case mem_mode_A is
             when disabled =>
                 if ( A_mem_calibrated = '1' ) then
                     mem_mode_A <= ready;
                     A_disabled <= '0';
                 end if;
-                
+
             when ready =>
                 if ( tsupperchange and A_done = '1' ) then
                     mem_mode_A    <= writing;
                     A_tsrange     <= ts_in_upper_A;
                     writefifo_A   <= '1';
                 end if;
-                
+
             when writing =>
                 A_writestate    <= '1';
-                
+
                 writefifo_A     <= not sync_A_empty;
                 if ( tsupperchange or A_almost_full = '1' ) then
                     mem_mode_A  <= reading;
                     writefifo_A <= '0';
                 end if;
-                
+
             when reading =>
                 A_readstate <= '1';
-                
+
                 if ( tsblock_done = A_tsrange ) then
                     mem_mode_A <= ready;
                 end if;
-                
+
             when others =>
                 mem_mode_A <= disabled;
-                
+
         end case;
     end if;
     end process;
-        
+
     process(reset_B_n, B_mem_clk)
         variable tsupperchange : boolean;
     begin
@@ -341,14 +343,14 @@ begin
         tsupper_last_B <= (others => '1');
         --
     elsif ( B_mem_clk'event and B_mem_clk = '1' ) then
-    
+
         tofifo_B    <= sync_B_q(519 downto 0);
         writefifo_B <= '0';
         B_readstate <= '0';
         B_writestate<= '0';
-        
+
         -- start when data is ready
-        -- TODO: MK: can this break if calibration takes to long? 
+        -- TODO: MK: can this break if calibration takes to long?
         -- maybe the run should only start when calibration
         -- is done
         tsupperchange := false;
@@ -358,39 +360,39 @@ begin
                 tsupperchange := true;
             end if;
         end if;
-        
+
         case mem_mode_B is
             when disabled =>
                 if ( B_mem_calibrated = '1' )then
                     mem_mode_B <= ready;
                     B_disabled <= '0';
                 end if;
-                
+
             when ready  =>
                 if ( tsupperchange and (mem_mode_A /= ready or (mem_mode_A = ready and A_done = '0')) and B_done ='1' ) then
                     mem_mode_B      <= writing;
                     B_tsrange       <= ts_in_upper_B;
                     writefifo_B     <= '1';
                 end if;
-                
+
             when writing =>
                 B_writestate <= '1';
-            
+
                 writefifo_B     <= not sync_B_empty;
                 if ( tsupperchange or B_almost_full = '1' ) then
                     mem_mode_B  <= reading;
                     writefifo_B <= '0';
                 end if;
-                
+
             when reading =>
                 B_readstate     <= '1';
-            
+
                 if ( tsblock_done = B_tsrange ) then
                     mem_mode_B <= ready;
                 end if;
             when others =>
                 mem_mode_B <= disabled;
-                
+
         end case;
     end if;
     end process;
@@ -410,9 +412,9 @@ begin
         empty       => A_fifo_empty,
         sclr        => not reset_A_n--,
     );
-    
+
     A_mem_data  <= qfifo_A(511 downto 0);
-    
+
     tomemfifo_B : entity work.ip_scfifo
     generic map(
         ADDR_WIDTH  => 8,
@@ -428,9 +430,9 @@ begin
         empty       => B_fifo_empty,
         sclr        => not reset_B_n--,
     );
-    
+
     B_mem_data  <= qfifo_B(511 downto 0);
-    
+
     -- Process for writing the A memory
     process(reset_A_n, A_mem_clk)
     begin
@@ -463,7 +465,7 @@ begin
                     A_done              <= '1';
                     -- synthesis translate_on
                 end if;
-                
+
             when ready =>
                 if ( A_writestate = '1' ) then
                     ddr3if_state_A      <= writing;
@@ -473,21 +475,21 @@ begin
                     A_tagts_last        <= (others => '1');
                     A_done              <= '0';
                 end if;
-                
+
             when writing =>
                 if ( A_readstate = '1' and A_fifo_empty = '1' ) then
                     ddr3if_state_A  <= reading;
                     A_readsubstate  <= fifowait;
                 end if;
-                
+
                 if ( A_fifo_empty = '0' and A_mem_ready = '1' ) then
                     readfifo_A      <= '1';
-                    
+
                     -- write DDR memory
                     A_mem_write     <= '1';
                     A_mem_addr      <= A_mem_addr + '1';
                     A_mem_word_cnt  <= A_mem_word_cnt + '1';
-                    
+
                     if ( A_tagts_last /= qfifo_A(519 downto 512) ) then
                         A_tagts_last                <= qfifo_A(519 downto 512);
                         A_tagram_write              <= '1';
@@ -500,13 +502,13 @@ begin
                         A_mem_word_cnt              <= (others => '0');
                     end if;
                 end if;
-                
+
             when reading =>
                 if ( A_readstate = '0' and A_reqfifo_empty = '1' and A_readsubstate = fifowait ) then
                     ddr3if_state_A      <= overwriting;
                     A_tagram_address    <= (others => '1');
                 end if;
-                
+
                 case A_readsubstate is
                     when fifowait =>
                         if ( A_reqfifo_empty = '0' ) then
@@ -518,9 +520,9 @@ begin
                             end if;
                         end if;
                     when tagmemwait_1 =>
-                        A_readsubstate <= tagmemwait_2;	
+                        A_readsubstate <= tagmemwait_2;
                     when tagmemwait_2 =>
-                        A_readsubstate <= tagmemwait_3;	
+                        A_readsubstate <= tagmemwait_3;
                     when tagmemwait_3 =>
                         A_mem_addr  <= A_tagram_q(25 downto 0);
                         A_readwords <= A_tagram_q(31 downto 26) - '1';
@@ -542,7 +544,7 @@ begin
                             A_readsubstate  <= fifowait;
                         end if;
                 end case;
-                                
+
             when overwriting =>
                 A_tagram_address    <= A_tagram_address + '1';
                 A_tagram_write      <= '1';
@@ -551,10 +553,10 @@ begin
                     ddr3if_state_A  <= ready;
                     A_done          <= '1';
                 end if;
-                
+
              when others =>
                 ddr3if_state_A <= disabled;
-                
+
         end case;
     end if;
     end process;
@@ -591,7 +593,7 @@ begin
                     B_done              <= '1';
                     -- synthesis translate_on
                 end if;
-                
+
             when ready =>
                 if ( B_writestate = '1' ) then
                     ddr3if_state_B      <= writing;
@@ -601,21 +603,21 @@ begin
                     B_tagts_last        <= (others => '1');
                     B_done              <= '0';
                 end if;
-                
+
             when writing =>
                 if ( B_readstate = '1' and B_fifo_empty = '1' ) then
                     ddr3if_state_B  <= reading;
                     B_readsubstate  <= fifowait;
                 end if;
-                
+
                 if ( B_fifo_empty = '0' and B_mem_ready = '1' ) then
                     readfifo_B      <= '1';
-                    
+
                     -- write DDR memory
                     B_mem_write     <= '1';
                     B_mem_addr      <= B_mem_addr + '1';
                     B_mem_word_cnt  <= B_mem_word_cnt + '1';
-                    
+
                     if ( B_tagts_last /= qfifo_B(519 downto 512) ) then
                         B_tagts_last                <= qfifo_B(519 downto 512);
                         B_tagram_write              <= '1';
@@ -628,13 +630,13 @@ begin
                         B_mem_word_cnt              <= (others => '0');
                     end if;
                 end if;
-                
+
             when reading =>
                 if ( B_readstate = '0' and B_reqfifo_empty = '1' and B_readsubstate = fifowait ) then
                     ddr3if_state_B      <= overwriting;
                     B_tagram_address    <= (others => '1');
                 end if;
-                
+
                 case B_readsubstate is
                     when fifowait =>
                         if ( B_reqfifo_empty = '0' ) then
@@ -646,9 +648,9 @@ begin
                             end if;
                         end if;
                     when tagmemwait_1 =>
-                        B_readsubstate <= tagmemwait_2;	
+                        B_readsubstate <= tagmemwait_2;
                     when tagmemwait_2 =>
-                        B_readsubstate <= tagmemwait_3;	
+                        B_readsubstate <= tagmemwait_3;
                     when tagmemwait_3 =>
                         B_mem_addr  <= B_tagram_q(25 downto 0);
                         B_readwords <= B_tagram_q(31 downto 26) - '1';
@@ -670,7 +672,7 @@ begin
                             B_readsubstate  <= fifowait;
                         end if;
                 end case;
-                
+
             when overwriting =>
                 B_tagram_address    <= B_tagram_address + '1';
                 B_tagram_write      <= '1';
@@ -679,10 +681,10 @@ begin
                     ddr3if_state_B  <= ready;
                     B_done          <= '1';
                 end if;
-                
+
             when others =>
                 ddr3if_state_B <= disabled;
-                
+
         end case;
     end if;
     end process;
@@ -709,16 +711,16 @@ begin
         dma_data_en <= '0';
         dma_eoe     <= '0';
         o_dma_done  <= '0';
-        
+
         if ( i_dma_wen = '0' ) then
             cnt_num_req_events <= (others => '0');
             cnt_4kb_done <= '0';
         end if;
-        
+
         if ( i_dma_wen = '1' and cnt_num_req_events >= i_num_req_events and cnt_4kb_done = '1' ) then
             o_dma_done <= '1';
         end if;
-        
+
         case output_write_state is
         when waiting =>
             if ( i_dma_wen = '1' and cnt_num_req_events >= i_num_req_events and cnt_4kb_done = '0' ) then
@@ -762,10 +764,10 @@ begin
                 nummemwords     <= nummemwords - '1';
                 if ( nummemwords = "0000001" ) then
                     output_write_state <= waiting;
-                    dma_eoe     <= '1';	
+                    dma_eoe     <= '1';
                 end if;
             end if;
-            
+
         when eventB =>
             if ( B_memdatafifo_empty = '0' ) then
                 dma_data_en     <= i_dma_wen;
@@ -776,7 +778,7 @@ begin
                     dma_eoe     <= '1';
                 end if;
             end if;
-            
+
         when skip_event_A =>
             if ( A_memdatafifo_empty = '0' ) then
                 nummemwords     <= nummemwords - '1';
@@ -784,7 +786,7 @@ begin
                     output_write_state <= waiting;
                 end if;
             end if;
-        
+
         when skip_event_B =>
             if ( B_memdatafifo_empty = '0' ) then
                 nummemwords     <= nummemwords - '1';
@@ -792,7 +794,7 @@ begin
                     output_write_state <= waiting;
                 end if;
             end if;
-            
+
         when write_4kb_padding =>
             dma_data_out <= (others => '1');
             dma_data_en <= '1';
@@ -803,10 +805,10 @@ begin
             else
                 cnt_4kb <= cnt_4kb + '1';
             end if;
-            
+
         when others =>
             output_write_state <= waiting;
-        
+
         end case;
     end if;
     end process;
@@ -922,7 +924,7 @@ begin
         wrusedw     => open,
         aclr        => not reset_B_n--,
     );
- 
+
     A_mdatafdfifo : entity work.ip_dcfifo_mixed_widths
     generic map(
         ADDR_WIDTH_w => 4,
@@ -942,7 +944,7 @@ begin
         rdempty => A_memdatafifo_empty,
         wrfull  => open--,
     );
-    
+
     B_mdatafdfifo : entity work.ip_dcfifo_mixed_widths
     generic map(
         ADDR_WIDTH_w => 4,

@@ -9,7 +9,7 @@
 library ieee;
 use ieee.std_logic_1164.all;
 
-entity dec_8b10b_v2 is
+entity dec_8b10b is
 port (
     -- input 10-bit data (8b10b encoded)
     i_data      : in    std_logic_vector(9 downto 0);
@@ -26,7 +26,7 @@ port (
 );
 end entity;
 
-architecture arch of dec_8b10b_v2 is
+architecture arch of dec_8b10b is
 
     -- disp & 6-bit group
     signal G6sel : std_logic_vector(6 downto 0);
