@@ -11,8 +11,14 @@ i2c_t i2c;
 
 #include "PCIe40.h"
 
-alt_u32 xcvr0_rx_p[] = { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24 };
-alt_u32 xcvr1_rx_p[] = { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24 };
+alt_u32 xcvr0_rx_p[] = {
+    0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11,
+    12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23
+};
+alt_u32 xcvr1_rx_p[] = {
+    0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11,
+    12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23
+};
 
 int main() {
     base_init();
@@ -39,17 +45,19 @@ int main() {
         case '1': {
             xcvr_block_t xcvr_block((alt_u32*)(AVM_XCVR0_BASE | ALT_CPU_DCACHE_BYPASS_MASK), AVM_XCVR0_SPAN);
             xcvr_block.rx_p = xcvr0_rx_p;
+            xcvr_block.n = 24;
             xcvr_block.menu();
             break;
         }
         case '2': {
             xcvr_block_t xcvr_block((alt_u32*)(AVM_XCVR1_BASE | ALT_CPU_DCACHE_BYPASS_MASK), AVM_XCVR1_SPAN);
             xcvr_block.rx_p = xcvr1_rx_p;
+            xcvr_block.n = 24;
             xcvr_block.menu();
             break;
         }
         case 's': {
-            xcvr_block_t sfp((alt_u32*)(AVM_SFP_BASE | ALT_CPU_DCACHE_BYPASS_MASK));
+            xcvr_block_t sfp((alt_u32*)(AVM_SFP_BASE | ALT_CPU_DCACHE_BYPASS_MASK), AVM_SFP_SPAN);
             sfp.menu();
             break;
         }

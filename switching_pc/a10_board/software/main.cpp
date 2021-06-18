@@ -68,7 +68,7 @@ int main() {
             flash.menu();
             break;
         case '2':
-            menu_xcvr(AVM_XCVR0_BASE);
+            menu_xcvr(AVM_XCVR0_BASE, AVM_XCVR0_SPAN);
             break;
         case '8':
             fan.menu();

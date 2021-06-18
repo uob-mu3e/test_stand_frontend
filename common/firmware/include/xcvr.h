@@ -13,6 +13,7 @@ struct xcvr_block_t {
     alt_u32 span;
 
     alt_u32 ch = 0;
+    int n = 0;
     alt_u32* rx_p = nullptr;
 
     explicit
@@ -20,7 +21,9 @@ struct xcvr_block_t {
     }
 
     volatile alt_u32* xcvr_ch(alt_u32 i) {
-        if(rx_p != nullptr) i = rx_p[i];
+        if(n != 0 && i >= n) return nullptr;
+
+        if(rx_p != nullptr && i < n) i = rx_p[i];
 
         volatile alt_u32* xcvr = base;
         while(1) {
@@ -69,7 +72,7 @@ struct xcvr_block_t {
             xcvr[0x20] = 0x01; // rx
             break;
         case 'R': { // reset (all channels)
-            for(int i = 0;; i++) {
+            for(alt_u32 i = 0;; i++) {
                 volatile alt_u32* xcvr = xcvr_ch(i);
                 if(xcvr == nullptr) break;
                 xcvr[0x10] = 0x01; // tx
@@ -81,7 +84,7 @@ struct xcvr_block_t {
             xcvr[0x2F] ^= 0x01;
             break;
         case 'L': { // toggle loopback (all channels)
-            for(int i = 0;; i++) {
+            for(alt_u32 i = 0;; i++) {
                 volatile alt_u32* xcvr = xcvr_ch(i);
                 if(xcvr == nullptr) break;
                 xcvr[0x2F] ^= 0x01;
@@ -135,8 +138,8 @@ struct xcvr_block_t {
         volatile alt_u32* xcvr = xcvr_ch(ch);
         if(xcvr == nullptr) return;
 
-        char id = '-';
-        printf("xcvr[%c].ch[0x%02X], lpbk = %d\n", id, ch, xcvr[0x2F]);
+        char id = 'A' + (xcvr - base) / (XCVR_SPAN / 4);
+        printf("xcvr[%c].ch[0x%02X], lpbk = %d\n", id, xcvr[0x00], xcvr[0x2F]);
         printf("                R_DA S_LS_R E__FDE\n");
         printf("  tx    :   %s  0x%02X 0x%04X 0x%04X\n",
             xcvr[0x10] == 0x00 && xcvr[0x11] == 0x0001 && xcvr[0x12] == 0x0000 ? "OK" : "  ",
