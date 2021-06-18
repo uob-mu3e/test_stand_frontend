@@ -200,6 +200,13 @@ var ladder_clicked = function(ladname) {
     document.getElementById("ladder_lv_read_volt").setAttribute("data-odb-path", "/Equipment/HAMEG" + lads[ladname]["json_node"]["LV_parameters"]["Module"].toString()+ "/Variables/Voltage[" + lads[ladname]["json_node"]["LV_parameters"]["Channel"].toString()  + "]")
     document.getElementById("ladder_lv_read_curr").setAttribute("data-odb-path", "/Equipment/HAMEG" + lads[ladname]["json_node"]["LV_parameters"]["Module"].toString()+ "/Variables/Current[" + lads[ladname]["json_node"]["LV_parameters"]["Channel"].toString()  + "]")
 
+
+    mjsonrpc_db_get_values(["/Equipment/HAMEG" + lads[ladname]["json_node"]["LV_parameters"]["Module"].toString()+ "/Variables/State[" + lads[ladname]["json_node"]["LV_parameters"]["Channel"].toString()  + "]"]).then(function(rpc) {
+       document.getElementById("debug").textContent = JSON.stringify(rpc.result)
+    }).catch(function(error) {
+       mjsonrpc_error_alert(error);
+    });
+
     reset_table("ladder_hv_tab", 0)
     tab_fill = {"HV-box Module : " : "Module", "IP address : " : "IP", "HV-box Channel : " : "Channel"}
     fill_table_by_json("ladder_hv_tab", lads[ladname]["json_node"]["HV_parameters"], tab_fill)
@@ -478,6 +485,16 @@ var create_decagon = function(ele, prefix, inversion) {
     }
 }
 
+var create_ladder_legend = function() {
+    for (state in states) {
+        let lad = document.createElement("div")
+        lad.type = "submit"
+        lad.classList.add("ladderDiv")
+        lad.classList.add("ladder_unselected")
+        lad.classList.add("ladder_unselected")
+    }
+}
+
 var list_chips_configuration = function (ele, direction) {
     var node_us = json_config["Stations"]["Tracker"]["Direction"][direction]
     multiple_chip_boxes[direction] = {}
@@ -499,6 +516,9 @@ var list_chips_configuration = function (ele, direction) {
                 chip_cb_div.appendChild(chip_label)
                 ele.appendChild(chip_cb_div)
             }
+            var linebreak = document.createElement("div");
+            linebreak.classList.add("line_break")
+            ele.appendChild(linebreak)
         }
     }
 }
