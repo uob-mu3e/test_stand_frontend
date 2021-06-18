@@ -1,6 +1,6 @@
 --
 -- author : Alexandr Kozlinskiy
--- date : 2017-02-24
+-- date : 2019-03-20
 --
 
 library ieee;
@@ -8,21 +8,20 @@ use ieee.std_logic_1164.all;
 use ieee.numeric_std.all;
 use ieee.std_logic_unsigned.all;
 
-entity xcvr_a10 is
+entity ${NAME} is
 generic (
     NUMBER_OF_CHANNELS_g : positive := 4;
     CHANNEL_WIDTH_g : positive := 32;
-    INPUT_CLOCK_FREQUENCY_g : positive := 125000000;
-    DATA_RATE_g : positive := 5000;
+    g_REFCLK_MHZ : real := 125.0;
+    g_RATE_MBPS : positive := 5000;
     K_g : std_logic_vector(7 downto 0) := work.util.D28_5;
-    CLK_MHZ_g : positive := 50--;
+    g_CLK_MHZ : real := 50.0--;
 );
 port (
     i_rx_serial         : in    std_logic_vector(NUMBER_OF_CHANNELS_g-1 downto 0);
     o_tx_serial         : out   std_logic_vector(NUMBER_OF_CHANNELS_g-1 downto 0);
 
-    i_pll_clk           : in    std_logic;
-    i_cdr_clk           : in    std_logic;
+    i_refclk            : in    std_logic;
 
     o_rx_data           : out   std_logic_vector(NUMBER_OF_CHANNELS_g*CHANNEL_WIDTH_g-1 downto 0);
     o_rx_datak          : out   std_logic_vector(NUMBER_OF_CHANNELS_g*CHANNEL_WIDTH_g/8-1 downto 0);
@@ -44,20 +43,20 @@ port (
     i_avs_writedata     : in    std_logic_vector(31 downto 0) := (others => '0');
     o_avs_waitrequest   : out   std_logic;
 
-    -- TODO: rename to i_reset_n
-    i_reset             : in    std_logic;
+    i_reset_n           : in    std_logic;
     i_clk               : in    std_logic--;
 );
 end entity;
 
-architecture arch of xcvr_a10 is
-
-    signal reset, reset_n : std_logic;
+architecture arch of ${NAME} is
 
     signal ch : integer range 0 to NUMBER_OF_CHANNELS_g-1 := 0;
 
     signal av_ctrl : work.util.avalon_t;
     signal av_phy, av_pll : work.util.avalon_t;
+
+    signal rx_parallel_data     :   std_logic_vector(NUMBER_OF_CHANNELS_g*CHANNEL_WIDTH_g/8*10-1 downto 0);
+    signal tx_parallel_data     :   std_logic_vector(NUMBER_OF_CHANNELS_g*CHANNEL_WIDTH_g/8*10-1 downto 0);
 
     signal rx_data              :   std_logic_vector(NUMBER_OF_CHANNELS_g*CHANNEL_WIDTH_g-1 downto 0);
     signal rx_datak             :   std_logic_vector(NUMBER_OF_CHANNELS_g*CHANNEL_WIDTH_g/8-1 downto 0);
@@ -83,13 +82,13 @@ architecture arch of xcvr_a10 is
     signal rx_is_lockedtoref    :   std_logic_vector(NUMBER_OF_CHANNELS_g-1 downto 0);
     signal rx_is_lockedtodata   :   std_logic_vector(NUMBER_OF_CHANNELS_g-1 downto 0);
 
-    signal tx_fifo_error        :   std_logic_vector(NUMBER_OF_CHANNELS_g-1 downto 0);
-    signal rx_fifo_error        :   std_logic_vector(NUMBER_OF_CHANNELS_g-1 downto 0);
-    signal rx_errdetect         :   std_logic_vector(NUMBER_OF_CHANNELS_g*CHANNEL_WIDTH_g/8-1 downto 0);
-    signal rx_disperr           :   std_logic_vector(NUMBER_OF_CHANNELS_g*CHANNEL_WIDTH_g/8-1 downto 0);
+    signal tx_fifo_error        :   std_logic_vector(NUMBER_OF_CHANNELS_g-1 downto 0) := (others => '0');
+    signal rx_fifo_error        :   std_logic_vector(NUMBER_OF_CHANNELS_g-1 downto 0) := (others => '0');
+    signal rx_errdetect         :   std_logic_vector(NUMBER_OF_CHANNELS_g*CHANNEL_WIDTH_g/8-1 downto 0) := (others => '0');
+    signal rx_disperr           :   std_logic_vector(NUMBER_OF_CHANNELS_g*CHANNEL_WIDTH_g/8-1 downto 0) := (others => '0');
 
-    signal rx_syncstatus        :   std_logic_vector(NUMBER_OF_CHANNELS_g*CHANNEL_WIDTH_g/8-1 downto 0);
-    signal rx_patterndetect     :   std_logic_vector(NUMBER_OF_CHANNELS_g*CHANNEL_WIDTH_g/8-1 downto 0);
+    signal rx_syncstatus        :   std_logic_vector(NUMBER_OF_CHANNELS_g*CHANNEL_WIDTH_g/8-1 downto 0) := (others => '0');
+    signal rx_patterndetect     :   std_logic_vector(NUMBER_OF_CHANNELS_g*CHANNEL_WIDTH_g/8-1 downto 0) := (others => '0');
     signal rx_enapatternalign   :   std_logic_vector(NUMBER_OF_CHANNELS_g-1 downto 0);
 
     signal rx_seriallpbken      :   std_logic_vector(NUMBER_OF_CHANNELS_g-1 downto 0);
@@ -97,6 +96,7 @@ architecture arch of xcvr_a10 is
 
 
     type rx_t is record
+        data10  :   std_logic_vector(CHANNEL_WIDTH_g/8*10-1 downto 0);
         data    :   std_logic_vector(CHANNEL_WIDTH_g-1 downto 0);
         datak   :   std_logic_vector(CHANNEL_WIDTH_g/8-1 downto 0);
         locked  :   std_logic;
@@ -119,9 +119,6 @@ architecture arch of xcvr_a10 is
 
 begin
 
-    reset <= i_reset;
-    reset_n <= not i_reset;
-
     gen_rx_data : for i in NUMBER_OF_CHANNELS_g-1 downto 0 generate
     begin
         o_rx_data(CHANNEL_WIDTH_g-1 + CHANNEL_WIDTH_g*i downto CHANNEL_WIDTH_g*i) <= rx(i).data;
@@ -134,8 +131,45 @@ begin
 
     g_rx_align : for i in NUMBER_OF_CHANNELS_g-1 downto 0 generate
     begin
+        process(i_rx_clkin(i))
+        begin
+        if rising_edge(i_rx_clkin(i)) then
+            rx(i).data10 <= rx_parallel_data(CHANNEL_WIDTH_g/8*10-1 + CHANNEL_WIDTH_g/8*10*i downto CHANNEL_WIDTH_g/8*10*i);
+        end if;
+        end process;
+
+        e_rx_8b10b_dec : entity work.dec_8b10b_n
+        generic map (
+            N_BYTES_g => CHANNEL_WIDTH_g/8--,
+        )
+        port map (
+            i_data => rx(i).data10,
+            o_data => rx_data(CHANNEL_WIDTH_g-1 + CHANNEL_WIDTH_g*i downto CHANNEL_WIDTH_g*i),
+            o_datak => rx_datak(CHANNEL_WIDTH_g/8-1 + CHANNEL_WIDTH_g/8*i downto CHANNEL_WIDTH_g/8*i),
+            o_err => rx_errdetect(i*CHANNEL_WIDTH_g/8),
+            i_reset_n => '1',
+            i_clk => i_rx_clkin(i)--,
+        );
+        rx_patterndetect(i*CHANNEL_WIDTH_g/8) <= '1' when (
+            rx_data(7 + CHANNEL_WIDTH_g*i downto CHANNEL_WIDTH_g*i) = X"BC" and
+            rx_datak(CHANNEL_WIDTH_g/8*i) = '1'
+        ) else '0';
+
+        e_tx_8b10b_enc : entity work.enc_8b10b_n
+        generic map (
+            N_BYTES_g => CHANNEL_WIDTH_g/8--,
+        )
+        port map (
+            i_data => i_tx_data(CHANNEL_WIDTH_g-1 + CHANNEL_WIDTH_g*i downto CHANNEL_WIDTH_g*i),
+            i_datak => i_tx_datak(CHANNEL_WIDTH_g/8-1 + CHANNEL_WIDTH_g/8*i downto CHANNEL_WIDTH_g/8*i),
+            o_data => tx_parallel_data(CHANNEL_WIDTH_g/8*10-1 + CHANNEL_WIDTH_g/8*10*i downto CHANNEL_WIDTH_g/8*10*i),
+            o_err => open,
+            i_reset_n => '1',
+            i_clk => i_tx_clkin(i)--,
+        );
+
         e_rx_rst_n : entity work.reset_sync
-        port map ( o_reset_n => rx(i).rst_n, i_reset_n => reset_n and rx_rst_n(i), i_clk => i_rx_clkin(i) );
+        port map ( o_reset_n => rx(i).rst_n, i_reset_n => i_reset_n and rx_rst_n(i), i_clk => i_rx_clkin(i) );
 
         e_rx_align : entity work.rx_align
         generic map (
@@ -189,9 +223,9 @@ begin
     end generate;
 
     -- av_ctrl process, avalon iface
-    process(i_clk, reset_n)
+    process(i_clk, i_reset_n)
     begin
-    if ( reset_n = '0' ) then
+    if ( i_reset_n = '0' ) then
         av_ctrl.waitrequest <= '1';
         ch <= 0;
         rx_seriallpbken <= (others => '0');
@@ -302,9 +336,9 @@ begin
 
         o_avs_waitrequest <= avs_waitrequest;
 
-        process(i_clk, reset_n)
+        process(i_clk, i_reset_n)
         begin
-        if ( reset_n = '0' ) then
+        if ( i_reset_n = '0' ) then
             avs_waitrequest <= '1';
             av_ctrl.read <= '0';
             av_ctrl.write <= '0';
@@ -357,12 +391,12 @@ begin
         end process;
     end block;
 
-    e_phy : component work.cmp.ip_xcvr_phy
+    e_phy : component work.cmp.ip_${NAME}_phy
     port map (
         tx_serial_data  => o_tx_serial,
         rx_serial_data  => i_rx_serial,
 
-        rx_cdr_refclk0  => i_cdr_clk,
+        rx_cdr_refclk0  => i_refclk,
         tx_serial_clk0  => (others => tx_serial_clk),
 
         -- analog reset => reset PMA/CDR (phys medium attachment, clock data recovery)
@@ -379,19 +413,11 @@ begin
         -- When asserted, indicates that the RX CDR is locked to incoming data. This signal is optional.
         rx_is_lockedtodata => rx_is_lockedtodata,
 
-        -- When asserted, indicates that a received 10-bit code group has an 8B/10B code violation or disparity error.
-        rx_errdetect => rx_errdetect,
-        -- When asserted, indicates that the received 10-bit code or data group has a disparity error.
-        rx_disperr => rx_disperr,
-        rx_runningdisp => open,
+        rx_bitslip              => rx_enapatternalign,
 
-        rx_syncstatus => rx_syncstatus,
-        rx_patterndetect => rx_patterndetect,
-
-        tx_parallel_data    => i_tx_data,
-        tx_datak            => i_tx_datak,
-        rx_parallel_data    => rx_data,
-        rx_datak            => rx_datak,
+        rx_parallel_data        => rx_parallel_data,
+        tx_parallel_data        => tx_parallel_data,
+        tx_enh_data_valid       => (others => '1'),
 
         tx_clkout       => o_tx_clkout,
         tx_coreclkin    => i_tx_clkin,
@@ -409,13 +435,13 @@ begin
         reconfig_write(0)       => av_phy.write,
         reconfig_writedata      => av_phy.writedata,
         reconfig_waitrequest(0) => av_phy.waitrequest,
-        reconfig_reset(0)       => reset,
+        reconfig_reset(0)       => not i_reset_n,
         reconfig_clk(0)         => i_clk--,
     );
 
-    e_fpll : component work.cmp.ip_xcvr_fpll
+    e_fpll : component work.cmp.ip_${NAME}_fpll
     port map (
-        pll_refclk0     => i_pll_clk,
+        pll_refclk0     => i_refclk,
         pll_powerdown   => pll_powerdown(0),
         pll_cal_busy    => pll_cal_busy(0),
         pll_locked      => pll_locked(0),
@@ -427,14 +453,14 @@ begin
         reconfig_write0         => av_pll.write,
         reconfig_writedata0     => av_pll.writedata,
         reconfig_waitrequest0   => av_pll.waitrequest,
-        reconfig_reset0         => reset,
+        reconfig_reset0         => not i_reset_n,
         reconfig_clk0           => i_clk--,
     );
 
     --
     --
     --
-    e_reset : component work.cmp.ip_xcvr_reset
+    e_reset : component work.cmp.ip_${NAME}_reset
     port map (
         tx_analogreset => tx_analogreset,
         tx_digitalreset => tx_digitalreset,
@@ -455,7 +481,7 @@ begin
 
         pll_select => (others => '0'),
 
-        reset => reset,
+        reset => not i_reset_n,
         clock => i_clk--,
     );
 

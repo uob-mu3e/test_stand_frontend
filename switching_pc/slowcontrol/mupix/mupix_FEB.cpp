@@ -39,10 +39,10 @@ using midas::odb;
 #define FEB_REPLY_ERROR   1
 
 //Mapping to physical ports of switching board.
-uint16_t MupixFEB::FPGAid_from_ID(int asic) const {return asic/2;}
-uint16_t MupixFEB::ASICid_from_ID(int asic) const {return asic%2;}
+uint16_t MupixFEB::FPGAid_from_ID(int asic) const {return asic/12;}
+uint16_t MupixFEB::ASICid_from_ID(int asic) const {return asic%12;}
 
-uint16_t MupixFEB::GetNumASICs() const {return febs.size()*1;} //TODO: add parameter for number of asics per FEB, later more flexibility to have different number of sensors per FEB
+uint16_t MupixFEB::GetNumASICs() const {return febs.size()*12;} //TODO: add parameter for number of asics per FEB, later more flexibility to have different number of sensors per FEB
 
 void invert_datastream(uint32_t * datastream) {
 
@@ -82,38 +82,62 @@ int MupixFEB::ConfigureASICs(){
       // down a lot with a well chosen function call
 
       try {
+          uint32_t bitpattern_m;
+          vector<vector<uint32_t> > payload_m;
+          vector<uint32_t> payload;
+          payload_m.push_back(vector<uint32_t>(reinterpret_cast<uint32_t*>(config->bitpattern_w),reinterpret_cast<uint32_t*>(config->bitpattern_w)+config->length_32bits));
 
-         uint8_t bitpattern[config->length];
-         std::cout<< "Printing config:"<<std::endl;
-         for (unsigned int nbit = 0; nbit < config->length; ++nbit) {
-             for(short i=0;i<8;i++){// reverse Bits (reverse config setting is something different !!)
-                  bitpattern[nbit] |= ((config->bitpattern_w[nbit]>>i) & 0b1)<<(7-i);
-             }
-         }
+          for(uint32_t j = 0; j<payload_m.at(0).size();j++){
+              bitpattern_m=0;
+              for(short i=0; i<32; i++){
+                  bitpattern_m|= ((payload_m.at(0).at(j)>>i) & 0b1)<<(31-i);
+              }
+              payload.push_back(bitpattern_m);
+          }
 
-         uint32_t * datastream = (uint32_t*)(bitpattern);
-
-         vector<uint32_t> payload;
-         for (unsigned int nbit = 0; nbit < config->length_32bits; ++nbit) {
-             uint32_t tmp = ((datastream[nbit]>>24)&0x000000FF) | ((datastream[nbit]>>8)&0x0000FF00) | ((datastream[nbit]<<8)&0x00FF0000) | ((datastream[nbit]<<24)&0xFF000000);
-             payload.push_back(tmp);
-             std::cout << std::hex << tmp << std::endl;
-         }
+          for(uint32_t j = 0; j<payload.size();j++){
+              std::cout<<std::hex<<payload.at(j)<<std::endl;
+          }
 
          // ToDo: Col Test Tdac bits from file
          for(int i=0; i<85;i++){
              payload.push_back(0x00000000);
          }
-         std::cout<<"length 32:"<<config->length_32bits<<std::endl;
-         std::cout<<"length byte:"<<config->length<<std::endl;
 
-         // TODO: include headers for addr.
-         feb_sc.FEB_write(SP_ID, 0xFF47, 0x0000000F); // SPI slow down reg
-         feb_sc.FEB_write(SP_ID, 0xFF40, 0x00000FC0); // reset Mupix config fifos
-         feb_sc.FEB_write(SP_ID, 0xFF40, 0x00000000);
-         feb_sc.FEB_write(SP_ID, 0xFF49, 0x00000003); // idk, have to look it up
-         rpc_status = feb_sc.FEB_write(SP_ID, 0xFF4A, payload,true);
+         //Mask all chips but this one
+         uint32_t chip_select_mask = 0xfff; //all chips masked (12 times 1)
+         int pos = ASICid_from_ID(asic);
+         chip_select_mask &= ((~0x1) << pos);
+         for (int i = 0; i < pos; ++i)
+             chip_select_mask |= (0x1 << i);
 
+         uint32_t spi_busy = 1;
+         uint32_t count = 0;
+         uint32_t limit = 5;
+         rpc_status=FEB_REPLY_SUCCESS;
+
+         feb_sc.FEB_register_read(SP_ID,0x4B,spi_busy);
+
+         while(spi_busy==1 && count < limit){
+             sleep(1);
+             feb_sc.FEB_register_read(SP_ID,0x4B,spi_busy);
+             count++;
+             cm_msg(MINFO, "MupixFEB", "Mupix config spi busy .. waiting");
+         }
+         if(count == limit){
+             std::cout<<"Timeout"<<std::endl;
+             cm_msg(MERROR, "setup_mupix", "FEB Mupix SPI timeout");
+         }else{
+            std::cout << "Chip select mask = " << std::hex << chip_select_mask << std::endl;
+            feb_sc.FEB_write(SP_ID, 0xFF48, chip_select_mask);
+
+            // TODO: include headers for addr.
+            feb_sc.FEB_write(SP_ID, 0xFF47, 0x0000000F); // SPI slow down reg
+            feb_sc.FEB_write(SP_ID, 0xFF40, 0x00000FC0); // reset Mupix config fifos
+            feb_sc.FEB_write(SP_ID, 0xFF40, 0x00000000);
+            feb_sc.FEB_write(SP_ID, 0xFF49, 0x00000003); // idk, have to look it up
+            rpc_status = feb_sc.FEB_write(SP_ID, 0xFF4A, payload,true);
+         }
       } catch(std::exception& e) {
           cm_msg(MERROR, "setup_mupix", "Communication error while configuring MuPix %d: %s", asic, e.what());
           set_equipment_status(equipment_name, "SB-FEB Communication error", "red");
@@ -179,26 +203,14 @@ unsigned char reverse(unsigned char b) {
    return b;
 }
 
-// TODO: The following two functions do the same???
-uint32_t MupixFEB::ReadBackCounters(uint16_t FPGA_ID){
-   //map to SB fiber
-   auto FEB = febs[FPGA_ID];
-   if(!FEB.IsScEnabled()) return SUCCESS; //skip disabled fibers
-   if(FEB.SB_Number()!= SB_number) return SUCCESS; //skip commands not for this SB
-
-   vector<uint32_t> hitsEna(1);
-   // TODO: Get rid of hardcoded address
-    feb_sc.FEB_register_read(FEB.SB_Port(), 0x9a, hitsEna);
-   return hitsEna[0];
+uint32_t MupixFEB::ReadBackLVDSNumHits(uint16_t FPGA_ID, uint16_t LVDS_ID)
+{
+    cm_msg(MINFO, "MupixFEB::ReadBackLVDSNumHits" , "Implement Me");
+    return 0;
 }
 
-uint32_t MupixFEB::ReadBackHitsEnaRate(uint16_t FPGA_ID){
-    auto FEB = febs[FPGA_ID];
-    if(!FEB.IsScEnabled()) return SUCCESS; //skip disabled fibers
-    if(FEB.SB_Number()!= SB_number) return SUCCESS; //skip commands not for this SB
-    
-    vector<uint32_t> hitsEna(1);
-    // TODO: Get rid of hardcoded address
-    feb_sc.FEB_register_read(FEB.SB_Port(), 0x9a, hitsEna);
-    return hitsEna[0];
+uint32_t MupixFEB::ReadBackLVDSNumHitsInMupixFormat(uint16_t FPGA_ID, uint16_t LVDS_ID)
+{
+    cm_msg(MINFO, "MupixFEB::ReadBackLVDSNumHitsInMupixFormat" , "Implement Me");
+    return 0;
 }

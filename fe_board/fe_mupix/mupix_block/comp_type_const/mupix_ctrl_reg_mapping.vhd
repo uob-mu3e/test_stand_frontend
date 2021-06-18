@@ -24,6 +24,7 @@ port (
     i_reg_wdata                 : in  std_logic_vector(31 downto 0);
 
     -- inputs  156--------------------------------------------
+    i_mp_spi_busy               : in std_logic;
 
     -- outputs 156--------------------------------------------
 
@@ -129,6 +130,11 @@ architecture rtl of mupix_ctrl_reg_mapping is
             if ( regaddr = MP_CTRL_ALL_REGISTER_W and i_reg_we = '1' ) then
                 o_mp_ctrl_data_all      <= i_reg_wdata;
                 o_mp_ctrl_data_all_we   <= '1';
+            end if;
+
+            if ( regaddr = MP_CTRL_SPI_BUSY_REGISTER_R and i_reg_re = '1' ) then
+                o_reg_rdata(0) <= i_mp_spi_busy;
+                o_reg_rdata(31 downto 1) <= (others => '0');
             end if;
 
         end if;

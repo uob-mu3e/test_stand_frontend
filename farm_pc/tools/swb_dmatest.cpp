@@ -30,7 +30,6 @@ void print_usage(){
     cout << "Usage: " << endl;
     cout << "       dmatest <readout mode> <stop dma> <readout words> <link mask> <use pixel>" << endl;
     cout << " readout mode: 0 = use stream merger to readout links" << endl;
-    cout << " readout mode: 1 = use one link to readout (not working)" << endl;
     cout << " readout mode: 2 = use stream merger to readout datagen" << endl;
     cout << " readout mode: 3 = use time merger to readout datagen" << endl;
     cout << " readout mode: 4 = use time merger to readout links" << endl;
@@ -147,9 +146,6 @@ int main(int argc, char *argv[])
     // use stream merger to readout links
     if ( atoi(argv[1]) == 0 ) mu.write_register(mask_n_add, strtol(argv[4], NULL, 16));
     if ( atoi(argv[1]) == 0 ) mu.write_register(SWB_READOUT_STATE_REGISTER_W, 0x42 | (set_pixel << 7));
-    // use one link to readout --> does not work 
-    if ( atoi(argv[1]) == 1 ) mu.write_register(SWB_READOUT_LINK_REGISTER_W, strtol(argv[4], NULL, 16));
-    if ( atoi(argv[1]) == 1 ) mu.write_register(SWB_READOUT_STATE_REGISTER_W, 0x9 | (set_pixel << 7));
     // use stream merger to readout datagen
     if ( atoi(argv[1]) == 2 ) mu.write_register(mask_n_add, strtol(argv[4], NULL, 16));
     if ( atoi(argv[1]) == 2 ) mu.write_register(SWB_READOUT_STATE_REGISTER_W, 0x3 | (set_pixel << 7));

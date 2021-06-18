@@ -51,8 +51,10 @@ architecture arch of xcvr_block is
     signal rx_datak, tx_datak : datak_array_t(g_XCVR_N-1 downto 0);
 
     signal avs_waitrequest : std_logic;
-    signal av : work.util.avmm_array_t(g_XCVR_N-1 downto 0);
-    signal av_i : integer;
+    signal av : work.util.avmm_array_t(15 downto 0);
+    -- chip select
+    signal cs : integer;
+    signal timeout : unsigned(7 downto 0);
 
 begin
 
@@ -70,16 +72,15 @@ begin
         e_xcvr_a10 : entity work.xcvr_a10
         generic map (
             NUMBER_OF_CHANNELS_g => g_CHANNELS,
-            INPUT_CLOCK_FREQUENCY_g => integer(g_REFCLK_MHZ * 1000000.0),
-            DATA_RATE_g => g_RATE_MBPS,
-            CLK_MHZ_g => integer(g_CLK_MHZ)--,
+            g_REFCLK_MHZ => g_REFCLK_MHZ,
+            g_RATE_MBPS => g_RATE_MBPS,
+            g_CLK_MHZ => g_CLK_MHZ--,
         )
         port map (
             i_rx_serial => i_rx_serial(g_CHANNELS*i + g_CHANNELS-1 downto 0 + g_CHANNELS*i),
             o_tx_serial => o_tx_serial(g_CHANNELS*i + g_CHANNELS-1 downto 0 + g_CHANNELS*i),
 
-            i_pll_clk   => i_refclk(i),
-            i_cdr_clk   => i_refclk(i),
+            i_refclk    => i_refclk(i),
 
             o_rx_data   => rx_data(i),
             o_rx_datak  => rx_datak(i),
@@ -98,7 +99,7 @@ begin
             i_avs_writedata   => av(i).writedata,
             o_avs_waitrequest => av(i).waitrequest,
 
-            i_reset     => not i_reset_n,
+            i_reset_n   => i_reset_n,
             i_clk       => i_clk--,
         );
         end generate;
@@ -107,16 +108,15 @@ begin
         e_xcvr_enh : entity work.xcvr_enh
         generic map (
             NUMBER_OF_CHANNELS_g => g_CHANNELS,
-            INPUT_CLOCK_FREQUENCY_g => integer(g_REFCLK_MHZ * 1000000.0),
-            DATA_RATE_g => g_RATE_MBPS,
-            CLK_MHZ_g => integer(g_CLK_MHZ)--,
+            g_REFCLK_MHZ => g_REFCLK_MHZ,
+            g_RATE_MBPS => g_RATE_MBPS,
+            g_CLK_MHZ => g_CLK_MHZ--,
         )
         port map (
             i_rx_serial => i_rx_serial(g_CHANNELS*i + g_CHANNELS-1 downto 0 + g_CHANNELS*i),
             o_tx_serial => o_tx_serial(g_CHANNELS*i + g_CHANNELS-1 downto 0 + g_CHANNELS*i),
 
-            i_pll_clk   => i_refclk(i),
-            i_cdr_clk   => i_refclk(i),
+            i_refclk    => i_refclk(i),
 
             o_rx_data   => rx_data(i),
             o_rx_datak  => rx_datak(i),
@@ -135,7 +135,7 @@ begin
             i_avs_writedata   => av(i).writedata,
             o_avs_waitrequest => av(i).waitrequest,
 
-            i_reset     => not i_reset_n,
+            i_reset_n   => i_reset_n,
             i_clk       => i_clk--,
         );
         end generate;
@@ -145,45 +145,52 @@ begin
 
     o_avs_waitrequest <= avs_waitrequest;
 
-    av_i <= to_integer(unsigned(i_avs_address(i_avs_address'left downto 14)));
+    cs <= to_integer(unsigned(i_avs_address(i_avs_address'left downto 14)));
 
     -- avmm routing
     process(i_clk, i_reset_n)
     begin
     if ( i_reset_n = '0' ) then
-        o_avs_readdata <= X"CCCCCCCC";
         avs_waitrequest <= '1';
-        for i in 0 to g_XCVR_N-1 loop
+        timeout <= (others => '0');
+        for i in av'range loop
             av(i).read <= '0';
             av(i).write <= '0';
         end loop;
         --
     elsif rising_edge(i_clk) then
-        o_avs_readdata <= X"CCCCCCCC";
         avs_waitrequest <= '1';
+        timeout <= (others => '0');
 
-        for i in av'range loop
-            if ( i = av_i and av(i).read = '0' and av(i).write = '0' and avs_waitrequest = '1' ) then
+        if ( i_avs_read /= i_avs_write and avs_waitrequest = '1' ) then
+            if ( av(cs).read = av(cs).write ) then
                 -- start read/write request
-                av(i).address(i_avs_address'range) <= i_avs_address;
-                av(i).read <= i_avs_read;
-                av(i).write <= i_avs_write;
-                av(i).writedata <= i_avs_writedata;
-            end if;
-
-            if ( av(i).read /= av(i).write and av(i).waitrequest = '0' ) then
+                av(cs).address(i_avs_address'range) <= i_avs_address;
+                av(cs).read <= i_avs_read;
+                av(cs).write <= i_avs_write;
+                av(cs).writedata <= i_avs_writedata;
+            elsif ( av(cs).waitrequest = '0' ) then
                 -- done
-                av(i).read <= '0';
-                o_avs_readdata <= av(i).readdata;
-                av(i).write <= '0';
+                av(cs).read <= '0';
+                o_avs_readdata <= av(cs).readdata;
+                av(cs).write <= '0';
                 avs_waitrequest <= '0';
             end if;
-        end loop;
 
-        if ( i_avs_read /= i_avs_write and av_i >= g_XCVR_N ) then
-            o_avs_readdata <= X"CCCCCCCC";
-            avs_waitrequest <= '0';
+            if ( cs >= g_XCVR_N or timeout = (timeout'range => '1') ) then
+                o_avs_readdata <= X"CCCCCCCC";
+                avs_waitrequest <= '0';
+            end if;
+
+            timeout <= timeout + 1;
         end if;
+
+        for i in av'range loop
+            if ( av(i).read /= av(i).write and av(i).waitrequest = '0' ) then
+                av(i).read <= '0';
+                av(i).write <= '0';
+            end if;
+        end loop;
 
         --
     end if;

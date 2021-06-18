@@ -4,9 +4,9 @@
 -- MODULE: dcfifo 
 
 -- ============================================================
--- File Name: ip_dcfifo.vhd
+-- File Name: ip_dcfifo_mixed_widths.vhd
 -- Megafunction Name(s):
--- 			dcfifo
+-- 			dcfifo_mixed_widths
 --
 -- Simulation Library Files(s):
 -- 			altera_mf
@@ -39,110 +39,143 @@ USE ieee.std_logic_1164.all;
 LIBRARY altera_mf;
 USE altera_mf.all;
 
-ENTITY ip_dcfifo IS
+ 
+ENTITY ip_dcfifo_mixed_widths IS
     generic (
-        ADDR_WIDTH : positive := 8;
-        DATA_WIDTH : positive := 8;
-        SHOWAHEAD : string := "ON";
-        OVERFLOW : string := "ON";
-        DEVICE : string := "Stratix IV"--;
+        ADDR_WIDTH_w 	: positive := 8;
+        DATA_WIDTH_w 	: positive := 8;
+        ADDR_WIDTH_r 	: positive := 8;
+        DATA_WIDTH_r 	: positive := 8;
+        SYNC_CLKS		: string := "TRUE";
+        SHOWAHEAD 		: string := "ON";
+        REGOUT          : integer  := 1;
+        DEVICE 			: string := "Stratix IV"--;
     );
 	PORT
 	(
 		aclr		: IN STD_LOGIC  := '0';
-		data		: IN STD_LOGIC_VECTOR (DATA_WIDTH-1 DOWNTO 0);
-		rdclk		: IN STD_LOGIC ;
-		rdreq		: IN STD_LOGIC ;
-		wrclk		: IN STD_LOGIC ;
-		wrreq		: IN STD_LOGIC ;
-		q		: OUT STD_LOGIC_VECTOR (DATA_WIDTH-1 DOWNTO 0);
-		rdempty		: OUT STD_LOGIC ;
-		rdusedw		: OUT STD_LOGIC_VECTOR (ADDR_WIDTH-1 DOWNTO 0);
-		wrfull		: OUT STD_LOGIC ;
-		wrusedw		: OUT STD_LOGIC_VECTOR (ADDR_WIDTH-1 DOWNTO 0)
+		data		: IN STD_LOGIC_VECTOR (DATA_WIDTH_w-1 DOWNTO 0);
+		rdclk		: IN STD_LOGIC;
+		rdreq		: IN STD_LOGIC;
+		wrclk		: IN STD_LOGIC;
+		wrreq		: IN STD_LOGIC;
+		q			: OUT STD_LOGIC_VECTOR (DATA_WIDTH_r-1 DOWNTO 0);
+		rdempty		: OUT STD_LOGIC;
+		rdusedw		: OUT STD_LOGIC_VECTOR (ADDR_WIDTH_r-1 DOWNTO 0);
+		wrfull		: OUT STD_LOGIC;
+		wrusedw		: OUT STD_LOGIC_VECTOR (ADDR_WIDTH_w-1 DOWNTO 0)
 	);
-END ip_dcfifo;
+END ip_dcfifo_mixed_widths;
 
 
-ARCHITECTURE SYN OF ip_dcfifo IS
+ARCHITECTURE SYN OF ip_dcfifo_mixed_widths IS
 
-	SIGNAL sub_wire0	: STD_LOGIC_VECTOR (DATA_WIDTH-1 DOWNTO 0);
-	SIGNAL sub_wire1	: STD_LOGIC ;
-	SIGNAL sub_wire2	: STD_LOGIC_VECTOR (ADDR_WIDTH-1 DOWNTO 0);
-	SIGNAL sub_wire3	: STD_LOGIC ;
-	SIGNAL sub_wire4	: STD_LOGIC_VECTOR (ADDR_WIDTH-1 DOWNTO 0);
+	SIGNAL sub_wire0	: STD_LOGIC_VECTOR (DATA_WIDTH_r-1 DOWNTO 0);
+	SIGNAL sub_wire1	: STD_LOGIC;
+	SIGNAL sub_wire2	: STD_LOGIC_VECTOR (ADDR_WIDTH_r-1 DOWNTO 0);
+	SIGNAL sub_wire3	: STD_LOGIC;
+	SIGNAL sub_wire4	: STD_LOGIC_VECTOR (ADDR_WIDTH_w-1 DOWNTO 0);
 
-
-
-	COMPONENT dcfifo
+	COMPONENT dcfifo_mixed_widths
 	GENERIC (
-		intended_device_family		: STRING;
-		lpm_numwords		: NATURAL;
-		lpm_showahead		: STRING;
-		lpm_type		: STRING;
-		lpm_width		: NATURAL;
-		lpm_widthu		: NATURAL;
-		overflow_checking		: STRING;
-		rdsync_delaypipe		: NATURAL;
-		read_aclr_synch		: STRING;
-		underflow_checking		: STRING;
-		use_eab		: STRING;
-		write_aclr_synch		: STRING;
-		wrsync_delaypipe		: NATURAL
+         clocks_are_synchronized 	:   string;
+         intended_device_family  	:   string;
+         lpm_numwords    			:   natural;
+         lpm_showahead   			:   string;
+         lpm_width   				:   natural;
+         lpm_width_r 				:   natural;
+         lpm_widthu  				:   natural;
+         lpm_widthu_r    			:   natural;
+         overflow_checking   		:   string;
+         rdsync_delaypipe    		:   natural;
+         read_aclr_synch 			:   string;
+         underflow_checking  		:   string;
+         use_eab 					:   string;
+         write_aclr_synch    		:   string;
+         wrsync_delaypipe    		:   natural--;
 	);
 	PORT (
-			aclr	: IN STD_LOGIC ;
-			data	: IN STD_LOGIC_VECTOR (DATA_WIDTH-1 DOWNTO 0);
-			rdclk	: IN STD_LOGIC ;
-			rdreq	: IN STD_LOGIC ;
-			wrclk	: IN STD_LOGIC ;
-			wrreq	: IN STD_LOGIC ;
-			q	: OUT STD_LOGIC_VECTOR (DATA_WIDTH-1 DOWNTO 0);
-			rdempty	: OUT STD_LOGIC ;
-			rdusedw	: OUT STD_LOGIC_VECTOR (ADDR_WIDTH-1 DOWNTO 0);
-			wrfull	: OUT STD_LOGIC ;
-			wrusedw	: OUT STD_LOGIC_VECTOR (ADDR_WIDTH-1 DOWNTO 0)
+		aclr    	:   in std_logic;
+		data    	:   in std_logic_vector(DATA_WIDTH_w-1 downto 0);
+		--eccstatus   :   out std_logic_vector(2-1 downto 0);
+		q   		:   out std_logic_vector(DATA_WIDTH_r-1 downto 0);
+		rdclk   	:   in std_logic;
+		rdempty 	:   out std_logic;
+		--rdfull  	:   out std_logic;
+		rdreq   	:   in std_logic;
+		rdusedw 	:   out std_logic_vector(ADDR_WIDTH_r-1 downto 0);
+		wrclk   	:   in std_logic;
+		--wrempty 	:   out std_logic;
+		wrfull  	:   out std_logic;
+		wrreq   	:   in std_logic;
+		wrusedw 	:   out std_logic_vector(ADDR_WIDTH_w-1 downto 0)
 	);
 	END COMPONENT;
 
-BEGIN
-	q    <= sub_wire0(DATA_WIDTH-1 DOWNTO 0);
-	rdempty    <= sub_wire1;
-	rdusedw    <= sub_wire2(ADDR_WIDTH-1 DOWNTO 0);
-	wrfull    <= sub_wire3;
-	wrusedw    <= sub_wire4(ADDR_WIDTH-1 DOWNTO 0);
+    signal reset_n : std_logic;
+    signal q0 : std_logic_vector(q'range);
+    signal rdempty0 : std_logic;
+    signal rdreq0 : std_logic;
 
-	dcfifo_component : dcfifo
+BEGIN
+	q0    	<= sub_wire0(DATA_WIDTH_r-1 DOWNTO 0);
+	rdempty0 <= sub_wire1;
+	rdusedw <= sub_wire2(ADDR_WIDTH_r-1 DOWNTO 0);
+	wrfull  <= sub_wire3;
+	wrusedw <= sub_wire4(ADDR_WIDTH_w-1 DOWNTO 0);
+
+	dcfifo_mixed_widths_component : dcfifo_mixed_widths
 	GENERIC MAP (
-		intended_device_family => DEVICE,
-		lpm_numwords => 2**ADDR_WIDTH,
-		lpm_showahead => SHOWAHEAD,
-		lpm_type => "dcfifo",
-		lpm_width => DATA_WIDTH,
-		lpm_widthu => ADDR_WIDTH,
-		overflow_checking => OVERFLOW,
-		rdsync_delaypipe => 4,
-		read_aclr_synch => "ON",
-		underflow_checking => "ON",
-		use_eab => "ON",
-		write_aclr_synch => "ON",
-		wrsync_delaypipe => 4
+		clocks_are_synchronized => SYNC_CLKS,
+		intended_device_family 	=> DEVICE,
+		lpm_numwords 			=> 2**ADDR_WIDTH_w,
+		lpm_showahead 			=> "ON",
+		lpm_width 				=> DATA_WIDTH_w,
+		lpm_width_r				=> DATA_WIDTH_r,
+		lpm_widthu 				=> ADDR_WIDTH_w,
+		lpm_widthu_r			=> ADDR_WIDTH_r,
+		overflow_checking 		=> SHOWAHEAD,
+		rdsync_delaypipe 		=> 4,
+		read_aclr_synch 		=> "ON",
+		underflow_checking 		=> "ON",
+		use_eab 				=> "ON",
+		write_aclr_synch 		=> "ON",
+		wrsync_delaypipe 		=> 4
 	)
 	PORT MAP (
-		aclr => aclr,
-		data => data,
-		rdclk => rdclk,
-		rdreq => rdreq,
-		wrclk => wrclk,
-		wrreq => wrreq,
-		q => sub_wire0,
+		aclr 	=> aclr,
+		data 	=> data,
+		rdclk 	=> rdclk,
+		rdreq 	=> rdreq0,
+		wrclk 	=> wrclk,
+		wrreq 	=> wrreq,
+		q 		=> sub_wire0,
 		rdempty => sub_wire1,
 		rdusedw => sub_wire2,
-		wrfull => sub_wire3,
+		wrfull 	=> sub_wire3,
 		wrusedw => sub_wire4
 	);
 
+    e_reset_n : entity work.reset_sync
+    port map ( o_reset_n => reset_n, i_reset_n => not aclr, i_clk => rdclk );
 
+    e_fifo_rreg : entity work.fifo_rreg
+    generic map (
+        g_N => work.util.value_if(SHOWAHEAD = "ON", REGOUT, 0),
+        g_DATA_WIDTH => q'length--,
+    )
+    port map (
+        o_rdata => q,
+        i_re => rdreq,
+        o_rempty => rdempty,
+
+        i_rdata => q0,
+        o_re => rdreq0,
+        i_rempty => rdempty0,
+
+        i_reset_n => reset_n,
+        i_clk => rdclk--,
+    );
 
 END SYN;
 

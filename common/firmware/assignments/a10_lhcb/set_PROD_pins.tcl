@@ -219,7 +219,7 @@ puts "Set XCVR RefClocks"
 # location assignment
 set_location_assignment PIN_AN37 -to A10_REFCLK_TFC_P -comment "Bank : 1C"
 set_location_assignment PIN_AL37 -to A10_REFCLK_2_TFC_P -comment "Bank : 1C"
-#set_location_assignment PIN_AY40 -to A10_REFCLK_TFC_CMU_P -comment "Bank : 1C"
+set_location_assignment PIN_AY40 -to A10_REFCLK_TFC_CMU_P -comment "Bank : 1C"
 set_location_assignment PIN_AL8  -to A10_REFCLK_10G_P_0 -comment "Bank : 4C"
 set_location_assignment PIN_AG8  -to A10_REFCLK_10G_P_1 -comment "Bank : 4D"
 set_location_assignment PIN_AC8  -to A10_REFCLK_10G_P_2 -comment "Bank : 4E"
@@ -240,7 +240,7 @@ set_location_assignment PIN_N37  -to A10_REFCLK_GBT_P_7 -comment "Bank : 1H"
 #FH add constraints
 set_instance_assignment -name XCVR_A10_REFCLK_TERM_TRISTATE "TRISTATE_OFF" -to A10_REFCLK_TFC_P
 set_instance_assignment -name XCVR_A10_REFCLK_TERM_TRISTATE "TRISTATE_OFF" -to A10_REFCLK_2_TFC_P
-#set_instance_assignment -name XCVR_A10_REFCLK_TERM_TRISTATE "TRISTATE_OFF" -to A10_REFCLK_TFC_CMU_P
+set_instance_assignment -name XCVR_A10_REFCLK_TERM_TRISTATE "TRISTATE_OFF" -to A10_REFCLK_TFC_CMU_P
 set_instance_assignment -name XCVR_A10_REFCLK_TERM_TRISTATE "TRISTATE_OFF" -to A10_REFCLK_10G_P_0
 set_instance_assignment -name XCVR_A10_REFCLK_TERM_TRISTATE "TRISTATE_OFF" -to A10_REFCLK_10G_P_1
 set_instance_assignment -name XCVR_A10_REFCLK_TERM_TRISTATE "TRISTATE_OFF" -to A10_REFCLK_10G_P_2

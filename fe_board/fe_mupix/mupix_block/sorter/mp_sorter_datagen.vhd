@@ -14,6 +14,9 @@ use work.mudaq.all;
 
 
 entity mp_sorter_datagen is
+generic (
+    send_header_trailer : std_logic := '0'--;
+);
 port (
     i_reset_n           : in  std_logic;
     i_clk               : in  std_logic;
@@ -26,6 +29,7 @@ port (
     -- signals to insert after sorter
     o_fifo_wdata        : out std_logic_vector(35 downto 0);
     o_fifo_write        : out std_logic;
+    o_datak             : out std_logic_vector(3 downto 0);
 
     -- signals to insert before sorter
     o_ts                : out ts_array_t      (35 downto 0);
@@ -55,7 +59,7 @@ architecture rtl of mp_sorter_datagen is
     signal run_shutdown         : std_logic;
     signal global_ts            : std_logic_vector(63 downto 0);
 
-    type genstate_t   is (head1, head2, subhead, trail, EoR, hitgen, idle);
+    type genstate_t   is (pre, head1, head2, subhead, trail, EoR, hitgen, idle);
     signal genstate : genstate_t;
 
     -- rate control signals
@@ -143,6 +147,7 @@ architecture rtl of mp_sorter_datagen is
 
         elsif rising_edge(i_clk) then
             fwdata              <= (others => '0');
+            o_datak             <= (others => '0');
             fwrite              <= '0';
             running_prev        <= i_running;
             frame_ts_overflow   <= '0';
@@ -219,12 +224,24 @@ architecture rtl of mp_sorter_datagen is
                         genstate <= EoR;
                     elsif( i_running = '1' and enable = '1' and produce_next_packet = '1') then
                         if(miss_header = '0') then 
-                            genstate <= head1;
+                            if ( send_header_trailer = '1' ) then
+                                genstate <= pre;
+                            else
+                                genstate <= head1;
+                            end if;
                         else
                             genstate <= subhead;
                             mischief_managed <= '1';
                         end if;
                     end if;
+                    
+                when pre =>
+                    fwdata(31 downto 26)   <= DATA_HEADER_ID;
+                    fwdata(25 downto 8)    <= (others => '0');
+					fwdata(7 downto 0)     <= x"bc";
+					o_datak                <= "0001";
+                    fwrite                 <= '1';
+					genstate               <= head1;
 
                 when head1 =>
                     if(miss_half_of_header = '0') then
@@ -272,6 +289,10 @@ architecture rtl of mp_sorter_datagen is
                     genstate                <= idle;
                     if(miss_trailer = '0') then 
                         fwdata(35 downto 32)<= MERGER_FIFO_PAKET_END_MARKER;
+                        if ( send_header_trailer = '1') then
+                            fwdata(7 downto 0)	<= x"9c";
+                        end if;
+                        o_datak             <= "0001";
                         fwrite              <= '1';
                     else
                         mischief_managed    <= '1';

@@ -13,6 +13,7 @@ done
 # directories to be searched for library files
 DIRS=(
     "/usr/local/lib/ghdl/vendors/altera"
+    "/usr/lib/ghdl/vendors/altera"
     "$HOME/.local/share/ghdl/vendors/altera"
 )
 

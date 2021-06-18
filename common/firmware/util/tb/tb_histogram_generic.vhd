@@ -138,7 +138,7 @@ BEGIN
                 valid_in <= '1';
                 data_in <= data_in + 31;
                 counter <= counter + 1;
-                if(conv_integer(counter) mod 29 = 0)then
+                if(to_integer(unsigned(counter)) mod 29 = 0)then
                     valid_in <= '0';
                 end if;
             else

@@ -36,8 +36,8 @@ class MupixFEB  : public MuFEB{
       virtual uint16_t FPGAid_from_ID(int asic) const;
       virtual uint16_t ASICid_from_ID(int asic) const;
       // TODO: Do this right
-      virtual uint16_t GetModulesPerFEB() const {return 2;}
-      virtual uint16_t GetASICSPerModule() const {return 4;}
+      virtual uint16_t GetModulesPerFEB() const {return 4;}
+      virtual uint16_t GetASICSPerModule() const {return 3;}
 
       uint16_t GetNumASICs() const;
       virtual FEBTYPE  GetTypeID() const {return FEBTYPE::Pixel;}
@@ -49,16 +49,35 @@ class MupixFEB  : public MuFEB{
       int ConfigureBoards();
 
       //FEB registers and functions
-      uint32_t ReadBackCounters(uint16_t FPGA_ID);
-      uint32_t ReadBackHitsEnaRate(uint16_t FPGA_ID);
+      uint32_t ReadBackLVDSNumHits(uint16_t FPGA_ID, uint16_t LVDS_ID);
+      uint32_t ReadBackLVDSNumHitsInMupixFormat(uint16_t FPGA_ID, uint16_t LVDS_ID);
+      DWORD*  ReadLVDSCounters(DWORD* pdata, uint16_t FPGA_ID){
+        for(uint32_t i=0; i<GetASICSPerModule()*GetModulesPerFEB(); i++){ // TODO: set currect LVDS links number
+            // FPGA ID | Link ID
+            *(DWORD*)pdata++ = (FPGA_ID << 16) | i;
+            // number of hits from link
+            *(DWORD*)pdata++ = ReadBackLVDSNumHits(FPGA_ID, i);
+            // number of hits from link in mupix format
+            *(DWORD*)pdata++ = ReadBackLVDSNumHitsInMupixFormat(FPGA_ID, i);
+        };
+        return pdata;
+      };
       uint32_t getNFPGAs(){
           return febs.size();
       }
-      void ReadBackAllCounters(DWORD** pdata){
-          for(size_t i=0;i<febs.size();i++){
-              (*pdata)++;
-              **pdata = (DWORD)ReadBackCounters(i);
+      // TODO: the febs.size() does not work, dont find out why thats why we pass the numFEBs
+      DWORD* fill_PSLL(DWORD* pdata, uint32_t numFEBs){
+          if ( numFEBs == 0 ) {
+            // if no febs than send 3 zeros
+            *(DWORD*)pdata++ = 0;
+            *(DWORD*)pdata++ = 0;
+            *(DWORD*)pdata++ = 0;
+            return pdata;
+          }
+          for(uint16_t i=0; i<numFEBs; i++){
+                pdata = ReadLVDSCounters(pdata, i);
           };
+          return pdata;
       }
 
 
