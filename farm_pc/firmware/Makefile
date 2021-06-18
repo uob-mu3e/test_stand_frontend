@@ -2,9 +2,9 @@
 CABLE=DE5
 
 IPs = \
-    $(wildcard ip/*.tcl) \
-    $(wildcard pcieapp/*.tcl) \
-    $(wildcard ddr3/*.tcl) \
+    $(wildcard a10/ddr3/*.tcl) \
+    $(wildcard a10/ip/*.tcl) \
+    $(wildcard a10/pcieapp/*.tcl) \
     nios.tcl
 
 include util/altera/makefile.mk

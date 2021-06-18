@@ -1,9 +1,25 @@
 ADD_CUSTOM_COMMAND(
-  OUTPUT ${CMAKE_CURRENT_SOURCE_DIR}/feb_constants.h
-  COMMAND python3 ${CMAKE_CURRENT_SOURCE_DIR}/../../common/include/makeheader.py ${CMAKE_CURRENT_SOURCE_DIR}/../../common/firmware/registers/feb_sc_registers.vhd ${CMAKE_CURRENT_SOURCE_DIR}/feb_constants.h
-  COMMAND python3 ${CMAKE_CURRENT_SOURCE_DIR}/../../common/include/makeheader.py ${CMAKE_CURRENT_SOURCE_DIR}/../../common/firmware/registers/scifi_registers.vhd ${CMAKE_CURRENT_SOURCE_DIR}/../../common/firmware/include/scifi_registers.h
-  COMMAND python3 ${CMAKE_CURRENT_SOURCE_DIR}/../../common/include/makeheader.py ${CMAKE_CURRENT_SOURCE_DIR}/../../common/firmware/registers/mupix_registers.vhd ${CMAKE_CURRENT_SOURCE_DIR}/../../common/firmware/include/mupix_registers.h
-  DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/../../common/firmware/registers/feb_sc_registers.vhd
+    OUTPUT ${CMAKE_CURRENT_SOURCE_DIR}/feb_constants.h
+    COMMAND python3 ${CMAKE_CURRENT_SOURCE_DIR}/../../common/include/makeheader.py ${CMAKE_CURRENT_SOURCE_DIR}/../../common/firmware/registers/feb_sc_registers.vhd ${CMAKE_CURRENT_SOURCE_DIR}/feb_constants.h
+    DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/../../common/firmware/registers/feb_sc_registers.vhd
+)
+
+ADD_CUSTOM_COMMAND(
+    OUTPUT ${CMAKE_CURRENT_SOURCE_DIR}/../../common/firmware/include/scifi_registers.h
+    COMMAND python3 ${CMAKE_CURRENT_SOURCE_DIR}/../../common/include/makeheader.py ${CMAKE_CURRENT_SOURCE_DIR}/../../common/firmware/registers/scifi_registers.vhd ${CMAKE_CURRENT_SOURCE_DIR}/../../common/firmware/include/scifi_registers.h
+    DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/../../common/firmware/registers/scifi_registers.vhd
+)
+
+ADD_CUSTOM_COMMAND(
+    OUTPUT ${CMAKE_CURRENT_SOURCE_DIR}/../../common/firmware/include/a10_counters.h
+    COMMAND python3 ${CMAKE_CURRENT_SOURCE_DIR}/../../common/include/makeheader.py ${CMAKE_CURRENT_SOURCE_DIR}/../../common/firmware/registers/a10_counters.vhd ${CMAKE_CURRENT_SOURCE_DIR}/../../common/firmware/include/a10_counters.h
+    DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/../../common/firmware/registers/a10_counters.vhd
+)
+
+ADD_CUSTOM_COMMAND(
+    OUTPUT ${CMAKE_CURRENT_SOURCE_DIR}/../../common/firmware/include/mupix_registers.h
+    COMMAND python3 ${CMAKE_CURRENT_SOURCE_DIR}/../../common/include/makeheader.py ${CMAKE_CURRENT_SOURCE_DIR}/../../common/firmware/registers/mupix_registers.vhd ${CMAKE_CURRENT_SOURCE_DIR}/../../common/firmware/include/mupix_registers.h
+    DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/../../common/firmware/registers/mupix_registers.h
 )
 
 add_library(libslowcontrol STATIC

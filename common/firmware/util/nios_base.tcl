@@ -165,9 +165,6 @@ proc nios_base.init {} {
     add_interface spi conduit end
     set_interface_property spi EXPORTOF spi.external
 
-    set_instance_parameter_value spi {clockPhase} {0}
-    set_instance_parameter_value spi {clockPolarity} {0}
-
     nios_base.add_pio pio 32 Output 0x700F0280
 
     # i2c slave select port
@@ -217,8 +214,15 @@ proc nios_base.export_avm { name addressWidth baseAddress args } {
         set_instance_parameter_value ${name} {USE_READ_DATA_VALID} true
     }
 
-    add_connection ${clk}.clk       ${name}.clk
-    add_connection ${clk}.clk_reset ${name}.reset
+    # clock
+    add_connection ${clk}.clk ${name}.clk
+
+    # resets
+    if { [ string equal ${clk} clk ] == 0 } {
+        add_connection ${clk}.clk_reset ${name}.reset
+    }
+    add_connection clk.clk_reset ${name}.reset
+    add_connection cpu.debug_reset_request ${name}.reset
 
     add_connection                 ${cpu}.data_master ${name}.slave
     set_connection_parameter_value ${cpu}.data_master/${name}.slave baseAddress ${baseAddress}

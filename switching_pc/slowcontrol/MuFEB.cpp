@@ -194,16 +194,21 @@ int MuFEB::ReadBackRunState(uint16_t FPGA_ID){
 }
 
 uint32_t MuFEB::ReadBackMergerRate(uint16_t FPGA_ID){
+
+    if ( febs.size() == 0 ) return 0; // return 0 if there is no feb
+
     auto FEB = febs[FPGA_ID];
     if(!FEB.IsScEnabled()) return SUCCESS; //skip disabled fibers
     if(FEB.SB_Number()!=SB_number) return SUCCESS; //skip commands not for this SB
-
     vector<uint32_t> mergerRate(1);
     feb_sc.FEB_register_read(FEB.SB_Port(), MERGER_RATE_REGISTER_R, mergerRate);
     return mergerRate[0];
 }
 
 uint32_t MuFEB::ReadBackResetPhase(uint16_t FPGA_ID){
+
+    if ( febs.size() == 0 ) return 0; // return 0 if there is no feb
+
     auto FEB = febs[FPGA_ID];
     if(!FEB.IsScEnabled()) return SUCCESS; //skip disabled fibers
     if(FEB.SB_Number()!=SB_number) return SUCCESS; //skip commands not for this SB
@@ -214,6 +219,9 @@ uint32_t MuFEB::ReadBackResetPhase(uint16_t FPGA_ID){
 }
 
 uint32_t MuFEB::ReadBackTXReset(uint16_t FPGA_ID){
+
+    if ( febs.size() == 0 ) return 0; // return 0 if there is no feb
+
     auto FEB = febs[FPGA_ID];
     if(!FEB.IsScEnabled()) return SUCCESS; //skip disabled fibers
     if(FEB.SB_Number()!=SB_number) return SUCCESS; //skip commands not for this SB

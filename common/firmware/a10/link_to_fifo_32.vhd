@@ -19,7 +19,7 @@ port (
     i_rx            : in std_logic_vector(31 downto 0);
     i_rx_k          : in std_logic_vector(3 downto 0);
     
-    o_q             : out std_logic_vector(37 downto 0);
+    o_q             : out std_logic_vector(33 downto 0);
     i_ren           : in std_logic;
     o_rdempty       : out std_logic;
 
@@ -27,7 +27,9 @@ port (
     --! 0: fifo almost_full
     --! 1: fifo wrfull
     --! 2: # of skip event
-    o_counter     : out work.util.slv32_array_t(2 downto 0);
+    --! 3: # of events
+    --! 4: # of sub header
+    o_counter     : out work.util.slv32_array_t(4 downto 0);
 
     i_reset_n_156   : in std_logic;
     i_clk_156       : in std_logic;
@@ -39,91 +41,109 @@ end entity;
 
 architecture arch of link_to_fifo_32 is
    
-    type link_to_fifo_type is (idle, write_data, skip_data);
+    type link_to_fifo_type is (idle, write_ts_0, write_ts_1, write_data, skip_data);
     signal link_to_fifo_state : link_to_fifo_type;
-    signal cnt_skip_data : std_logic_vector(31 downto 0);
+    signal cnt_skip_data, cnt_sub, cnt_events : std_logic_vector(31 downto 0);
 
-    signal rx_156_data, rx_250_q : std_logic_vector(35 downto 0);
-    signal rx_250_data : std_logic_vector(37 downto 0);
-    signal rx_156_wen, rx_250_wen, sync_rdempty, almost_full, wrfull : std_logic;
+    signal rx_156_data : std_logic_vector(33 downto 0);
+    signal rx_156_wen, almost_full, wrfull : std_logic;
     signal wrusedw : std_logic_vector(LINK_FIFO_ADDR_WIDTH - 1 downto 0);
 
 begin
 
     e_cnt_link_fifo_almost_full : entity work.counter
     generic map ( WRAP => true, W => 32 )
-    port map ( o_cnt => o_counter(0), i_ena => almost_full, i_reset_n => i_reset_n_250, i_clk => i_clk_250 );
+    port map ( o_cnt => o_counter(0), i_ena => almost_full, i_reset_n => i_reset_n_156, i_clk => i_clk_156 );
 
     e_cnt_dc_link_fifo_full : entity work.counter
     generic map ( WRAP => true, W => 32 )
-    port map ( o_cnt => o_counter(1), i_ena => wrfull, i_reset_n => i_reset_n_250, i_clk => i_clk_250 );
+    port map ( o_cnt => o_counter(1), i_ena => wrfull, i_reset_n => i_reset_n_156, i_clk => i_clk_156 );
 
-    --! sync data from data clk to dma clk
+    o_counter(2) <= cnt_skip_data;
+    o_counter(3) <= cnt_events;
+    o_counter(4) <= cnt_sub;
+
     --! write only if not idle
     process(i_clk_156, i_reset_n_156)
     begin
-        if ( i_reset_n_156 = '0' ) then
-            rx_156_data  <= (others => '0');
-            rx_156_wen    <= '0';
-        elsif ( rising_edge(i_clk_156) ) then
-            rx_156_data <= i_rx & i_rx_k;
-            if ( i_rx = x"000000BC" and i_rx_k = "0001" ) then
-                rx_156_wen <= '0';
-            else
+    if ( i_reset_n_156 /= '1' ) then
+        rx_156_data         <= (others => '0');
+        cnt_sub             <= (others => '0');
+        cnt_events          <= (others => '0');
+        rx_156_wen          <= '0';
+        cnt_skip_data       <= (others => '0');
+        link_to_fifo_state  <= idle;
+        --
+    elsif ( rising_edge(i_clk_156) ) then
+
+        rx_156_wen  <= '0';
+        rx_156_data(31 downto 0)  <= i_rx;
+        rx_156_data(33 downto 32) <= "00";
+
+        if ( i_rx = x"000000BC" and i_rx_k = "0001" ) then
+            --
+        else
+            case link_to_fifo_state is
+
+            when idle =>
+                if ( i_rx(7 downto 0) = x"BC" and i_rx_k = "0001" ) then
+                    cnt_events <= cnt_events + '1';
+                    if ( almost_full = '1' ) then
+                        link_to_fifo_state <= skip_data;
+                        cnt_skip_data <= cnt_skip_data + '1';
+                    else
+                        link_to_fifo_state <= write_ts_0;
+                        rx_156_data(33 downto 32) <= "10"; -- header
+                        rx_156_wen <= '1';
+                    end if;
+                end if;
+
+            when write_ts_0 =>
+                link_to_fifo_state <= write_ts_1;
                 rx_156_wen <= '1';
-            end if;
+
+            when write_ts_1 =>
+                link_to_fifo_state <= write_data;
+                rx_156_wen <= '1';
+
+            when write_data =>
+                if ( i_rx(7 downto 0) = x"9C" and i_rx_k = "0001" ) then
+                    link_to_fifo_state <= idle;
+                    rx_156_data(33 downto 32) <= "01"; -- trailer
+                end if;
+
+                if ( i_rx(31 downto 26) = "111111" and i_rx_k = "0000" ) then
+                    rx_156_data(33 downto 32) <= "11"; -- sub header
+                    cnt_sub <= cnt_sub + '1';
+                end if;
+
+                rx_156_wen <= '1';
+
+            when skip_data =>
+                if ( i_rx(7 downto 0) = x"9C" and i_rx_k = "0001" ) then
+                    link_to_fifo_state <= idle;
+                end if;
+
+            when others =>
+                link_to_fifo_state <= idle;
+
+            end case;
         end if;
+        --
+    end if;
     end process;
-        
-    e_sync_fifo : entity work.ip_dcfifo
+
+    e_fifo : entity work.ip_dcfifo
     generic map(
-        ADDR_WIDTH  => 6,
-        DATA_WIDTH  => 36,
+        ADDR_WIDTH  => LINK_FIFO_ADDR_WIDTH,
+        DATA_WIDTH  => 34,
         DEVICE      => "Arria 10"--,
     )
     port map (
         data        => rx_156_data,
         wrreq       => rx_156_wen,
-        rdreq       => not sync_rdempty,
-        wrclk       => i_clk_156,
-        rdclk       => i_clk_250,
-        q           => rx_250_q,
-        rdempty     => sync_rdempty,
-        aclr        => '0'--,
-    );
-        
-    e_link_to_fifo : entity work.link_to_fifo
-    generic map(
-        W => 32--,
-    )
-    port map(
-        i_link_data         => rx_250_q(35 downto 4),
-        i_link_datak        => rx_250_q(3 downto 0),
-        i_fifo_almost_full  => almost_full,
-        i_sync_fifo_empty   => sync_rdempty,
-        o_fifo_data         => rx_250_data(35 downto 0),
-        o_fifo_wr           => rx_250_wen,
-        o_cnt_skip_data     => o_counter(2),
-        i_reset_n           => i_reset_n_250,
-        i_clk               => i_clk_250--,
-    );
-        
-    -- sop
-    rx_250_data(36) <= '1' when ( rx_250_data(3 downto 0) = "0001" and rx_250_data(11 downto 4) = x"BC" ) else '0';
-    -- eop
-    rx_250_data(37) <= '1' when ( rx_250_data(3 downto 0) = "0001" and rx_250_data(11 downto 4) = x"9C" ) else '0';
-    
-    e_fifo : entity work.ip_dcfifo
-    generic map(
-        ADDR_WIDTH  => LINK_FIFO_ADDR_WIDTH,
-        DATA_WIDTH  => 38,
-        DEVICE      => "Arria 10"--,
-    )
-    port map (
-        data        => rx_250_data,
-        wrreq       => rx_250_wen,
         rdreq       => i_ren,
-        wrclk       => i_clk_250,
+        wrclk       => i_clk_156,
         rdclk       => i_clk_250,
         q           => o_q,
         rdempty     => o_rdempty,
@@ -133,11 +153,11 @@ begin
         aclr        => not i_reset_n_250--,
     );
 
-    process(i_clk_250, i_reset_n_250)
+    process(i_clk_156, i_reset_n_156)
     begin
-        if(i_reset_n_250 = '0') then
+        if ( i_reset_n_156 = '0' ) then
             almost_full       <= '0';
-        elsif(rising_edge(i_clk_250)) then
+        elsif ( rising_edge(i_clk_156) ) then
             if(wrusedw(LINK_FIFO_ADDR_WIDTH - 1) = '1') then
                 almost_full <= '1';
             else 

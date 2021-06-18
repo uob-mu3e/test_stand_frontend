@@ -1,7 +1,9 @@
 library ieee;
 use ieee.std_logic_1164.all;
 
--- https://en.wikipedia.org/wiki/Linear-feedback_shift_register
+--
+-- <https://en.wikipedia.org/wiki/Linear-feedback_shift_register>
+--
 entity lfsr_fibonacci is
 generic (
     -- taps (e.g. poly 'x^8 + x^6 + x^5 + x^4 + 1' corresponds to "10111000")

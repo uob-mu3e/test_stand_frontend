@@ -7,3 +7,6 @@ IPs := \
     nios.tcl
 
 include util/altera/makefile.mk
+
+output_files/top.rbf : output_files/top.sof
+	quartus_cpf -c $< $@

@@ -142,9 +142,6 @@ begin
         avm_xcvr0_writedata     => av_xcvr.writedata,
         avm_xcvr0_waitrequest   => av_xcvr.waitrequest,
 
-        avm_xcvr0_reset_reset_n => reset_125_n,
-        avm_xcvr0_clock_clk     => clk_125,
-
         rst_reset_n             => nios_reset_n,
         clk_clk                 => clk_50--,
     );
@@ -179,11 +176,11 @@ begin
     QSFPA_MOD_SEL_n <= '1';
     QSFPA_RST_n <= '1';
 
-    e_xcvr : entity work.xcvr_enh
+    e_xcvr : entity work.xcvr_bonded
     generic map (
-        INPUT_CLOCK_FREQUENCY_g => 125000000,
-        DATA_RATE_g => 5000,
-        CLK_MHZ_g => 125--,
+        g_REFCLK_MHZ => 125.0,
+        g_RATE_MBPS => 5000,
+        g_CLK_MHZ => 50.0--,
     )
     port map (
         i_tx_data               => X"03CAFEBC"
@@ -206,8 +203,7 @@ begin
         o_tx_serial             => QSFPA_TX_p,
         i_rx_serial             => QSFPA_RX_p,
 
-        i_pll_clk               => clk_125,
-        i_cdr_clk               => clk_125,
+        i_refclk                => clk_125,
 
         i_avs_address           => av_xcvr.address(13 downto 0),
         i_avs_read              => av_xcvr.read,
@@ -216,8 +212,8 @@ begin
         i_avs_writedata         => av_xcvr.writedata,
         o_avs_waitrequest       => av_xcvr.waitrequest,
 
-        i_reset                 => not clk_125,
-        i_clk                   => clk_125--,
+        i_reset                 => not clk_50,
+        i_clk                   => clk_50--,
     );
 
 end architecture;

@@ -15,11 +15,13 @@ generic (
     TREE_DEPTH_w : positive := 8;
     TREE_DEPTH_r : positive := 8;
     g_NLINKS_DATA : positive := 12;
-    N : positive := 34--;
+    N : positive := 34;
+    -- Data type: x"01" = pixel, x"02" = scifi, x"03" = tiles
+    DATA_TYPE : std_logic_vector(7 downto 0) := x"01"--;
 );
 port (
     -- input streams
-    i_rdata         : in    work.util.slv38_array_t(N - 1 downto 0);
+    i_rdata         : in    work.util.slv34_array_t(N - 1 downto 0);
     i_rsop          : in    std_logic_vector(N-1 downto 0); -- start of packet (SOP)
     i_reop          : in    std_logic_vector(N-1 downto 0); -- end of packet (EOP)
     i_rshop         : in    std_logic_vector(N-1 downto 0); -- sub header of packet (SHOP)
@@ -53,15 +55,15 @@ architecture arch of time_merger_v2 is
     -- state machine
     type merge_state_type is (wait_for_pre, compare_time1, compare_time2, wait_for_sh, error_state, merge_hits, get_time1, get_time2, trailer, wait_for_sh_written);
     signal merge_state : merge_state_type;
-    type sheader_time_array_t is array (N - 1 downto 0) of std_logic_vector(5 downto 0);
+    type sheader_time_array_t is array (N - 1 downto 0) of std_logic_vector(6 downto 0);
     signal sheader_time : sheader_time_array_t;
     signal merger_state_signal : std_logic;
-    signal shtime : std_logic_vector(5 downto 0);
+    signal shtime : std_logic_vector(6 downto 0);
     signal overflow : std_logic_vector(15 downto 0);
     signal wait_cnt_pre, wait_cnt_sh, wait_cnt_merger : std_logic_vector(31 downto 0);
     signal header_trailer : std_logic_vector(37 downto 0);
     signal sop_wait, shop_wait, eop_wait, time_wait : std_logic_vector(N - 1 downto 0);
-    signal gtime1, gtime2 : work.util.slv38_array_t(N - 1 downto 0);
+    signal gtime1, gtime2 : work.util.slv34_array_t(N - 1 downto 0);
 
     -- error signals
     signal error_gtime1, error_gtime2, error_shtime, error_merger, header_trailer_we : std_logic;
@@ -74,8 +76,10 @@ architecture arch of time_merger_v2 is
     constant generate_fifos : fifo_width_t := (1, 2, 4, 8, 16, 32, 64);
 
     signal data_0 : work.util.slv38_array_t(generate_fifos(0) - 1 downto 0);
-    signal q_0, q_0_reg : work.util.slv76_array_t(generate_fifos(0) - 1 downto 0);
-    signal rdreq_0_reg, rdreq_0, wrreq_0, rdempty_0, rdempty_0_reg, wrfull_0, wrfull_0_reg, reset_0 : std_logic_vector(generate_fifos(0) - 1 downto 0);
+    signal q_0, q_0_reg, q_0_reg_reg : work.util.slv76_array_t(generate_fifos(0) - 1 downto 0);
+    signal rdreq_0, wrreq_0, rdempty_0, wrfull_0, reset_0 : std_logic_vector(generate_fifos(0) - 1 downto 0);
+    signal rdreq_0_reg, rdempty_0_reg, wrfull_0_reg : std_logic_vector(generate_fifos(0) - 1 downto 0);
+    signal rdreq_0_reg_reg, rdempty_0_reg_reg, wrfull_0_reg_reg : std_logic_vector(generate_fifos(0) - 1 downto 0);
     signal q_1 : work.util.slv76_array_t(generate_fifos(1) - 1 downto 0);
     signal q_2 : work.util.slv76_array_t(generate_fifos(2) - 1 downto 0);
     signal q_3 : work.util.slv76_array_t(generate_fifos(3) - 1 downto 0);
@@ -153,7 +157,7 @@ begin
             end if;
             end process;
             
-            data_0(i)  <=   work.util.link_36_to_std(i) & i_rdata(i)(35 downto 4)   when merger_finish(i) = '0' and merge_state = merge_hits else
+            data_0(i)  <=   work.util.link_36_to_std(i) & i_rdata(i)(31 downto 0)   when merger_finish(i) = '0' and merge_state = merge_hits else
                             tree_padding                                            when merger_finish(i) = '1' and merge_state = merge_hits else 
                             (others => '0');
             wrreq_0(i) <= '1' when merge_state = merge_hits and i_rempty(i) = '0' and wrfull_0(i) = '0' else '0';
@@ -180,23 +184,40 @@ begin
             
             -- reg for FIFO outputs (timing)
             rdreq_0(i) <= '1' when rdempty_0(i) = '0' and wrfull_0_reg(i) = '0' else '0';
-            rdempty_0_reg(i) <= '1' when rdreq_0_reg(i) = '1' else '0' when rdreq_0(i) = '1' else '1';
-            reg : process(i_clk, reset_0(i))
+            rdreq_0_reg(i) <= '1' when rdempty_0_reg(i) = '0' and wrfull_0_reg_reg(i) = '0' else '0';
+            process(i_clk, reset_0(i))
             begin
-                if ( reset_0(i) = '1' ) then
-                    q_0_reg(i)       <= (others => '0');
-                    wrfull_0_reg(i)  <= '0';
-                    --
-                elsif ( rising_edge(i_clk) ) then
-                    if ( rdreq_0(i) = '1' ) then
-                        q_0_reg(i)       <= q_0(i);
-                        wrfull_0_reg(i)  <= '1';
-                    end if;
-                    
-                    if ( rdreq_0_reg(i) = '1' ) then
-                        wrfull_0_reg(i)  <= '0';
-                    end if;
+            if ( reset_0(i) = '1' ) then
+                rdempty_0_reg(i)    <= '1';
+                wrfull_0_reg(i)     <= '0';
+                q_0_reg(i)          <= (others => '0');
+                rdempty_0_reg_reg(i)<= '1';
+                wrfull_0_reg_reg(i) <= '0';
+                q_0_reg_reg(i)      <= (others => '0');
+                --
+            elsif ( rising_edge(i_clk) ) then
+
+                if ( rdreq_0(i) = '1' ) then
+                    q_0_reg(i)       <= q_0(i);
+                    wrfull_0_reg(i)  <= '1';
+                    rdempty_0_reg(i) <= '0';
                 end if;
+
+                if ( rdreq_0_reg(i) = '1' ) then
+                    q_0_reg_reg(i)   <= q_0_reg(i);
+                    wrfull_0_reg(i)  <= '0';
+                    rdempty_0_reg(i) <= '1';
+
+                    wrfull_0_reg_reg(i)  <= '1';
+                    rdempty_0_reg_reg(i) <= '0';
+                end if;
+
+                if ( rdreq_0_reg_reg(i) = '1' ) then
+                    wrfull_0_reg_reg(i)  <= '0';
+                    rdempty_0_reg_reg(i) <= '1';
+                end if;
+
+            end if;
             end process;
             
         END GENERATE;
@@ -210,8 +231,8 @@ begin
         compare_fifos => generate_fifos(0), gen_fifos => generate_fifos(1)--,
     )
     port map (
-        i_data          => q_0_reg,
-        i_rdempty       => rdempty_0_reg,
+        i_data          => q_0_reg_reg,
+        i_rdempty       => rdempty_0_reg_reg,
         i_rdreq         => rdreq_1,
         i_merge_state   => merger_state_signal,
         i_mask_n        => i_mask_n,
@@ -220,7 +241,7 @@ begin
 
         o_q             => q_1,
         o_rdempty       => rdempty_1,
-        o_rdreq         => rdreq_0_reg,
+        o_rdreq         => rdreq_0_reg_reg,
         o_mask_n        => mask_n_1,
         o_layer_state   => open,
         o_wrfull        => open,
@@ -436,7 +457,7 @@ begin
                     gtime1 <= (others => (others => '0'));
                     -- send gtime1
                     header_trailer(37 downto 32) <= ts1_marker;
-                    header_trailer(31 downto 0) <= gtime1(i_link)(35 downto 4);
+                    header_trailer(31 downto 0) <= gtime1(i_link)(31 downto 0);
                     header_trailer_we <= '1';
                 end if;
                 -- dont check at the moment 
@@ -470,7 +491,7 @@ begin
                     gtime2 <= (others => (others => '0'));
                     -- send gtime2
                     header_trailer(37 downto 32) <= ts2_marker;
-                    header_trailer(31 downto 0) <= gtime2(i_link)(35 downto 4);
+                    header_trailer(31 downto 0) <= gtime2(i_link)(31 downto 0);
                     header_trailer_we <= '1';
                 end if;
                 -- dont check at the moment 
@@ -494,14 +515,14 @@ begin
                     -- send merged data sub header
                     -- zeros & sub header & zeros & datak
                     header_trailer(37 downto 32) <= sh_marker;
-                    header_trailer(31 downto 28) <= "0000";
-                    header_trailer(27 downto 22) <= "111111";
+                    header_trailer(31 downto 26) <= "111111";
+                    header_trailer(25 downto 23) <= "000";
                     -- send sub header time -- check later if equal
-                    header_trailer(21 downto 16) <= i_rdata(i_link)(25 downto 20);
-                    shtime <= i_rdata(i_link)(25 downto 20);
+                    header_trailer(22 downto 16) <= i_rdata(i_link)(22 downto 16);
+                    shtime <= i_rdata(i_link)(22 downto 16);
                     FOR I in N - 1 downto 0 LOOP
                         if ( i_mask_n(I) = '1' ) then
-                            sheader_time(I) <= i_rdata(I)(25 downto 20);
+                            sheader_time(I) <= i_rdata(I)(22 downto 16);
                         end if;
                     END LOOP;
                     header_trailer(15 downto 0) <= overflow;

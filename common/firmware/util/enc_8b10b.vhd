@@ -9,7 +9,7 @@
 library ieee;
 use ieee.std_logic_1164.all;
 
-entity enc_8b10b_v2 is
+entity enc_8b10b is
 port (
     -- input data (K bit & 8-bit data)
     i_data      : in    std_logic_vector(8 downto 0);
@@ -27,7 +27,7 @@ end entity;
 library ieee;
 use ieee.numeric_std.all;
 
-architecture arch of enc_8b10b_v2 is
+architecture arch of enc_8b10b is
 
     signal K28, Kx7 : std_logic;
 
