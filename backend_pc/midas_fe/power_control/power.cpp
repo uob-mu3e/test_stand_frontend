@@ -130,117 +130,117 @@ EQUIPMENT equipment[] = {
      	read_hameg_power1,    
     },
     
-    //{"HAMEG2",                       /* equipment name */
-    	//{122, 0,                       /* event ID, trigger mask */
-     	//"SYSTEM",                  /* event buffer */
-     	//EQ_PERIODIC,                   /* equipment type */
-     	//0,                         /* event source */
-     	//"MIDAS",                   /* format */
-     	//TRUE,                      /* enabled */
-     	//RO_STOPPED | RO_RUNNING | RO_PAUSE,        /* all, but not write to odb */
-     	//10000,                     /* read every 10 sec */
-     	//0,                         /* stop run after this event limit */
-    	//0,                         /* number of sub events */
-     	//0,                         /* log history every event */
-     	//"", "", ""} ,                  /* device driver list */
-     	//read_hameg_power2,    
-    //},
+    {"HAMEG2",                       /* equipment name */
+    	{122, 0,                       /* event ID, trigger mask */
+     	"SYSTEM",                  /* event buffer */
+     	EQ_PERIODIC,                   /* equipment type */
+     	0,                         /* event source */
+     	"MIDAS",                   /* format */
+     	TRUE,                      /* enabled */
+     	RO_STOPPED | RO_RUNNING | RO_PAUSE,        /* all, but not write to odb */
+     	10000,                     /* read every 10 sec */
+     	0,                         /* stop run after this event limit */
+    	0,                         /* number of sub events */
+     	0,                         /* log history every event */
+     	"", "", ""} ,                  /* device driver list */
+     	read_hameg_power2,    
+    },
 
-	//{"HAMEG3",                       /* equipment name */
-    	//{123, 0,                       /* event ID, trigger mask */
-     	//"SYSTEM",                  /* event buffer */
-     	//EQ_PERIODIC,                   /* equipment type */
-     	//0,                         /* event source */
-     	//"MIDAS",                   /* format */
-     	//TRUE,                      /* enabled */
-     	//RO_STOPPED | RO_RUNNING | RO_PAUSE,        /* all, but not write to odb */
-     	//10000,                     /* read every 10 sec */
-     	//0,                         /* stop run after this event limit */
-    	//0,                         /* number of sub events */
-     	//0,                         /* log history every event */
-     	//"", "", ""} ,                  /* device driver list */
-     	//read_hameg_power3,    
-    //},
+	{"HAMEG3",                       /* equipment name */
+    	{123, 0,                       /* event ID, trigger mask */
+     	"SYSTEM",                  /* event buffer */
+     	EQ_PERIODIC,                   /* equipment type */
+     	0,                         /* event source */
+     	"MIDAS",                   /* format */
+     	TRUE,                      /* enabled */
+     	RO_STOPPED | RO_RUNNING | RO_PAUSE,        /* all, but not write to odb */
+     	10000,                     /* read every 10 sec */
+     	0,                         /* stop run after this event limit */
+    	0,                         /* number of sub events */
+     	0,                         /* log history every event */
+     	"", "", ""} ,                  /* device driver list */
+     	read_hameg_power3,    
+    },
 
-	//{"HAMEG4",                       /* equipment name */
-    	//{124, 0,                       /* event ID, trigger mask */
-     	//"SYSTEM",                  /* event buffer */
-     	//EQ_PERIODIC,                   /* equipment type */
-     	//0,                         /* event source */
-     	//"MIDAS",                   /* format */
-     	//TRUE,                      /* enabled */
-     	//RO_STOPPED | RO_RUNNING | RO_PAUSE,        /* all, but not write to odb */
-     	//10000,                     /* read every 10 sec */
-     	//0,                         /* stop run after this event limit */
-    	//0,                         /* number of sub events */
-     	//0,                         /* log history every event */
-     	//"", "", ""} ,                  /* device driver list */
-     	//read_hameg_power4,    
-    //},
+	{"HAMEG4",                       /* equipment name */
+    	{124, 0,                       /* event ID, trigger mask */
+     	"SYSTEM",                  /* event buffer */
+     	EQ_PERIODIC,                   /* equipment type */
+     	0,                         /* event source */
+     	"MIDAS",                   /* format */
+     	TRUE,                      /* enabled */
+     	RO_STOPPED | RO_RUNNING | RO_PAUSE,        /* all, but not write to odb */
+     	10000,                     /* read every 10 sec */
+     	0,                         /* stop run after this event limit */
+    	0,                         /* number of sub events */
+     	0,                         /* log history every event */
+     	"", "", ""} ,                  /* device driver list */
+     	read_hameg_power4,    
+    },
 
-	//{"HAMEG5",                       /* equipment name */
-    	//{125, 0,                       /* event ID, trigger mask */
-     	//"SYSTEM",                  /* event buffer */
-     	//EQ_PERIODIC,                   /* equipment type */
-     	//0,                         /* event source */
-     	//"MIDAS",                   /* format */
-     	//TRUE,                      /* enabled */
-     	//RO_STOPPED | RO_RUNNING | RO_PAUSE,        /* all, but not write to odb */
-     	//10000,                     /* read every 10 sec */
-     	//0,                         /* stop run after this event limit */
-    	//0,                         /* number of sub events */
-     	//0,                         /* log history every event */
-     	//"", "", ""} ,                  /* device driver list */
-     	//read_hameg_power5,    
-    //},
+	{"HAMEG5",                       /* equipment name */
+    	{125, 0,                       /* event ID, trigger mask */
+     	"SYSTEM",                  /* event buffer */
+     	EQ_PERIODIC,                   /* equipment type */
+     	0,                         /* event source */
+     	"MIDAS",                   /* format */
+     	TRUE,                      /* enabled */
+     	RO_STOPPED | RO_RUNNING | RO_PAUSE,        /* all, but not write to odb */
+     	10000,                     /* read every 10 sec */
+     	0,                         /* stop run after this event limit */
+    	0,                         /* number of sub events */
+     	0,                         /* log history every event */
+     	"", "", ""} ,                  /* device driver list */
+     	read_hameg_power5,    
+    },
 
-	//{"HAMEG6",                       /* equipment name */
-    	//{126, 0,                       /* event ID, trigger mask */
-     	//"SYSTEM",                  /* event buffer */
-     	//EQ_PERIODIC,                   /* equipment type */
-     	//0,                         /* event source */
-     	//"MIDAS",                   /* format */
-     	//TRUE,                      /* enabled */
-     	//RO_STOPPED | RO_RUNNING | RO_PAUSE,        /* all, but not write to odb */
-     	//10000,                     /* read every 10 sec */
-     	//0,                         /* stop run after this event limit */
-    	//0,                         /* number of sub events */
-     	//0,                         /* log history every event */
-     	//"", "", ""} ,                  /* device driver list */
-     	//read_hameg_power6,    
-    //},
+	{"HAMEG6",                       /* equipment name */
+    	{126, 0,                       /* event ID, trigger mask */
+     	"SYSTEM",                  /* event buffer */
+     	EQ_PERIODIC,                   /* equipment type */
+     	0,                         /* event source */
+     	"MIDAS",                   /* format */
+     	TRUE,                      /* enabled */
+     	RO_STOPPED | RO_RUNNING | RO_PAUSE,        /* all, but not write to odb */
+     	10000,                     /* read every 10 sec */
+     	0,                         /* stop run after this event limit */
+    	0,                         /* number of sub events */
+     	0,                         /* log history every event */
+     	"", "", ""} ,                  /* device driver list */
+     	read_hameg_power6,    
+    },
 
-	//{"HAMEG7",                       /* equipment name */
-    	//{127, 0,                       /* event ID, trigger mask */
-     	//"SYSTEM",                  /* event buffer */
-     	//EQ_PERIODIC,                   /* equipment type */
-     	//0,                         /* event source */
-     	//"MIDAS",                   /* format */
-     	//TRUE,                      /* enabled */
-     	//RO_STOPPED | RO_RUNNING | RO_PAUSE,        /* all, but not write to odb */
-     	//10000,                     /* read every 10 sec */
-     	//0,                         /* stop run after this event limit */
-    	//0,                         /* number of sub events */
-     	//0,                         /* log history every event */
-     	//"", "", ""} ,                  /* device driver list */
-     	//read_hameg_power7,    
-    //},
+	{"HAMEG7",                       /* equipment name */
+    	{127, 0,                       /* event ID, trigger mask */
+     	"SYSTEM",                  /* event buffer */
+     	EQ_PERIODIC,                   /* equipment type */
+     	0,                         /* event source */
+     	"MIDAS",                   /* format */
+     	TRUE,                      /* enabled */
+     	RO_STOPPED | RO_RUNNING | RO_PAUSE,        /* all, but not write to odb */
+     	10000,                     /* read every 10 sec */
+     	0,                         /* stop run after this event limit */
+    	0,                         /* number of sub events */
+     	0,                         /* log history every event */
+     	"", "", ""} ,                  /* device driver list */
+     	read_hameg_power7,    
+    },
 
-	//{"HAMEG8",                       /* equipment name */
-    	//{138, 0,                       /* event ID, trigger mask */
-     	//"SYSTEM",                  /* event buffer */
-     	//EQ_PERIODIC,                   /* equipment type */
-     	//0,                         /* event source */
-     	//"MIDAS",                   /* format */
-     	//TRUE,                      /* enabled */
-     	//RO_STOPPED | RO_RUNNING | RO_PAUSE,        /* all, but not write to odb */
-     	//10000,                     /* read every 10 sec */
-     	//0,                         /* stop run after this event limit */
-    	//0,                         /* number of sub events */
-     	//0,                         /* log history every event */
-     	//"", "", ""} ,                  /* device driver list */
-     	//read_hameg_power8,    
-    //},
+	{"HAMEG8",                       /* equipment name */
+    	{138, 0,                       /* event ID, trigger mask */
+     	"SYSTEM",                  /* event buffer */
+     	EQ_PERIODIC,                   /* equipment type */
+     	0,                         /* event source */
+     	"MIDAS",                   /* format */
+     	TRUE,                      /* enabled */
+     	RO_STOPPED | RO_RUNNING | RO_PAUSE,        /* all, but not write to odb */
+     	10000,                     /* read every 10 sec */
+     	0,                         /* stop run after this event limit */
+    	0,                         /* number of sub events */
+     	0,                         /* log history every event */
+     	"", "", ""} ,                  /* device driver list */
+     	read_hameg_power8,    
+    },
     
     {""} //why is there actually this empty one here? FW
     

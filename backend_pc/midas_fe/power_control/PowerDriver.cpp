@@ -16,6 +16,7 @@ INT PowerDriver::ConnectODB()
 	//general settings
 	settings.connect("/Equipment/"+name+"/Settings");
 	settings["IP"]("10.10.10.10");
+	settings["Use Hostname"](true);
 	settings["NChannels"](2);
 	settings["Global Reset On FE Start"](true);
 	settings["Read ESR"](false);
@@ -30,7 +31,10 @@ INT PowerDriver::ConnectODB()
 
 INT PowerDriver::Connect()
 {
-	client = new TCPClient(settings["IP"],settings["port"],settings["reply timout"]);
+	std::string hostname = "";
+	std::transform( name.begin(), name.end(), name.begin(), [](unsigned char c){ return std::tolower(c); } );
+	if(settings["Use Hostname"] == true) hostname.append( name );
+	client = new TCPClient(settings["IP"],settings["port"],settings["reply timout"],hostname);
 	ss_sleep(100);
 	std::string ip = settings["IP"];
 	min_reply_length = settings["min reply"];
