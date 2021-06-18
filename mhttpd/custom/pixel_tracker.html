@@ -22,28 +22,39 @@
     <div class="container-fluid normal_text" id="main">
         <div class="row" style="width: 1500px">
             <div class="col-xs-4 b-r padding_bottom_70" >
-                <div class="scrll_hide">
-                    <div id="L0_US" style="position: relative;height: 350px">
-                        <h1 style="color: #5e9ca0;">Layer 0 Upstream</h1>
-                        <p>As seen from outside the cage</p>
+                <!---div class="scrll_hide"-->
+                    <div class="row" style="width: 500px; margin-left: 10px">
+                        <div class="col-xs-8 b-r padding_bottom_70" style="border-right: 0px;">
+                            <div class="scrll_hide">
+                                <div id="L0_US" style="position: relative;height: 350px">
+                                    <h1 style="color: #5e9ca0;">Layer 0 Upstream</h1>
+                                    <p>As seen from outside the cage</p>
 
-                    </div>
-                    <div id="L1_US" style="position: relative;height: 400px">
-                        <h1 style="color: #5e9ca0;">Layer 1 Upstream</h1>
-                        <p>As seen from outside the cage</p>
+                                </div>
+                                <div id="L1_US" style="position: relative;height: 400px">
+                                    <h1 style="color: #5e9ca0;">Layer 1 Upstream</h1>
+                                    <p>As seen from outside the cage</p>
 
-                    </div>
-                    <div id="L0_DS" style="position: relative;height: 350px">
-                        <h1 style="color: #5e9ca0;">Layer 0 Downstream</h1>
-                        <p>As seen from outside the cage</p>
+                                </div>
+                                <div id="L0_DS" style="position: relative;height: 350px">
+                                    <h1 style="color: #5e9ca0;">Layer 0 Downstream</h1>
+                                    <p>As seen from outside the cage</p>
 
-                    </div>
-                    <div id="L1_DS" style="position: relative;height: 400px">
-                        <h1 style="color: #5e9ca0;">Layer 1 Downstream</h1>
-                        <p>As seen from outside the cage</p>
+                                </div>
+                                <div id="L1_DS" style="position: relative;height: 400px">
+                                    <h1 style="color: #5e9ca0;">Layer 1 Downstream</h1>
+                                    <p>As seen from outside the cage</p>
 
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-xs-4 b-r padding_bottom_70" style = "padding-left: 0px; padding-right: 0px">
+                            <div id="ladder_legend">
+                                <h3>Legend</h3>
+                            </div>
+                        </div>
                     </div>
-                </div>
+                <!--/div-->
             </div>
             <div class="col-xs-4 b-r padding_bottom_70" >
                 <div class="scrll_hide">
@@ -140,8 +151,8 @@
                         </table>
                     </div>
                     <div id="configure_chip_div" style="visibility: hidden;" class="button_configure">
-                        <button onclick="configureChip(event)">Configure</button>
-                        <button onclick="resetDACs(event)">Reset to Default</button>
+                        <button onclick="configureChip(event)" style="display: table-cell;">Configure</button>
+                        <button onclick="resetDACs(event)" style="display: table-cell;">Reset to Default</button>
                     </div>
                     <div id="pixel_configure_update" style="visibility: hidden;">
                         <h3>Status</h3>
