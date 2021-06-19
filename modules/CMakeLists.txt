@@ -5,6 +5,7 @@ if(NOT MIDAS_FOUND)
     find_package(Midas REQUIRED)
     add_subdirectory(midas/mscb)
 endif()
+
 if(ROOT_FOUND)
     if(USE_ANALYZER)
         add_subdirectory(analyzer)
@@ -14,5 +15,3 @@ if(ROOT_FOUND)
 else()
     message("No ROOT found, analyzer will not be build")
 endif()
-
-

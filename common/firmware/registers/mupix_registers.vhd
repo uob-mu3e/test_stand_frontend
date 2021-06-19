@@ -103,4 +103,6 @@ constant MUPIX_LVDS_STATUS_BLOCK_LENGTH     : integer := 36;
     constant MP_HIT_ENA_CNT_SORTER_IN_REGISTER_R :  integer := 16#C1#;
     constant MP_HIT_ENA_CNT_SORTER_SELECT_REGISTER_W :  integer := 16#C2#;
     constant MP_HIT_ENA_CNT_SORTER_OUT_REGISTER_R : integer := 16#C3#;
+    constant MP_RESET_LVDS_N_REGISTER_W         :  integer := 16#C4#;
+
 end package mupix_registers;

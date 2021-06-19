@@ -68,10 +68,11 @@ package a10_pcie_registers is
             constant USE_BIT_GEN_LINK                               : integer := 0;
             constant USE_BIT_STREAM                                 : integer := 1;
             constant USE_BIT_MERGER                                 : integer := 2;
-            constant USE_BIT_LINK                                   : integer := 3;
             constant USE_BIT_GEN_MERGER                             : integer := 4;
             constant USE_BIT_FARM                                   : integer := 5;
             constant USE_BIT_TEST                                   : integer := 6;
+            constant USE_BIT_PIXEL                                  : integer := 7;
+            constant USE_BIT_SCIFI                                  : integer := 8;
         constant SWB_READOUT_LINK_REGISTER_W                    : integer := 16#14#;
         
         constant SWB_COUNTER_REGISTER_W                         : integer := 16#15#;

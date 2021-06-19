@@ -13,18 +13,17 @@ generic (
     -- Data type: x"01" = pixel, x"02" = scifi, x"03" = tiles
     DATA_TYPE: std_logic_vector(7 downto 0) := x"01";
     g_NLINKS_DATA : positive := 12;
-    g_NLINKS_FARM : positive := 8;
-    g_NLINKS : positive := 16--;
+    g_NLINKS_FARM : positive := 8--;
 );
 port (
     -- input streams
-    i_rx            : in    work.util.slv34_array_t(g_NLINKS - 1 downto 0);
-    i_rsop          : in    std_logic_vector(g_NLINKS-1 downto 0);
-    i_reop          : in    std_logic_vector(g_NLINKS-1 downto 0);
-    i_rshop         : in    std_logic_vector(g_NLINKS-1 downto 0);
-    i_rempty        : in    std_logic_vector(g_NLINKS-1 downto 0);
-    i_rmask_n       : in    std_logic_vector(g_NLINKS-1 downto 0);
-    o_rack          : out   std_logic_vector(g_NLINKS-1 downto 0);
+    i_rx            : in    work.util.slv34_array_t(g_NLINKS_DATA - 1 downto 0);
+    i_rsop          : in    std_logic_vector(g_NLINKS_DATA - 1 downto 0);
+    i_reop          : in    std_logic_vector(g_NLINKS_DATA - 1 downto 0);
+    i_rshop         : in    std_logic_vector(g_NLINKS_DATA - 1 downto 0);
+    i_rempty        : in    std_logic_vector(g_NLINKS_DATA - 1 downto 0) := (others => '1');
+    i_rmask_n       : in    std_logic_vector(g_NLINKS_DATA - 1 downto 0);
+    o_rack          : out   std_logic_vector(g_NLINKS_DATA - 1 downto 0);
     o_counters      : out   work.util.slv32_array_t(0 downto 0);
 
     -- output strem
@@ -76,7 +75,7 @@ begin
         TREE_DEPTH_w => TREE_w,
         TREE_DEPTH_r => TREE_r,
         g_NLINKS_DATA => g_NLINKS_DATA,
-        N => g_NLINKS--,
+        DATA_TYPE => DATA_TYPE--,
     )
     port map (
         -- input streams
@@ -88,7 +87,7 @@ begin
         i_link                  => 1, -- which link should be taken to check ts etc.
         i_mask_n                => i_rmask_n,
         o_rack                  => o_rack,
-        
+
         -- output stream
         o_rdata                 => rdata_s,
         i_ren                   => ren,--not rempty and not wfull,
@@ -176,7 +175,7 @@ begin
 
 
     --! read/write data from time merger
-    mupix_time_merger : IF DATA_TYPE = x"01" GENERATE
+    mupix_time_merger : IF DATA_TYPE = x"01" or DATA_TYPE = x"02" GENERATE
         process(i_clk, i_reset_n)
         begin
             if ( i_reset_n = '0' ) then
@@ -185,12 +184,12 @@ begin
                 merge_state <= wait_for_pre;
                 wdata       <= (others => '0');
                 wdata_debug <= (others => '0');
-                wdata_reg   <= (others => '0');
+                wdata_reg   <= (others => '1');
                 wen_reg     <= '0';
             elsif rising_edge(i_clk) then
                 wen         <= '0';
                 wen_reg     <= '0';
-                wdata_reg   <= (others => '0');
+                wdata_reg   <= (others => '1');
                 wdata       <= (others => '0');
                 wdata_debug <= (others => '1');
                 if ( wfull = '0' and rempty = '0' ) then
@@ -231,11 +230,9 @@ begin
                                 for i in 0 to 7 loop
                                     if ( i >= (sh_idx + 1) and rdata(i) /= tree_paddingk ) then
                                         wdata_reg(38 * i + 37 downto 38 * i) <= rdata(i);
-                                    else
-                                        wdata_reg(38 * i + 37 downto 38 * i) <= tree_padding;
+                                        wen_reg <= '1';
                                     end if;
                                 end loop;
-                                wen_reg <= '1';
                             end if;
 
                         when delay =>

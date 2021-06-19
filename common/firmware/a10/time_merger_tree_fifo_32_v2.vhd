@@ -16,7 +16,9 @@ generic (
     compare_fifos   : positive  := 32;
     last_layer      : std_logic := '0';
     g_NLINKS_DATA   : positive  := 12;
-    gen_fifos       : positive  := 16--;
+    gen_fifos       : positive  := 16;
+    -- Data type: x"01" = pixel, x"02" = scifi, x"03" = tiles
+    DATA_TYPE : std_logic_vector(7 downto 0) := x"01"--;
 );
 port (
     -- input
@@ -25,7 +27,8 @@ port (
     i_rdreq         : in  std_logic_vector(gen_fifos - 1 downto 0);
     i_merge_state   : in  std_logic;
     i_mask_n        : in  std_logic_vector(compare_fifos - 1 downto 0);
-    i_wen_h_t       : in  std_logic;
+    -- "10" = header / "01" = sh padding 
+    i_wen_h_t       : in  std_logic_vector(1 downto 0);
     i_data_h_t      : in  std_logic_vector(37 downto 0);
 
     -- output
@@ -78,16 +81,22 @@ begin
 
     gen_hits:
     FOR i in 0 to gen_fifos - 1 GENERATE
-        a(i) <= i_data(i)(31 downto 28);
-        b(i) <= i_data(i + size)(31 downto 28);
+        mupix_data : IF DATA_TYPE = x"01" GENERATE
+            a(i)    <= i_data(i)(31 downto 28);
+            b(i)    <= i_data(i + size)(31 downto 28);
+        END GENERATE;
+        scifi_data : IF DATA_TYPE = x"02" GENERATE
+            a(i)    <= i_data(i)(9 downto 6);
+            b(i)    <= i_data(i + size)(9 downto 6);
+        END GENERATE;
 
-        a_h(i) <= i_data(i)(37 downto 0);
-        b_h(i) <= i_data(i + size)(37 downto 0);
+        a_h(i)      <= i_data(i)(37 downto 0);
+        b_h(i)      <= i_data(i + size)(37 downto 0);
 
         -- for debugging / simulation
-        t_q(i) <= q_reg_reg(i)(31 downto 28);
-        t_data(i) <= data(i)(31 downto 28);
-        l1(i) <= data(i)(37 downto 32);
+        t_q(i)      <= q_reg_reg(i)(31 downto 28);
+        t_data(i)   <= data(i)(31 downto 28);
+        l1(i)       <= data(i)(37 downto 32);
     END GENERATE;
 
     gen_last_layer : if last_layer = '1' generate
@@ -101,11 +110,11 @@ begin
         t_q_last( 3 downto  0) <= last_reg_reg(31 downto 28);
     end generate gen_last_layer;
 
-    o_layer_state <= layer_state;
-    o_wrfull <= wrfull;
-    o_q <= q_reg_reg;
-    o_last <= last_reg_reg;
-    o_rdempty <= rdempty_reg_reg;
+    o_layer_state   <= layer_state;
+    o_wrfull        <= wrfull;
+    o_q             <= q_reg_reg;
+    o_last          <= last_reg_reg;
+    o_rdempty       <= rdempty_reg_reg;
 
     gen_tree:
     FOR i in 0 to gen_fifos - 1 GENERATE
@@ -285,7 +294,7 @@ begin
 
                           IDEL;
 
-        wrreq(i)        <=  '1' when layer_state(i) = last_layer_state and i_wen_h_t = '1' else
+        wrreq(i)        <=  '1' when layer_state(i) = last_layer_state and (i_wen_h_t = "01" or i_wen_h_t = "10" ) else
                             '1' when layer_state(i) = end_state else
                             '1' when layer_state(i) = second_input_not_mask_n or layer_state(i) = a_no_b_padding_state or layer_state(i) = b_no_a_padding_state or layer_state(i) = a_smaller_b or layer_state(i) = b_smaller_a else
                             '0';
@@ -296,7 +305,8 @@ begin
         o_rdreq(i+size) <=  '1' when layer_state(i) = first_input_not_mask_n or layer_state(i) = b_no_a_padding_state or layer_state(i) = b_smaller_a else
                             '0';
 
-        data(i)         <= i_data_h_t when layer_state(i) = last_layer_state else
+        data(i)         <= i_data_h_t when layer_state(i) = last_layer_state and i_wen_h_t = "10" else
+                           tree_padding when layer_state(i) = last_layer_state and i_wen_h_t = "01" else 
                            tree_padding when layer_state(i) = end_state else
                            a_h(i) when layer_state(i) = second_input_not_mask_n or layer_state(i) = a_no_b_padding_state or layer_state(i) = a_smaller_b else
                            b_h(i) when layer_state(i) = first_input_not_mask_n or layer_state(i) = b_no_a_padding_state or layer_state(i) = b_smaller_a else

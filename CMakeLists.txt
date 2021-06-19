@@ -102,10 +102,8 @@ if(APPLE)
     rm_rt(switch_fe)
 endif(APPLE)
 
-if (CUDA_FOUND)
-    add_subdirectory(farm_pc/midas_fe)
-    add_subdirectory(farm_pc/tools)
-endif(CUDA_FOUND)
+add_subdirectory(farm_pc/midas_fe)
+add_subdirectory(farm_pc/tools)
 
 if(CMAKE_PROJECT_NAME STREQUAL mu3e_online)
     enable_testing()

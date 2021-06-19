@@ -86,4 +86,3 @@ set_instance_assignment -name IO_STANDARD "2.5 V" -to fpga_spi_miso
 set_instance_assignment -name IO_STANDARD "2.5 V" -to fpga_spi_mosi
 set_instance_assignment -name IO_STANDARD "2.5 V" -to fpga_reset_n
 set_instance_assignment -name IO_STANDARD "2.5 V" -to fpga_reset
-

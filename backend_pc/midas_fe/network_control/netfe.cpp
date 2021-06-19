@@ -20,7 +20,7 @@ const char *frontend_name = "DHCP DNS";
 const char *frontend_file_name = __FILE__;
 
 /* frontend_loop is called periodically if this variable is TRUE    */
-BOOL frontend_call_loop = TRUE;
+BOOL frontend_call_loop = FALSE;
 
 /* Overwrite equipment struct in ODB from values in code*/
 BOOL equipment_common_overwrite = FALSE;
@@ -342,22 +342,58 @@ INT frontend_exit()
 
 INT frontend_loop()
 {
+
+   return CM_SUCCESS;
+}
+
+/*-- Begin of Run --------------------------------------------------*/
+
+INT begin_of_run(INT run_number, char *error)
+{
+   return CM_SUCCESS;
+}
+
+/*-- End of Run ----------------------------------------------------*/
+
+INT end_of_run(INT run_number, char *error)
+{
+   return CM_SUCCESS;
+}
+
+/*-- Pause Run -----------------------------------------------------*/
+
+INT pause_run(INT run_number, char *error)
+{
+   return CM_SUCCESS;
+}
+
+/*-- Resume Run ----------------------------------------------------*/
+
+INT resume_run(INT run_number, char *error)
+{
+   return CM_SUCCESS;
+}
+
+/*--- Read Clock and Reset Event to be put into data stream --------*/
+
+INT read_cr_event(char *pevent, INT off)
+{
     // slow down
-    sleep(10);
+    //sleep(10);
     bool cmdreserveip=false;
     int cmdreserveipsize=sizeof(TID_BOOL);
-    
+
     db_get_value(hDB, 0, "/Equipment/DHCP DNS/Settings/usercmdReserve",&cmdreserveip, &cmdreserveipsize, TID_BOOL, TRUE);
     if(cmdreserveip==true){
          cmdreserveip = false;
          db_set_value(hDB, 0, "/Equipment/DHCP DNS/Settings/usercmdReserve",&cmdreserveip, cmdreserveipsize, 1, TID_BOOL);
-         reserve_ip();
+         //reserve_ip();
     }
     db_get_value(hDB, 0, "/Equipment/DHCP DNS/Settings/usercmdRmReserve",&cmdreserveip, &cmdreserveipsize, TID_BOOL, TRUE);
     if(cmdreserveip==true){
          cmdreserveip = false;
          db_set_value(hDB, 0, "/Equipment/DHCP DNS/Settings/usercmdRmReserve",&cmdreserveip, cmdreserveipsize, 1, TID_BOOL);
-         rm_reserve_ip();
+         //rm_reserve_ip();
     }
 
     string subnet = "192.168.0.";  // only X.X.X. here !!!
@@ -395,8 +431,8 @@ INT frontend_loop()
     if(prev_ips!=ips){
         cm_msg(MINFO, "netfe_settings_changed", "new dhcp lease, odb updated");
 
-        write_dns_table(dns_zone_def_path,ips,requestedHostnames);
-        system("rcnamed restart");
+        //write_dns_table(dns_zone_def_path,ips,requestedHostnames);
+        //system("rcnamed restart");
 
         //update odb only if there was a change (prev_ips!=ips). Rewrite everything if something changed
         db_set_value(hDB,0,"Equipment/DHCP DNS/Settings/leasedIPs", ips[0].c_str(), sizeof(ips[0]), 1, TID_STRING);
@@ -419,7 +455,7 @@ INT frontend_loop()
     }
 
     // ping everything in subnet
-    active_ips = find_active_ips("192.168.0.");
+    //active_ips = find_active_ips("192.168.0.");
 
     unknown_ips = find_unknown(ips, active_ips);
     int nUnknown= unknown_ips.size();
@@ -435,41 +471,6 @@ INT frontend_loop()
          db_set_value(hDB,0,"Equipment/DHCP DNS/Settings/nUnknown",to_string(nUnknown).c_str(), sizeof(to_string(nUnknown).c_str()), 1,TID_STRING);
     }
 
-   return CM_SUCCESS;
-}
-
-/*-- Begin of Run --------------------------------------------------*/
-
-INT begin_of_run(INT run_number, char *error)
-{
-   return CM_SUCCESS;
-}
-
-/*-- End of Run ----------------------------------------------------*/
-
-INT end_of_run(INT run_number, char *error)
-{
-   return CM_SUCCESS;
-}
-
-/*-- Pause Run -----------------------------------------------------*/
-
-INT pause_run(INT run_number, char *error)
-{
-   return CM_SUCCESS;
-}
-
-/*-- Resume Run ----------------------------------------------------*/
-
-INT resume_run(INT run_number, char *error)
-{
-   return CM_SUCCESS;
-}
-
-/*--- Read Clock and Reset Event to be put into data stream --------*/
-
-INT read_cr_event(char *pevent, INT off)
-{
    return 0;
 }
 
@@ -527,16 +528,16 @@ void netfe_settings_changed(HNDLE hDB, HNDLE hKey, INT, void *)
             db_get_value(hDB, 0, "/Equipment/DHCP DNS/Settings/usereditReserveHost",hostname, &sizehostname, TID_STRING, TRUE);
 
 
-            ofstream dhcpdconf ("/var/lib/dhcp/etc/dhcpd_reservations.conf", std::ios_base::app);
-            if (dhcpdconf.is_open())
-            {
-                dhcpdconf << "host "<<hostname<<" {\n  hardware ethernet "<<mac<<";\n  fixed-address "<<ip<<";\n  ddns-hostname \""<<hostname<<"\";\n  option host-name \""<<hostname<<"\";\n}\n\n";
+//            ofstream dhcpdconf ("/var/lib/dhcp/etc/dhcpd_reservations.conf", std::ios_base::app);
+//            if (dhcpdconf.is_open())
+//            {
+//                dhcpdconf << "host "<<hostname<<" {\n  hardware ethernet "<<mac<<";\n  fixed-address "<<ip<<";\n  ddns-hostname \""<<hostname<<"\";\n  option host-name \""<<hostname<<"\";\n}\n\n";
 
-                dhcpdconf.close();
-            }
-            else cout << "Unable to write dhcpdconf"<<endl;
+//                dhcpdconf.close();
+//            }
+//            else cout << "Unable to write dhcpdconf"<<endl;
 
-            system("rcdhcpd restart");
+//            system("rcdhcpd restart");
         }
    }
 
@@ -552,20 +553,20 @@ void netfe_settings_changed(HNDLE hDB, HNDLE hKey, INT, void *)
             db_set_data(hDB, hKey, &value, sizeof(value), 1, TID_BOOL);
             db_get_value(hDB, 0, "/Equipment/DHCP DNS/Settings/usereditRemReserveIP",removeip, &sizeip, TID_STRING, TRUE);
 
-            ofstream dhcpdconf ("/var/lib/dhcp/etc/dhcpd_reservations.conf");
-            int n = reserved_ips.size();
-            if (dhcpdconf.is_open())
-            {
-                for(int i = 0; i<n; i++){
-                    if(reserved_ips[i]!=removeip){
-                        dhcpdconf << "host "<<reserved_hostnames[i]<<" {\n  hardware ethernet "<<reserved_mac_addr[i]<<";\n  fixed-address "<<reserved_ips[i]<<";\n  ddns-hostname \""<<reserved_hostnames[i]<<"\";\n  option host-name \""<<reserved_hostnames[i]<<"\";\n}\n\n";
-                    }
-                }
-                dhcpdconf.close();
-            }
-            else cout << "Unable to write dhcpdconf"<<endl;
+//            ofstream dhcpdconf ("/var/lib/dhcp/etc/dhcpd_reservations.conf");
+//            int n = reserved_ips.size();
+//            if (dhcpdconf.is_open())
+//            {
+//                for(int i = 0; i<n; i++){
+//                    if(reserved_ips[i]!=removeip){
+//                        dhcpdconf << "host "<<reserved_hostnames[i]<<" {\n  hardware ethernet "<<reserved_mac_addr[i]<<";\n  fixed-address "<<reserved_ips[i]<<";\n  ddns-hostname \""<<reserved_hostnames[i]<<"\";\n  option host-name \""<<reserved_hostnames[i]<<"\";\n}\n\n";
+//                    }
+//                }
+//                dhcpdconf.close();
+//            }
+//            else cout << "Unable to write dhcpdconf"<<endl;
 
-            system("rcdhcpd restart");
+//            system("rcdhcpd restart");
         }
     }
 

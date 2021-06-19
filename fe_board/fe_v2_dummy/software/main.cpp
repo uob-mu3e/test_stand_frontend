@@ -2,7 +2,7 @@
 #include "include/base.h"
 #include "include/xcvr.h"
 
-#include "../../fe/software/si5345_fe_v2.h"
+#include "../../fe/software/si5345_fe_v2_mupix.h"
 si5345_t si5345_1 { SPI_SI_BASE, 0 };
 si5345_t si5345_2 { SPI_SI_BASE, 1 };
 //si5345_t si5345 { SPI_SI_BASE, 0 };

@@ -9,6 +9,10 @@
     <script src="obsolete.js"> </script>
     
         <script>
+        function reload_trigger(){
+            document.getElementById("reloadID").innerHTML="";
+        }
+        
         function reloadAll(jsonData){
             
             var obj = JSON.parse(jsonData);
@@ -81,13 +85,13 @@
     
     <title>network control</title>
 </head>
-<body class="mcss" onload="mhttpd_init('myPage');">
+<body class="mcss" onload="mhttpd_init('myPage'); ">
 
 <!-- header and side navigation will be filled in mhttpd_start -->
 <div id="mheader"></div>
 <div id="msidenav"></div>
 <div id="mmain">
-<div name="modb" data-odb-path="/Equipment/DHCP DNS/Settings" onchange="reloadAll(this.value)"> </div >
+<div name="modb" data-odb-path="/Equipment/DHCP DNS/Settings" onchange="reloadAll(this.value)" id="reloadID" onload="reloadAll(this.value)"> </div >
 
     <div id="unknown">
     <table class="mtable" width="100%" id="unknown">
