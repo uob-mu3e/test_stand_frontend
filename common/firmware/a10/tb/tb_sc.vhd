@@ -5,10 +5,10 @@ use ieee.std_logic_unsigned.all;
 
 
 --  A testbench has no ports.
-entity sc_tb is
+entity tb_sc is
 end entity;
 
-architecture behav of sc_tb is
+architecture rtl of tb_sc is
   --  Declaration of the component that will be instantiated.
 
   --  Specifies which entity is bound with the component.
@@ -23,8 +23,8 @@ architecture behav of sc_tb is
   		signal writememaddr : std_logic_vector(15 downto 0);
   		signal memaddr : std_logic_vector(15 downto 0);
   		signal memaddr_reg : std_logic_vector(15 downto 0);
-  		signal mem_data_out : std_logic_vector(NLINKS * 32 - 1 downto 0);
-  		signal mem_datak_out : std_logic_vector(NLINKS * 4 - 1 downto 0);
+  		signal mem_data_out : work.util.slv32_array_t(NLINKS-1 downto 0);
+  		signal mem_datak_out : work.util.slv4_array_t(NLINKS-1 downto 0);
   		signal mem_data_out_slave : std_logic_vector(31 downto 0);
   		signal mem_datak_out_slave : std_logic_vector(3 downto 0);
   		signal mem_addr_out_slave, length : std_logic_vector(15 downto 0);
@@ -40,7 +40,7 @@ architecture behav of sc_tb is
 		
 begin
   --  Component instantiation.
-    sc_main : entity work.sc_main 
+    sc_main : entity work.swb_sc_main 
     generic map (
         NLINKS => NLINKS
     )
@@ -59,8 +59,8 @@ begin
   
     sc_rx : entity work.sc_rx 
     port map(
-        i_link_data     => mem_data_out(31 downto 0),
-        i_link_datak    => mem_datak_out(3 downto 0),
+        i_link_data     => mem_data_out(0),
+        i_link_datak    => mem_datak_out(0),
         
         o_fifo_we       => open,
         o_fifo_wdata    => open,
@@ -78,7 +78,7 @@ begin
         i_clk           => clk--,
     );
   
-    sc_secondary : entity work.sc_secondary
+    sc_secondary : entity work.swb_sc_secondary
     generic map (
         NLINKS => NLINKS,
         skip_init => '1'
@@ -172,7 +172,8 @@ begin
 		length       <= (others => '0');
 		state        <= idle;
 	elsif(rising_edge(clk))then
-		writememwren <= '0';
+		writememwren    <= '0';
+        length_we       <= '0';
        
         case state is
             
@@ -186,31 +187,26 @@ begin
                     writememdata <= x"1fffffbc";
                     writememaddr <= writememaddr + 1;
                     writememwren <= '1';
-                    length <= x"0001";
                 elsif(writememaddr(3 downto 0)  = x"0")then
                     writememdata <= x"0000000a";
                     writememaddr <= writememaddr + 1;
                     writememwren <= '1';
-                    length <= length + '1';
                 elsif(writememaddr(3 downto 0)  = x"1")then
                     writememdata <= x"00000001";
                     writememaddr <= writememaddr + 1;
                     writememwren <= '1';
-                    length_we <= '0';
-                    length <= length + '1';
                 elsif(writememaddr(3 downto 0)  = x"2")then
                     writememdata <= x"0000000b";
                     writememaddr <= writememaddr + 1;
                     writememwren <= '1';
-                    length <= length + '1';
                 elsif(writememaddr(3 downto 0)  = x"3")then
                     writememdata <= x"0000009c";
                     writememaddr <= writememaddr + 1;
                     writememwren <= '1';
-                    length <= length + '1';
-                elsif(writememaddr(3 downto 0)  = x"4" and done = '1')then
+                    length <= x"0003";
+                elsif(writememaddr(3 downto 0)  = x"4")then
                     length_we <= '1';
-                    writememaddr <= (others => '0');
+                    writememaddr <= (others => '1');
                     state <= wait_state;
                 end if;
                                 

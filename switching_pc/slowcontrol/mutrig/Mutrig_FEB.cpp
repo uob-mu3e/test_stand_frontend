@@ -108,52 +108,52 @@ int MutrigFEB::MapForEach(std::function<int(mutrig::MutrigConfig* /*mutrig confi
 //ASIC configuration:
 //Configure all asics under prefix (e.g. prefix="/Equipment/SciFi")
 int MutrigFEB::ConfigureASICs(){
-      cm_msg(MINFO, "setup_mutrig" , "Configuring MuTRiG asics under prefix %s/Settings/ASICs/", odb_prefix);
-      int status = MapForEach([this](mutrig::MutrigConfig* config, int asic){
-        uint32_t rpc_status;
-        //mapping
-        uint16_t SB_ID=febs[FPGAid_from_ID(asic)].SB_Number();
-        uint16_t SP_ID=febs[FPGAid_from_ID(asic)].SB_Port();
-        uint16_t FA_ID=ASICid_from_ID(asic);
+    cm_msg(MINFO, "setup_mutrig" , "Configuring MuTRiG asics under prefix %s/Settings/ASICs/", odb_prefix);
+    int status = MapForEach([this](mutrig::MutrigConfig* config, int asic){
+            uint32_t rpc_status;
+            //mapping
+            uint16_t SB_ID=febs[FPGAid_from_ID(asic)].SB_Number();
+            uint16_t SP_ID=febs[FPGAid_from_ID(asic)].SB_Port();
+            uint16_t FA_ID=ASICid_from_ID(asic);
 
-        if(!febs[FPGAid_from_ID(asic)].IsScEnabled()){
-          printf(" [skipped -nonenable]\n");
-          return FE_SUCCESS;
-        }
-        if(SB_ID!= SB_number){
-          printf(" [skipped -SB]\n");
-          return FE_SUCCESS;
-        }
-      //printf("\n");
+            if(!febs[FPGAid_from_ID(asic)].IsScEnabled()){
+            printf(" [skipped -nonenable]\n");
+            return FE_SUCCESS;
+            }
+            if(SB_ID!= SB_number){
+            printf(" [skipped -SB]\n");
+            return FE_SUCCESS;
+            }
+            //printf("\n");
 
-        cm_msg(MINFO,
-               "setup_mutrig" ,
-               "Configuring MuTRiG asic %s/Settings/ASICs/%i/: Mapped to FEB%u -> SB%u.%u  ASIC #%d",
-               odb_prefix,asic,FPGAid_from_ID(asic),SB_ID,SP_ID,FA_ID);
+            cm_msg(MINFO,
+                    "setup_mutrig" ,
+                    "Configuring MuTRiG asic %s/Settings/ASICs/%i/: Mapped to FEB%u -> SB%u.%u  ASIC #%d",
+                    odb_prefix,asic,FPGAid_from_ID(asic),SB_ID,SP_ID,FA_ID);
 
 
-      try {
-         //Write ASIC number & Configuraton
-         //ASIC number is the lowest byte of the command that's written to CMD_LEN_REGISTER_RW,
-         //the configuration bitpattern is written to the RAM
-        //rpc_status = m_mu.FEBsc_NiosRPC(FPGAid_from_ID(asic), feb::CMD_MUTRIG_ASIC_CFG, {{reinterpret_cast<uint32_t*>(&asic),1},{reinterpret_cast<uint32_t*>(config->bitpattern_w), config->length_32bits}});
-          vector<vector<uint32_t> > payload;
-          payload.push_back(vector<uint32_t>(reinterpret_cast<uint32_t*>(config->bitpattern_w),reinterpret_cast<uint32_t*>(config->bitpattern_w)+config->length_32bits));
-          rpc_status = feb_sc.FEBsc_NiosRPC(SP_ID, feb::CMD_MUTRIG_ASIC_CFG | asic, payload);
-      } catch(std::exception& e) {
-          cm_msg(MERROR, "setup_mutrig", "Communication error while configuring MuTRiG %d: %s", asic, e.what());
-          set_equipment_status(equipment_name, "SB-FEB Communication error", "red");
-          return FE_ERR_HW; //note: return of lambda function
-      }
-      if(rpc_status!=FEB_REPLY_SUCCESS){
-         //configuration mismatch, report and break foreach-loop
-         set_equipment_status(equipment_name,  "MuTRiG config failed", "red");
-         cm_msg(MERROR, "setup_mutrig", "MuTRiG configuration error for ASIC %i", asic);
-         return FE_ERR_HW;//note: return of lambda function
-      }
-      return FE_SUCCESS;//note: return of lambda function
-   });//MapForEach
-   return status; //status of foreach function, SUCCESS when no error.
+            try {
+                //Write ASIC number & Configuraton
+                //ASIC number is the lowest byte of the command that's written to CMD_LEN_REGISTER_RW,
+                //the configuration bitpattern is written to the RAM
+                //rpc_status = m_mu.FEBsc_NiosRPC(FPGAid_from_ID(asic), feb::CMD_MUTRIG_ASIC_CFG, {{reinterpret_cast<uint32_t*>(&asic),1},{reinterpret_cast<uint32_t*>(config->bitpattern_w), config->length_32bits}});
+                vector<vector<uint32_t> > payload;
+                payload.push_back(vector<uint32_t>(reinterpret_cast<uint32_t*>(config->bitpattern_w),reinterpret_cast<uint32_t*>(config->bitpattern_w)+config->length_32bits));
+                rpc_status = feb_sc.FEBsc_NiosRPC(SP_ID, feb::CMD_MUTRIG_ASIC_CFG | asic, payload);
+            } catch(std::exception& e) {
+                cm_msg(MERROR, "setup_mutrig", "Communication error while configuring MuTRiG %d: %s", asic, e.what());
+                set_equipment_status(equipment_name, "SB-FEB Communication error", "red");
+                return FE_ERR_HW; //note: return of lambda function
+            }
+            if(rpc_status!=FEB_REPLY_SUCCESS){
+                //configuration mismatch, report and break foreach-loop
+                set_equipment_status(equipment_name,  "MuTRiG config failed", "red");
+                cm_msg(MERROR, "setup_mutrig", "MuTRiG configuration error for ASIC %i", asic);
+                return FE_ERR_HW;//note: return of lambda function
+            }
+            return FE_SUCCESS;//note: return of lambda function
+    });//MapForEach
+    return status; //status of foreach function, SUCCESS when no error.
 }
 
 int MutrigFEB::ResetCounters(uint16_t FPGA_ID){

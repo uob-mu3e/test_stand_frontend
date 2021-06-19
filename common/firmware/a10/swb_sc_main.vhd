@@ -50,11 +50,13 @@ architecture arch of swb_sc_main is
 	type state_type is (idle, read_fpga_id, read_data);
 	signal state : state_type;
 		
-	signal wait_cnt, length_we, length_we_reg : std_logic;
+	signal length_we, length_we_reg : std_logic;
+    signal wait_cnt : std_logic_vector(1 downto 0);
 	signal mem_datak : std_logic_vector(3 downto 0); 
+    signal mem_data  : std_logic_vector(31 downto 0); 
 	signal mask_addr : std_logic_vector(15 downto 0); 
-	signal length : std_logic_vector(15 downto 0);
-	signal cur_length : std_logic_vector(15 downto 0);
+    signal length : std_logic_vector(15 downto 0);
+    signal cur_length : std_logic_vector(15 downto 0);
 	
 begin
 
@@ -78,16 +80,16 @@ begin
 	for I in 0 to NLINKS-1 generate
 		process(i_clk, i_reset_n)
 		begin
-			if(i_reset_n = '0')then
-				o_mem_data(I) <= x"000000BC";
-				o_mem_datak(I) <= "0001";
-			elsif(rising_edge(i_clk))then
-				if (wren_reg(I) = '1') then
-					o_mem_data(I) <= i_mem_data;
-					o_mem_datak(I) <= mem_datak;
+			if ( i_reset_n = '0' ) then
+				o_mem_data(I)   <= x"000000BC";
+				o_mem_datak(I)  <= "0001";
+			elsif ( rising_edge(i_clk) ) then
+				if ( wren_reg(I) = '1' ) then
+					o_mem_data(I)   <= mem_data;
+					o_mem_datak(I)  <= mem_datak;
 				else
-                    o_mem_data(I) <= x"000000BC";
-                    o_mem_datak(I) <= "0001";
+                    o_mem_data(I)   <= x"000000BC";
+                    o_mem_datak(I)  <= "0001";
 				end if;
 			end if;
 		end process;
@@ -101,15 +103,17 @@ begin
 			state			<= idle;
 			o_done			<= '0';
 			o_state  		<= (others => '0');
-			wait_cnt		<= '0';
+			wait_cnt		<= "00";
 			mem_datak 		<= (others => '0');
+            mem_data        <= (others => '0');
 			length 			<= (others => '0');
 			cur_length		<= (others => '0');
 		elsif(rising_edge(i_clk))then
-			wait_cnt	            <= not wait_cnt;
+			wait_cnt	            <= wait_cnt + '1';
 			mem_datak 	            <= (others => '0');
+            mem_data                <= i_mem_data;
 			wren_reg	            <= (others => '0');
-			o_state(3 downto 0)	<= x"F";
+			o_state(3 downto 0)	    <= x"F";
 			
 			if (addr_reg = x"FFFF") then
 				addr_reg <= (others => '0');
@@ -124,18 +128,18 @@ begin
                         state		<= read_fpga_id;
                         length      <= i_length;
                         o_done		<= '0';
-                        wait_cnt <= '1';
+                        wait_cnt    <= "00";
                     end if;
 				
 				when read_fpga_id =>
 					o_state(3 downto 0) <= x"2";
-					if(wait_cnt = '0')then
+					if(wait_cnt = "11" )then
                         if (i_mem_data(7 downto 0) = x"BC") then
                             state		<= read_data;
                             addr_reg	<= addr_reg + '1';
                             cur_length  <= cur_length + '1';
-                            mem_datak <= "0001";
-                            mask_addr <= i_mem_data(23 downto 8); -- get fpga id if x"FFFF" write to all links, if 1 first link and so on
+                            mem_datak   <= "0001";
+                            mask_addr   <= i_mem_data(23 downto 8); -- get fpga id if x"FFFF" write to all links, if 1 first link and so on
                             if(i_mem_data(23 downto 8) = x"FFFF") then
                                 wren_reg <= (others => '1');
                             else
@@ -146,7 +150,7 @@ begin
 					
 				when read_data =>
 					o_state(3 downto 0) <= x"3";
-					if(wait_cnt = '0')then
+					if(wait_cnt = "11" )then
 						if(mask_addr(15 downto 0) = x"FFFF") then
 							wren_reg <= (others => '1');
 						else
@@ -155,6 +159,7 @@ begin
 						if (length + '1' = cur_length) then
 							mem_datak   <= "0001";
 							state		<= idle;
+                            wait_cnt    <= "00";
 							addr_reg	<= (others => '0');
 							length	    <= (others => '0');
 							cur_length	<= (others => '0');

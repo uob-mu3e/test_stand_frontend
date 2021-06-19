@@ -38,7 +38,7 @@ FEBSlowcontrolInterface::~FEBSlowcontrolInterface()
  *      start addr(32b, user parameter)
  *      (N-2)*data(32b, user parameter)
  *
- *      1 word as dummy: 0x00000000
+ *      1 word as dummy: 0x00000000 NOTE: MK: why this?
  *      Write length from 0xBC -> 0x9c to SC_MAIN_LENGTH_REGISTER_W
  *      Write enable to SC_MAIN_ENABLE_REGISTER_W
  */
