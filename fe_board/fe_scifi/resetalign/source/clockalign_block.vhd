@@ -37,25 +37,24 @@ end entity;
 
 
 architecture a of clockalign_block is
-	component pll_ip is
+	component pll_resetalign is
 	PORT
 	(
-		areset		: IN STD_LOGIC  := '0';
-		inclk0		: IN STD_LOGIC  := '0';
-		phasecounterselect		: IN STD_LOGIC_VECTOR (3 DOWNTO 0) :=  (OTHERS => '0');
-		phasestep		: IN STD_LOGIC  := '0';
-		phaseupdown		: IN STD_LOGIC  := '0';
+		rst		: IN STD_LOGIC  := '0';
+		refclk		: IN STD_LOGIC  := '0';
+		cntsel		: IN STD_LOGIC_VECTOR (4 DOWNTO 0) :=  (OTHERS => '0');
+		phase_en		: IN STD_LOGIC  := '0';
+		updn		: IN STD_LOGIC  := '0';
 		scanclk		: IN STD_LOGIC  := '1';
-		c0		: OUT STD_LOGIC ;
-		c1		: OUT STD_LOGIC ;
+		outclk_0		: OUT STD_LOGIC ;
+		--c1		: OUT STD_LOGIC ;
 		locked		: OUT STD_LOGIC ;
-		phasedone		: OUT STD_LOGIC 
+		phase_done		: OUT STD_LOGIC 
 	);
 	end component;
 
 	signal s_chainclk : std_logic;
 	signal s_run   : std_logic;
-
 	signal n_PHASECOUNTERSELECT, s_PHASECOUNTERSELECT	: std_logic_vector(3 downto 0);
 	signal n_PHASEUPDOWN, s_PHASEUPDOWN		: std_logic;
 	signal n_PHASESTEP, s_PHASESTEP		: std_logic;
@@ -164,20 +163,21 @@ begin
 
 
 
-	e_pll: entity work.pll_ip
+	e_pll: pll_resetalign
 	port map(
-		areset             => i_pll_arst or i_data(15),                  
-		inclk0             => i_pll_clk,
-		phasecounterselect => s_PHASECOUNTERSELECT,
-		phasestep          => s_PHASESTEP,
-		phaseupdown        => s_PHASEUPDOWN,
+		rst             => i_pll_arst or i_data(15),                  
+		refclk             => i_pll_clk,
+		cntsel(3 downto 0) => s_PHASECOUNTERSELECT,
+        cntsel(4)           => '0',
+		phase_en          => s_PHASESTEP,
+		updn        => s_PHASEUPDOWN,
 		scanclk            => s_chainclk,
-		c0                 => s_pll_clk(0),
-		c1                 => s_pll_clk(1),
+		outclk_0                 => s_pll_clk(0),
+		--c1                 => s_pll_clk(1),
 		--c2                 => s_pll_clk(2),
 		--c3                 => s_pll_clk(3),
 		locked             => o_pll_locked,
-		phasedone          => s_PHASEDONE
+		phase_done          => s_PHASEDONE
 	);
 	s_pll_clk(2) <= i_pll_clk; --TODO: extend pll
 	s_pll_clk(3) <= i_pll_clk; --TODO: extend pll

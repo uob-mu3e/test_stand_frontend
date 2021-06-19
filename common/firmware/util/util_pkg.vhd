@@ -47,7 +47,8 @@ package util is
     subtype slv256_t is std_logic_vector(255 downto 0);
     type slv256_array_t is array ( natural range <> ) of slv256_t;
 
-    type natural_array_t is array(integer range<>) of natural;
+    type integer_array_t is array( natural range <> ) of integer;
+    type natural_array_t is array( natural range <> ) of natural;
 
     --! 8b/10b words
     constant D16_2 : std_logic_vector(7 downto 0) := X"50";

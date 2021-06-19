@@ -23,7 +23,7 @@ port (
     i_reg_wdata     : in    std_logic_vector(31 downto 0);
 
     -- to detector module
-    o_chip_reset    : out   std_logic;
+    o_chip_reset    : out   std_logic_vector(N_MODULES-1 downto 0);
     o_pll_test      : out   std_logic;
     i_data          : in    std_logic_vector(N_MODULES*N_ASICS-1 downto 0);
     io_i2c_sda      : inout std_logic;
@@ -53,6 +53,8 @@ port (
     i_clk_ref_A     : in    std_logic; -- lvds reference only
     i_clk_ref_B     : in    std_logic; -- lvds reference only
     i_clk_g125      : in    std_logic; -- global 125 MHz clock, signals to ASIC from this
+    
+    o_fast_pll_clk  : out   std_logic;
 
     o_test_led      : out   std_logic_vector(1 downto 0);
     i_reset         : in    std_logic--;
@@ -88,8 +90,10 @@ architecture arch of scifi_path is
     -- chip reset synchronization/shift
     signal s_chip_rst : std_logic;
     signal s_chip_rst_shifted : std_logic_vector(3 downto 0);
+    signal chip_rst_prev : std_logic;
 
-
+    signal fast_pll_clk : std_logic;
+    signal s_receivers_usrclk : std_logic;
 
     -- TODO: remove 
     signal a : std_logic;
@@ -169,18 +173,22 @@ begin
     -- 100 kHz
     e_test_pulse : entity work.clkdiv
     generic map ( P => 1250 )
-    port map ( o_clk => s_testpulse, i_reset_n => not i_run_state(RUN_STATE_BITPOS_SYNC), i_clk => i_clk_g125 );
-    o_pll_test <= s_testpulse;
-
-    s_cntreg_denom_b <= work.util.gray2bin(s_cntreg_denom_g_156);
+    port map ( o_clk => s_testpulse, i_reset_n => not i_reset, i_clk => i_clk_g125 ); -- i_run_state(RUN_STATE_BITPOS_SYNC), i_clk => i_clk_g125 );
+    o_pll_test <= '0' when s_cntreg_ctrl(31) = '0' else s_testpulse;
 
     o_test_led(1) <= s_cntreg_ctrl(0);
 
     ---- REGISTER MAPPING ----
     e_scifi_reg_mapping : work.scifi_reg_mapping
+    generic map (
+        N_MODULES => N_MODULES,
+        N_ASICS   => N_ASICS--,
+    )
     port map (
         i_clk                       => i_clk_core,
         i_reset_n                   => not i_reset,
+        
+        i_receivers_usrclk          => s_receivers_usrclk,
 
         i_reg_add                   => i_reg_addr,
         i_reg_re                    => i_reg_re,
@@ -189,11 +197,11 @@ begin
         i_reg_wdata                 => i_reg_wdata,
 
         -- inputs  156--------------------------------------------
-        i_cntreg_num                => work.util.gray2bin(s_cntreg_num),
-        i_cntreg_denom_b            => s_cntreg_denom_b,
+        i_cntreg_num                => work.util.gray2bin(s_cntreg_num_g), -- on receivers_usrclk domain
+        i_cntreg_denom_b            => work.util.gray2bin(s_cntreg_denom_g), -- on receivers_usrclk domain
         i_rx_pll_lock               => rx_pll_lock,
         i_frame_desync              => frame_desync,
-        i_rx_dpa_lock_reg           => rx_dpa_lock_reg,
+        i_rx_dpa_lock_reg           => rx_dpa_lock, -- on receivers_usrclk domain
         i_rx_ready                  => rx_ready,
 
         -- outputs  156-------------------------------------------
@@ -205,16 +213,16 @@ begin
         o_subdet_resetdly_reg       => s_subdet_resetdly_reg--,
     );
 
-    process(i_clk_core)
+    process(i_clk_ref_A)
     begin
-    if rising_edge(i_clk_core) then
-        s_cntreg_denom_g_156 <= s_cntreg_denom_g;
-        s_cntreg_num <= s_cntreg_num_g;
-        rx_dpa_lock_reg <= rx_dpa_lock;
+    if rising_edge(i_clk_ref_A) then
+        chip_rst_prev <= i_run_state(RUN_STATE_BITPOS_SYNC);
     end if;
     end process;
 
-    s_chip_rst <= s_subdet_reset_reg(0) or i_run_state(RUN_STATE_BITPOS_SYNC); --TODO: remove register, replace by generic reset from resetsys
+    -- s_chip_rst <= s_subdet_reset_reg(0) or i_run_state(RUN_STATE_BITPOS_SYNC); --TODO: remove register, replace by generic reset from resetsys
+    s_chip_rst <= i_run_state(RUN_STATE_BITPOS_SYNC) and not chip_rst_prev; --TODO: remove register, replace by generic reset from resetsys
+
     s_datapath_rst <= i_reset or s_subdet_reset_reg(1) or i_run_state(RUN_STATE_BITPOS_PREP); --TODO: remove register, replace by generic reset from resetsys
     s_lvds_rx_rst <= i_reset or s_subdet_reset_reg(2)  or i_run_state(RUN_STATE_BITPOS_RESET);--TODO: remove register, replace by generic reset from resetsys
 
@@ -224,24 +232,24 @@ begin
     port map( i_reset_n => not s_lvds_rx_rst, o_reset_n => s_lvds_rx_rst_n_125, i_clk => i_clk_g125);
 
 
---    u_resetshift: entity work.clockalign_block
---    generic map ( CLKDIV => 2 )
---    port map (
---        i_clk_config    => i_clk_core,
---        i_rst           => i_reset,
---
---        i_pll_clk       => i_clk_g125,
---        i_pll_arst      => i_reset,
---
---        i_flag          => s_subdet_resetdly_reg_written,
---        i_data          => s_subdet_resetdly_reg,
---
---        i_sig           => s_chip_rst,
---        o_sig           => s_chip_rst_shifted,
---        o_pll_clk       => open
---    );
-    --o_chip_reset <= s_chip_rst_shifted(N_MODULES-1 downto 0);
-    o_chip_reset <= i_reset;
+    u_resetshift: entity work.clockalign_block
+    generic map ( CLKDIV => 2 )
+    port map (
+        i_clk_config    => i_clk_core,
+        i_rst           => i_reset,
+
+        i_pll_clk       => i_clk_g125,
+        i_pll_arst      => i_reset,
+
+        i_flag          => s_subdet_resetdly_reg_written,
+        i_data          => s_subdet_resetdly_reg,
+
+        i_sig           => s_chip_rst,
+        o_sig           => s_chip_rst_shifted,
+        o_pll_clk(0)    => o_fast_pll_clk
+    );
+    o_chip_reset <= (others =>s_chip_rst_shifted(0)); --s_chip_rst_shifted(N_MODULES-1 downto 0);TODO: fix this !!
+    --o_chip_reset <= i_reset;
 
     e_mutrig_datapath : entity work.mutrig_datapath
     generic map (
@@ -288,7 +296,7 @@ begin
         i_upper_bnd => (others => '0'), --s_upper_bnd,
 
         -- monitors
-        o_receivers_usrclk => open,
+        o_receivers_usrclk => s_receivers_usrclk,
         o_receivers_pll_lock => rx_pll_lock,
         o_receivers_dpa_lock => rx_dpa_lock,
         o_receivers_ready => rx_ready,

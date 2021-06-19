@@ -85,7 +85,9 @@ MutrigConfig::paras_t MutrigConfig::parameters_header = {
         make_param("short_event_mode",      1, 1), //fast transmission mode
         make_param("pll_setcoarse",         1, 1),
         make_param("pll_envomonitor",       1, 1),
-        make_param("disable_coarse",        1, 1)
+        make_param("disable_coarse",        1, 1),
+        make_param("pll_lol_dbg",           1, 1),
+        make_param("en_ch_evt_cnt",         1, 1)
     };
 
 MutrigConfig::paras_t MutrigConfig::parameters_footer = {
@@ -96,44 +98,46 @@ MutrigConfig::paras_t MutrigConfig::parameters_footer = {
         make_param("coin_xbar_lower_tx_idac", 6, 1),
 //coincidence logic matrix
         make_param("coin_mat_xbl", 3, 1),
-        make_param("coin_mat_0", 3, 1),
-        make_param("coin_mat_1", 3, 1),
-        make_param("coin_mat_2", 3, 1),
-        make_param("coin_mat_3", 3, 1),
-        make_param("coin_mat_4", 3, 1),
-        make_param("coin_mat_5", 3, 1),
-        make_param("coin_mat_6", 3, 1),
-        make_param("coin_mat_7", 3, 1),
-        make_param("coin_mat_8", 3, 1),
-        make_param("coin_mat_9", 3, 1),
-        make_param("coin_mat_10", 3, 1),
-        make_param("coin_mat_11", 3, 1),
-        make_param("coin_mat_12", 3, 1),
-        make_param("coin_mat_13", 3, 1),
-        make_param("coin_mat_14", 3, 1),
-        make_param("coin_mat_15", 3, 1),
-        make_param("coin_mat_16", 3, 1),
-        make_param("coin_mat_17", 3, 1),
-        make_param("coin_mat_18", 3, 1),
-        make_param("coin_mat_19", 3, 1),
-        make_param("coin_mat_20", 3, 1),
-        make_param("coin_mat_21", 3, 1),
-        make_param("coin_mat_22", 3, 1),
-        make_param("coin_mat_23", 3, 1),
-        make_param("coin_mat_24", 3, 1),
-        make_param("coin_mat_25", 3, 1),
-        make_param("coin_mat_26", 3, 1),
-        make_param("coin_mat_27", 3, 1),
-        make_param("coin_mat_28", 3, 1),
-        make_param("coin_mat_29", 3, 1),
-        make_param("coin_mat_30", 3, 1),
-        make_param("coin_mat_31", 3, 1),
+        make_param("coin_mat_0", 6, 1),
+        make_param("coin_mat_1", 6, 1),
+        make_param("coin_mat_2", 6, 1),
+        make_param("coin_mat_3", 6, 1),
+        make_param("coin_mat_4", 6, 1),
+        make_param("coin_mat_5", 6, 1),
+        make_param("coin_mat_6", 6, 1),
+        make_param("coin_mat_7", 6, 1),
+        make_param("coin_mat_8", 6, 1),
+        make_param("coin_mat_9", 6, 1),
+        make_param("coin_mat_10", 6, 1),
+        make_param("coin_mat_11", 6, 1),
+        make_param("coin_mat_12", 6, 1),
+        make_param("coin_mat_13", 6, 1),
+        make_param("coin_mat_14", 6, 1),
+        make_param("coin_mat_15", 6, 1),
+        make_param("coin_mat_16", 6, 1),
+        make_param("coin_mat_17", 6, 1),
+        make_param("coin_mat_18", 6, 1),
+        make_param("coin_mat_19", 6, 1),
+        make_param("coin_mat_20", 6, 1),
+        make_param("coin_mat_21", 6, 1),
+        make_param("coin_mat_22", 6, 1),
+        make_param("coin_mat_23", 6, 1),
+        make_param("coin_mat_24", 6, 1),
+        make_param("coin_mat_25", 6, 1),
+        make_param("coin_mat_26", 6, 1),
+        make_param("coin_mat_27", 6, 1),
+        make_param("coin_mat_28", 6, 1),
+        make_param("coin_mat_29", 6, 1),
+        make_param("coin_mat_30", 6, 1),
+        make_param("coin_mat_31", 6, 1),
         make_param("coin_mat_xbu", 3, 1),
 //coincidence logic crossbar / upper
         make_param("coin_xbar_upper_rx_ena",  1, 1),
         make_param("coin_xbar_upper_tx_ena",  1, 1),
         make_param("coin_xbar_upper_tx_vdac", 8, 1),
         make_param("coin_xbar_upper_tx_idac", 6, 1),
+
+        make_param("coin_wnd",   1, 1),
 
         make_param("amon_en",       1, 1),
         make_param("amon_dac",      8, 1),
@@ -162,6 +166,9 @@ MutrigConfig::MutrigConfig() {
     for(const auto& para : parameters_footer )
         addPara(para, "");
 
+    if(length_bits != 2719) {
+        cm_msg(MERROR,"MutrigConfig","Bitpattern is not 2719 bits long!");
+    }
     // allocate memory for bitpattern
     length = length_bits/8;
     if( length_bits%8 > 0 ) length++;

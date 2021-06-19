@@ -205,12 +205,12 @@ unsigned char reverse(unsigned char b) {
 
 uint32_t MupixFEB::ReadBackLVDSNumHits(uint16_t FPGA_ID, uint16_t LVDS_ID)
 {
-    cm_msg(MINFO, "MupixFEB::ReadBackLVDSNumHits" , "Implement Me");
+    //cm_msg(MINFO, "MupixFEB::ReadBackLVDSNumHits" , "Implement Me");
     return 0;
 }
 
 uint32_t MupixFEB::ReadBackLVDSNumHitsInMupixFormat(uint16_t FPGA_ID, uint16_t LVDS_ID)
 {
-    cm_msg(MINFO, "MupixFEB::ReadBackLVDSNumHitsInMupixFormat" , "Implement Me");
+    //cm_msg(MINFO, "MupixFEB::ReadBackLVDSNumHitsInMupixFormat" , "Implement Me");
     return 0;
 }

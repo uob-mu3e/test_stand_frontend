@@ -21,7 +21,6 @@ namespace mutrig { namespace midasODB {
 
 int setup_db(const char* prefix, MutrigFEB* FEB_interface){
     /* Book Setting space */
-    cm_msg(MINFO, "mutrig_midasobb::setup_db", "Setting up odb");
     INT status = DB_SUCCESS;
 
     char set_str[255];
@@ -30,7 +29,7 @@ int setup_db(const char* prefix, MutrigFEB* FEB_interface){
     sprintf(set_str, "%s/Settings/ASICs/Global", prefix);
     auto settings_asics = MUTRIG_GLOBAL_SETTINGS;
      // global mutrig setting are from mutrig_MIDAS_config.h
-    settings_asics.connect(set_str, true);
+    settings_asics.connect(set_str);
  
     //Set number of ASICs, derived from mapping
     unsigned int nasics = FEB_interface->GetNumASICs();
@@ -43,13 +42,14 @@ int setup_db(const char* prefix, MutrigFEB* FEB_interface){
 
     // Add [prefix]/Daq (structure defined in mutrig_MIDAS_config.h) 
     auto settings_daq = MUTRIG_DAQ_SETTINGS; // gloabl setting for daq/fpga from mutrig_MIDAS_config.h
-    settings_daq.connect(set_str, true);
+    settings_daq.connect(set_str);
     //update length flags for DAQ section
     settings_daq["num_asics"]=nasics;
     settings_daq["mask"].resize(nasics);
     settings_daq["resetskew_cphase"].resize(FEB_interface->GetNumModules());
     settings_daq["resetskew_cdelay"].resize(FEB_interface->GetNumModules());
     settings_daq["resetskew_phases"].resize(FEB_interface->GetNumModules());
+    settings_daq.connect(set_str);
 
 
     // use lambda function for passing FEB_interface
@@ -67,51 +67,66 @@ int setup_db(const char* prefix, MutrigFEB* FEB_interface){
     auto settings_ch = MUTRIG_CH_SETTINGS;
     for(unsigned int asic = 0; asic < nasics; ++asic) {
         sprintf(set_str, "%s/Settings/ASICs/TDCs/%i", prefix, asic);
-        settings_tdc.connect(set_str, true);
+        settings_tdc.connect(set_str);
         for(unsigned int ch = 0; ch < 32; ++ch) {
             sprintf(set_str, "%s/Settings/ASICs/Channels/%i", prefix, asic*32+ch);
-            settings_ch.connect(set_str, true);
+            settings_ch.connect(set_str);
         }
     }
-    cm_msg(MINFO, "mutrig_midasobb::setup_db", "Setting up odb - ASICs done");
 
     //set up variables read from FEB: counters
     sprintf(set_str, "%s/Variables/Counters", prefix);
     odb variables_counters = {
-        {"nHits", nasics},
-        {"Time", nasics},
-        {"nBadFrames", nasics},
-        {"nFrames", nasics},
-        {"nErrorsLVDS", nasics},
-        {"nWordsLVDS", nasics},
-        {"nErrorsPRBS", nasics},
-        {"nWordsPRBS", nasics},
-        {"nDatasyncloss", nasics},
+        {"nHits", std::array<uint32_t, 255>()},
+        {"Time", std::array<uint32_t, 255>()},
+        {"nBadFrames", std::array<uint32_t, 255>()},
+        {"nFrames", std::array<uint32_t, 255>()},
+        {"nErrorsLVDS", std::array<uint32_t, 255>()},
+        {"nWordsLVDS", std::array<uint32_t, 255>()},
+        {"nErrorsPRBS", std::array<uint32_t, 255>()},
+        {"nWordsPRBS", std::array<uint32_t, 255>()},
+        {"nDatasyncloss", std::array<uint32_t, 255>()},
     };
     variables_counters.connect(set_str);
-    cm_msg(MINFO, "mutrig_midasobb::setup_db", "Setting up odb - counters done");
+    variables_counters["nHits"].resize(nasics);
+    variables_counters["Time"].resize(nasics);
+    variables_counters["nBadFrames"].resize(nasics);
+    variables_counters["nFrames"].resize(nasics);
+    variables_counters["nErrorsLVDS"].resize(nasics);
+    variables_counters["nWordsLVDS"].resize(nasics);
+    variables_counters["nErrorsPRBS"].resize(nasics);
+    variables_counters["nWordsPRBS"].resize(nasics);
+    variables_counters["nDatasyncloss"].resize(nasics);
 
+    variables_counters.connect(set_str);
 
     //set up variables read from FEB: run state & reset system bypass
     sprintf(set_str, "%s/Variables/FEB Run State", prefix);
     odb bypass_setting = {
-            {"Bypass enabled", FEB_interface->GetNumFPGAs()},
-            {"Run state", FEB_interface->GetNumFPGAs()}
+            {"Bypass enabled", std::array<uint32_t, 255>()},
+            {"Run state", std::array<uint32_t, 255>()}
     };
     bypass_setting.connect(set_str);
-    cm_msg(MINFO, "mutrig_midasobb::setup_db", "Setting up odb - feb state done");
+    bypass_setting["Bypass enabled"].resize(FEB_interface->GetNumFPGAs());
+    bypass_setting["Run state"].resize(FEB_interface->GetNumFPGAs());
+    bypass_setting.connect(set_str);
 
     //set up variables read from FEB: run state & reset system bypass
     sprintf(set_str, "%s/Variables/FEB datapath status", prefix);
     odb datapath_status = {
-            {"PLL locked", FEB_interface->GetNumFPGAs()},
-            {"Buffer full", FEB_interface->GetNumFPGAs()},
-            {"Frame desync", FEB_interface->GetNumFPGAs()},
-            {"DPA locked", FEB_interface->GetNumASICs()},
-            {"RX ready", FEB_interface->GetNumASICs()}
+            {"PLL locked", std::array<uint32_t, 255>()},
+            {"Buffer full", std::array<uint32_t, 255>()},
+            {"Frame desync", std::array<uint32_t, 255>()},
+            {"DPA locked", std::array<uint32_t, 255>()},
+            {"RX ready", std::array<uint32_t, 255>()}
     };
     datapath_status.connect(set_str);
-    cm_msg(MINFO, "mutrig_midasobb::setup_db", "Setting up odb - datapath status done");
+    datapath_status["PLL locked"].resize(FEB_interface->GetNumFPGAs());
+    datapath_status["Buffer full"].resize(FEB_interface->GetNumFPGAs());
+    datapath_status["Frame desync"].resize(FEB_interface->GetNumFPGAs());
+    datapath_status["DPA locked"].resize(FEB_interface->GetNumASICs());
+    datapath_status["RX ready"].resize(FEB_interface->GetNumASICs());
+    datapath_status.connect(set_str);
 
     // Define history panels
     for(std::string panel: {
@@ -133,7 +148,6 @@ int setup_db(const char* prefix, MutrigFEB* FEB_interface){
         }
         hs_define_panel(FEB_interface->GetName(),panel.c_str(),varlist);
     }
-    cm_msg(MINFO, "mutrig_midasobb::setup_db", "Setting up odb - history done");
 
     //hs_define_panel("SciFi","Times",{"SciFi:Counters_Time",
     //                                "SciFi:Counters_Time"});

@@ -48,8 +48,7 @@ begin
     e_rx_fifo : entity work.ip_dcfifo_v2
     generic map (
         g_ADDR_WIDTH => g_FIFO_ADDR_WIDTH,
-        g_DATA_WIDTH => rx_data'length + rx_datak'length,
-        DEVICE_FAMILY => "Arria 10"--,
+        g_DATA_WIDTH => rx_data'length + rx_datak'length--,
     )
     port map (
         i_wdata(rx_data'range) => i_xcvr_rx_data,
@@ -76,8 +75,7 @@ begin
     e_tx_fifo : entity work.ip_dcfifo_v2
     generic map (
         g_ADDR_WIDTH => g_FIFO_ADDR_WIDTH,
-        g_DATA_WIDTH => tx_data'length + tx_datak'length,
-        DEVICE_FAMILY => "Arria 10"--,
+        g_DATA_WIDTH => tx_data'length + tx_datak'length--,
     )
     port map (
         i_wdata(tx_data'range) => i_tx_data,
