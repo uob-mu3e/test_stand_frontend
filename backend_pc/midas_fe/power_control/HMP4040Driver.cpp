@@ -26,6 +26,7 @@ INT HMP4040Driver::ConnectODB()
 	settings["reply timout"](300);
 	settings["min reply"](2); //minimum reply , 2 chars , not 3 (not fully figured out why)
 	settings["ESR"](0);
+	settings["Max Voltage"](2);
 	if(false) return FE_ERR_ODB;
     return FE_SUCCESS;
 }

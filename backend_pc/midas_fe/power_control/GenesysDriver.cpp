@@ -142,6 +142,8 @@ INT GenesysDriver::Init()
 	variables["State"]=state; //push to odb
 	variables["Set State"]=state; //the init function can not change the on/off state of the supply
   
+	//variabes["OVP level"]
+  
  	variables["Voltage"]=voltage;
  	variables["Demand Voltage"]=demandvoltage;
  	
