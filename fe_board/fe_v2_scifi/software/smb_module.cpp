@@ -15,7 +15,7 @@ char wait_key(useconds_t us = 100000);
 #include "include/scifi_registers.h"
 
 int SMB_t::spi2_write_pattern(alt_u32 spi_slave, const alt_u8* bitpattern) {
-    volatile alt_u32* base = (alt_u32*)AVALON_SPI_MASTER_0_BASE;
+/*    volatile alt_u32* base = (alt_u32*)AVALON_SPI_MASTER_0_BASE;
 
     // reset
     base[3] |= 0x80000000;
@@ -65,7 +65,7 @@ int SMB_t::spi2_write_pattern(alt_u32 spi_slave, const alt_u8* bitpattern) {
     } while(nb > 0);
     base[2] &= ~0x80000000;
     base[1] = 1 << spi_slave;
-    return status;
+    return status;*/
 }
 
 //write slow control pattern over SPI, returns 0 if readback value matches written, otherwise -1. Does not include CSn line switching.
