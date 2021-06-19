@@ -30,7 +30,7 @@ signal run_number :                             std_logic_vector(23 downto 0);
 
 BEGIN
 
-    process (i_clk, i_reset_run_end_n, i_reset_ack_seen_n, i_aligned)
+    process (i_clk, i_reset_run_end_n, i_reset_ack_seen_n, i_data, i_aligned)
     begin
         if(i_data = MERGER_TIMEOUT)then
             o_merger_timeout <= '1';
