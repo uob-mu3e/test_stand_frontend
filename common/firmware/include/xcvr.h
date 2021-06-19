@@ -13,7 +13,7 @@ struct xcvr_block_t {
     alt_u32 span;
 
     alt_u32 ch = 0;
-    int n = 0;
+    alt_u32 n = 0;
     alt_u32* rx_p = nullptr;
 
     explicit
@@ -112,11 +112,11 @@ struct xcvr_block_t {
                 xcvr = xcvr_ch(j);
                 if(xcvr == nullptr) break;
 
-                int l = xcvr[0x2F];
-                int e = xcvr[0x23] > 0 || xcvr[0x24] > 0;
-                int E = xcvr[0x23] == 0xFF && xcvr[0x24] == 0xFFFF;
-                int _ = xcvr[0x21] != 0;
-                int S = xcvr[0x20] == 0 && (xcvr[0x21] & 0x1005) == 0x1005 && xcvr[0x22] == 0;
+                alt_u32 l = xcvr[0x2F];
+                alt_u32 e = xcvr[0x23] > 0 || xcvr[0x24] > 0;
+                alt_u32 E = xcvr[0x23] == 0xFF && xcvr[0x24] == 0xFFFF;
+                alt_u32 _ = xcvr[0x21] != 0;
+                alt_u32 S = xcvr[0x20] == 0 && (xcvr[0x21] & 0x1005) == 0x1005 && xcvr[0x22] == 0;
                 printf(" | %s0x%02X%s %s%s..%s",
                     j == ch ? "[" : " ", j, j == ch ? "]" : " ",
                     S ? "S" : _ ? "_" : ".", l ? "l" : ".", E ? "E" : e ? "e" : "."
