@@ -89,7 +89,7 @@ void MuFEB::ReadFirmwareVersionsToODB()
 void MuFEB::LoadFirmware(std::string filename, uint16_t FPGA_ID)
 {
 
-    auto FEB = febs[FPGA_ID];
+    auto FEB = febs.at(FPGA_ID);
 
     FILE * f = fopen(filename.c_str(), "rb");
     if(!f){
@@ -162,7 +162,7 @@ void MuFEB::LoadFirmware(std::string filename, uint16_t FPGA_ID)
 
 int MuFEB::ReadBackRunState(uint16_t FPGA_ID){
     //map to SB fiber
-    auto FEB = febs[FPGA_ID];
+    auto FEB = febs.at(FPGA_ID);
 
     //skip disabled fibers
     if(!FEB.IsScEnabled())
@@ -203,7 +203,7 @@ uint32_t MuFEB::ReadBackMergerRate(uint16_t FPGA_ID){
 
     if ( febs.size() == 0 ) return 0; // return 0 if there is no feb
 
-    auto FEB = febs[FPGA_ID];
+    auto FEB = febs.at(FPGA_ID);
     if(!FEB.IsScEnabled()) return SUCCESS; //skip disabled fibers
     if(FEB.SB_Number()!=SB_number) return SUCCESS; //skip commands not for this SB
     vector<uint32_t> mergerRate(1);
@@ -215,7 +215,7 @@ uint32_t MuFEB::ReadBackResetPhase(uint16_t FPGA_ID){
 
     if ( febs.size() == 0 ) return 0; // return 0 if there is no feb
 
-    auto FEB = febs[FPGA_ID];
+    auto FEB = febs.at(FPGA_ID);
     if(!FEB.IsScEnabled()) return SUCCESS; //skip disabled fibers
     if(FEB.SB_Number()!=SB_number) return SUCCESS; //skip commands not for this SB
 
@@ -228,7 +228,7 @@ uint32_t MuFEB::ReadBackTXReset(uint16_t FPGA_ID){
 
     if ( febs.size() == 0 ) return 0; // return 0 if there is no feb
 
-    auto FEB = febs[FPGA_ID];
+    auto FEB = febs.at(FPGA_ID);
     if(!FEB.IsScEnabled()) return SUCCESS; //skip disabled fibers
     if(FEB.SB_Number()!=SB_number) return SUCCESS; //skip commands not for this SB
 

@@ -175,6 +175,11 @@ int MutrigFEB::ReadBackCounters(uint16_t FPGA_ID){
     auto rpc_ret = feb_sc.FEBsc_NiosRPC(FEB.SB_Port(), feb::CMD_MUTRIG_CNT_READ, {});
    //retrieve results
 
+   if(rpc_ret < 0) {
+       cm_msg(MINFO, "ReadBackCounters", "RPC Returned %d for FPGA_ID %u", rpc_ret, FPGA_ID);
+       return SUCCESS; // TODO: Proper error code
+   }
+
    vector<uint32_t> val(rpc_ret*5*3);
 
    feb_sc.FEB_read(FEB.SB_Port(), FEBSlowcontrolInterface::OFFSETS::FEBsc_RPC_DATAOFFSET,
