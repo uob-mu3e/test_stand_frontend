@@ -134,13 +134,12 @@ int MutrigFEB::ConfigureASICs(){
 
       try {
          //Write ASIC number & Configuraton
+         //ASIC number is the lowest byte of the command that's written to CMD_LEN_REGISTER_RW,
+         //the configuration bitpattern is written to the RAM
         //rpc_status = m_mu.FEBsc_NiosRPC(FPGAid_from_ID(asic), feb::CMD_MUTRIG_ASIC_CFG, {{reinterpret_cast<uint32_t*>(&asic),1},{reinterpret_cast<uint32_t*>(config->bitpattern_w), config->length_32bits}});
           vector<vector<uint32_t> > payload;
-          payload.push_back(vector<uint32_t>(1,asic));
-          std::cout << "Pushing back (1, " << asic << ")" << std::endl;
           payload.push_back(vector<uint32_t>(reinterpret_cast<uint32_t*>(config->bitpattern_w),reinterpret_cast<uint32_t*>(config->bitpattern_w)+config->length_32bits));
-          std::cout << "Pushing back (" << reinterpret_cast<uint32_t*>(config->bitpattern_w) <<  ", " << reinterpret_cast<uint32_t*>(config->bitpattern_w)+config->length_32bits << std::endl;
-          rpc_status = feb_sc.FEBsc_NiosRPC(SP_ID, feb::CMD_MUTRIG_ASIC_CFG, payload);
+          rpc_status = feb_sc.FEBsc_NiosRPC(SP_ID, feb::CMD_MUTRIG_ASIC_CFG | asic, payload);
       } catch(std::exception& e) {
           cm_msg(MERROR, "setup_mutrig", "Communication error while configuring MuTRiG %d: %s", asic, e.what());
           set_equipment_status(equipment_name, "SB-FEB Communication error", "red");

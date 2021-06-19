@@ -60,3 +60,6 @@ set_output_delay -clock { spare_clk_osc } -max 0 [get_ports {max10_spi_D1}]
 set_output_delay -clock { spare_clk_osc } -max 0 [get_ports {max10_spi_D2}]
 set_output_delay -clock { spare_clk_osc } -max 0 [get_ports {max10_spi_D3}]
 set_output_delay -clock { spare_clk_osc } -max 0 [get_ports {max10_spi_csn}]
+
+# false paths
+set_false_path -from {scifi_path:e_tile_path|mutrig_datapath:e_mutrig_datapath|receiver_block:u_rxdeser|data_decoder:\gen_channels:*:datadec|ready_buf} -to {*}
