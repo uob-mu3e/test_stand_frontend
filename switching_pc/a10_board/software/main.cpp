@@ -53,10 +53,7 @@ int main() {
 
     while (1) {
         printf("  [1] => flash\n");
-        printf("  [2] => xcvr qsfp[A]\n");
-        printf("  [3] => xcvr qsfp[B]\n");
-        printf("  [4] => xcvr qsfp[C]\n");
-        printf("  [5] => xcvr qsfp[D]\n");
+        printf("  [2] => xcvr\n");
         printf("  [8] => fan\n");
         printf("  [0] => spi si chip\n");
         printf("  [r] => reconfig pll\n");
@@ -68,16 +65,7 @@ int main() {
             flash.menu();
             break;
         case '2':
-            menu_xcvr((alt_u32*)((AVM_XCVR0_BASE + 0x00000) | ALT_CPU_DCACHE_BYPASS_MASK), 'A');
-            break;
-        case '3':
-            menu_xcvr((alt_u32*)((AVM_XCVR0_BASE + 0x10000) | ALT_CPU_DCACHE_BYPASS_MASK), 'B');
-            break;
-        case '4':
-            menu_xcvr((alt_u32*)((AVM_XCVR0_BASE + 0x20000) | ALT_CPU_DCACHE_BYPASS_MASK), 'C');
-            break;
-        case '5':
-            menu_xcvr((alt_u32*)((AVM_XCVR0_BASE + 0x30000) | ALT_CPU_DCACHE_BYPASS_MASK), 'D');
+            menu_xcvr((alt_u32*)((AVM_XCVR0_BASE + 0x00000) | ALT_CPU_DCACHE_BYPASS_MASK), AVM_XCVR0_SPAN);
             break;
         case '8':
             fan.menu();
