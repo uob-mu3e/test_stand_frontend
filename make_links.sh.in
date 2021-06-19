@@ -1,0 +1,23 @@
+#
+
+PREFIX=@CMAKE_INSTALL_PREFIX@
+SOURCE=@PROJECT_SOURCE_DIR@
+BINDIR=${PREFIX}/bin
+BINDIRMIDAS=${SOURCE}/modules/midas/bin
+LIBDIR=${PREFIX}/lib
+
+ONLINE_DIR="${SOURCE}/online"
+
+cd "$ONLINE_DIR"
+ln -sf "${SOURCE}/modules/midas/resources"
+ln -sf "${SOURCE}/modules/analyzer/packages/mu3edisplay/config"
+ln -sf "${SOURCE}/modules/analyzer/packages/mu3edisplay/dist"
+ln -sf "${SOURCE}/modules/analyzer/packages/rootana/examples"
+
+ln -sf "${SOURCE}/mhttpd/custom/manalyzer/online_ana_setup.json"
+ln -sf "${SOURCE}/mhttpd/custom/manalyzer/OnlineAna.js"
+ln -sf "${SOURCE}/mhttpd/custom/manalyzer/OnlineAna.css"
+ln -sf "${SOURCE}/mhttpd/custom/manalyzer/plotting_functions_jsroot.js"
+ln -sf "${SOURCE}/mhttpd/custom/manalyzer/plotting_functions_nonroot.js"
+ln -sf "${SOURCE}/mhttpd/custom/manalyzer/rootana_functions.js"
+cd -
