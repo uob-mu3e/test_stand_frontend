@@ -8,9 +8,11 @@
 #include <unistd.h>
 #include <cassert>
 #include "midas.h"
+#include "odbxx.h"
 #include "mfe.h"
 
 using namespace std;
+using midas::odb;
 
 /*-- Globals -------------------------------------------------------*/
 
@@ -297,38 +299,36 @@ INT interrupt_configure(INT cmd, INT source, POINTER_T adr)
 
 INT frontend_init()
 {
-   HNDLE hKey;
+    odb settings = {
+        {"DHCPD Active", true},
+        {"DNS Active", true},
+        {"usercmdReserve", false},
+        {"usercmdRmReserve", false},
 
-   system("touch /var/lib/dhcp/etc/dhcpd_reservations.conf");
+        {"usereditReserveIP", "000.000.000.000"},
+        {"usereditReserveMAC", "00:00:00:00:00"},
+        {"usereditReserveHost", "hostname"},
+        {"usereditRemReserveIP", "000.000.000.000"},
 
-   // create Settings structure in ODB
-   db_create_record(hDB, 0, "Equipment/DHCP DNS/Settings", strcomb(cr_settings_str));
-   db_create_key(hDB, 0, "Equipment/DHCP DNS/Settings/leasedIPs", TID_STRING);
-   db_create_key(hDB, 0, "Equipment/DHCP DNS/Settings/leasedHostnames", TID_STRING);
-   db_create_key(hDB, 0, "Equipment/DHCP DNS/Settings/leasedMACs", TID_STRING);
-   db_create_key(hDB, 0, "Equipment/DHCP DNS/Settings/expiration", TID_STRING);
-   db_create_key(hDB, 0, "Equipment/DHCP DNS/Settings/reservedIPs", TID_STRING);
-   db_create_key(hDB, 0, "Equipment/DHCP DNS/Settings/reservedHostnames", TID_STRING);
-   db_create_key(hDB, 0, "Equipment/DHCP DNS/Settings/reservedMACs", TID_STRING);
-   db_create_key(hDB, 0, "Equipment/DHCP DNS/Settings/unknownIPs", TID_STRING);
-   db_create_key(hDB, 0, "Equipment/DHCP DNS/Settings/DNSips", TID_STRING);
-   db_create_key(hDB, 0, "Equipment/DHCP DNS/Settings/DNSHostnames", TID_STRING);
-   db_create_key(hDB, 0, "Equipment/DHCP DNS/Settings/usereditReserveIP", TID_STRING);
-   db_create_key(hDB, 0, "Equipment/DHCP DNS/Settings/usereditReserveMAC", TID_STRING);
-   db_create_key(hDB, 0, "Equipment/DHCP DNS/Settings/usereditReserveHost", TID_STRING);
-   db_create_key(hDB, 0, "Equipment/DHCP DNS/Settings/usereditRemReserveIP", TID_STRING);
+        {"leasedIPs", std::array<std::string, 255>()},
+        {"leasedHostnames", std::array<std::string, 255>()},
+        {"leasedMACs", std::array<std::string, 255>()},
+        {"expiration", std::array<std::string, 255>()},
+        {"reservedIPs", std::array<std::string, 255>()},
+        {"reservedHostnames", std::array<std::string, 255>()},
+        {"reservedMACs", std::array<std::string, 255>()},
+        {"unknownIPs", std::array<std::string, 255>()},
+        {"DNSips", std::array<std::string, 255>()},
+        {"DNSHostnames", std::array<std::string, 255>()}
+    };
 
-   db_find_key(hDB, 0, "/Equipment/DHCP DNS", &hKey);
-   assert(hKey);
+    settings.connect("/Equipment/DHCP DNS/Settings", true);
 
-  // db_watch(hDB, hKey, netfe_settings_changed, nullptr);
+    // add custom page to ODB
+    odb custom("/Custom");
+    custom["DHCP DNS&"] = "net.html";
 
-   // add custom page to ODB
-   db_create_key(hDB, 0, "Custom/DHCP DNS&", TID_STRING);
-   const char * name = "net.html";
-   db_set_value(hDB,0,"Custom/DHCP DNS&",name, 9*sizeof(char), 1,TID_STRING);
-
-   return CM_SUCCESS;
+    return CM_SUCCESS;
 }
 
 /*-- Frontend Exit -------------------------------------------------*/
@@ -429,7 +429,14 @@ INT read_cr_event(char *pevent, INT off)
     // if new dhcp request:   --> update dns table
 
     if(prev_ips!=ips){
-        cm_msg(MINFO, "netfe_settings_changed", "new dhcp lease, odb updated");
+        if(ips.size()!=0 && prev_ips.size()!=0 ){
+            for (int i = 0; i < ips.size(); i++){
+                if(ips.at(i)!=prev_ips.at(i)){
+                    cm_msg(MINFO, "netfe_settings_changed", "new or updated dhcp lease of %s to %s",ips.at(i).c_str(),requestedHostnames.at(i).c_str());
+                    break;
+                }
+            }
+        }
 
         //write_dns_table(dns_zone_def_path,ips,requestedHostnames);
         //system("rcnamed restart");
