@@ -143,7 +143,7 @@ architecture arch of top is
     signal dma_data_wren, dmamem_endofevent, pcie0_dma0_hfull : std_logic;
     signal dma_data : std_logic_vector(255 downto 0);
 
-    signal rx_data_raw, rx_data, tx_data, farm_rx_data : work.util.slv32_array_t(23 downto 0) := (
+    signal rx_data_raw, rx_data, tx_data : work.util.slv32_array_t(23 downto 0) := (
         0 => X"000000BC", 1 => X"010000BC", 2 => X"020000BC", 3 => X"030000BC", 4 => X"040000BC", 5 => X"050000BC", 6 => X"060000BC", 7 => X"070000BC",
         8 => X"080000BC", 9 => X"090000BC", 10 => X"100000BC", 11 => X"110000BC", 12 => X"120000BC", 13 => X"130000BC", 14 => X"140000BC", 15 => X"150000BC",
         16 => X"160000BC", 17 => X"170000BC", 18 => X"180000BC", 19 => X"190000BC", 20 => X"200000BC", 21 => X"210000BC", 22 => X"220000BC", 23 => X"230000BC",
@@ -151,7 +151,7 @@ architecture arch of top is
     );
     signal rx_datak_raw, rx_datak, tx_datak : work.util.slv4_array_t(23 downto 0) := (others => "0001");
 
-    signal farm_rx_data : work.util.slv32_array_t(23 downto 0) := (
+    signal farm_rx_data, farm_tx_data : work.util.slv32_array_t(23 downto 0) := (
         0 => X"000000BC", 1 => X"010000BC", 2 => X"020000BC", 3 => X"030000BC", 4 => X"040000BC", 5 => X"050000BC", 6 => X"060000BC", 7 => X"070000BC",
         8 => X"080000BC", 9 => X"090000BC", 10 => X"100000BC", 11 => X"110000BC", 12 => X"120000BC", 13 => X"130000BC", 14 => X"140000BC", 15 => X"150000BC",
         16 => X"160000BC", 17 => X"170000BC", 18 => X"180000BC", 19 => X"190000BC", 20 => X"200000BC", 21 => X"210000BC", 22 => X"220000BC", 23 => X"230000BC",
