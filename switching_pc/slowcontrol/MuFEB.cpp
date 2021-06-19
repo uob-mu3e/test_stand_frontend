@@ -47,6 +47,12 @@ int MuFEB::WriteFEBID(){
     return 0;
 }
 
+int MuFEB::WriteSorterDelay(uint16_t FPGA_ID, uint32_t delay)
+{
+    std::vector<uint32_t> data(1,delay);
+    feb_sc.FEB_register_write(FPGA_ID, SORTER_DELAY_RW, data);
+}
+
 void MuFEB::ReadFirmwareVersionsToODB()
 {
     vector<uint32_t> arria(1);
@@ -320,6 +326,54 @@ DWORD *MuFEB::read_SSFE_OneFEB(DWORD *pdata, uint32_t index, uint32_t version)
     *(float*)pdata++ = ((float)fireflydata[11])/1E7f; // FF2 RX4 Power
     *pdata++ = fireflydata[12]; // FF2 Alarms
 
+    return pdata;
+}
+
+DWORD *MuFEB::fill_SSSO(DWORD *pdata)
+{
+    uint32_t index = 0;
+
+    for(auto FEB: febs){
+       if(!FEB.IsScEnabled()) continue; //skip disabled fibers
+       if(FEB.SB_Number()!=SB_number) continue;
+
+       uint32_t port = FEB.SB_Port();
+       // Fill in zeroes for non-existing ports
+       while(index < port){
+            // 39 is per_fe_SSSO_size - need to find a header for that...
+            for(uint32_t j=0; j < 39; j++){
+                *pdata++ = 0;
+             }
+           index++;
+       }
+
+       // And here we actually fill the bank
+        pdata = read_SSSO_OneFEB(pdata, index);
+        index++;
+    }
+
+
+
+    // Fill in zeroes for non-existing ports
+    while(index < N_FEBS[SB_number]){
+        for(uint32_t j=0; j < 39; j++){
+            *pdata++ = 0;
+         }
+       index++;
+    }
+    return pdata;
+}
+
+DWORD *MuFEB::read_SSSO_OneFEB(DWORD *pdata, uint32_t index)
+{
+    uint32_t data;
+    // Start with FEB index
+    *pdata++ = index;
+    vector<uint32_t> sorterdata(38);
+    // Read the sorter counters (different meaning for scifi, but maybe put in the same spot??)
+    feb_sc.FEB_register_read(index, SORTER_COUNTER_R, sorterdata);
+    for(uint32_t i=0; i < 38; i++)
+        *pdata++ = sorterdata[i];
     return pdata;
 }
 
