@@ -429,7 +429,14 @@ INT read_cr_event(char *pevent, INT off)
     // if new dhcp request:   --> update dns table
 
     if(prev_ips!=ips){
-        cm_msg(MINFO, "netfe_settings_changed", "new dhcp lease, odb updated");
+        if(ips.size()!=0 && prev_ips.size()!=0 ){
+            for (int i = 0; i < ips.size(); i++){
+                if(ips.at(i)!=prev_ips.at(i)){
+                    cm_msg(MINFO, "netfe_settings_changed", "new or updated dhcp lease of %s to %s",ips.at(i).c_str(),requestedHostnames.at(i).c_str());
+                    break;
+                }
+            }
+        }
 
         //write_dns_table(dns_zone_def_path,ips,requestedHostnames);
         //system("rcnamed restart");
