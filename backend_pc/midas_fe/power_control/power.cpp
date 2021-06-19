@@ -255,7 +255,7 @@ EQUIPMENT equipment[] = {
     //~ },
 
 	//~ {"HAMEG8",                       /* equipment name */
-    	//~ {138, 0,                       /* event ID, trigger mask */
+    	//~ {128, 0,                       /* event ID, trigger mask */
      	//~ "SYSTEM",                  /* event buffer */
      	//~ EQ_PERIODIC,                   /* equipment type */
      	//~ 0,                         /* event source */
