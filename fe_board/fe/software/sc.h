@@ -32,6 +32,8 @@ struct sc_t {
         reset_bypass = 0x0331;
         reset_bypass = 0x0200;
         
+        reset_bypass = 0x00000000; // set to use genesis (optical reset distribution)
+        
     }
 
     alt_u16 callback(alt_u16 cmd, volatile alt_u32* data, alt_u16 n);

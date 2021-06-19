@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <link rel="stylesheet" href="midas.css">
+    <!--link rel="stylesheet" href="mu3estyle.css"-->
+    <link rel="stylesheet" type="text/css" href="pixel_tracker.css">
+    <script src="controls.js"></script>
+    <script src="midas.js"></script>
+    <script src="mhttpd.js"></script>
+    <link href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" crossorigin="anonymous">
+    <title>Tracker Configuration</title>
+</head>
+<body class="mcss" onload="mhttpd_init('myPage');">
+
+<!-- header and side navigation will be filled in mhttpd_start -->
+<div id="mheader"></div>
+<div id="msidenav"></div>
+
+<div id="mmain">
+
+    <div class="container-fluid normal_text" id="main">
+        <div class="row" style="width: 1500px">
+            <div class="col-xs-4 b-r padding_bottom_70" >
+                <div class="scrll_hide">
+                    <div id="L0_US" style="position: relative;height: 350px">
+                        <h1 style="color: #5e9ca0;">Layer 0 Upstream</h1>
+                        <p>As seen from outside the cage</p>
+
+                    </div>
+                    <div id="L1_US" style="position: relative;height: 400px">
+                        <h1 style="color: #5e9ca0;">Layer 1 Upstream</h1>
+                        <p>As seen from outside the cage</p>
+
+                    </div>
+                    <div id="L0_DS" style="position: relative;height: 350px">
+                        <h1 style="color: #5e9ca0;">Layer 0 Downstream</h1>
+                        <p>As seen from outside the cage</p>
+
+                    </div>
+                    <div id="L1_DS" style="position: relative;height: 400px">
+                        <h1 style="color: #5e9ca0;">Layer 1 Downstream</h1>
+                        <p>As seen from outside the cage</p>
+
+                    </div>
+                </div>
+            </div>
+            <div class="col-xs-4 b-r padding_bottom_70" >
+                <div class="scrll_hide">
+                    <div id="config_area">
+                        <div id="ladder_header" style="visibility: hidden;">
+                            <h1>Ladder Control</h1>
+                            <h3>Parameters</h3>
+                        </div>
+                        <table id="parameter_tab">
+
+                        </table>
+                        <div id="ladder_lv_header" style="visibility: hidden;">
+                            <h2>LV</h2>
+                            <h3>Settings</h3>
+                        </div>
+                        <table id="ladder_lv_tab">
+
+                        </table>
+                        <div id="ladder_lv_settings" style="visibility: hidden;">
+                            <h3>Readings</h3>
+                            <h4>Voltage : </h4>
+                            <div id = "ladder_lv_read_volt" class="modbvalue" data-odb-path="/Equipment/HAMEG0/Variables/Voltage[0]" style="display: table-cell;"></div>
+                            <h4>Current : </h4>
+                            <div id = "ladder_lv_read_curr" class="modbvalue" data-odb-path="/Equipment/HAMEG0/Variables/Current[0]" style="display: table-cell;"></div>
+                        </div>
+                    </div>
+                    <div id="ladder_hv_header" style="visibility: hidden;">
+                        <h2>HV</h2>
+                        <h3>Settings</h3>
+                    </div>
+                    <table id="ladder_hv_tab">
+
+                    </table>
+                    <div id="ladder_hv_settings" style="visibility: hidden;">
+
+                    </div>
+                    <div id="chip_header" style="visibility: hidden;">
+                        <h1>Chip control</h1>
+                        <h2>Select a chip</h2>
+                    </div>
+                    <div id="pixel_select" style="visibility: hidden;">
+
+                    </div>
+                    <div id="chip_table_header" style="visibility: hidden;">
+                        <h2>Parameters</h2>
+                    </div>
+                    <table id="pixel_parameters">
+
+                    </table>
+                    <div id="chip_dacs_header" style="visibility: hidden;">
+                        <h2>DACs</h2>
+                    </div>
+                    <div class="tab" id="chip_dacs" style="visibility: hidden;">
+                        <button class="tablinks" onclick="openChipDacs(event, 'Bias')">Bias</button>
+                        <button class="tablinks" onclick="openChipDacs(event, 'Conf')">Conf</button>
+                        <button class="tablinks" onclick="openChipDacs(event, 'VDAC')">VDAC</button>
+                        <button class="tablinks tablinks_service" onclick="openChipDacs(event, 'Hide')">Hide</button>
+                    </div>
+                    <div id="Bias" class="tabcontent">
+                        <h3>Bias</h3>
+                        <p id = "Bias_head">Boom</p>
+                        <table id="Bias_tab">
+
+                        </table>
+                    </div>
+                    <div id="Conf" class="tabcontent">
+                    <h3>Conf</h3>
+                    <p id = "Conf_head">Shaka</p>
+                    <table id="Conf_tab">
+
+                    </table>
+                    </div>
+                    <div id="VDAC" class="tabcontent">
+                        <h3>VDACs</h3>
+                        <p id = "VDAC_head">Lalala</p>
+                        <table id="VDAC_tab">
+
+                        </table>
+                    </div>
+                    <div id="configure_chip_div" style="visibility: hidden;" class="button_configure">
+                        <button onclick="configureChip(event)">Configure</button>
+                    </div>
+                    <div id="pixel_configure_update" style="visibility: hidden;">
+
+                    </div>
+                    <div>
+                        <h1>Debug</h1>
+                        <p id="debug">
+                            Right side Data
+                        </p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-xs-4 b-r padding_bottom_70" >
+                <div class="scrll_hide">
+                <h1>Multiple Chip Configuration</h1>
+                <div style="width:265px; display: table-cell">
+                    <h2>Upstream<h2>
+                </div>
+                <div style="width:250px; display: table-cell">
+                    <h2>Downstream<h2>
+                </div>
+                <div id="multiple_chip_configuration">
+                    <div class="row" style="width: 500px; margin-left: 10px">
+                        <div class="col-xs-6 b-r padding_bottom_70" >
+                            <div class="scrll_hide">
+                                <div id = "multiple_chip_configuration_us">
+
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-xs-6 b-r padding_bottom_70" >
+                            <div class="scrll_hide">
+                                <div id = "multiple_chip_configuration_ds">
+
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div id="configure_multiple_chip_div" style="visibility: visible; display: flex; justify-content: center;" class="button_configure">
+                    <button onclick="configureMultipleChip(event)">Configure</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!--iframe id="config" src="file:///C:/Users/Luigi/Programming/midas_pixel_page/mupix_configuration.json" style="width: 0; height: 0; border: 0; border: none; position: absolute;visibility: hidden;">
+
+</iframe-->
+
+</div>
+<script src="mupix_configuration.json"></script>
+<script src="mupix_dacs.json"></script>
+<script src="pixel_tracker.js"></script>
+</body>
+</html>

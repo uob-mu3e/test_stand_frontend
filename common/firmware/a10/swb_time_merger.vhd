@@ -184,12 +184,12 @@ begin
                 merge_state <= wait_for_pre;
                 wdata       <= (others => '0');
                 wdata_debug <= (others => '0');
-                wdata_reg   <= (others => '0');
+                wdata_reg   <= (others => '1');
                 wen_reg     <= '0';
             elsif rising_edge(i_clk) then
                 wen         <= '0';
                 wen_reg     <= '0';
-                wdata_reg   <= (others => '0');
+                wdata_reg   <= (others => '1');
                 wdata       <= (others => '0');
                 wdata_debug <= (others => '1');
                 if ( wfull = '0' and rempty = '0' ) then
