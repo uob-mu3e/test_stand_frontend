@@ -62,10 +62,11 @@ def main(fname, outname):
         if match is not None:
             file.write('#define ' + match.group(1) + '\t\t' + '0x' + match.group(2).lower() + '\n')
             continue
+        
 
         # match stuff like "constant DDR3_CONTROL_W :  integer := 16#20#;"
         if len(line.split()) > 1:
-            if line.split()[1].endswith("_W") or line.split()[1].endswith("_R"):
+            if line.split()[1].endswith("_W") or line.split()[1].endswith("_R") or line.split()[1].endswith("_RW"):
                 file.write('#define ' + line.split()[1] + '\t\t' + '0x' + line.split()[-1].split("#")[1].lower() + '\n')
                 continue
 

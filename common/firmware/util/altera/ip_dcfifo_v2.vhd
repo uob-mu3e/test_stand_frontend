@@ -15,7 +15,7 @@ entity ip_dcfifo_v2 is
 generic (
     g_ADDR_WIDTH : positive := 8;
     g_DATA_WIDTH : positive := 8;
-    DEVICE_FAMILY : string := ""--;
+    DEVICE_FAMILY : string := "Arria 10"--;
 );
 port (
     i_wdata     : in    std_logic_vector(g_DATA_WIDTH-1 downto 0);

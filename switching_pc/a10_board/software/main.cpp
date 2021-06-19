@@ -65,7 +65,7 @@ int main() {
             flash.menu();
             break;
         case '2':
-            menu_xcvr((alt_u32*)((AVM_XCVR0_BASE + 0x00000) | ALT_CPU_DCACHE_BYPASS_MASK), AVM_XCVR0_SPAN);
+            menu_xcvr(AVM_XCVR0_BASE, AVM_XCVR0_SPAN);
             break;
         case '8':
             fan.menu();

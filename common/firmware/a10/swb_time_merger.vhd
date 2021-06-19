@@ -101,7 +101,7 @@ begin
         
         i_reset_n               => i_reset_n,
         i_clk                   => i_clk--,
-    );                                                       
+    );
 
 
     --! map data for time_merger

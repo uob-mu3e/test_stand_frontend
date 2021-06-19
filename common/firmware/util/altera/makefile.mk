@@ -174,6 +174,10 @@ $(APP_DIR)/main.elf : $(SRC_DIR)/* $(BSP_DIR)/settings.bsp
 	mkdir -pv -- "output_files/"
 	cp -av -- "$(APP_DIR)/mem_init/nios_ram.hex" "output_files/"
 
+app_gdb:
+	nios2-gdb-server --cable $(CABLE) --tcpport 2342 --tcptimeout 2 &
+	nios2-elf-gdb --eval-command='target remote :2342' $(APP_DIR)/app/main.elf
+
 .PHONY : app
 app : $(APP_DIR)/main.elf
 

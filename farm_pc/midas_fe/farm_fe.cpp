@@ -228,6 +228,7 @@ void setup_odb(){
         {"Mask Links", 0x0}, // int
         {"dma_buf_nwords", int(dma_buf_nwords)},
         {"dma_buf_size", int(dma_buf_size)},
+        {"Use Scifi not Pixel Debug Data", 0x0}, // int 
     };
 
     stream_settings.connect("/Equipment/Stream/Settings", true);
@@ -390,19 +391,21 @@ INT begin_of_run(INT run_number, char *error)
    uint32_t reg=mu.read_register_rw(DATAGENERATOR_REGISTER_W);
    odb stream_settings;
    stream_settings.connect("/Equipment/Stream/Settings");
+   uint32_t use_pixel = !stream_settings["Use Scifi not Pixel Debug Data"];
+
    if(stream_settings["Datagen Enable"]) {
-        // TODO: test me
         int divider = stream_settings["Datagen Divider"];
         cm_msg(MINFO,"farm_fe", "Use datagenerator with divider register %d", divider);
         // readout datagen
-        mu.write_register(SWB_READOUT_STATE_REGISTER_W, 0x3);
+        mu.write_register(SWB_READOUT_STATE_REGISTER_W, 0x3 | (use_pixel << 7));
         mu.write_register(DATAGENERATOR_DIVIDER_REGISTER_W, divider);
    } else {
         cm_msg(MINFO,"farm_fe", "Use link data");
         // readout link
-        mu.write_register(SWB_READOUT_STATE_REGISTER_W, 0x42);
+        mu.write_register(SWB_READOUT_STATE_REGISTER_W, 0x42 | (use_pixel << 7));
    }
    mu.write_register(SWB_LINK_MASK_PIXEL_REGISTER_W, stream_settings["Mask Links"]);
+  
    // reset lastlastwritten
    lastlastWritten = 0;
    lastRunWritten = mu.last_written_addr();//lastWritten;
@@ -471,8 +474,8 @@ INT end_of_run(INT run_number, char *error)
     mu.write_register(SWB_LINK_MASK_PIXEL_REGISTER_W, 0x0);
     mu.write_register(SWB_READOUT_LINK_REGISTER_W, 0x0);
     mu.write_register(GET_N_DMA_WORDS_REGISTER_W, 0x0);
-    // reset all
-    mu.write_register(RESET_REGISTER_W, 0x1);
+    // reset data path
+    mu.write_register(RESET_REGISTER_W, 0x0 | (1<<21));
 
    set_equipment_status(equipment[0].name, "Ready for running", "var(--mgreen)");
    
@@ -883,7 +886,7 @@ INT read_stream_thread(void *param) {
         mu.write_register(0xC, max_requested_words / (256/32));
         
         // reset all
-        mu.write_register(RESET_REGISTER_W, 0x1);
+        mu.write_register(RESET_REGISTER_W, 0x0 | (1<<21));
 //         sleep(1);
         mu.write_register(RESET_REGISTER_W, 0x0);
         
@@ -897,7 +900,7 @@ INT read_stream_thread(void *param) {
         mu.write_register(SWB_READOUT_LINK_REGISTER_W, 0x0);
         mu.write_register(GET_N_DMA_WORDS_REGISTER_W, 0x0);
         // reset all
-        mu.write_register(RESET_REGISTER_W, 0x1);
+        mu.write_register(RESET_REGISTER_W, 0x0 | (1<<21));
         
         // and get lastWritten/endofevent
         lastlastWritten = 0;

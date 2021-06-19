@@ -133,7 +133,7 @@ lsfr_chip_id <= (others => '0') when wchip = '0' else lsfr_chip_id_reg;
 	
 	
 	
-process (clk, i_reset_n)
+process (clk, i_reset_n, start_global_time)
 
 variable current_overflow : std_logic_vector(15 downto 0) := "0000000000000000";
 variable overflow_idx	  : integer range 0 to 15 := 0;

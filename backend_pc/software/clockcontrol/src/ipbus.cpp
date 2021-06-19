@@ -100,11 +100,11 @@ int ipbus::write(uint32_t addr, vector<uint32_t> data, bool nonicrementing)
         //cout << "wa :" << std::hex << addr << endl;
 
         if(nwords < 256){
-            for(int i=0; i < data.size(); i++)
+            for(size_t i=0; i < data.size(); i++)
                 sendbuffer.push_back(data[i]);
             nwords -= 256;
         } else {
-            for(int i=0; i < 255; i++)
+            for(size_t i=0; i < 255; i++)
                 sendbuffer.push_back(data[i]);
             nwords -= 255;
         }
