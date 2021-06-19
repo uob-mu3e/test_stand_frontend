@@ -53,10 +53,7 @@ int main() {
 
     while (1) {
         printf("  [1] => flash\n");
-        printf("  [2] => xcvr qsfp[A]\n");
-        printf("  [3] => xcvr qsfp[B]\n");
-        printf("  [4] => xcvr qsfp[C]\n");
-        printf("  [5] => xcvr qsfp[D]\n");
+        printf("  [2] => xcvr\n");
         printf("  [8] => fan\n");
         printf("  [0] => spi si chip\n");
         printf("  [r] => reconfig pll\n");
