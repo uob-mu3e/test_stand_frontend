@@ -71,6 +71,10 @@ set(ENV{MIDAS_EXP_NAME} "")
 
 # on some older boxes, wpedantic and MIDAS do not mix
 add_subdirectory(modules)
+# Should be found after this
+find_package(Midas HINTS modules/midas REQUIRED)
+link_directories(${MIDAS_LIBRARY_DIRS})
+include_directories(${MIDAS_INCLUDE_DIRS})
 add_subdirectory(common)
 add_subdirectory(backend_pc)
 #add_subdirectory(common/kerneldriver)
