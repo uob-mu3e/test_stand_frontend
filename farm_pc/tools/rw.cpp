@@ -33,7 +33,7 @@ void print_usage(){
     cout << "       rw wm <addr> for reading write memory at addr" << endl;
     cout << "       rw wwr <addr> <value> for writing write register at addr" << endl;
     cout << "       rw wwm <addr> <value> for writing write memory at addr" << endl;
-    cout << "       rw t <FEBaddr> test sc" << endl;
+    cout << "       rw t <None> for test sc on addr 0xA" << endl;
 
 }
 
@@ -130,7 +130,7 @@ int main(int argc, char * argv[])
 
             // wait for stateout 2 of SC secondary
             while ( (mu.read_register_ro(SC_STATE_REGISTER_R) & 0x20000000) != 0x20000000 ) {
-                cout << hex << mu.read_register_ro(SC_STATE_REGISTER_R) << " 0x20000000" << endl;
+//                cout << hex << mu.read_register_ro(SC_STATE_REGISTER_R) << " 0x20000000" << endl;
                 continue;
             } 
             cout << "State: " << hex << mu.read_register_ro(SC_STATE_REGISTER_R) << endl;
