@@ -58,7 +58,7 @@ class PowerDriver{
 		float Read(std::string,INT&);
 		float ReadSetVoltage(int,INT&);
 		float ReadCurrentLimit(int,INT&);
-		
+		float ReadOVPLevel(int,INT&);
 
 		
 		//set
@@ -73,6 +73,9 @@ class PowerDriver{
 		void SetState(int,bool,INT&);
 		void SetVoltage(int,float,INT&);
 		void DemandVoltageChanged();
+		
+		void DemandOVPLevelChanged();
+		void SetOVPLevel(int,float,INT&);
 		
 		EQUIPMENT_INFO* info;
 		std::string name;
@@ -90,6 +93,8 @@ class PowerDriver{
 		std::vector<float> demandvoltage;
 		std::vector<float> current;
 		std::vector<float> currentlimit;
+		
+		std::vector<float> OVPlevel;
 		
 		std::vector<int> instrumentID;
 		

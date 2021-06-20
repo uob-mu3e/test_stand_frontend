@@ -111,7 +111,9 @@ INT GenesysDriver::Init()
 	current.resize(nChannels);
 	currentlimit.resize(nChannels);
 	idCode.resize(nChannels);
+	OVPlevel.resize(nChannels);
 	interlock_enabled.resize(nChannels);
+	OVPlevel.resize(nChannels);
 	QCGEreg.resize(nChannels);
   
 	for(int i = 0; i<nChannels; i++ ) 
@@ -125,6 +127,8 @@ INT GenesysDriver::Init()
 
 		current[i]=ReadCurrent(i,err);
 		currentlimit[i]=ReadCurrentLimit(i,err);
+		
+		OVPlevel[i]=ReadOVPLevel(i,err);
 
 		interlock_enabled[i]=true;
 		SetInterlock(i,interlock_enabled[i],err);
@@ -142,13 +146,15 @@ INT GenesysDriver::Init()
 	variables["State"]=state; //push to odb
 	variables["Set State"]=state; //the init function can not change the on/off state of the supply
   
-	//variabes["OVP level"]
   
  	variables["Voltage"]=voltage;
  	variables["Demand Voltage"]=demandvoltage;
  	
  	variables["Current"]=current;
  	variables["Current Limit"]=currentlimit;
+ 	
+ 	variables["OVP Level"]=OVPlevel;
+ 	//variables["Demand OVP Level"]=OVPlevel;
  	
  	variables["Interlock"]= InterlockStatus(QCGEreg);
 
@@ -165,6 +171,7 @@ INT GenesysDriver::Init()
 	variables["Set State"].watch(  [&](midas::odb &arg) { this->SetStateChanged(); }  );
 	variables["Demand Voltage"].watch(  [&](midas::odb &arg) { this->DemandVoltageChanged(); }  );
 	variables["Current Limit"].watch(  [&](midas::odb &arg) { this->CurrentLimitChanged(); }  );
+	//variables["Demand OVP Level"].watch(  [&](midas::odb &arg) { this->DemandOVPLevelChanged(); }  );
 	
 	settings["Blink"].watch(  [&](midas::odb &arg) { this->BlinkChanged(); }  );
 	settings["Read ESR"].watch(  [&](midas::odb &arg) { this->ReadESRChanged(); }  );
@@ -297,6 +304,14 @@ INT GenesysDriver::ReadAll()
 			current[i]=fvalue;
 			variables["Current"][i]=fvalue;	  	
 		}
+		
+		fvalue = ReadOVPLevel(i,err);
+		if( fabs(OVPlevel[i]-fvalue) > fabs(relevantchange*OVPlevel[i]) )
+		{
+			OVPlevel[i]=fvalue;
+			variables["OVP Level"][i]=fvalue;	  	
+		}
+  	
 		
 		std::vector<std::string> error_queue = ReadErrorQueue(i,err);
 		for(auto& s : error_queue)

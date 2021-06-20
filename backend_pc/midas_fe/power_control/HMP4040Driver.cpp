@@ -87,6 +87,7 @@ INT HMP4040Driver::Init()
 	current.resize(nChannels);
 	currentlimit.resize(nChannels);
 	state.resize(nChannels);
+	OVPlevel.resize(nChannels);
 	instrumentID = {1,2,3,4}; // The HMP4040 supply has 4 channel numbered 1,2,3, and 4.
 	
 	idCode=ReadIDCode(-1,err); 	//channel selection not relevant for HAMEG supply to read ID
@@ -106,6 +107,9 @@ INT HMP4040Driver::Init()
 
 		current[i]=ReadCurrent(i,err);
 		currentlimit[i]=ReadCurrentLimit(i,err);
+		
+		OVPlevel[i]=ReadOVPLevel(i,err);
+		
   	
 	 	if(err!=FE_SUCCESS) return err;  	
 	}
@@ -123,10 +127,14 @@ INT HMP4040Driver::Init()
  	variables["Current"]=current;
  	variables["Current Limit"]=currentlimit;
  	
+ 	variables["OVP Level"]=OVPlevel;
+ 	variables["Demand OVP Level"]=OVPlevel;
+ 	
  	//watch functions
  	variables["Current Limit"].watch(  [&](midas::odb &arg) { this->CurrentLimitChanged(); }  );
  	variables["Set State"].watch(  [&](midas::odb &arg) { this->SetStateChanged(); }  );
 	variables["Demand Voltage"].watch(  [&](midas::odb &arg) { this->DemandVoltageChanged(); }  );
+	variables["Demand OVP Level"].watch(  [&](midas::odb &arg) { this->DemandOVPLevelChanged(); }  );
 
 
 	settings["Read ESR"].watch(  [&](midas::odb &arg) { this->ReadESRChanged(); }  );
@@ -169,6 +177,14 @@ INT HMP4040Driver::ReadAll()
 			current[i]=fvalue;
 			variables["Current"][i]=fvalue;	  	
 		}
+		
+		fvalue = ReadOVPLevel(i,err);
+		if( fabs(OVPlevel[i]-fvalue) > fabs(relevantchange*OVPlevel[i]) )
+		{
+			OVPlevel[i]=fvalue;
+			variables["OVP Level"][i]=fvalue;	  	
+		}
+  	
   	
 	 	if(err!=FE_SUCCESS) return err;		
 	}

@@ -21,8 +21,6 @@ INT PowerDriver::ConnectODB()
 	settings["NChannels"](2);
 	settings["Global Reset On FE Start"](false);
 	settings["Read ESR"](false);
-	settings["OVP"](true);
-	settings["OVP level"](2.2);
 	
 	//variables
 	variables.connect("/Equipment/"+name+"/Variables");
@@ -307,6 +305,15 @@ float PowerDriver::ReadCurrentLimit(int index,INT& error)
   return value; 
 }
 
+float PowerDriver::ReadOVPLevel(int index,INT& error)
+{
+	error = FE_SUCCESS;
+	float value = 0.0;
+	if( SelectChannel(instrumentID[index]) )  {	  value = Read("VOLT:PROT:LEV?\n",error);	}
+		else error = FE_ERR_DRIVER;
+	return value; 
+}
+
 
 
 
@@ -411,6 +418,35 @@ void PowerDriver::SetVoltage(int index, float value,INT& error)
 }
 
 
+void PowerDriver::SetOVPLevel(int index, float value,INT& error)
+{
+	error = FE_SUCCESS;
+	if(value<-0.1 || value > 25.) //check valid range 
+	{
+		cm_msg(MERROR, "Power supply ... ", "voltage protection level of %f not allowed",value );
+		variables["Demand OVP Level"][index]=OVPlevel[index]; //disable request
+		error=FE_ERR_DRIVER;
+		return;  	
+	}
+  
+	if( SelectChannel(instrumentID[index]) ) // module address in the daisy chain to select channel, or 1/2/3/4 for the HAMEG
+	{
+		bool success = Set("VOLT:PROT:LEV "+std::to_string(value)+"\n",error);
+		if(!success) error=FE_ERR_DRIVER;
+		else // read changes
+		{
+			voltage[index]=ReadVoltage(index,error);
+			variables["Voltage"][index]=voltage[index];
+			current[index]=ReadCurrent(index,error);
+			variables["Current"][index]=current[index];
+			OVPlevel[index]=ReadOVPLevel(index,error);
+			variables["OVP Level"][index]=OVPlevel[index];
+		}		
+	}
+	else error=FE_ERR_DRIVER;
+}
+
+
 
 // ******************* Watch functions ******************** //
 
@@ -491,6 +527,29 @@ void PowerDriver::DemandVoltageChanged()
 	}	
 	if(nChannelsChanged < 1) cm_msg(MINFO, "Genesys supply ... ", "changing voltage request rejected");
 }
+
+
+void PowerDriver::DemandOVPLevelChanged()
+{
+	INT err;
+	int nChannelsChanged = 0;
+	for(unsigned int i=0; i<OVPlevel.size(); i++)
+	{
+		float value = variables["Demand OVP Level"][i];
+		if( fabs(value-OVPlevel[i]) > fabs(relevantchange*OVPlevel[i]) ) //compare to local book keeping, look for significant change
+		{
+			SetOVPLevel(i,value,err);
+			if(err!=FE_SUCCESS ) cm_msg(MERROR, "Power ... ", "changing %s voltage protection level of channel %d to %f failed, error %d", name.c_str(), instrumentID[i],value,err);
+			else
+			{
+				cm_msg(MINFO, "Power ... ", "changing %s voltage protection level of channel %d to %f", name.c_str(), instrumentID[i],value);
+				nChannelsChanged++;
+			}
+		}			
+	}	
+	if(nChannelsChanged < 1) cm_msg(MINFO, "Genesys supply ... ", "changing voltage protection level request rejected");
+}
+
 
 
 
