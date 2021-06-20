@@ -6,19 +6,34 @@ BINDIR=${PREFIX}/bin
 BINDIRMIDAS=${SOURCE}/modules/midas/bin
 LIBDIR=${PREFIX}/lib
 
-export CMAKE_PREFIX_PATH="${PREFIX}${CMAKE_PREFIX_PATH:+:}${CMAKE_PREFIX_PATH}"
-export LD_LIBRARY_PATH="${LIBDIR}${LD_LIBRARY_PATH:+:}${LD_LIBRARY_PATH}"
-export PATH="${BINDIR}${PATH:+:}${PATH}"
-export PATH=$PATH:${BINDIRMIDAS}
-export PYTHONPATH="${PYTHONDIR}:${PYTHONARCHDIR}${PYTHONPATH:+:}${PYTHONPATH}"
+PATH=${BINDIR}:${BINDIRMIDAS}:${PATH}
 if [[ "$OSTYPE" == "darwin"* ]]; then
         export DYLD_LIBRARY_PATH="${LIBDIR}${DYLD_LIBRARY_PATH:+:}${DYLD_LIBRARY_PATH}";
 fi
 
-export MIDASSYS="${PREFIX}"
-export MIDAS_DIR="${SOURCE}/online"
+export MIDASSYS="${SOURCE}/modules/midas"
 export MIDAS_EXPTAB="${SOURCE}/online/exptab"
-export MIDAS_EXP_NAME="Mu3e"
+export MIDAS_EXPT_NAME="Mu3e"
+if [ ! -f "${MIDAS_EXPTAB}" ]; then
+    echo "${MIDAS_EXPTAB} does not exist, creating default exptab with experiment name ${MIDAS_EXPT_NAME}"
+    echo "#Exptname    Expt Directory             Username" >> ${MIDAS_EXPTAB}
+    echo "${MIDAS_EXPT_NAME}    ${SOURCE}/online    ${USER}" >> ${MIDAS_EXPTAB}
+fi
+
+#Remove duplicates in $PATH
+if [ -n "$PATH" ]; then
+    old_PATH=$PATH:; PATH=
+    while [ -n "$old_PATH" ]; do
+        x=${old_PATH%%:*}         # the first remaining entry
+        case $PATH: in
+            *:"$x":*) ;;          # already there
+            *) PATH=$PATH:$x;;    # not there yet
+        esac
+        old_PATH=${old_PATH#*:}
+    done
+    PATH=${PATH#:}
+    unset old_PATH x
+fi
 
 # bash or zsh require a rehash to pick up new commands
 if test -n "${BASH}" -o -n "${ZSH_VERSION}"; then
