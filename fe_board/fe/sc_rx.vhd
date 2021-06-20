@@ -83,7 +83,7 @@ begin
         elsif ( state = S_ADDR and i_link_datak = "0000" ) then
             -- ack addr
             o_fifo_we <= '1';
-            o_fifo_wdata <= MERGER_FIFO_PAKET_START_MARKER & i_link_data;
+            o_fifo_wdata <= sc_type & "10" & i_link_data;
 
             ram_addr <= unsigned(i_link_data);
             ram_addr_reg <= unsigned(i_link_data);
@@ -160,7 +160,7 @@ begin
             if ( ram_addr = ram_addr_end and ram_read_nreq = 0 ) then
                 -- write end of packet
                 o_fifo_we <= '1';
-                o_fifo_wdata <= "0011" & X"00000000";
+                o_fifo_wdata <= MERGER_FIFO_PAKET_END_MARKER & X"00000000";
                 state <= S_IDLE;
             end if;
             --
@@ -170,7 +170,7 @@ begin
             -- trailer
             -- write end of packet
             o_fifo_we <= '1';
-            o_fifo_wdata <= "0011" & X"00000000";
+            o_fifo_wdata <= MERGER_FIFO_PAKET_END_MARKER & X"00000000";
             state <= S_IDLE;
             --
         elsif ( state = S_TIMEOUT ) then
