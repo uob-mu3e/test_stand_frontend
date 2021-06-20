@@ -33,9 +33,13 @@ architecture rtl of tb_sc is
 
   		constant ckTime: 		time	:= 10 ns;
   		
-  		signal writememwren, length_we, done : std_logic;
-  		
-  		type state_type is (idle, write_sc, wait_state);
+  		signal writememwren, length_we, done, toggle_read, fifo_we : std_logic;
+
+        signal fifo_wdata : std_logic_vector(35 downto 0);
+        signal link_data : std_logic_vector(127 downto 0);
+        signal link_datak : std_logic_vector(15 downto 0);
+
+  		type state_type is (idle, write_sc, wait_state, read_sc);
         signal state : state_type;
 		
 begin
@@ -62,8 +66,8 @@ begin
         i_link_data     => mem_data_out(0),
         i_link_datak    => mem_datak_out(0),
         
-        o_fifo_we       => open,
-        o_fifo_wdata    => open,
+        o_fifo_we       => fifo_we,
+        o_fifo_wdata    => fifo_wdata,
         
         o_ram_addr      => open,
         o_ram_re        => open,
@@ -77,6 +81,42 @@ begin
         i_reset_n       => reset_n,
         i_clk           => clk--,
     );
+
+    e_merger : entity work.data_merger
+    generic map (
+        feb_mapping => (3,2,1,0)--;
+                )
+    port map (
+                 fpga_ID_in                 => x"000A",
+                 FEB_type_in                => "111000",
+
+                 run_state                  => (0 => '1', others =>'0'),
+                 run_number                 => (others => '0'),
+
+                 o_data_out    => link_data,
+                 o_data_is_k    => link_datak,
+
+                 slowcontrol_write_req      => fifo_we,
+                 i_data_in_slowcontrol      => fifo_wdata,
+
+                 data_write_req             => (others => '0'),
+                 i_data_in                  => (others => '0'),
+                 o_fifos_almost_full        => open,
+
+                 override_data_in           => (others => '0'),
+                 override_data_is_k_in      => (others => '0'),
+                 override_req               => '0',
+                 override_granted           => open,
+
+                 can_terminate              => '0',
+                 o_terminated               => open,
+                 data_priority              => '0',
+                 o_rate_count               => open,
+
+                 reset                      => not reset_n,
+                 clk                        => clk--,
+             );
+
   
     sc_secondary : entity work.swb_sc_secondary
     generic map (
@@ -86,13 +126,13 @@ begin
     port map(
         clk					=> clk,
         reset_n				=> reset_n,
-        i_link_enable				=> link_enable,
-        link_data_in		=> mem_data_out,
-        link_data_in_k		=> mem_datak_out,
+        i_link_enable		=> "01",
+        link_data_in(0)     => link_data(31 downto 0),
+        link_data_in_k(0)   => link_datak(3 downto 0),
         mem_data_out		=> mem_data_out_slave,
         mem_addr_out		=> mem_addr_out_slave,
         mem_wren 			=> mem_wren_slave,
-        mem_addr_finished_out				=> open,
+        mem_addr_finished_out => open,
         stateout			=> open
     );
 
@@ -169,6 +209,7 @@ begin
 		writememaddr <= x"FFFF";
 		writememwren <= '0';
 		length_we    <= '0';
+        toggle_read  <= '0';
 		length       <= (others => '0');
 		state        <= idle;
 	elsif(rising_edge(clk))then
@@ -179,12 +220,16 @@ begin
             
             when idle =>
                 if ( done = '1' ) then
-                    state <= write_sc;
+                    if ( toggle_read = '1' ) then
+                        state <= read_sc;
+                    else
+                        state <= write_sc;
+                    end if;
                 end if;
                 
             when write_sc =>
                 if(writememaddr(3 downto 0) = x"F")then
-                    writememdata <= x"1fffffbc";
+                    writememdata <= x"1dffffbc";
                     writememaddr <= writememaddr + 1;
                     writememwren <= '1';
                 elsif(writememaddr(3 downto 0)  = x"0")then
@@ -209,9 +254,36 @@ begin
                     writememaddr <= (others => '1');
                     state <= wait_state;
                 end if;
-                                
+
+            when read_sc =>
+                if(writememaddr(3 downto 0) = x"F")then
+                    writememdata <= x"1Effffbc";
+                    writememaddr <= writememaddr + 1;
+                    writememwren <= '1';
+                elsif(writememaddr(3 downto 0)  = x"0")then
+                    writememdata <= x"0000000a";
+                    writememaddr <= writememaddr + 1;
+                    writememwren <= '1';
+                elsif(writememaddr(3 downto 0)  = x"1")then
+                    writememdata <= x"00000001";
+                    writememaddr <= writememaddr + 1;
+                    writememwren <= '1';
+                elsif(writememaddr(3 downto 0)  = x"2")then
+                    writememdata <= x"0000009c";
+                    writememaddr <= writememaddr + 1;
+                    writememwren <= '1';
+                    length <= x"0002";
+                elsif(writememaddr(3 downto 0)  = x"3")then
+                    length_we <= '1';
+                    writememaddr <= (others => '1');
+                    state <= wait_state;
+                end if;
+            
             when wait_state =>
-                state <= idle;
+                if ( done = '0' ) then
+                    toggle_read <= not toggle_read;
+                    state <= idle;
+                end if;
             
             when others =>
                 writememaddr <= (others => '0');

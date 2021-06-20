@@ -314,6 +314,7 @@ INT frontend_init()
     feblist = new FEBList(switch_id);
 
     //init SC
+    feb_sc->FEBsc_resetSecondary();
 
     //init feb crates
     status = init_crates();

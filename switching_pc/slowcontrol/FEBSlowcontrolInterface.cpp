@@ -277,10 +277,10 @@ void FEBSlowcontrolInterface::FEBsc_resetSecondary()
     mdev.toggle_register(RESET_REGISTER_W, SET_RESET_BIT_SC_SECONDARY(0), 1000);
     //wait until SECONDARY is reset, clearing the ram takes time
     uint16_t timeout_cnt=0;
-    // TODO: we clear a fixed size memory at a fixed frequency - we KNOW how long this takes
-    // TODO: do we need to clear the memory or is this just nice to have?
-    //poll register until reset. Should be 0xff... during reset and zero after, but we might be bombarded with packets, so give some margin for data to enter.
-    while((mdev.read_register_ro(MEM_WRITEADDR_LOW_REGISTER_R) > 0xff) && timeout_cnt++ < 50){
+    // poll register until addr of sc secondary is 0xffff (and of init state)
+    // NOTE: we have to wait 2**16 * 156.25MHz here, but we wait a bit longer
+    while ( (mdev.read_register_ro(SC_STATE_REGISTER_R) & 0x20000000) != 0x20000000 ) {
+    //while((mdev.read_register_ro(MEM_WRITEADDR_LOW_REGISTER_R) == 0x0) && timeout_cnt++ < 500){
         std::this_thread::sleep_for(std::chrono::milliseconds(1));
         printf("."); fflush(stdout);
     };
