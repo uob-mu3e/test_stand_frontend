@@ -21,6 +21,8 @@ INT PowerDriver::ConnectODB()
 	settings["NChannels"](2);
 	settings["Global Reset On FE Start"](false);
 	settings["Read ESR"](false);
+	settings["OVP"](true);
+	settings["OVP level"](2.2);
 	
 	//variables
 	variables.connect("/Equipment/"+name+"/Variables");
