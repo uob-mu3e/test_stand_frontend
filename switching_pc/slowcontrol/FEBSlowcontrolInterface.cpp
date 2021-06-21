@@ -326,7 +326,7 @@ int FEBSlowcontrolInterface::FEBsc_NiosRPC(uint32_t FPGA_ID, uint16_t command, v
     while(1){
         if(++timeout_cnt >= 500) return ERRCODES::NIOS_RPC_TIMEOUT;
         std::this_thread::sleep_for(std::chrono::milliseconds(2));
-        status=FEB_register_read(FPGA_ID, 0xf0, readback);
+        status=FEB_register_read(FPGA_ID, CMD_LEN_REGISTER_RW, readback);
         if(status < 0)
             return status
                     ;
