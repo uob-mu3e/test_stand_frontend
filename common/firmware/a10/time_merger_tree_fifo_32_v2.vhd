@@ -22,7 +22,7 @@ generic (
 );
 port (
     -- input
-    i_data          : in  work.util.slv38_array_t(compare_fifos - 1 downto 0);
+    i_data          : in  work.util.slv38_array_t(compare_fifos - 1 downto 0) := (others => (others => '1'));
     i_rdempty       : in  std_logic_vector(compare_fifos - 1 downto 0);
     i_rdreq         : in  std_logic_vector(gen_fifos - 1 downto 0);
     i_merge_state   : in  std_logic;
@@ -68,8 +68,8 @@ architecture arch of time_merger_tree_fifo_32_v2 is
     signal wrfull_and_merge_state_and_both_inputs_not_rdempty, wrfull_and_merge_state_and_first_input_not_rdempty, wrfull_and_merge_state_and_second_input_not_rdempty : std_logic_vector(gen_fifos - 1 downto 0);
     signal first_input_mask_n_second_input_not_mask_n, second_input_mask_n_first_input_not_mask_n, a_padding, b_padding, c_padding, d_padding : std_logic_vector(gen_fifos - 1 downto 0);
     signal a_b_padding, b_no_a_padding, a_no_b_padding, c_d_padding, c_d_no_padding, c_no_d_padding, a_c_padding : std_logic_vector(gen_fifos - 1 downto 0);
-    signal a, b : work.util.slv4_array_t(gen_fifos - 1 downto 0) := (others => (others => '0'));
-    signal a_h, b_h : work.util.slv38_array_t(gen_fifos - 1 downto 0) := (others => (others => '0'));
+    signal a, b : work.util.slv4_array_t(gen_fifos - 1 downto 0) := (others => (others => '1'));
+    signal a_h, b_h : work.util.slv38_array_t(gen_fifos - 1 downto 0) := (others => (others => '1'));
     signal last, last_reg, last_reg_reg : std_logic_vector(r_width-1 downto 0);
 
     -- for debugging / simulation
@@ -82,16 +82,16 @@ begin
     gen_hits:
     FOR i in 0 to gen_fifos - 1 GENERATE
         mupix_data : IF DATA_TYPE = x"01" GENERATE
-            a(i)    <= i_data(i)(31 downto 28);
-            b(i)    <= i_data(i + size)(31 downto 28);
+            a(i)    <= i_data(i)(31 downto 28) when i_mask_n(i) = '1' else (others => '1');
+            b(i)    <= i_data(i + size)(31 downto 28) when i_mask_n(i) = '1' else (others => '1');
         END GENERATE;
         scifi_data : IF DATA_TYPE = x"02" GENERATE
-            a(i)    <= i_data(i)(9 downto 6);
-            b(i)    <= i_data(i + size)(9 downto 6);
+            a(i)    <= i_data(i)(9 downto 6) when i_mask_n(i) = '1' else (others => '1');
+            b(i)    <= i_data(i + size)(9 downto 6) when i_mask_n(i) = '1' else (others => '1');
         END GENERATE;
 
-        a_h(i)      <= i_data(i)(37 downto 0);
-        b_h(i)      <= i_data(i + size)(37 downto 0);
+        a_h(i)      <= i_data(i)(37 downto 0) when i_mask_n(i) = '1' else (others => '1');
+        b_h(i)      <= i_data(i + size)(37 downto 0) when i_mask_n(i) = '1' else (others => '1');
 
         -- for debugging / simulation
         t_q(i)      <= q_reg_reg(i)(31 downto 28);

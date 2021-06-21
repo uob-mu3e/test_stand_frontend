@@ -84,7 +84,6 @@ begin
         i_reop                  => i_reop,
         i_rshop                 => i_rshop,
         i_rempty                => i_rempty,
-        i_link                  => 1, -- which link should be taken to check ts etc.
         i_mask_n                => i_rmask_n,
         o_rack                  => o_rack,
 

@@ -26,7 +26,6 @@ port (
     i_rshop         : in    std_logic_vector(g_NLINKS_DATA - 1 downto 0); -- sub header of packet (SHOP)
     i_rempty        : in    std_logic_vector(g_NLINKS_DATA - 1 downto 0);
     i_mask_n        : in    std_logic_vector(g_NLINKS_DATA - 1 downto 0);
-    i_link          : in    integer;
     o_rack          : out   std_logic_vector(g_NLINKS_DATA - 1 downto 0); -- read ACK
 
     -- output stream
@@ -68,6 +67,7 @@ architecture arch of time_merger_v3 is
     signal error_gtime1, error_gtime2, error_shtime, error_merger : std_logic;
     signal header_trailer_we : std_logic_vector(1 downto 0);
     signal error_pre, error_sh : std_logic_vector(g_NLINKS_DATA - 1 downto 0);
+    signal check_link : integer range 0 to g_NLINKS_DATA - 1;
 
     -- merger tree
     type fifo_width_t is array (6 downto 0) of integer;
@@ -409,6 +409,7 @@ begin
         v_overflow := (others => '0');
         wait_cnt <= (others => '0');
         TF := (others => '0');
+        check_link <= 0;
         --
     elsif rising_edge(i_clk) then
 
@@ -416,6 +417,13 @@ begin
         header_trailer_we   <= "00";
         v_overflow  := (others => '0');
         TF          := (others => '0');
+
+        FOR i in 0 to g_NLINKS_DATA - 1 LOOP
+            if ( i_mask_n(I) = '1' ) then
+                check_link <= I;
+                exit;
+            end if;
+        END LOOP;
 
         case merge_state is
             when wait_for_pre =>
@@ -451,7 +459,7 @@ begin
             when compare_time1 =>
                 -- compare MSB from FPGA time
                 FOR I in g_NLINKS_DATA - 1 downto 0 LOOP
-                    if ( gtime1(I) /= gtime1(i_link) and i_mask_n(I) = '1' ) then
+                    if ( gtime1(I) /= gtime1(check_link) and i_mask_n(I) = '1' ) then
                         error_gtime1 <= '1';
                     end if;
                 END LOOP;
@@ -464,7 +472,7 @@ begin
                     gtime1 <= (others => (others => '0'));
                     -- send gtime1
                     header_trailer(37 downto 32) <= ts1_marker;
-                    header_trailer(31 downto 0) <= gtime1(i_link)(31 downto 0);
+                    header_trailer(31 downto 0) <= gtime1(check_link)(31 downto 0);
                     header_trailer_we <= "10";
                 end if;
                 -- dont check at the moment
@@ -485,7 +493,7 @@ begin
             when compare_time2 =>
                 -- compare LSB from FPGA time
                 FOR I in g_NLINKS_DATA - 1 downto 0 LOOP
-                    if ( gtime2(I) /= gtime2(i_link) and i_mask_n(I) = '1' ) then
+                    if ( gtime2(I) /= gtime2(check_link) and i_mask_n(I) = '1' ) then
                         error_gtime2 <= '1';
                     end if;
                 END LOOP;
@@ -498,7 +506,7 @@ begin
                     gtime2 <= (others => (others => '0'));
                     -- send gtime2
                     header_trailer(37 downto 32) <= ts2_marker;
-                    header_trailer(31 downto 0) <= gtime2(i_link)(31 downto 0);
+                    header_trailer(31 downto 0) <= gtime2(check_link)(31 downto 0);
                     header_trailer_we <= "10";
                 end if;
                 -- dont check at the moment
@@ -522,12 +530,12 @@ begin
                     -- zeros & sub header & zeros & datak
                     header_trailer(37 downto 32) <= sh_marker;
                     -- send sub header time -- check later if equal
-                    header_trailer(31 downto 23) <= i_rdata(i_link)(31 downto 23);
+                    header_trailer(31 downto 23) <= i_rdata(check_link)(31 downto 23);
                     if ( DATA_TYPE = x"01" ) then
                         shtime(9 downto 7) <= (others => '0');
-                        shtime(6 downto 0) <= i_rdata(i_link)(22 downto 16);
+                        shtime(6 downto 0) <= i_rdata(check_link)(22 downto 16);
                     elsif ( DATA_TYPE = x"02" ) then
-                        shtime <= i_rdata(i_link)(25 downto 16);
+                        shtime <= i_rdata(check_link)(25 downto 16);
                     end if;
                     FOR I in g_NLINKS_DATA - 1 downto 0 LOOP
                         if ( i_mask_n(I) = '1' ) then
