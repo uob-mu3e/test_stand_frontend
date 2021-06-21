@@ -59,7 +59,7 @@ function DataLink(xmin,y,xmax, index, name){
             cc.fillStyle = this.col;
             cc.fillRect(this.lxmin, this.lymin,this.lxmax-this.lxmin, this.lymax-this.lymin);
             cc.fillStyle = "Black";
-            cc.font = "12px Arial";
+            cc.font = "12px Arial, sans-serif";
             cc.fillText(this.name, this.lxmin+10, this.lymin+15);
             cc.fillStyle = "Black";
             cc.font = "12px Arial";
@@ -69,7 +69,7 @@ function DataLink(xmin,y,xmax, index, name){
             cc.fillStyle = "rgb(50,50,50)";
             cc.fillRect(this.bxmin, this.bymin,this.bxmax-this.bxmin, this.bymax-this.bymin);
             cc.fillStyle = "White";
-            cc.font = "12px Arial";
+            cc.font = "12px Arial, sans-serif";
             if(this.status == 0){
                 cc.fillText("Enable", this.bxmin+10, this.bymin+17);
             } else {
@@ -140,17 +140,17 @@ function SCLink(xmin,y,xmax, index, name){
             cc.fillStyle = this.col;
             cc.fillRect(this.lxmin, this.lymin,this.lxmax-this.lxmin, this.lymax-this.lymin);
             cc.fillStyle = "Black";
-            cc.font = "12px Arial";
+            cc.font = "12px Arial, sans-serif";
             cc.fillText(this.name, this.lxmin+10, this.lymin+15);
             cc.fillStyle = "Black";
-            cc.font = "12px Arial";
+            cc.font = "12px Arial, sans-serif";
             cc.fillText(this.type, this.lxmin+10, this.lymin+30);
 
             if(rxlinks[index].shorttype != "FS"){
                 cc.fillStyle = "rgb(50,50,50)";
                 cc.fillRect(this.bxmin, this.bymin,this.bxmax-this.bxmin, this.bymax-this.bymin);
                 cc.fillStyle = "White";
-                cc.font = "12px Arial";
+                cc.font = "12px Arial, sans-serif";
                 if(this.status == 0){
                     cc.fillText("Enable", this.bxmin+10, this.bymin+17);
                 } else {
@@ -200,7 +200,7 @@ function Switchingboard(x,y,dx,dy, index){
         cc.fillRect(this.x, this.y,this.dx, this.dy);
 
         cc.fillStyle = "Black";
-        cc.font = "20px Arial";
+        cc.font = "20px Arial, sans-serif";
         cc.fillText(this.index, this.x+10, this.y+780);
         if(this.active > 0){
             for(var i =0; i < 4; i++){
@@ -211,21 +211,21 @@ function Switchingboard(x,y,dx,dy, index){
 
 
         cc.fillStyle = "Black";
-        cc.font = "16px Arial";
+        cc.font = "16px Arial, sans-serif";
         cc.fillText("Data", this.x+20, this.y+700);
 
         cc.fillStyle = "Black";
-        cc.font = "16px Arial";
+        cc.font = "16px Arial, sans-serif";
         cc.fillText("SC", this.x+75, this.y+700);
 
         cc.fillStyle = "Black";
-        cc.font = "12px Arial";
+        cc.font = "12px Arial, sans-serif";
         cc.fillText(this.name, this.x+10, this.y+740);
 
         cc.fillStyle = "rgb(50,50,50)";
         cc.fillRect(this.bxmin, this.bymin,this.bxmax-this.bxmin, this.bymax-this.bymin);
         cc.fillStyle = "White";
-        cc.font = "12px Arial";
+        cc.font = "12px Arial, sans-serif";
         if(this.active == 0){
             cc.fillText("Enable", this.bxmin+12, this.bymin+19);
         } else {
