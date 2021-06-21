@@ -672,7 +672,8 @@ INT frontend_loop()
 	
     for(auto& d: drivers)
     {
-       threads.emplace_back( &PowerDriver::ReadAll,d );
+	
+       if(d->Initialized()) threads.emplace_back( &PowerDriver::ReadAll,d );
       //  d->ReverseSort();
     }
     
