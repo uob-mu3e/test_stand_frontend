@@ -98,6 +98,7 @@ begin
         
         i_rx             => rx,
         i_rx_k           => rx_k,
+            
         i_rmask_n        => mask_n(g_NLINKS_DATA - 1 downto 0),
 
         i_writeregs_156  => writeregs_156,

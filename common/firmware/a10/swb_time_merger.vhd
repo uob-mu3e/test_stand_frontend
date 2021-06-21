@@ -24,7 +24,16 @@ port (
     i_rempty        : in    std_logic_vector(g_NLINKS_DATA - 1 downto 0) := (others => '1');
     i_rmask_n       : in    std_logic_vector(g_NLINKS_DATA - 1 downto 0);
     o_rack          : out   std_logic_vector(g_NLINKS_DATA - 1 downto 0);
-    o_counters      : out   work.util.slv32_array_t(0 downto 0);
+
+    -- counters
+    -- swb time fifo full
+    -- cnt_gtime1_error;
+    -- cnt_gtime2_error;
+    -- cnt_shtime_error; 
+    -- wait_cnt_pre;
+    -- wait_cnt_sh; 
+    -- wait_cnt_merger;
+    o_counters      : out   work.util.slv32_array_t(6 downto 0);
 
     -- output strem
     o_q             : out   std_logic_vector(W-1 downto 0);
@@ -61,13 +70,16 @@ architecture arch of swb_time_merger is
     signal ts2_idx     : integer range 0 to 8 := 8;
     signal sh_idx      : integer range 0 to 8 := 8;
 
+    -- counters
+    signal counters    : work.util.slv32_array_t(5 downto 0);
+
 begin
 
     --! counters
     e_swb_time_fifo_full : entity work.counter
     generic map ( WRAP => true, W => 32 )
     port map ( o_cnt => o_counters(0), i_ena => wfull, i_reset_n => i_reset_n, i_clk => i_clk );
-
+    o_counters(6 downto 1) <= counters;
 
     e_time_merger : entity work.time_merger_v3
         generic map (
@@ -97,8 +109,11 @@ begin
         o_error_sh              => open,
         o_error_gtime           => open,
         o_error_shtime          => open,
+
+        -- counter
+        o_counters              => counters;
         
-        i_reset_n               => i_reset_n,
+                i_reset               => i_reset_n,
         i_clk                   => i_clk--,
     );
 

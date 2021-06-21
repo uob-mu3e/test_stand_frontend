@@ -34,10 +34,19 @@ port (
     o_empty         : out   std_logic;
 
     -- error outputs
-    o_error_pre     : out std_logic_vector(g_NLINKS_DATA - 1 downto 0);
-    o_error_sh      : out std_logic_vector(g_NLINKS_DATA - 1 downto 0);
-    o_error_gtime   : out std_logic_vector(1 downto 0);
-    o_error_shtime  : out std_logic;
+    o_error_pre     : out   std_logic_vector(g_NLINKS_DATA - 1 downto 0);
+    o_error_sh      : out   std_logic_vector(g_NLINKS_DATA - 1 downto 0);
+    o_error_gtime   : out   std_logic_vector(1 downto 0);
+    o_error_shtime  : out   std_logic;
+
+    -- counters
+    -- cnt_gtime1_error;
+    -- cnt_gtime2_error;
+    -- cnt_shtime_error;
+    -- wait_cnt_pre;
+    -- wait_cnt_sh;
+    -- wait_cnt_merger;
+        o_counters      : out   work.util.slv32_array_t(5 downto 0);
 
     i_reset_n       : in    std_logic;
     i_clk           : in    std_logic--;
@@ -100,6 +109,9 @@ architecture arch of time_merger_v3 is
     signal rdata_last_layer : std_logic_vector(W - 1 downto 0);
     signal rdata_hit_time : std_logic_vector(4 * 8 - 1 downto 0);
 
+    -- counter
+    signal cnt_gtime1_error, cnt_gtime2_error, cnt_shtime_error : std_logic_vector(31 downto 0);
+
 begin
 
     -- ports out
@@ -109,6 +121,12 @@ begin
     o_error_pre         <= error_pre;
     o_error_sh          <= error_sh;
     o_rdata             <= rdata_last_layer;
+    o_counters(0)       <= cnt_gtime1_error;
+    o_counters(1)       <= cnt_gtime2_error;
+    o_counters(2)       <= cnt_shtime_error;
+    o_counters(3)       <= wait_cnt_pre;
+    o_counters(4)       <= wait_cnt_sh;
+    o_counters(5)       <= wait_cnt_merger;
 
     -- debug signals
     gen_hit_data : FOR i in 0 to 7 GENERATE
@@ -410,6 +428,9 @@ begin
         wait_cnt <= (others => '0');
         TF := (others => '0');
         check_link <= 0;
+        cnt_gtime1_error <= (others => '0');
+        cnt_gtime2_error <= (others => '0');
+        cnt_shtime_error <= (others => '0');
         --
     elsif rising_edge(i_clk) then
 
@@ -475,10 +496,11 @@ begin
                     header_trailer(31 downto 0) <= gtime1(check_link)(31 downto 0);
                     header_trailer_we <= "10";
                 end if;
-                -- dont check at the moment
-                -- elsif ( error_gtime1 = '1' ) then
+                -- dont go into error_state at the moment
+                if ( error_gtime1 = '1' ) then
                 --     merge_state <= error_state;
-                -- end if;
+                    cnt_gtime1_error <= cnt_gtime1_error + '1';
+                end if;
 
             -- TODO: change this to one cycle
             when get_time2 =>
@@ -510,9 +532,10 @@ begin
                     header_trailer_we <= "10";
                 end if;
                 -- dont check at the moment
-                --elsif ( error_gtime2 = '1' ) then
+                if ( error_gtime2 = '1' ) then
                 --   merge_state <= error_state;
-                --end if;
+                    cnt_gtime2_error <= cnt_gtime2_error + '1';
+                end if;
 
             when wait_for_sh =>
                 -- dont check at the moment
@@ -574,6 +597,7 @@ begin
 
             when merge_hits =>
                 if ( error_shtime = '1' ) then
+                    cnt_shtime_error <= cnt_shtime_error + '1';
                     merge_state <= error_state;
                 end if;
 
