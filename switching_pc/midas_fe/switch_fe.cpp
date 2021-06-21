@@ -1252,8 +1252,8 @@ void sc_settings_changed(odb o)
         cm_msg(MINFO, "sc_settings_changed", "Load firmware triggered");
         string fname = odb("/Equipment/Switching/Settings/Firmware File");
         uint32_t id = odb("/Equipment/Switching/Settings/Firmware FEB ID");
-       mufeb->LoadFirmware(fname,id);
-       o = false;
+        mufeb->LoadFirmware(fname,id);
+        o = false;
     }
 
 }

@@ -35,7 +35,7 @@ int setup_db(const char* prefix, MutrigFEB* FEB_interface){
     unsigned int nasics = FEB_interface->GetNumASICs();
     sprintf(set_str, "%s/Settings/Daq", prefix);
     if(nasics == 0){
-        cm_msg(MINFO, "mutrig_midasodb::setup_db", "Number of ASICs is 0, will not continue to build DB. Consider to delete ODB subtree %s", prefix);
+        cm_msg(MINFO, "mutrig_midasodb::setup_db", "Number of MuTRiGs is 0, will not continue to build DB. Consider to delete ODB subtree %s", prefix);
         return DB_SUCCESS;
     }
     cm_msg(MINFO, "mutrig_midasodb::setup_db", "For ODB subtree %s, number of ASICs is set to %u", prefix, nasics);
