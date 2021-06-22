@@ -78,11 +78,11 @@ void MuFEB::ReadFirmwareVersionsToODB()
             cm_msg(MINFO,"MuFEB::ReadFirmwareVersionsToODB", "Failed to read Max status register");
          else{
              // TODO: Handle this properly
-             if(GET_MAX10_STATUS_BIT_SPI_ARRIA_CLK(max[0]))
-                febversions[FEB.GetLinkID()] = 20;
-             else
-                febversions[FEB.GetLinkID()] = 20;
-             cm_msg(MINFO, "ReadFirmwareVersionsToODB", "Max10 Status: %d, febversions[FEB.GetLinkID()] = 20/21?", GET_MAX10_STATUS_BIT_SPI_ARRIA_CLK(max[0]));
+             //if(GET_MAX10_STATUS_BIT_SPI_ARRIA_CLK(max[0]))
+             //   febversions[FEB.GetLinkID()] = 20;
+             //else
+             //   febversions[FEB.GetLinkID()] = 20;
+             //cm_msg(MINFO, "ReadFirmwareVersionsToODB", "Max10 Status: %d, febversions[FEB.GetLinkID()] = 20/21?", GET_MAX10_STATUS_BIT_SPI_ARRIA_CLK(max[0]));
          }
     }
 }
