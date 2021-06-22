@@ -12,6 +12,7 @@ class TCPClient{
 	public:
 	
 		TCPClient(std::string IP,int port,int=2000);
+		TCPClient(std::string IP, int port,int=2000, std::string hostname="");
 		~TCPClient();
 		bool Connect();
 		bool Write(std::string str);
@@ -24,6 +25,7 @@ class TCPClient{
 	  boost::asio::io_service io_service;
     ip::tcp::socket* socket;
     std::string ip;
+    std::string hostname;
     int port;
     int default_wait;
     std::string read_stop;
