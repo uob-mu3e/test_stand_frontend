@@ -1,4 +1,4 @@
-json_configuration = {
+{
     "Description": [
         "JSON file for mu3e pixel configuration. Current subdivision",
         "Subdivisions",

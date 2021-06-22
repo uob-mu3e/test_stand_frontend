@@ -15,72 +15,9 @@ var current_chip_selected = ""
 var current_lad_chips = {}
 
 var json_config = {}
+var mupix_dacs = {}
 
 var multiple_chip_boxes = {}
-
-//var fileInput = document.querySelector('input[type="file"]');
-
-function receivedText(e) {
-    json_config = JSON.parse(e);
-}
-
-var load_json_config = function() {
-    //var file = fileInput.files.item(0);
-    var file = 'file:///C:/Users/Luigi/Programming/midas_pixel_page/mupix_configuration.json'
-    var file2 = File("file:///C:/Users/Luigi/Programming/midas_pixel_page/mupix_configuration.json")
-    var file3 = File.createFromFileName("mupix_configuration.json")
-    var fr = new FileReader();
-    fr.onload = function() {receivedText(fr.result)};
-    //fr.readAsDataURL(file);
-    fr.readAsText(file3)
-}
-
-function loadJSON(callback) {
-    var xObj = new XMLHttpRequest();
-    //xObj.overrideMimeType("application/json");
-    //xObj.responseType = 'blob';
-    xObj.open('GET', 'file:///C:/Users/Luigi/Programming/midas_pixel_page/mupix_configuration.json', true);
-    xObj.onreadystatechange = function() {
-    //xObj.onload = function() {
-            if (xObj.readyState === 4 && xObj.status === 200) {
-            // 2. call your callback function
-            document.getElementById("debug").textContent = "OK: " + xObj.responseText
-            callback(xObj.responseText);
-        }
-        else {
-            document.getElementById("debug").textContent = "NO: " +JSON.stringify(xObj)
-        }
-    };
-    xObj.send();
-}
-
-var init_config = function () {
-    loadJSON(function(response) {
-        json_config = response
-        document.getElementById("debug").textContent = 'aaaa' + JSON.stringify(response)
-    })
-}
-
-//json_config = document.getElementById("config").contentDocument
-document.getElementById("debug").textContent = "AAAAA"
-document.getElementById("debug").textContent = JSON.stringify(json_configuration)
-json_config = json_configuration
-//json_config = {}
-
-//load_json_config()
-
-//json_config = require("./mupix_configuration.json")
-
-//init_config()
-
-/*fetch('file:///C:/Users/Luigi/Programming/midas_pixel_page/mupix_configuration.json')
-.then(response => {
-    document.getElementById("debug").textContent = response
-    document.getElementById("debug").textContent = JSON.stringify(response)
-   return response.json();
-})
-.then(data => {json_config = data; document.getElementById("debug").textContent = data});
-*/
 
 var get_json_element = function (ladname) {
     var direction = ladname.substr(3,2)
@@ -170,10 +107,10 @@ var rotate_div = function(div, deg) {
     div.style.transform       = 'rotate('+deg+'deg)';
 }
 
-var reset_table = function (tabname) {
+var reset_table = function (tabname, tableHeaderRowCount) {
     var table2 = document.getElementById(tabname);
     table2.style["visibility"] = "hidden"
-    var tableHeaderRowCount = 0;
+    //var tableHeaderRowCount = 0;
     var rowCount = table2.rows.length;
     for (var i = tableHeaderRowCount; i < rowCount; i++) {
         table2.deleteRow(tableHeaderRowCount);
@@ -184,6 +121,8 @@ var fill_table_by_json  = function (tablename, json_node, row_dict) {
     var table = document.getElementById(tablename);
     table.style["visibility"] = "visible"
     var row_n = 0
+    if (table.hasAttribute("rows") === true)
+        row_n = table.rows.length;
     document.getElementById("debug").textContent += JSON.stringify(row_dict)
     for (var key in row_dict) {
         var row1 = table.insertRow(row_n);
@@ -218,12 +157,12 @@ var chip_clicked = function (ladname, chip) {
     }
     change_state_chip(current_lad_chips[chip]["chip"], "selected")
     current_chip_selected = chip
-    reset_table("pixel_parameters")
+    reset_table("pixel_parameters", 0)
     tab_fill = {"SpecBook ID:" : "SpecBookId", "MIDAS ID:" : "MIDAS_ID", "Event Display ID:" : "EventDisplayID", "Link A number:": "LinkA", "Link B number:": "LinkB", "Link C number:": "LinkC"}
     fill_table_by_json("pixel_parameters", current_lad_chips[chip]["json_node"], tab_fill)
-    reset_table("Bias_tab")
-    reset_table("Conf_tab")
-    reset_table("VDAC_tab")
+    reset_table("Bias_tab", 0)
+    reset_table("Conf_tab", 0)
+    reset_table("VDAC_tab", 0)
     var i, tabcontent, tablinks;
     tabcontent = document.getElementsByClassName("tabcontent");
     for (i = 0; i < tabcontent.length; i++) {
@@ -245,21 +184,30 @@ var ladder_clicked = function(ladname) {
             change_state(lads[current_selected]["ladder"], "unselected")
     }
     current_selected = ladname
-    reset_table("parameter_tab")
+    reset_table("parameter_tab", 0)
     tab_fill = {"SpecBook ID : " : "SpecBookId", "FEB ID : " : "FEB_ID", "DAB channel : " : "FEB_channel"}
     fill_table_by_json("parameter_tab", lads[ladname]["json_node"], tab_fill)
 
-    reset_table("ladder_lv_tab")
+    reset_table("ladder_lv_tab", 0)
     tab_fill = {"Hameg Module : " : "Module", "IP address : " : "IP", "Hameg Channel : " : "Channel"}
     fill_table_by_json("ladder_lv_tab", lads[ladname]["json_node"]["LV_parameters"], tab_fill)
 
     document.getElementById("ladder_lv_header").style["visibility"] = "visible"
     document.getElementById("ladder_lv_settings").style["visibility"] = "visible"
 
+    document.getElementById("ladder_lv_status").setAttribute("data-odb-path", "/Equipment/HAMEG" + lads[ladname]["json_node"]["LV_parameters"]["Module"].toString()+ "/Variables/State[" + lads[ladname]["json_node"]["LV_parameters"]["Channel"].toString()  + "]")
+    document.getElementById("ladder_lv_set_status").setAttribute("data-odb-path", "/Equipment/HAMEG" + lads[ladname]["json_node"]["LV_parameters"]["Module"].toString()+ "/Variables/Set State[" + lads[ladname]["json_node"]["LV_parameters"]["Channel"].toString()  + "]")
     document.getElementById("ladder_lv_read_volt").setAttribute("data-odb-path", "/Equipment/HAMEG" + lads[ladname]["json_node"]["LV_parameters"]["Module"].toString()+ "/Variables/Voltage[" + lads[ladname]["json_node"]["LV_parameters"]["Channel"].toString()  + "]")
     document.getElementById("ladder_lv_read_curr").setAttribute("data-odb-path", "/Equipment/HAMEG" + lads[ladname]["json_node"]["LV_parameters"]["Module"].toString()+ "/Variables/Current[" + lads[ladname]["json_node"]["LV_parameters"]["Channel"].toString()  + "]")
 
-    reset_table("ladder_hv_tab")
+
+    mjsonrpc_db_get_values(["/Equipment/HAMEG" + lads[ladname]["json_node"]["LV_parameters"]["Module"].toString()+ "/Variables/State[" + lads[ladname]["json_node"]["LV_parameters"]["Channel"].toString()  + "]"]).then(function(rpc) {
+       document.getElementById("debug").textContent = JSON.stringify(rpc.result)
+    }).catch(function(error) {
+       mjsonrpc_error_alert(error);
+    });
+
+    reset_table("ladder_hv_tab", 0)
     tab_fill = {"HV-box Module : " : "Module", "IP address : " : "IP", "HV-box Channel : " : "Channel"}
     fill_table_by_json("ladder_hv_tab", lads[ladname]["json_node"]["HV_parameters"], tab_fill)
 
@@ -298,10 +246,10 @@ var ladder_clicked = function(ladname) {
     document.getElementById("chip_dacs").style["visibility"] = "hidden"
     document.getElementById("configure_chip_div").style["visibility"] = "hidden"
     document.getElementById("pixel_configure_update").style["visibility"] = "hidden"
-    reset_table("pixel_parameters")
-    reset_table("Bias_tab")
-    reset_table("Conf_tab")
-    reset_table("VDAC_tab")
+    reset_table("pixel_parameters", 0)
+    reset_table("Bias_tab", 0)
+    reset_table("Conf_tab", 0)
+    reset_table("VDAC_tab", 0)
     var i, tabcontent, tablinks;
     tabcontent = document.getElementsByClassName("tabcontent");
     for (i = 0; i < tabcontent.length; i++) {
@@ -336,21 +284,43 @@ function openChipDacs(evt, dacName) {
     else if (dacName === "VDAC")
         odb_dacName = "VDACS"
     document.getElementById(dacName + "_head").textContent = "Change values in " + "/Equipment/Mupix/Settings/" + odb_dacName + "/" + (parseInt(lads[current_selected]["json_node"]["FEB_ID"])*12 + parseInt(current_lad_chips[current_chip_selected]["json_node"]["MIDAS_ID"]))
-    reset_table(dacName + "_tab")
+    reset_table(dacName + "_tab", 0)
     var table = document.getElementById(dacName + "_tab");
     table.style["visibility"] = "visible"
     dac_list = mupix_dacs[dacName]
     document.getElementById("debug").textContent = JSON.stringify(dac_list)
-    var row_n = 0
+    var row0 = table.insertRow(0);
+    row0.style.fontWeight="bold"
+    var cell01 = row0.insertCell(0);
+    cell01.innerHTML = "DAC name"
+    var cell02 = row0.insertCell(1);
+    cell02.innerHTML = "DAC value"
+    var cell03 = row0.insertCell(2);
+    cell03.innerHTML = "Default value"
+    var cell04 = row0.insertCell(3);
+    cell04.innerHTML = "Difference"
+    var row_n = 1
+    var watch_diff_cells = {}
     for (dac in dac_list) {
         var row1 = table.insertRow(row_n);
         var cell1 = row1.insertCell(0);
         var cell2 = row1.insertCell(1);
-        cell1.innerHTML = dac_list[dac];
+        cell1.innerHTML = dac;
         cell2.classList.add("modbvalue")
-        var link = "/Equipment/Mupix/Settings/" + odb_dacName + "/" + (parseInt(lads[current_selected]["json_node"]["FEB_ID"])*12 + parseInt(current_lad_chips[current_chip_selected]["json_node"]["MIDAS_ID"])) + "/" + dac_list[dac]
+        var link = "/Equipment/Mupix/Settings/" + odb_dacName + "/" + (parseInt(lads[current_selected]["json_node"]["FEB_ID"])*12 + parseInt(current_lad_chips[current_chip_selected]["json_node"]["MIDAS_ID"])) + "/" + dac
         cell2.setAttribute("data-odb-path", link)
         cell2.setAttribute("data-odb-editable", "1")
+        cell2.id = "DAC_tab_" + dac
+        var cell3 = row1.insertCell(2);
+        cell3.innerHTML = dac_list[dac];
+        var cell4 = row1.insertCell(3);
+        watch_diff_cells["DAC_tab_" + dac] = cell4
+        cell2.addEventListener('DOMSubtreeModified', function() {
+            dac_name = this.id.substr(8,this.id.length)
+            watch_diff_cells[this.id].innerHTML = (this.textContent) - dac_list[dac_name];
+            //watch_diff_cells[this.id].innerHTML = dac_name;
+        })
+
         row_n++
     }
     evt.currentTarget.className += " active";
@@ -368,12 +338,36 @@ function configureChip(evt) {
             px_mask.push(true)
     }
     document.getElementById("pixel_configure_update").style["visibility"] = "visible"
-    document.getElementById("pixel_configure_update").textContent = "Configuring chip number " + num
+    document.getElementById("pixel_configure_update_content").textContent = "Configuring chip number " + num
     mjsonrpc_db_paste(mask_names, px_mask).then(function () {
         mjsonrpc_db_paste(["/Equipment/Switching/Settings/MupixConfig"], [true])
     }).catch(function(error) {
         mjsonrpc_error_alert(error);
      });
+}
+
+function resetDACs(evt) {
+    var odb_dacName = ""
+    var num = (parseInt(lads[current_selected]["json_node"]["FEB_ID"])*12 + parseInt(current_lad_chips[current_chip_selected]["json_node"]["MIDAS_ID"]))
+    for (var dacName in mupix_dacs) {
+        var daclist = []
+        var dacvalues = []
+        if (dacName === "Bias")
+            odb_dacName = "BIASDACS"
+        else if (dacName === "Conf")
+            odb_dacName = "CONFDACS"
+        else if (dacName === "VDAC")
+            odb_dacName = "VDACS"
+        for (var dac in mupix_dacs[dacName]) {
+            daclist.push("/Equipment/Mupix/Settings/" + odb_dacName + "/" + num + "/" + dac)
+            dacvalues.push(mupix_dacs[dacName][dac])
+        }
+        document.getElementById("pixel_configure_update").style["visibility"] = "visible"
+        document.getElementById("pixel_configure_update_content").textContent = "Resetting chip number " + num
+        mjsonrpc_db_paste(daclist, dacvalues).catch(function(error) {
+            mjsonrpc_error_alert(error);
+         });
+    }
 }
 
 function configureMultipleChip(evt) {
@@ -426,18 +420,18 @@ var create_octagon = function(ele, prefix, inversion) {
         lad.style = "width:70px;height:20px;position: relative;"
         lad.textContent = "Ladder " + i.toString()
         if (inversion == false) {
-            leftpos = 120*Math.cos((2*Math.PI*(i-4)/8)) +120
-            toppos = 120*(Math.sin((2*Math.PI*(i-4)/8))) -20*i + 130
+            leftpos = 120*Math.cos(Math.PI/8 + (2*Math.PI*(i-4)/8)) +120
+            toppos = 120*(Math.sin(Math.PI/8 + (2*Math.PI*(i-4)/8))) -20*i + 130
             lad.style.left = leftpos.toString() + "px"
             lad.style.top = toppos.toString() + "px"
-            rotate_div(lad, -90 + (360*i/8))
+            rotate_div(lad, -90 + 22.5 + (360*i/8))
         }
         else {
-            leftpos = 120*Math.cos(-(2*Math.PI*(i)/8)) +120
-            toppos = 120*(Math.sin(-(2*Math.PI*(i)/8))) -20*i + 130
+            leftpos = 120*Math.cos(-Math.PI/8-(2*Math.PI*(i)/8)) +120
+            toppos = 120*(Math.sin(-Math.PI/8-(2*Math.PI*(i)/8))) -20*i + 130
             lad.style.left = leftpos.toString() + "px"
             lad.style.top = toppos.toString() + "px"
-            rotate_div(lad, 90 - (360*i/8))
+            rotate_div(lad, 90 - 22.5 - (360*i/8))
         }
         /*if(lad.addEventListener) {
             lad.addEventListener("click", ladder_clicked(prefix + i.toString()));
@@ -465,18 +459,18 @@ var create_decagon = function(ele, prefix, inversion) {
         lad.style = "width:70px;height:20px;position: relative;"
         lad.textContent = "Ladder " + i.toString()
         if (inversion == false) {
-            leftpos = 120*Math.cos((2*Math.PI*(i-5)/10)) +120
-            toppos = 120*(Math.sin((2*Math.PI*(i-5)/10))) -20*i + 130
+            leftpos = 120*Math.cos(Math.PI/10 + (2*Math.PI*(i-5)/10)) +120
+            toppos = 120*(Math.sin(Math.PI/10 + (2*Math.PI*(i-5)/10))) -20*i + 130
             lad.style.left = leftpos.toString() + "px"
             lad.style.top = toppos.toString() + "px"
-            rotate_div(lad, -90 + (360*i/10))
+            rotate_div(lad, -72 + (360*i/10))
         }
         else {
-            leftpos = 120*Math.cos(-(2*Math.PI*(i)/10)) +120
-            toppos = 120*(Math.sin(-(2*Math.PI*(i)/10))) -20*i + 130
+            leftpos = 120*Math.cos(-Math.PI/10 -(2*Math.PI*(i)/10)) +120
+            toppos = 120*(Math.sin(-Math.PI/10 -(2*Math.PI*(i)/10))) -20*i + 130
             lad.style.left = leftpos.toString() + "px"
             lad.style.top = toppos.toString() + "px"
-            rotate_div(lad, 90 - (360*i/10))
+            rotate_div(lad, 72 - (360*i/10))
         }
         /*if(lad.addEventListener) {
             lad.addEventListener("click", ladder_clicked(prefix + i.toString()));
@@ -488,6 +482,16 @@ var create_decagon = function(ele, prefix, inversion) {
         ele.appendChild(lad)
         //TODO: nest it like the rest
         lads[prefix + i.toString()] = create_ladder_element(lad)
+    }
+}
+
+var create_ladder_legend = function() {
+    for (state in states) {
+        let lad = document.createElement("div")
+        lad.type = "submit"
+        lad.classList.add("ladderDiv")
+        lad.classList.add("ladder_unselected")
+        lad.classList.add("ladder_unselected")
     }
 }
 
@@ -512,14 +516,53 @@ var list_chips_configuration = function (ele, direction) {
                 chip_cb_div.appendChild(chip_label)
                 ele.appendChild(chip_cb_div)
             }
+            var linebreak = document.createElement("div");
+            linebreak.classList.add("line_break")
+            ele.appendChild(linebreak)
         }
     }
 }
 
-create_octagon(document.getElementById("L0_US"), "L0_US_L", false)
-create_decagon(document.getElementById("L1_US"), "L1_US_L", false)
-create_octagon(document.getElementById("L0_DS"), "L0_DS_L", true)
-create_decagon(document.getElementById("L1_DS"), "L1_DS_L", true)
+var setup = function () {
+    create_octagon(document.getElementById("L0_US"), "L0_US_L", false)
+    create_decagon(document.getElementById("L1_US"), "L1_US_L", false)
+    create_octagon(document.getElementById("L0_DS"), "L0_DS_L", true)
+    create_decagon(document.getElementById("L1_DS"), "L1_DS_L", true)
 
-list_chips_configuration(document.getElementById("multiple_chip_configuration_us"), "Upstream")
-list_chips_configuration(document.getElementById("multiple_chip_configuration_ds"), "Downstream")
+    list_chips_configuration(document.getElementById("multiple_chip_configuration_us"), "Upstream")
+    list_chips_configuration(document.getElementById("multiple_chip_configuration_ds"), "Downstream")
+}
+
+var load_json = function () {
+    var xmlhttp2 = new XMLHttpRequest();
+    xmlhttp2.onreadystatechange = function(){
+      if(xmlhttp2.status==200 && xmlhttp2.readyState==4){
+        var words = xmlhttp2.responseText;//.split(' ');
+        document.getElementById("debug").textContent = "OPEN! - ";
+        document.getElementById("debug").textContent += words;
+        mupix_dacs = JSON.parse(words);
+      }
+      else {
+          document.getElementById("debug").textContent = "NOOOOOOO!!!" ;
+      }
+    }
+
+    var xmlhttp = new XMLHttpRequest();
+    xmlhttp.onreadystatechange = function(){
+      if(xmlhttp.status==200 && xmlhttp.readyState==4){
+        var words = xmlhttp.responseText;//.split(' ');
+        json_config = JSON.parse(words);
+        xmlhttp2.open("GET","mupix_default_dacs.json",true);
+        xmlhttp2.send();
+        setup();
+      }
+      else {
+          document.getElementById("debug").textContent = "NOOOOOOO!!!" ;
+      }
+    }
+    xmlhttp.open("GET","mupix_configuration.json",true);
+    xmlhttp.send();
+}
+
+load_json()
+

@@ -30,6 +30,8 @@ table td {
 .ladderDiv
 {
     cursor: pointer;
+    display: flex;
+    justify-content: center;
 }
 .ladder_selected
 {
@@ -131,9 +133,14 @@ table td {
     width: 100px;
     height: 50px;
     margin: 5px;
-    padding: 5px;
+    padding: 10px;
+    vertical-align: middle;
    }
 .button_configure button:hover {
     background-color : #00F;
     color: white;
+}
+.line_break {
+    border: 1px solid #ccc;
+    height: 1px;
 }
