@@ -111,9 +111,9 @@ begin
         o_error_shtime          => open,
 
         -- counter
-        o_counters              => counters;
-        
-                i_reset               => i_reset_n,
+        o_counters              => counters,        
+
+        i_reset_n               => i_reset_n,
         i_clk                   => i_clk--,
     );
 
