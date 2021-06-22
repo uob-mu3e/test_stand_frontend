@@ -63,7 +63,7 @@ DEVICE_DRIVER multi_driver_pix[] = {
 EQUIPMENT equipment[] = {
         
     {"Environment",              /* equipment name */
-        {13, 0,                      /* event ID, trigger mask */
+        {150, 0,                      /* event ID, trigger mask */
             "SYSTEM",                  /* event buffer */
             EQ_SLOW,                   /* equipment type */
             0,                         /* event source */
@@ -82,7 +82,7 @@ EQUIPMENT equipment[] = {
     },
     
     {"Pixel-SC-Temperature",              /* equipment name */
-        {13, 0,                      /* event ID, trigger mask */
+        {151, 0,                      /* event ID, trigger mask */
             "SYSTEM",                  /* event buffer */
             EQ_SLOW,                   /* equipment type */
             0,                         /* event source */
