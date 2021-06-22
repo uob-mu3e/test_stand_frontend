@@ -28,6 +28,7 @@ port(
     o_ren_scifi         : out std_logic;
 
     i_farm_id           : in  std_logic_vector(31 downto 0);
+    i_builder_ctl       : in  std_logic_vector(31 downto 0);
 
     -- DDR
     o_data              : out std_logic_vector(511 downto 0);
@@ -361,11 +362,27 @@ begin
                     cnt_idle_scifi_marked <= cnt_idle_scifi_marked + 1;
                 end if;
 
-                -- start when both Scifi and Pixel are not empty, both have header and ram_halffull = '0'
-                if ( i_empty_pixel = '0' and i_empty_pixel = '0' and pixel_header = '1' and scifi_header = '1' and ram_halffull = '0' and i_pixel(223 downto 200) = x"000000" and i_scifi(223 downto 200) = x"000000" ) then
-                    event_tagging_state <= event_head;
-                    header_pixel        <= i_pixel;
-                    header_scifi        <= i_scifi;
+                -- default mode: readout pixel and scifi
+                -- start when both scifi and pixel are not empty, both have header and ram_halffull = '0'
+                if ( i_builder_ctl(USE_BIT_PIXEL_ONLY) = '0' and i_builder_ctl(USE_BIT_SCIFI_ONLY) = '0' ) then
+                    if ( i_empty_scifi = '0' and i_empty_pixel = '0' and pixel_header = '1' and scifi_header = '1' and ram_halffull = '0' and i_pixel(223 downto 200) = x"000000" and i_scifi(223 downto 200) = x"000000" ) then
+                        event_tagging_state <= event_head;
+                        header_pixel        <= i_pixel;
+                        header_scifi        <= i_scifi;
+                    end if;
+                -- readout only pixel
+                -- start when pixel is not empty, has header and ram_halffull = '0'
+                elsif ( i_builder_ctl(USE_BIT_PIXEL_ONLY) = '1' ) then
+                    if ( i_empty_pixel = '0' and pixel_header = '1' and ram_halffull = '0' and i_pixel(223 downto 200) = x"000000" ) then
+                        event_tagging_state <= event_head;
+                        header_pixel        <= i_pixel;
+                    end if;
+                -- start when scifi is not empty, has header and ram_halffull = '0'
+                elsif ( i_builder_ctl(USE_BIT_SCIFI_ONLY) = '1' ) then
+                    if ( i_empty_scifi = '0' and scifi_header = '1' and ram_halffull = '0' and i_scifi(223 downto 200) = x"000000" ) then
+                        event_tagging_state <= event_head;
+                        header_scifi        <= i_scifi;
+                    end if;
                 end if;
 
             when event_head =>
@@ -375,36 +392,53 @@ begin
                 -- end if;
 
                 -- store TS of headers for DDR address
-                ts(15 downto  0) <= header_pixel(87 downto 72);
-                ts(31 downto 16) <= header_pixel(31 downto 16);
-                ts(47 downto 32) <= header_pixel(55 downto 40);
+                if ( i_builder_ctl(USE_BIT_SCIFI_ONLY) = '1' ) then
+                    ts(15 downto  0) <= header_scifi(87 downto 72);
+                    ts(31 downto 16) <= header_scifi(31 downto 16);
+                    ts(47 downto 32) <= header_scifi(55 downto 40);
+                else;
+                    ts(15 downto  0) <= header_pixel(87 downto 72);
+                    ts(31 downto 16) <= header_pixel(31 downto 16);
+                    ts(47 downto 32) <= header_pixel(55 downto 40);
+                end if;
 
                 -- event header
-                w_ram_pixel_header( 31 downto   0) <= trigger_mask & event_id;
-                w_ram_pixel_header( 63 downto  32) <= serial_number;
-                w_ram_pixel_header( 95 downto  64) <= time_tmp;
-                w_ram_pixel_header(127 downto  96) <= (others => '0'); -- e_size
+                w_ram_header( 31 downto   0) <= trigger_mask & event_id;
+                w_ram_header( 63 downto  32) <= serial_number;
+                w_ram_header( 95 downto  64) <= time_tmp;
+                w_ram_header(127 downto  96) <= (others => '0'); -- e_size
                 -- bank header
-                w_ram_pixel_header(159 downto 128) <= (others => '0'); -- b_size
-                w_ram_pixel_header(191 downto 160) <= flags;
+                w_ram_header(159 downto 128) <= (others => '0'); -- b_size
+                w_ram_header(191 downto 160) <= flags;
                 -- BANK32A (start with IPIX)
                 w_ram_pixel_header(223 downto 192) <= x"58495049"; -- bank header
                 w_ram_pixel_header(255 downto 224) <= type_bank;
                 w_ram_pixel_header(287 downto 256) <= (others => '0'); -- bank length
                 w_ram_pixel_header(319 downto 288) <= (others => '0'); -- bank reserved
-                w_ram_pixel_header(351 downto 320) <= header_pixel(127 downto  96); -- overflow (24b) & 7C
-                w_ram_pixel_header(383 downto 352) <= header_pixel(159 downto 128); -- overflow (24b) & 7C
+                if ( i_builder_ctl(USE_BIT_SCIFI_ONLY) = '1' ) then
+                    w_ram_header(351 downto 320) <= header_scifi(127 downto  96); -- overflow (24b) & 7C
+                    w_ram_header(383 downto 352) <= header_scifi(159 downto 128); -- overflow (24b) & 7C
+                    event_tagging_state          <= bank_data_scifi_header;
+                else
+                    w_ram_pixel_header(351 downto 320)  <= header_pixel(127 downto  96); -- overflow (24b) & 7C
+                    w_ram_pixel_header(383 downto 352)  <= header_pixel(159 downto 128); -- overflow (24b) & 7C
+                    event_tagging_state                 <= bank_data_pixel_header;
+                end if;
                 w_ram_data                 <= (others => '0');
                 event_size_cnt             <= event_size_cnt + 8*4; -- b_size, flags, bank name, bank type, bank length, bank reserved, overflow, overflow
                 header_add                 <= w_ram_add + 1;
                 w_ram_add                  <= w_ram_add + 1;
                 w_ram_en                   <= '1';
-                event_tagging_state        <= bank_data_pixel_header;
 
             when bank_data_pixel_header =>
-                w_ram_data(31 downto 0)  <= i_farm_id;       -- reserved
-                w_ram_data(63 downto 32) <= header_pixel(31 downto 16) & header_pixel(87 downto 72); --reserved (TS(31:0))
-                event_tagging_state     <= bank_data_pixel_one;
+                w_ram_data(31 downto 0)         <= i_farm_id; -- reserved
+                if ( i_builder_ctl(USE_BIT_SCIFI_ONLY) = '1' ) then 
+                    w_ram_data(63 downto 32)    <= header_scifi(31 downto 16) & header_scifi(87 downto 72); --reserved (TS(31:0))
+                    event_tagging_state         <= bank_data_scifi_one;
+                else
+                    w_ram_data(63 downto 32)    <= header_pixel(31 downto 16) & header_pixel(87 downto 72); --reserved (TS(31:0))
+                    event_tagging_state         <= bank_data_pixel_one;
+                end if;
 
             when bank_data_pixel_one =>
                 -- check again if the fifo is empty and no header/trailer
@@ -423,7 +457,11 @@ begin
                     bank_size_pixel           <= bank_size_pixel + 14*4;
                     w_ram_add                 <= w_ram_add + 1;
                     w_ram_en                  <= '1';
-                    event_tagging_state       <= bank_data_scifi_header;
+                    if ( i_builder_ctl(USE_BIT_PIXEL_ONLY) /= '1' ) then 
+                        event_tagging_state   <= bank_data_scifi_header;
+                    else
+                        event_tagging_state   <= align_event_size;
+                    end if;
                 end if;
 
             when bank_data_pixel =>
@@ -443,7 +481,11 @@ begin
                     bank_size_pixel           <= bank_size_pixel + 12*4;
                     w_ram_add                 <= w_ram_add + 1;
                     w_ram_en                  <= '1';
-                    event_tagging_state       <= bank_data_scifi_header;
+                    if ( i_builder_ctl(USE_BIT_PIXEL_ONLY) = '1' ) then
+                        event_tagging_state   <= align_event_size;
+                    else 
+                        event_tagging_state   <= bank_data_scifi_header;
+                    end if;
                 end if;
 
             when bank_data_scifi_header =>
@@ -462,22 +504,22 @@ begin
                 -- check again if the fifo is empty and no header/trailer
                 if ( i_empty_scifi = '0' and scifi_header = '0' and scifi_trailer = '0' ) then
                     -- convert 2 38 bit hits to 2 64 bit hits
-                    w_ram_scifi_data(383 downto 256)<= convert_to_64_scifi(i_scifi(75 downto 0), 2, ts);
-                    i_scifi_reg(255 downto 0) <= convert_to_64_scifi(i_scifi(227 downto 76), 4, ts);
-                    event_size_cnt            <= event_size_cnt + 12*4;
-                    bank_size_scifi           <= bank_size_scifi + 16*4;
-                    w_ram_add                 <= w_ram_add + 1;
-                    scifi_header_add          <= w_ram_add + 1;
-                    w_ram_en                  <= '1';
-                    event_tagging_state       <= bank_data_scifi;
+                    w_ram_scifi_data(383 downto 256)    <= convert_to_64_scifi(i_scifi(75 downto 0), 2, ts);
+                    i_scifi_reg(255 downto 0)           <= convert_to_64_scifi(i_scifi(227 downto 76), 4, ts);
+                    event_size_cnt                      <= event_size_cnt + 12*4;
+                    bank_size_scifi                     <= bank_size_scifi + 16*4;
+                    w_ram_add                           <= w_ram_add + 1;
+                    scifi_header_add                    <= w_ram_add + 1;
+                    w_ram_en                            <= '1';
+                    event_tagging_state                 <= bank_data_scifi;
                 elsif ( scifi_header = '1' or scifi_trailer = '1' ) then
-                    w_ram_scifi_data(383 downto 256)<= (others => '1');
-                    event_size_cnt            <= event_size_cnt + 12*4;
-                    bank_size_scifi           <= bank_size_scifi + 16*4;
-                    w_ram_add                 <= w_ram_add + 1;
-                    scifi_header_add          <= w_ram_add + 1;
-                    w_ram_en                  <= '1';
-                    event_tagging_state       <= align_event_size;
+                    w_ram_scifi_data(383 downto 256)    <= (others => '1');
+                    event_size_cnt                      <= event_size_cnt + 12*4;
+                    bank_size_scifi                     <= bank_size_scifi + 16*4;
+                    w_ram_add                           <= w_ram_add + 1;
+                    scifi_header_add                    <= w_ram_add + 1;
+                    w_ram_en                            <= '1';
+                    event_tagging_state                 <= align_event_size;
                 end if;
 
             when bank_data_scifi =>
@@ -511,7 +553,11 @@ begin
                 -- check if the size of the event data
                 -- is in 512 bit if not add dummy words
                 if ( w_ram_add(1 downto 0) + '1' = "00" ) then
-                    event_tagging_state <= bank_set_length_pixel;
+                    if ( i_builder_ctl(USE_BIT_SCIFI_ONLY) = '1' )
+                        event_tagging_state <= bank_set_length_scifi_only;
+                    else
+                        event_tagging_state <= bank_set_length_pixel;
+                    end if;
                 else
                     event_size_cnt <= event_size_cnt + 12*4;
                     bank_size_scifi <= bank_size_scifi + 12*4;
@@ -521,16 +567,32 @@ begin
                 w_ram_en  <= '1';
                 w_ram_add <= header_add;
                 -- write header values
-                w_ram_data( 95 downto   0) <= w_ram_pixel_header( 95 downto   0);
+                w_ram_data( 95 downto   0) <= w_ram_header(95 downto 0);
                 w_ram_data(127 downto  96) <= event_size_cnt; -- event size
                 w_ram_data(159 downto 128) <= event_size_cnt - 8; -- all bank size
-                w_ram_data(255 downto 160) <= w_ram_pixel_header(255 downto 160);
+                w_ram_data(191 downto 160) <= w_ram_header(191 downto 160);
+                w_ram_data(255 downto 192) <= w_ram_pixel_header(255 downto 192);
                 w_ram_data(287 downto 256) <= bank_size_pixel; -- bank length pixel
                 w_ram_data(383 downto 288) <= w_ram_pixel_header(383 downto 288);
                 bank_size_pixel <= (others => '0');
                 event_size_cnt  <= (others => '0');
                 event_tagging_state <= bank_set_length_scifi;
 
+            when bank_set_length_scifi_only =>
+                w_ram_en  <= '1';
+                w_ram_add <= header_add;
+                -- write header values
+                w_ram_data( 95 downto   0) <= w_ram_header(95 downto 0);
+                w_ram_data(127 downto  96) <= event_size_cnt; -- event size
+                w_ram_data(159 downto 128) <= event_size_cnt - 8; -- all bank size
+                w_ram_data(191 downto 160) <= w_ram_header(191 downto 160);
+                w_ram_data(255 downto 192) <= w_ram_pixel_header(255 downto 192);
+                w_ram_data(287 downto 256) <= bank_size_scifi; -- bank length pixel
+                w_ram_data(383 downto 288) <= w_ram_pixel_header(383 downto 288);
+                bank_size_pixel <= (others => '0');
+                event_size_cnt  <= (others => '0');
+                event_tagging_state <= bank_set_length_scifi;
+            
             when bank_set_length_scifi =>
                 w_ram_en        <= '1';
                 w_ram_add       <= scifi_header_add;
