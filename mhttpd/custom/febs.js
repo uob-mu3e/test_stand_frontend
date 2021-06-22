@@ -454,7 +454,10 @@ function update_slots(valuex){
         }
     }
     draw(boardselindex);
+}
 
-
-
+function start_programming() {
+    if (confirm("Do you want to program this FEB?")) {
+        mjsonrpc_db_set_value("/Equipment/Switching/Settings/Load Firmware", 1);
+    }
 }
