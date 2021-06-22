@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <link rel="stylesheet" href="midas.css">
+    <!--link rel="stylesheet" href="mu3estyle.css"-->
+    <link rel="stylesheet" type="text/css" href="pixel_tracker.css">
+    <script src="controls.js"></script>
+    <script src="midas.js"></script>
+    <script src="mhttpd.js"></script>
+    <link href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" crossorigin="anonymous">
+    <title>SSW Cooling</title>
+    <style>
+        table, th, td {
+            border: 1px solid black;
+            border-collapse: collapse;
+        }
+
+        th, td {
+            padding: 10px;
+        }
+    </style>
+
+</head>
+<body class="mcss" onload="mhttpd_init('myPage');">
+
+    <!-- header and side navigation will be filled in mhttpd_start -->
+    <div id="mheader"></div>
+    <div id="msidenav"></div>
+
+    <div id="mmain">
+        <table class="mtable">
+            <tr><th colspan="7" class="mtableheader">SSW Cooling Boxes</th></tr>
+            <tr>
+                <th>Cooling box</th>
+                <th>Temperature (V)</th>
+                <th>Pressure (V)</th>
+                <th>Temperature (C)</th>
+                <th>Pressure (Bar)</th>
+            </tr>
+            <tr><th colspan="5">Upstream Inlet</th></tr>
+            <tr>
+                <th>1</th>
+                <td><div id="1_temp_v" class="modbvalue" data-odb-path="/Equipment/Environment/Variables/Input[45]"></div></td>
+                <td><div id="1_pres_v" class="modbvalue" data-odb-path="/Equipment/Environment/Variables/Input[46]"></div></td>
+                <td><div id="1_temp_c"></div></td>
+                <td><div id="1_press_bar"></div></td>
+            </tr>
+            <tr><th colspan="5">Downstream Inlet</th></tr>
+            <tr>
+                <th>2</th>
+                <td><div id="2_temp_v" class="modbvalue" data-odb-path="/Equipment/Environment/Variables/Input[47]"></div></td>
+                <td><div id="2_pres_v" class="modbvalue" data-odb-path="/Equipment/Environment/Variables/Input[48]"></div></td>
+                <td><div id="2_temp_c"></div></td>
+                <td><div id="2_press_bar"></div></td>
+            </tr>
+            <tr><th colspan="5">Upstream Outlet</th></tr>
+            <tr>
+                <th>3</th>
+                <td><div id="3_temp_v" class="modbvalue" data-odb-path="/Equipment/Environment/Variables/Input[49]"></div></td>
+                <td><div id="3_pres_v" class="modbvalue" data-odb-path="/Equipment/Environment/Variables/Input[50]"></div></td>
+                <td><div id="3_temp_c"></div></td>
+                <td><div id="3_press_bar"></div></td>
+            </tr>
+            <tr><th colspan="5">Downstream Outlet</th></tr>
+            <tr>
+                <th>4</th>
+                <td><div id="4_temp_v" class="modbvalue" data-odb-path="/Equipment/Environment/Variables/Input[51]"></div></td>
+                <td><div id="4_pres_v" class="modbvalue" data-odb-path="/Equipment/Environment/Variables/Input[52]"></div></td>
+                <td><div id="4_temp_c"></div></td>
+                <td><div id="4_press_bar"></div></td>
+            </tr>
+        </table>
+    </div>
+
+<script src="ssw_cooling.js"></script>
+</body>
