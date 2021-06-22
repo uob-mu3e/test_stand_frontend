@@ -1,3 +1,6 @@
+#!/bin/bash
+set -euf
+
 odbedit -c clean
 
 odbedit -c 'mkdir Custom'

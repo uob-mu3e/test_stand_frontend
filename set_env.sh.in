@@ -1,4 +1,5 @@
-#
+#!/bin/bash
+set -euf
 
 PREFIX=@CMAKE_INSTALL_PREFIX@
 SOURCE=@PROJECT_SOURCE_DIR@

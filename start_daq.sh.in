@@ -1,5 +1,5 @@
 #!/bin/bash
-# start_daq.sh
+set -euf
 
 PREFIX=@CMAKE_INSTALL_PREFIX@
 SOURCE=@PROJECT_SOURCE_DIR@
