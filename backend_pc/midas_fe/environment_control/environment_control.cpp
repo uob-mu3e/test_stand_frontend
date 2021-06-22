@@ -127,10 +127,25 @@ void mscb_define(const char *submaster,const char *equipment,const char *devname
     cm_get_experiment_database(&hDB, NULL);
     
     if (submaster && submaster[0]) {
+        char dev_name[500];
+        int size_dev_name = sizeof(dev_name);
+
         sprintf(str, "/Equipment/%s/Settings/Devices/%s/Device", equipment, devname);
-        db_set_value(hDB, 0, str, submaster, 32, 1, TID_STRING);
+        int has_subname = db_get_value(hDB, 0, str, dev_name, &size_dev_name, TID_STRING, TRUE);
+
+        if (has_subname != DB_SUCCESS) { //Variable not set, first time...
+            sprintf(str, "/Equipment/%s/Settings/Devices/%s/Device", equipment, devname);
+            db_set_value(hDB, 0, str, submaster, 32, 1, TID_STRING);
+
+        }
+
         sprintf(str, "/Equipment/%s/Settings/Devices/%s/Pwd", equipment, devname);
-        db_set_value(hDB, 0, str, "meg", 32, 1, TID_STRING);
+        int has_subpwd = db_get_value(hDB, 0, str, dev_name, &size_dev_name, TID_STRING, TRUE);
+
+        if (has_subpwd != DB_SUCCESS) { //Variable not set, first time...
+            sprintf(str, "/Equipment/%s/Settings/Devices/%s/Pwd", equipment, devname);
+            db_set_value(hDB, 0, str, "mu3e", 32, 1, TID_STRING);
+        }
     }
     
     /* find device in device driver */
