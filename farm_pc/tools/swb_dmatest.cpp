@@ -157,9 +157,11 @@ int main(int argc, char *argv[])
     if ( atoi(argv[1]) == 4 ) mu.write_register(SWB_READOUT_STATE_REGISTER_W, 0x44| (set_pixel << 7));
     
     // reset all
-    mu.write_register(RESET_REGISTER_W, 0x1);
-    sleep(2);
-    mu.write_register(RESET_REGISTER_W, 0x0);
+    uint32_t reset_regs = 0;
+    reset_regs = SET_RESET_BIT_DATA_PATH(reset_regs);
+    cout << reset_regs << endl;
+    mu.write_register_wait(RESET_REGISTER_W, reset_regs, 100);
+    mu.write_register_wait(RESET_REGISTER_W, 0x0, 100);
 
     for(int i=0; i < 8; i++)
         cout << hex << "0x" <<  dma_buf[i] << " ";
@@ -196,8 +198,6 @@ int main(int argc, char *argv[])
     mu.write_register(SWB_LINK_MASK_PIXEL_REGISTER_W, 0x0);
     mu.write_register(SWB_READOUT_LINK_REGISTER_W, 0x0);
     mu.write_register(GET_N_DMA_WORDS_REGISTER_W, 0x0);
-    // reset all
-    mu.write_register(RESET_REGISTER_W, 0x1);
     
     // write data
     char dma_buf_str[256];
