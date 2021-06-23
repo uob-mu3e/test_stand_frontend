@@ -61,16 +61,15 @@ architecture arch of time_merger_tree_fifo_32_v2 is
     constant last_layer_state : std_logic_vector(7 downto 0) := x"09";
     constant IDEL : std_logic_vector(7 downto 0) := x"FF";
 
-    signal data, data_reg, q, q_reg, q_reg_reg : work.util.slv38_array_t(gen_fifos - 1 downto 0);
-    signal layer_state, layer_state_reg : work.util.slv8_array_t(gen_fifos - 1 downto 0);
-    signal wrreq, f_wrreq, f_wrreq_reg, wrfull, reset_fifo, wrfull_and_merge_state, both_inputs_rdempty, rdempty, rdempty_reg, wrfull_reg, rdreq : std_logic_vector(gen_fifos - 1 downto 0);
-    signal rdempty_reg_reg, wrfull_reg_reg, rdreq_reg : std_logic_vector(gen_fifos - 1 downto 0);
+    signal data, q : work.util.slv38_array_t(gen_fifos - 1 downto 0);
+    signal layer_state : work.util.slv8_array_t(gen_fifos - 1 downto 0);
+    signal wrreq, wrfull, reset_fifo, wrfull_and_merge_state, both_inputs_rdempty, rdempty : std_logic_vector(gen_fifos - 1 downto 0);
     signal wrfull_and_merge_state_and_both_inputs_not_rdempty, wrfull_and_merge_state_and_first_input_not_rdempty, wrfull_and_merge_state_and_second_input_not_rdempty : std_logic_vector(gen_fifos - 1 downto 0);
-    signal first_input_mask_n_second_input_not_mask_n, second_input_mask_n_first_input_not_mask_n, a_padding, b_padding, c_padding, d_padding : std_logic_vector(gen_fifos - 1 downto 0);
-    signal a_b_padding, b_no_a_padding, a_no_b_padding, c_d_padding, c_d_no_padding, c_no_d_padding, a_c_padding : std_logic_vector(gen_fifos - 1 downto 0);
+    signal first_input_mask_n_second_input_not_mask_n, second_input_mask_n_first_input_not_mask_n, a_padding, b_padding : std_logic_vector(gen_fifos - 1 downto 0);
+    signal a_b_padding, b_no_a_padding, a_no_b_padding : std_logic_vector(gen_fifos - 1 downto 0);
     signal a, b : work.util.slv4_array_t(gen_fifos - 1 downto 0) := (others => (others => '1'));
     signal a_h, b_h : work.util.slv38_array_t(gen_fifos - 1 downto 0) := (others => (others => '1'));
-    signal last, last_reg, last_reg_reg : std_logic_vector(r_width-1 downto 0);
+    signal last : std_logic_vector(r_width-1 downto 0);
 
     -- for debugging / simulation
     signal t_q, t_data : work.util.slv4_array_t(gen_fifos - 1 downto 0);
@@ -94,27 +93,27 @@ begin
         b_h(i)      <= i_data(i + size)(37 downto 0) when i_mask_n(i) = '1' else (others => '1');
 
         -- for debugging / simulation
-        t_q(i)      <= q_reg_reg(i)(31 downto 28);
+        t_q(i)      <= q(i)(31 downto 28);
         t_data(i)   <= data(i)(31 downto 28);
         l1(i)       <= data(i)(37 downto 32);
     END GENERATE;
 
     gen_last_layer : if last_layer = '1' generate
-        t_q_last(31 downto 28) <= last_reg_reg(297 downto 294);
-        t_q_last(27 downto 24) <= last_reg_reg(259 downto 256);
-        t_q_last(23 downto 20) <= last_reg_reg(221 downto 218);
-        t_q_last(19 downto 16) <= last_reg_reg(183 downto 180);
-        t_q_last(15 downto 12) <= last_reg_reg(145 downto 142);
-        t_q_last(11 downto  8) <= last_reg_reg(107 downto 104);
-        t_q_last( 7 downto  4) <= last_reg_reg(69 downto 66);
-        t_q_last( 3 downto  0) <= last_reg_reg(31 downto 28);
+        t_q_last(31 downto 28) <= last(297 downto 294);
+        t_q_last(27 downto 24) <= last(259 downto 256);
+        t_q_last(23 downto 20) <= last(221 downto 218);
+        t_q_last(19 downto 16) <= last(183 downto 180);
+        t_q_last(15 downto 12) <= last(145 downto 142);
+        t_q_last(11 downto  8) <= last(107 downto 104);
+        t_q_last( 7 downto  4) <= last(69 downto 66);
+        t_q_last( 3 downto  0) <= last(31 downto 28);
     end generate gen_last_layer;
 
     o_layer_state   <= layer_state;
     o_wrfull        <= wrfull;
-    o_q             <= q_reg_reg;
-    o_last          <= last_reg_reg;
-    o_rdempty       <= rdempty_reg_reg;
+    o_q             <= q;
+    o_last          <= last;
+    o_rdempty       <= rdempty;
 
     gen_tree:
     FOR i in 0 to gen_fifos - 1 GENERATE
@@ -147,51 +146,13 @@ begin
                 aclr    => reset_fifo(i),
                 data    => data(i),
                 rdclk   => i_clk,
-                rdreq   => rdreq(i),
+                rdreq   => i_rdreq(i),
                 wrclk   => i_clk,
                 wrreq   => wrreq(i),
                 q       => last,
                 rdempty => rdempty(i),
                 wrfull  => wrfull(i)--,
             );
-
-            -- reg for last FIFO output (timing)
-            rdreq(i) <= '1' when rdempty(i) = '0' and wrfull_reg(i) = '0' else '0';
-            rdreq_reg(i) <= '1' when rdempty_reg(i) = '0' and wrfull_reg_reg(i) = '0' else '0';
-            process(i_clk, reset_fifo(i))
-            begin
-            if ( reset_fifo(i) = '1' ) then
-                rdempty_reg(i)    <= '1';
-                wrfull_reg(i)     <= '0';
-                last_reg          <= (others => '0');
-                rdempty_reg_reg(i)<= '1';
-                wrfull_reg_reg(i) <= '0';
-                last_reg_reg      <= (others => '0');
-                --
-            elsif ( rising_edge(i_clk) ) then
-
-                if ( rdreq(i) = '1' ) then
-                    last_reg       <= last;
-                    wrfull_reg(i)  <= '1';
-                    rdempty_reg(i) <= '0';
-                end if;
-
-                if ( rdreq_reg(i) = '1' ) then
-                    last_reg_reg   <= last_reg;
-                    wrfull_reg(i)  <= '0';
-                    rdempty_reg(i) <= '1';
-
-                    wrfull_reg_reg(i)  <= '1';
-                    rdempty_reg_reg(i) <= '0';
-                end if;
-
-                if ( i_rdreq(i) = '1' ) then
-                    wrfull_reg_reg(i)  <= '0';
-                    rdempty_reg_reg(i) <= '1';
-                end if;
-
-            end if;
-            end process;
 
         END GENERATE;
 
@@ -208,50 +169,13 @@ begin
                 aclr    => reset_fifo(i),
                 data    => data(i),
                 rdclk   => i_clk,
-                rdreq   => rdreq(i),
+                rdreq   => i_rdreq(i),
                 wrclk   => i_clk,
                 wrreq   => wrreq(i),
                 q       => q(i),
                 rdempty => rdempty(i),
                 wrfull  => wrfull(i)--,
             );
-
-            -- reg for FIFO output (timing)
-            rdreq(i) <= '1' when rdempty(i) = '0' and wrfull_reg(i) = '0' else '0';
-            rdreq_reg(i) <= '1' when rdempty_reg(i) = '0' and wrfull_reg_reg(i) = '0' else '0';
-            process(i_clk, reset_fifo(i))
-            begin
-            if ( reset_fifo(i) = '1' ) then
-                rdempty_reg(i)    <= '1';
-                wrfull_reg(i)     <= '0';
-                q_reg(i)          <= (others => '0');
-                rdempty_reg_reg(i)<= '1';
-                wrfull_reg_reg(i) <= '0';
-                q_reg_reg(i)       <= (others => '0');
-            elsif ( rising_edge(i_clk) ) then
-
-                if ( rdreq(i) = '1' ) then
-                    q_reg(i)       <= q(i);
-                    wrfull_reg(i)  <= '1';
-                    rdempty_reg(i) <= '0';
-                end if;
-
-                if ( rdreq_reg(i) = '1' ) then
-                    q_reg_reg(i)   <= q_reg(i);
-                    wrfull_reg(i)  <= '0';
-                    rdempty_reg(i) <= '1';
-
-                    wrfull_reg_reg(i)  <= '1';
-                    rdempty_reg_reg(i) <= '0';
-                end if;
-
-                if ( i_rdreq(i) = '1' ) then
-                    wrfull_reg_reg(i)  <= '0';
-                    rdempty_reg_reg(i) <= '1';
-                end if;
-
-            end if;
-            end process;
 
         END GENERATE;
 
@@ -281,6 +205,8 @@ begin
         -- TODO: include sub-header, check backpres., counters etc.
         layer_state(i) <= last_layer_state when i_merge_state = '0' and last_layer = '1' else
 
+                          end_state when a_b_padding(i) = '1' else
+
                           second_input_not_mask_n when wrfull_and_merge_state_and_first_input_not_rdempty(i) = '1' and first_input_mask_n_second_input_not_mask_n(i) = '1' else
                           first_input_not_mask_n when wrfull_and_merge_state_and_second_input_not_rdempty(i) = '1' and second_input_mask_n_first_input_not_mask_n(i) = '1' else
 
@@ -289,8 +215,6 @@ begin
 
                           a_smaller_b when wrfull_and_merge_state_and_both_inputs_not_rdempty(i) = '1' and a(i) <= b(i) else
                           b_smaller_a when wrfull_and_merge_state_and_both_inputs_not_rdempty(i) = '1' and a(i)  > b(i) else
-
-                          end_state when a_b_padding(i) = '1' else
 
                           IDEL;
 

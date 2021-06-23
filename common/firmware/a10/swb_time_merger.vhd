@@ -183,7 +183,7 @@ begin
              '1' when merge_state = get_ts_1 and ts1_idx = 8 and rempty = '0' and wfull = '0'  else 
              '1' when merge_state = get_ts_2 and ts2_idx = 8 and rempty = '0' and wfull = '0'  else
              '1' when merge_state = get_sh and sh_idx = 8 and rempty = '0' and wfull = '0'  else
-             '1' when merge_state = delay and (trailer_idx = 8 or sh_idx = 7) else
+             '1' when merge_state = delay and (trailer_idx = 8 or sh_idx = 7 or trailer_idx < sh_idx) else
              '1' when merge_state = hit and header_idx = 8 and trailer_idx = 8 and ts1_idx = 8 and ts2_idx = 8 and sh_idx = 8 and rempty = '0' and wen_reg = '0' and wfull = '0'  else 
              '0';
 

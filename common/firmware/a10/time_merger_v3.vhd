@@ -10,13 +10,13 @@ use work.mudaq.all;
 -- merge packets delimited by SOP and EOP from N input streams
 entity time_merger_v3 is
 generic (
-    W : positive := 64+12;
-    TIMEOUT : std_logic_vector(31 downto 0) := x"FFFFFFFF";
-    TREE_DEPTH_w : positive := 8;
-    TREE_DEPTH_r : positive := 8;
-    g_NLINKS_DATA : positive := 12;
+    W               : positive := 64+12;
+    TIMEOUT         : std_logic_vector(31 downto 0) := x"FFFFFFFF";
+    TREE_DEPTH_w    : positive := 8;
+    TREE_DEPTH_r    : positive := 8;
+    g_NLINKS_DATA   : positive := 12;
     -- Data type: x"01" = pixel, x"02" = scifi, x"03" = tiles
-    DATA_TYPE : std_logic_vector(7 downto 0) := x"01"--;
+    DATA_TYPE       : std_logic_vector(7 downto 0) := x"01"--;
 );
 port (
     -- input streams
@@ -46,7 +46,7 @@ port (
     -- wait_cnt_pre;
     -- wait_cnt_sh;
     -- wait_cnt_merger;
-        o_counters      : out   work.util.slv32_array_t(5 downto 0);
+    o_counters      : out   work.util.slv32_array_t(5 downto 0);
 
     i_reset_n       : in    std_logic;
     i_clk           : in    std_logic--;
@@ -84,22 +84,26 @@ architecture arch of time_merger_v3 is
     constant write_width : fifo_width_t := (32+6, 32+6, 32+6, 32+6, 32+6, 32+6, 32+6);
     constant generate_fifos : fifo_width_t := (1, 2, 4, 8, 16, 32, 64);
 
-    signal data_0 : work.util.slv38_array_t(generate_fifos(0) - 1 downto 0);
-    signal q_0, q_0_reg, q_0_reg_reg : work.util.slv38_array_t(generate_fifos(0) - 1 downto 0);
+    -- layer0
+    signal data_0, q_0 : work.util.slv38_array_t(generate_fifos(0) - 1 downto 0);
     signal rdreq_0, wrreq_0, rdempty_0, wrfull_0, reset_0 : std_logic_vector(generate_fifos(0) - 1 downto 0);
-    signal rdreq_0_reg, rdempty_0_reg, wrfull_0_reg : std_logic_vector(generate_fifos(0) - 1 downto 0);
-    signal rdreq_0_reg_reg, rdempty_0_reg_reg, wrfull_0_reg_reg : std_logic_vector(generate_fifos(0) - 1 downto 0);
     signal mask_n_0 : std_logic_vector(generate_fifos(0) - 1 downto 0) := (others => '0');
+    -- layer1
     signal q_1 : work.util.slv38_array_t(generate_fifos(1) - 1 downto 0);
-    signal q_2 : work.util.slv38_array_t(generate_fifos(2) - 1 downto 0);
-    signal q_3 : work.util.slv38_array_t(generate_fifos(3) - 1 downto 0);
-    signal q_4 : work.util.slv38_array_t(generate_fifos(4) - 1 downto 0);
-    signal q_5 : work.util.slv38_array_t(generate_fifos(5) - 1 downto 0);
     signal rdempty_1, rdreq_1, mask_n_1 : std_logic_vector(generate_fifos(1) - 1 downto 0);
+    -- layer2
+    signal q_2 : work.util.slv38_array_t(generate_fifos(2) - 1 downto 0);
     signal rdempty_2, rdreq_2, mask_n_2 : std_logic_vector(generate_fifos(2) - 1 downto 0);
+    -- layer3
+    signal q_3 : work.util.slv38_array_t(generate_fifos(3) - 1 downto 0);
     signal rdempty_3, rdreq_3, mask_n_3 : std_logic_vector(generate_fifos(3) - 1 downto 0);
+    -- layer4
+    signal q_4 : work.util.slv38_array_t(generate_fifos(4) - 1 downto 0);
     signal rdempty_4, rdreq_4, mask_n_4 : std_logic_vector(generate_fifos(4) - 1 downto 0);
+    -- layer5
+    signal q_5 : work.util.slv38_array_t(generate_fifos(5) - 1 downto 0);
     signal rdempty_5, rdreq_5, mask_n_5 : std_logic_vector(generate_fifos(5) - 1 downto 0);
+    -- layer6
     signal full_6  : std_logic_vector(generate_fifos(6) - 1 downto 0);
     signal alignment_done : std_logic := '0';
     signal last_layer_state : std_logic_vector(7 downto 0);
@@ -109,7 +113,7 @@ architecture arch of time_merger_v3 is
     signal rdata_last_layer : std_logic_vector(W - 1 downto 0);
     signal rdata_hit_time : std_logic_vector(4 * 8 - 1 downto 0);
 
-    -- counter
+    -- counters
     signal cnt_gtime1_error, cnt_gtime2_error, cnt_shtime_error : std_logic_vector(31 downto 0);
 
 begin
@@ -201,44 +205,6 @@ begin
                 wrfull  => wrfull_0(i)--,
             );
 
-            -- reg for FIFO outputs (timing)
-            rdreq_0(i) <= '1' when rdempty_0(i) = '0' and wrfull_0_reg(i) = '0' else '0';
-            rdreq_0_reg(i) <= '1' when rdempty_0_reg(i) = '0' and wrfull_0_reg_reg(i) = '0' else '0';
-            process(i_clk, reset_0(i))
-            begin
-            if ( reset_0(i) = '1' ) then
-                rdempty_0_reg(i)    <= '1';
-                wrfull_0_reg(i)     <= '0';
-                q_0_reg(i)          <= (others => '0');
-                rdempty_0_reg_reg(i)<= '1';
-                wrfull_0_reg_reg(i) <= '0';
-                q_0_reg_reg(i)      <= (others => '0');
-                --
-            elsif ( rising_edge(i_clk) ) then
-
-                if ( rdreq_0(i) = '1' ) then
-                    q_0_reg(i)       <= q_0(i);
-                    wrfull_0_reg(i)  <= '1';
-                    rdempty_0_reg(i) <= '0';
-                end if;
-
-                if ( rdreq_0_reg(i) = '1' ) then
-                    q_0_reg_reg(i)   <= q_0_reg(i);
-                    wrfull_0_reg(i)  <= '0';
-                    rdempty_0_reg(i) <= '1';
-
-                    wrfull_0_reg_reg(i)  <= '1';
-                    rdempty_0_reg_reg(i) <= '0';
-                end if;
-
-                if ( rdreq_0_reg_reg(i) = '1' ) then
-                    wrfull_0_reg_reg(i)  <= '0';
-                    rdempty_0_reg_reg(i) <= '1';
-                end if;
-
-            end if;
-            end process;
-
         END GENERATE;
 
     END GENERATE;
@@ -251,8 +217,8 @@ begin
         compare_fifos => generate_fifos(0), gen_fifos => generate_fifos(1), DATA_TYPE => DATA_TYPE--,
     )
     port map (
-        i_data          => q_0_reg_reg,
-        i_rdempty       => rdempty_0_reg_reg,
+        i_data          => q_0,
+        i_rdempty       => rdempty_0,
         i_rdreq         => rdreq_1,
         i_merge_state   => merger_state_signal,
         i_mask_n        => mask_n_0,
@@ -261,7 +227,7 @@ begin
 
         o_q             => q_1,
         o_rdempty       => rdempty_1,
-        o_rdreq         => rdreq_0_reg_reg,
+        o_rdreq         => rdreq_0,
         o_mask_n        => mask_n_1,
         o_layer_state   => open,
         o_wrfull        => open,
