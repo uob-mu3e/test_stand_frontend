@@ -396,7 +396,7 @@ begin
                     ts(15 downto  0) <= header_scifi(87 downto 72);
                     ts(31 downto 16) <= header_scifi(31 downto 16);
                     ts(47 downto 32) <= header_scifi(55 downto 40);
-                else;
+                else
                     ts(15 downto  0) <= header_pixel(87 downto 72);
                     ts(31 downto 16) <= header_pixel(31 downto 16);
                     ts(47 downto 32) <= header_pixel(55 downto 40);
@@ -553,7 +553,7 @@ begin
                 -- check if the size of the event data
                 -- is in 512 bit if not add dummy words
                 if ( w_ram_add(1 downto 0) + '1' = "00" ) then
-                    if ( i_builder_ctl(USE_BIT_SCIFI_ONLY) = '1' )
+                    if ( i_builder_ctl(USE_BIT_SCIFI_ONLY) = '1' ) then
                         event_tagging_state <= bank_set_length_scifi_only;
                     else
                         event_tagging_state <= bank_set_length_pixel;
