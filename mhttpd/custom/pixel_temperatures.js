@@ -34,13 +34,21 @@ var init_table = function () {
             continue;
         }
         var row1 = table.insertRow(-1);
+        if (ch % 8 == 0) {
+            row1.style["border-top"] = "5px solid black";
+        }
         var cell1 = row1.insertCell(0);
         var cell2 = row1.insertCell(1);
         var cell3 = row1.insertCell(2);
         var cell4 = row1.insertCell(3);
         var pos = from_input_to_portchannel(ch)
         cell1.innerHTML = "Input " + ch + ": port " + pos[0] + ", channel " + pos[1];
-        cell2.innerHTML = get_description(pos[0], pos[1])
+        descr = get_description(pos[0], pos[1])
+        cell2.innerHTML = descr
+        if (descr.search("Finding") != -1) {
+            row1.style["background-color"] = "#666"
+            cell2.innerHTML = "Not used"
+        }
         cell3.classList.add("modbvalue")
         var link = "/Equipment/Pixel-SC-Temperature/Variables/Input[" + ch + "]"
         cell3.setAttribute("data-odb-path", link)

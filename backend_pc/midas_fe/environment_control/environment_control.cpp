@@ -126,29 +126,32 @@ void mscb_define(const char *submaster,const char *equipment,const char *devname
     
     cm_get_experiment_database(&hDB, NULL);
     
-    if (submaster && submaster[0]) {
-        //char dev_name[256];
-        //int size_dev_name = sizeof(dev_name);
+    if (submaster && submaster[0]) { //Default submaster: deprecated
+        sprintf(str, "/Equipment/%s/Settings/Devices/%s/Device", equipment, devname);
+        db_set_value(hDB, 0, str, submaster, 32, 1, TID_STRING);
 
-        //sprintf(str, "/Equipment/%s/Settings/Devices/%s/Device", equipment, devname);
-        //int has_subname = db_get_value(hDB, 0, str, dev_name, &size_dev_name, TID_STRING, TRUE);
+        sprintf(str, "/Equipment/%s/Settings/Devices/%s/Pwd", equipment, devname);
+        db_set_value(hDB, 0, str, "mu3e", 32, 1, TID_STRING);
+    }
+    else { //If no default submaster, look for it in the variables
+        char dev_name[256];
+        int size_dev_name = sizeof(dev_name);
 
-        //if (has_subname != DB_SUCCESS) { //Variable not set, first time...
-            sprintf(str, "/Equipment/%s/Settings/Devices/%s/Device", equipment, devname);
-            db_set_value(hDB, 0, str, submaster, 32, 1, TID_STRING);
-
-        //}
-
-        //char pwd_name[256];
-        //int size_pwd_name = sizeof(pwd_name);
-
-        //sprintf(str, "/Equipment/%s/Settings/Devices/%s/Pwd", equipment, devname);
-        //int has_subpwd = db_get_value(hDB, 0, str, pwd_name, &size_pwd_name, TID_STRING, TRUE);
-
-        //if (has_subpwd != DB_SUCCESS) { //Variable not set, first time...
-            sprintf(str, "/Equipment/%s/Settings/Devices/%s/Pwd", equipment, devname);
-            db_set_value(hDB, 0, str, "mu3e", 32, 1, TID_STRING);
-        //}
+        sprintf(str, "/Equipment/%s/Settings/Submaster", equipment);
+        int has_subname = db_get_value(hDB, 0, str, dev_name, &size_dev_name, TID_STRING, FALSE);
+        if (has_subname != DB_SUCCESS) {//If it is not set, set it to 'none'
+            db_set_value(hDB, 0, str, "none", 32, 1, TID_STRING);
+        }
+        else {
+            if (dev_name == "none") {
+                sprintf(str, "/Equipment/%s/Settings/Devices/%s/Device", equipment, devname);
+                db_set_value(hDB, 0, str, "none", 32, 1, TID_STRING);
+            }
+            else {//If it is present, set it also for the device
+                sprintf(str, "/Equipment/%s/Settings/Devices/%s/Device", equipment, devname);
+                db_set_value(hDB, 0, str, dev_name, size_dev_name, 1, TID_STRING);
+            }
+        }
     }
     
     /* find device in device driver */
@@ -216,12 +219,14 @@ INT frontend_init()
     /* SCS-3000 environment */
     printf("Initializing Environment...\n");
     for (unsigned int i=0 ; i<71 ; i++)
-        mscb_define("mscb400.mu3e", "Environment", "ADC", multi_driver_env, 65535, i, NULL, 0.0005);
-    
+        //mscb_define("mscb400.mu3e", "Environment", "ADC", multi_driver_env, 65535, i, NULL, 0.0005);//Default submaster (deprecated)
+        mscb_define("", "Environment", "ADC", multi_driver_env, 65535, i, NULL, 0.0005);
+
     /* SCS-3000 pixels */
     printf("Initializing Pixel-SC-Temperature...\n");
     for (unsigned int j = 0; j < 48; j++)
-        mscb_define("mscb334.mu3e", "Pixel-SC-Temperature", "ADC", multi_driver_pix, 0, j, NULL, 0.0005);
+        //mscb_define("mscb334.mu3e", "Pixel-SC-Temperature", "ADC", multi_driver_pix, 0, j, NULL, 0.0005);//Default submaster (deprecated)
+        mscb_define("", "Pixel-SC-Temperature", "ADC", multi_driver_pix, 0, j, NULL, 0.0005);
 
     return CM_SUCCESS;
 }
