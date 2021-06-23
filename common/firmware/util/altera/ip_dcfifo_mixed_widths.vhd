@@ -36,6 +36,7 @@
 LIBRARY ieee;
 USE ieee.std_logic_1164.all;
 
+
 LIBRARY altera_mf;
 USE altera_mf.all;
 
@@ -112,17 +113,36 @@ ARCHITECTURE SYN OF ip_dcfifo_mixed_widths IS
 	);
 	END COMPONENT;
 
+    constant one : std_logic_vector(ADDR_WIDTH_r-1 downto 0) := (0 => '1', others => '0');
+
+    signal rdusedw_reg : std_logic_vector(ADDR_WIDTH_r-1 downto 0);
     signal reset_n : std_logic;
     signal q0 : std_logic_vector(q'range);
     signal rdempty0 : std_logic;
-    signal rdreq0 : std_logic;
+    signal rdempty1 : std_logic;
+    signal rdreq0, rdreq0_reg : std_logic;
 
 BEGIN
-	q0    	<= sub_wire0(DATA_WIDTH_r-1 DOWNTO 0);
-	rdempty0 <= sub_wire1;
-	rdusedw <= sub_wire2(ADDR_WIDTH_r-1 DOWNTO 0);
-	wrfull  <= sub_wire3;
-	wrusedw <= sub_wire4(ADDR_WIDTH_w-1 DOWNTO 0);
+	q0    	    <= sub_wire0(DATA_WIDTH_r-1 DOWNTO 0);
+	rdempty0    <= sub_wire1;
+    rdusedw     <= sub_wire2(ADDR_WIDTH_r-1 DOWNTO 0);
+
+    rdempty1    <= '1' when (rdusedw = one and rdusedw_reg = one and rdreq0_reg = '1') else rdempty0;
+    --rdempty1    <= rdempty0;
+
+    process(rdclk, reset_n)
+    begin
+    if ( reset_n = '0' ) then
+       rdusedw_reg  <= (others => '0');
+       rdreq0_reg   <= '0';
+    elsif ( rising_edge(rdclk) ) then
+        rdusedw_reg <= rdusedw;
+        rdreq0_reg <= rdreq0;
+    end if;
+    end process;
+
+	wrfull      <= sub_wire3;
+	wrusedw     <= sub_wire4(ADDR_WIDTH_w-1 DOWNTO 0);
 
 	dcfifo_mixed_widths_component : dcfifo_mixed_widths
 	GENERIC MAP (
@@ -165,16 +185,16 @@ BEGIN
         g_DATA_WIDTH => q'length--,
     )
     port map (
-        o_rdata => q,
-        i_re => rdreq,
-        o_rempty => rdempty,
+        o_rdata     => q,
+        i_re        => rdreq,
+        o_rempty    => rdempty,
 
-        i_rdata => q0,
-        o_re => rdreq0,
-        i_rempty => rdempty0,
+        i_rdata     => q0,
+        o_re        => rdreq0,
+        i_rempty    => rdempty1,
 
-        i_reset_n => reset_n,
-        i_clk => rdclk--,
+        i_reset_n   => reset_n,
+        i_clk       => rdclk--,
     );
 
 END SYN;
