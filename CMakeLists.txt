@@ -68,7 +68,8 @@ add_subdirectory(modules)
 # Should be found after this
 find_package(Midas HINTS modules/midas REQUIRED)
 # To be implemented in midas/MidasConfig.cmake at some point
-set (MIDASSYS ${MIDAS_INCLUDE_DIR}/..)
+set (MIDASSYS ${MIDAS_LIBRARY_DIRS}/..)
+message(STATUS "MIDASSYS = ${MIDASSYS}")
 list (APPEND MIDAS_INCLUDE_DIRS
     ${CMAKE_CURRENT_SOURCE_DIR}/midas/manalyzer
     ${CMAKE_CURRENT_SOURCE_DIR}/midas/midasio
