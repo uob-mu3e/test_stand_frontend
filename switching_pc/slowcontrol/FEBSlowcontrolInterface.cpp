@@ -338,6 +338,8 @@ int FEBSlowcontrolInterface::FEBsc_NiosRPC(uint32_t FPGA_ID, uint16_t command, v
 
 int FEBSlowcontrolInterface::FEBsc_read_packets()
 {
+
+
     int packetcount = 0;
     uint32_t fpga_rmem_addr=(mdev.read_register_ro(MEM_WRITEADDR_LOW_REGISTER_R)+1) & 0xffff;
     while(fpga_rmem_addr!=m_FEBsc_rmem_addr){
@@ -345,8 +347,9 @@ int FEBSlowcontrolInterface::FEBsc_read_packets()
         if ((mdev.read_memory_ro(m_FEBsc_rmem_addr) & 0x1c0000bc) != 0x1c0000bc)
             return 0; //TODO: correct when no event is to be written?
 
-        if(((fpga_rmem_addr > m_FEBsc_rmem_addr) && (fpga_rmem_addr-m_FEBsc_rmem_addr) < 4)
-            || (MUDAQ_MEM_RO_LEN - m_FEBsc_rmem_addr + fpga_rmem_addr) <4   ){ // This is the wraparound case
+        // the eqaulity case is taken care of by the while condition
+        if(((fpga_rmem_addr > m_FEBsc_rmem_addr) && (fpga_rmem_addr-m_FEBsc_rmem_addr < MIN_SC_MESSAGE_SIZE))
+            || ((fpga_rmem_addr < m_FEBsc_rmem_addr) && (MUDAQ_MEM_RO_LEN - m_FEBsc_rmem_addr + fpga_rmem_addr) < MIN_SC_MESSAGE_SIZE)   ){ // This is the wraparound case
             cout << "Incomplete packet!" << endl;
             return -1;
         }
@@ -359,16 +362,18 @@ int FEBSlowcontrolInterface::FEBsc_read_packets()
         packet.push_back(mdev.read_memory_ro(m_FEBsc_rmem_addr)); //save length word
         rmenaddrIncr();
 
-        if(((fpga_rmem_addr > m_FEBsc_rmem_addr) && (fpga_rmem_addr-m_FEBsc_rmem_addr) < packet.GetLength() +1)
-            || (MUDAQ_MEM_RO_LEN - m_FEBsc_rmem_addr + fpga_rmem_addr) < packet.GetLength() + 1  ){ // This is the wraparound case
+        if(((fpga_rmem_addr >= m_FEBsc_rmem_addr) && (fpga_rmem_addr-m_FEBsc_rmem_addr) < packet.GetLength() +1) // Plus 1 for the trailer
+            || ((fpga_rmem_addr < m_FEBsc_rmem_addr) && (MUDAQ_MEM_RO_LEN - m_FEBsc_rmem_addr + fpga_rmem_addr) < packet.GetLength() + 1 ) ){ // This is the wraparound case
             cout << "Incomplete packet!" << endl;
             return -1;
         }
+        // Read data
         for (uint32_t i = 0; i < packet.GetLength(); i++) {
             packet.push_back(mdev.read_memory_ro(m_FEBsc_rmem_addr)); //save data
             rmenaddrIncr();
         }
 
+        // Read trailer
         packet.push_back(mdev.read_memory_ro(m_FEBsc_rmem_addr));
         rmenaddrIncr();
 

@@ -75,7 +75,7 @@ begin
 					mem_data_o	<= (others => '0');
 					mem_wren_o  <= '1';
 					if ( mem_addr_o = x"FFFE" ) then
-						mem_addr_finished_out <= (others => '0');
+						mem_addr_finished_out <= (others => '1');
 						state <= waiting;
 					end if;		
 
