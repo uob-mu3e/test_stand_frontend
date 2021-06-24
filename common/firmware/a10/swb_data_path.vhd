@@ -376,6 +376,7 @@ begin
     generic map (
         ADDR_WIDTH      => 10,
         DATA_WIDTH      => W,
+        RAM_OUT_REG     => "ON",
         DEVICE          => "Arria 10"--,
     )
     port map (

@@ -185,22 +185,40 @@ begin
                             (others => '0');
             wrreq_0(i) <= '1' when merge_state = merge_hits and i_rempty(i) = '0' and wrfull_0(i) = '0' else '0';
 
-            e_link_fifo : entity work.ip_scfifo
+--            e_link_fifo : entity work.ip_scfifo
+--            generic map(
+--                ADDR_WIDTH      => TREE_DEPTH_w,
+--                DATA_WIDTH      => write_width(0),
+--                RAM_OUT_REG     => "ON",
+--                DEVICE          => "Arria 10"--,
+--            )
+--            port map (
+--                sclr    => reset_0(i),
+--                data    => data_0(i),
+--                clock   => i_clk,
+--                rdreq   => rdreq_0(i),
+--                wrreq   => wrreq_0(i),
+--                q       => q_0(i),
+--                empty   => rdempty_0(i),
+--                full    => wrfull_0(i)--,
+--            );
+            
+            e_link_fifo : entity work.ip_dcfifo
             generic map(
-                ADDR_WIDTH      => TREE_DEPTH_w,
-                DATA_WIDTH      => write_width(0),
-                RAM_OUT_REG     => "OFF",
-                DEVICE          => "Arria 10"--,
+                ADDR_WIDTH  => TREE_DEPTH_w,
+                DATA_WIDTH  => write_width(0),
+                DEVICE      => "Arria 10"--,
             )
             port map (
-                sclr    => reset_0(i),
-                data    => data_0(i),
-                clock   => i_clk,
-                rdreq   => rdreq_0(i),
-                wrreq   => wrreq_0(i),
-                q       => q_0(i),
-                empty   => rdempty_0(i),
-                full    => wrfull_0(i)--,
+                data        => data_0(i),
+                wrreq       => wrreq_0(i),
+                rdreq       => rdreq_0(i),
+                wrclk       => i_clk,
+                rdclk       => i_clk,
+                q           => q_0(i),
+                rdempty     => rdempty_0(i),
+                wrfull      => wrfull_0(i),
+                aclr        => reset_0(i)--,
             );
 
         END GENERATE;

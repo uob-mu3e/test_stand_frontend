@@ -26,3 +26,4 @@ derive_clock_uncertainty
 
 # false paths
 set_false_path -from {a10_block:a10_block|pcie_block:\generate_pcie0:e_pcie0_block|pcie_application:e_pcie_application|pcie_writeable_registers:e_pcie_writeable_registers|writeregs_r[19][*]} -to {*}
+set_false_path -from {a10_block:a10_block|pcie_block:\generate_pcie0:e_pcie0_block|pcie_application:e_pcie_application|pcie_writeable_registers:e_pcie_writeable_registers|writeregs_r[16][*]} -to {*}
