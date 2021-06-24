@@ -72,6 +72,7 @@ architecture arch of time_merger_tree_fifo_32_v2 is
     signal last : std_logic_vector(r_width-1 downto 0);
     signal last_data : std_logic_vector(8 * 32 - 1 downto 0);
     signal last_link : std_logic_vector(8 *  6 - 1 downto 0);
+    signal wrfull_last0, wrfull_last1, wrfull_s, rdempty_last0, rdempty_last1 : std_logic_vector(gen_fifos - 1 downto 0);
 
     -- for debugging / simulation
     signal t_q, t_data : work.util.slv4_array_t(gen_fifos - 1 downto 0);
@@ -113,13 +114,21 @@ begin
         t_q_last(11 downto  8) <= last(107 downto 104);
         t_q_last( 7 downto  4) <= last(69 downto 66);
         t_q_last( 3 downto  0) <= last(31 downto 28);
+        o_wrfull               <= wrfull_last0 and wrfull_last1;
+        wrfull_s               <= wrfull_last0 and wrfull_last1;
+        o_rdempty              <= rdempty_last0 and rdempty_last1;
     end generate gen_last_layer;
+    
+    gen_not_last_layer : if last_layer = '0' generate
+        o_wrfull    <= wrfull;
+        wrfull_s    <= wrfull;
+        o_rdempty   <= rdempty;
+    end generate;
 
     o_layer_state   <= layer_state;
-    o_wrfull        <= wrfull;
     o_q             <= q;
     o_last          <= last;
-    o_rdempty       <= rdempty;
+    
 
     gen_tree:
     FOR i in 0 to gen_fifos - 1 GENERATE
@@ -156,8 +165,8 @@ begin
                 wrclk   => i_clk,
                 wrreq   => wrreq(i),
                 q       => last_data,
-                rdempty => rdempty(i),
-                wrfull  => wrfull(i)--,
+                rdempty => rdempty_last0(i),
+                wrfull  => wrfull_last0(i)--,
             );
 
             e_last_fifo_link : entity work.ip_dcfifo_mixed_widths
@@ -176,8 +185,8 @@ begin
                 wrclk   => i_clk,
                 wrreq   => wrreq(i),
                 q       => last_link,
-                rdempty => rdempty(i),
-                wrfull  => wrfull(i)--,
+                rdempty => rdempty_last1(i),
+                wrfull  => wrfull_last1(i)--,
             );
 
         END GENERATE;
@@ -205,13 +214,13 @@ begin
 
         -- Tree setup
         -- x => empty, F => padding
-        -- [a]              [a]
-        -- [1]  -> [2,1]    [x]  -> [x,2]
-        -- [2]              [2]
-        -- [b]              [b]
+        -- [a]              [a]             [a]
+        -- [1]  -> [2,1]    [x]  -> [x,2]   [F]  -> [x,2]
+        -- [2]              [2]             [2]
+        -- [b]              [b]             [b]
 
         -- TODO: what to do when the FIFO (wrfull(i) = '1') gets full? There need to be a waiting state which does nothing
-        wrfull_and_merge_state(i)                               <= '1' when i_merge_state = '1' and wrfull(i) = '0' else '0';
+        wrfull_and_merge_state(i)                               <= '1' when i_merge_state = '1' and wrfull_s(i) = '0' else '0';
         both_inputs_rdempty(i)                                  <= '0' when i_rdempty(i) = '0' and i_rdempty(i+size) = '0' else '1';
         wrfull_and_merge_state_and_both_inputs_not_rdempty(i)   <= '1' when wrfull_and_merge_state(i) = '1' and both_inputs_rdempty(i) = '0' else '0';
         wrfull_and_merge_state_and_first_input_not_rdempty(i)   <= '1' when wrfull_and_merge_state(i) = '1' and i_rdempty(i) = '0' else '0';
@@ -224,7 +233,6 @@ begin
         a_no_b_padding(i)                                       <= '1' when a_padding(i) = '0' and b_padding(i) = '1' else '0';
         b_no_a_padding(i)                                       <= '1' when a_padding(i) = '1' and b_padding(i) = '0' else '0';
 
-        -- TODO: name the different states, combine stuff
         -- TODO: include sub-header, check backpres., counters etc.
         layer_state(i) <= last_layer_state when i_merge_state = '0' and last_layer = '1' else
 
@@ -242,7 +250,7 @@ begin
                           IDEL;
 
         wrreq(i)        <=  '1' when layer_state(i) = last_layer_state and (i_wen_h_t = "01" or i_wen_h_t = "10" ) else
-                            '1' when layer_state(i) = end_state and wrfull(i) = '0' else
+                            '1' when layer_state(i) = end_state and wrfull_s(i) = '0' else
                             '1' when layer_state(i) = second_input_not_mask_n or layer_state(i) = a_no_b_padding_state or layer_state(i) = b_no_a_padding_state or layer_state(i) = a_smaller_b or layer_state(i) = b_smaller_a else
                             '0';
 

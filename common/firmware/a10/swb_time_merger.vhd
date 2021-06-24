@@ -62,6 +62,7 @@ architecture arch of swb_time_merger is
     signal rdata : work.util.slv38_array_t(g_NLINKS_FARM-1 downto 0);
     signal rempty, wfull, ren, wen, wen_reg : std_logic;
     signal link_number : std_logic_vector(5 downto 0);
+    signal rempty_debug_data, rempty_debug_head : std_logic;
 
     type merge_state_type is (wait_for_pre, get_ts_1, get_ts_2, get_sh, hit, delay, get_tr);
     signal merge_state : merge_state_type;
@@ -329,7 +330,7 @@ begin
 
     gen_debug_data:
     FOR i in 0 to g_NLINKS_FARM-1 GENERATE
-        debug_data(32 * i + 31 downto 32 * i)   <= wdata_debug(32 * i + 31 downto 32 * i);
+        debug_data(32 * i + 31 downto 32 * i)   <= wdata_debug(34 * i + 31 downto 34 * i);
         debug_head(2 * i + 1 downto 2 * i)      <= wdata_debug(34 * i + 33 downto 34 * i + 32);
     END GENERATE;
 
@@ -349,7 +350,7 @@ begin
         wrclk   => i_clk,
         wrreq   => wen,
         q       => o_q_debug,
-        rdempty => o_rempty_debug,
+        rdempty => rempty_debug_data,
         wrfull  => open--, -- should be okay since the FIFO above has the same size
     );
 
@@ -369,7 +370,7 @@ begin
         wrclk   => i_clk,
         wrreq   => wen,
         q       => q_debug_head,
-        rdempty => o_rempty_debug,
+        rdempty => rempty_debug_head,
         wrfull  => open--, -- should be okay since the FIFO above has the same size
     );
     
@@ -381,5 +382,6 @@ begin
     o_header_debug  <= '1' when q_debug_head = "10" else '0';
     o_trailer_debug <= '1' when q_debug_head = "01" else '0';
     link_number     <= fifo_q(37 downto 32);
+    o_rempty_debug  <= rempty_debug_data and rempty_debug_head;
 
 end architecture;
