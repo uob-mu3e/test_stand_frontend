@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <link rel="stylesheet" href="midas.css">
+    <!--link rel="stylesheet" href="mu3estyle.css"-->
+    <link rel="stylesheet" type="text/css" href="pixel_tracker.css">
+    <script src="controls.js"></script>
+    <script src="midas.js"></script>
+    <script src="mhttpd.js"></script>
+    <link href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" crossorigin="anonymous">
+    <title>Pixel Temperatures</title>
+    <style>
+        table, th, td {
+            border: 1px solid black;
+            border-collapse: collapse;
+        }
+
+        th, td {
+            padding: 10px;
+        }
+    </style>
+
+</head>
+<body class="mcss" onload="mhttpd_init('myPage');">
+
+    <!-- header and side navigation will be filled in mhttpd_start -->
+    <div id="mheader"></div>
+    <div id="msidenav"></div>
+
+    <div id="mmain">
+        <table class="mtable" id="temp_tab">
+            <tr><th colspan="4" class="mtableheader">Pixel temperatures</th></tr>
+            <tr>
+                <th>Read-out channel</th>
+                <th>Ladder</th>
+                <th>Temperature (V)</th>
+                <th>Temperature (C)</th>
+            </tr>
+        </table>
+    </div>
+
+    <script src="pixel_utils.js"></script>
+    <script src="pixel_temperatures.js"></script>
+</body>
