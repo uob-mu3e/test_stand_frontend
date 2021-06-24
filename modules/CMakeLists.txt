@@ -1,6 +1,6 @@
-
 if(NOT MIDAS_FOUND)
     message(STATUS "Midas not found, building and installing in modules/midas")
+    file(MAKE_DIRECTORY midas/build)
 # Run cmake for midas (needed for include file
     execute_process(COMMAND ${CMAKE_COMMAND} 
             -DCMAKE_CXX_STANDARD=${CMAKE_CXX_STANDARD} 
@@ -8,10 +8,12 @@ if(NOT MIDAS_FOUND)
             WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/midas/build)
 # Build and install subproject
     execute_process(COMMAND ${CMAKE_COMMAND} --build ${CMAKE_CURRENT_SOURCE_DIR}/midas/build --target install  --parallel 4)
-# Because Konstantin does not want to include mscb in MidasConfig.cmake
+    # At the moment, mscb is not fully part of the midas cmake config
     add_subdirectory(midas/mscb)
-endif()
 
+    list(APPEND CMAKE_PREFIX_PATH "${CMAKE_CURRENT_SOURCE_DIR}/midas")
+    set(CMAKE_PREFIX_PATH ${CMAKE_PREFIX_PATH} PARENT_SCOPE)
+endif()
 
 if(ROOT_FOUND)
     if(USE_ANALYZER)

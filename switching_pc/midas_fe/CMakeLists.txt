@@ -8,7 +8,7 @@ target_compile_options(switch_fe PRIVATE
 )
 
 target_include_directories(switch_fe
-        PRIVATE ../../modules/midas/mscb/include
+        PRIVATE 
         ${LIBMUDAQ_DIR} ${INCMUDAQ_DIR} ${LIBSLOWCONTROL_DIR} ${CMAKE_CURRENT_SOURCE_DIR}/../../common/firmware/include
         )
 
