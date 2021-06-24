@@ -129,6 +129,7 @@ begin
 
     --! check for error
     --! TODO: handle errors, at the moment they are sent out at the end of normal events
+    --! TODO: make 50:1 MUX nicer -> check less bits
     o_error     <=  '1' when (rdata(0)(37 downto 32) = err_marker) else
                     '1' when (rdata(2)(37 downto 32) = err_marker) else
                     '1' when (rdata(4)(37 downto 32) = err_marker) else

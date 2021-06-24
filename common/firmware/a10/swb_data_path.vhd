@@ -109,7 +109,7 @@ architecture arch of swb_data_path is
 
 begin
 
-        --! generate reset for 125 MHz
+        --! generate reset for 250 MHz
     e_reset_250_n : entity work.reset_sync
     port map ( o_reset_n => reset_250_n, i_reset_n => i_reset_n_250, i_clk => i_clk_250 );
 

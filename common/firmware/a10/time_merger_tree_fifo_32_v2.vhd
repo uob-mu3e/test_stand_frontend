@@ -85,15 +85,15 @@ begin
     FOR i in 0 to gen_fifos - 1 GENERATE
         mupix_data : IF DATA_TYPE = x"01" GENERATE
             a(i)    <= i_data(i)(31 downto 28) when i_mask_n(i) = '1' else (others => '1');
-            b(i)    <= i_data(i + size)(31 downto 28) when i_mask_n(i) = '1' else (others => '1');
+            b(i)    <= i_data(i + size)(31 downto 28) when i_mask_n(i+size) = '1' else (others => '1');
         END GENERATE;
         scifi_data : IF DATA_TYPE = x"02" GENERATE
             a(i)    <= i_data(i)(9 downto 6) when i_mask_n(i) = '1' else (others => '1');
-            b(i)    <= i_data(i + size)(9 downto 6) when i_mask_n(i) = '1' else (others => '1');
+            b(i)    <= i_data(i + size)(9 downto 6) when i_mask_n(i+size) = '1' else (others => '1');
         END GENERATE;
 
         a_h(i)      <= i_data(i)(37 downto 0) when i_mask_n(i) = '1' else (others => '1');
-        b_h(i)      <= i_data(i + size)(37 downto 0) when i_mask_n(i) = '1' else (others => '1');
+        b_h(i)      <= i_data(i + size)(37 downto 0) when i_mask_n(i+size) = '1' else (others => '1');
 
         -- for debugging / simulation
         t_q(i)      <= q(i)(31 downto 28);
@@ -196,6 +196,7 @@ begin
             generic map(
                 ADDR_WIDTH      => TREE_w,
                 DATA_WIDTH      => w_width,
+                RAM_OUT_REG     => "ON",
                 DEVICE          => "Arria 10"--,
             )
             port map (
@@ -235,7 +236,7 @@ begin
 
         -- TODO: include sub-header, check backpres., counters etc.
         layer_state(i) <= last_layer_state when i_merge_state = '0' and last_layer = '1' else
-
+        
                           end_state when a_b_padding(i) = '1' else
 
                           second_input_not_mask_n when wrfull_and_merge_state_and_first_input_not_rdempty(i) = '1' and first_input_mask_n_second_input_not_mask_n(i) = '1' else
@@ -251,7 +252,7 @@ begin
 
         wrreq(i)        <=  '1' when layer_state(i) = last_layer_state and (i_wen_h_t = "01" or i_wen_h_t = "10" ) else
                             '1' when layer_state(i) = end_state and wrfull_s(i) = '0' else
-                            '1' when layer_state(i) = second_input_not_mask_n or layer_state(i) = a_no_b_padding_state or layer_state(i) = b_no_a_padding_state or layer_state(i) = a_smaller_b or layer_state(i) = b_smaller_a else
+                            '1' when layer_state(i) = second_input_not_mask_n or layer_state(i) = first_input_not_mask_n or layer_state(i) = a_no_b_padding_state or layer_state(i) = b_no_a_padding_state or layer_state(i) = a_smaller_b or layer_state(i) = b_smaller_a else
                             '0';
 
         o_rdreq(i)      <=  '1' when layer_state(i) = second_input_not_mask_n or layer_state(i) = a_no_b_padding_state or layer_state(i) = a_smaller_b else

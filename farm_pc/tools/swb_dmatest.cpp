@@ -159,7 +159,8 @@ int main(int argc, char *argv[])
     // reset all
     uint32_t reset_regs = 0;
     reset_regs = SET_RESET_BIT_DATA_PATH(reset_regs);
-    cout << reset_regs << endl;
+	reset_regs = SET_RESET_BIT_DATAGEN(reset_regs);
+    cout << "Reset Regs: " << hex << reset_regs << endl;
     mu.write_register_wait(RESET_REGISTER_W, reset_regs, 100);
     mu.write_register_wait(RESET_REGISTER_W, 0x0, 100);
 

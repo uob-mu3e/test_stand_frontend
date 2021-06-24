@@ -113,28 +113,16 @@ ARCHITECTURE SYN OF ip_dcfifo_mixed_widths IS
     );
     END COMPONENT;
 
-    signal rdusedw_reg : std_logic_vector(ADDR_WIDTH_r-1 downto 0);
     signal reset_n : std_logic;
     signal q0 : std_logic_vector(q'range);
     signal rdempty0 : std_logic;
-    signal rdreq0, rdreq0_reg : std_logic;
+    signal rdreq0 : std_logic;
 
 BEGIN
+
     q0          <= sub_wire0(DATA_WIDTH_r-1 DOWNTO 0);
     rdempty0    <= sub_wire1;
     rdusedw     <= sub_wire2(ADDR_WIDTH_r-1 DOWNTO 0);
-
-    process(rdclk, reset_n)
-    begin
-    if ( reset_n = '0' ) then
-       rdusedw_reg  <= (others => '0');
-       rdreq0_reg   <= '0';
-    elsif ( rising_edge(rdclk) ) then
-        rdusedw_reg <= rdusedw;
-        rdreq0_reg <= rdreq0;
-    end if;
-    end process;
-
     wrfull      <= sub_wire3;
     wrusedw     <= sub_wire4(ADDR_WIDTH_w-1 DOWNTO 0);
 

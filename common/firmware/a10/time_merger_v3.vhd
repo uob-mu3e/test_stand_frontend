@@ -189,6 +189,7 @@ begin
             generic map(
                 ADDR_WIDTH      => TREE_DEPTH_w,
                 DATA_WIDTH      => write_width(0),
+                RAM_OUT_REG     => "OFF",
                 DEVICE          => "Arria 10"--,
             )
             port map (
