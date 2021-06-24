@@ -55,8 +55,10 @@ end entity;
 architecture arch of swb_time_merger is
 
     signal rdata_s, wdata, wdata_reg, fifo_q : std_logic_vector(W-1 downto 0);
-    signal fifo_q_debug : std_logic_vector(33 downto 0);
-    signal wdata_debug : std_logic_vector(34*g_NLINKS_FARM-1 downto 0);
+    signal q_debug_head : std_logic_vector(1 downto 0);
+    signal debug_data : std_logic_vector(32 * g_NLINKS_FARM - 1 downto 0);
+    signal debug_head : std_logic_vector(2 * g_NLINKS_FARM - 1 downto 0);
+    signal wdata_debug : std_logic_vector(34 * g_NLINKS_FARM - 1 downto 0);
     signal rdata : work.util.slv38_array_t(g_NLINKS_FARM-1 downto 0);
     signal rempty, wfull, ren, wen, wen_reg : std_logic;
     signal link_number : std_logic_vector(5 downto 0);
@@ -183,7 +185,7 @@ begin
              '1' when merge_state = get_ts_1 and ts1_idx = 8 and rempty = '0' and wfull = '0'  else 
              '1' when merge_state = get_ts_2 and ts2_idx = 8 and rempty = '0' and wfull = '0'  else
              '1' when merge_state = get_sh and sh_idx = 8 and rempty = '0' and wfull = '0'  else
-             '1' when merge_state = delay and (trailer_idx = 8 or sh_idx = 7 or trailer_idx < sh_idx) else
+             '1' when merge_state = delay and (trailer_idx = 8 or sh_idx = 7 or trailer_idx < sh_idx) and rempty = '0' else
              '1' when merge_state = hit and header_idx = 8 and trailer_idx = 8 and ts1_idx = 8 and ts2_idx = 8 and sh_idx = 8 and rempty = '0' and wen_reg = '0' and wfull = '0'  else 
              '0';
 
@@ -325,24 +327,50 @@ begin
         clock           => i_clk--,
     );
 
-    e_debug_fifo : entity work.ip_dcfifo_mixed_widths
+    gen_debug_data:
+    FOR i in 0 to g_NLINKS_FARM-1 GENERATE
+        debug_data(32 * i + 31 downto 32 * i)   <= wdata_debug(32 * i + 31 downto 32 * i);
+        debug_head(2 * i + 1 downto 2 * i)      <= wdata_debug(34 * i + 33 downto 34 * i + 32);
+    END GENERATE;
+
+    e_debug_fifo_data : entity work.ip_dcfifo_mixed_widths
     generic map(
-        ADDR_WIDTH_w => 8,
-        DATA_WIDTH_w => 34*g_NLINKS_FARM,
-        ADDR_WIDTH_r => 12,
-        DATA_WIDTH_r => 34,
-        DEVICE 		 => "Arria 10"--,
+        ADDR_WIDTH_w    => 9,
+        DATA_WIDTH_w    => 32*g_NLINKS_FARM,
+        ADDR_WIDTH_r    => 12,
+        DATA_WIDTH_r    => 32,
+        DEVICE          => "Arria 10"--,
     )
     port map (
-        aclr 	=> not i_reset_n,
-        data 	=> wdata_debug,
-        rdclk 	=> i_clk,
-        rdreq 	=> i_ren,
-        wrclk 	=> i_clk,
-        wrreq 	=> wen,
-        q 		=> fifo_q_debug,
+        aclr    => not i_reset_n,
+        data    => debug_data,
+        rdclk   => i_clk,
+        rdreq   => i_ren,
+        wrclk   => i_clk,
+        wrreq   => wen,
+        q       => o_q_debug,
         rdempty => o_rempty_debug,
-        wrfull 	=> open--, -- should be okay since the FIFO above has the same size
+        wrfull  => open--, -- should be okay since the FIFO above has the same size
+    );
+
+    e_debug_fifo_header : entity work.ip_dcfifo_mixed_widths
+    generic map(
+        ADDR_WIDTH_w    => 9,
+        DATA_WIDTH_w    => 2*g_NLINKS_FARM,
+        ADDR_WIDTH_r    => 12,
+        DATA_WIDTH_r    => 2,
+        DEVICE          => "Arria 10"--,
+    )
+    port map (
+        aclr    => not i_reset_n,
+        data    => debug_head,
+        rdclk   => i_clk,
+        rdreq   => i_ren,
+        wrclk   => i_clk,
+        wrreq   => wen,
+        q       => q_debug_head,
+        rdempty => o_rempty_debug,
+        wrfull  => open--, -- should be okay since the FIFO above has the same size
     );
     
     o_header    <= '1' when fifo_q(37 downto 32) = pre_marker else '0';
@@ -350,9 +378,8 @@ begin
     o_q         <= fifo_q;
 
     -- debug path
-    o_header_debug  <= '1' when fifo_q_debug(33 downto 32) = "10" else '0';
-    o_trailer_debug <= '1' when fifo_q_debug(33 downto 32) = "01" else '0';
-    o_q_debug       <= fifo_q_debug(31 downto 0);
+    o_header_debug  <= '1' when q_debug_head = "10" else '0';
+    o_trailer_debug <= '1' when q_debug_head = "01" else '0';
     link_number     <= fifo_q(37 downto 32);
 
 end architecture;

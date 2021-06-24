@@ -70,6 +70,8 @@ architecture arch of time_merger_tree_fifo_32_v2 is
     signal a, b : work.util.slv4_array_t(gen_fifos - 1 downto 0) := (others => (others => '1'));
     signal a_h, b_h : work.util.slv38_array_t(gen_fifos - 1 downto 0) := (others => (others => '1'));
     signal last : std_logic_vector(r_width-1 downto 0);
+    signal last_data : std_logic_vector(8 * 32 - 1 downto 0);
+    signal last_link : std_logic_vector(8 *  6 - 1 downto 0);
 
     -- for debugging / simulation
     signal t_q, t_data : work.util.slv4_array_t(gen_fifos - 1 downto 0);
@@ -99,6 +101,10 @@ begin
     END GENERATE;
 
     gen_last_layer : if last_layer = '1' generate
+        gen_last:
+        FOR i in 0 to 7 GENERATE
+            last(38 * i + 37 downto 38 * i) <= last_link(6 * i + 5 downto 6 * i) & last_data(32 * i + 31 downto 32 * i);
+        END GENERATE;
         t_q_last(31 downto 28) <= last(297 downto 294);
         t_q_last(27 downto 24) <= last(259 downto 256);
         t_q_last(23 downto 20) <= last(221 downto 218);
@@ -134,22 +140,42 @@ begin
         o_mask_n(i) <= i_mask_n(i) or i_mask_n(i + size);
 
         gen_last_layer : IF last_layer = '1' and i < g_NLINKS_DATA GENERATE
-            e_last_fifo : entity work.ip_dcfifo_mixed_widths
+            e_last_fifo_data : entity work.ip_dcfifo_mixed_widths
             generic map(
-                ADDR_WIDTH_w    => TREE_w,
-                DATA_WIDTH_w    => w_width,
-                ADDR_WIDTH_r    => TREE_r,
-                DATA_WIDTH_r    => r_width,
+                ADDR_WIDTH_w    => 11,
+                DATA_WIDTH_w    => 32,
+                ADDR_WIDTH_r    => 8,
+                DATA_WIDTH_r    => 32*8,
                 DEVICE          => "Arria 10"--,
             )
             port map (
                 aclr    => reset_fifo(i),
-                data    => data(i),
+                data    => data(i)(31 downto 0),
                 rdclk   => i_clk,
                 rdreq   => i_rdreq(i),
                 wrclk   => i_clk,
                 wrreq   => wrreq(i),
-                q       => last,
+                q       => last_data,
+                rdempty => rdempty(i),
+                wrfull  => wrfull(i)--,
+            );
+
+            e_last_fifo_link : entity work.ip_dcfifo_mixed_widths
+            generic map(
+                ADDR_WIDTH_w    => 11,
+                DATA_WIDTH_w    => 6,
+                ADDR_WIDTH_r    => 8,
+                DATA_WIDTH_r    => 6*8,
+                DEVICE          => "Arria 10"--,
+            )
+            port map (
+                aclr    => reset_fifo(i),
+                data    => data(i)(37 downto 32),
+                rdclk   => i_clk,
+                rdreq   => i_rdreq(i),
+                wrclk   => i_clk,
+                wrreq   => wrreq(i),
+                q       => last_link,
                 rdempty => rdempty(i),
                 wrfull  => wrfull(i)--,
             );
@@ -157,24 +183,21 @@ begin
         END GENERATE;
 
         gen_layer : IF last_layer = '0' and i < g_NLINKS_DATA GENERATE
-            e_link_fifo : entity work.ip_dcfifo_mixed_widths
+            e_link_fifo : entity work.ip_scfifo
             generic map(
-                ADDR_WIDTH_w    => TREE_w,
-                DATA_WIDTH_w    => w_width,
-                ADDR_WIDTH_r    => TREE_r,
-                DATA_WIDTH_r    => r_width,
+                ADDR_WIDTH      => TREE_w,
+                DATA_WIDTH      => w_width,
                 DEVICE          => "Arria 10"--,
             )
             port map (
-                aclr    => reset_fifo(i),
+                sclr    => reset_fifo(i),
                 data    => data(i),
-                rdclk   => i_clk,
+                clock   => i_clk,
                 rdreq   => i_rdreq(i),
-                wrclk   => i_clk,
                 wrreq   => wrreq(i),
                 q       => q(i),
-                rdempty => rdempty(i),
-                wrfull  => wrfull(i)--,
+                empty   => rdempty(i),
+                full    => wrfull(i)--,
             );
 
         END GENERATE;
@@ -182,10 +205,10 @@ begin
 
         -- Tree setup
         -- x => empty, F => padding
-        -- [b,a]
-        -- [1,1]  -> [1,1] -> [x,2] -> [3,2] -> [2,2] -> [x,3] -> [3,3] -> ->  [3,2] -> [2,2] [4,2] -> [4,2]
-        -- [2,2]              [2,2]    [2,2]             [x,2]    [3,2]        [F,2]          [F,F]
-        -- [d,c]
+        -- [a]              [a]
+        -- [1]  -> [2,1]    [x]  -> [x,2]
+        -- [2]              [2]
+        -- [b]              [b]
 
         -- TODO: what to do when the FIFO (wrfull(i) = '1') gets full? There need to be a waiting state which does nothing
         wrfull_and_merge_state(i)                               <= '1' when i_merge_state = '1' and wrfull(i) = '0' else '0';
@@ -195,11 +218,11 @@ begin
         wrfull_and_merge_state_and_second_input_not_rdempty(i)  <= '1' when wrfull_and_merge_state(i) = '1' and i_rdempty(i+size) = '0' else '0';
         first_input_mask_n_second_input_not_mask_n(i)           <= '1' when i_mask_n(i) = '1' and i_mask_n(i+size) = '0' else '0';
         second_input_mask_n_first_input_not_mask_n(i)           <= '1' when i_mask_n(i+size) = '1' and i_mask_n(i) = '0' else '0';
-        a_padding(i)        <= '1' when a_h(i) = tree_padding else '0';
-        b_padding(i)        <= '1' when b_h(i) = tree_padding else '0';
-        a_b_padding(i)      <= '1' when a_padding(i) = '1' and b_padding(i) = '1' else '0';
-        a_no_b_padding(i)   <= '1' when a_padding(i) = '0' and b_padding(i) = '1' else '0';
-        b_no_a_padding(i)   <= '1' when a_padding(i) = '1' and b_padding(i) = '0' else '0';
+        a_padding(i)                                            <= '1' when a_h(i) = tree_padding else '0';
+        b_padding(i)                                            <= '1' when b_h(i) = tree_padding else '0';
+        a_b_padding(i)                                          <= '1' when a_padding(i) = '1' and b_padding(i) = '1' else '0';
+        a_no_b_padding(i)                                       <= '1' when a_padding(i) = '0' and b_padding(i) = '1' else '0';
+        b_no_a_padding(i)                                       <= '1' when a_padding(i) = '1' and b_padding(i) = '0' else '0';
 
         -- TODO: name the different states, combine stuff
         -- TODO: include sub-header, check backpres., counters etc.
@@ -219,7 +242,7 @@ begin
                           IDEL;
 
         wrreq(i)        <=  '1' when layer_state(i) = last_layer_state and (i_wen_h_t = "01" or i_wen_h_t = "10" ) else
-                            '1' when layer_state(i) = end_state else
+                            '1' when layer_state(i) = end_state and wrfull(i) = '0' else
                             '1' when layer_state(i) = second_input_not_mask_n or layer_state(i) = a_no_b_padding_state or layer_state(i) = b_no_a_padding_state or layer_state(i) = a_smaller_b or layer_state(i) = b_smaller_a else
                             '0';
 
