@@ -214,6 +214,13 @@ var ladder_clicked = function(ladname) {
     document.getElementById("ladder_hv_header").style["visibility"] = "visible"
     document.getElementById("ladder_hv_settings").innerHTML = ""
 
+    document.getElementById("ladder_temperature").style["visibility"] = "visible"
+    var port = lads[ladname]["json_node"]["Temperature_parameters"]["port"]
+    var channela = lads[ladname]["json_node"]["Temperature_parameters"]["channel"]
+    var input_channel = from_portchannel_to_input(port, channela)
+    var link_temp = "/Equipment/Pixel-SC-Temperature/Variables/Input[" + input_channel + "]"
+    document.getElementById("ladder_temp_read_volt").setAttribute("data-odb-path", link_temp)
+
     document.getElementById("chip_header").style["visibility"] = "visible"
     document.getElementById("pixel_select").style["visibility"] = "visible"
     document.getElementById("pixel_select").innerHTML = ""
@@ -523,6 +530,12 @@ var list_chips_configuration = function (ele, direction) {
     }
 }
 
+var setup_listeners = function () {
+    document.getElementById("ladder_temp_read_volt").addEventListener('DOMSubtreeModified', function () {
+        document.getElementById("ladder_temp_read_c").innerHTML = convert_v_to_temperature(this.textContent);
+    })
+}
+
 var setup = function () {
     create_octagon(document.getElementById("L0_US"), "L0_US_L", false)
     create_decagon(document.getElementById("L1_US"), "L1_US_L", false)
@@ -531,6 +544,8 @@ var setup = function () {
 
     list_chips_configuration(document.getElementById("multiple_chip_configuration_us"), "Upstream")
     list_chips_configuration(document.getElementById("multiple_chip_configuration_ds"), "Downstream")
+
+    setup_listeners()
 }
 
 var load_json = function () {

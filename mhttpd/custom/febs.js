@@ -143,18 +143,18 @@ function Feb(x,y,dx,dy, index){
         cc.fillText(this.shorttype, this.x+this.dx-10, this.y+10);
 
         if(this.active > 0){
-            tbar(this.arria_temp,this.x+20, this.y+2, this.dy-4);
-            tbar(this.max_temp  ,this.x+24, this.y+2, this.dy-4);
-            tbar(this.si1_temp  ,this.x+28, this.y+2, this.dy-4);
-            tbar(this.si2_temp  ,this.x+32, this.y+2, this.dy-4);
-            tbar(this.arria_temp_ext,this.x+36, this.y+2, this.dy-4);
-            tbar(this.dcdc_temp     ,this.x+40, this.y+2, this.dy-4);
-            tbar(this.ff1_temp      ,this.x+44, this.y+2, this.dy-4);
+            tbar(this.arria_temp,this.x+50, this.y+2, this.dy-4);
+            tbar(this.max_temp  ,this.x+54, this.y+2, this.dy-4);
+            tbar(this.si1_temp  ,this.x+58, this.y+2, this.dy-4);
+            tbar(this.si2_temp  ,this.x+62, this.y+2, this.dy-4);
+            tbar(this.arria_temp_ext,this.x+66, this.y+2, this.dy-4);
+            tbar(this.dcdc_temp     ,this.x+70, this.y+2, this.dy-4);
+            tbar(this.ff1_temp      ,this.x+74, this.y+2, this.dy-4);
 
-            rxdot(this.ff1_rx1, this.x+50, this.y+6);
-            rxdot(this.ff1_rx2, this.x+56, this.y+6);
-            rxdot(this.ff1_rx3, this.x+50, this.y+12);
-            //rxdot(this.ff1_rx4, this.x+56, this.y+12); RX4 currently not used
+            rxdot(this.ff1_rx1, this.x+80, this.y+6);
+            rxdot(this.ff1_rx2, this.x+86, this.y+6);
+            //rxdot(this.ff1_rx3, this.x+80, this.y+12);
+            rxdot(this.ff1_rx4, this.x+86, this.y+12); //RX4 currently not used
 
             cc.fillStyle = "Black";
             cc.font = "10px Arial, sans-serif";
@@ -454,7 +454,10 @@ function update_slots(valuex){
         }
     }
     draw(boardselindex);
+}
 
-
-
+function start_programming() {
+    if (confirm("Do you want to program this FEB?")) {
+        mjsonrpc_db_set_value("/Equipment/Switching/Settings/Load Firmware", 1);
+    }
 }
