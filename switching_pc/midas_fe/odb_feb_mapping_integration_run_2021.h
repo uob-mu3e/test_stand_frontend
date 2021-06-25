@@ -29,7 +29,7 @@ for(uint32_t i=12; i < 14; i++){
 }
 
 for(uint32_t i=14; i < 192; i++){
-    links["FrontEndBoardType"][i] = FEBTYPE::Undefined;
+    links["FrontEndBoardType"][i] = FEBTYPE::Unused;
 }
 
 links["FrontEndBoardNames"][0] = "Pixel US L1 0-3";

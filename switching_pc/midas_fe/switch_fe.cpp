@@ -285,11 +285,9 @@ INT frontend_init()
     #endif
 
     // create Settings structure in ODB
-    cout << "Setting up ODB" << endl;
     setup_odb();
 
 
-    cout << "Opening Mudaq" << endl;
     // open mudaq
     #ifdef NO_SWITCHING_BOARD
         mup = new mudaq::DummyDmaMudaqDevice("/dev/mudaq0");
@@ -302,18 +300,17 @@ INT frontend_init()
         return FE_ERR_DRIVER;
 
 
-    cout << "Setting link enables" << endl;
     //set link enables so slow control can pass
     odb cur_links_odb("/Equipment/Links/Settings/LinkMask");
     try{
         set_feb_enable(get_link_active_from_odb(cur_links_odb)); }
     catch(...){ return FE_ERR_ODB;}
     
-    cout << "Creating FEB List" << endl;
     // Create the FEB List
     feblist = new FEBList(switch_id);
 
     //init SC
+    feb_sc->FEBsc_resetSecondary();
 
     //init feb crates
     status = init_crates();
@@ -472,8 +469,6 @@ void setup_odb(){
      create_scfc_names_in_odb(crate_settings);
 
     crate_settings.connect("/Equipment/FEBCrates/Settings");
-
-    cout << "Setting crate variables" << endl;
 
     odb crate_variables = {
         {"FEBPower", std::array<uint8_t, N_FEBCRATES*MAX_FEBS_PER_CRATE>{}},
@@ -913,7 +908,7 @@ INT read_febcrate_sc_event(char *pevent, INT off){
             uint16_t node = crates["CrateControllerNode"][i];
             int fd = mscb_init(cstr, sizeof(cstr), nullptr, 0);
             if (fd < 0) {
-               std::cout << "Cannot connect to " << node << std::endl;
+               cm_msg(MINFO, "read_febcrate_sc_event", "Cannot connect to node: %d", node);
                for(uint32_t j= 0; j < per_crate_SCFC_size-1; j++)// -1 as index is already written
                    *pdata++ = 0;
                continue;
@@ -937,7 +932,7 @@ INT read_febcrate_sc_event(char *pevent, INT off){
 /*--- Read Slow Control Event from FEBs to be put into data stream --------*/
 INT read_sc_event(char *pevent, INT off)
 {    
-    cm_msg(MINFO, "switch_fe::read_sc_event()" , "Reading FEB SC");
+    //cm_msg(MINFO, "switch_fe::read_sc_event()" , "Reading FEB SC");
 
     string bankname = ssfe[switch_id];
     string counterbankname = sscn[switch_id];
@@ -997,7 +992,6 @@ DWORD * fill_SSCN(DWORD * pdata)
 
 INT read_scifi_sc_event(char *pevent, INT off){
 	static int i=0;
-    printf("Reading Scifi FEB status data from all FEBs %d\n",i++);
 
     //TODO: Make this more proper: move this to class driver routine and make functions not writing to ODB all the time (only on update).
     //Add readout function for this one that gets data from class variables and writes midas banks
@@ -1011,7 +1005,7 @@ INT read_scifi_sc_event(char *pevent, INT off){
 
 INT read_scitiles_sc_event(char *pevent, INT off){
 	static int i=0;
-    printf("Reading SciTiles FEB status data from all FEBs %d\n",i++);
+    
     //TODO: Make this more proper: move this to class driver routine and make functions not writing to ODB all the time (only on update).
     //Add readout function for this one that gets data from class variables and writes midas banks
     tilefeb->ReadBackAllCounters();
@@ -1023,7 +1017,7 @@ INT read_scitiles_sc_event(char *pevent, INT off){
 /*--- Read Slow Control Event from Mupix to be put into data stream --------*/
 
 INT read_mupix_sc_event(char *pevent, INT off){
-    cm_msg(MINFO, "Mupix::read_mupix_sc_event()" , "Reading MuPix FEB SC");
+    //cm_msg(MINFO, "Mupix::read_mupix_sc_event()" , "Reading MuPix FEB SC");
 
 //     create banks with LVDS counters
     string bankname = "PSLL";
@@ -1062,14 +1056,16 @@ void febpower_changed(odb o)
             uint16_t node = crates["CrateControllerNode"][crate];
             int fd = mscb_init(cstr, sizeof(cstr), nullptr, 0);
             if (fd < 0) {
-               std::cout << "Cannot connect to " << node << std::endl;
+               cm_msg(MINFO, "read_febcrate_sc_event", "Cannot connect to node: %d", node);
                return;
             }
             uint8_t power = power_odb[i];
-           if(power)
-               cout << "Switching on FEB " << slot << " in crate " << crate << endl;
-           else
-               cout << "Switching off FEB " << slot << " in crate " << crate << endl;
+            if(power){
+                cm_msg(MINFO, "febpower_changed", "Switching on FEB %d in crate %d", slot, crate);
+            }
+            else {
+                cm_msg(MINFO, "febpower_changed", "Switching off FEB %d in crate %d", slot, crate); 
+            }
 
             mscb_write(fd, node, slot+CC_POWER_OFFSET,&power,sizeof(power));
             febpower[i] = power;
@@ -1094,8 +1090,6 @@ void sorterdelays_changed(odb o)
 void sc_settings_changed(odb o)
 {
     std::string name = o.get_name();
-
-    printf("%s\n",name.c_str());
 
 #ifdef MY_DEBUG
     dummy_mudaq::DummyMudaqDevice & mu = *mup;
@@ -1239,7 +1233,7 @@ void sc_settings_changed(odb o)
 	  if((command&0xff) == 0) return;
       uint32_t payload = odb("/Equipment/Switching/Settings/Reset Bypass Payload");
 
-	  printf("Reset Bypass Command %8.8x, payload %8.8x\n",command,payload);
+	  cm_msg(MINFO, "sc_settings_changed", "Reset Bypass Command %d, payload %d", command, payload);
 
         // TODO: get rid of hardcoded addresses
         feb_sc->FEB_register_write(FEBSlowcontrolInterface::ADDRS::BROADCAST_ADDR, 0xf5, payload);
@@ -1255,11 +1249,11 @@ void sc_settings_changed(odb o)
     }
 
     if (name == "Load Firmware" && o) {
-        printf("Load firmware triggered");
+        cm_msg(MINFO, "sc_settings_changed", "Load firmware triggered");
         string fname = odb("/Equipment/Switching/Settings/Firmware File");
         uint32_t id = odb("/Equipment/Switching/Settings/Firmware FEB ID");
-       mufeb->LoadFirmware(fname,id);
-       o = false;
+        mufeb->LoadFirmware(fname,id);
+        o = false;
     }
 
 }
