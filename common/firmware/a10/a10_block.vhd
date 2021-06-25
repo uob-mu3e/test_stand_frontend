@@ -685,6 +685,8 @@ begin
 
         o_pcie0_rregs       => pcie0_rregs,
 
+        i_reset_n           => reset_pcie0_n,
+
         i_clk_A             => i_pcie0_wregs_A_clk,
         i_clk_B             => i_pcie0_wregs_B_clk,
         i_clk_C             => i_pcie0_wregs_C_clk--,

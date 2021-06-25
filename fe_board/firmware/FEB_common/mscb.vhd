@@ -3,8 +3,8 @@ use ieee.std_logic_1164.all;
 
 entity mscb is
 generic (
-    BAUD_RATE_g : positive := 115200;
-    CLK_MHZ_g : real--;
+    g_BAUD_RATE : positive := 115200;
+    g_CLK_MHZ   : real--;
 );
 port (
     -- avalon slave interface
@@ -100,8 +100,8 @@ begin
     e_uart_rx : entity work.uart_rx
     generic map (
         g_DATA_BITS => 9,
-        g_BAUD_RATE => BAUD_RATE_g,
-        g_CLK_MHZ => CLK_MHZ_g--,
+        g_BAUD_RATE => g_BAUD_RATE,
+        g_CLK_MHZ   => g_CLK_MHZ--,
     )
     port map (
         i_data          => i_rx_data,
@@ -137,8 +137,8 @@ begin
     e_uart_tx : entity work.uart_tx
     generic map (
         g_DATA_BITS => 9,
-        g_BAUD_RATE => BAUD_RATE_g,
-        g_CLK_MHZ => CLK_MHZ_g--,
+        g_BAUD_RATE => g_BAUD_RATE,
+        g_CLK_MHZ   => g_CLK_MHZ--,
     )
     port map (
         o_data          => o_tx_data,
