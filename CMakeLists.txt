@@ -71,9 +71,9 @@ find_package(Midas HINTS modules/midas REQUIRED)
 set (MIDASSYS ${MIDAS_LIBRARY_DIRS}/..)
 message(STATUS "MIDASSYS = ${MIDASSYS}")
 list (APPEND MIDAS_INCLUDE_DIRS
-    ${CMAKE_CURRENT_SOURCE_DIR}/midas/manalyzer
-    ${CMAKE_CURRENT_SOURCE_DIR}/midas/midasio
-    ${CMAKE_CURRENT_SOURCE_DIR}/midas/mvodb
+    ${MIDASSYS}/midas/manalyzer
+    ${MIDASSYS}/midas/midasio
+    ${MIDASSYS}/midas/mvodb
     )
 link_directories(${MIDAS_LIBRARY_DIRS})
 include_directories(${MIDAS_INCLUDE_DIRS})
