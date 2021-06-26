@@ -9,6 +9,10 @@
 #define POWERDRIVER_H
 
 #include <iostream>
+#include <thread>
+#include <mutex>
+#include <atomic>
+
 #include "midas.h"
 #include "odbxx.h"
 #include "TCPClient.h"
@@ -21,11 +25,15 @@ class PowerDriver{
 	
 		PowerDriver();
 		PowerDriver(std::string, EQUIPMENT_INFO*);
+        virtual ~PowerDriver();
 		
 		virtual INT ConnectODB();
 		INT Connect();
 		virtual INT Init(){return FE_ERR_DRIVER;};
 		virtual INT ReadAll(){return FE_ERR_DRIVER;}
+        INT GetReadStatus(){return readstatus;}
+        void ReadLoop();
+        void StartReading(){read = 1;}
 		virtual void ReadESRChanged(){};
 		std::vector<bool> GetState() const { return state; }
 		std::vector<float> GetVoltage() const { return voltage; }
@@ -53,6 +61,7 @@ class PowerDriver{
 		
 
 	protected:
+
 	
 		//read
 		float Read(std::string,INT&);
@@ -83,6 +92,13 @@ class PowerDriver{
 		midas::odb variables;
 		
 		TCPClient* client;
+
+        std::mutex power_mutex;
+        std::thread readthread;
+
+        std::atomic<int> read;
+        std::atomic<int> stop;
+        std::atomic<INT> readstatus;
 		
 		float relevantchange;
 
