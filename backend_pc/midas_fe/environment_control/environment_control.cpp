@@ -20,6 +20,70 @@
 #include "mfe.h"
 #include "device/mscbdev.h"
 #include "class/multi.h"
+#include <cmath>
+#include <map>
+#include <string>
+
+double convert_temperature(float volt) {
+    char get_str[256];
+    double scale;
+    int sizze = sizeof(double);
+    sprintf(get_str, "/Equipment/Environment/Converted/Parameters/Temperature/Scale");
+    int ok_scale = db_get_value(hDB, 0, get_str, &scale, &sizze, TID_DOUBLE, FALSE);
+    double expo;
+    sprintf(get_str, "/Equipment/Environment/Converted/Parameters/Temperature/Exp");
+    int ok_expo = db_get_value(hDB, 0, get_str, &expo, &sizze, TID_DOUBLE, FALSE);
+    double offset;
+    sprintf(get_str, "/Equipment/Environment/Converted/Parameters/Temperature/Offset");
+    int ok_offset = db_get_value(hDB, 0, get_str, &offset, &sizze, TID_DOUBLE, FALSE);
+
+    return (scale * exp(-1*expo * (10000 * (volt / (5 - volt)))) - offset);
+}
+double convert_pressure(float volt) {
+    char get_str[256];
+    double scale;
+    int sizze = sizeof(double);
+    sprintf(get_str, "/Equipment/Environment/Converted/Parameters/Pressure/Scale");
+    int ok_scale = db_get_value(hDB, 0, get_str, &scale, &sizze, TID_DOUBLE, FALSE);
+    return (volt * 9 / 4);
+}
+double convert_flow(float volt) {
+    return 1000. / (volt / (2500. / 4095.)) / (78. * 60.);
+}
+
+std::map<int, std::pair<std::string, std::string> > extra_env = {
+    {0, {"Env_US1 - Water", "undefined"}},
+    {1, {"Env_US1 - PCMini52_RH", "undefined"} },
+    {2, {"Env_US1 - PCMini52_T", "undefined" }},
+    {3, {"Env_US2 - O2-7-top", "undefined" }},
+    {4, {"Env_US2 - HIH4040_top", "undefined" }},
+    {5, {"Env_US2 - LM35_Fibre", "undefined" }},
+    {6, {"Env_US2 - LM35_FEC1", "undefined" }},
+    {7, {"Env_US2 - LM35_top", "undefined" }},
+
+    {9, {"Env_DS1 - Water", "undefined" }},
+    {11, {"Env_DS2 - O2-4-top", "undefined" }},
+    {12, {"Env_DS2 - HIH4040_top", "undefined" }},
+    {13, {"Env_DS2 - LM35_Fibre", "undefined" }},
+    {14, {"Env_DS2 - LM35_FEC1", "undefined" }},
+    {15, {"Env_DS2 - LM35_top", "undefined" }},
+
+    {18, {"Env_DS3 - O2-11-bottom", "undefined" }},
+    {19, {"Env_US3 - O2-6-central", "undefined" }},
+    {20, {"Env_US3 - HIH4040_bottom", "undefined" }},
+    {21, {"Env_US3 - HIH4040_central", "undefined" }},
+    //{23, {"Env_US6 - O2_3", "undefined" }},
+    //{24, {"Env_US6 - LM35_3", "undefined" }},
+    //{25, {"Env_US6 - HIH_3", "undefined" }},
+
+    {27, {"Env_DS3 - O2-11-bottom", "undefined" }},
+    {28, {"Env_DS3 - O2-6-central", "undefined" }},
+    {29, {"Env_DS3 - HIH4040_bottom", "undefined" }},
+    {30, {"Env_DS3 - HIH4040_central", "undefined" }}
+    //{32, {"Env_DS6 - LM35_6", "undefined" }},
+    //{33, {"Env_DS6 - HIH_6", "undefined" }},
+    //{34, {"Env_DS6 - O2_6", "undefined" }}
+};
 
 /*-- Globals -------------------------------------------------------*/
 
@@ -173,7 +237,58 @@ void mscb_define(const char *submaster,const char *equipment,const char *devname
     db_set_value_index(hDB, 0, str, &address, sizeof(int), chn_index, TID_INT, TRUE);
     sprintf(str, "/Equipment/%s/Settings/Devices/%s/MSCB Index", equipment, devname);
     db_set_value_index(hDB, 0, str, &var_index, sizeof(char), chn_index, TID_BYTE, TRUE);
-    
+
+    if (equipment == "Environment") {
+        if (chn_index == 0) {
+            char set_str[256];
+            sprintf(set_str, "/Equipment/%s/Converted/Parameters/Temperature/Scale", equipment);
+            double scale_tmp;
+            int size_scale_tmp = sizeof(double);
+            int has_subname = db_get_value(hDB, 0, set_str, &scale_tmp, &size_scale_tmp, TID_DOUBLE, FALSE);
+            if (has_subname != DB_SUCCESS) {
+                double scale = 79.5;
+                db_set_value(hDB, 0, set_str, &scale, sizeof(double), 1, TID_DOUBLE);
+                sprintf(set_str, "/Equipment/%s/Converted/Parameters/Temperature/Exp", equipment);
+                double expo = 0.00011;
+                db_set_value(hDB, 0, set_str, &expo, sizeof(double), 1, TID_DOUBLE);
+                sprintf(set_str, "/Equipment/%s/Converted/Parameters/Temperature/Offset", equipment);
+                double offset = 1.76;
+                db_set_value(hDB, 0, set_str, &offset, sizeof(double), 1, TID_DOUBLE);
+
+                sprintf(set_str, "/Equipment/%s/Converted/Parameters/Pressure/Scale", equipment);
+                double scalep = 2.25;
+                db_set_value(hDB, 0, set_str, &scalep, sizeof(double), 1, TID_DOUBLE);
+            }
+        }
+        else if (chn_index == 45 || chn_index == 47 || chn_index == 49 || chn_index == 51) {
+            char set_str[256];
+            sprintf(set_str, "/Equipment/%s/Converted/Temperature", equipment);
+            double temp = 30;
+            int idx = (int)((chn_index - 45) / 2);
+            db_set_value_index(hDB, 0, set_str, &temp, sizeof(double), idx, TID_DOUBLE, TRUE);
+        }
+        else if (chn_index == 46 || chn_index == 48 || chn_index == 50 || chn_index == 52) {
+            char set_str[256];
+            sprintf(set_str, "/Equipment/%s/Converted/Pressure", equipment);
+            double temp = 1;
+            int idx = (int)((chn_index - 46) / 2);
+            db_set_value_index(hDB, 0, set_str, &temp, sizeof(double), idx, TID_DOUBLE, TRUE);
+        }
+        else if (chn_index == 42 || chn_index == 43) {
+            char set_str[256];
+            sprintf(set_str, "/Equipment/%s/Converted/Flow", equipment);
+            double temp = 1;
+            int idx = (int)((chn_index - 42));
+            db_set_value_index(hDB, 0, set_str, &temp, sizeof(double), idx, TID_DOUBLE, TRUE);
+        }
+        else if (extra_env.find(chn_index) != extra_env.end()) {
+            char set_str[256];
+            sprintf(set_str, "/Equipment/%s/Converted/%s", equipment, extra_env[chn_index].first.c_str());
+            double temp = 1.;
+            db_set_value(hDB, 0, set_str, &temp, sizeof(double), 1, TID_DOUBLE);
+        }
+    }
+
     if (threshold != -1) {
         sprintf(str, "/Equipment/%s/Settings/Update Threshold", equipment);
         f_threshold = (float) threshold;
@@ -270,7 +385,40 @@ INT resume_run(INT run_number, char *error)
 
 INT frontend_loop()
 {
-    ss_sleep(10);
+    ss_sleep(100);
+    for (int ch = 0; ch < 4; ++ch) {
+        char get_str[256];
+        float volt;
+        int size_volt = sizeof(float);
+        sprintf(get_str, "/Equipment/Environment/Variables/Input[%d]", 45 + ch*2);
+        int ok_temp = db_get_value(hDB, 0, get_str, &volt, &size_volt, TID_FLOAT, FALSE);
+        if (ok_temp == DB_SUCCESS) {
+            char set_str[256];
+            sprintf(set_str, "/Equipment/Environment/Converted/Temperature");
+            double temp = convert_temperature(volt);
+            db_set_value_index(hDB, 0, set_str, &temp, sizeof(double), ch, TID_DOUBLE, TRUE);
+        }
+        float volt2;
+        sprintf(get_str, "/Equipment/Environment/Variables/Input[%d]", 46 + ch * 2);
+        int ok_press = db_get_value(hDB, 0, get_str, &volt2, &size_volt, TID_FLOAT, FALSE);
+        if (ok_press == DB_SUCCESS) {
+            char set_str[256];
+            sprintf(set_str, "/Equipment/Environment/Converted/Pressure");
+            double temp = convert_pressure(volt2);
+            db_set_value_index(hDB, 0, set_str, &temp, sizeof(double), ch, TID_DOUBLE, TRUE);
+        }
+        if (ch > 1)
+            continue;
+        float volt3;
+        sprintf(get_str, "/Equipment/Environment/Variables/Input[%d]", 42 + ch);
+        int ok_flow = db_get_value(hDB, 0, get_str, &volt3, &size_volt, TID_FLOAT, FALSE);
+        if (ok_flow == DB_SUCCESS) {
+            char set_str[256];
+            sprintf(set_str, "/Equipment/Environment/Converted/Flow");
+            double temp = convert_flow(volt3);
+            db_set_value_index(hDB, 0, set_str, &temp, sizeof(double), ch, TID_DOUBLE, TRUE);
+        }
+    }
     return CM_SUCCESS;
 }
 
