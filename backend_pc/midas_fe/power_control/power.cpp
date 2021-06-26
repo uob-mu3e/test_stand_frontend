@@ -22,6 +22,7 @@
 #include "midas.h"
 #include "mfe.h"
 #include "mscb.h"
+#include "history.h"
 #include "class/multi.h"
 #include "class/generic.h"
 #include "device/mscbdev.h"
@@ -80,6 +81,8 @@ INT read_hameg_power7(char *pevent, INT off);
 INT read_hameg_power8(char *pevent, INT off);
 INT read_power(float* pdata, const std::string& eqn);
 
+void setup_history();
+
 
 
 /*-- Equipment list ------------------------------------------------*/
@@ -120,7 +123,7 @@ EQUIPMENT equipment[] = {
      	10000,                     /* read every 10 sec */
      	0,                         /* stop run after this event limit */
     	0,                         /* number of sub events */
-     	0,                         /* log history every event */
+        1,                         /* log history every event */
      	"", "", ""} ,                  /* device driver list */
      	read_hameg_power0,    
     },
@@ -136,7 +139,7 @@ EQUIPMENT equipment[] = {
      	10000,                     /* read every 10 sec */
      	0,                         /* stop run after this event limit */
     	0,                         /* number of sub events */
-     	0,                         /* log history every event */
+        1,                         /* log history every event */
      	"", "", ""} ,                  /* device driver list */
      	read_hameg_power1,    
     },
@@ -152,7 +155,7 @@ EQUIPMENT equipment[] = {
      	10000,                     /* read every 10 sec */
      	0,                         /* stop run after this event limit */
     	0,                         /* number of sub events */
-     	0,                         /* log history every event */
+        1,                         /* log history every event */
      	"", "", ""} ,                  /* device driver list */
      	read_hameg_power2,    
     },
@@ -168,7 +171,7 @@ EQUIPMENT equipment[] = {
      	10000,                     /* read every 10 sec */
      	0,                         /* stop run after this event limit */
     	0,                         /* number of sub events */
-     	0,                         /* log history every event */
+        1,                         /* log history every event */
      	"", "", ""} ,                  /* device driver list */
      	read_hameg_power3,    
     },
@@ -184,7 +187,7 @@ EQUIPMENT equipment[] = {
      	10000,                     /* read every 10 sec */
      	0,                         /* stop run after this event limit */
     	0,                         /* number of sub events */
-     	0,                         /* log history every event */
+        1,                         /* log history every event */
      	"", "", ""} ,                  /* device driver list */
      	read_hameg_power4,    
     },
@@ -200,7 +203,7 @@ EQUIPMENT equipment[] = {
      	10000,                     /* read every 10 sec */
      	0,                         /* stop run after this event limit */
     	0,                         /* number of sub events */
-     	0,                         /* log history every event */
+        1,                         /* log history every event */
      	"", "", ""} ,                  /* device driver list */
      	read_hameg_power5,    
     },
@@ -216,7 +219,7 @@ EQUIPMENT equipment[] = {
      	10000,                     /* read every 10 sec */
      	0,                         /* stop run after this event limit */
     	0,                         /* number of sub events */
-     	0,                         /* log history every event */
+        1,                         /* log history every event */
      	"", "", ""} ,                  /* device driver list */
      	read_hameg_power6,    
     },
@@ -232,7 +235,7 @@ EQUIPMENT equipment[] = {
      	10000,                     /* read every 10 sec */
      	0,                         /* stop run after this event limit */
     	0,                         /* number of sub events */
-     	0,                         /* log history every event */
+        1,                         /* log history every event */
      	"", "", ""} ,                  /* device driver list */
      	read_hameg_power7,    
     },
@@ -248,7 +251,7 @@ EQUIPMENT equipment[] = {
      	10000,                     /* read every 10 sec */
      	0,                         /* stop run after this event limit */
     	0,                         /* number of sub events */
-     	0,                         /* log history every event */
+        1,                         /* log history every event */
      	"", "", ""} ,                  /* device driver list */
      	read_hameg_power8,    
     },
@@ -509,6 +512,7 @@ INT frontend_init()
     custom.connect("/Custom");
     custom["Low Voltage&"] = "lowvoltage.html";
 
+    setup_history();
 
 	ss_sleep(5000);
   
@@ -701,4 +705,24 @@ INT resume_run(INT run_number [[maybe_unused]], char *error [[maybe_unused]])
    return CM_SUCCESS;
 }
 
-/*------------------------------------------------------------------*/
+/*-- Set up history panels-----------------------------------------------*/
+void setup_history(){
+    for(const auto& d: drivers)
+    {
+        if( !d->Initialized() ) continue;
+
+        std::string name = d->GetName();
+        size_t nchannels = d->GetVoltage().size();
+        std::vector<std::string> cnames;
+        std::vector<std::string> vnames;
+        for(int i=0; i < nchannels; i++){
+            cnames.push_back(std::string(name +std::string(":Current[")+std::to_string(i)+std::string("]")));
+            vnames.push_back(std::string(name +std::string(":Voltage[")+std::to_string(i)+std::string("]")));
+        }
+
+        hs_define_panel("Power",std::string(name + std::string(" Currents")).c_str(),cnames);
+        hs_define_panel("Power",std::string(name + std::string(" Voltages")).c_str(),vnames);
+    }
+};
+
+
