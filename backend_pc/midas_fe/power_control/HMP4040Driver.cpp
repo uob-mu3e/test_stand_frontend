@@ -21,7 +21,7 @@ HMP4040Driver::HMP4040Driver(std::string n, EQUIPMENT_INFO* inf) : PowerDriver(n
 INT HMP4040Driver::ConnectODB()
 {
 	InitODBArray();
-	INT status = PowerDriver::ConnectODB();
+    PowerDriver::ConnectODB();
 	settings["port"](5025);
 	settings["reply timout"](300);
 	settings["min reply"](2); //minimum reply , 2 chars , not 3 (not fully figured out why)
@@ -131,13 +131,13 @@ INT HMP4040Driver::Init()
  	variables["Demand OVP Level"]=OVPlevel;
  	
  	//watch functions
- 	variables["Current Limit"].watch(  [&](midas::odb &arg) { this->CurrentLimitChanged(); }  );
- 	variables["Set State"].watch(  [&](midas::odb &arg) { this->SetStateChanged(); }  );
-	variables["Demand Voltage"].watch(  [&](midas::odb &arg) { this->DemandVoltageChanged(); }  );
-	variables["Demand OVP Level"].watch(  [&](midas::odb &arg) { this->DemandOVPLevelChanged(); }  );
+    variables["Current Limit"].watch(  [&](midas::odb &arg [[maybe_unused]]) { this->CurrentLimitChanged(); }  );
+    variables["Set State"].watch(  [&](midas::odb &arg  [[maybe_unused]]) { this->SetStateChanged(); }  );
+    variables["Demand Voltage"].watch(  [&](midas::odb &arg  [[maybe_unused]]) { this->DemandVoltageChanged(); }  );
+    variables["Demand OVP Level"].watch(  [&](midas::odb &arg  [[maybe_unused]]) { this->DemandOVPLevelChanged(); }  );
 
 
-	settings["Read ESR"].watch(  [&](midas::odb &arg) { this->ReadESRChanged(); }  );
+    settings["Read ESR"].watch(  [&](midas::odb &arg  [[maybe_unused]]) { this->ReadESRChanged(); }  );
  	
 	return FE_SUCCESS;
 }
