@@ -114,22 +114,30 @@ int FEBSlowcontrolInterface::FEB_write(const uint32_t FPGA_ID, const uint32_t st
 
     // check for acknowledge packet
     count = 0;
-    while(count<10){
+    while(count<20){
         if(FEBsc_read_packets() > 0 && sc_packet_deque.front().IsWR()) break;
+        // for some reason there is a read acknowledge at the front of the queue...
+        if(FEBsc_read_packets() > 0 ){
+            cout << "wrong packet type" << endl;
+            sc_packet_deque.pop_front();
+        };
+
         count++;
         std::this_thread::sleep_for(std::chrono::microseconds(20));
     }
-    if(count==10){
+    if(count==20){
         cm_msg(MERROR, "MudaqDevice::FEBsc_write" , "Timeout occured waiting for reply");
         cm_msg(MERROR, "MudaqDevice::FEBsc_write", "Wanted to write to FPGA %d, Addr %d, length %zu", FPGA_ID, startaddr, data.size());
         return ERRCODES::FPGA_TIMEOUT;
     }
     if(!sc_packet_deque.front().Good()){
         cm_msg(MERROR, "MudaqDevice::FEBsc_write" , "Received bad packet");
+        sc_packet_deque.pop_front();
         return ERRCODES::BAD_PACKET;
     }
     if(!sc_packet_deque.front().IsResponse()){
         cm_msg(MERROR, "MudaqDevice::FEBsc_write" , "Received request packet, this should not happen...");
+        sc_packet_deque.pop_front();
         return ERRCODES::BAD_PACKET;
     }
 
@@ -194,25 +202,33 @@ int FEBSlowcontrolInterface::FEB_read(const uint32_t FPGA_ID, const uint32_t sta
     int count = 0;
     while(count<10){
         if(FEBsc_read_packets() > 0 && sc_packet_deque.front().IsRD()) break;
+        // for some reason there is a write acknowledge at the front of the queue...
+        if(FEBsc_read_packets() > 0 ){
+            cout << "wrong packet type" << endl;
+            sc_packet_deque.pop_front();
+        };
         count++;
         std::this_thread::sleep_for(std::chrono::microseconds(20));
     }
     if(count==10){
         cm_msg(MERROR, "MudaqDevice::FEBsc_read" , "Timeout occured waiting for reply");
-        cm_msg(MERROR, "MudaqDevice::FEBsc_read", "Wanted to read from FPGA %d, Addr %d, length %zu, memaddr %d", FPGA_ID, startaddr, data.size(), m_FEBsc_rmem_addr);
+        cm_msg(MERROR, "MudaqDevice::FEBsc_read",  "Wanted to read from FPGA %d, Addr %d, length %zu, memaddr %d", FPGA_ID, startaddr, data.size(), m_FEBsc_rmem_addr);
         return ERRCODES::FPGA_TIMEOUT;
     }
     if(!sc_packet_deque.front().Good()){
         cm_msg(MERROR, "MudaqDevice::FEBsc_read" , "Received bad packet");
+        sc_packet_deque.pop_front();
         return ERRCODES::BAD_PACKET;
     }
     if(!sc_packet_deque.front().IsResponse()){
         cm_msg(MERROR, "MudaqDevice::FEBsc_read" , "Received request packet, this should not happen...");
+        sc_packet_deque.pop_front();
         return ERRCODES::BAD_PACKET;
     }
     if(sc_packet_deque.front().GetLength()!=data.size()){
         cm_msg(MERROR, "MudaqDevice::FEBsc_read", "Wanted to read from FPGA %d, Addr %d, length %zu", FPGA_ID, startaddr, data.size());
         cm_msg(MERROR, "MudaqDevice::FEBsc_read" , "Received packet fails size check, communication error");
+        sc_packet_deque.pop_front();
         return ERRCODES::WRONG_SIZE;
     }
 
