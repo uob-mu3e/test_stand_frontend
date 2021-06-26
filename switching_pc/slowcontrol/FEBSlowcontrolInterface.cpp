@@ -344,8 +344,8 @@ int FEBSlowcontrolInterface::FEBsc_NiosRPC(uint32_t FPGA_ID, uint16_t command, v
         std::this_thread::sleep_for(std::chrono::milliseconds(2));
         status=FEB_register_read(FPGA_ID, CMD_LEN_REGISTER_RW, readback);
         if(status < 0)
-            return status
-                    ;
+            return status;
+
         if(timeout_cnt > 5) printf("MudaqDevice::FEBsc_NiosRPC(): Polling for command %x @%d: %x, %x\n",command,timeout_cnt,readback[0],readback[0]&0xffff0000);
         if((readback[0]&0xffff0000) == 0) break;
     }
@@ -360,6 +360,7 @@ int FEBSlowcontrolInterface::FEBsc_read_packets()
 
         if ((mdev.read_memory_ro(m_FEBsc_rmem_addr) & 0x1c0000bc) != 0x1c0000bc){
             cout << "Start pattern not seen at addr " << std::hex << m_FEBsc_rmem_addr << " seeing " << mdev.read_memory_ro(m_FEBsc_rmem_addr) << std::dec << endl;
+            rmenaddrIncr();
             return 0; //TODO: correct when no event is to be written?
         }
 
