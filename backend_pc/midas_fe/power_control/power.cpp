@@ -505,6 +505,11 @@ INT frontend_init()
         drivers.at(eqID)->StartReading();
   	}
   
+    midas::odb custom;
+    custom.connect("/Custom");
+    custom["Low Voltage&"] = "lowvoltage.html";
+
+
 	ss_sleep(5000);
   
 	//Equipment ready
