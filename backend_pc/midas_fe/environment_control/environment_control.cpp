@@ -20,6 +20,7 @@
 #include "mfe.h"
 #include "device/mscbdev.h"
 #include "class/multi.h"
+#include "history.h"
 #include <cmath>
 #include <map>
 #include <string>
@@ -45,10 +46,23 @@ double convert_pressure(float volt) {
     int sizze = sizeof(double);
     sprintf(get_str, "/Equipment/Environment/Converted/Parameters/Pressure/Scale");
     int ok_scale = db_get_value(hDB, 0, get_str, &scale, &sizze, TID_DOUBLE, FALSE);
-    return (volt * 9 / 4);
+    return (volt * scale);
 }
 double convert_flow(float volt) {
     return 1000. / (volt / (2500. / 4095.)) / (78. * 60.);
+}
+
+double convert_temperature_pixels(float volt) {
+    char get_str[256];
+    double scale;
+    int sizze = sizeof(double);
+    sprintf(get_str, "/Equipment/Pixel-SC-Temperature/Converted/Parameters/Temperature/Scale");
+    int ok_scale = db_get_value(hDB, 0, get_str, &scale, &sizze, TID_DOUBLE, FALSE);
+    double offset;
+    sprintf(get_str, "/Equipment/Pixel-SC-Temperature/Converted/Parameters/Temperature/Offset");
+    int ok_offset = db_get_value(hDB, 0, get_str, &offset, &sizze, TID_DOUBLE, FALSE);
+
+    return offset + scale * volt;
 }
 
 std::map<int, std::pair<std::string, std::string> > extra_env = {
@@ -265,7 +279,35 @@ void mscb_define(const char *submaster,const char *equipment,const char *devname
             sprintf(set_str, "/Equipment/%s/Converted/Temperature", equipment);
             double temp = 30;
             int idx = (int)((chn_index - 45) / 2);
+
             db_set_value_index(hDB, 0, set_str, &temp, sizeof(double), idx, TID_DOUBLE, TRUE);
+
+            //Alarms
+            char al_str[256];
+            sprintf(al_str, "SSF_Cooling_TempHigh_Alarm_%d", idx);
+            char al_cond[256];
+            sprintf(al_cond, "/Equipment/%s/Converted/Temperature[%d] > 30", equipment, idx);
+            char al_message[256];
+            sprintf(al_message, "Temperature too high for SSF chiller (Box %d)", idx+1);
+            al_define_odb_alarm(al_str, al_cond, "Alarm", al_message);
+
+            char al_strw[256];
+            sprintf(al_strw, "SSF_Cooling_TempHigh_Warning_%d", idx);
+            char al_condw[256];
+            sprintf(al_condw, "/Equipment/%s/Converted/Temperature[%d] > 25", equipment, idx);
+            char al_messagew[256];
+            sprintf(al_messagew, "Temperature quite high for SSF chiller (Box %d)", idx+1);
+            al_define_odb_alarm(al_strw, al_condw, "Warning", al_messagew);
+
+            sprintf(al_str, "SSF_Cooling_TempLow_Alarm_%d", idx);
+            sprintf(al_cond, "/Equipment/%s/Converted/Temperature[%d] < 10", equipment, idx);
+            sprintf(al_message, "Temperature too low for SSF chiller (Box %d)", idx + 1);
+            al_define_odb_alarm(al_str, al_cond, "Alarm", al_message);
+
+            sprintf(al_strw, "SSF_Cooling_TempLow_Warning_%d", idx);
+            sprintf(al_condw, "/Equipment/%s/Converted/Temperature[%d] < 15", equipment, idx);
+            sprintf(al_messagew, "Temperature quite low for SSF chiller (Box %d)", idx + 1);
+            al_define_odb_alarm(al_strw, al_condw, "Warning", al_messagew);
         }
         else if (chn_index == 46 || chn_index == 48 || chn_index == 50 || chn_index == 52) {
             char set_str[256];
@@ -286,6 +328,47 @@ void mscb_define(const char *submaster,const char *equipment,const char *devname
             sprintf(set_str, "/Equipment/%s/Converted/%s", equipment, extra_env[chn_index].first.c_str());
             double temp = 1.;
             db_set_value(hDB, 0, set_str, &temp, sizeof(double), 1, TID_DOUBLE);
+        }
+    }
+    else if (equipment == "Pixel-SC-Temperature") {
+        if (chn_index == 0) {
+            char set_str[256];
+            sprintf(set_str, "/Equipment/%s/Converted/Parameters/Temperature/Scale", equipment);
+            double scale_tmp;
+            int size_scale_tmp = sizeof(double);
+            int has_subname = db_get_value(hDB, 0, set_str, &scale_tmp, &size_scale_tmp, TID_DOUBLE, FALSE);
+            if (has_subname != DB_SUCCESS) {
+                double scale = -331.8;
+                db_set_value(hDB, 0, set_str, &scale, sizeof(double), 1, TID_DOUBLE);
+                sprintf(set_str, "/Equipment/%s/Converted/Parameters/Temperature/Offset", equipment);
+                double offset = 228.;
+                db_set_value(hDB, 0, set_str, &offset, sizeof(double), 1, TID_DOUBLE);
+            }
+        }
+        char set_str[256];
+        sprintf(set_str, "/Equipment/%s/Converted/Temperature", equipment);
+        double temp = 0;
+        int idx = chn_index;
+        db_set_value_index(hDB, 0, set_str, &temp, sizeof(double), idx, TID_DOUBLE, TRUE);
+        if (chn_index != 2
+            && chn_index != 34 && chn_index != 35 && chn_index != 36 && chn_index != 37 && chn_index != 38
+            && chn_index < 42) {
+            //Alarms
+            char al_str[256];
+            sprintf(al_str, "Pixel_Temperature_Alarm_%d", chn_index);
+            char al_cond[256];
+            sprintf(al_cond, "/Equipment/%s/Converted/Temperature[%d] > 70", equipment, chn_index);
+            char al_message[256];
+            sprintf(al_message, "Temperature too high for pixel (MSCB channel %d)", chn_index);
+            al_define_odb_alarm(al_str, al_cond, "Alarm", al_message);
+
+            char al_strw[256];
+            sprintf(al_strw, "Pixel_Temperature_Warning_%d", chn_index);
+            char al_condw[256];
+            sprintf(al_condw, "/Equipment/%s/Converted/Temperature[%d] > 60", equipment, chn_index);
+            char al_messagew[256];
+            sprintf(al_messagew, "Temperature quite high for pixel (MSCB channel %d)", chn_index);
+            al_define_odb_alarm(al_strw, al_condw, "Warning", al_messagew);
         }
     }
 
@@ -342,6 +425,94 @@ INT frontend_init()
     for (unsigned int j = 0; j < 48; j++)
         //mscb_define("mscb334.mu3e", "Pixel-SC-Temperature", "ADC", multi_driver_pix, 0, j, NULL, 0.0005);//Default submaster (deprecated)
         mscb_define("", "Pixel-SC-Temperature", "ADC", multi_driver_pix, 0, j, NULL, 0.0005);
+
+    std::vector<std::string> histo_vars;
+    for (int cha = 0; cha < 42; ++cha) {
+        if (cha != 2
+            && cha != 34 && cha != 35 && cha != 36 && cha != 37 && cha != 38
+            && cha < 42) {
+            char variab[256];
+            int port = (int)(cha / 8);
+            int in_ch = cha % 8;
+            sprintf(variab, "Pixel-SC-Temperature:P%dUIn%d", port, in_ch);
+            histo_vars.push_back((std::string)(variab));
+        }
+    }
+    hs_define_panel("Pixel", "Temperature", histo_vars);
+    for (int cha = 0; cha < 42; ++cha) {
+        if (cha != 2
+            && cha != 34 && cha != 35 && cha != 36 && cha != 37 && cha != 38
+            && cha < 42) {
+            char variab[256];
+            int port = (int)(cha / 8);
+            int in_ch = cha % 8;
+            sprintf(variab, "/History/Display/Pixel/Temperature/Label");
+            char vvalue[32];
+            sprintf(vvalue, "Module %d", cha);
+            db_set_value_index(hDB, 0, variab, &vvalue, sizeof(vvalue), cha, TID_STRING, TRUE);
+            sprintf(variab, "/History/Display/Pixel/Temperature/Formula");
+            char get_str[256];
+            double scale;
+            int sizze = sizeof(double);
+            sprintf(get_str, "/Equipment/Pixel-SC-Temperature/Converted/Parameters/Temperature/Scale");
+            int ok_scale = db_get_value(hDB, 0, get_str, &scale, &sizze, TID_DOUBLE, FALSE);
+            double offset;
+            sprintf(get_str, "/Equipment/Pixel-SC-Temperature/Converted/Parameters/Temperature/Offset");
+            int ok_offset = db_get_value(hDB, 0, get_str, &offset, &sizze, TID_DOUBLE, FALSE);
+            char formula[256];
+            sprintf(formula, "%.3f*x + %.3f", scale, offset);
+            db_set_value_index(hDB, 0, variab, &formula, sizeof(formula), cha, TID_STRING, TRUE);
+        }
+    }
+
+    std::vector<std::string> histo_vars_temp;
+    std::vector<std::string> histo_vars_press;
+    for (int cha = 0; cha < 4; ++cha) {
+        char variab[256];
+        int port = 5;
+        int in_ch = cha*2;
+        sprintf(variab, "Environment:P%dUIn%d", port, in_ch);
+        histo_vars_temp.push_back((std::string)(variab));
+
+        in_ch +=1;
+        sprintf(variab, "Environment:P%dUIn%d", port, in_ch);
+        histo_vars_press.push_back((std::string)(variab));
+    }
+
+    hs_define_panel("Environment", "SSF-temperatures", histo_vars_temp);
+    hs_define_panel("Environment", "SSF-pressures", histo_vars_press);
+    for (int cha = 0; cha < 4; ++cha) {
+        char variab[256];
+        sprintf(variab, "/History/Display/Environment/SSF-temperatures/Label");
+        char vvalue[32];
+        sprintf(vvalue, "Box %d", cha+1);
+        db_set_value_index(hDB, 0, variab, &vvalue, sizeof(vvalue), cha, TID_STRING, TRUE);
+        sprintf(variab, "/History/Display/Environment/SSF-temperatures/Formula");
+        char get_str[256];
+        double scale;
+        int sizze = sizeof(double);
+        sprintf(get_str, "/Equipment/Environment/Converted/Parameters/Temperature/Scale");
+        int ok_scale = db_get_value(hDB, 0, get_str, &scale, &sizze, TID_DOUBLE, FALSE);
+        double expo;
+        sprintf(get_str, "/Equipment/Environment/Converted/Parameters/Temperature/Exp");
+        int ok_expo = db_get_value(hDB, 0, get_str, &expo, &sizze, TID_DOUBLE, FALSE);
+        double offset;
+        sprintf(get_str, "/Equipment/Environment/Converted/Parameters/Temperature/Offset");
+        int ok_offset = db_get_value(hDB, 0, get_str, &offset, &sizze, TID_DOUBLE, FALSE);
+        char formula[256];
+        sprintf(formula, "%.1f*Math.exp(-%.5f*(10000*(x/(5-x))))-%.2f", scale, expo, offset);
+        db_set_value_index(hDB, 0, variab, &formula, sizeof(formula), cha, TID_STRING, TRUE);
+
+        sprintf(variab, "/History/Display/Environment/SSF-pressures/Label");
+        sprintf(vvalue, "Box %d", cha + 1);
+        db_set_value_index(hDB, 0, variab, &vvalue, sizeof(vvalue), cha, TID_STRING, TRUE);
+        sprintf(variab, "/History/Display/Environment/SSF-pressures/Formula");
+        sprintf(get_str, "/Equipment/Environment/Converted/Parameters/Pressure/Scale");
+        int ok_scale2 = db_get_value(hDB, 0, get_str, &scale, &sizze, TID_DOUBLE, FALSE);
+        sprintf(formula, "%.3f * x", scale);
+        db_set_value_index(hDB, 0, variab, &formula, sizeof(formula), cha, TID_STRING, TRUE);
+    }
+
 
     return CM_SUCCESS;
 }
@@ -419,6 +590,24 @@ INT frontend_loop()
             db_set_value_index(hDB, 0, set_str, &temp, sizeof(double), ch, TID_DOUBLE, TRUE);
         }
     }
+
+    for (int chp = 0; chp < 42; ++chp) {
+        if (chp == 2 ||
+            chp == 34 || chp == 35 || chp == 36 || chp == 37 || chp == 38)
+            continue;
+        char get_str[256];
+        float volt;
+        int size_volt = sizeof(float);
+        sprintf(get_str, "/Equipment/Pixel-SC-Temperature/Variables/Input[%d]", chp);
+        int ok_temp = db_get_value(hDB, 0, get_str, &volt, &size_volt, TID_FLOAT, FALSE);
+        if (ok_temp == DB_SUCCESS) {
+            char set_str[256];
+            sprintf(set_str, "/Equipment/Pixel-SC-Temperature/Converted/Temperature");
+            double temp = convert_temperature_pixels(volt);
+            db_set_value_index(hDB, 0, set_str, &temp, sizeof(double), chp, TID_DOUBLE, TRUE);
+        }
+    }
+
     return CM_SUCCESS;
 }
 
