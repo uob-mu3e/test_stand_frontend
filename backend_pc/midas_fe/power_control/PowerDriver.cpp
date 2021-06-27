@@ -139,17 +139,22 @@ float PowerDriver::Read(std::string cmd, INT& error)
 	error = FE_SUCCESS;
 	bool success;
 	std::string reply;
-    // From here on we grab the mutex until the end of the function: One transaction at a time
-    const std::lock_guard<std::mutex> lock(power_mutex);
 	client->Write(cmd);
 	std::this_thread::sleep_for(std::chrono::milliseconds(client->GetWaitTime()));
 	success = client->ReadReply(&reply,min_reply_length);
+    float value = 0.;
 	if(!success)
 	{
 		cm_msg(MERROR, "Power supply read ... ", "could not read after command %s", cmd.c_str());
 		error = FE_ERR_DRIVER;		
 	}
-	float value = std::stof(reply);
+    try {
+	    value = std::stof(reply);
+    }
+    catch (const std::exception& e) {
+        cm_msg(MERROR, "Power supply read...", "could not convert to float %s (%s)", reply.c_str(), e.what());
+        error = FE_ERR_DRIVER;
+    }
 	return value;
 }
 
