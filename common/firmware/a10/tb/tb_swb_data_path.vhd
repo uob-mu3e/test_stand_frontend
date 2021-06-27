@@ -47,12 +47,12 @@ begin
     --! ------------------------------------------------------------------------
     --! ------------------------------------------------------------------------
     --! ------------------------------------------------------------------------
-    --! USE_GEN_LINK | USE_STREAM | USE_MERGER | USE_LINK | USE_GEN_MERGER | USE_FARM | SWB_READOUT_LINK_REGISTER_W | EFFECT                                                                         | WORKS 
+    --! USE_GEN_LINK | USE_STREAM | USE_MERGER | USE_GEN_MERGER | USE_FARM | SWB_READOUT_LINK_REGISTER_W | EFFECT                                                                         | WORKS 
     --! ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-    --! 1            | 0          | 0          | 1        | 0              | 0        | n                           | Generate data for all 64 links, readout link n via DAM                         | x
-    --! 1            | 1          | 0          | 0        | 0              | 0        | -                           | Generate data for all 64 links, simple merging of links, readout via DAM       | x
-    --! 1            | 0          | 1          | 0        | 0              | 0        | -                           | Generate data for all 64 links, time merging of links, readout via DAM         | x
-    --! 0            | 0          | 0          | 0        | 1              | 1        | -                           | Generate time merged data, send to farm                                        | x
+    --! 1            | 0          | 0          | 0              | 0        | n                           | Generate data for all 64 links, readout link n via DAM                         | x
+    --! 1            | 1          | 0          | 0              | 0        | -                           | Generate data for all 64 links, simple merging of links, readout via DAM       | x
+    --! 1            | 0          | 1          | 0              | 0        | -                           | Generate data for all 64 links, time merging of links, readout via DAM         | x
+    --! 0            | 0          | 0          | 1              | 1        | -                           | Generate time merged data, send to farm                                        | x
     resets_n_156(RESET_BIT_DATAGEN)                             <= '0', '1' after (1.0 us / CLK_MHZ);
     writeregs_156(DATAGENERATOR_DIVIDER_REGISTER_W)             <= x"00000002";
     writeregs_156(SWB_READOUT_STATE_REGISTER_W)(USE_BIT_GEN_LINK)   <= '1';
@@ -63,7 +63,7 @@ begin
     writeregs_250(SWB_READOUT_STATE_REGISTER_W)(USE_BIT_GEN_MERGER) <= '0';
     writeregs_250(SWB_READOUT_STATE_REGISTER_W)(USE_BIT_FARM)       <= '0';
         
-    writeregs_250(SWB_LINK_MASK_PIXEL_REGISTER_W)               <= x"0000000F";
+    writeregs_250(SWB_LINK_MASK_PIXEL_REGISTER_W)               <= x"00000005";
     writeregs_250(SWB_READOUT_LINK_REGISTER_W)                  <= x"00000001";
     writeregs_250(GET_N_DMA_WORDS_REGISTER_W)                   <= (others => '1');
     writeregs_250(DMA_REGISTER_W)(DMA_BIT_ENABLE)               <= '1';
@@ -98,6 +98,7 @@ begin
         
         i_rx             => rx,
         i_rx_k           => rx_k,
+            
         i_rmask_n        => mask_n(g_NLINKS_DATA - 1 downto 0),
 
         i_writeregs_156  => writeregs_156,

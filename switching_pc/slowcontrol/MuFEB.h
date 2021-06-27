@@ -76,7 +76,7 @@ protected:
       virtual uint16_t ASICid_from_ID(int asic [[maybe_unused]]) const {return 0;}; //global asic number to FEB-local asic number
 
       //Return typeID for building FEB ID map
-      virtual FEBTYPE GetTypeID() const {return FEBTYPE::Undefined;}
+      virtual FEBTYPE GetTypeID() const {return FEBTYPE::Unused;}
       virtual bool IsSecondary([[maybe_unused]] int t){return false;}
 
       //Conversions for slow control values

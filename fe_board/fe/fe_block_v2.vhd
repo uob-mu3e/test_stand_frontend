@@ -599,7 +599,7 @@ begin
 
     e_mscb : entity work.mscb
     generic map (
-        CLK_MHZ_g => 156.25--,
+        g_CLK_MHZ => 156.25--,
     )
     port map (
         i_avs_address           => av_mscb.address(3 downto 0),
