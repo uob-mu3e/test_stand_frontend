@@ -170,8 +170,10 @@ int MutrigFEB::ResetCounters(uint16_t FPGA_ID){
 int MutrigFEB::ReadBackCounters(uint16_t FPGA_ID){
    //map to SB fiber
    auto FEB = febs[FPGA_ID];
-   if(!FEB.IsScEnabled()) return SUCCESS; //skip disabled fibers
-   if(FEB.SB_Number()!= SB_number) return SUCCESS; //skip commands not for this SB
+   if(!FEB.IsScEnabled())
+       return SUCCESS; //skip disabled fibers
+   if(FEB.SB_Number()!= SB_number)
+       return SUCCESS; //skip commands not for this SB
 
    auto rpc_ret = feb_sc.FEBsc_NiosRPC(FEB.SB_Port(), feb::CMD_MUTRIG_CNT_READ, {});
    //retrieve results
@@ -181,6 +183,15 @@ int MutrigFEB::ReadBackCounters(uint16_t FPGA_ID){
        return SUCCESS; // TODO: Proper error code
    }
 
+   // rpc_ret is number of ASICs n, times 5 counters,
+   // times (1 nominator + 2 denominator values)
+   // The vector val is filled like
+   // asic 1 counter 1 nominator
+   // asic 1 counter 1 denominator upper 32 bit
+   // asic 1 counter 1 denominator lower 32 bit
+   // asic 1 counter 2 nominator
+   // [...]
+   // asic n counter 5 denominator lower 32 bit
    vector<uint32_t> val(rpc_ret*5*3);
 
    feb_sc.FEB_read(FEB.SB_Port(), FEBSlowcontrolInterface::OFFSETS::FEBsc_RPC_DATAOFFSET,
