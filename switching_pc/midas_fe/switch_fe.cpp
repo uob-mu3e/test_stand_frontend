@@ -1260,7 +1260,7 @@ void sc_settings_changed(odb o)
     if (name == "SciFiTDCTest") {
           int status=scififeb->ChangeTDCTest(o);
           if(status!=SUCCESS){
-              cm_msg(MERROR, "SciFiConfig" , "ASIC Configuration failed.");
+              cm_msg(MERROR, "SciFiConfig" , "Changing SciFi test pulses failed");
           }
     }
     if (name == "SciTilesConfig" && o) {
