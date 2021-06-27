@@ -37,6 +37,9 @@ port (
     i_ffly_temp                 : in   std_logic_vector(15 downto 0);  -- temperature in °C
     i_ffly_alarm                : in   std_logic_vector(63 downto 0);  -- latched alarm bits
     i_ffly_vcc                  : in   std_logic_vector(31 downto 0);  -- operating voltagein units of 100 uV 
+    
+    i_si45_intr_n               : in   std_logic_vector(1 downto 0);
+    i_si45_lol_n                : in   std_logic_vector(1 downto 0);
 
     -- outputs 156--------------------------------------------
     o_reg_cmdlen                : out std_logic_vector(31 downto 0);
@@ -277,6 +280,12 @@ begin
         end if;
         if ( regaddr = FIREFLY2_ALARM_REGISTER_R and i_reg_re = '1' ) then
             o_reg_rdata <= i_ffly_alarm(63 downto 32);
+        end if;
+        
+        -- SI chips
+        if ( regaddr = SI_STATUS_REGISTER and i_reg_re = '1' ) then
+            o_reg_rdata(1 downto 0) <= i_si45_intr_n;
+            o_reg_rdata(3 downto 2) <= i_si45_lol_n;
         end if;
 
         -- NON-incrementing reads/writes TEST
