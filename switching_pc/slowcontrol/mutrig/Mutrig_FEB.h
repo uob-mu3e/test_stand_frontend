@@ -47,6 +47,8 @@ class MutrigFEB : public MuFEB{
       //ASIC configuration:
       //Configure all asics under prefix (e.g. prefix="/Equipment/SciFi"), report any errors as equipment_name
       int ConfigureASICs();
+      int ChangeTDCTest(bool o);
+      int ConfigureASICsAllOff();
 
       //Read counter values from FEB, store in subtree $odb_prefix/Variables/Counters/
       //Parameter FPGA_ID refers to global numbering, i.e. before mapping

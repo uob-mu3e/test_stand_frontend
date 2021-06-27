@@ -42,5 +42,5 @@ add_library(libslowcontrol STATIC
     ${CMAKE_CURRENT_SOURCE_DIR}/../../common/firmware/include/a10_counters.h #needs to be here explicitly for make rules to work!
 )
 
-target_include_directories(libslowcontrol PUBLIC . ./mupix ./mutrig ./tiles ./scifi ../../common/include)
+target_include_directories(libslowcontrol PUBLIC . ./mupix ./mutrig ./tiles ./scifi ../../common/include ${CMAKE_SOURCE_DIR}/common/firmware/include)
 target_link_libraries(libslowcontrol libmudaq midas ${Boost_LIBRARIES})

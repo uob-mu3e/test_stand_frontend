@@ -395,6 +395,8 @@ void setup_odb(){
             {"MupixConfig", false},
             {"MupixBoard", false},
             {"SciFiConfig", false},
+            {"SciFiAllOff", false},
+            {"SciFiTDCTest", false},
             {"SciTilesConfig", false},
             {"Reset Bypass Payload", 0},
             {"Reset Bypass Command", 0},
@@ -1247,10 +1249,24 @@ void sc_settings_changed(odb o)
           }
        o = false;
     }
+    if (name == "SciFiAllOff" && o) {
+        int status=scififeb->ConfigureASICsAllOff();
+        if(status!=SUCCESS){
+            cm_msg(MERROR, "SciFiAllOff" , "ASIC all off configuration failed.");
+            //TODO: what to do?
+        }
+       o = false;
+    }
+    if (name == "SciFiTDCTest") {
+          int status=scififeb->ChangeTDCTest(o);
+          if(status!=SUCCESS){
+              cm_msg(MERROR, "SciFiConfig" , "ASIC Configuration failed.");
+          }
+    }
     if (name == "SciTilesConfig" && o) {
           int status=tilefeb->ConfigureASICs();
-          if(status!=SUCCESS){ 
-         	//TODO: what to do? 
+          if(status!=SUCCESS){
+         	//TODO: what to do?
           }
       o = false;
     }

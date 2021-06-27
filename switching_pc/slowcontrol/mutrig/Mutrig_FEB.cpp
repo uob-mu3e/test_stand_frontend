@@ -14,6 +14,7 @@ Contents:       Definition of functions to talk to a mutrig-based FEB. Designed 
 #include "mfe.h" //for set_equipment_status
 
 #include "../include/feb.h"
+#include "scifi_registers.h"
 using namespace mu3e::daq;
 
 #include "MutrigConfig.h"
@@ -155,6 +156,45 @@ int MutrigFEB::ConfigureASICs(){
             return FE_SUCCESS;//note: return of lambda function
     });//MapForEach
     return status; //status of foreach function, SUCCESS when no error.
+}
+
+int MutrigFEB::ChangeTDCTest(bool o){
+    cm_msg(MINFO, "SciFi ChangeTDCTest" , o ? "Turning on test pulses" : "Turning off test pulses");
+    int status = feb_sc.ERRCODES::OK;
+    for(size_t FPGA_ID = 0; FPGA_ID < febs.size(); FPGA_ID++){
+        auto FEB = febs[FPGA_ID];
+        if(!FEB.IsScEnabled())
+            continue; //skip disabled fibers
+        uint32_t regvalue;
+        status = feb_sc.FEB_register_read(FEB.SB_Port(), SCIFI_CNT_CTRL_REGISTER_W, regvalue);
+        if(status != feb_sc.ERRCODES::OK) {
+            cm_msg(MINFO, "SciFi ChangeTDCTest" , "Could not read control register");
+            continue;
+        }
+
+        if(o)
+            regvalue &= ~(1<<31);
+        else
+            regvalue |= (1<<31);
+
+        status = feb_sc.FEB_register_write(FEB.SB_Port(), SCIFI_CNT_CTRL_REGISTER_W, regvalue);
+    }
+    return status;
+}
+int MutrigFEB::ConfigureASICsAllOff(){
+    cm_msg(MINFO, "ConfigureASICsAllOff" , "Configuring all SciFi ASICs in the ALL_OFF Mode");
+    int status = feb_sc.ERRCODES::OK;
+    for(size_t FPGA_ID = 0; FPGA_ID < febs.size(); FPGA_ID++){
+        auto FEB = febs[FPGA_ID];
+        if(!FEB.IsScEnabled())
+            continue; //skip disabled fibers
+        auto rpc_ret = feb_sc.FEBsc_NiosRPC(FEB.SB_Port(), feb::CMD_MUTRIG_ASIC_OFF, {});
+        if (rpc_ret < 0){
+            cm_msg(MERROR, "ConfigureASICsAllOff" , "Received negative return value from FEBsc_NiosRPC()");
+            continue;
+        }
+    }
+    return status;
 }
 
 int MutrigFEB::ResetCounters(uint16_t FPGA_ID){
