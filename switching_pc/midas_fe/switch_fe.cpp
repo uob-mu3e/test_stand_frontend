@@ -357,6 +357,7 @@ INT frontend_init()
 
     cm_msg(MINFO, "frontend_init()", "Setting up Watches");
     setup_watches();
+    setup_history();
 
     return CM_SUCCESS;
 }
@@ -488,13 +489,46 @@ void setup_odb(){
     // Inculde the line below to set up the FEBs and their mapping for the 2021 integration run
 //#include "odb_feb_mapping_integration_run_2021.h"
 
-    // TODO: not sure at the moment we have a midas frontend for three feb types but 
-    // we need to have different swb at the final experiment so maybe one needs to take
-    // things apart later. For now we put this "common" FEB variables into the generic
-    // switching path
-    hs_define_panel("Switching", "All FEBs", {"Switching:Merger Timeout All FEBs"});
+
 
 }
+
+void setup_history(){
+
+    hs_define_panel("Switching", "All FEBs", {"Switching:Merger Timeout All FEBs"});
+
+    //TODO: The 12 is the integration run number used to reduce clutter
+    for(uint i= 0; i < 12; i++){
+        std::string name("FEB"+std::to_string(i));
+        std::vector<std::string> tnames;
+        tnames.push_back(std::string("Switching:" + name + std::string(" Arria Temperature")));
+        tnames.push_back(std::string("Switching:" + name + std::string(" MAX Temperature")));
+        tnames.push_back(std::string("Switching:" + name + std::string(" SI1 Temperature")));
+        tnames.push_back(std::string("Switching:" + name + std::string(" SI2 Temperature")));
+        tnames.push_back(std::string("Switching:" + name + std::string(" ext Arria Temperature")));
+        tnames.push_back(std::string("Switching:" + name + std::string(" DCDC Temperature")));
+        tnames.push_back(std::string("Switching:" + name + std::string(" Firefly 1 Temperature")));
+
+       std::vector<std::string> vnames;
+       vnames.push_back(std::string("Switching:" + name + std::string(" Voltage 1.1")));
+       vnames.push_back(std::string("Switching:" + name + std::string(" Voltage 1.8")));
+       vnames.push_back(std::string("Switching:" + name + std::string(" Voltage 2.5")));
+       vnames.push_back(std::string("Switching:" + name + std::string(" Voltage 3.3")));
+       vnames.push_back(std::string("Switching:" + name + std::string(" Voltage 20")));
+       vnames.push_back(std::string("Switching:" + name + std::string(" Firefly1 Voltage")));
+
+       std::vector<std::string> pnames;
+       pnames.push_back(std::string("Switching:" + name + std::string(" Firefly1 RX1 Power")));
+       pnames.push_back(std::string("Switching:" + name + std::string(" Firefly1 RX2 Power")));
+       pnames.push_back(std::string("Switching:" + name + std::string(" Firefly1 RX3 Power")));
+       pnames.push_back(std::string("Switching:" + name + std::string(" Firefly1 RX4 Power")));
+
+       hs_define_panel("Switching",std::string(name + std::string(" Temperatures")).c_str(),tnames);
+       hs_define_panel("Switching",std::string(name + std::string(" Voltages")).c_str(),vnames);
+       hs_define_panel("Switching",std::string(name + std::string(" RX Power")).c_str(),pnames);
+    }
+}
+
 
 void setup_watches(){
     //UI watch
@@ -741,19 +775,19 @@ try{ // TODO: What can throw here?? Why?? Is there another way to handle this??
       return CM_TRANSITION_CANCELED;
    }
 
-   //configure ASICs for Tiles
-   status=tilefeb->ConfigureASICs();
-   if(status!=SUCCESS){
-      cm_msg(MERROR,"switch_fe","ASIC configuration failed");
-      return CM_TRANSITION_CANCELED;
-   }
-
-   //configure Pixel sensors
-   status=mupixfeb->ConfigureASICs();
-   if(status!=SUCCESS){
-      cm_msg(MERROR,"switch_fe","ASIC configuration failed");
-      return CM_TRANSITION_CANCELED;
-   }
+//   //configure ASICs for Tiles
+//   status=tilefeb->ConfigureASICs();
+//   if(status!=SUCCESS){
+//      cm_msg(MERROR,"switch_fe","ASIC configuration failed");
+//      return CM_TRANSITION_CANCELED;
+//   }
+//
+//   //configure Pixel sensors
+//   status=mupixfeb->ConfigureASICs();
+//   if(status!=SUCCESS){
+//      cm_msg(MERROR,"switch_fe","ASIC configuration failed");
+//      return CM_TRANSITION_CANCELED;
+//   }
 
 
    //last preparations
