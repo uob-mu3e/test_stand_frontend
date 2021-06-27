@@ -201,12 +201,19 @@ int FEBSlowcontrolInterface::FEB_read(const uint32_t FPGA_ID, const uint32_t sta
 
     int count = 0;
     while(count<10){
-        if(FEBsc_read_packets() > 0 && sc_packet_deque.front().IsRD()) break;
+        int retval = FEBsc_read_packets();
+        if(retval > 0 && sc_packet_deque.front().IsRD()) break;
         // for some reason there is a write acknowledge at the front of the queue...
-        if(FEBsc_read_packets() > 0 ){
+        if(retval > 0 ){
             cout << "wrong packet type" << endl;
             sc_packet_deque.pop_front();
+            return ERRCODES::BAD_PACKET;
         };
+        if(retval < 0){
+            cout << "Receiving failed, resetting" << endl;
+            FEBsc_resetSecondary();
+            return ERRCODES::BAD_PACKET;
+        }
         count++;
         std::this_thread::sleep_for(std::chrono::microseconds(20));
     }
@@ -216,19 +223,22 @@ int FEBSlowcontrolInterface::FEB_read(const uint32_t FPGA_ID, const uint32_t sta
         return ERRCODES::FPGA_TIMEOUT;
     }
     if(!sc_packet_deque.front().Good()){
-        cm_msg(MERROR, "MudaqDevice::FEBsc_read" , "Received bad packet");
+        cm_msg(MERROR, "MudaqDevice::FEBsc_read" , "Received bad packet, resetting");
         sc_packet_deque.pop_front();
+        FEBsc_resetSecondary();
         return ERRCODES::BAD_PACKET;
     }
     if(!sc_packet_deque.front().IsResponse()){
-        cm_msg(MERROR, "MudaqDevice::FEBsc_read" , "Received request packet, this should not happen...");
+        cm_msg(MERROR, "MudaqDevice::FEBsc_read" , "Received request packet, this should not happen..., resetting");
         sc_packet_deque.pop_front();
+        FEBsc_resetSecondary();
         return ERRCODES::BAD_PACKET;
     }
     if(sc_packet_deque.front().GetLength()!=data.size()){
         cm_msg(MERROR, "MudaqDevice::FEBsc_read", "Wanted to read from FPGA %d, Addr %d, length %zu", FPGA_ID, startaddr, data.size());
-        cm_msg(MERROR, "MudaqDevice::FEBsc_read" , "Received packet fails size check, communication error");
+        cm_msg(MERROR, "MudaqDevice::FEBsc_read" , "Received packet fails size check, communication error, resetting");
         sc_packet_deque.pop_front();
+        FEBsc_resetSecondary();
         return ERRCODES::WRONG_SIZE;
     }
 
@@ -355,18 +365,25 @@ int FEBSlowcontrolInterface::FEBsc_NiosRPC(uint32_t FPGA_ID, uint16_t command, v
 int FEBSlowcontrolInterface::FEBsc_read_packets()
 {
     int packetcount = 0;
+    int waitcount =0;
     uint32_t fpga_rmem_addr=(mdev.read_register_ro(MEM_WRITEADDR_LOW_REGISTER_R)+1) & 0xffff;
     while(fpga_rmem_addr!=m_FEBsc_rmem_addr){
 
         if ((mdev.read_memory_ro(m_FEBsc_rmem_addr) & 0x1c0000bc) != 0x1c0000bc){
             cout << "Start pattern not seen at addr " << std::hex << m_FEBsc_rmem_addr << " seeing " << mdev.read_memory_ro(m_FEBsc_rmem_addr) << std::dec << endl;
-            rmenaddrIncr();
-            return 0; //TODO: correct when no event is to be written?
+            return -1;
         }
 
         if(((fpga_rmem_addr > m_FEBsc_rmem_addr) && (fpga_rmem_addr-m_FEBsc_rmem_addr) < 4)  // equal case taken care of by while condition
             || ((fpga_rmem_addr > m_FEBsc_rmem_addr) && (MUDAQ_MEM_RO_LEN - m_FEBsc_rmem_addr + fpga_rmem_addr) <4)   ){ // This is the wraparound case
             cout << "Incomplete packet (header)! at " << std::hex << m_FEBsc_rmem_addr << std::dec << endl;
+            std::this_thread::sleep_for(std::chrono::milliseconds(1));
+            fpga_rmem_addr=(mdev.read_register_ro(MEM_WRITEADDR_LOW_REGISTER_R)+1) & 0xffff;
+            waitcount++;
+            if(waitcount > 10){
+                cout << "Timeout whilst waiting for rest of message" << endl;
+                return -1;
+            }
             continue;
         }
 
@@ -378,10 +395,19 @@ int FEBSlowcontrolInterface::FEBsc_read_packets()
         packet.push_back(mdev.read_memory_ro(m_FEBsc_rmem_addr)); //save length word
         rmenaddrIncr();
 
-        if(((fpga_rmem_addr >= m_FEBsc_rmem_addr) && (fpga_rmem_addr-m_FEBsc_rmem_addr) < packet.GetLength() +1)
+        int count = 0;
+
+        while(((fpga_rmem_addr >= m_FEBsc_rmem_addr) && (fpga_rmem_addr-m_FEBsc_rmem_addr) < packet.GetLength() +1)
             || ((fpga_rmem_addr > m_FEBsc_rmem_addr) && (MUDAQ_MEM_RO_LEN - m_FEBsc_rmem_addr + fpga_rmem_addr) < packet.GetLength() + 1 ) ){ // This is the wraparound case
-            cout << "Incomplete packet (body)! at " << std::hex << m_FEBsc_rmem_addr << std::dec << endl;
-            return -1;
+
+            std::this_thread::sleep_for(std::chrono::milliseconds(1));
+            fpga_rmem_addr=(mdev.read_register_ro(MEM_WRITEADDR_LOW_REGISTER_R)+1) & 0xffff;
+            cout << "Incomplete packet (body)! at " << std::hex << m_FEBsc_rmem_addr << " " << fpga_rmem_addr <<std::dec << endl;
+            count++;
+            if(count > 10){
+                cout << "Timeout whilst waiting for rest of message" << endl;
+                return -1;
+            }
         }
         for (uint32_t i = 0; i < packet.GetLength(); i++) {
             packet.push_back(mdev.read_memory_ro(m_FEBsc_rmem_addr)); //save data
