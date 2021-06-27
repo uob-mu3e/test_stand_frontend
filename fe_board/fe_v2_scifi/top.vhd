@@ -405,7 +405,7 @@ begin
 
         -- reset system
         o_run_state_125             => run_state_125,
-        i_ack_run_prep_permission   => and_reduce(s_MON_rxrdy),
+        i_ack_run_prep_permission   => '1',--and_reduce(s_MON_rxrdy), --TODO: check what s_MON_rxrdy does and if it works
 
         -- clocks
         i_nios_clk          => spare_clk_osc,
