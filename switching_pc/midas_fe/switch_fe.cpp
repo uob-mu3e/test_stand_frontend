@@ -509,7 +509,7 @@ void setup_history(){
         tnames.push_back(std::string("Switching:" + name + std::string(" SI2 Temperature")));
         tnames.push_back(std::string("Switching:" + name + std::string(" ext Arria Temperature")));
         tnames.push_back(std::string("Switching:" + name + std::string(" DCDC Temperature")));
-        tnames.push_back(std::string("Switching:" + name + std::string(" Firefly 1 Temperature")));
+        tnames.push_back(std::string("Switching:" + name + std::string(" Firefly1 Temperature")));
 
        std::vector<std::string> vnames;
        vnames.push_back(std::string("Switching:" + name + std::string(" Voltage 1.1")));
