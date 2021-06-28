@@ -17,19 +17,10 @@
  *
  */
 
-#ifndef SI5345_REVB_REG_CONFIG_HEADER
-#define SI5345_REVB_REG_CONFIG_HEADER
+#ifndef __SI5345_REGS_V1_H__
+#define __SI5345_REGS_V1_H__
 
-#define SI5345_REVB_REG_CONFIG_NUM_REGS 386
-
-typedef struct
-{
-	uint16_t address; /* 16-bit register address */
-	uint16_t value; /* 8-bit register data */
-
-} si5345_revb_register_t;
-
-si_t::register_t const si5345_revb_registers[] =
+si_t::register_t const si5345_regs_v1[] =
 {
 
 	/* Start configuration preamble */
@@ -978,4 +969,4 @@ si_t::register_t const si5345_revb_registers[] =
  *
  */
 
-#endif
+#endif // __SI5345_REGS_V1_H__
