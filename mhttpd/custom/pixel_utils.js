@@ -9,12 +9,13 @@ var from_input_to_portchannel = function (inp) {
 }
 
 var convert_v_to_temperature = function (volt) {
+    var volt2 = (volt/2)
     var I_0 = 950;
     var a_0 = 2;
     var I_1 = 1300;
     var a_1 = 2;
     var p0_0 = 228;
     var p1_0 = -0.3318;
-    var p1_1 = p1_0 * (I_1 / I_0) * (a_1 / a_0);
-    return p0_0 + p1_1 * (volt*1000);
+    var p1_1 = p1_0 * (I_1 / I_0) * (a_0 / a_1);
+    return p0_0 + p1_0 * (volt2*1000);
 }

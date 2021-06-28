@@ -201,8 +201,16 @@ var ladder_clicked = function(ladname) {
     document.getElementById("ladder_lv_read_curr").setAttribute("data-odb-path", "/Equipment/HAMEG" + lads[ladname]["json_node"]["LV_parameters"]["Module"].toString()+ "/Variables/Current[" + lads[ladname]["json_node"]["LV_parameters"]["Channel"].toString()  + "]")
 
 
-    mjsonrpc_db_get_values(["/Equipment/HAMEG" + lads[ladname]["json_node"]["LV_parameters"]["Module"].toString()+ "/Variables/State[" + lads[ladname]["json_node"]["LV_parameters"]["Channel"].toString()  + "]"]).then(function(rpc) {
-       document.getElementById("debug").textContent = JSON.stringify(rpc.result)
+    mjsonrpc_db_get_values(["/Equipment/HAMEG" + lads[ladname]["json_node"]["LV_parameters"]["Module"].toString() + "/Variables/State[" + lads[ladname]["json_node"]["LV_parameters"]["Channel"].toString() + "]"]).then(function (rpc) {
+        document.getElementById("debug").textContent = JSON.stringify(rpc.result)
+        if (rpc.result.data[0] != null) {
+            if (rpc.result.data[0] == true) {
+                change_state(lads[ladname]["ladder"], "power_on")
+            }
+            else if (rpc.result.data[0] == false) {
+                change_state(lads[ladname]["ladder"], "power_off")
+            }
+        }
     }).catch(function(error) {
        mjsonrpc_error_alert(error);
     });
@@ -346,11 +354,17 @@ function configureChip(evt) {
     }
     document.getElementById("pixel_configure_update").style["visibility"] = "visible"
     document.getElementById("pixel_configure_update_content").textContent = "Configuring chip number " + num
-    mjsonrpc_db_paste(mask_names, px_mask).then(function () {
+    /*mjsonrpc_db_paste(mask_names, px_mask).then(function () {
         mjsonrpc_db_paste(["/Equipment/Switching/Settings/MupixConfig"], [true])
     }).catch(function(error) {
         mjsonrpc_error_alert(error);
-     });
+    });*/
+    var chip_select_mask = 0xfff;
+    var pos = current_lad_chips[current_chip_selected]["json_node"]["MIDAS_ID"];
+    chip_select_mask &= ((~0x1) << pos);
+    for (var i = 0; i < pos; ++i)
+        chip_select_mask |= (0x1 << i);
+    document.getElementById("debug").textContent = "0x" + chip_select_mask.toString(16);
 }
 
 function resetDACs(evt) {
@@ -492,13 +506,23 @@ var create_decagon = function(ele, prefix, inversion) {
     }
 }
 
-var create_ladder_legend = function() {
+var create_ladder_legend = function () {
+    document.getElementById("debug").textContent = "hmmm"
     for (state in states) {
         let lad = document.createElement("div")
         lad.type = "submit"
+        lad.style = "width:70px;height:20px;position: relative;"
         lad.classList.add("ladderDiv")
         lad.classList.add("ladder_unselected")
-        lad.classList.add("ladder_unselected")
+        document.getElementById("debug").textContent += "-" + states[state]
+        var state_name = states[state].substr(7, states[state].length)
+        lad.textContent = state_name
+        change_state(lad, state_name)
+        document.getElementById("ladder_legend").appendChild(lad)
+        document.getElementById("debug").textContent += "-" + state_name
+        var linebreak = document.createElement("div");
+        linebreak.classList.add("line_break_white")
+        document.getElementById("ladder_legend").appendChild(linebreak)
     }
 }
 
@@ -546,6 +570,7 @@ var setup = function () {
     list_chips_configuration(document.getElementById("multiple_chip_configuration_ds"), "Downstream")
 
     setup_listeners()
+    create_ladder_legend()
 }
 
 var load_json = function () {
@@ -553,7 +578,7 @@ var load_json = function () {
     xmlhttp2.onreadystatechange = function(){
       if(xmlhttp2.status==200 && xmlhttp2.readyState==4){
         var words = xmlhttp2.responseText;//.split(' ');
-        document.getElementById("debug").textContent = "OPEN! - ";
+        document.getElementById("debug").textContent += "OPEN! - ";
         document.getElementById("debug").textContent += words;
         mupix_dacs = JSON.parse(words);
       }
