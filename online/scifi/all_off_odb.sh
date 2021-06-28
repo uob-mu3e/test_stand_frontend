@@ -17,7 +17,7 @@ odbedit -d "/Equipment/SciFi/Settings/ASICs/Global" -c "set en_ch_evt_cnt       
 
 
 
-for i in {0..24}
+for i in {0..8}
 do
 odbedit -d "/Equipment/SciFi/Settings/ASICs/TDCs/${i}" -c "set vnpfc                           63"
 odbedit -d "/Equipment/SciFi/Settings/ASICs/TDCs/${i}" -c "set vnpfc_offset                    3"
@@ -66,7 +66,7 @@ odbedit -d "/Equipment/SciFi/Settings/ASICs/TDCs/${i}" -c "set coin_xbar_upper_t
 odbedit -d "/Equipment/SciFi/Settings/ASICs/TDCs/${i}" -c "set coin_xbar_upper_tx_idac         0"
 done
 
-for i in {0..768}
+for i in {0..256}
 do
 odbedit -d "/Equipment/SciFi/Settings/ASICs/Channels/${i}" -c "set mask                            n"
 odbedit -d "/Equipment/SciFi/Settings/ASICs/Channels/${i}" -c "set recv_all                        n"

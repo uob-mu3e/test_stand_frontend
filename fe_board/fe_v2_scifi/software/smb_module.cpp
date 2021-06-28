@@ -14,68 +14,14 @@ char wait_key(useconds_t us = 100000);
 #include "altera_avalon_spi.h"
 #include "include/scifi_registers.h"
 
-int SMB_t::spi2_write_pattern(alt_u32 spi_slave, const alt_u8* bitpattern) {
-/*    volatile alt_u32* base = (alt_u32*)AVALON_SPI_MASTER_0_BASE;
-
-    // reset
-    base[3] |= 0x80000000;
-    base[3] &= ~0x80000000;
-    
-    // slave select
-    base[1] = 1 << spi_slave;
-    printf("base[1] = %08X\n", base[1]);
-    // clock divider
-    base[3] = 0x00080;
-    printf("base[3] = %08X\n", base[3]);
-    
-    printf("base[2] = %08X\n", base[2]);
-
-    int result_i=0;
-    int status=0;
-    uint16_t rx_pre=0xff00;
-    uint16_t nb=MUTRIG_CONFIG_LEN_BYTES;
-
-    // slave select override
-    base[2] |= 0x80000000;
-    do {
-        nb--;
-        //do spi transaction, one byte at a time
-        alt_u8 rx = 0xCC;
-        alt_u8 tx = bitpattern[nb];
-
-        while((base[2] & 0x00000001) != 0); // wait for wfull == 0
-        base[0] = tx;
-
-        while((base[2] & 0x00000100) != 0); // wait for rempty == 0
-        rx = base[0];
-         
-//        printf("tx:%2.2X rx:%2.2x nb:%d\n",tx,rx,nb);
-
-        //pattern is not in full units of bytes, so shift back while receiving to check the correct configuration state
-        unsigned char rx_check= (rx_pre | rx ) >> (8-MUTRIG_CONFIG_LEN_BITS%8);
-        if(nb==MUTRIG_CONFIG_LEN_BYTES-1){
-            rx_check &= 0xff>>(8-MUTRIG_CONFIG_LEN_BITS%8);
-        };
-
-        if(rx_check!=bitpattern[nb]){
-            //printf("Error in byte %d: received %2.2x expected %2.2x\n",nb,rx_check,bitpattern[nb]);
-            status=-1;
-        }
-        rx_pre=rx<<8;
-    } while(nb > 0);
-    base[2] &= ~0x80000000;
-    base[1] = 1 << spi_slave;
-    return status;*/
-}
-
 //write slow control pattern over SPI, returns 0 if readback value matches written, otherwise -1. Does not include CSn line switching.
 int SMB_t::spi_write_pattern(alt_u32 spi_slave, const alt_u8* bitpattern) {
-    	char tx_string[681];
-    	char rx_string[681];
+    	//char tx_string[681];
+    	//char rx_string[681];
     	int result_i=0;
 	int status=0;
-	uint16_t rx_pre=0xff00;
-    	uint16_t nb=MUTRIG_CONFIG_LEN_BYTES;
+    uint16_t rx_pre=0xff00;
+    uint16_t nb=MUTRIG_CONFIG_LEN_BYTES;
    	do{
 		nb--;
 		//do spi transaction, one byte at a time
@@ -109,41 +55,12 @@ int SMB_t::spi_write_pattern(alt_u32 spi_slave, const alt_u8* bitpattern) {
    	     }
    	     rx_pre=rx<<8;
    	 }while(nb>0);
-   	 rx_string[680]=0;
-   	 tx_string[680]=0;
+   	 //rx_string[680]=0;
+   	 //tx_string[680]=0;
    	 //printf("TX = %s\n", tx_string);
    	 //printf("RX = %s\n", rx_string);
    	 return status;
 }
-
-//=======
-//	uint16_t nb=MUTRIG_CONFIG_LEN_BYTES;
-//       	do{
-//		nb--;
-//		//do spi transaction, one byte at a time
-//                alt_u8 rx = 0xCC;
-//                alt_u8 tx = bitpattern[nb];
-//
-//                alt_avalon_spi_command(SPI_BASE, spi_slave, 1, &tx, 0, &rx, nb==0?0:ALT_AVALON_SPI_COMMAND_MERGE);
-//                rx = IORD_8DIRECT(SPI_BASE, 0);
-////                printf("%02X %02x\n",tx,rx);
-////                printf("%02X ",tx);
-//
-//		//pattern is not in full units of bytes, so shift back while receiving to check the correct configuration state
-//		unsigned char rx_check= (rx_pre | rx ) >> (8-MUTRIG_CONFIG_LEN_BITS%8);
-//		if(nb==MUTRIG_CONFIG_LEN_BYTES-1){
-//			rx_check &= 0xff>>(8-MUTRIG_CONFIG_LEN_BITS%8);
-//		};
-//
-//		if(rx_check!=bitpattern[nb]){
-////			printf("Error in byte %d: received %2.2x expected %2.2x\n",nb,rx_check,bitpattern[nb]);
-//			status=-1;
-//		}
-//		rx_pre=rx<<8;
-//	}while(nb>0);
-////                printf("\n");
-//	return status;
-//>>>>>>> origin/SciFi_ASIC_cfg
 
 
 
@@ -180,10 +97,11 @@ alt_u16 SMB_t::configure_asic(alt_u32 asic, const alt_u8* bitpattern) {
 using namespace mu3e::daq::feb;
 //TODO: add list&document in specbook
 alt_u16 SMB_t::sc_callback(alt_u16 cmd, volatile alt_u32* data, alt_u16 n) {
+    //printf("Command 0x%x\n", cmd);
     switch (cmd){
     case CMD_MUTRIG_ASIC_OFF:
         for(alt_u8 asic = 0; asic < 8; asic++)
-            sc_callback(0x0110 | asic, (alt_u32*) config_ALL_OFF, 0);
+            sc_callback(CMD_MUTRIG_ASIC_CFG | asic, (alt_u32*) config_ALL_OFF, 0);
         break;
     case CMD_MUTRIG_CNT_READ:
         return store_counters(data);
@@ -240,12 +158,12 @@ void SMB_t::menu_SMB_main() {
         case '0':
             sc.ram->data[0xFF00|SCIFI_CNT_CTRL_REGISTER_W] = sc.ram->data[0xFF00|SCIFI_CNT_CTRL_REGISTER_W] & ~(1<<31);
             for(alt_u8 asic = 0; asic < 8; asic++)
-                sc_callback(0x0110 | asic, (alt_u32*) config_ALL_OFF, 0);
+                sc_callback(CMD_MUTRIG_ASIC_CFG | asic, (alt_u32*) config_ALL_OFF, 0);
             break;
         case '1':
             sc.ram->data[0xFF00|SCIFI_CNT_CTRL_REGISTER_W] = sc.ram->data[0xFF00|SCIFI_CNT_CTRL_REGISTER_W] & ~(1<<31); 
             for(alt_u8 asic = 0; asic < 8; asic++)
-                sc_callback(0x0110 | asic, (alt_u32*) config_PRBS_single, 0);
+                sc_callback(CMD_MUTRIG_ASIC_CFG | asic, (alt_u32*) config_PRBS_single, 0);
             break;
         case 't':
             sc.ram->data[0xFF00|SCIFI_CNT_CTRL_REGISTER_W] = sc.ram->data[0xFF00|SCIFI_CNT_CTRL_REGISTER_W] | (1<<31);
@@ -255,13 +173,13 @@ void SMB_t::menu_SMB_main() {
             break;
         case '2':
             for(alt_u8 asic = 0; asic < 8; asic++)
-                sc_callback(0x0110 | asic, (alt_u32*) config_plltest, 0);
+                sc_callback(CMD_MUTRIG_ASIC_CFG | asic, (alt_u32*) config_plltest, 0);
             sc.ram->data[0xFF00|SCIFI_CNT_CTRL_REGISTER_W] = sc.ram->data[0xFF00|SCIFI_CNT_CTRL_REGISTER_W] | (1<<31);
             break;
         case '3':
             sc.ram->data[0xFF00|SCIFI_CNT_CTRL_REGISTER_W] = sc.ram->data[0xFF00|SCIFI_CNT_CTRL_REGISTER_W] & ~(1<<31);
             for(alt_u8 asic = 0; asic < 8; asic++)
-                sc_callback(0x0110 | asic, (alt_u32*) no_tdc_power, 0);
+                sc_callback(CMD_MUTRIG_ASIC_CFG | asic, (alt_u32*) no_tdc_power, 0);
             break;
         case '8':
             printf("buffer_full / frame_desync / rx_pll_lock : 0x%03X\n", sc.ram->data[0xFF00|SCIFI_MON_STATUS_REGISTER_R]);
@@ -576,3 +494,59 @@ alt_u16 SMB_t::store_counters(volatile alt_u32* data){
 	}
 	return 4*n_MODULES; //return number of asic channels written so we can parse correctly later
 }
+
+
+int SMB_t::spi2_write_pattern(alt_u32 spi_slave, const alt_u8* bitpattern) {
+/*    volatile alt_u32* base = (alt_u32*)AVALON_SPI_MASTER_0_BASE;
+
+    // reset
+    base[3] |= 0x80000000;
+    base[3] &= ~0x80000000;
+    
+    // slave select
+    base[1] = 1 << spi_slave;
+    printf("base[1] = %08X\n", base[1]);
+    // clock divider
+    base[3] = 0x00080;
+    printf("base[3] = %08X\n", base[3]);
+    
+    printf("base[2] = %08X\n", base[2]);
+
+    int result_i=0;
+    int status=0;
+    uint16_t rx_pre=0xff00;
+    uint16_t nb=MUTRIG_CONFIG_LEN_BYTES;
+
+    // slave select override
+    base[2] |= 0x80000000;
+    do {
+        nb--;
+        //do spi transaction, one byte at a time
+        alt_u8 rx = 0xCC;
+        alt_u8 tx = bitpattern[nb];
+
+        while((base[2] & 0x00000001) != 0); // wait for wfull == 0
+        base[0] = tx;
+
+        while((base[2] & 0x00000100) != 0); // wait for rempty == 0
+        rx = base[0];
+         
+//        printf("tx:%2.2X rx:%2.2x nb:%d\n",tx,rx,nb);
+
+        //pattern is not in full units of bytes, so shift back while receiving to check the correct configuration state
+        unsigned char rx_check= (rx_pre | rx ) >> (8-MUTRIG_CONFIG_LEN_BITS%8);
+        if(nb==MUTRIG_CONFIG_LEN_BYTES-1){
+            rx_check &= 0xff>>(8-MUTRIG_CONFIG_LEN_BITS%8);
+        };
+
+        if(rx_check!=bitpattern[nb]){
+            //printf("Error in byte %d: received %2.2x expected %2.2x\n",nb,rx_check,bitpattern[nb]);
+            status=-1;
+        }
+        rx_pre=rx<<8;
+    } while(nb > 0);
+    base[2] &= ~0x80000000;
+    base[1] = 1 << spi_slave;
+    return status;*/
+}
+

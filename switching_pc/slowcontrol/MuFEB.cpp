@@ -133,7 +133,6 @@ void MuFEB::LoadFirmware(std::string filename, uint16_t FPGA_ID)
                 if(ec != FEBSlowcontrolInterface::ERRCODES::OK){
                     printf("Error reading back!\n");
                     feb_sc.FEB_register_write(FEB.SB_Port(),PROGRAMMING_CTRL_W,0);
-                    return;
                 }
                 count++;
                 usleep(100);
@@ -142,7 +141,6 @@ void MuFEB::LoadFirmware(std::string filename, uint16_t FPGA_ID)
             if(count == limit){
                 printf("Timeout\n");
                 feb_sc.FEB_register_write(FEB.SB_Port(),PROGRAMMING_CTRL_W,0);
-                return;
             }
         }
         pos  += 256;

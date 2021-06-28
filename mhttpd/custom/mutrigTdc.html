@@ -1137,6 +1137,14 @@ title="1: disable TDC test input to this channel. (0 enables TDC input and short
                 <input type="file" name="file" id="file" class="button_2" onChange="loadFromDisk(event)" />
 	        <!--<input type="file" name="filename" id="filename" />-->
                 <label for="file" class="button_2">Load config</label>
+                   </div>
+               <div style="text-align:center;">
+                    <button name="modbbutton" class="button_2" id="config"
+			        data-odb-path="/Equipment/Switching/Settings/SciFiAllOff"
+			        data-odb-value="1">
+                    Configure all off
+		            </button>
+                    <!-- Rounded switch -->
                </div>
                <div style="text-align:center;" id='message'>&nbsp;</div>
 		<h2 onclick="toggle(dmon_table)">Digital monitor control</h2>
