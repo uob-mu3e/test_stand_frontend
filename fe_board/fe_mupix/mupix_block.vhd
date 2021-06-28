@@ -22,7 +22,7 @@ port (
 
     i_run_state_125           : in  run_state_t;
     i_run_state_156           : in  run_state_t;
-    o_ack_run_prep_permission : out std_logic;
+    o_ack_run_prep_permission : out std_logic :='1';
 
     -- mupix dac regs
     i_reg_add               : in  std_logic_vector(7 downto 0);
