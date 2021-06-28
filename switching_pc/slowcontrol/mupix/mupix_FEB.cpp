@@ -203,6 +203,24 @@ unsigned char reverse(unsigned char b) {
    return b;
 }
 
+uint32_t MupixFEB::ReadBackLVDSStatus(DWORD* pdata, uint16_t FPGA_ID, uint16_t LVDS_ID)
+{
+    auto FEB = febs.at(FPGA_ID);
+
+    //skip disabled fibers
+    if(!FEB.IsScEnabled())
+        return 0;
+
+    //skip commands not for this SB
+    if(FEB.SB_Number()!=SB_number)
+        return 0;
+    
+    uint32_t val;
+    int status = feb_sc.FEB_register_read(FEB.SB_Port(), MP_LVDS_STATUS_START_REGISTER_W + LVDS_ID, val);
+    
+    return val;
+}
+
 uint32_t MupixFEB::ReadBackLVDSNumHits(uint16_t FPGA_ID, uint16_t LVDS_ID)
 {
     //cm_msg(MINFO, "MupixFEB::ReadBackLVDSNumHits" , "Implement Me");

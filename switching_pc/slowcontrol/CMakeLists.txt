@@ -39,6 +39,7 @@ add_library(libslowcontrol STATIC
     ${CMAKE_CURRENT_SOURCE_DIR}/feb_constants.h #needs to be here explicitly for make rules to work!
     ${CMAKE_CURRENT_SOURCE_DIR}/../../common/firmware/include/feb_sc_registers.h #needs to be here explicitly for make rules to work!
     ${CMAKE_CURRENT_SOURCE_DIR}/../../common/firmware/include/scifi_registers.h #needs to be here explicitly for make rules to work!
+    ${CMAKE_CURRENT_SOURCE_DIR}/../../common/firmware/include/mupix_registers.h #needs to be here explicitly for make rules to work!
     ${CMAKE_CURRENT_SOURCE_DIR}/../../common/firmware/include/a10_counters.h #needs to be here explicitly for make rules to work!
 )
 

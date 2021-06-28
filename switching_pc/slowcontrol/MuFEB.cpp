@@ -174,6 +174,9 @@ int MuFEB::ReadBackRunState(uint16_t FPGA_ID){
    vector<uint32_t> val(2);
    char set_str[255];
    int status = feb_sc.FEB_register_read(FEB.SB_Port(), RUN_STATE_RESET_BYPASS_REGISTER_RW , val);
+
+   //printf("FEB %d, state 0x%08x\n", FPGA_ID, val[0]);
+
    if(status!=FEBSlowcontrolInterface::ERRCODES::OK) return status;
 
    //val[0] is reset_bypass register

@@ -969,6 +969,7 @@ INT read_febcrate_sc_event(char *pevent, INT off){
 INT read_sc_event(char *pevent, INT off)
 {    
     //cm_msg(MINFO, "switch_fe::read_sc_event()" , "Reading FEB SC");
+    mufeb->ReadBackAllRunState();
 
     string bankname = ssfe[switch_id];
     string counterbankname = sscn[switch_id];
@@ -1054,8 +1055,8 @@ INT read_scitiles_sc_event(char *pevent, INT off){
 
 INT read_mupix_sc_event(char *pevent, INT off){
     //cm_msg(MINFO, "Mupix::read_mupix_sc_event()" , "Reading MuPix FEB SC");
-
-//     create banks with LVDS counters
+    
+    // create banks with LVDS counters & status
     string bankname = "PSLL";
     bk_init(pevent);
     DWORD *pdata;

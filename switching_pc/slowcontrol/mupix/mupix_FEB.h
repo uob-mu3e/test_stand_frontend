@@ -15,6 +15,7 @@ Contents:       Definition of functions to talk to a mupix-based FEB.
 #include "mupix_config.h"
 #include "MuFEB.h"
 #include "odbxx.h"
+#include "mupix_registers.h"
 
 using midas::odb;
 
@@ -52,6 +53,7 @@ class MupixFEB  : public MuFEB{
       uint32_t ReadBackLVDSNumHits(uint16_t FPGA_ID, uint16_t LVDS_ID);
       uint32_t ReadBackLVDSNumHitsInMupixFormat(uint16_t FPGA_ID, uint16_t LVDS_ID);
       DWORD*  ReadLVDSCounters(DWORD* pdata, uint16_t FPGA_ID){
+        uint32_t lvds_status;
         for(uint32_t i=0; i<GetASICSPerModule()*GetModulesPerFEB(); i++){ // TODO: set currect LVDS links number
             // FPGA ID | Link ID
             *(DWORD*)pdata++ = (FPGA_ID << 16) | i;
@@ -59,9 +61,23 @@ class MupixFEB  : public MuFEB{
             *(DWORD*)pdata++ = ReadBackLVDSNumHits(FPGA_ID, i);
             // number of hits from link in mupix format
             *(DWORD*)pdata++ = ReadBackLVDSNumHitsInMupixFormat(FPGA_ID, i);
+            
+            // read lvds status
+            lvds_status = ReadBackLVDSStatus(pdata, FPGA_ID, i);
+
+            // LVDS Status Disp Errors
+            *(DWORD*)pdata++ = lvds_status & 0x0FFFFFFF;
+            // PLL Locked
+            *(DWORD*)pdata++ = (lvds_status >> MP_LVDS_STATUS_PLL_LOCKED_BIT) & 0x1;
+            // RX State
+            *(DWORD*)pdata++ = (lvds_status >> MP_LVDS_STATUS_STATE_RANGE_LOW) & 0x3;
+            // READY
+            *(DWORD*)pdata++ = (lvds_status >> MP_LVDS_STATUS_READY_BIT);
         };
         return pdata;
       };
+      uint32_t ReadBackLVDSStatus(DWORD* pdata, uint16_t FPGA_ID, uint16_t LVDS_ID);
+
       uint32_t getNFPGAs(){
           return febs.size();
       }
