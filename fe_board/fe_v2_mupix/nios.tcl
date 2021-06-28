@@ -2,7 +2,8 @@
 
 source {device.tcl}
 
-source {util/nios_base_small.tcl}
+source {util/nios_base.tcl}
+set_instance_parameter_value ram {memorySize} {0x00015000}
 set_instance_parameter_value spi numberOfSlaves 16
 
 proc call_python {} {
