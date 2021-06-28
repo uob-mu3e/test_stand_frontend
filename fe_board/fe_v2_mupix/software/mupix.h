@@ -179,6 +179,8 @@ struct mupix_t {
                 printf("  [4] => invert lvds in\n");
             }
             printf("  [5] => set lvds mask\n");
+            printf("  [6] => test write all\n");
+            printf("  [7] => write sorter delay\n");
             printf("  [q] => exit\n");
 
             printf("Select entry ...\n");
@@ -241,6 +243,9 @@ struct mupix_t {
                 break;
             case '6':
                 test_write_all();
+                break;
+            case '7':
+                sc->ram->data[0xFF91]=10;
                 break;
             case 'q':
                 return;
