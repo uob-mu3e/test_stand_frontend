@@ -74,6 +74,7 @@ ARCHITECTURE SYN OF ip_scfifo IS
 	SIGNAL sub_wire3	: STD_LOGIC ;
 	SIGNAL sub_wire4	: STD_LOGIC_VECTOR (DATA_WIDTH-1 DOWNTO 0);
 	SIGNAL sub_wire5	: STD_LOGIC_VECTOR (ADDR_WIDTH-1 DOWNTO 0);
+	SIGNAL fifo_rreg_reset_n : STD_LOGIC;
 
     function setup_almost_full_value(s:positive; ADDR_W:positive) 
         return positive is
@@ -159,6 +160,8 @@ BEGIN
 		usedw => sub_wire5
 	);
 
+    fifo_rreg_reset_n <= not sclr;
+
     e_fifo_rreg : entity work.fifo_rreg
     generic map (
         g_N => work.util.value_if(SHOWAHEAD = "ON", REGOUT, 0),
@@ -173,7 +176,7 @@ BEGIN
         o_re => rdreq0,
         i_rempty => empty0,
 
-        i_reset_n => not sclr,
+        i_reset_n => fifo_rreg_reset_n, -- not sclr, -- Modelsim does not like it and i need fifos in modelsim
         i_clk => clock--,
     );
 
