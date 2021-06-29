@@ -150,9 +150,14 @@ int MupixFEB::ConfigureASICs(){
          return FE_ERR_HW;//note: return of lambda function
       }
 
+      // reset lvds links
+      feb_sc.FEB_write(SP_ID, MP_RESET_LVDS_N_REGISTER_W, 0x0);
+      feb_sc.FEB_write(SP_ID, MP_RESET_LVDS_N_REGISTER_W, 0x1);
+
       return FE_SUCCESS;//note: return of lambda function
    });//MapForEach
-   return status; //status of foreach function, SUCCESS when no error.
+
+    return status; //status of foreach function, SUCCESS when no error.
 }
 
 //MIDAS callback function for FEB register Setter functions
