@@ -639,6 +639,11 @@ function readback() {
 						<td></td>
 					</tr>
 					<tr>
+						<td colspan=2><label for="lvds_waitforall_sticky">Send TDC injections</label></td>
+                                                <td><input type="checkbox" name="modbcheckbox" id="send_tdc_injections" data-odb-path="/Equipment/Switching/Settings/SciFiTDCTest" title="Set the register on the FEB to send a 100 kHz differential signal to the TDC. To be used with the 'PLL test'."></input></td>
+                                                <td></td>
+					</tr>
+					<tr>
 						<td colspan=1>Reset Blocks</td>
 						<td>
 						<button name="modbbutton" class="button_2 button_s" id="reset_datapath" data-odb-path="/Equipment/SciFi/Settings/Daq/reset_datapath" data-odb-value="1">
