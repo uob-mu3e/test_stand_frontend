@@ -125,15 +125,15 @@ void create_psll_names_in_odb(odb & settings, uint32_t N_FEBS_MUPIX, uint32_t N_
             settings[namestrPSLL.c_str()][bankindex++] = s;
 
             s = new string(name);
+            (*s) += " STATUS LVDS";
+            settings[namestrPSLL.c_str()][bankindex++] = s;
+
+            s = new string(name);
             (*s) += " NUM HITS LVDS";
             settings[namestrPSLL.c_str()][bankindex++] = s;
 
             s = new string(name);
             (*s) += " NUM MuPix HITS LVDS";
-            settings[namestrPSLL.c_str()][bankindex++] = s;
-
-            s = new string(name);
-            (*s) += " STATUS LVDS";
             settings[namestrPSLL.c_str()][bankindex++] = s;
         }
     }

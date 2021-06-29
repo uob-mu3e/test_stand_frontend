@@ -15,7 +15,22 @@ function generateLVDSMupixTableHead(table, febname){
     row2.appendChild(th);
 
     th = document.createElement("th");
-    text = document.createTextNode("LVDS Status");
+    text = document.createTextNode("RX READY");
+    th.appendChild(text);
+    row2.appendChild(th);
+
+    th = document.createElement("th");
+    text = document.createTextNode("RX STATE");
+    th.appendChild(text);
+    row2.appendChild(th);
+
+    th = document.createElement("th");
+    text = document.createTextNode("PLL LOCK");
+    th.appendChild(text);
+    row2.appendChild(th);
+
+    th = document.createElement("th");
+    text = document.createTextNode("DISP ERROR");
     th.appendChild(text);
     row2.appendChild(th);
 
@@ -35,7 +50,7 @@ function generateLVDSMupixTable(table, counters, feb){
 
     for(var lvds=0; lvds < 36; lvds++){
         let row = table.insertRow();
-        for(var i=0; i < 4; i++){
+        for(var i=0; i < 7; i++){
             let cell = row.insertCell();
             let text = document.createTextNode(0);
             cell.appendChild(text);
@@ -416,9 +431,30 @@ function update_psll(valuex){
     console.log(value);
 
     for(var feb=0; feb < 10; feb++){
-        for(var lvds=0; lvds<36; lvds++){
-            for(var i=0; i < 4; i++){
-                mupixlvdsstatus[i+feb*36*4+lvds*4].nodeValue = value[i+feb*36*4+lvds*4];
+        for(var lvds=0; lvds < 36; lvds++){
+            for(var i=0; i < 7; i++){
+                if ( i >= 1 && i <= 4 ) {
+                    if ( i === 1 ) {
+                        // RX READY
+                        mupixlvdsstatus[i+feb*36*7+lvds*7].nodeValue = ((value[1+feb*36*4+lvds*4] >> 31) & 0x1).toString(16);
+                    }
+                    if ( i === 2 ) {
+                        // RX STATE
+                        mupixlvdsstatus[i+feb*36*7+lvds*7].nodeValue = ((value[1+feb*36*4+lvds*4] >> 29) & 0x3).toString(16);
+                    }
+                    if ( i === 3 ) {
+                        // PLL LOCK
+                        mupixlvdsstatus[i+feb*36*7+lvds*7].nodeValue = ((value[1+feb*36*4+lvds*4] >> 28) & 0x1).toString(16);
+                    }
+                    if ( i === 4 ) {
+                        // DISP ERROR
+                        mupixlvdsstatus[i+feb*36*7+lvds*7].nodeValue = (value[1+feb*36*4+lvds*4] & 0x0FFFFFFF).toString(16);
+                    }
+                } else if ( i > 4){
+                    mupixlvdsstatus[i+feb*36*7+lvds*7].nodeValue = value[i-3+feb*36*4+lvds*4];
+                } else {
+                    mupixlvdsstatus[i+feb*36*7+lvds*7].nodeValue = (value[i+feb*36*4+lvds*4]);
+                }
             }
         }
     }

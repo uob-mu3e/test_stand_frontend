@@ -243,12 +243,13 @@ DWORD* MupixFEB::ReadLVDSCounters(DWORD* pdata, uint16_t FPGA_ID)
     for(uint32_t i=0; i<lvds_links_per_feb; i++){ // TODO: set currect LVDS links number
         // Link ID
         *(DWORD*)pdata++ = i;
+        // read lvds status
+        *(DWORD*)pdata++ = ReadBackLVDSStatus(pdata, FPGA_ID, i);
         // number of hits from link
         *(DWORD*)pdata++ = ReadBackLVDSNumHits(FPGA_ID, i);
         // number of hits from link in mupix format
         *(DWORD*)pdata++ = ReadBackLVDSNumHitsInMupixFormat(FPGA_ID, i);
-        // read lvds status
-        *(DWORD*)pdata++ = ReadBackLVDSStatus(pdata, FPGA_ID, i);
+
     };
     return pdata;
 }
