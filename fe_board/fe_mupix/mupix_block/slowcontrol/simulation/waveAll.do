@@ -43,8 +43,8 @@ force -freeze mupix_ctrl_tb/reg_add x"48" -cancel 8ns
 force -freeze mupix_ctrl_tb/reg_we 1 -cancel 8ns
 force -freeze mupix_ctrl_tb/reg_wdata x"00000000" -cancel 8ns
 run 16ns
-force -freeze mupix_ctrl_tb/reg_add x"4A" -cancel 800ns
-force -freeze mupix_ctrl_tb/reg_we 1 -cancel 800ns
+force -freeze mupix_ctrl_tb/reg_add x"4A" -cancel 672ns
+force -freeze mupix_ctrl_tb/reg_we 1 -cancel 672ns
 force -freeze mupix_ctrl_tb/reg_wdata x"2A000A03"
 run 8ns
 force -freeze mupix_ctrl_tb/reg_wdata x"FA3F002F"
@@ -71,6 +71,7 @@ force -freeze mupix_ctrl_tb/reg_wdata x"11802E00"
 run 8ns
 force -freeze mupix_ctrl_tb/reg_wdata x"00000000"
 run 800ns
+
 
 run 4ms
 
