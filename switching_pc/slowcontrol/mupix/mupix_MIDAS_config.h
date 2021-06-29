@@ -285,4 +285,16 @@ static odb MUPIX_VDACS_SETTINGS = {
 
 #endif
 
+#ifndef MUPIX_PSLL_DEFINED
+#define MUPIX_PSLL_DEFINED
+
+//// PSLL
+/// TODO: we need this for different SWBs in the future for now its only central
+constexpr uint32_t per_fe_PSLL_size = 4;
+constexpr uint32_t lvds_links_per_feb = 36;
+const std::string banknamePSLL = "PSLL";
+const std::string namestrPSLL = "Names PSLL";
+
+#endif
+
 #endif //MU3EDAQ_MUPIX_MIDAS_CONFIG_H

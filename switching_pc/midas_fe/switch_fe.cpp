@@ -752,6 +752,7 @@ INT frontend_loop()
 
 INT begin_of_run(INT run_number, char *error)
 {
+
    int status;
 try{ // TODO: What can throw here?? Why?? Is there another way to handle this??
    set_equipment_status(equipment[EQUIPMENT_ID::SciFi].name, "Starting Run", "var(--morange)");
@@ -859,6 +860,7 @@ try{ // TODO: What can throw here?? Why?? Is there another way to handle this??
 
 INT end_of_run(INT run_number, char *error)
 {
+
 try{
    /* get link active from odb */
     odb cur_links_odb("/Equipment/Links/Settings/LinkMask");
@@ -1057,10 +1059,9 @@ INT read_mupix_sc_event(char *pevent, INT off){
     //cm_msg(MINFO, "Mupix::read_mupix_sc_event()" , "Reading MuPix FEB SC");
     
     // create banks with LVDS counters & status
-    string bankname = "PSLL";
     bk_init(pevent);
     DWORD *pdata;
-    bk_create(pevent, bankname.c_str(), TID_INT, (void **)&pdata);
+    bk_create(pevent, banknamePSLL.c_str(), TID_INT, (void **)&pdata);
     pdata = mupixfeb->fill_PSLL(pdata, feblist->getPixelFEBs().size());
     bk_close(pevent, pdata);
 
