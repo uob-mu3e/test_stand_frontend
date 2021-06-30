@@ -2,7 +2,10 @@ var lads = {}
 var states = [
     "ladder_available",
     "ladder_power_on",
-    "ladder_power_off"
+    "ladder_power_off",
+    "ladder_power_current_high",
+    "ladder_hv_current_high",
+    "ladder_hv_on"
 ]
 var states_chip = [
     "chip_available",
@@ -36,42 +39,65 @@ var get_json_element = function (ladname) {
 var create_ladder_element = function (lad) {
     var element = {
         "ladder" : lad,
-        "state" : "available",
-        "json_node" : get_json_element(lad.id)
+        "state" : "available"
+        //"json_node" : get_json_element(lad.id)
     }
+    if (lad.hasAttribute("id"))
+        element["json_node"] = get_json_element(lad.id)
     return element
 }
 
 var create_chip_element = function (ladname, chip) {
     var element = {
         "chip" : chip,
-        "state" : "available",
+        "state" : ["available"],
         "json_node" : lads[ladname]["json_node"]["Chips"][chip.id]
     }
     return element
 }
 
-var change_state = function(ladder, state) {
+var change_state = function (ladder, state, add = false) {
+    lad_div = ladder["ladder"]
     class_state = "ladder_" + state
     if (state === "selected") {
-        if ( ladder.classList.contains("ladder_unselected") )
-            ladder.classList.remove("ladder_unselected")
-        ladder.classList.add("ladder_selected")
+        if (lad_div.classList.contains("ladder_unselected") )
+            lad_div.classList.remove("ladder_unselected")
+        lad_div.classList.add("ladder_selected")
     }
     else if (state === "unselected") {
-        if ( ladder.classList.contains("ladder_selected") )
-            ladder.classList.remove("ladder_selected")
-        ladder.classList.add("ladder_unselected")
+        if (lad_div.classList.contains("ladder_selected") )
+            lad_div.classList.remove("ladder_selected")
+        lad_div.classList.add("ladder_unselected")
     }
     else {
         if (states.includes(class_state) == false) {
             return;
-        }    
-        for (var s = 0; s < states.length; s++) {
-            if ( ladder.classList.contains(states[s]) )
-                ladder.classList.remove(states[s])
         }
-    ladder.classList.add(class_state)
+        if (add == false) {
+            document.getElementById("debug").textContent = "Ladder " + lad_div.id + " set not to blink"
+            for (var s = 0; s < states.length; s++) {
+                if (lad_div.classList.contains(states[s]))
+                    lad_div.classList.remove(states[s])
+            }
+            ladder["state"] = [state]
+            lad_div.classList.add(class_state)
+        }
+        else {
+            document.getElementById("debug").textContent = "Ladder " + lad_div.id + " set to blink"
+            ladder["state"].push(state)
+            ladder["blinking"] = 0
+            setInterval(function () {
+                if (ladder["blinking"] >= ladder["state"].length)
+                    ladder["blinking"] = 0
+                class_state_blink = "ladder_" + ladder["state"][ladder["blinking"]]
+                document.getElementById("debug").textContent = "Ladder " + lad_div.id + " blinking at " + ladder["blinking"]
+                for (var s = 0; s < states.length; s++) {
+                    if (lad_div.classList.contains(states[s]))
+                        lad_div.classList.remove(states[s])
+                }
+                lad_div.classList.add(class_state_blink)
+            }, 1000);
+        }
     }
 }
 
@@ -158,8 +184,20 @@ var chip_clicked = function (ladname, chip) {
     change_state_chip(current_lad_chips[chip]["chip"], "selected")
     current_chip_selected = chip
     reset_table("pixel_parameters", 0)
-    tab_fill = {"SpecBook ID:" : "SpecBookId", "MIDAS ID:" : "MIDAS_ID", "Event Display ID:" : "EventDisplayID", "Link A number:": "LinkA", "Link B number:": "LinkB", "Link C number:": "LinkC"}
+    tab_fill = {"SpecBook ID:" : "SpecBookId", "MIDAS ID:" : "MIDAS_ID", "Event Display ID:" : "EventDisplayID", "Link A number:": "LinkA", "Link B number:": "LinkB", "Link C number:": "LinkC", "Status" : "Initial_Status"}
     fill_table_by_json("pixel_parameters", current_lad_chips[chip]["json_node"], tab_fill)
+    var chip_select_mask = 0xfff;
+    var pos = current_lad_chips[current_chip_selected]["json_node"]["MIDAS_ID"];
+    chip_select_mask &= ((~0x1) << pos);
+    for (var i = 0; i < pos; ++i)
+        chip_select_mask |= (0x1 << i);
+    document.getElementById("debug").textContent = "0x" + chip_select_mask.toString(16);
+    var roww = document.getElementById("pixel_parameters").insertRow(-1)
+    var celll1 = roww.insertCell(0)
+    var celll2 = roww.insertCell(1)
+    celll1.textContent = "Predicted mask"
+    celll2.textContent = "0x" + chip_select_mask.toString(16);
+
     reset_table("Bias_tab", 0)
     reset_table("Conf_tab", 0)
     reset_table("VDAC_tab", 0)
@@ -178,10 +216,10 @@ var ladder_clicked = function(ladname) {
     document.getElementById("ladder_header").style["visibility"] = "visible"
     lad = lads[ladname]["ladder"]
     document.getElementById("debug").textContent = lad.id + "-" + JSON.stringify(lads[ladname]["json_node"])
-    change_state(lad, "selected")
+    change_state(lads[ladname], "selected", false)
     if (current_selected != "") {
         if (current_selected != ladname)
-            change_state(lads[current_selected]["ladder"], "unselected")
+            change_state(lads[current_selected], "unselected", false)
     }
     current_selected = ladname
     reset_table("parameter_tab", 0)
@@ -201,11 +239,19 @@ var ladder_clicked = function(ladname) {
     document.getElementById("ladder_lv_read_curr").setAttribute("data-odb-path", "/Equipment/HAMEG" + lads[ladname]["json_node"]["LV_parameters"]["Module"].toString()+ "/Variables/Current[" + lads[ladname]["json_node"]["LV_parameters"]["Channel"].toString()  + "]")
 
 
-    mjsonrpc_db_get_values(["/Equipment/HAMEG" + lads[ladname]["json_node"]["LV_parameters"]["Module"].toString()+ "/Variables/State[" + lads[ladname]["json_node"]["LV_parameters"]["Channel"].toString()  + "]"]).then(function(rpc) {
-       document.getElementById("debug").textContent = JSON.stringify(rpc.result)
+    /*mjsonrpc_db_get_values(["/Equipment/HAMEG" + lads[ladname]["json_node"]["LV_parameters"]["Module"].toString() + "/Variables/State[" + lads[ladname]["json_node"]["LV_parameters"]["Channel"].toString() + "]"]).then(function (rpc) {
+        document.getElementById("debug").textContent = JSON.stringify(rpc.result)
+        if (rpc.result.data[0] != null) {
+            if (rpc.result.status[0] == true) {
+                change_state(lads[ladname], "power_on", false)
+            }
+            else if (rpc.result.status[0] == false) {
+                change_state(lads[ladname], "power_off", false)
+            }
+        }
     }).catch(function(error) {
        mjsonrpc_error_alert(error);
-    });
+    });*/
 
     reset_table("ladder_hv_tab", 0)
     tab_fill = {"HV-box Module : " : "Module", "IP address : " : "IP", "HV-box Channel : " : "Channel"}
@@ -234,11 +280,17 @@ var ladder_clicked = function(ladname) {
         let chip = document.createElement("div")
         chip.type = "submit"
         chip.classList.add("chipDiv")
-        chip.classList.add("chip_available")
         chip.classList.add("chip_unselected")
         chip.textContent = "Chip " + ch.toString()
         let ch_num = ch.toString()
         chip.id = ch_num
+        if (lads[ladname]["json_node"]["Chips"][ch_num]["Initial_Status"] == "Dead") {
+            chip.classList.add("chip_dead")
+            chip.textContent += "\nDEAD"
+        }
+        else if (lads[ladname]["json_node"]["Chips"][ch_num]["Initial_Status"] == "OK") {
+            chip.classList.add("chip_available")
+        }
         chip.onclick = function () {chip_clicked(ladname, ch_num)}
         document.getElementById("pixel_select").appendChild(chip)
         current_lad_chips[chip.id] = create_chip_element(ladname, chip)
@@ -350,7 +402,13 @@ function configureChip(evt) {
         mjsonrpc_db_paste(["/Equipment/Switching/Settings/MupixConfig"], [true])
     }).catch(function(error) {
         mjsonrpc_error_alert(error);
-     });
+    });
+    var chip_select_mask = 0xfff;
+    var pos = current_lad_chips[current_chip_selected]["json_node"]["MIDAS_ID"];
+    chip_select_mask &= ((~0x1) << pos);
+    for (var i = 0; i < pos; ++i)
+        chip_select_mask |= (0x1 << i);
+    document.getElementById("debug").textContent = "0x" + chip_select_mask.toString(16);
 }
 
 function resetDACs(evt) {
@@ -492,13 +550,26 @@ var create_decagon = function(ele, prefix, inversion) {
     }
 }
 
-var create_ladder_legend = function() {
+var create_ladder_legend = function () {
+    document.getElementById("debug").textContent = "hmmm"
     for (state in states) {
         let lad = document.createElement("div")
         lad.type = "submit"
+        lad.style = "width:70px;height:20px;position: relative;"
         lad.classList.add("ladderDiv")
         lad.classList.add("ladder_unselected")
-        lad.classList.add("ladder_unselected")
+        lad.id = "ladder_legend_" + state
+        document.getElementById("debug").textContent += "-" + states[state]
+        var state_name = states[state].substr(7, states[state].length)
+        lad.textContent = state_name
+        ladder = create_ladder_element(lad)
+        change_state(ladder, state_name, false)
+        //change_state(ladder, "hv_on", true)
+        document.getElementById("ladder_legend").appendChild(lad)
+        document.getElementById("debug").textContent += "-" + state_name
+        var linebreak = document.createElement("div");
+        linebreak.classList.add("line_break_white")
+        document.getElementById("ladder_legend").appendChild(linebreak)
     }
 }
 
@@ -546,6 +617,7 @@ var setup = function () {
     list_chips_configuration(document.getElementById("multiple_chip_configuration_ds"), "Downstream")
 
     setup_listeners()
+    create_ladder_legend()
 }
 
 var load_json = function () {
@@ -553,12 +625,12 @@ var load_json = function () {
     xmlhttp2.onreadystatechange = function(){
       if(xmlhttp2.status==200 && xmlhttp2.readyState==4){
         var words = xmlhttp2.responseText;//.split(' ');
-        document.getElementById("debug").textContent = "OPEN! - ";
+        document.getElementById("debug").textContent += "OPEN! - ";
         document.getElementById("debug").textContent += words;
         mupix_dacs = JSON.parse(words);
       }
       else {
-          document.getElementById("debug").textContent = "NOOOOOOO!!!" ;
+          document.getElementById("debug").textContent += "NOOOOOOO!!!" ;
       }
     }
 
@@ -572,7 +644,7 @@ var load_json = function () {
         setup();
       }
       else {
-          document.getElementById("debug").textContent = "NOOOOOOO!!!" ;
+          document.getElementById("debug").textContent += "NOOOOOOO!!!" ;
       }
     }
     xmlhttp.open("GET","mupix_configuration.json",true);

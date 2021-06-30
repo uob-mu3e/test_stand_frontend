@@ -40,7 +40,7 @@ const char *frontend_name = "Power Frontend";
 const char *frontend_file_name = __FILE__;
 
 /* frontend_loop is called periodically if this variable is TRUE    */
-BOOL frontend_call_loop = TRUE;
+BOOL frontend_call_loop = FALSE;
 
 /* Overwrite equipment struct in ODB from values in code*/
 BOOL equipment_common_overwrite = FALSE;
@@ -548,13 +548,13 @@ INT frontend_exit()
 INT read_power(float* pdata,const std::string& eq_name)
 {
 	
-    INT error = CM_SUCCESS;
+   INT error = CM_SUCCESS;
 	for(const auto& d: drivers)
 	{
 		if( !d->Initialized() ) continue;
 
 		if(d->GetName()!=eq_name) continue;
-        error = d->GetReadStatus();
+      error = d->GetReadStatus();
 		if(error == FE_SUCCESS)
 		{
 			std::vector<float> voltage = d->GetVoltage();
@@ -564,17 +564,24 @@ INT read_power(float* pdata,const std::string& eq_name)
 			{
 				*pdata++ = voltage.at(iChannel);
 				*pdata++ = current.at(iChannel);
-			}	//std::cout << " close bank " << bk_name << std::endl; 
-           //And start the next read
-            d->StartReading();
+			}
+         //And start the next read
+         d->StartReading();
+         d->ResetNReadFaults();
 		}
  		else 
  		{
 			cm_msg(MERROR, "power read", "Error in read: %d",error);
-            //And start the next read
-             d->StartReading();
+         d->AddReadFault();
+         //And start the next read
+         d->StartReading();
 			return 0;
   		}
+      if( d->GetNReadFaults() >= 3 )
+      {
+         d->UnsetInitialized();
+         set_equipment_status(d->GetName().c_str(), "Read Error", "redLight");
+      }
 	}
 	return error;
 }

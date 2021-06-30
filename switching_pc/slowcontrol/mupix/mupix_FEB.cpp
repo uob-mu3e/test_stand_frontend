@@ -128,7 +128,9 @@ int MupixFEB::ConfigureASICs(){
              std::cout<<"Timeout"<<std::endl;
              cm_msg(MERROR, "setup_mupix", "FEB Mupix SPI timeout");
          }else{
-            std::cout << "Chip select mask = " << std::hex << chip_select_mask << std::endl;
+
+            // TODO: write LVDS MASK here
+            
             feb_sc.FEB_write(SP_ID, 0xFF48, chip_select_mask);
 
             // TODO: include headers for addr.
@@ -136,7 +138,48 @@ int MupixFEB::ConfigureASICs(){
             feb_sc.FEB_write(SP_ID, 0xFF40, 0x00000FC0); // reset Mupix config fifos
             feb_sc.FEB_write(SP_ID, 0xFF40, 0x00000000);
             feb_sc.FEB_write(SP_ID, 0xFF49, 0x00000003); // idk, have to look it up
-            rpc_status = feb_sc.FEB_write(SP_ID, 0xFF4A, payload,true);
+
+            // We now only write the default configuration for testing
+            //rpc_status = feb_sc.FEB_write(SP_ID, 0xFF4A, payload,true);
+            
+            // write data for the  complete BIAS reg into FEB storage
+            feb_sc.FEB_write(SP_ID, 0xFF41, 0x2A000A03);
+            feb_sc.FEB_write(SP_ID, 0xFF41, 0xFA3F002F);
+            feb_sc.FEB_write(SP_ID, 0xFF41, 0x1E041041);
+            feb_sc.FEB_write(SP_ID, 0xFF41, 0x041E9A51);
+            feb_sc.FEB_write(SP_ID, 0xFF41, 0x40280000);
+            feb_sc.FEB_write(SP_ID, 0xFF41, 0x1400C20A);
+            feb_sc.FEB_write(SP_ID, 0xFF41, 0x028A0000);
+            
+            //write conf defaults
+            feb_sc.FEB_write(SP_ID, 0xFF42, 0x001F0002);
+            feb_sc.FEB_write(SP_ID, 0xFF42, 0x00380000);
+            feb_sc.FEB_write(SP_ID, 0xFF42, 0xFC09F000);
+                                                                                                                  
+            // write vdac defaults
+            feb_sc.FEB_write(SP_ID, 0xFF43, 0x00720000);
+            //feb_sc.FEB_write(SP_ID, 0xFF43, 0x52000046);
+            odb mupix_daq("/Equipment/Mupix/Settings/Daq");
+            uint32_t cur_th = mupix_daq["default_th_int_run_2021"];
+            uint32_t cur_value = ((cur_th << 24) | 0x00000046);
+            feb_sc.FEB_write(SP_ID, 0xFF43, cur_value);
+            feb_sc.FEB_write(SP_ID, 0xFF43, 0x00B80000);
+            
+            // zero the rest
+            for(int i = 0; i<30; i++){
+                feb_sc.FEB_write(SP_ID, 0xFF44, 0x00000000);
+            }
+            
+            for(int i = 0; i<30; i++){
+                feb_sc.FEB_write(SP_ID, 0xFF45, 0x00000000);
+            }
+            
+            for(int i = 0; i<30; i++){
+                feb_sc.FEB_write(SP_ID, 0xFF46, 0x00000000);
+            }
+                                                                                                                  
+            feb_sc.FEB_write(SP_ID, 0xFF40, 63);
+            feb_sc.FEB_write(SP_ID, 0xFF40, 0);
          }
       } catch(std::exception& e) {
           cm_msg(MERROR, "setup_mupix", "Communication error while configuring MuPix %d: %s", asic, e.what());
@@ -150,9 +193,15 @@ int MupixFEB::ConfigureASICs(){
          return FE_ERR_HW;//note: return of lambda function
       }
 
+      // reset lvds links
+      std::cout << "RESET" << std::endl;
+      feb_sc.FEB_register_write(SP_ID, MP_RESET_LVDS_N_REGISTER_W, 0x0);
+      feb_sc.FEB_register_write(SP_ID, MP_RESET_LVDS_N_REGISTER_W, 0x1);
+
       return FE_SUCCESS;//note: return of lambda function
    });//MapForEach
-   return status; //status of foreach function, SUCCESS when no error.
+
+    return status; //status of foreach function, SUCCESS when no error.
 }
 
 //MIDAS callback function for FEB register Setter functions
@@ -203,6 +252,24 @@ unsigned char reverse(unsigned char b) {
    return b;
 }
 
+uint32_t MupixFEB::ReadBackLVDSStatus(DWORD* pdata, uint16_t FPGA_ID, uint16_t LVDS_ID)
+{
+    auto FEB = febs.at(FPGA_ID);
+
+    //skip disabled fibers
+    if(!FEB.IsScEnabled())
+        return 0;
+
+    //skip commands not for this SB
+    if(FEB.SB_Number()!=SB_number)
+        return 0;
+    
+    uint32_t val;
+    int status = feb_sc.FEB_register_read(FEB.SB_Port(), MP_LVDS_STATUS_START_REGISTER_W + LVDS_ID, val);
+    
+    return val;
+}
+
 uint32_t MupixFEB::ReadBackLVDSNumHits(uint16_t FPGA_ID, uint16_t LVDS_ID)
 {
     //cm_msg(MINFO, "MupixFEB::ReadBackLVDSNumHits" , "Implement Me");
@@ -213,4 +280,20 @@ uint32_t MupixFEB::ReadBackLVDSNumHitsInMupixFormat(uint16_t FPGA_ID, uint16_t L
 {
     //cm_msg(MINFO, "MupixFEB::ReadBackLVDSNumHitsInMupixFormat" , "Implement Me");
     return 0;
+}
+
+DWORD* MupixFEB::ReadLVDSCounters(DWORD* pdata, uint16_t FPGA_ID)
+{
+    for(uint32_t i=0; i<lvds_links_per_feb; i++){ // TODO: set currect LVDS links number
+        // Link ID
+        *(DWORD*)pdata++ = i;
+        // read lvds status
+        *(DWORD*)pdata++ = ReadBackLVDSStatus(pdata, FPGA_ID, i);
+        // number of hits from link
+        *(DWORD*)pdata++ = ReadBackLVDSNumHits(FPGA_ID, i);
+        // number of hits from link in mupix format
+        *(DWORD*)pdata++ = ReadBackLVDSNumHitsInMupixFormat(FPGA_ID, i);
+
+    };
+    return pdata;
 }

@@ -133,7 +133,11 @@ struct mupix_t {
             printf("order is CON2 ModuleA chip1 ABC, chip2 ABC, .. ModuleB chip1 ABC .. CON3..\n");
             for(int i=0; i<36; i++){
                 value = sc->ram->data[0xFF66+i];
-                printf("%i ready: %01x  rx_state: %01x  pll_lock: %01x  disp_err: %01x\n ",i,value>>31,(value>>29) & 0x3,(value>>28) & 0x1,value & 0x0FFFFFFF);
+		if ( i<10) {	
+	        	printf("0%i ready: %01x  rx_state: %01x  pll_lock: %01x  disp_err: %01x\n ",i,value>>31,(value>>29) & 0x3,(value>>28) & 0x1,value & 0x0FFFFFFF);
+		} else  {
+	        	printf("%i ready: %01x  rx_state: %01x  pll_lock: %01x  disp_err: %01x\n ",i,value>>31,(value>>29) & 0x3,(value>>28) & 0x1,value & 0x0FFFFFFF);
+		}
             }
             printf("----------------------------\n");
             usleep(200000);
@@ -179,6 +183,8 @@ struct mupix_t {
                 printf("  [4] => invert lvds in\n");
             }
             printf("  [5] => set lvds mask\n");
+            printf("  [6] => test write all\n");
+            printf("  [7] => write sorter delay\n");
             printf("  [q] => exit\n");
 
             printf("Select entry ...\n");
@@ -241,6 +247,9 @@ struct mupix_t {
                 break;
             case '6':
                 test_write_all();
+                break;
+            case '7':
+                sc->ram->data[0xFF91]=10;
                 break;
             case 'q':
                 return;

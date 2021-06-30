@@ -43,30 +43,33 @@
                   "Chips": {
                     "0": {
                       "Type": "Mupix10",
-                      "MIDAS_ID": 0,
+                      "MIDAS_ID": 9,
                       "SpecBookId": 1,
                       "EventDisplayID": 0,
                       "LinkA": 0,
                       "LinkB": 1,
-                      "LinkC": 2
+                      "LinkC": 2,
+                      "Initial_Status": "Dead"
                     },
                     "1": {
                       "Type": "Mupix10",
-                      "MIDAS_ID": 1,
+                      "MIDAS_ID": 10,
                       "SpecBookId": 2,
                       "EventDisplayID": 1,
                       "LinkA": 3,
                       "LinkB": 4,
-                      "LinkC": 5
+                      "LinkC": 5,
+                      "Initial_Status": "OK"
                     },
                     "2": {
                       "Type": "Mupix10",
-                      "MIDAS_ID": 2,
+                      "MIDAS_ID": 11,
                       "SpecBookId": 3,
                       "EventDisplayID": 2,
                       "LinkA": 6,
                       "LinkB": 7,
-                      "LinkC": 8
+                      "LinkC": 8,
+                      "Initial_Status": "OK"
                     }
                   },
                   "LV_parameters": {
@@ -94,30 +97,33 @@
                   "Chips": {
                     "0": {
                       "Type": "Mupix10",
-                      "MIDAS_ID": 3,
+                      "MIDAS_ID": 6,
                       "SpecBookId": 1,
                       "EventDisplayID": 3,
                       "LinkA": 9,
                       "LinkB": 10,
-                      "LinkC": 11
+                      "LinkC": 11,
+                      "Initial_Status": "OK"
                     },
                     "1": {
                       "Type": "Mupix10",
-                      "MIDAS_ID": 4,
+                      "MIDAS_ID": 7,
                       "SpecBookId": 2,
                       "EventDisplayID": 4,
                       "LinkA": 12,
                       "LinkB": 13,
-                      "LinkC": 14
+                      "LinkC": 14,
+                      "Initial_Status": "OK"
                     },
                     "2": {
                       "Type": "Mupix10",
-                      "MIDAS_ID": 5,
+                      "MIDAS_ID": 8,
                       "SpecBookId": 3,
                       "EventDisplayID": 5,
                       "LinkA": 15,
                       "LinkB": 16,
-                      "LinkC": 17
+                      "LinkC": 17,
+                      "Initial_Status": "OK"
                     }
                   },
                   "LV_parameters": {
@@ -145,30 +151,33 @@
                   "Chips": {
                     "0": {
                       "Type": "Mupix10",
-                      "MIDAS_ID": 6,
+                      "MIDAS_ID": 3,
                       "SpecBookId": 1,
                       "EventDisplayID": 6,
                       "LinkA": 18,
                       "LinkB": 19,
-                      "LinkC": 20
+                      "LinkC": 20,
+                      "Initial_Status": "OK"
                     },
                     "1": {
                       "Type": "Mupix10",
-                      "MIDAS_ID": 7,
+                      "MIDAS_ID": 4,
                       "SpecBookId": 2,
                       "EventDisplayID": 7,
                       "LinkA": 21,
                       "LinkB": 22,
-                      "LinkC": 23
+                      "LinkC": 23,
+                      "Initial_Status": "OK"
                     },
                     "2": {
                       "Type": "Mupix10",
-                      "MIDAS_ID": 8,
+                      "MIDAS_ID": 5,
                       "SpecBookId": 3,
                       "EventDisplayID": 8,
                       "LinkA": 24,
                       "LinkB": 25,
-                      "LinkC": 26
+                      "LinkC": 26,
+                      "Initial_Status": "OK"
                     }
                   },
                   "LV_parameters": {
@@ -196,30 +205,33 @@
                   "Chips": {
                     "0": {
                       "Type": "Mupix10",
-                      "MIDAS_ID": 9,
+                      "MIDAS_ID": 0,
                       "SpecBookId": 1,
                       "EventDisplayID": 9,
                       "LinkA": 27,
                       "LinkB": 28,
-                      "LinkC": 29
+                      "LinkC": 29,
+                      "Initial_Status": "OK"
                     },
                     "1": {
                       "Type": "Mupix10",
-                      "MIDAS_ID": 10,
+                      "MIDAS_ID": 1,
                       "SpecBookId": 2,
                       "EventDisplayID": 10,
                       "LinkA": 30,
                       "LinkB": 31,
-                      "LinkC": 32
+                      "LinkC": 32,
+                      "Initial_Status": "OK"
                     },
                     "2": {
                       "Type": "Mupix10",
-                      "MIDAS_ID": 11,
+                      "MIDAS_ID": 2,
                       "SpecBookId": 3,
                       "EventDisplayID": 11,
                       "LinkA": 33,
                       "LinkB": 34,
-                      "LinkC": 35
+                      "LinkC": 35,
+                      "Initial_Status": "OK"
                     }
                   },
                   "LV_parameters": {
@@ -247,30 +259,33 @@
                   "Chips": {
                     "0": {
                       "Type": "Mupix10",
-                      "MIDAS_ID": 0,
+                      "MIDAS_ID": 9,
                       "SpecBookId": 1,
                       "EventDisplayID": 12,
                       "LinkA": 0,
                       "LinkB": 1,
-                      "LinkC": 2
+                      "LinkC": 2,
+                      "Initial_Status": "OK"
                     },
                     "1": {
                       "Type": "Mupix10",
-                      "MIDAS_ID": 1,
+                      "MIDAS_ID": 10,
                       "SpecBookId": 2,
                       "EventDisplayID": 13,
                       "LinkA": 3,
                       "LinkB": 4,
-                      "LinkC": 5
+                      "LinkC": 5,
+                      "Initial_Status": "OK"
                     },
                     "2": {
                       "Type": "Mupix10",
-                      "MIDAS_ID": 2,
+                      "MIDAS_ID": 11,
                       "SpecBookId": 3,
                       "EventDisplayID": 14,
                       "LinkA": 6,
                       "LinkB": 7,
-                      "LinkC": 8
+                      "LinkC": 8,
+                      "Initial_Status": "OK"
                     }
                   },
                   "LV_parameters": {
@@ -298,30 +313,33 @@
                   "Chips": {
                     "0": {
                       "Type": "Mupix10",
-                      "MIDAS_ID": 3,
+                      "MIDAS_ID": 6,
                       "SpecBookId": 1,
                       "EventDisplayID": 15,
                       "LinkA": 9,
                       "LinkB": 10,
-                      "LinkC": 11
+                      "LinkC": 11,
+                      "Initial_Status": "OK"
                     },
                     "1": {
                       "Type": "Mupix10",
-                      "MIDAS_ID": 4,
+                      "MIDAS_ID": 7,
                       "SpecBookId": 2,
                       "EventDisplayID": 16,
                       "LinkA": 12,
                       "LinkB": 13,
-                      "LinkC": 14
+                      "LinkC": 14,
+                      "Initial_Status": "OK"
                     },
                     "2": {
                       "Type": "Mupix10",
-                      "MIDAS_ID": 5,
+                      "MIDAS_ID": 8,
                       "SpecBookId": 3,
                       "EventDisplayID": 17,
                       "LinkA": 15,
                       "LinkB": 16,
-                      "LinkC": 17
+                      "LinkC": 17,
+                      "Initial_Status": "OK"
                     }
                   },
                   "LV_parameters": {
@@ -349,30 +367,33 @@
                   "Chips": {
                     "0": {
                       "Type": "Mupix10",
-                      "MIDAS_ID": 6,
+                      "MIDAS_ID": 3,
                       "SpecBookId": 1,
                       "EventDisplayID": 18,
                       "LinkA": 18,
                       "LinkB": 19,
-                      "LinkC": 20
+                      "LinkC": 20,
+                      "Initial_Status": "OK"
                     },
                     "1": {
                       "Type": "Mupix10",
-                      "MIDAS_ID": 7,
+                      "MIDAS_ID": 4,
                       "SpecBookId": 2,
                       "EventDisplayID": 19,
                       "LinkA": 21,
                       "LinkB": 22,
-                      "LinkC": 23
+                      "LinkC": 23,
+                      "Initial_Status": "OK"
                     },
                     "2": {
                       "Type": "Mupix10",
-                      "MIDAS_ID": 8,
+                      "MIDAS_ID": 5,
                       "SpecBookId": 3,
                       "EventDisplayID": 20,
                       "LinkA": 24,
                       "LinkB": 25,
-                      "LinkC": 26
+                      "LinkC": 26,
+                      "Initial_Status": "OK"
                     }
                   },
                   "LV_parameters": {
@@ -400,30 +421,33 @@
                   "Chips": {
                     "0": {
                       "Type": "Mupix10",
-                      "MIDAS_ID": 9,
+                      "MIDAS_ID": 0,
                       "SpecBookId": 1,
                       "EventDisplayID": 21,
                       "LinkA": 27,
                       "LinkB": 28,
-                      "LinkC": 29
+                      "LinkC": 29,
+                      "Initial_Status": "OK"
                     },
                     "1": {
                       "Type": "Mupix10",
-                      "MIDAS_ID": 10,
+                      "MIDAS_ID": 1,
                       "SpecBookId": 2,
                       "EventDisplayID": 22,
                       "LinkA": 30,
                       "LinkB": 31,
-                      "LinkC": 32
+                      "LinkC": 32,
+                      "Initial_Status": "OK"
                     },
                     "2": {
                       "Type": "Mupix10",
-                      "MIDAS_ID": 11,
+                      "MIDAS_ID": 2,
                       "SpecBookId": 3,
                       "EventDisplayID": 23,
                       "LinkA": 33,
                       "LinkB": 34,
-                      "LinkC": 35
+                      "LinkC": 35,
+                      "Initial_Status": "Dead"
                     }
                   },
                   "LV_parameters": {
@@ -457,30 +481,33 @@
                   "Chips": {
                     "0": {
                       "Type": "Mupix10",
-                      "MIDAS_ID": 0,
+                      "MIDAS_ID": 9,
                       "SpecBookId": 1,
                       "EventDisplayID": 0,
                       "LinkA": 0,
                       "LinkB": 1,
-                      "LinkC": 2
+                      "LinkC": 2,
+                      "Initial_Status": "OK"
                     },
                     "1": {
                       "Type": "Mupix10",
-                      "MIDAS_ID": 1,
+                      "MIDAS_ID": 10,
                       "SpecBookId": 2,
                       "EventDisplayID": 1,
                       "LinkA": 3,
                       "LinkB": 4,
-                      "LinkC": 5
+                      "LinkC": 5,
+                      "Initial_Status": "OK"
                     },
                     "2": {
                       "Type": "Mupix10",
-                      "MIDAS_ID": 2,
+                      "MIDAS_ID": 11,
                       "SpecBookId": 3,
                       "EventDisplayID": 2,
                       "LinkA": 6,
                       "LinkB": 7,
-                      "LinkC": 8
+                      "LinkC": 8,
+                      "Initial_Status": "OK"
                     }
                   },
                   "LV_parameters": {
@@ -508,30 +535,33 @@
                   "Chips": {
                     "0": {
                       "Type": "Mupix10",
-                      "MIDAS_ID": 3,
+                      "MIDAS_ID": 6,
                       "SpecBookId": 1,
                       "EventDisplayID": 3,
                       "LinkA": 9,
                       "LinkB": 10,
-                      "LinkC": 11
+                      "LinkC": 11,
+                      "Initial_Status": "OK"
                     },
                     "1": {
                       "Type": "Mupix10",
-                      "MIDAS_ID": 4,
+                      "MIDAS_ID": 7,
                       "SpecBookId": 2,
                       "EventDisplayID": 4,
                       "LinkA": 12,
                       "LinkB": 13,
-                      "LinkC": 14
+                      "LinkC": 14,
+                      "Initial_Status": "OK"
                     },
                     "2": {
                       "Type": "Mupix10",
-                      "MIDAS_ID": 5,
+                      "MIDAS_ID": 8,
                       "SpecBookId": 3,
                       "EventDisplayID": 5,
                       "LinkA": 15,
                       "LinkB": 16,
-                      "LinkC": 17
+                      "LinkC": 17,
+                      "Initial_Status": "OK"
                     }
                   },
                   "LV_parameters": {
@@ -559,30 +589,33 @@
                   "Chips": {
                     "0": {
                       "Type": "Mupix10",
-                      "MIDAS_ID": 6,
+                      "MIDAS_ID": 3,
                       "SpecBookId": 1,
                       "EventDisplayID": 6,
                       "LinkA": 18,
                       "LinkB": 19,
-                      "LinkC": 20
+                      "LinkC": 20,
+                      "Initial_Status": "OK"
                     },
                     "1": {
                       "Type": "Mupix10",
-                      "MIDAS_ID": 7,
+                      "MIDAS_ID": 4,
                       "SpecBookId": 2,
                       "EventDisplayID": 7,
                       "LinkA": 21,
                       "LinkB": 22,
-                      "LinkC": 23
+                      "LinkC": 23,
+                      "Initial_Status": "OK"
                     },
                     "2": {
                       "Type": "Mupix10",
-                      "MIDAS_ID": 8,
+                      "MIDAS_ID": 5,
                       "SpecBookId": 3,
                       "EventDisplayID": 8,
                       "LinkA": 24,
                       "LinkB": 25,
-                      "LinkC": 26
+                      "LinkC": 26,
+                      "Initial_Status": "OK"
                     }
                   },
                   "LV_parameters": {
@@ -610,30 +643,33 @@
                   "Chips": {
                     "0": {
                       "Type": "Mupix10",
-                      "MIDAS_ID": 9,
+                      "MIDAS_ID": 0,
                       "SpecBookId": 1,
                       "EventDisplayID": 9,
                       "LinkA": 27,
                       "LinkB": 28,
-                      "LinkC": 29
+                      "LinkC": 29,
+                      "Initial_Status": "OK"
                     },
                     "1": {
                       "Type": "Mupix10",
-                      "MIDAS_ID": 10,
+                      "MIDAS_ID": 1,
                       "SpecBookId": 2,
                       "EventDisplayID": 10,
                       "LinkA": 30,
                       "LinkB": 31,
-                      "LinkC": 32
+                      "LinkC": 32,
+                      "Initial_Status": "OK"
                     },
                     "2": {
                       "Type": "Mupix10",
-                      "MIDAS_ID": 11,
+                      "MIDAS_ID": 2,
                       "SpecBookId": 3,
                       "EventDisplayID": 11,
                       "LinkA": 33,
                       "LinkB": 34,
-                      "LinkC": 35
+                      "LinkC": 35,
+                      "Initial_Status": "Dead"
                     }
                   },
                   "LV_parameters": {
@@ -661,30 +697,33 @@
                   "Chips": {
                     "0": {
                       "Type": "Mupix10",
-                      "MIDAS_ID": 0,
+                      "MIDAS_ID": 9,
                       "SpecBookId": 1,
                       "EventDisplayID": 12,
                       "LinkA": 0,
                       "LinkB": 1,
-                      "LinkC": 2
+                      "LinkC": 2,
+                      "Initial_Status": "Dead"
                     },
                     "1": {
                       "Type": "Mupix10",
-                      "MIDAS_ID": 1,
+                      "MIDAS_ID": 10,
                       "SpecBookId": 2,
                       "EventDisplayID": 13,
                       "LinkA": 3,
                       "LinkB": 4,
-                      "LinkC": 5
+                      "LinkC": 5,
+                      "Initial_Status": "Dead"
                     },
                     "2": {
                       "Type": "Mupix10",
-                      "MIDAS_ID": 2,
+                      "MIDAS_ID": 11,
                       "SpecBookId": 3,
                       "EventDisplayID": 14,
                       "LinkA": 6,
                       "LinkB": 7,
-                      "LinkC": 8
+                      "LinkC": 8,
+                      "Initial_Status": "OK"
                     }
                   },
                   "LV_parameters": {
@@ -712,30 +751,33 @@
                   "Chips": {
                     "0": {
                       "Type": "Mupix10",
-                      "MIDAS_ID": 3,
+                      "MIDAS_ID": 6,
                       "SpecBookId": 1,
                       "EventDisplayID": 15,
                       "LinkA": 9,
                       "LinkB": 10,
-                      "LinkC": 11
+                      "LinkC": 11,
+                      "Initial_Status": "OK"
                     },
                     "1": {
                       "Type": "Mupix10",
-                      "MIDAS_ID": 4,
+                      "MIDAS_ID": 7,
                       "SpecBookId": 2,
                       "EventDisplayID": 16,
                       "LinkA": 12,
                       "LinkB": 13,
-                      "LinkC": 14
+                      "LinkC": 14,
+                      "Initial_Status": "Dead"
                     },
                     "2": {
                       "Type": "Mupix10",
-                      "MIDAS_ID": 5,
+                      "MIDAS_ID": 8,
                       "SpecBookId": 3,
                       "EventDisplayID": 17,
                       "LinkA": 15,
                       "LinkB": 16,
-                      "LinkC": 17
+                      "LinkC": 17,
+                      "Initial_Status": "Dead"
                     }
                   },
                   "LV_parameters": {
@@ -763,30 +805,33 @@
                   "Chips": {
                     "0": {
                       "Type": "Mupix10",
-                      "MIDAS_ID": 6,
+                      "MIDAS_ID": 3,
                       "SpecBookId": 1,
                       "EventDisplayID": 18,
                       "LinkA": 18,
                       "LinkB": 19,
-                      "LinkC": 20
+                      "LinkC": 20,
+                      "Initial_Status": "OK"
                     },
                     "1": {
                       "Type": "Mupix10",
-                      "MIDAS_ID": 7,
+                      "MIDAS_ID": 4,
                       "SpecBookId": 2,
                       "EventDisplayID": 19,
                       "LinkA": 21,
                       "LinkB": 22,
-                      "LinkC": 23
+                      "LinkC": 23,
+                      "Initial_Status": "OK"
                     },
                     "2": {
                       "Type": "Mupix10",
-                      "MIDAS_ID": 8,
+                      "MIDAS_ID": 5,
                       "SpecBookId": 3,
                       "EventDisplayID": 20,
                       "LinkA": 24,
                       "LinkB": 25,
-                      "LinkC": 26
+                      "LinkC": 26,
+                      "Initial_Status": "OK"
                     }
                   },
                   "LV_parameters": {
@@ -819,7 +864,8 @@
                       "EventDisplayID": 21,
                       "LinkA": 27,
                       "LinkB": 28,
-                      "LinkC": 29
+                      "LinkC": 29,
+                      "Initial_Status": "OK"
                     },
                     "1": {
                       "Type": "Mupix10",
@@ -828,7 +874,8 @@
                       "EventDisplayID": 22,
                       "LinkA": 30,
                       "LinkB": 31,
-                      "LinkC": 32
+                      "LinkC": 32,
+                      "Initial_Status": "Dead"
                     },
                     "2": {
                       "Type": "Mupix10",
@@ -837,7 +884,8 @@
                       "EventDisplayID": 23,
                       "LinkA": 33,
                       "LinkB": 34,
-                      "LinkC": 35
+                      "LinkC": 35,
+                      "Initial_Status": "OK"
                     }
                   },
                   "LV_parameters": {
@@ -865,30 +913,33 @@
                   "Chips": {
                     "0": {
                       "Type": "Mupix10",
-                      "MIDAS_ID": 3,
+                      "MIDAS_ID": 9,
                       "SpecBookId": 1,
                       "EventDisplayID": 21,
                       "LinkA": 0,
                       "LinkB": 1,
-                      "LinkC": 2
+                      "LinkC": 2,
+                      "Initial_Status": "OK"
                     },
                     "1": {
                       "Type": "Mupix10",
-                      "MIDAS_ID": 4,
+                      "MIDAS_ID": 10,
                       "SpecBookId": 2,
                       "EventDisplayID": 22,
                       "LinkA": 3,
                       "LinkB": 4,
-                      "LinkC": 5
+                      "LinkC": 5,
+                      "Initial_Status": "OK"
                     },
                     "2": {
                       "Type": "Mupix10",
-                      "MIDAS_ID": 5,
+                      "MIDAS_ID": 11,
                       "SpecBookId": 3,
                       "EventDisplayID": 23,
                       "LinkA": 6,
                       "LinkB": 7,
-                      "LinkC": 8
+                      "LinkC": 8,
+                      "Initial_Status": "OK"
                     }
                   },
                   "LV_parameters": {
@@ -921,7 +972,8 @@
                       "EventDisplayID": 21,
                       "LinkA": 9,
                       "LinkB": 10,
-                      "LinkC": 11
+                      "LinkC": 11,
+                      "Initial_Status": "Dead"
                     },
                     "1": {
                       "Type": "Mupix10",
@@ -930,7 +982,8 @@
                       "EventDisplayID": 22,
                       "LinkA": 12,
                       "LinkB": 13,
-                      "LinkC": 14
+                      "LinkC": 14,
+                      "Initial_Status": "OK"
                     },
                     "2": {
                       "Type": "Mupix10",
@@ -939,7 +992,8 @@
                       "EventDisplayID": 23,
                       "LinkA": 15,
                       "LinkB": 16,
-                      "LinkC": 17
+                      "LinkC": 17,
+                      "Initial_Status": "OK"
                     }
                   },
                   "LV_parameters": {
@@ -978,30 +1032,33 @@
                   "Chips": {
                     "0": {
                       "Type": "Mupix10",
-                      "MIDAS_ID": 0,
+                      "MIDAS_ID": 11,
                       "SpecBookId": 4,
                       "EventDisplayID": 0,
                       "LinkA": 0,
                       "LinkB": 1,
-                      "LinkC": 2
+                      "LinkC": 2,
+                      "Initial_Status": "OK"
                     },
                     "1": {
                       "Type": "Mupix10",
-                      "MIDAS_ID": 1,
+                      "MIDAS_ID": 10,
                       "SpecBookId": 5,
                       "EventDisplayID": 1,
                       "LinkA": 3,
                       "LinkB": 4,
-                      "LinkC": 5
+                      "LinkC": 5,
+                      "Initial_Status": "OK"
                     },
                     "2": {
                       "Type": "Mupix10",
-                      "MIDAS_ID": 2,
+                      "MIDAS_ID": 9,
                       "SpecBookId": 6,
                       "EventDisplayID": 2,
                       "LinkA": 6,
                       "LinkB": 7,
-                      "LinkC": 8
+                      "LinkC": 8,
+                      "Initial_Status": "OK"
                     }
                   },
                   "LV_parameters": {
@@ -1029,30 +1086,33 @@
                   "Chips": {
                     "0": {
                       "Type": "Mupix10",
-                      "MIDAS_ID": 3,
+                      "MIDAS_ID": 8,
                       "SpecBookId": 4,
                       "EventDisplayID": 3,
                       "LinkA": 9,
                       "LinkB": 10,
-                      "LinkC": 11
+                      "LinkC": 11,
+                      "Initial_Status": "Dead"
                     },
                     "1": {
                       "Type": "Mupix10",
-                      "MIDAS_ID": 4,
+                      "MIDAS_ID": 7,
                       "SpecBookId": 5,
                       "EventDisplayID": 4,
                       "LinkA": 12,
                       "LinkB": 13,
-                      "LinkC": 14
+                      "LinkC": 14,
+                      "Initial_Status": "OK"
                     },
                     "2": {
                       "Type": "Mupix10",
-                      "MIDAS_ID": 5,
+                      "MIDAS_ID": 6,
                       "SpecBookId": 6,
                       "EventDisplayID": 5,
                       "LinkA": 15,
                       "LinkB": 16,
-                      "LinkC": 17
+                      "LinkC": 17,
+                      "Initial_Status": "OK"
                     }
                   },
                   "LV_parameters": {
@@ -1080,30 +1140,33 @@
                   "Chips": {
                     "0": {
                       "Type": "Mupix10",
-                      "MIDAS_ID": 6,
+                      "MIDAS_ID": 5,
                       "SpecBookId": 4,
                       "EventDisplayID": 6,
                       "LinkA": 18,
                       "LinkB": 19,
-                      "LinkC": 20
+                      "LinkC": 20,
+                      "Initial_Status": "OK"
                     },
                     "1": {
                       "Type": "Mupix10",
-                      "MIDAS_ID": 7,
+                      "MIDAS_ID": 4,
                       "SpecBookId": 5,
                       "EventDisplayID": 7,
                       "LinkA": 21,
                       "LinkB": 22,
-                      "LinkC": 23
+                      "LinkC": 23,
+                      "Initial_Status": "OK"
                     },
                     "2": {
                       "Type": "Mupix10",
-                      "MIDAS_ID": 8,
+                      "MIDAS_ID": 3,
                       "SpecBookId": 6,
                       "EventDisplayID": 8,
                       "LinkA": 24,
                       "LinkB": 25,
-                      "LinkC": 26
+                      "LinkC": 26,
+                      "Initial_Status": "OK"
                     }
                   },
                   "LV_parameters": {
@@ -1131,30 +1194,33 @@
                   "Chips": {
                     "0": {
                       "Type": "Mupix10",
-                      "MIDAS_ID": 9,
+                      "MIDAS_ID": 2,
                       "SpecBookId": 4,
                       "EventDisplayID": 9,
                       "LinkA": 27,
                       "LinkB": 28,
-                      "LinkC": 29
+                      "LinkC": 29,
+                      "Initial_Status": "Dead"
                     },
                     "1": {
                       "Type": "Mupix10",
-                      "MIDAS_ID": 10,
+                      "MIDAS_ID": 1,
                       "SpecBookId": 5,
                       "EventDisplayID": 10,
                       "LinkA": 30,
                       "LinkB": 31,
-                      "LinkC": 32
+                      "LinkC": 32,
+                      "Initial_Status": "OK"
                     },
                     "2": {
                       "Type": "Mupix10",
-                      "MIDAS_ID": 11,
+                      "MIDAS_ID": 0,
                       "SpecBookId": 6,
                       "EventDisplayID": 11,
                       "LinkA": 33,
                       "LinkB": 34,
-                      "LinkC": 35
+                      "LinkC": 35,
+                      "Initial_Status": "OK"
                     }
                   },
                   "LV_parameters": {
@@ -1182,30 +1248,33 @@
                   "Chips": {
                     "0": {
                       "Type": "Mupix10",
-                      "MIDAS_ID": 0,
+                      "MIDAS_ID": 11,
                       "SpecBookId": 4,
                       "EventDisplayID": 12,
                       "LinkA": 0,
                       "LinkB": 1,
-                      "LinkC": 2
+                      "LinkC": 2,
+                      "Initial_Status": "OK"
                     },
                     "1": {
                       "Type": "Mupix10",
-                      "MIDAS_ID": 1,
+                      "MIDAS_ID": 10,
                       "SpecBookId": 5,
                       "EventDisplayID": 13,
                       "LinkA": 3,
                       "LinkB": 4,
-                      "LinkC": 5
+                      "LinkC": 5,
+                      "Initial_Status": "OK"
                     },
                     "2": {
                       "Type": "Mupix10",
-                      "MIDAS_ID": 2,
+                      "MIDAS_ID": 9,
                       "SpecBookId": 6,
                       "EventDisplayID": 14,
                       "LinkA": 6,
                       "LinkB": 7,
-                      "LinkC": 8
+                      "LinkC": 8,
+                      "Initial_Status": "OK"
                     }
                   },
                   "LV_parameters": {
@@ -1233,30 +1302,33 @@
                   "Chips": {
                     "0": {
                       "Type": "Mupix10",
-                      "MIDAS_ID": 3,
+                      "MIDAS_ID": 8,
                       "SpecBookId": 4,
                       "EventDisplayID": 15,
                       "LinkA": 9,
                       "LinkB": 10,
-                      "LinkC": 11
+                      "LinkC": 11,
+                      "Initial_Status": "Dead"
                     },
                     "1": {
                       "Type": "Mupix10",
-                      "MIDAS_ID": 4,
+                      "MIDAS_ID": 7,
                       "SpecBookId": 5,
                       "EventDisplayID": 16,
                       "LinkA": 12,
                       "LinkB": 13,
-                      "LinkC": 14
+                      "LinkC": 14,
+                      "Initial_Status": "OK"
                     },
                     "2": {
                       "Type": "Mupix10",
-                      "MIDAS_ID": 5,
+                      "MIDAS_ID": 6,
                       "SpecBookId": 6,
                       "EventDisplayID": 17,
                       "LinkA": 15,
                       "LinkB": 16,
-                      "LinkC": 17
+                      "LinkC": 17,
+                      "Initial_Status": "OK"
                     }
                   },
                   "LV_parameters": {
@@ -1284,30 +1356,33 @@
                   "Chips": {
                     "0": {
                       "Type": "Mupix10",
-                      "MIDAS_ID": 6,
+                      "MIDAS_ID": 5,
                       "SpecBookId": 4,
                       "EventDisplayID": 18,
                       "LinkA": 18,
                       "LinkB": 19,
-                      "LinkC": 20
+                      "LinkC": 20,
+                      "Initial_Status": "OK"
                     },
                     "1": {
                       "Type": "Mupix10",
-                      "MIDAS_ID": 7,
+                      "MIDAS_ID": 4,
                       "SpecBookId": 5,
                       "EventDisplayID": 19,
                       "LinkA": 21,
                       "LinkB": 22,
-                      "LinkC": 23
+                      "LinkC": 23,
+                      "Initial_Status": "OK"
                     },
                     "2": {
                       "Type": "Mupix10",
-                      "MIDAS_ID": 8,
+                      "MIDAS_ID": 3,
                       "SpecBookId": 6,
                       "EventDisplayID": 20,
                       "LinkA": 24,
                       "LinkB": 25,
-                      "LinkC": 26
+                      "LinkC": 26,
+                      "Initial_Status": "OK"
                     }
                   },
                   "LV_parameters": {
@@ -1335,30 +1410,33 @@
                   "Chips": {
                     "0": {
                       "Type": "Mupix10",
-                      "MIDAS_ID": 9,
+                      "MIDAS_ID": 2,
                       "SpecBookId": 4,
                       "EventDisplayID": 21,
                       "LinkA": 27,
                       "LinkB": 28,
-                      "LinkC": 29
+                      "LinkC": 29,
+                      "Initial_Status": "OK"
                     },
                     "1": {
                       "Type": "Mupix10",
-                      "MIDAS_ID": 10,
+                      "MIDAS_ID": 1,
                       "SpecBookId": 5,
                       "EventDisplayID": 22,
                       "LinkA": 30,
                       "LinkB": 31,
-                      "LinkC": 32
+                      "LinkC": 32,
+                      "Initial_Status": "OK"
                     },
                     "2": {
                       "Type": "Mupix10",
-                      "MIDAS_ID": 11,
+                      "MIDAS_ID": 0,
                       "SpecBookId": 6,
                       "EventDisplayID": 23,
                       "LinkA": 33,
                       "LinkB": 34,
-                      "LinkC": 35
+                      "LinkC": 35,
+                      "Initial_Status": "OK"
                     }
                   },
                   "LV_parameters": {
@@ -1392,30 +1470,33 @@
                   "Chips": {
                     "0": {
                       "Type": "Mupix10",
-                      "MIDAS_ID": 0,
+                      "MIDAS_ID": 11,
                       "SpecBookId": 4,
                       "EventDisplayID": 0,
                       "LinkA": 0,
                       "LinkB": 1,
-                      "LinkC": 2
+                      "LinkC": 2,
+                      "Initial_Status": "Dead"
                     },
                     "1": {
                       "Type": "Mupix10",
-                      "MIDAS_ID": 1,
+                      "MIDAS_ID": 10,
                       "SpecBookId": 5,
                       "EventDisplayID": 1,
                       "LinkA": 3,
                       "LinkB": 4,
-                      "LinkC": 5
+                      "LinkC": 5,
+                      "Initial_Status": "OK"
                     },
                     "2": {
                       "Type": "Mupix10",
-                      "MIDAS_ID": 2,
+                      "MIDAS_ID": 9,
                       "SpecBookId": 6,
                       "EventDisplayID": 2,
                       "LinkA": 6,
                       "LinkB": 7,
-                      "LinkC": 8
+                      "LinkC": 8,
+                      "Initial_Status": "OK"
                     }
                   },
                   "LV_parameters": {
@@ -1443,30 +1524,33 @@
                   "Chips": {
                     "0": {
                       "Type": "Mupix10",
-                      "MIDAS_ID": 3,
+                      "MIDAS_ID": 8,
                       "SpecBookId": 4,
                       "EventDisplayID": 3,
                       "LinkA": 9,
                       "LinkB": 10,
-                      "LinkC": 11
+                      "LinkC": 11,
+                      "Initial_Status": "OK"
                     },
                     "1": {
                       "Type": "Mupix10",
-                      "MIDAS_ID": 4,
+                      "MIDAS_ID": 7,
                       "SpecBookId": 5,
                       "EventDisplayID": 4,
                       "LinkA": 12,
                       "LinkB": 13,
-                      "LinkC": 14
+                      "LinkC": 14,
+                      "Initial_Status": "OK"
                     },
                     "2": {
                       "Type": "Mupix10",
-                      "MIDAS_ID": 5,
+                      "MIDAS_ID": 6,
                       "SpecBookId": 6,
                       "EventDisplayID": 5,
                       "LinkA": 15,
                       "LinkB": 16,
-                      "LinkC": 17
+                      "LinkC": 17,
+                      "Initial_Status": "OK"
                     }
                   },
                   "LV_parameters": {
@@ -1494,30 +1578,33 @@
                   "Chips": {
                     "0": {
                       "Type": "Mupix10",
-                      "MIDAS_ID": 6,
+                      "MIDAS_ID": 5,
                       "SpecBookId": 4,
                       "EventDisplayID": 6,
                       "LinkA": 18,
                       "LinkB": 19,
-                      "LinkC": 20
+                      "LinkC": 20,
+                      "Initial_Status": "OK"
                     },
                     "1": {
                       "Type": "Mupix10",
-                      "MIDAS_ID": 7,
+                      "MIDAS_ID": 4,
                       "SpecBookId": 5,
                       "EventDisplayID": 7,
                       "LinkA": 21,
                       "LinkB": 22,
-                      "LinkC": 23
+                      "LinkC": 23,
+                      "Initial_Status": "OK"
                     },
                     "2": {
                       "Type": "Mupix10",
-                      "MIDAS_ID": 8,
+                      "MIDAS_ID": 3,
                       "SpecBookId": 6,
                       "EventDisplayID": 8,
                       "LinkA": 24,
                       "LinkB": 25,
-                      "LinkC": 26
+                      "LinkC": 26,
+                      "Initial_Status": "OK"
                     }
                   },
                   "LV_parameters": {
@@ -1545,30 +1632,33 @@
                   "Chips": {
                     "0": {
                       "Type": "Mupix10",
-                      "MIDAS_ID": 9,
+                      "MIDAS_ID": 2,
                       "SpecBookId": 4,
                       "EventDisplayID": 9,
                       "LinkA": 27,
                       "LinkB": 28,
-                      "LinkC": 29
+                      "LinkC": 29,
+                      "Initial_Status": "OK"
                     },
                     "1": {
                       "Type": "Mupix10",
-                      "MIDAS_ID": 10,
+                      "MIDAS_ID": 1,
                       "SpecBookId": 5,
                       "EventDisplayID": 10,
                       "LinkA": 30,
                       "LinkB": 31,
-                      "LinkC": 32
+                      "LinkC": 32,
+                      "Initial_Status": "OK"
                     },
                     "2": {
                       "Type": "Mupix10",
-                      "MIDAS_ID": 11,
+                      "MIDAS_ID": 0,
                       "SpecBookId": 6,
                       "EventDisplayID": 11,
                       "LinkA": 33,
                       "LinkB": 34,
-                      "LinkC": 35
+                      "LinkC": 35,
+                      "Initial_Status": "OK"
                     }
                   },
                   "LV_parameters": {
@@ -1596,30 +1686,33 @@
                   "Chips": {
                     "0": {
                       "Type": "Mupix10",
-                      "MIDAS_ID": 0,
+                      "MIDAS_ID": 11,
                       "SpecBookId": 4,
                       "EventDisplayID": 12,
                       "LinkA": 0,
                       "LinkB": 1,
-                      "LinkC": 2
+                      "LinkC": 2,
+                      "Initial_Status": "OK"
                     },
                     "1": {
                       "Type": "Mupix10",
-                      "MIDAS_ID": 1,
+                      "MIDAS_ID": 10,
                       "SpecBookId": 5,
                       "EventDisplayID": 13,
                       "LinkA": 3,
                       "LinkB": 4,
-                      "LinkC": 5
+                      "LinkC": 5,
+                      "Initial_Status": "OK"
                     },
                     "2": {
                       "Type": "Mupix10",
-                      "MIDAS_ID": 2,
+                      "MIDAS_ID": 9,
                       "SpecBookId": 6,
                       "EventDisplayID": 14,
                       "LinkA": 6,
                       "LinkB": 7,
-                      "LinkC": 8
+                      "LinkC": 8,
+                      "Initial_Status": "Dead"
                     }
                   },
                   "LV_parameters": {
@@ -1647,30 +1740,33 @@
                   "Chips": {
                     "0": {
                       "Type": "Mupix10",
-                      "MIDAS_ID": 3,
+                      "MIDAS_ID": 8,
                       "SpecBookId": 4,
                       "EventDisplayID": 15,
                       "LinkA": 9,
                       "LinkB": 10,
-                      "LinkC": 11
+                      "LinkC": 11,
+                      "Initial_Status": "OK"
                     },
                     "1": {
                       "Type": "Mupix10",
-                      "MIDAS_ID": 4,
+                      "MIDAS_ID": 7,
                       "SpecBookId": 5,
                       "EventDisplayID": 16,
                       "LinkA": 12,
                       "LinkB": 13,
-                      "LinkC": 14
+                      "LinkC": 14,
+                      "Initial_Status": "OK"
                     },
                     "2": {
                       "Type": "Mupix10",
-                      "MIDAS_ID": 5,
+                      "MIDAS_ID": 6,
                       "SpecBookId": 6,
                       "EventDisplayID": 17,
                       "LinkA": 15,
                       "LinkB": 16,
-                      "LinkC": 17
+                      "LinkC": 17,
+                      "Initial_Status": "OK"
                     }
                   },
                   "LV_parameters": {
@@ -1698,30 +1794,33 @@
                   "Chips": {
                     "0": {
                       "Type": "Mupix10",
-                      "MIDAS_ID": 6,
+                      "MIDAS_ID": 5,
                       "SpecBookId": 4,
                       "EventDisplayID": 18,
                       "LinkA": 18,
                       "LinkB": 19,
-                      "LinkC": 20
+                      "LinkC": 20,
+                      "Initial_Status": "OK"
                     },
                     "1": {
                       "Type": "Mupix10",
-                      "MIDAS_ID": 7,
+                      "MIDAS_ID": 4,
                       "SpecBookId": 5,
                       "EventDisplayID": 19,
                       "LinkA": 21,
                       "LinkB": 22,
-                      "LinkC": 23
+                      "LinkC": 23,
+                      "Initial_Status": "OK"
                     },
                     "2": {
                       "Type": "Mupix10",
-                      "MIDAS_ID": 8,
+                      "MIDAS_ID": 3,
                       "SpecBookId": 6,
                       "EventDisplayID": 20,
                       "LinkA": 24,
                       "LinkB": 25,
-                      "LinkC": 26
+                      "LinkC": 26,
+                      "Initial_Status": "OK"
                     }
                   },
                   "LV_parameters": {
@@ -1749,12 +1848,13 @@
                   "Chips": {
                     "0": {
                       "Type": "Mupix10",
-                      "MIDAS_ID": 0,
+                      "MIDAS_ID": 2,
                       "SpecBookId": 4,
                       "EventDisplayID": 21,
                       "LinkA": 27,
                       "LinkB": 28,
-                      "LinkC": 29
+                      "LinkC": 29,
+                      "Initial_Status": "OK"
                     },
                     "1": {
                       "Type": "Mupix10",
@@ -1763,16 +1863,18 @@
                       "EventDisplayID": 22,
                       "LinkA": 30,
                       "LinkB": 31,
-                      "LinkC": 32
+                      "LinkC": 32,
+                      "Initial_Status": "OK"
                     },
                     "2": {
                       "Type": "Mupix10",
-                      "MIDAS_ID": 2,
+                      "MIDAS_ID": 0,
                       "SpecBookId": 6,
                       "EventDisplayID": 23,
                       "LinkA": 33,
                       "LinkB": 34,
-                      "LinkC": 35
+                      "LinkC": 35,
+                      "Initial_Status": "OK"
                     }
                   },
                   "LV_parameters": {
@@ -1800,30 +1902,33 @@
                   "Chips": {
                     "0": {
                       "Type": "Mupix10",
-                      "MIDAS_ID": 3,
+                      "MIDAS_ID": 11,
                       "SpecBookId": 4,
                       "EventDisplayID": 21,
                       "LinkA": 0,
                       "LinkB": 1,
-                      "LinkC": 2
+                      "LinkC": 2,
+                      "Initial_Status": "OK"
                     },
                     "1": {
                       "Type": "Mupix10",
-                      "MIDAS_ID": 4,
+                      "MIDAS_ID": 10,
                       "SpecBookId": 5,
                       "EventDisplayID": 22,
                       "LinkA": 3,
                       "LinkB": 4,
-                      "LinkC": 5
+                      "LinkC": 5,
+                      "Initial_Status": "OK"
                     },
                     "2": {
                       "Type": "Mupix10",
-                      "MIDAS_ID": 5,
+                      "MIDAS_ID": 9,
                       "SpecBookId": 6,
                       "EventDisplayID": 23,
                       "LinkA": 6,
                       "LinkB": 7,
-                      "LinkC": 8
+                      "LinkC": 8,
+                      "Initial_Status": "OK"
                     }
                   },
                   "LV_parameters": {
@@ -1851,12 +1956,13 @@
                   "Chips": {
                     "0": {
                       "Type": "Mupix10",
-                      "MIDAS_ID": 6,
+                      "MIDAS_ID": 8,
                       "SpecBookId": 4,
                       "EventDisplayID": 21,
                       "LinkA": 9,
                       "LinkB": 10,
-                      "LinkC": 11
+                      "LinkC": 11,
+                      "Initial_Status": "OK"
                     },
                     "1": {
                       "Type": "Mupix10",
@@ -1865,16 +1971,18 @@
                       "EventDisplayID": 22,
                       "LinkA": 12,
                       "LinkB": 13,
-                      "LinkC": 14
+                      "LinkC": 14,
+                      "Initial_Status": "OK"
                     },
                     "2": {
                       "Type": "Mupix10",
-                      "MIDAS_ID": 8,
+                      "MIDAS_ID": 6,
                       "SpecBookId": 6,
                       "EventDisplayID": 23,
                       "LinkA": 15,
                       "LinkB": 16,
-                      "LinkC": 17
+                      "LinkC": 17,
+                      "Initial_Status": "OK"
                     }
                   },
                   "LV_parameters": {

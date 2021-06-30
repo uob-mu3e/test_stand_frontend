@@ -29,7 +29,7 @@ var get_description = function (port, channel) {
 
 var init_table = function () {
     var table = document.getElementById("temp_tab")
-    for (var ch = 0; ch < 48; ++ch) {
+    for (var ch = 0; ch < 42; ++ch) {
         if (ch == 46) {
             continue;
         }
@@ -50,13 +50,17 @@ var init_table = function () {
             cell2.innerHTML = "Not used"
         }
         cell3.classList.add("modbvalue")
-        var link = "/Equipment/Pixel-SC-Temperature/Variables/Input[" + ch + "]"
+        var link = "/Equipment/EnvPixels/Variables/Input[" + ch + "]"
         cell3.setAttribute("data-odb-path", link)
         cell3.id = "temp_ch_" + ch
-        watch_diff_cells["temp_ch_" + ch] = cell4
-        cell3.addEventListener('DOMSubtreeModified', function () {
-            watch_diff_cells[this.id].innerHTML = convert_v_to_temperature(this.textContent);
-        })
+        cell4.classList.add("modbvalue")
+        var link = "/Equipment/EnvPixels/Converted/Temperature_" + ch
+        cell4.setAttribute("data-odb-path", link)
+        //cell4.id = "temp_converted_ch_" + ch
+        //watch_diff_cells["temp_ch_" + ch] = cell4
+        //cell3.addEventListener('DOMSubtreeModified', function () {
+        //    watch_diff_cells[this.id].innerHTML = convert_v_to_temperature(this.textContent);
+        //})
     }
 }
 

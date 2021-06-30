@@ -752,6 +752,7 @@ INT frontend_loop()
 
 INT begin_of_run(INT run_number, char *error)
 {
+
    int status;
 try{ // TODO: What can throw here?? Why?? Is there another way to handle this??
    set_equipment_status(equipment[EQUIPMENT_ID::SciFi].name, "Starting Run", "var(--morange)");
@@ -771,11 +772,11 @@ try{ // TODO: What can throw here?? Why?? Is there another way to handle this??
     uint64_t link_active_from_odb = get_link_active_from_odb(cur_links_odb);
 
    //configure ASICs for SciFi
-   status=scififeb->ConfigureASICs();
-   if(status!=SUCCESS){
-      cm_msg(MERROR,"switch_fe","ASIC configuration failed");
-      return CM_TRANSITION_CANCELED;
-   }
+   //status=scififeb->ConfigureASICs();
+   //if(status!=SUCCESS){
+   //   cm_msg(MERROR,"switch_fe","ASIC configuration failed");
+   //   return CM_TRANSITION_CANCELED;
+   //}
 
 //   //configure ASICs for Tiles
 //   status=tilefeb->ConfigureASICs();
@@ -859,6 +860,7 @@ try{ // TODO: What can throw here?? Why?? Is there another way to handle this??
 
 INT end_of_run(INT run_number, char *error)
 {
+
 try{
    /* get link active from odb */
     odb cur_links_odb("/Equipment/Links/Settings/LinkMask");
@@ -969,6 +971,7 @@ INT read_febcrate_sc_event(char *pevent, INT off){
 INT read_sc_event(char *pevent, INT off)
 {    
     //cm_msg(MINFO, "switch_fe::read_sc_event()" , "Reading FEB SC");
+    mufeb->ReadBackAllRunState();
 
     string bankname = ssfe[switch_id];
     string counterbankname = sscn[switch_id];
@@ -1008,16 +1011,14 @@ DWORD * fill_SSCN(DWORD * pdata)
     *pdata++ = read_counters(SWB_BANK_BUILDER_RAM_FULL_PIXEL_CNT);
     *pdata++ = read_counters(SWB_BANK_BUILDER_TAG_FIFO_FULL_PIXEL_CNT);
 
-    for(uint32_t i=0; i < N_FEBS[switch_id]; i++){
-
+    for(uint32_t i=0; i < N_FEBS.at(switch_id); i++){
         *pdata++ = i;
         *pdata++ = (cur_link_active_from_odb.test(i) == 1 ? (read_counters(SWB_LINK_FIFO_ALMOST_FULL_PIXEL_CNT | (i << 8))) : 0);
         *pdata++ = (cur_link_active_from_odb.test(i) == 1 ? (read_counters(SWB_LINK_FIFO_FULL_PIXEL_CNT | (i << 8))) : 0);
         *pdata++ = (cur_link_active_from_odb.test(i) == 1 ? (read_counters(SWB_SKIP_EVENT_PIXEL_CNT | (i << 8))) : 0);
         *pdata++ = (cur_link_active_from_odb.test(i) == 1 ? (read_counters(SWB_EVENT_PIXEL_CNT | (i << 8))) : 0);
         *pdata++ = (cur_link_active_from_odb.test(i) == 1 ? (read_counters(SWB_SUB_HEADER_PIXEL_CNT | (i << 8))) : 0);
-        // TODO: What is the magic number here?
-        *pdata++ = (cur_link_active_from_odb.test(i) == 1 ? (0x7735940 - mufeb->ReadBackMergerRate(i)) : 0);
+        *pdata++ = (cur_link_active_from_odb.test(i) == 1 ? mufeb->ReadBackMergerRate(i) : 0);
         *pdata++ = (cur_link_active_from_odb.test(i) == 1 ? mufeb->ReadBackResetPhase(i) : 0);
         *pdata++ = (cur_link_active_from_odb.test(i) == 1 ? mufeb->ReadBackTXReset(i) : 0);
     }
@@ -1054,12 +1055,11 @@ INT read_scitiles_sc_event(char *pevent, INT off){
 
 INT read_mupix_sc_event(char *pevent, INT off){
     //cm_msg(MINFO, "Mupix::read_mupix_sc_event()" , "Reading MuPix FEB SC");
-
-//     create banks with LVDS counters
-    string bankname = "PSLL";
+    
+    // create banks with LVDS counters & status
     bk_init(pevent);
     DWORD *pdata;
-    bk_create(pevent, bankname.c_str(), TID_INT, (void **)&pdata);
+    bk_create(pevent, banknamePSLL.c_str(), TID_INT, (void **)&pdata);
     pdata = mupixfeb->fill_PSLL(pdata, feblist->getPixelFEBs().size());
     bk_close(pevent, pdata);
 
