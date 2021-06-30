@@ -91,6 +91,7 @@ def main(fname, outname):
                     file.write('#define GET_' + line.split()[1] + '(REG) ((REG>>' + line.split()[-1].split(";")[0].lower() + ')& 0x1) \n')
                     file.write('#define SET_' + line.split()[1] + '(REG) ((1<<' + line.split()[-1].split(";")[0].lower() + ')| REG) \n')
                     file.write('#define UNSET_' + line.split()[1] + '(REG) ((~(1<<' + line.split()[-1].split(";")[0].lower() + '))& REG) \n')
+                    continue
             
         # match stuff like "subtype DIPSWITCH_RANGE is integer range 7 downto 0;"
         match = re.search(r'SUBTYPE (\w+_RANGE) IS INTEGER RANGE (\w+) DOWNTO (\w+);', line)
