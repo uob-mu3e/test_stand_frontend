@@ -161,16 +161,16 @@ int MupixFEB::ConfigureASICs(){
             
             // zero the rest
             for(int i = 0; i<30; i++){
-	    	feb_sc.FEB_write(SP_ID, 0xFF44, 0x00000000);
-	    }
+            feb_sc.FEB_write(SP_ID, 0xFF44, 0x00000000);
+        }
             
             for(int i = 0; i<30; i++){
-            	feb_sc.FEB_write(SP_ID, 0xFF45, 0x00000000);
-	    }
+                feb_sc.FEB_write(SP_ID, 0xFF45, 0x00000000);
+        }
             
             for(int i = 0; i<30; i++){
-            	feb_sc.FEB_write(SP_ID, 0xFF46, 0x00000000);
-	    }
+                feb_sc.FEB_write(SP_ID, 0xFF46, 0x00000000);
+        }
                                                                                                                   
             feb_sc.FEB_write(SP_ID, 0xFF40, 63);
             feb_sc.FEB_write(SP_ID, 0xFF40, 0);
@@ -188,8 +188,9 @@ int MupixFEB::ConfigureASICs(){
       }
 
       // reset lvds links
-      feb_sc.FEB_write(SP_ID, MP_RESET_LVDS_N_REGISTER_W, 0x0);
-      feb_sc.FEB_write(SP_ID, MP_RESET_LVDS_N_REGISTER_W, 0x1);
+      std::cout << "RESET" << std::endl;
+      feb_sc.FEB_register_write(SP_ID, MP_RESET_LVDS_N_REGISTER_W, 0x0);
+      feb_sc.FEB_register_write(SP_ID, MP_RESET_LVDS_N_REGISTER_W, 0x1);
 
       return FE_SUCCESS;//note: return of lambda function
    });//MapForEach
