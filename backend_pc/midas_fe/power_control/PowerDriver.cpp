@@ -209,7 +209,8 @@ std::vector<std::string> PowerDriver::ReadErrorQueue(int index, INT& error)
 		success = client->ReadReply(&reply,min_reply_length);
 		if(!success)
 		{
-			cm_msg(MERROR, "Power supply read ... ", "could not read error supply with address %d", instrumentID[index]);
+			if(index >=0){ cm_msg(MERROR, "Power supply read ... ", "could not read error supply with address %d", instrumentID[index]); }
+			else { cm_msg(MERROR, "Power supply read ... ", "could not read error supply ");}
 			error = FE_ERR_DRIVER;
 		}
 		//std::cout << " error queue " << reply << std::endl;

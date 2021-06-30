@@ -580,7 +580,7 @@ INT read_power(float* pdata,const std::string& eq_name)
       if( d->GetNReadFaults() >= 3 )
       {
          d->UnsetInitialized();
-         set_equipment_status(d->GetName(), "Read Error", "redLight");
+         set_equipment_status(d->GetName().c_str(), "Read Error", "redLight");
       }
 	}
 	return error;
