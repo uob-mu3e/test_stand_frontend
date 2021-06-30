@@ -156,21 +156,25 @@ int MupixFEB::ConfigureASICs(){
                                                                                                                   
             // write vdac defaults
             feb_sc.FEB_write(SP_ID, 0xFF43, 0x00720000);
-            feb_sc.FEB_write(SP_ID, 0xFF43, 0x52000046);
+            //feb_sc.FEB_write(SP_ID, 0xFF43, 0x52000046);
+            odb mupix_daq("/Equipment/Mupix/Settings/Daq");
+            uint32_t cur_th = mupix_daq["default_th_int_run_2021"];
+            uint32_t cur_value = ((cur_th << 24) | 0x00000046);
+            feb_sc.FEB_write(SP_ID, 0xFF43, cur_value);
             feb_sc.FEB_write(SP_ID, 0xFF43, 0x00B80000);
             
             // zero the rest
             for(int i = 0; i<30; i++){
-            feb_sc.FEB_write(SP_ID, 0xFF44, 0x00000000);
-        }
+                feb_sc.FEB_write(SP_ID, 0xFF44, 0x00000000);
+            }
             
             for(int i = 0; i<30; i++){
                 feb_sc.FEB_write(SP_ID, 0xFF45, 0x00000000);
-        }
+            }
             
             for(int i = 0; i<30; i++){
                 feb_sc.FEB_write(SP_ID, 0xFF46, 0x00000000);
-        }
+            }
                                                                                                                   
             feb_sc.FEB_write(SP_ID, 0xFF40, 63);
             feb_sc.FEB_write(SP_ID, 0xFF40, 0);

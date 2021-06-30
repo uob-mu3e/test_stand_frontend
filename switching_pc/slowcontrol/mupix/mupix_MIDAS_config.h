@@ -47,6 +47,7 @@ static odb MUPIX_GLOBAL_SETTINGS = {
 #define MUPIX_DAQ_DEFINED
 
 typedef struct {
+  INT default_th_int_run_2021;
   BOOL dummy_config;
   BOOL dummy_data;
   INT dummy_data_n;
@@ -59,6 +60,7 @@ typedef struct {
 } MUPIX_DAQ;
 
 static odb MUPIX_DAQ_SETTINGS = {
+    {"default_th_int_run_2021", 0x52},
     {"dummy_config", false},
     {"dummy_data", false},
     {"dummy_data_n", 255},
