@@ -548,7 +548,7 @@ INT frontend_exit()
 INT read_power(float* pdata,const std::string& eq_name)
 {
 	
-    INT error = CM_SUCCESS;
+   INT error = CM_SUCCESS;
 	for(const auto& d: drivers)
 	{
 		if( !d->Initialized() ) continue;
@@ -567,14 +567,21 @@ INT read_power(float* pdata,const std::string& eq_name)
 			}
          //And start the next read
          d->StartReading();
+         d->ResetNReadFaults();
 		}
  		else 
  		{
 			cm_msg(MERROR, "power read", "Error in read: %d",error);
+         d->AddReadFault();
          //And start the next read
          d->StartReading();
 			return 0;
   		}
+      if( d->GetNReadFaults() >= 3 )
+      {
+         d->UnsetInitialized();
+         set_equipment_status(d->GetName(), "Read Error", "redLight");
+      }
 	}
 	return error;
 }

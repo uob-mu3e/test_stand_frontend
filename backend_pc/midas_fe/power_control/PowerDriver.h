@@ -43,6 +43,7 @@ class PowerDriver{
 		bool Initialized() const { return initialized; }
 		bool Enabled();
 		void SetInitialized() { initialized = true; }
+		void UnsetInitialized() { initialized = false; }
 		std::string ReadIDCode(int,INT&);
 		
 		virtual bool AskPermissionToTurnOn(int) { std::cout << "Ask permissions in derived class!" << std::endl; return false;};
@@ -58,6 +59,10 @@ class PowerDriver{
 		
 		
 		EQUIPMENT_INFO GetInfo() { return *info; } //by value, so you cant modify the original
+
+		void AddReadFault(){n_read_faults = n_read_faults + 1;}
+		void ResetNReadFaults(){ n_read_faults = 0; }
+		int GetNReadFaults() { return n_read_faults; }
 		
 
 	protected:
@@ -99,6 +104,8 @@ class PowerDriver{
     std::atomic<int> read;
     std::atomic<int> stop;
     std::atomic<INT> readstatus;
+
+		int n_read_faults;
 		
 		float relevantchange;
 

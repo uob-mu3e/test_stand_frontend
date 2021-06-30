@@ -6,7 +6,7 @@ PowerDriver::PowerDriver()
 	std::cout << "Warning: empty base class instantiated" << std::endl;
 }
 
-PowerDriver::PowerDriver(std::string n, EQUIPMENT_INFO* inf) : info{inf}, name{n}, read{0}, stop{0}, readstatus(FE_ERR_DISABLED)
+PowerDriver::PowerDriver(std::string n, EQUIPMENT_INFO* inf) : info{inf}, name{n}, read{0}, stop{0}, readstatus(FE_ERR_DISABLED), n_read_faults(0)
 {
 }
 
