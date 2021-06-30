@@ -554,7 +554,7 @@ INT read_power(float* pdata,const std::string& eq_name)
 		if( !d->Initialized() ) continue;
 
 		if(d->GetName()!=eq_name) continue;
-        error = d->GetReadStatus();
+      error = d->GetReadStatus();
 		if(error == FE_SUCCESS)
 		{
 			std::vector<float> voltage = d->GetVoltage();
@@ -564,15 +564,15 @@ INT read_power(float* pdata,const std::string& eq_name)
 			{
 				*pdata++ = voltage.at(iChannel);
 				*pdata++ = current.at(iChannel);
-			}	//std::cout << " close bank " << bk_name << std::endl; 
-           //And start the next read
-            d->StartReading();
+			}
+         //And start the next read
+         d->StartReading();
 		}
  		else 
  		{
 			cm_msg(MERROR, "power read", "Error in read: %d",error);
-            //And start the next read
-             d->StartReading();
+         //And start the next read
+         d->StartReading();
 			return 0;
   		}
 	}

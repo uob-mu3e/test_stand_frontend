@@ -31,9 +31,9 @@ class PowerDriver{
 		INT Connect();
 		virtual INT Init(){return FE_ERR_DRIVER;};
 		virtual INT ReadAll(){return FE_ERR_DRIVER;}
-        INT GetReadStatus(){return readstatus;}
-        void ReadLoop();
-        void StartReading(){read = 1;}
+    INT GetReadStatus(){return readstatus;}
+    void ReadLoop();
+    void StartReading(){read = 1;}
 		virtual void ReadESRChanged(){};
 		std::vector<bool> GetState() const { return state; }
 		std::vector<float> GetVoltage() const { return voltage; }
@@ -93,12 +93,12 @@ class PowerDriver{
 		
 		TCPClient* client;
 
-        std::mutex power_mutex;
-        std::thread readthread;
+    std::mutex power_mutex;
+    std::thread readthread;
 
-        std::atomic<int> read;
-        std::atomic<int> stop;
-        std::atomic<INT> readstatus;
+    std::atomic<int> read;
+    std::atomic<int> stop;
+    std::atomic<INT> readstatus;
 		
 		float relevantchange;
 
