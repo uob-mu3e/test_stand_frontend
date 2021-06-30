@@ -153,11 +153,13 @@ bool HMP4040Driver::AskPermissionToTurnOn(int channel) //extra check whether it 
 INT HMP4040Driver::ReadAll()
 {
 	INT err;
+	INT err_accumulated;
 	int nChannels = instrumentID.size();
 	//update local book keeping
 	for(int i=0; i<nChannels; i++)
 	{
 		bool bvalue = ReadState(i,err);
+		err_accumulated = err;
 		if(state[i]!=bvalue) //only update odb if there is a change
 		{
 			state[i]=bvalue;
@@ -165,6 +167,7 @@ INT HMP4040Driver::ReadAll()
 		}
  	
  		float fvalue = ReadVoltage(i,err);
+		err_accumulated = err_accumulated | err;
 		if( fabs(voltage[i]-fvalue) > fabs(relevantchange*voltage[i]) )
 		{
 			voltage[i]=fvalue;
@@ -172,6 +175,7 @@ INT HMP4040Driver::ReadAll()
 		}
   	
 		fvalue = ReadCurrent(i,err);
+		err_accumulated = err_accumulated | err;
 		if( fabs(current[i]-fvalue) > fabs(relevantchange*current[i]) )
 		{
 			current[i]=fvalue;
@@ -179,6 +183,7 @@ INT HMP4040Driver::ReadAll()
 		}
 		
 		fvalue = ReadOVPLevel(i,err);
+		err_accumulated = err_accumulated | err;
 		if( fabs(OVPlevel[i]-fvalue) > fabs(relevantchange*OVPlevel[i]) )
 		{
 			OVPlevel[i]=fvalue;
@@ -186,7 +191,7 @@ INT HMP4040Driver::ReadAll()
 		}
   	
   	
-	 	if(err!=FE_SUCCESS) return err;		
+	 	if(err_accumulated!=FE_SUCCESS) return err_accumulated & 0xFFFE; //remove the success bit if there is any		
 	}
 	
 	std::vector<std::string> error_queue = ReadErrorQueue(-1,err);
