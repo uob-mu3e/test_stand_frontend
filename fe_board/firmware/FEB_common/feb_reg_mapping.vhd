@@ -286,6 +286,7 @@ begin
         if ( regaddr = SI_STATUS_REGISTER and i_reg_re = '1' ) then
             o_reg_rdata(1 downto 0) <= i_si45_intr_n;
             o_reg_rdata(3 downto 2) <= i_si45_lol_n;
+            o_reg_rdata(31 downto 4) <= (others => '0');
         end if;
 
         -- NON-incrementing reads/writes TEST
