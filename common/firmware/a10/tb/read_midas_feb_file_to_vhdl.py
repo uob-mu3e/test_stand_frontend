@@ -36,6 +36,6 @@ for items in list_feb0:
 file.close()
 
 file=open('f1_sim.vhdl','w')
-for items in list_feb0:
+for items in list_feb2:
     file.writelines([items])
 file.close()
