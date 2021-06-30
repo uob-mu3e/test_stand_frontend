@@ -128,7 +128,9 @@ int MupixFEB::ConfigureASICs(){
              std::cout<<"Timeout"<<std::endl;
              cm_msg(MERROR, "setup_mupix", "FEB Mupix SPI timeout");
          }else{
-            std::cout << "Chip select mask = " << std::hex << chip_select_mask << std::endl;
+
+            // TODO: write LVDS MASK here
+            
             feb_sc.FEB_write(SP_ID, 0xFF48, chip_select_mask);
 
             // TODO: include headers for addr.
@@ -137,7 +139,7 @@ int MupixFEB::ConfigureASICs(){
             feb_sc.FEB_write(SP_ID, 0xFF40, 0x00000000);
             feb_sc.FEB_write(SP_ID, 0xFF49, 0x00000003); // idk, have to look it up
 
-	    // We now only write the default configuration for testing
+            // We now only write the default configuration for testing
             //rpc_status = feb_sc.FEB_write(SP_ID, 0xFF4A, payload,true);
             
             // write data for the  complete BIAS reg into FEB storage
