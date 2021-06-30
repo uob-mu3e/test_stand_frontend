@@ -6,7 +6,13 @@ list_feb0 = []
 list_feb2 = []
 
 def to_vhdl(d, i):
-    outfile = 'data_feb' + i + ' <= x\"' + str(hex(d)).split('x')[1] + '\";\n'
+    
+    value_str = str(hex(d)).split('x')[1]
+    
+    while len(list(value_str)) != 8:
+        value_str = "0" + value_str
+
+    outfile = 'data_feb' + i + ' <= x\"' + value_str + '\";\n'
     if d == 0xe8feb0bc or d == 0xe8feb2bc or d == 0xFC00009C:
         outfile += 'datak_feb' + i + ' <= "0001";\n'
     else:
