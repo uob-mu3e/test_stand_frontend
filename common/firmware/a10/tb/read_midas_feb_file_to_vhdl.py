@@ -8,9 +8,9 @@ list_feb2 = []
 def to_vhdl(d, i):
     outfile = 'data_feb' + i + ' <= x\"' + str(hex(d)).split('x')[1] + '\";\n'
     if d == 0xe8feb0bc or d == 0xe8feb2bc or d == 0xFC00009C:
-        outfile += 'datak_feb' + i + ' <= "0001"\n'
+        outfile += 'datak_feb' + i + ' <= "0001";\n'
     else:
-        outfile += 'datak_feb' + i + ' <= "0000"\n'
+        outfile += 'datak_feb' + i + ' <= "0000";\n'
     outfile += 'wait until rising_edge(clk);\n'
     return outfile
 
@@ -30,12 +30,12 @@ for event in mfile:
                     list_feb2.append(to_vhdl(d, "2"))
             if counter == 100: break
 
-file=open('f0_sim.vhdl','w')
+file=open('f0_sim.vhd','w')
 for items in list_feb0:
     file.writelines([items])
 file.close()
 
-file=open('f1_sim.vhdl','w')
+file=open('f1_sim.vhd','w')
 for items in list_feb2:
     file.writelines([items])
 file.close()
