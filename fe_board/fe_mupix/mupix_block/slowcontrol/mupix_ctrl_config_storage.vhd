@@ -200,7 +200,7 @@ begin
         fifo_wdata_final(I) <= i_data(I*32 + 31 downto I*32) when i_wrreq(I)='1' else fifo_wdata(I);
         fifo_write_final(I) <= i_wrreq(I) or fifo_write(I);
         
-        mp_ctrl_storage_fifo: entity work.ip_scfifo
+        mp_ctrl_storage_fifo: entity work.ip_scfifo_not_broken
         generic map(
             ADDR_WIDTH      => integer(ceil(log2(real(MP_CONFIG_REGS_LENGTH(I))))),
             DATA_WIDTH      => 32,

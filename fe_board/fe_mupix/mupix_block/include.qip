@@ -12,6 +12,7 @@ set_global_assignment -name VHDL_FILE [file join $::quartus(qip_path) "slowcontr
 set_global_assignment -name VHDL_FILE [file join $::quartus(qip_path) "slowcontrol/mupix_ctrl.vhd"]
 set_global_assignment -name VHDL_FILE [file join $::quartus(qip_path) "slowcontrol/mupix_ctrl_config_storage.vhd"]
 set_global_assignment -name VHDL_FILE [file join $::quartus(qip_path) "slowcontrol/mupix_ctrl_dummy.vhd"]
+set_global_assignment -name VHDL_FILE [file join $::quartus(qip_path) "slowcontrol/ip_scfifo_not_broken.vhd"]
 
 set_global_assignment -name QIP_FILE [file join $::quartus(qip_path) "receiver_block/receiver_block.qip"]
 
