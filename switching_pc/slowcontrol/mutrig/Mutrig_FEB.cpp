@@ -175,9 +175,9 @@ int MutrigFEB::ChangeTDCTest(bool o){
         }
 
         if(o)
-            regvalue &= ~(1<<31);
-        else
             regvalue |= (1<<31);
+        else
+            regvalue &= ~(1<<31);
 
         status = feb_sc.FEB_register_write(FEB.SB_Port(), SCIFI_CNT_CTRL_REGISTER_W, regvalue);
     }
@@ -246,7 +246,7 @@ int MutrigFEB::ReadBackCounters(uint16_t FPGA_ID){
    char path[255];
    uint32_t value;
    uint32_t odbval;
-   for(auto nASIC=0;nASIC<rpc_ret;nASIC++){
+   for(auto nASIC=0 + FPGA_ID * GetASICSPerFEB(); nASIC < rpc_ret + FPGA_ID * GetASICSPerFEB(); nASIC++){
 
        // get midas odb object
        sprintf(path,"%s/Variables/Counters", odb_prefix);
@@ -654,30 +654,30 @@ void MutrigFEB::setWaitForAllSticky(uint32_t FPGA_ID, bool value){
 //reset all asics (digital part, CC, fsms, etc.)
 void MutrigFEB::chipReset(uint16_t FPGA_ID){
     uint32_t val=0;
-    //m_mu.FEBsc_read(FPGA_ID, &val, 1 , (uint32_t) FE_SUBDET_RESET_REG);
+    //m_mu.FEBsc_read(FPGA_ID, &val, 1 , (uint32_t) SCIFI_CTRL_RESET_REGISTER_W);
     //constant reset should not happen...
     //assert(!GET_FE_SUBDET_REST_BIT_CHIP(val));
     //set and clear reset
         val=reg_setBit(val,0,true);
-    feb_sc.FEB_register_write(FPGA_ID, FE_SUBDET_RESET_REG, val);
+    feb_sc.FEB_register_write(FPGA_ID, SCIFI_CTRL_RESET_REGISTER_W, val);
     std::this_thread::sleep_for(std::chrono::milliseconds(1));
     val=reg_setBit(val,0,false);
-    feb_sc.FEB_register_write(FPGA_ID, FE_SUBDET_RESET_REG, val);
+    feb_sc.FEB_register_write(FPGA_ID, SCIFI_CTRL_RESET_REGISTER_W, val);
 }
 
 //reset full datapath upstream from merger
 void MutrigFEB::DataPathReset(uint16_t FPGA_ID){
     uint32_t val=0;
-    //m_mu.FEBsc_read(FPGA_ID, &val, 1 , (uint32_t) FE_SUBDET_RESET_REG);
+    //m_mu.FEBsc_read(FPGA_ID, &val, 1 , (uint32_t) SCIFI_CTRL_RESET_REGISTER_W);
     //constant reset should not happen...
     //assert(!GET_FE_SUBDET_REST_BIT_DPATH(val));
     //set and clear reset
-        val=reg_setBit(val,1,true);
+    val=reg_setBit(val,1,true);
     //do not expect a reply in write below, the data generator is in reset (not having sent a trailer) and this may block the data merger sending a slow control reply (TODO: this should be fixed in firmware!)
-   feb_sc.FEB_register_write(FPGA_ID, FE_SUBDET_RESET_REG, val);
-   std::this_thread::sleep_for(std::chrono::milliseconds(1));
-   val=reg_setBit(val,1,false);
-   feb_sc.FEB_register_write(FPGA_ID, FE_SUBDET_RESET_REG, val);
+    feb_sc.FEB_register_write(FPGA_ID, SCIFI_CTRL_RESET_REGISTER_W, val);
+    std::this_thread::sleep_for(std::chrono::milliseconds(1));
+    val=reg_setBit(val,1,false);
+    feb_sc.FEB_register_write(FPGA_ID, SCIFI_CTRL_RESET_REGISTER_W, val);
 }
 
 //reset lvds receivers
@@ -685,10 +685,10 @@ void MutrigFEB::LVDS_RX_Reset(uint16_t FPGA_ID){
     uint32_t val=0;
     //set and clear reset
     val=reg_setBit(val,2,true);
-    feb_sc.FEB_register_write(FPGA_ID, FE_SUBDET_RESET_REG, val);
+    feb_sc.FEB_register_write(FPGA_ID, SCIFI_CTRL_RESET_REGISTER_W, val);
     std::this_thread::sleep_for(std::chrono::milliseconds(1));
     val=reg_setBit(val,2,false);
-    feb_sc.FEB_register_write(FPGA_ID, FE_SUBDET_RESET_REG, val);
+    feb_sc.FEB_register_write(FPGA_ID, SCIFI_CTRL_RESET_REGISTER_W, val);
 }
 
 //set reset skew configuration
