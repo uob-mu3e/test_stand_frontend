@@ -114,6 +114,7 @@ begin
     generic map (
         ADDR_WIDTH      => 12,
         DATA_WIDTH      => 12,
+        REGOUT          => 0, 
         DEVICE          => "Arria 10"--,
     )
     port map (
@@ -124,9 +125,6 @@ begin
         q               => r_fifo_data,
         full            => tag_fifo_full,
         empty           => tag_fifo_empty,
-        almost_empty    => open,
-        almost_full     => open,
-        usedw           => open,
         sclr            => not i_reset_n_250--,
     );
 

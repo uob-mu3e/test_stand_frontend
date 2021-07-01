@@ -36,6 +36,7 @@ port (
     o_last          : out std_logic_vector(r_width-1 downto 0);
     o_last_link_debug : out std_logic_vector(37 downto 0);
     o_rdempty       : out std_logic_vector(gen_fifos - 1 downto 0) := (others => '1');
+    o_rdempty_debug : out std_logic_vector(gen_fifos - 1 downto 0) := (others => '1');
     o_rdreq         : out std_logic_vector(compare_fifos - 1 downto 0);
     o_mask_n        : out std_logic_vector(gen_fifos - 1 downto 0);
     o_layer_state   : out work.util.slv8_array_t(gen_fifos - 1 downto 0);
@@ -73,7 +74,7 @@ architecture arch of time_merger_tree_fifo_32_v2 is
     signal last : std_logic_vector(r_width-1 downto 0);
     signal last_data : std_logic_vector(8 * 32 - 1 downto 0);
     signal last_link : std_logic_vector(8 *  6 - 1 downto 0);
-    signal wrfull_last0, wrfull_last1, wrfull_s, rdempty_last0, rdempty_last1 : std_logic_vector(gen_fifos - 1 downto 0);
+    signal wrfull_last0, wrfull_last1, wrfull_last2, wrfull_s, rdempty_last0, rdempty_last1, rdempty_last2 : std_logic_vector(gen_fifos - 1 downto 0);
 
     -- for debugging / simulation
     signal t_q, t_data : work.util.slv4_array_t(gen_fifos - 1 downto 0);
@@ -115,9 +116,10 @@ begin
         t_q_last(11 downto  8) <= last(107 downto 104);
         t_q_last( 7 downto  4) <= last(69 downto 66);
         t_q_last( 3 downto  0) <= last(31 downto 28);
-        o_wrfull               <= wrfull_last0 and wrfull_last1;
-        wrfull_s               <= wrfull_last0 and wrfull_last1;
+        o_wrfull               <= (wrfull_last0 and wrfull_last1) or wrfull_last2;
+        wrfull_s               <= (wrfull_last0 and wrfull_last1) or wrfull_last2;
         o_rdempty              <= rdempty_last0 and rdempty_last1;
+        o_rdempty_debug        <= rdempty_last2;
     end generate gen_last_layer;
     
     gen_not_last_layer : if last_layer = '0' generate
@@ -206,8 +208,8 @@ begin
                 wrclk   => i_clk,
                 wrreq   => wrreq(i),
                 q       => o_last_link_debug,
-                rdempty => rdempty_last1(i),
-                wrfull  => wrfull_last1(i)--,
+                rdempty => rdempty_last2(i),
+                wrfull  => wrfull_last2(i)--,
             );
 
         END GENERATE;

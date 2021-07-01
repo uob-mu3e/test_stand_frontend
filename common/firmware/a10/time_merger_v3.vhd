@@ -33,6 +33,7 @@ port (
     o_rdata_debug   : out   std_logic_vector(37 downto 0);
     i_ren           : in    std_logic;
     o_empty         : out   std_logic;
+    o_rdempty_debug : out   std_logic;
 
     -- error outputs
     o_error_pre     : out   std_logic_vector(g_NLINKS_DATA - 1 downto 0);
@@ -375,7 +376,8 @@ begin
         i_data_h_t      => header_trailer,
 
         o_last          => rdata_last_layer,
-        o_last_link_debug => rdata_last_layer_debug,
+        o_last_link_debug   => rdata_last_layer_debug,
+        o_rdempty_debug(0)  => o_rdempty_debug,
         o_rdempty(0)    => o_empty,
         o_rdreq         => rdreq_5,
         o_mask_n        => open,
