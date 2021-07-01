@@ -280,6 +280,7 @@ begin
 
         -- output stream
         o_q             => merger_rdata,
+        i_debug         => i_writeregs_250(SWB_READOUT_STATE_REGISTER_W)(USE_BIT_MERGER),
         o_q_debug       => merger_rdata_debug,
         o_rempty        => merger_rempty,
         o_rempty_debug  => merger_rempty_debug,

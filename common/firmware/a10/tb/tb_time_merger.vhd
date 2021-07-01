@@ -27,10 +27,12 @@ architecture TB of tb_time_merger is
     signal gen_link_k, gen_link_k_reg : work.util.slv4_array_t(1 downto 0);
     
     -- signals
-    signal rx_q : work.util.slv34_array_t(g_NLINKS_TOTL-1 downto 0) := (others => (others => '0'));
-    signal rx_ren, rx_rdempty, sop, shop, eop, link_mask_n : std_logic_vector(g_NLINKS_TOTL-1 downto 0);
+    signal rx_q : work.util.slv34_array_t(g_NLINKS_DATA-1 downto 0) := (others => (others => '0'));
+    signal rx_ren, rx_rdempty, sop, shop, eop, link_mask_n : std_logic_vector(g_NLINKS_DATA-1 downto 0) := (others => '0');
     signal rempty : std_logic;
     signal counter_int: unsigned(31 downto 0);
+    signal builder_data : std_logic_vector(31 downto 0);
+    signal builder_rempty, builder_header, builder_trailer, builder_rack : std_logic;
 
 begin
 
@@ -151,8 +153,8 @@ begin
     e_feb1 : entity work.f1_sim
     port map (
         clk         => clk,
-        data_feb2   => gen_link_reg(1),
-        datak_feb2  => gen_link_k_reg(1),
+        data_feb1   => gen_link_reg(1),
+        datak_feb1  => gen_link_k_reg(1),
         reset_n     => reset_n--,
     );
     
@@ -184,7 +186,7 @@ begin
   
         sop(0)  <= '1' when rx_q(0)(33 downto 32) = "10" else '0';
         shop(0) <= '1' when rx_q(0)(33 downto 32) = "11" else '0'; 
-        eop(0)  <= '1' when rx_q(0)(33 downto 32) = "10" else '0';
+        eop(0)  <= '1' when rx_q(0)(33 downto 32) = "01" else '0';
         
         e_link_to_fifo_32_2 : entity work.link_to_fifo_32
         generic map (
@@ -209,11 +211,11 @@ begin
   
         sop(1)  <= '1' when rx_q(1)(33 downto 32) = "10" else '0';
         shop(1) <= '1' when rx_q(1)(33 downto 32) = "11" else '0'; 
-        eop(1)  <= '1' when rx_q(1)(33 downto 32) = "10" else '0';
+        eop(1)  <= '1' when rx_q(1)(33 downto 32) = "01" else '0';
 
     --END GENERATE gen_link_fifos;
     
-    link_mask_n <= x"0000000000000003";
+    link_mask_n(3 downto 0) <= x"3";
 
     --e_time_merger : entity work.time_merger_v2
         --generic map (
@@ -268,16 +270,44 @@ begin
 
         -- output strem
         o_q             => open,
-        o_q_debug       => open,
-        o_rempty        => open,
+        i_debug         => '1',
+        o_q_debug       => builder_data,
+        o_rempty        => builder_rempty,
         o_rempty_debug  => rempty,
-        i_ren           => not rempty,
-        o_header_debug  => open,
-        o_trailer_debug => open,
+        i_ren           => builder_rack,
+        o_header_debug  => builder_header,
+        o_trailer_debug => builder_trailer,
         o_error         => open,
 
         i_reset_n       => reset_n,
         i_clk           => clk_fast--,
+    );
+
+    e_event_builder : entity work.swb_midas_event_builder
+    generic map(
+        DATA_TYPE           => x"01"--,
+    )
+    port map (
+        i_rx                => builder_data,
+        i_rempty            => builder_rempty,
+        i_header            => builder_header,
+        i_trailer           => builder_trailer,
+
+        i_get_n_words       => (others => '1'),
+        i_dmamemhalffull    => '0',
+        i_wen               => '1',
+
+        o_data              => open,
+        o_wen               => open,
+        o_ren               => builder_rack,
+        o_endofevent        => open,
+        o_dma_cnt_words     => open,
+        o_done              => open,
+
+        o_counters          => open,
+
+        i_reset_n_250       => reset_n,
+        i_clk_250           => clk_fast--,
     );
     
 end TB;

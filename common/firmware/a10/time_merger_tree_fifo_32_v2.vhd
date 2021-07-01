@@ -34,6 +34,7 @@ port (
     -- output
     o_q             : out work.util.slv38_array_t(gen_fifos - 1 downto 0);
     o_last          : out std_logic_vector(r_width-1 downto 0);
+    o_last_link_debug : out std_logic_vector(37 downto 0);
     o_rdempty       : out std_logic_vector(gen_fifos - 1 downto 0) := (others => '1');
     o_rdreq         : out std_logic_vector(compare_fifos - 1 downto 0);
     o_mask_n        : out std_logic_vector(gen_fifos - 1 downto 0);
@@ -85,15 +86,15 @@ begin
     FOR i in 0 to gen_fifos - 1 GENERATE
         mupix_data : IF DATA_TYPE = x"01" GENERATE
             a(i)    <= i_data(i)(31 downto 28) when i_mask_n(i) = '1' else (others => '1');
-            b(i)    <= i_data(i + size)(31 downto 28) when i_mask_n(i+size) = '1' else (others => '1');
+            b(i)    <= i_data(i+size)(31 downto 28) when i_mask_n(i+size) = '1' else (others => '1');
         END GENERATE;
         scifi_data : IF DATA_TYPE = x"02" GENERATE
             a(i)    <= i_data(i)(9 downto 6) when i_mask_n(i) = '1' else (others => '1');
-            b(i)    <= i_data(i + size)(9 downto 6) when i_mask_n(i+size) = '1' else (others => '1');
+            b(i)    <= i_data(i+size)(9 downto 6) when i_mask_n(i+size) = '1' else (others => '1');
         END GENERATE;
 
         a_h(i)      <= i_data(i)(37 downto 0) when i_mask_n(i) = '1' else (others => '1');
-        b_h(i)      <= i_data(i + size)(37 downto 0) when i_mask_n(i+size) = '1' else (others => '1');
+        b_h(i)      <= i_data(i+size)(37 downto 0) when i_mask_n(i+size) = '1' else (others => '1');
 
         -- for debugging / simulation
         t_q(i)      <= q(i)(31 downto 28);
@@ -185,6 +186,26 @@ begin
                 wrclk   => i_clk,
                 wrreq   => wrreq(i),
                 q       => last_link,
+                rdempty => rdempty_last1(i),
+                wrfull  => wrfull_last1(i)--,
+            );
+
+            e_last_fifo_link_debug : entity work.ip_dcfifo_mixed_widths
+            generic map(
+                ADDR_WIDTH_w    => 11,
+                DATA_WIDTH_w    => 38,
+                ADDR_WIDTH_r    => 8,
+                DATA_WIDTH_r    => 38,
+                DEVICE          => "Arria 10"--,
+            )
+            port map (
+                aclr    => reset_fifo(i),
+                data    => data(i),
+                rdclk   => i_clk,
+                rdreq   => i_rdreq(i),
+                wrclk   => i_clk,
+                wrreq   => wrreq(i),
+                q       => o_last_link_debug,
                 rdempty => rdempty_last1(i),
                 wrfull  => wrfull_last1(i)--,
             );
