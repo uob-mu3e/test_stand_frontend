@@ -51,6 +51,7 @@ signal running_seq:	   std_logic;
 signal tslow 	: ts_t;
 signal tshi  	: ts_t;
 signal tsread	: ts_t;
+signal tsreadmemdelay	: ts_t;
 
 signal runstartup : std_logic;
 signal runshutdown: std_logic;
@@ -177,6 +178,7 @@ signal nout		  : reg32;
 
 constant TSONE : ts_t := "00000000001";
 constant TSZERO : ts_t := "00000000000";
+constant TSTHREE : ts_t := "00000000011";
 --constant DELAY : ts_t := "01100000000";
 constant WINDOWSIZE : ts_t := "11000000000";
 
@@ -229,6 +231,7 @@ if(reset_n = '0') then
 	tslow 		<= TSZERO;
 	tshi		<= TSZERO;
 	tsread		<= TSZERO;
+	tsreadmemdelay <= TSZERO;
 elsif (writeclk'event and writeclk = '1') then
 
 	running_last	<= running;
@@ -254,8 +257,10 @@ elsif (writeclk'event and writeclk = '1') then
 	elsif(running = '1' and running_last = '1' and runshutdown = '0') then
 		tslow <= tslow + '1';
 		tshi  <= tshi  + '1';
-		running_read	<= '1';
-		running_seq		<= '1';
+		if(running_read = '0' and tslow >= TSTHREE) then
+			running_read	<= '1';
+			running_seq		<= '1';
+		end if;
 	else
 		tshi  <= tshi  + '1';
 		tslow <= tslow + '1';
@@ -271,6 +276,7 @@ elsif (writeclk'event and writeclk = '1') then
 	end if;
 	
 	tsread	  <= tslow - "11";
+	tsreadmemdelay <= tsread;
 end if;
 end process;
 
@@ -321,7 +327,7 @@ genmem: for i in NCHIPS-1 downto 0 generate
 									else cmemwren_hitwriter(i)(k);
 	end generate gencmem;
 	
-	fromcmem_hitreader(i)	<= fromcmem(i)(conv_integer(tsread(COUNTERMEMSELRANGE)));
+	fromcmem_hitreader(i)	<= fromcmem(i)(conv_integer(tsreadmemdelay(COUNTERMEMSELRANGE)));
 	
 	
 	-- Write side: Put hits into memory at the right place and count them
@@ -350,6 +356,11 @@ genmem: for i in NCHIPS-1 downto 0 generate
 		
 		sametsnext(i)		<= '0';
 		sametsafternext(i)	<= '0';
+
+		for k in NMEMS-1 downto 0 loop
+			tocmem_hitwriter(i)(k) <= (others => '0'); 		
+		end loop;
+
 		
 	elsif (writeclk'event and writeclk = '1') then
 		memwren(i) <= '0';
