@@ -141,7 +141,8 @@ INT GenesysDriver::Init()
 	}
   
 	settings["Identification Code"]=idCode;
-	settings["Questionable Condition Register"]=QCGEreg;
+	
+	variables["Questionable Condition Register"]=QCGEreg;
   
 	variables["State"]=state; //push to odb
 	variables["Set State"]=state; //the init function can not change the on/off state of the supply
