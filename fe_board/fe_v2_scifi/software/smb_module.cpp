@@ -436,7 +436,7 @@ void SMB_t::menu_counters(){
         for (int j=0; j<2; j++) {
             printf("ASIC %i to %i\n", j*4, 3+j*4);
             for(char selected=0;selected<5; selected++){
-                sc.ram->data[0xFF00|SCIFI_CNT_CTRL_REGISTER_W] = selected&0x7;
+                sc.ram->data[0xFF00|SCIFI_CNT_CTRL_REGISTER_W] = (sc.ram->data[0xFF00|SCIFI_CNT_CTRL_REGISTER_W] & ~0xF) | selected&0x7;
                 switch(selected){
                     case 0: printf("Events/Time  [8ns] "); break;
                     case 1: printf("Errors/Frame       "); break;
@@ -476,7 +476,7 @@ alt_u16 SMB_t::reset_counters(){
 alt_u16 SMB_t::store_counters(volatile alt_u32* data){
     for(uint8_t i=0;i<4*n_MODULES;i++){
         for(uint8_t selected=0;selected<5; selected++){
-            sc.ram->data[0xFF00|SCIFI_CNT_CTRL_REGISTER_W] = (selected&0x7) + (i<<3);
+            sc.ram->data[0xFF00|SCIFI_CNT_CTRL_REGISTER_W] = (sc.ram->data[0xFF00|SCIFI_CNT_CTRL_REGISTER_W] & ~0xF) | ((selected&0x7) + (i<<3));
             *data = sc.ram->data[0xFF00|SCIFI_CNT_NOM_REGISTER_REGISTER_R];
             //printf("%u: %8.8x\n", sc.ram->data[0xFF00|SCIFI_CNT_CTRL_REGISTER_W], *data);
             data++;
