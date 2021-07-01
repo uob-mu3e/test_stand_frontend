@@ -138,48 +138,10 @@ int MupixFEB::ConfigureASICs(){
             feb_sc.FEB_write(SP_ID, 0xFF40, 0x00000FC0); // reset Mupix config fifos
             feb_sc.FEB_write(SP_ID, 0xFF40, 0x00000000);
             feb_sc.FEB_write(SP_ID, 0xFF49, 0x00000003); // idk, have to look it up
-
+	    
             // We now only write the default configuration for testing
-            //rpc_status = feb_sc.FEB_write(SP_ID, 0xFF4A, payload,true);
-            
-            // write data for the  complete BIAS reg into FEB storage
-            feb_sc.FEB_write(SP_ID, 0xFF41, 0x2A000A03);
-            feb_sc.FEB_write(SP_ID, 0xFF41, 0xFA3F002F);
-            feb_sc.FEB_write(SP_ID, 0xFF41, 0x1E041041);
-            feb_sc.FEB_write(SP_ID, 0xFF41, 0x041E9A51);
-            feb_sc.FEB_write(SP_ID, 0xFF41, 0x40280000);
-            feb_sc.FEB_write(SP_ID, 0xFF41, 0x1400C20A);
-            feb_sc.FEB_write(SP_ID, 0xFF41, 0x028A0000);
-            
-            //write conf defaults
-            feb_sc.FEB_write(SP_ID, 0xFF42, 0x001F0002);
-            feb_sc.FEB_write(SP_ID, 0xFF42, 0x00380000);
-            feb_sc.FEB_write(SP_ID, 0xFF42, 0xFC09F000);
-                                                                                                                  
-            // write vdac defaults
-            feb_sc.FEB_write(SP_ID, 0xFF43, 0x00720000);
-            //feb_sc.FEB_write(SP_ID, 0xFF43, 0x52000046);
-            odb mupix_daq("/Equipment/Mupix/Settings/Daq");
-            uint32_t cur_th = mupix_daq["default_th_int_run_2021"];
-            uint32_t cur_value = ((cur_th << 24) | 0x00000046);
-            feb_sc.FEB_write(SP_ID, 0xFF43, cur_value);
-            feb_sc.FEB_write(SP_ID, 0xFF43, 0x00B80000);
-            
-            // zero the rest
-            for(int i = 0; i<30; i++){
-                feb_sc.FEB_write(SP_ID, 0xFF44, 0x00000000);
-            }
-            
-            for(int i = 0; i<30; i++){
-                feb_sc.FEB_write(SP_ID, 0xFF45, 0x00000000);
-            }
-            
-            for(int i = 0; i<30; i++){
-                feb_sc.FEB_write(SP_ID, 0xFF46, 0x00000000);
-            }
-                                                                                                                  
-            feb_sc.FEB_write(SP_ID, 0xFF40, 63);
-            feb_sc.FEB_write(SP_ID, 0xFF40, 0);
+            rpc_status = feb_sc.FEB_write(SP_ID, 0xFF4A, payload,true);
+           
          }
       } catch(std::exception& e) {
           cm_msg(MERROR, "setup_mupix", "Communication error while configuring MuPix %d: %s", asic, e.what());

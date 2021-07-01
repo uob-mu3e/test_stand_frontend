@@ -29,6 +29,7 @@ begin
     e_fifo : entity work.ip_dcfifo
     generic map (
         ADDR_WIDTH => FIFO_ADDR_WIDTH_g,
+		  REGOUT     => 0,
         DATA_WIDTH => RDATA_RESET_g'length--,
     )
     port map (
