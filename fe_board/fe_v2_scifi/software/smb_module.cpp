@@ -445,7 +445,7 @@ void SMB_t::menu_counters(){
                     case 4: printf("SYNCLOSS: Count/-- "); break;
                 }
                 for(int i=0+j*4;i<4+j*4;i++){
-                    sc.ram->data[0xFF00|SCIFI_CNT_CTRL_REGISTER_W] = (sc.ram->data[0xFF00|SCIFI_CNT_CTRL_REGISTER_W] & 0x7) + (i<<3);
+                    sc.ram->data[0xFF00|SCIFI_CNT_CTRL_REGISTER_W] = ((sc.ram->data[0xFF00|SCIFI_CNT_CTRL_REGISTER_W]) & ~0xF) | (0x7 + (i<<3));
                     printf("| %10u / %18lu |", sc.ram->data[0xFF00|SCIFI_CNT_NOM_REGISTER_REGISTER_R],
                             (alt_u64) sc.ram->data[0xFF00|SCIFI_CNT_DENOM_LOWER_REGISTER_R]);
                 }
