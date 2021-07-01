@@ -140,10 +140,26 @@ begin
         --,
     );
     
-    gen_link_reg(0) <=  x"000000BC" when gen_link_valid(0) = '0' else gen_link(31 downto 0);
-    gen_link_k_reg(0) <= "0001" when gen_link_valid(0) = '0' else gen_link_k(0);
+    e_feb0 : entity work.f0_sim
+    port map (
+        clk         => clk,
+        data_feb0   => gen_link_reg(0),
+        datak_feb0  => gen_link_k_reg(0),
+        reset_n     => reset_n--,
+    );
+    
+    e_feb1 : entity work.f1_sim
+    port map (
+        clk         => clk,
+        data_feb2   => gen_link_reg(1),
+        datak_feb2  => gen_link_k_reg(1),
+        reset_n     => reset_n--,
+    );
+    
+    --gen_link_reg(0) <=  x"000000BC" when gen_link_valid(0) = '0' else gen_link(31 downto 0);
+    --gen_link_k_reg(0) <= "0001" when gen_link_valid(0) = '0' else gen_link_k(0);
 
-    gen_link_fifos : FOR i in 0 to g_NLINKS_DATA - 1 GENERATE
+    --gen_link_fifos : FOR i in 0 to g_NLINKS_DATA - 1 GENERATE
         
         e_link_to_fifo_32 : entity work.link_to_fifo_32
         generic map (
@@ -153,9 +169,9 @@ begin
             i_rx            => gen_link_reg(0),
             i_rx_k          => gen_link_k_reg(0),
             
-            o_q             => rx_q(i),
-            i_ren           => rx_ren(i),
-            o_rdempty       => rx_rdempty(i),
+            o_q             => rx_q(0),
+            i_ren           => rx_ren(0),
+            o_rdempty       => rx_rdempty(0),
 
             o_counter       => open,
             
@@ -166,11 +182,36 @@ begin
             i_clk_250       => clk_fast--;
         );
   
-        sop(i)  <= '1' when rx_q(i)(33 downto 32) = "10" else '0';
-        shop(i) <= '1' when rx_q(i)(33 downto 32) = "11" else '0'; 
-        eop(i)  <= '1' when rx_q(i)(33 downto 32) = "10" else '0';
+        sop(0)  <= '1' when rx_q(0)(33 downto 32) = "10" else '0';
+        shop(0) <= '1' when rx_q(0)(33 downto 32) = "11" else '0'; 
+        eop(0)  <= '1' when rx_q(0)(33 downto 32) = "10" else '0';
+        
+        e_link_to_fifo_32_2 : entity work.link_to_fifo_32
+        generic map (
+            LINK_FIFO_ADDR_WIDTH => 8--;
+        )
+        port map (
+            i_rx            => gen_link_reg(1),
+            i_rx_k          => gen_link_k_reg(1),
+            
+            o_q             => rx_q(1),
+            i_ren           => rx_ren(1),
+            o_rdempty       => rx_rdempty(1),
 
-    END GENERATE gen_link_fifos;
+            o_counter       => open,
+            
+            i_reset_n_156   => reset_n,
+            i_clk_156       => clk,
+
+            i_reset_n_250   => reset_n,
+            i_clk_250       => clk_fast--;
+        );
+  
+        sop(1)  <= '1' when rx_q(1)(33 downto 32) = "10" else '0';
+        shop(1) <= '1' when rx_q(1)(33 downto 32) = "11" else '0'; 
+        eop(1)  <= '1' when rx_q(1)(33 downto 32) = "10" else '0';
+
+    --END GENERATE gen_link_fifos;
     
     link_mask_n <= x"0000000000000003";
 
@@ -214,7 +255,6 @@ begin
         W               => W,
         TREE_w          => 10,
         TREE_r          => 10,
-        g_NLINKS        => g_NLINKS_TOTL,
         g_NLINKS_DATA   => g_NLINKS_DATA--,
     )
     port map (
