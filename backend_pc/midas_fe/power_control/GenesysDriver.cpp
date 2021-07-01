@@ -130,7 +130,7 @@ INT GenesysDriver::Init()
 		
 		OVPlevel[i]=ReadOVPLevel(i,err);
 
-		interlock_enabled[i]=false;
+		interlock_enabled[i]=true;
 		SetInterlock(i,interlock_enabled[i],err);
 		
 		settings["ESR"]=ReadESR(i,err);
