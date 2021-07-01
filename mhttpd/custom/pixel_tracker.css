@@ -144,3 +144,7 @@ table td {
     border: 1px solid #ccc;
     height: 1px;
 }
+.line_break_white {
+    border: 1px solid #fff;
+    height: 5px;
+}

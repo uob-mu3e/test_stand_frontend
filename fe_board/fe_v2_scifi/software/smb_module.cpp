@@ -159,7 +159,7 @@ void SMB_t::print_config(const alt_u8* bitpattern) {
 
 //configure ASIC
 alt_u16 SMB_t::configure_asic(alt_u32 asic, const alt_u8* bitpattern) {
-    printf("[SMB] chip_configure(%u)\n", asic);
+    //printf("[SMB] chip_configure(%u)\n", asic);
 
     int ret;
     ret = spi_write_pattern(asic, bitpattern);
@@ -179,16 +179,33 @@ alt_u16 SMB_t::configure_asic(alt_u32 asic, const alt_u8* bitpattern) {
 //#include "../../../../common/include/feb.h"
 using namespace mu3e::daq::feb;
 //TODO: add list&document in specbook
-//TODO: update functions
 alt_u16 SMB_t::sc_callback(alt_u16 cmd, volatile alt_u32* data, alt_u16 n) {
-    if((cmd & 0xFFF0) == CMD_MUTRIG_ASIC_CFG) {
-        int asic = cmd & 0x000F;
-        //Lprintf("configuring ASIC %d\n",asic);
-        configure_asic(asic, (alt_u8*)data);
-        //print_config((alt_u8*)data);
-    }
-    else {
-        printf("[sc_callback] unknown command: %d\n", cmd);
+    switch (cmd){
+    case CMD_MUTRIG_ASIC_OFF:
+        for(alt_u8 asic = 0; asic < 8; asic++)
+            sc_callback(0x0110 | asic, (alt_u32*) config_ALL_OFF, 0);
+        break;
+    case CMD_MUTRIG_CNT_READ:
+        return store_counters(data);
+        break;
+    case CMD_MUTRIG_CNT_RESET:
+        reset_counters();
+        break;
+    case CMD_MUTRIG_SKEW_RESET:
+        for(int i=0;i<8;i++)
+            RSTSKWctrl_Set(i,data[i]);  
+        break;
+    default:
+        if((cmd & 0xFFF0) == CMD_MUTRIG_ASIC_CFG) {
+            int asic = cmd & 0x000F;
+            //Lprintf("configuring ASIC %d\n",asic);
+            configure_asic(asic, (alt_u8*)data);
+            //print_config((alt_u8*)data);
+        }
+        else {
+            printf("[sc_callback] unknown command: 0x%X\n", cmd);
+        }
+        break;
     }
     return 0;
 }
@@ -415,7 +432,7 @@ void SMB_t::RSTSKWctrl_Clear(){
 }
 
 void SMB_t::RSTSKWctrl_Set(uint8_t channel, uint8_t value){
-    if(channel>3) return;
+    if(channel>7) return;
     if(value>7) return;
     uint32_t val = sc.ram->data[0xFF00|SCIFI_CTRL_RESETDELAY_REGISTER_W] & 0xffc0;
     //printf("PLL_phaseadjust #%u: ",channel);
@@ -540,14 +557,14 @@ alt_u16 SMB_t::store_counters(volatile alt_u32* data){
 		for(uint8_t selected=0;selected<5; selected++){
             sc.ram->data[0xFF00|SCIFI_CNT_CTRL_REGISTER_W] = (selected&0x7) + (i<<3);
 			*data = sc.ram->data[0xFF00|SCIFI_CNT_NOM_REGISTER_REGISTER_R];
-			printf("%u: %8.8x\n", sc.ram->data[0xFF00|SCIFI_CNT_CTRL_REGISTER_W], *data);
+			//printf("%u: %8.8x\n", sc.ram->data[0xFF00|SCIFI_CNT_CTRL_REGISTER_W], *data);
 			data++;
             //FIXME: Check the order of upper/lower, compare to code below
             *data = sc.ram->data[0xFF00|SCIFI_CNT_DENOM_UPPER_REGISTER_R];
-			printf("%u: %8.8x\n", sc.ram->data[0xFF00|SCIFI_CNT_DENOM_UPPER_REGISTER_R],*data);
+			//printf("%u: %8.8x\n", sc.ram->data[0xFF00|SCIFI_CNT_DENOM_UPPER_REGISTER_R],*data);
             data++;
             *data = sc.ram->data[0xFF00|SCIFI_CNT_DENOM_LOWER_REGISTER_R];
-			printf("%u: %8.8x\n", sc.ram->data[0xFF00|SCIFI_CNT_DENOM_LOWER_REGISTER_R],*data);
+			//printf("%u: %8.8x\n", sc.ram->data[0xFF00|SCIFI_CNT_DENOM_LOWER_REGISTER_R],*data);
             data++;
 			//*data=(sc.ram->regs.SMB.counters.denom>>32)&0xffffffff;
 			//printf("%u: %8.8x\n", sc.ram->regs.SMB.counters.ctrl,*data);

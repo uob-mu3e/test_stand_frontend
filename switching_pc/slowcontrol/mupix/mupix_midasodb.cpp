@@ -32,7 +32,7 @@ int setup_db(const char* prefix, MupixFEB* FEB_interface, bool init_FEB){
     settings_asics_global["Num boards"] = nasics;
 
     if(nasics==0){
-        cm_msg(MINFO,"mupix_midasodb::setup_db","Number of ASICs is 0, will not continue to build DB. Consider to delete ODB subtree %s",prefix);
+        cm_msg(MINFO,"mupix_midasodb::setup_db","Number of Mupixes is 0, will not continue to build DB. Consider to delete ODB subtree %s",prefix);
     return DB_SUCCESS;
     }
 

@@ -11,6 +11,7 @@ use ieee.std_logic_1164.all;
 use ieee.numeric_std.all;
 
 use work.feb_sc_registers.all;
+use work.mudaq.all;
 
 entity sc_rx is
 generic (
@@ -128,7 +129,7 @@ begin
             if ( ram_addr = ram_addr_end ) then
                 -- write end of packet
                 o_fifo_we <= '1';
-                o_fifo_wdata <= "0011" & X"00000000";
+                o_fifo_wdata <= MERGER_FIFO_PAKET_END_MARKER & X"00000000";
                 state <= S_IDLE;
             end if;
             --
@@ -159,7 +160,7 @@ begin
             if ( ram_addr = ram_addr_end and ram_read_nreq = 0 ) then
                 -- write end of packet
                 o_fifo_we <= '1';
-                o_fifo_wdata <= "0011" & X"00000000";
+                o_fifo_wdata <= MERGER_FIFO_PAKET_END_MARKER & X"00000000";
                 state <= S_IDLE;
             end if;
             --
@@ -169,7 +170,7 @@ begin
             -- trailer
             -- write end of packet
             o_fifo_we <= '1';
-            o_fifo_wdata <= "0011" & X"00000000";
+            o_fifo_wdata <= MERGER_FIFO_PAKET_END_MARKER & X"00000000";
             state <= S_IDLE;
             --
         elsif ( state = S_TIMEOUT ) then

@@ -29,10 +29,10 @@ public:
     size_t nSciFiFEBS() const {return mSciFiFEBs.size();}
     size_t nTileFEBS() const {return mTileFEBs.size();}
 
-    const mappedFEB getFEB(size_t i) const {return mFEBs[i];}
-    const mappedFEB getPixelFEB(size_t i) const {return mPixelFEBs[i];}
-    const mappedFEB getSciFiFEB(size_t i) const {return mSciFiFEBs[i];}
-    const mappedFEB getTileFEB(size_t i) const {return mTileFEBs[i];}
+    const mappedFEB getFEB(size_t i) const {return mFEBs.at(i);}
+    const mappedFEB getPixelFEB(size_t i) const {return mPixelFEBs.at(i);}
+    const mappedFEB getSciFiFEB(size_t i) const {return mSciFiFEBs.at(i);}
+    const mappedFEB getTileFEB(size_t i) const {return mTileFEBs.at(i);}
 
     const std::vector<mappedFEB> & getFEBs(){return mpFEBs;}
     const std::vector<mappedFEB> & getPixelFEBs(){return mPixelFEBs;}

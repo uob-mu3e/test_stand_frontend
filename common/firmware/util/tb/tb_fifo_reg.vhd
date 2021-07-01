@@ -37,24 +37,19 @@ begin
         end if;
     end process;
     
-    e_link_fifo : entity work.ip_dcfifo_mixed_widths
+    e_link_fifo : entity work.ip_scfifo
     generic map(
-        ADDR_WIDTH_w    => 8,
-        DATA_WIDTH_w    => 8,
-        ADDR_WIDTH_r    => 4,
-        DATA_WIDTH_r    => 16,
-        DEVICE          => "Arria 10"--,
+        RAM_OUT_REG    => "ON"--,
     )
     port map (
-        aclr    => not reset_n,
+        sclr    => not reset_n,
         data    => data,
-        rdclk   => clk,
+        clock   => clk,
         rdreq   => rdreq,
-        wrclk   => clk,
         wrreq   => wrreq,
-        q       => q,
-        rdempty => rdempty,
-        wrfull  => wrfull--,
+        q       => open,
+        empty => rdempty,
+        full  => wrfull--,
     );
     
     rdreq <= '1' when rdempty = '0' and reg_full = '0' else '0';

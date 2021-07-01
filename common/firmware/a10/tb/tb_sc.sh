@@ -8,4 +8,4 @@ export STOPTIME=10us
 
 entity=$(basename "$0" .sh)
 
-../../util/sim.sh "$entity" "$entity.vhd"  *.vhd ../*.vhd ../../util/*.vhd
+../../util/sim.sh "$entity" "$entity.vhd"  *.vhd ../*.vhd ../../util/*.vhd ../../../../fe_board/fe/sc_rx.vhd ../../../../fe_board/firmware/FEB_common/*.vhd ../../registers/*.vhd ../../util/altera/*.vhd
