@@ -41,6 +41,7 @@ class MuFEB {
       virtual uint16_t GetNumFPGAs() const {return febs.size();}
       virtual uint16_t GetModulesPerFEB() const {return 0;}
       virtual uint16_t GetASICSPerModule() const {return 0;}
+      virtual uint16_t GetASICSPerFEB() const {return GetASICSPerModule() * GetModulesPerFEB();}
 
       //Parameter FPGA_ID refers to global numbering, i.e. before mapping
       int ReadBackRunState(uint16_t FPGA_ID);
@@ -89,6 +90,7 @@ protected:
       static const vector<float>    maxtempvals;
 
       //Helper functions
+      const vector<mappedFEB> getFEBs() const {return febs;}
       uint32_t reg_setBit  (uint32_t reg_in, uint8_t bit, bool value=true);
       uint32_t reg_unsetBit(uint32_t reg_in, uint8_t bit);
       bool reg_getBit(uint32_t reg_in, uint8_t bit);

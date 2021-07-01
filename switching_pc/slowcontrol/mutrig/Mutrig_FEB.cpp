@@ -141,7 +141,9 @@ int MutrigFEB::ConfigureASICs(){
                 //rpc_status = m_mu.FEBsc_NiosRPC(FPGAid_from_ID(asic), feb::CMD_MUTRIG_ASIC_CFG, {{reinterpret_cast<uint32_t*>(&asic),1},{reinterpret_cast<uint32_t*>(config->bitpattern_w), config->length_32bits}});
                 vector<vector<uint32_t>> payload;
                 payload.push_back(vector<uint32_t>(reinterpret_cast<uint32_t*>(config->bitpattern_w),reinterpret_cast<uint32_t*>(config->bitpattern_w)+config->length_32bits));
-                rpc_status = feb_sc.FEBsc_NiosRPC(SP_ID, feb::CMD_MUTRIG_ASIC_CFG | asic, payload);
+                // TODO: we make modulo number of asics per module here since each FEB has only # ASIC from 0 to asics per module but
+                // here we loop until total number of asics which is asics per module times # of FEBs
+                rpc_status = feb_sc.FEBsc_NiosRPC(SP_ID, feb::CMD_MUTRIG_ASIC_CFG | (asic % GetASICSPerFEB()), payload);
             } catch(std::exception& e) {
                 cm_msg(MERROR, "setup_mutrig", "Communication error while configuring MuTRiG %d: %s", asic, e.what());
                 set_equipment_status(equipment_name, "SB-FEB Communication error", "red");
@@ -150,8 +152,8 @@ int MutrigFEB::ConfigureASICs(){
             if(rpc_status!=FEB_REPLY_SUCCESS){
                 //configuration mismatch, report and break foreach-loop
                 set_equipment_status(equipment_name,  "MuTRiG config failed", "red");
-                cm_msg(MERROR, "setup_mutrig", "MuTRiG configuration error for ASIC %i", asic);
-                return FE_ERR_HW;//note: return of lambda function
+                cm_msg(MERROR, "setup_mutrig", "MuTRiG configuration error for ASIC %i", (asic % GetASICSPerFEB()));
+                return FE_SUCCESS;//note: return of lambda function
             }
             return FE_SUCCESS;//note: return of lambda function
     });//MapForEach
@@ -183,7 +185,7 @@ int MutrigFEB::ChangeTDCTest(bool o){
 }
 int MutrigFEB::ConfigureASICsAllOff(){
     cm_msg(MINFO, "ConfigureASICsAllOff" , "Configuring all SciFi ASICs in the ALL_OFF Mode");
-    int status = feb_sc.ERRCODES::OK;
+    int status = SUCCESS;
     for(size_t FPGA_ID = 0; FPGA_ID < febs.size(); FPGA_ID++){
         auto FEB = febs[FPGA_ID];
         if(!FEB.IsScEnabled())

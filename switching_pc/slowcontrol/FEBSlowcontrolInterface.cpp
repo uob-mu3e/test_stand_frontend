@@ -311,10 +311,8 @@ void FEBSlowcontrolInterface::FEBsc_resetSecondary()
         printf("."); fflush(stdout);
     };
     if(timeout_cnt>=50){
-        cout << "\n ERROR: Slow control secondary reset FAILED with timeout\n";
-    }else{
-        cout << " DONE\n";
-    };
+        cm_msg(MERROR, "FEBsc_resetSecondary()", "Slow control secondary reset FAILED with timeout");
+    }
 }
 
 int FEBSlowcontrolInterface::FEBsc_NiosRPC(uint32_t FPGA_ID, uint16_t command, vector<vector<uint32_t> > payload_chunks)

@@ -1011,7 +1011,7 @@ DWORD * fill_SSCN(DWORD * pdata)
     *pdata++ = read_counters(SWB_BANK_BUILDER_RAM_FULL_PIXEL_CNT);
     *pdata++ = read_counters(SWB_BANK_BUILDER_TAG_FIFO_FULL_PIXEL_CNT);
 
-    for(uint32_t i=0; i < N_FEBS.at(switch_id); i++){
+    for(uint32_t i=0; i < N_FEBS[switch_id]; i++){
         *pdata++ = i;
         *pdata++ = (cur_link_active_from_odb.test(i) == 1 ? (read_counters(SWB_LINK_FIFO_ALMOST_FULL_PIXEL_CNT | (i << 8))) : 0);
         *pdata++ = (cur_link_active_from_odb.test(i) == 1 ? (read_counters(SWB_LINK_FIFO_FULL_PIXEL_CNT | (i << 8))) : 0);
@@ -1250,9 +1250,10 @@ void sc_settings_changed(odb o)
        o = false;
     }
     if (name == "SciFiAllOff" && o) {
+        cm_msg(MERROR, "SciFiAllOff", "Configuring all SciFi ASICs in All Off mode.");
         int status=scififeb->ConfigureASICsAllOff();
         if(status!=SUCCESS){
-            cm_msg(MERROR, "SciFiAllOff" , "ASIC all off configuration failed.");
+            cm_msg(MERROR, "SciFiAllOff" , "ASIC all off configuration failed. Return value was %d, expected %d.", status, SUCCESS);
             //TODO: what to do?
         }
        o = false;
