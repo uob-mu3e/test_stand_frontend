@@ -102,6 +102,7 @@ begin
         -- output stream
         o_rdata                 => rdata_s,
         o_rdata_debug           => rdata_debug_s,
+        o_rdempty_debug         => o_rempty_debug,
         i_ren                   => ren_merger,--not rempty and not wfull,
         o_empty                 => rempty,
         
@@ -322,6 +323,5 @@ begin
     o_trailer_debug <= '1' when rdata_debug_s(37 downto 32) = tr_marker else '0';
     link_number     <= rdata_debug_s(37 downto 32);
     o_q_debug       <= rdata_debug_s(31 downto 0);
-    o_rempty_debug  <= rempty;
 
 end architecture;

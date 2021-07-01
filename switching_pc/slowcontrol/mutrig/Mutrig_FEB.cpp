@@ -84,9 +84,9 @@ int MutrigFEB::WriteAll(){
     std::string odb_str(set_str);
     odb odb_set_str(odb_str);
     // use lambda function for passing this
-    odb_set_str.watch([this](odb &o){
-        on_settings_changed(o, this);
-    });
+//    odb_set_str.watch([this](odb &o){
+//        on_settings_changed(o, this);
+//    });
     return 0;
 }
 

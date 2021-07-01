@@ -63,6 +63,9 @@ class MuFEB {
       DWORD *fill_SSSO(DWORD * pdata);
       DWORD *read_SSSO_OneFEB(DWORD * pdata, uint32_t index);
 
+      const vector<mappedFEB> getFEBs() const {return febs;}
+      const uint8_t getSB_number() const {return SB_number;}
+
 protected:
 
       FEBSlowcontrolInterface & feb_sc;
@@ -90,7 +93,6 @@ protected:
       static const vector<float>    maxtempvals;
 
       //Helper functions
-      const vector<mappedFEB> getFEBs() const {return febs;}
       uint32_t reg_setBit  (uint32_t reg_in, uint8_t bit, bool value=true);
       uint32_t reg_unsetBit(uint32_t reg_in, uint8_t bit);
       bool reg_getBit(uint32_t reg_in, uint8_t bit);
