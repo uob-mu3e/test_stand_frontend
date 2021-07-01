@@ -130,7 +130,7 @@ INT GenesysDriver::Init()
 		
 		OVPlevel[i]=ReadOVPLevel(i,err);
 
-		interlock_enabled[i]=true;
+		interlock_enabled[i]=false;
 		SetInterlock(i,interlock_enabled[i],err);
 		
 		settings["ESR"]=ReadESR(i,err);
@@ -141,7 +141,8 @@ INT GenesysDriver::Init()
 	}
   
 	settings["Identification Code"]=idCode;
-	settings["Questionable Condition Register"]=QCGEreg;
+	
+	variables["Questionable Condition Register"]=QCGEreg;
   
 	variables["State"]=state; //push to odb
 	variables["Set State"]=state; //the init function can not change the on/off state of the supply
