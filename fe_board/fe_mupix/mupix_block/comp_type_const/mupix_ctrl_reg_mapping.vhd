@@ -29,10 +29,10 @@ port (
     -- outputs 156--------------------------------------------
 
     o_mp_ctrl_data              : out std_logic_vector(32*5 + 31 downto 0);
-    o_mp_fifo_write             : out std_logic_vector( 5 downto 0);
+    o_mp_fifo_write             : out std_logic_vector( 5 downto 0) := (others => '0');
     o_mp_ctrl_data_all          : out std_logic_vector(31 downto 0);
     o_mp_ctrl_data_all_we       : out std_logic;
-    o_mp_fifo_clear             : out std_logic_vector( 5 downto 0);
+    o_mp_fifo_clear             : out std_logic_vector( 5 downto 0) := (others => '0');
     o_mp_ctrl_enable            : out std_logic_vector( 5 downto 0);
     o_mp_ctrl_chip_config_mask  : out std_logic_vector(11 downto 0);
     o_mp_ctrl_invert_29         : out std_logic;
@@ -56,6 +56,14 @@ architecture rtl of mupix_ctrl_reg_mapping is
             o_mp_ctrl_enable          <= (others => '0');
             mp_ctrl_invert_csn        <= '0';
             o_mp_ctrl_data_all_we     <= '0';
+            o_mp_fifo_write           <= (others => '0');
+            o_mp_fifo_clear           <= (others => '0');
+            o_mp_ctrl_data            <= (others => '0');
+            o_mp_ctrl_data_all        <= (others => '0');
+            o_mp_ctrl_chip_config_mask<= (others => '0');
+            o_mp_ctrl_invert_29       <= '0';
+            o_mp_ctrl_invert_csn      <= '0';
+            o_mp_ctrl_slow_down       <= (others => '0');
             
         elsif(rising_edge(i_clk156)) then
 

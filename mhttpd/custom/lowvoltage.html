@@ -1,4 +1,4 @@
-<!--Slow controle custom page for the spring run 2021-->
+<!--Slow control custom page for the spring run 2021-->
 
 <!DOCTYPE html>
 <html lang="en">
@@ -38,7 +38,7 @@
 
 <div id="mmain">
 
-<!--<div id="BoxButtons">
+<!--div id="BoxButtons">
     <h1>OFF Buttons</h1>
     <p>This buttons can be used to switch off the power supplies of the individual detector subsystems or all of them at once </p>
     <button class="button" onclick="SciFiOFF">SciFi</button>
@@ -46,7 +46,7 @@
     <button class="butoon" onclick="FebOFF">FEB-SC</button>
     <button class="button" onclick="AllOFF">ALL</button>
 
-</div> -->
+</div-->
 
         <!--Tables for the FMBs-->
    <table class="mtable">
@@ -67,7 +67,7 @@
             <td><div class="modbvalue" data-odb-path="/Equipment/SciFi LV/Variables/Demand[0]" data-odb-editable="1"></div></td>
             <td><div class="modbvalue" data-odb-path="/Equipment/SciFi LV/Variables/Measured[0]"></div></td>
             <td><div class="modbvalue" data-odb-path="/Equipment/SciFi LV/Variables/Current[0]"></div></td>
-            <td style="text-align: center">SMB1+ (25-1U)</td>
+            <td style="text-align: center">US, 1V8, SMB-1U </td>
         </tr>
         <tr>
             <th>2</th>
@@ -76,7 +76,7 @@
             <td><div class="modbvalue" data-odb-path="/Equipment/SciFi LV/Variables/Demand[1]" data-odb-editable="1"></div></td>
             <td><div class="modbvalue" data-odb-path="/Equipment/SciFi LV/Variables/Measured[1]"></div></td>
             <td><div class="modbvalue" data-odb-path="/Equipment/SciFi LV/Variables/Current[1]"></div></td>
-            <td style="text-align: center">SMB2+ (35-1U/2U)</td>
+            <td style="text-align: center">US, 1V8, SMB-2U</td>
         </tr>
         <tr>
             <th>3</th>
@@ -85,7 +85,7 @@
             <td><div class="modbvalue" data-odb-path="/Equipment/SciFi LV/Variables/Demand[2]" data-odb-editable="1"></div></td>
             <td><div class="modbvalue" data-odb-path="/Equipment/SciFi LV/Variables/Measured[2]"></div></td>
             <td><div class="modbvalue" data-odb-path="/Equipment/SciFi LV/Variables/Current[2]"></div></td>
-            <td style="text-align: center">SMB3+ (25-2U)</td>
+            <td style="text-align: center">US, 3V3, SMB-1/2U</td>
         </tr>
                <tr>
             <th>4</th>
@@ -94,7 +94,7 @@
             <td><div class="modbvalue" data-odb-path="/Equipment/SciFi LV/Variables/Demand[3]" data-odb-editable="1"></div></td>
             <td><div class="modbvalue" data-odb-path="/Equipment/SciFi LV/Variables/Measured[3]"></div></td>
             <td><div class="modbvalue" data-odb-path="/Equipment/SciFi LV/Variables/Current[3]"></div></td>
-            <td style="text-align: center">SMB4+ (25-2U)</td>
+            <td style="text-align: center">DS, 1V8, SMB-1D</td>
         </tr>
                <tr>
             <th>5</th>
@@ -103,7 +103,7 @@
             <td><div class="modbvalue" data-odb-path="/Equipment/SciFi LV/Variables/Demand[4]" data-odb-editable="1"></div></td>
             <td><div class="modbvalue" data-odb-path="/Equipment/SciFi LV/Variables/Measured[4]"></div></td>
             <td><div class="modbvalue" data-odb-path="/Equipment/SciFi LV/Variables/Current[4]"></div></td>
-            <td style="text-align: center">SMB5+ (25-2U)</td>
+            <td style="text-align: center">DS, 1V8, SMB-2D</td>
         </tr>
              <tr>
             <th>6</th>
@@ -112,13 +112,13 @@
             <td><div class="modbvalue" data-odb-path="/Equipment/SciFi LV/Variables/Demand[5]" data-odb-editable="1"></div></td>
             <td><div class="modbvalue" data-odb-path="/Equipment/SciFi LV/Variables/Measured[5]"></div></td>
             <td><div class="modbvalue" data-odb-path="/Equipment/SciFi LV/Variables/Current[5]"></div></td>
-            <td style="text-align: center">SMB6+ (25-2U)</td>
+            <td style="text-align: center">DS, 3V3, SMB-1/2D</td>
         </tr>
-       <!-- <tr>
+       <tr>
             <td colspan="3">Switch all channels ON/OFF</td>
-            <td colspan="2"><button class="ButtonSciFiON" onclick="SciFiAllON">ON</button></td>
-            <td colspan="2"><button class="ButtonSciFiOFF" onclick="SciFiOFF">OFF</button></td>
-        </tr>-->
+            <td colspan="2"><button class="ButtonSciFiON" onclick="SciFiUSON()">US ON</button><button class="ButtonSciFiON" onclick="SciFiUSOFF()">US OFF</button></td>
+            <td colspan="2"><button class="ButtonSciFiON" onclick="SciFiDSON()">DS ON</button><button class="ButtonSciFiON" onclick="SciFiDSOFF()">DS OFF</button></td>
+        </tr>
     </table> 
     
 <!--Tables for the Pixels-->
@@ -646,6 +646,6 @@
     </table>
 
 </div>
- <!-->script src="mupix_configuration.json"></!--script-->
+
  <script src="lowvoltage.js"></script>     
  </body>

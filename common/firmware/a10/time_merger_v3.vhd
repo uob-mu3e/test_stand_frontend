@@ -30,8 +30,10 @@ port (
 
     -- output stream
     o_rdata         : out   std_logic_vector(W-1 downto 0);
+    o_rdata_debug   : out   std_logic_vector(37 downto 0);
     i_ren           : in    std_logic;
     o_empty         : out   std_logic;
+    o_rdempty_debug : out   std_logic;
 
     -- error outputs
     o_error_pre     : out   std_logic_vector(g_NLINKS_DATA - 1 downto 0);
@@ -111,6 +113,7 @@ architecture arch of time_merger_v3 is
 
     -- debug signals
     signal rdata_last_layer : std_logic_vector(W - 1 downto 0);
+    signal rdata_last_layer_debug : std_logic_vector(37 downto 0);
     signal rdata_hit_time : std_logic_vector(4 * 8 - 1 downto 0);
 
     -- counters
@@ -125,6 +128,7 @@ begin
     o_error_pre         <= error_pre;
     o_error_sh          <= error_sh;
     o_rdata             <= rdata_last_layer;
+    o_rdata_debug       <= rdata_last_layer_debug;
     o_counters(0)       <= cnt_gtime1_error;
     o_counters(1)       <= cnt_gtime2_error;
     o_counters(2)       <= cnt_shtime_error;
@@ -372,6 +376,8 @@ begin
         i_data_h_t      => header_trailer,
 
         o_last          => rdata_last_layer,
+        o_last_link_debug   => rdata_last_layer_debug,
+        o_rdempty_debug(0)  => o_rdempty_debug,
         o_rdempty(0)    => o_empty,
         o_rdreq         => rdreq_5,
         o_mask_n        => open,
@@ -535,7 +541,7 @@ begin
                     -- zeros & sub header & zeros & datak
                     header_trailer(37 downto 32) <= sh_marker;
                     -- send sub header time -- check later if equal
-                    header_trailer(31 downto 23) <= i_rdata(check_link)(31 downto 23);
+                    header_trailer(31 downto 16) <= i_rdata(check_link)(31 downto 16);
                     if ( DATA_TYPE = x"01" ) then
                         shtime(9 downto 7) <= (others => '0');
                         shtime(6 downto 0) <= i_rdata(check_link)(22 downto 16);

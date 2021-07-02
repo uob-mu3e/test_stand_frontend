@@ -10,16 +10,64 @@ var PathH9='"/Equipment/HAMEG9/Variables/Set State'
 var PathTDK='"/Equipment/Genesys/Variables/Set State'
 var PathSciFi='"/Equipment/SciFi LV/Variables/ChState'
 
+function SciFiUSOFF(){
+var clist=document.getElementsByName("CheckboxSciFi");
+// Stupid but works
+console.log("SciFi US Off!");
+modbset("/Equipment/SciFi LV/Variables/ChState[0]", 0);
+modbset("/Equipment/SciFi LV/Variables/ChState[1]", 0);
+modbset("/Equipment/SciFi LV/Variables/ChState[2]", 0);
+}
+
+function SciFiUSON(){
+var clist=document.getElementsByName("CheckboxSciFi");
+// Stupid but works
+console.log("SciFi US Off!");
+modbset("/Equipment/SciFi LV/Variables/ChState[0]", 1);
+modbset("/Equipment/SciFi LV/Variables/ChState[1]", 1);
+modbset("/Equipment/SciFi LV/Variables/ChState[2]", 1);
+}
+
+function SciFiDSOFF(){
+var clist=document.getElementsByName("CheckboxSciFi");
+// Stupid but works
+console.log("SciFi DS Off!");
+modbset("/Equipment/SciFi LV/Variables/ChState[3]", 0);
+modbset("/Equipment/SciFi LV/Variables/ChState[4]", 0);
+modbset("/Equipment/SciFi LV/Variables/ChState[5]", 0);
+}
+
+function SciFiDSON(){
+var clist=document.getElementsByName("CheckboxSciFi");
+// Stupid but works
+console.log("SciFi DS On!");
+modbset("/Equipment/SciFi LV/Variables/ChState[3]", 1);
+modbset("/Equipment/SciFi LV/Variables/ChState[4]", 1);
+modbset("/Equipment/SciFi LV/Variables/ChState[5]", 1);
+}
+
 function SciFiOFF(){
 var clist=document.getElementsByName("CheckboxSciFi");
-for (var i = 0; i < clist.length; ++i) { clist[i].checked = false; }
+// Stupid but works
+console.log("SciFi Off!");
+modbset("/Equipment/SciFi LV/Variables/ChState[0]", 0);
+modbset("/Equipment/SciFi LV/Variables/ChState[1]", 0);
+modbset("/Equipment/SciFi LV/Variables/ChState[2]", 0);
+modbset("/Equipment/SciFi LV/Variables/ChState[3]", 0);
+modbset("/Equipment/SciFi LV/Variables/ChState[4]", 0);
+modbset("/Equipment/SciFi LV/Variables/ChState[5]", 0);
+}
 
-mjsonrpc_db_paste([PathSciFi + '[0]"', PathSciFi + '[1]"', PathSciFi + '[2]"', PathSciFi + '[3]"', PathSciFi + '[4]"', PathSciFi + '[5]"'], [0]).then(function(rpc) {
-
-        }).catch(function(error) {
-            mjsonrpc_error_alert(error);
-        });
-
+function SciFiON(){
+var clist=document.getElementsByName("CheckboxSciFi");
+// Stupid but works
+console.log("SciFi On!");
+modbset("/Equipment/SciFi LV/Variables/ChState[0]", 1);
+modbset("/Equipment/SciFi LV/Variables/ChState[1]", 1);
+modbset("/Equipment/SciFi LV/Variables/ChState[2]", 1);
+modbset("/Equipment/SciFi LV/Variables/ChState[3]", 1);
+modbset("/Equipment/SciFi LV/Variables/ChState[4]", 1);
+modbset("/Equipment/SciFi LV/Variables/ChState[5]", 1);
 }
 
 function PixelsOFF() {
@@ -61,18 +109,6 @@ PathH3 +'[0]"', PathH3 +'[1]"', PathH3 +'[2]"', PathH3 +'[3]"', PathH4 +'[0]"', 
 PathH5 +'[0]"', PathH5 +'[1]"', PathH5 +'[2]"', PathH5 +'[3]"', PathH6 +'[0]"', PathH6 +'[1]"', PathH6 +'[2]"', PathH6 +'[3]"',
 PathH7 +'[0]"', PathH7 +'[1]"', PathH7 +'[2]"', PathH7 +'[3]"', PathH8 +'[0]"', PathH8 +'[1]"', PathH8 +'[2]"', PathH8 +'[3]"',
 PathH9 +'[0]"', PathH9 +'[1]"', PathH9 +'[2]"', PathH9 +'[3]"', PathTDK + '[0]"', PathTDK + '[1]"'], [0]).then(function(rpc) {
-
-        }).catch(function(error) {
-            mjsonrpc_error_alert(error);
-        });
-
-}
-
-function SciFiAllON() {
-var clist=document.getElementsByName("CheckboxSciFi");
-for (var i = 0; i < clist.length; ++i) { clist[i].checked = true; }
-
-mjsonrpc_db_paste([PathSciFi + '[0]"', PathSciFi + '[1]"', PathSciFi + '[2]"', PathSciFi + '[3]"', PathSciFi + '[4]"', PathSciFi + '[5]"'], [1]).then(function(rpc) {
 
         }).catch(function(error) {
             mjsonrpc_error_alert(error);

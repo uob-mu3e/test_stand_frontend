@@ -50,17 +50,17 @@ var init_table = function () {
             cell2.innerHTML = "Not used"
         }
         cell3.classList.add("modbvalue")
-        var link = "/Equipment/Pixel-SC-Temperature/Variables/Input[" + ch + "]"
+        var link = "/Equipment/EnvPixels/Variables/Input[" + ch + "]"
         cell3.setAttribute("data-odb-path", link)
         cell3.id = "temp_ch_" + ch
-        //cell4.classList.add("modbvalue")
-        //var link = "/Equipment/Pixel-SC-Temperature/Converted/Temperature[" + ch + "]"
-        //cell4.setAttribute("data-odb-path", link)
-        cell4.id = "temp_converted_ch_" + ch
-        watch_diff_cells["temp_ch_" + ch] = cell4
-        cell3.addEventListener('DOMSubtreeModified', function () {
-            watch_diff_cells[this.id].innerHTML = convert_v_to_temperature(this.textContent);
-        })
+        cell4.classList.add("modbvalue")
+        var link = "/Equipment/EnvPixels/Converted/Temperature_" + ch
+        cell4.setAttribute("data-odb-path", link)
+        //cell4.id = "temp_converted_ch_" + ch
+        //watch_diff_cells["temp_ch_" + ch] = cell4
+        //cell3.addEventListener('DOMSubtreeModified', function () {
+        //    watch_diff_cells[this.id].innerHTML = convert_v_to_temperature(this.textContent);
+        //})
     }
 }
 

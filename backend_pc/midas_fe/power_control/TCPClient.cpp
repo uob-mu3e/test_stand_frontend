@@ -2,6 +2,7 @@
 #include <iostream>
 #include <chrono>
 #include <thread>
+#include "midas.h"
 
 
 using boost::asio::ip::tcp;
@@ -113,7 +114,12 @@ bool TCPClient::ReadReply(std::string *str,int min_size)
 	
   //read
   streambuf buf; 
-  read_until(*socket, buf, read_stop); 
+  try{
+      read_until(*socket, buf, read_stop); 
+  } catch(...) {
+      cm_msg(MERROR, "ReadReply", "read_until failed");
+  }
+
   std::string data = buffer_cast<const char*>(buf.data());
   //std::cout << "data : " << data << std::endl; 
   //std::size_t found = data.find('\r');

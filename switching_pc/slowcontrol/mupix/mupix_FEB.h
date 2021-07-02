@@ -15,6 +15,7 @@ Contents:       Definition of functions to talk to a mupix-based FEB.
 #include "mupix_config.h"
 #include "MuFEB.h"
 #include "odbxx.h"
+#include "mupix_registers.h"
 
 using midas::odb;
 
@@ -42,6 +43,7 @@ class MupixFEB  : public MuFEB{
       uint16_t GetNumASICs() const;
       virtual FEBTYPE  GetTypeID() const {return FEBTYPE::Pixel;}
 
+
       //ASIC configuration:
       //Configure all asics under prefix (e.g. prefix="/Equipment/Mupix")
       int ConfigureASICs();
@@ -51,17 +53,9 @@ class MupixFEB  : public MuFEB{
       //FEB registers and functions
       uint32_t ReadBackLVDSNumHits(uint16_t FPGA_ID, uint16_t LVDS_ID);
       uint32_t ReadBackLVDSNumHitsInMupixFormat(uint16_t FPGA_ID, uint16_t LVDS_ID);
-      DWORD*  ReadLVDSCounters(DWORD* pdata, uint16_t FPGA_ID){
-        for(uint32_t i=0; i<GetASICSPerModule()*GetModulesPerFEB(); i++){ // TODO: set currect LVDS links number
-            // FPGA ID | Link ID
-            *(DWORD*)pdata++ = (FPGA_ID << 16) | i;
-            // number of hits from link
-            *(DWORD*)pdata++ = ReadBackLVDSNumHits(FPGA_ID, i);
-            // number of hits from link in mupix format
-            *(DWORD*)pdata++ = ReadBackLVDSNumHitsInMupixFormat(FPGA_ID, i);
-        };
-        return pdata;
-      };
+      DWORD* ReadLVDSCounters(DWORD* pdata, uint16_t FPGA_ID);
+      uint32_t ReadBackLVDSStatus(DWORD* pdata, uint16_t FPGA_ID, uint16_t LVDS_ID);
+
       uint32_t getNFPGAs(){
           return febs.size();
       }

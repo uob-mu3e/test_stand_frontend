@@ -111,6 +111,9 @@ BEGIN
 
     -- decode state from rx
     i_state_controller : entity work.state_controller
+    generic map (
+        FULL_VERSION_g => false--,
+    )
     PORT MAP (
         reset_link_8bData       => state_controller_in,
         fpga_addr               => fpga_id_125_rx,

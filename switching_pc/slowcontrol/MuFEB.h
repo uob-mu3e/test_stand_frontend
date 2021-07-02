@@ -41,6 +41,7 @@ class MuFEB {
       virtual uint16_t GetNumFPGAs() const {return febs.size();}
       virtual uint16_t GetModulesPerFEB() const {return 0;}
       virtual uint16_t GetASICSPerModule() const {return 0;}
+      virtual uint16_t GetASICSPerFEB() const {return GetASICSPerModule() * GetModulesPerFEB();}
 
       //Parameter FPGA_ID refers to global numbering, i.e. before mapping
       int ReadBackRunState(uint16_t FPGA_ID);
@@ -61,6 +62,9 @@ class MuFEB {
 
       DWORD *fill_SSSO(DWORD * pdata);
       DWORD *read_SSSO_OneFEB(DWORD * pdata, uint32_t index);
+
+      const vector<mappedFEB> getFEBs() const {return febs;}
+      const uint8_t getSB_number() const {return SB_number;}
 
 protected:
 

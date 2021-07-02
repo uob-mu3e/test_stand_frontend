@@ -139,7 +139,7 @@ package a10_pcie_registers is
         constant DMA_STATUS_R                                   : integer := 16#11#;
             constant DMA_DATA_WEN                                   : integer:= 0;
             constant DMA_CONTROL_WEN                                : integer:= 1;
-        constant PLL_LOCKED_BIT                                 : integer := 16#12#;
+        constant PLL_LOCKED_REGISTER_R                          : integer := 16#12#;
         constant DEBUG_SC                                       : integer := 16#13#;
         constant DMA_HALFFUL_REGISTER_R                         : integer := 16#14#;
         constant DMA_NOTHALFFUL_REGISTER_R                      : integer := 16#15#;
