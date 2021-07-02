@@ -23,6 +23,7 @@
 #include "mfe.h"
 #include "mscb.h"
 #include "history.h"
+#include "odbxx.h"
 #include "class/multi.h"
 #include "class/generic.h"
 #include "device/mscbdev.h"
@@ -30,7 +31,7 @@
 #include "GenesysDriver.h"
 #include "HMP4040Driver.h"
 
-
+using midas::odb;
 
 /*-- Globals -------------------------------------------------------*/
 
