@@ -34,7 +34,7 @@ end entity mupix_ctrl;
 
 architecture RTL of mupix_ctrl is
 
-    signal mp_fifo_clear            : std_logic_vector(5 downto 0);
+    signal mp_fifo_clear            : std_logic_vector(5 downto 0) := (others => '0');
     signal config_storage_input_data: std_logic_vector(32*5 + 31 downto 0);
     signal config_storage_in_all    : std_logic_vector(31 downto 0);
     signal config_storage_in_all_we : std_logic;

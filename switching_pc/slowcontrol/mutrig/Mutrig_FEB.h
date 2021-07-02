@@ -47,6 +47,8 @@ class MutrigFEB : public MuFEB{
       //ASIC configuration:
       //Configure all asics under prefix (e.g. prefix="/Equipment/SciFi"), report any errors as equipment_name
       int ConfigureASICs();
+      int ChangeTDCTest(bool o);
+      int ConfigureASICsAllOff();
 
       //Read counter values from FEB, store in subtree $odb_prefix/Variables/Counters/
       //Parameter FPGA_ID refers to global numbering, i.e. before mapping
@@ -61,16 +63,10 @@ class MutrigFEB : public MuFEB{
       int ReadBackDatapathStatus(uint16_t FPGA_ID);
       void ReadBackAllDatapathStatus(){for(size_t i=0;i<febs.size();i++) ReadBackDatapathStatus(i);}
 
-
-   protected:
-
       //Foreach loop over all asics under this prefix. Call with a lambda function,
       //e.g. midasODB::MapForEach(hDB, "/Equipment/SciFi",[mudaqdev_ptr](Config c,int asic){mudaqdev_ptr->ConfigureAsic(c,asic);});
       //Function must return SUCCESS, otherwise loop is stopped.
       int MapForEach(std::function<int(mutrig::MutrigConfig* /*mutrig config*/,int /*ASIC #*/)> func);
-
-
-
 
       //FEB registers and functions.
       //Parameter FPGA_ID refers to the physical FEB port, i.e. after mapping

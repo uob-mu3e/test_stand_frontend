@@ -619,7 +619,7 @@ uint32_t check_event(T* buffer, uint32_t idx, uint32_t* pdata) {
     //printf("Header Buffer: %8.8x\n", buffer[idx]);
     //printf("Data: %8.8x\n", buffer[idx+4+eventDataSize/4-1]);
 
-    if ( !(buffer[idx+4+eventDataSize/4-1] == 0xAFFEAFFE or buffer[idx+4+eventDataSize/4-1] == 0x0FC0009C) ) {
+    if ( !(buffer[idx+4+eventDataSize/4-1] == 0xAFFEAFFE or buffer[idx+4+eventDataSize/4-1] == 0xFC00009C) ) {
       printf("Data: %8.8x\n", buffer[idx+4+eventDataSize/4-2]);
       return -1;
     }

@@ -38,7 +38,8 @@ int main() {
     while (1) {
         printf("\n");
         printf("[fe_dummy] -------- menu --------\n");
-	printf("ID: 0x%08x\n", ram->data[0xFFFB]);
+        printf("[lol_n/intr_n] S1 status: 0x%08x, S2 status: 0x%08x\n", ram->data[0xFF2B], ram->data[0xFF2B]);
+	    printf("ID: 0x%08x\n", ram->data[0xFF03]);
 
         printf("\n");
         printf("  [1] => Firefly channels\n");
