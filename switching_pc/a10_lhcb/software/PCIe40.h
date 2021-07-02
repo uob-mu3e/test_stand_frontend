@@ -13,8 +13,8 @@ void menu() {
         printf("[PCIe40] -------- menu --------\n");
 
         printf("\n");
-        printf("  [1] => si5345_1\n");
-        printf("  [2] => si5345_2\n");
+        printf("  [1] => si5345_1 menu\n");
+        printf("  [2] => si5345_2 menu\n");
         printf("  [m] => menu\n");
         printf("  [I] => init\n");
         printf("  [q] => exit\n");
@@ -24,11 +24,10 @@ void menu() {
         switch(cmd) {
         case '1':
             IOWR_ALTERA_AVALON_PIO_DATA(I2C_MASK_BASE, 1 << 1); // i2c_mask(1) <= '1'
+            si5345.menu();
             break;
         case '2':
             IOWR_ALTERA_AVALON_PIO_DATA(I2C_MASK_BASE, 1 << 2); // i2c_mask(2) <= '1'
-            break;
-        case 'm':
             si5345.menu();
             break;
         case 'I':
