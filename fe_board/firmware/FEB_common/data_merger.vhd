@@ -418,7 +418,6 @@ begin
                     (run_state=RUN_STATE_TERMINATING and can_terminate='1')
                     ) then
                     -- allows run end for idle and sending data, run end in state sending_data is always packet end
-                    data_read_req                           <= '1';
                     terminated(i)                           <= '1';
                     data_out(32*i+31 downto 32*i)           <= RUN_END;
                     data_is_k(4*i+3 downto 4*i)             <= RUN_END_DATAK;
