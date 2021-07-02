@@ -57,8 +57,6 @@ begin
     -- psl assert always ( i_we = '0' or wfull = '0' ) @ i_clk ;
 
     -- psl assert always ( we = '1' |=> rempty = '0' ) @ i_clk ;
-    -- psl assert always ( rptr = wptr |-> rempty = '1' ) @ i_clk ;
-    -- psl assert always ( unsigned(rptr) = unsigned(wptr) + 2**g_ADDR_WIDTH |-> wfull = '1' ) @ i_clk ;
 
 
 
