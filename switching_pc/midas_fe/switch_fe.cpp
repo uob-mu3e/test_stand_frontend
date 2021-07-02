@@ -674,8 +674,10 @@ INT init_scifi(mudaq::MudaqDevice & mu) {
     custom["SciFi-ASICs&"] = "mutrigTdc.html";
 
     // setup watches
-    odb scifi_setting("/Equipment/SciFi/Settings/Daq");
-    scifi_setting.watch(scifi_settings_changed);
+    if ( scififeb->GetNumASICs() != 0 ){
+        odb scifi_setting("/Equipment/SciFi/Settings/Daq");
+        scifi_setting.watch(scifi_settings_changed);
+    }
 
     return SUCCESS;
 }
