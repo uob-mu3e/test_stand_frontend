@@ -277,6 +277,7 @@ INT interrupt_configure(INT cmd, INT source, POINTER_T adr)
 
 INT frontend_init()
 {
+    set_equipment_status(equipment[EQUIPMENT_ID::Switching].name, "Initializing...", "var(--myellow)");
     for(size_t i =0; i < febpower.size(); i++)
         febpower[i] = 0;
 
@@ -360,6 +361,7 @@ INT frontend_init()
     setup_watches();
     setup_history();
 
+    set_equipment_status(equipment[EQUIPMENT_ID::Switching].name, "OK", "var(--mgreen)");
     return CM_SUCCESS;
 }
 
@@ -622,7 +624,7 @@ INT init_febs(mudaq::MudaqDevice & mu) {
     sorterdelays_changed(sorterdelays_odb);
 
     // switching setup part
-    set_equipment_status(equipment[EQUIPMENT_ID::Switching].name, "Initializing...", "var(--myellow)");
+    //set_equipment_status(equipment[EQUIPMENT_ID::Switching].name, "Initializing...", "var(--myellow)");
     mufeb = new  MuFEB(*feb_sc,
                         feblist->getFEBs(),
                         feblist->getFEBMask(),
@@ -640,7 +642,7 @@ INT init_febs(mudaq::MudaqDevice & mu) {
     odb sorterdelay_odb("/Equipment/Switching/Settings/Sorter Delay");
     sorterdelays_changed(sorterdelay_odb);
 
-    set_equipment_status(equipment[EQUIPMENT_ID::Switching].name, "Ok", "var(--mgreen)");
+    //set_equipment_status(equipment[EQUIPMENT_ID::Switching].name, "Ok", "var(--mgreen)");
 
     return SUCCESS;
 }
@@ -667,7 +669,6 @@ INT init_scifi(mudaq::MudaqDevice & mu) {
     scififeb->WriteAll();
     scififeb->WriteFEBID();
 
-    set_equipment_status(equipment[EQUIPMENT_ID::SciFi].name, "Ok", "var(--mgreen)");
     
     //set custom page
     odb custom("/Custom");
@@ -677,6 +678,8 @@ INT init_scifi(mudaq::MudaqDevice & mu) {
     // setup watches
     odb scifi_setting("/Equipment/SciFi/Settings/Daq");
     scifi_setting.watch(scifi_settings_changed);
+
+    set_equipment_status(equipment[EQUIPMENT_ID::SciFi].name, "Ok", "var(--mgreen)");
 
     return SUCCESS;
 }
