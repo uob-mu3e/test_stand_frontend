@@ -1,7 +1,9 @@
 #!/bin/bash
+set -euf
+
 # setup_mhttpd.sh
 
-SOURCE=@PROJECT_SOURCE_DIR@
+SOURCE="@PROJECT_SOURCE_DIR@"
 
 cd "${SOURCE}/online"
 
