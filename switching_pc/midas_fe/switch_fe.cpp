@@ -672,6 +672,7 @@ INT init_scifi(mudaq::MudaqDevice & mu) {
     //set custom page
     odb custom("/Custom");
     custom["SciFi-ASICs"] = "mutrigTdc.html";
+    custom["Pixel Control"] = "pixel_tracker.html";
 
     // setup watches
     odb scifi_setting("/Equipment/SciFi/Settings/Daq");
