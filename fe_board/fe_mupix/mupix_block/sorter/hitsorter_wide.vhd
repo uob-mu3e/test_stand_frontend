@@ -46,6 +46,7 @@ architecture rtl of hitsorter_wide is
 -- For run start/stop process
 signal running_last:   std_logic;
 signal running_read:   std_logic;
+signal running_read_last:   std_logic;
 signal running_seq:	   std_logic;
 
 signal tslow 	: ts_t;
@@ -223,6 +224,7 @@ begin
 if(reset_n = '0') then
 	running_last 	<= '0';
 	running_read	<= '0';
+	running_read_last	<= '0';
 	running_seq		<= '0';
 	
 	runstartup		<= '0';
@@ -235,6 +237,7 @@ if(reset_n = '0') then
 elsif (writeclk'event and writeclk = '1') then
 
 	running_last	<= running;
+	running_read_last  <= running_read;
 
 	if(running = '0') then
 		runstartup		<= '0';
@@ -405,8 +408,8 @@ genmem: for i in NCHIPS-1 downto 0 generate
 		dcountertemp2(i) <= dcountertemp(i);
 	
 		if((running = '1' or runshutdown = '1') and hit_ena_last2(i) ='1') then -- Hit coming in during run
-			if(((tshi > tslow) and (tshit(i) > tslow and tshit(i) < tshi)) or
-				((tslow > tshi) and (tshit(i) > tslow or tshit(i) < tshi))) then
+			if(((tshi > tslow) and (tshit(i) >= tslow and tshit(i) < tshi)) or
+				((tslow > tshi) and (tshit(i) >= tslow or tshit(i) < tshi))) then
 				-- Hit TS in the range we can accept
 				if(sametsnext(i) = '0' and sametsafternext(i) = '0') then -- not the same memory location as the last hit
 					waddr(i) 	<= tshit(i) & counterfrommem(3 downto 0);
@@ -571,23 +574,27 @@ elsif (writeclk'event and writeclk = '1') then
 		end loop;
 		mem_nnonempty 	<= mem_nonemptycount;
 		
-		block_empty <= '0';
+		
 		blockchange	<= '0';
-		if((or_reduce(tsread(TSNONBLOCKRANGE))) = '0') then
+		if((or_reduce(tsread(TSNONBLOCKRANGE))) = '0' and running_read_last = '1') then -- no block change at startup
 			blockchange <= '1';
-			block_nonempty_accumulate <= mem_ne;
-			if(block_nonempty_accumulate = '0') then
-				block_empty <= '1';
-			end if;
 			if(counterfifo_almostfull = '1' or credits <= 0) then
 				stopwrite <= '1';
 			else
 				stopwrite <= '0';
 			end if;
+		
+		end if;
+		
+		block_empty_del2 <= '0';
+		if(blockchange_del1 = '1') then
+            block_nonempty_accumulate <= mem_ne;
+            if(block_nonempty_accumulate = '0')then
+                block_empty_del2 <= '1';
+            end if;
 		else
 			block_nonempty_accumulate <= mem_ne or block_nonempty_accumulate;
 		end if;
-		
 		
 		
 		-- multiplexing of counters -- here we pack groups of three towards the LSB
@@ -633,7 +640,7 @@ elsif (writeclk'event and writeclk = '1') then
 		end loop;
 		
 		mem_overflow_del1 	<= mem_overflow;
-		block_empty_del1	<= block_empty;
+		--block_empty_del1	<= block_empty;
 		stopwrite_del1		<= stopwrite;
 		blockchange_del1	<= blockchange;
 		
@@ -657,7 +664,7 @@ elsif (writeclk'event and writeclk = '1') then
 		
 		
 		mem_overflow_del2 	<= mem_overflow_del1;
-		block_empty_del2	<= block_empty_del1;
+		--block_empty_del2	<= block_empty_del1;
 		stopwrite_del2		<= stopwrite_del1;
 		blockchange_del2	<= blockchange_del1;
 		
@@ -670,9 +677,11 @@ elsif (writeclk'event and writeclk = '1') then
 			if(hitcounter_sum_mem < 48) then -- limit number of hits per ts
 				creditchange := creditchange - hitcounter_sum_mem;
 			else
-				tofifo_counters(HASMEMBIT) 		<= '0';
+				tofifo_counters(HASMEMBIT) 		<= '1';
 				tofifo_counters(MEMOVERFLOWBIT)	<= '1';
 				tofifo_counters(MEMCOUNTERRANGE)	<= counter2chipszero;
+				creditchange := creditchange - 1;
+				tofifo_counters(0)                  <= '1';
 			end if;
 						
 			if(blockchange_del2 = '1') then

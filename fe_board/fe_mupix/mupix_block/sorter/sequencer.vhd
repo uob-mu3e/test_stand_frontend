@@ -49,6 +49,7 @@ signal subaddr:			counter_t;
 signal overflowts : std_logic_vector(15 downto 0);
 
 signal fifo_empty_last : std_logic;
+signal fifo_reading_last: boolean;
 signal newblocknext_reg : boolean;
 
 begin
@@ -73,6 +74,7 @@ elsif(clk'event and clk = '1') then
 	read_fifo		<= '0';
 
 	fifo_empty_last	<= fifo_empty;
+	
 
 	do_fifo_reading := false;
 	newblocknext 	:= from_fifo(TSBLOCKINFIFORANGE) /= current_block;
@@ -107,6 +109,7 @@ elsif(clk'event and clk = '1') then
 		if(fifo_empty = '1') then
 			command_enable 		<= '0';
 			do_fifo_reading 	:= true;
+			current_block		<= current_block;
 		elsif(from_fifo(HASMEMBIT) = '0') then
 			do_fifo_reading 	:= true;
 			subaddr				<= (others => '0');
@@ -117,7 +120,11 @@ elsif(clk'event and clk = '1') then
 				state 			<= subheader;
 			end if;
 		else
-			do_fifo_reading 	:= true;
+            if(from_fifo(3 downto 0) = "0001" and from_fifo(11 downto 8) = "0000") then
+                do_fifo_reading 	:= true;
+            else 
+                do_fifo_reading 	:= false;
+            end if;
 			state				<= hits;
 			subaddr				<= "0000";
 		end if;
@@ -133,8 +140,16 @@ elsif(clk'event and clk = '1') then
 			outcommand(COMMANDBITS-6 downto TIMESTAMPSIZE)   <= subaddr;
 			command_enable 	<= '1';
 
-			if(counters_reg(3 downto 0) = "0010" and counters_reg(11 downto 8) = "0000" and fifo_empty = '0') then
-				read_fifo <= '1';
+			if(counters_reg(3 downto 0) = "0010" and counters_reg(11 downto 8) = "0000" and fifo_empty = '0' and not newblocknext) then
+				do_fifo_reading := true;
+			end if;	
+			
+            --if(counters_reg(3 downto 0) = "0001" and counters_reg(11 downto 8) = "0000" and fifo_empty = '0' and newblocknext) then
+			--	do_fifo_reading := true;
+			--end if;	
+			
+            if(counters_reg(3 downto 0) = "0001" and counters_reg(11 downto 8) = "0001" and counters_reg(19 downto 16) = "0000" and fifo_empty = '0' and not newblocknext) then
+				do_fifo_reading := true;
 			end if;	
 
 			if(counters_reg(3 downto 0) = "0001" and counters_reg(11 downto 8) = "0000") then
@@ -147,9 +162,21 @@ elsif(clk'event and clk = '1') then
 						state			<= footer;
 					else
 						state 			<= subheader;
+						do_fifo_reading 	:= true;
+                        --if((from_fifo(3 downto 0) = "0001" and from_fifo(11 downto 8) = "0000"  and fifo_empty = '0') -- only one hit in the next packet, move ahead
+                        --or from_fifo(HASMEMBIT) = '0') then -- just a header, also move ahead
+                        --    do_fifo_reading 	:= true;
+                        --else 
+                        --    do_fifo_reading 	:= false;
+                        --end if;
 					end if;
 				else -- we stay in block
-					do_fifo_reading 	:= true;
+                    if((from_fifo(3 downto 0) = "0001" and from_fifo(11 downto 8) = "0000"  and fifo_empty = '0') -- only one hit in the next packet, move ahead
+                        or from_fifo(HASMEMBIT) = '0') then
+                        do_fifo_reading 	:= true;
+                    else
+                        do_fifo_reading 	:= false;
+                    end if;
 					subaddr				<= "0000";
 				end if;
 			elsif(counters_reg(3 downto 0) = "0001") then -- switch chip
@@ -193,8 +220,12 @@ elsif(clk'event and clk = '1') then
 	end case;
 
 
-	if(do_fifo_reading and fifo_empty='0') then
+	fifo_reading_last <= do_fifo_reading;
+	
+	if(do_fifo_reading ) then --and fifo_empty='0') then
 		read_fifo 		<= '1';
+    end if;
+    if(fifo_reading_last and fifo_empty='0') then
 		fifo_reg		<= from_fifo;
 		counters_reg	<= from_fifo(MEMCOUNTERRANGE);
 		domem			<= from_fifo(HASMEMBIT);
