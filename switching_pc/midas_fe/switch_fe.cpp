@@ -634,7 +634,7 @@ INT init_scifi(mudaq::MudaqDevice & mu) {
     
     //set custom page
     odb custom("/Custom");
-    custom["SciFi-ASICs&"] = "mutrigTdc.html";
+    custom["SciFi-ASICs"] = "mutrigTdc.html";
 
     return SUCCESS;
 }

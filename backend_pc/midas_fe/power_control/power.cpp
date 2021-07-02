@@ -362,6 +362,10 @@ void mscb_define(std::string eq, std::string devname, DEVICE_DRIVER *driver,
 
    // increment number of channels for this driver
    driver[dev_index].channels++;
+
+   // setup custom page
+   odb custom("/Custom");
+   custom["LV Power"] = "lowvoltage.html";
 }
 
 /*-- Error dispatcher causing communiction alarm -------------------*/
