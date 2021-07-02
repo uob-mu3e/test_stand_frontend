@@ -162,7 +162,7 @@ begin
 
     -- reset the data fifo in idle
     data_fifo_reset     <= '1' when ( run_state = RUN_STATE_IDLE or reset = '1' ) else '0';
-    e_common_fifo_data: entity work.ip_scfifo
+    e_common_fifo_data: entity work.ip_scfifo_not_broken
     generic map(
         ADDR_WIDTH      => FIFO_ADDR_WIDTH,
         DATA_WIDTH      => 36,
@@ -183,7 +183,7 @@ begin
         usedw           => usedw_data_fifo--,
     );
     
-    e_common_fifo_sc: entity work.ip_scfifo
+    e_common_fifo_sc: entity work.ip_scfifo_not_broken
     generic map(
         ADDR_WIDTH      => FIFO_ADDR_WIDTH,
         DATA_WIDTH      => 36,
