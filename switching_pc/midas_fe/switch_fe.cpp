@@ -676,8 +676,10 @@ INT init_scifi(mudaq::MudaqDevice & mu) {
     custom["Pixel Control"] = "pixel_tracker.html";
 
     // setup watches
-    odb scifi_setting("/Equipment/SciFi/Settings/Daq");
-    scifi_setting.watch(scifi_settings_changed);
+    if ( scififeb->GetNumASICs() != 0 ){
+        odb scifi_setting("/Equipment/SciFi/Settings/Daq");
+        scifi_setting.watch(scifi_settings_changed);
+    }
 
     set_equipment_status(equipment[EQUIPMENT_ID::SciFi].name, "Ok", "var(--mgreen)");
 

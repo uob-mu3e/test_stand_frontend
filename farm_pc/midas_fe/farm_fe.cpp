@@ -91,6 +91,7 @@ void setup_watches();
 
 INT init_mudaq();
 
+uint64_t get_link_active_from_odb(odb o);
 void link_active_settings_changed(odb);
 void stream_settings_changed(odb);
 /*-- Equipment list ------------------------------------------------*/
@@ -186,14 +187,21 @@ void stream_settings_changed(odb o)
         //this is set once we start the run
     }
 
-    if (name == "Mask Links") {
+    if (name == "mask_n_scifi") {
+        int value = o;
+        char buffer [50];
+        sprintf(buffer, "Set Mask Links to " PRINTF_BINARY_PATTERN_INT32, PRINTF_BYTE_TO_BINARY_INT32((long long int) value));
+        cm_msg(MINFO, "stream_settings_changed", buffer);
+        mup->write_register(SWB_LINK_MASK_SCIFI_REGISTER_W, value);
+    }
+
+    if (name == "mask_n_pixel") {
         int value = o;
         char buffer [50];
         sprintf(buffer, "Set Mask Links to " PRINTF_BINARY_PATTERN_INT32, PRINTF_BYTE_TO_BINARY_INT32((long long int) value));
         cm_msg(MINFO, "stream_settings_changed", buffer);
         mup->write_register(SWB_LINK_MASK_PIXEL_REGISTER_W, value);
     }
-
 }
 
 void link_active_settings_changed(odb o){
@@ -221,14 +229,18 @@ void link_active_settings_changed(odb o){
 // ODB Setup //////////////////////////////
 void setup_odb(){
 
+    // TODO: use me for the default values
+    odb cur_links_odb("/Equipment/Links/Settings/LinkMask");
+    std::bitset<64> cur_link_active_from_odb = get_link_active_from_odb(cur_links_odb);
+
     // Map /equipment/Stream/Settings
     odb stream_settings = {
         {"Datagen Divider", 1000},     // int
         {"Datagen Enable", false},     // bool
-        {"Mask Links", 0x0}, // int
+        {"mask_n_scifi", 0x0},         // int
+        {"mask_n_pixel", 0x0},         // int
         {"dma_buf_nwords", int(dma_buf_nwords)},
-        {"dma_buf_size", int(dma_buf_size)},
-        {"Use Scifi not Pixel Debug Data", 0x0}, // int 
+        {"dma_buf_size", int(dma_buf_size)}
     };
 
     stream_settings.connect("/Equipment/Stream/Settings", true);
@@ -392,25 +404,21 @@ INT begin_of_run(INT run_number, char *error)
    uint32_t reg=mu.read_register_rw(DATAGENERATOR_REGISTER_W);
    odb stream_settings;
    stream_settings.connect("/Equipment/Stream/Settings");
-   uint32_t use_pixel = !stream_settings["Use Scifi not Pixel Debug Data"];
 
    if(stream_settings["Datagen Enable"]) {
         int divider = stream_settings["Datagen Divider"];
         cm_msg(MINFO,"farm_fe", "Use datagenerator with divider register %d", divider);
         // readout datagen
-        mu.write_register(SWB_READOUT_STATE_REGISTER_W, 0x3 | (use_pixel << 7));
+        mu.write_register(SWB_READOUT_STATE_REGISTER_W, 0x3);
         mu.write_register(DATAGENERATOR_DIVIDER_REGISTER_W, divider);
    } else {
         cm_msg(MINFO,"farm_fe", "Use link data");
         // readout link
-        mu.write_register(SWB_READOUT_STATE_REGISTER_W, 0x42 | (use_pixel << 7));
+        mu.write_register(SWB_READOUT_STATE_REGISTER_W, 0x42);
    }
 
-   if ( use_pixel = 1 ) {
-       mu.write_register(SWB_LINK_MASK_PIXEL_REGISTER_W, stream_settings["Mask Links"]);
-   } else {
-       mu.write_register(SWB_LINK_MASK_SCIFI_REGISTER_W, stream_settings["Mask Links"]);
-   }
+   mu.write_register(SWB_LINK_MASK_PIXEL_REGISTER_W, stream_settings["mask_n_pixel"]);
+   mu.write_register(SWB_LINK_MASK_SCIFI_REGISTER_W, stream_settings["mask_n_scifi"]);
   
    // reset lastlastwritten
    lastlastWritten = 0;
@@ -478,6 +486,7 @@ INT end_of_run(INT run_number, char *error)
     mu.write_register(DATAGENERATOR_DIVIDER_REGISTER_W, 0x0);
     mu.write_register(SWB_READOUT_STATE_REGISTER_W, 0x0);
     mu.write_register(SWB_LINK_MASK_PIXEL_REGISTER_W, 0x0);
+    mu.write_register(SWB_LINK_MASK_SCIFI_REGISTER_W, 0x0);
     mu.write_register(SWB_READOUT_LINK_REGISTER_W, 0x0);
     mu.write_register(GET_N_DMA_WORDS_REGISTER_W, 0x0);
     // reset data path
@@ -672,6 +681,24 @@ INT read_stream_thread(void *param) {
             continue;
         }
 
+        // change readout state to switch between pixel and scifi
+        uint32_t current_readout_register = mu.read_register_rw(SWB_READOUT_STATE_REGISTER_W);
+        uint32_t current_pixel_mask_n = mu.read_register_rw(SWB_LINK_MASK_PIXEL_REGISTER_W);
+        uint32_t current_scifi_mask_n = mu.read_register_rw(SWB_LINK_MASK_SCIFI_REGISTER_W);
+
+        if ( current_pixel_mask_n != 0 && current_scifi_mask_n != 0 ) {
+            current_readout_register ^= 1UL << 7;
+            mu.write_register(SWB_READOUT_STATE_REGISTER_W, current_readout_register);
+        } else if ( current_pixel_mask_n != 0 && current_scifi_mask_n == 0 ) {
+            current_readout_register |= (1 << 7);
+            mu.write_register(SWB_READOUT_STATE_REGISTER_W, current_readout_register);
+        } else if ( current_pixel_mask_n == 0 && current_scifi_mask_n != 0 ) {
+            current_readout_register |= (0 << 7);
+            mu.write_register(SWB_READOUT_STATE_REGISTER_W, current_readout_register);
+        } else {
+            continue;
+        }
+
         // start dma
         mu.enable_continous_readout(0);
 
@@ -683,8 +710,8 @@ INT read_stream_thread(void *param) {
         mu.write_register_wait(RESET_REGISTER_W, reset_reg, 100);
 //         sleep(1);
         mu.write_register(RESET_REGISTER_W, 0x0);
-        
-        while ( (mu.read_register_ro(0x1C) & 1) == 0 ) {}
+
+        while ( (mu.read_register_ro(0x1C) & 1) == 0  ) {}
 
         uint32_t words_written = mu.read_register_ro(0x32);
 
@@ -758,4 +785,22 @@ INT read_stream_thread(void *param) {
     signal_readout_thread_active(0, FALSE);
 
     return 0;
+}
+
+uint64_t get_link_active_from_odb(odb o){
+
+   /* get link active from odb */
+   uint64_t link_active_from_odb = 0;
+   for(uint32_t link = 0; link < MAX_LINKS_PER_SWITCHINGBOARD; link++) {
+      // TODO: for Int run we only have on switch -> offset is zero
+      int offset = 0;//MAX_LINKS_PER_SWITCHINGBOARD * switch_id;
+      int cur_mask = o[offset + link];
+      if((cur_mask == FEBLINKMASK::ON) || (cur_mask == FEBLINKMASK::DataOn)){
+        //a standard FEB link (SC and data) is considered enabled if RX and TX are. 
+	    //a secondary FEB link (only data) is enabled if RX is.
+	    //Here we are concerned only with run transitions and slow control, the farm frontend may define this differently.
+        link_active_from_odb += (1 << link);
+      }
+   }
+   return link_active_from_odb;
 }
