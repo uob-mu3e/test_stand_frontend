@@ -44,7 +44,7 @@ begin
     assert ( g_N < 2 ) report "" severity failure;
 
     o_rdata <= rdata;
-    o_re <= re and not i_rempty and i_reset_n;
+    o_re <= re;
     o_rempty <= rempty;
 
     generate_N_0 : if ( g_N = 0 ) generate
@@ -54,7 +54,7 @@ begin
     end generate;
 
     generate_N_1 : if ( g_N = 1 ) generate
-        re <= i_re or rempty;
+        re <= ( i_re or rempty ) and not i_rempty;
 
         process(i_clk, i_reset_n)
         begin
@@ -62,7 +62,7 @@ begin
             rdata <= (others => '0');
             rempty <= '1';
         elsif rising_edge(i_clk) then
-            if ( re = '1' ) then
+            if ( i_re = '1' or rempty = '1' ) then
                 rdata <= i_rdata;
                 rempty <= i_rempty;
                 if ( i_rempty = '1' ) then
