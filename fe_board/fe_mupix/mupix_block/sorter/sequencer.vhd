@@ -100,7 +100,7 @@ elsif(clk'event and clk = '1') then
 		do_fifo_reading 	:= true;
 	when subheader =>
 		outcommand 					<= COMMAND_SUBHEADER;
-		outcommand(TSRANGE)			<= block_from_fifo & conv_std_logic_vector(0, BITSPERTSBLOCK);
+		outcommand(TSRANGE)			<= from_fifo(TSBLOCKINFIFORANGE) & conv_std_logic_vector(0, BITSPERTSBLOCK);
 		command_enable 				<= '1';
 		outoverflow					<= overflowts;	
 		overflowts					<= (others => '0');
@@ -120,13 +120,19 @@ elsif(clk'event and clk = '1') then
 				state 			<= subheader;
 			end if;
 		else
-            if(from_fifo(3 downto 0) = "0001" and from_fifo(11 downto 8) = "0000") then
-                do_fifo_reading 	:= true;
-            else 
-                do_fifo_reading 	:= false;
-            end if;
-			state				<= hits;
-			subaddr				<= "0000";
+	--		if(block_from_fifo /= current_block)then
+	--			state 				<= subheader;
+	--			subaddr				<= (others => '0');
+	--				current_block		<= block_from_fifo;
+	--		else	
+				if(from_fifo(3 downto 0) = "0001" and from_fifo(11 downto 8) = "0000") then
+                	do_fifo_reading 	:= true;
+            	else 
+                	do_fifo_reading 	:= false;
+            	end if;
+				state				<= hits;
+				subaddr				<= "0000";
+	--		end if;
 		end if;
 		
 	when hits =>
@@ -135,6 +141,8 @@ elsif(clk'event and clk = '1') then
 		outcommand(COMMANDBITS-1)	<= '0'; -- Hits, not a command
 		outcommand(TSRANGE)			<= fifo_reg(TSINFIFORANGE); 
 		
+		current_block <= block_from_fifo;
+
 		if(domem = '1') then
 			outcommand(COMMANDBITS-2 downto TIMESTAMPSIZE+4) <= counters_reg(7 downto 4);
 			outcommand(COMMANDBITS-6 downto TIMESTAMPSIZE)   <= subaddr;
@@ -158,7 +166,7 @@ elsif(clk'event and clk = '1') then
 					command_enable <= '0';
 				elsif(newblocknext) then -- the next block is a new one
 					current_block <= block_from_fifo;
-					if(current_block = block_max) then
+					if(block_from_fifo = block_max) then
 						state			<= footer;
 					else
 						state 			<= subheader;
