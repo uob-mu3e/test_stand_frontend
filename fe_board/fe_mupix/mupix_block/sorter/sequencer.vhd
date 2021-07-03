@@ -39,6 +39,8 @@ signal state: state_type;
 
 signal current_block:	block_t;
 constant block_max:		block_t := (others => '1');
+signal block_from_fifo:	block_t;
+
 
 signal fifo_reg	: sorterfifodata_t;
 signal counters_reg: std_logic_vector(MEMCOUNTERRANGE);
@@ -75,6 +77,7 @@ elsif(clk'event and clk = '1') then
 	do_fifo_reading := false;
 	newblocknext 	:= from_fifo(TSBLOCKINFIFORANGE) /= current_block;
 	newblocknext_reg <= newblocknext;
+	block_from_fifo <= from_fifo(TSBLOCKINFIFORANGE);
 
 	-- State machine for creating commands: We want to send a HEADER once per TS overflow, a SUBHEADER for every block
 	-- and ordered read commands for the hits, where the read commands contain both the memory address (corresponding to the TS)
@@ -95,7 +98,7 @@ elsif(clk'event and clk = '1') then
 		do_fifo_reading 	:= true;
 	when subheader =>
 		outcommand 					<= COMMAND_SUBHEADER;
-		outcommand(TSRANGE)			<= current_block & conv_std_logic_vector(0, BITSPERTSBLOCK);
+		outcommand(TSRANGE)			<= block_from_fifo & conv_std_logic_vector(0, BITSPERTSBLOCK);
 		command_enable 				<= '1';
 		outoverflow					<= overflowts;	
 		overflowts					<= (others => '0');
@@ -107,7 +110,7 @@ elsif(clk'event and clk = '1') then
 		elsif(from_fifo(HASMEMBIT) = '0') then
 			do_fifo_reading 	:= true;
 			subaddr				<= (others => '0');
-			current_block		<= current_block + '1';	
+			current_block		<= block_from_fifo;	
 			if(current_block = block_max) then
 				state			<= footer;
 			else
@@ -139,7 +142,7 @@ elsif(clk'event and clk = '1') then
 				if(fifo_empty = '1') then -- the fifo is empty, sit here and wait
 					command_enable <= '0';
 				elsif(newblocknext) then -- the next block is a new one
-					current_block <= current_block + '1';
+					current_block <= block_from_fifo;
 					if(current_block = block_max) then
 						state			<= footer;
 					else
@@ -169,7 +172,7 @@ elsif(clk'event and clk = '1') then
 				command_enable <= '0';
 			elsif(newblocknext) then -- the next block is a new one
 				do_fifo_reading 	:= true;
-				current_block <= current_block + '1';
+				current_block <= block_from_fifo;
 				if(current_block = block_max) then
 					state			<= footer;
 				else
@@ -186,6 +189,7 @@ elsif(clk'event and clk = '1') then
 		outcommand		<= COMMAND_FOOTER;
 		command_enable 	<= '1';
 		state			<= header1;
+		current_block	<= (others => '0');
 	end case;
 
 
