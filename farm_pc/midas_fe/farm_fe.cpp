@@ -119,7 +119,7 @@ EQUIPMENT equipment[] = {
      EQ_PERIODIC,                /* equipment type */
      0,                      /* event source crate 0, all stations */
      "MIDAS",                /* format */
-     TRUE,                   /* enabled */
+     FALSE,                   /* enabled */
      RO_ALWAYS  | RO_ODB,             /* read only when running */
      1000,                    /* poll for 1s */
      0,                      /* stop run after this event limit */
@@ -176,31 +176,30 @@ void stream_settings_changed(odb o)
     cm_msg(MINFO, "stream_settings_changed", "Stream stettings changed");
 
     if (name == "Datagen Divider") {
-        int value = o;
-        cm_msg(MINFO, "stream_settings_changed", "Set Divider to %d", value);
-        mup->write_register(DATAGENERATOR_DIVIDER_REGISTER_W, o);
+        uint32_t divider = o;
+        cm_msg(MINFO, "stream_settings_changed", "Set Divider to %d", divider);
+        mup->write_register(DATAGENERATOR_DIVIDER_REGISTER_W, divider);
     }
 
     if (name == "Datagen Enable") {
-        bool value = o;
-        cm_msg(MINFO, "stream_settings_changed", "Set Disable to %d", value);
+        cm_msg(MINFO, "stream_settings_changed", "Set Disable to %s", o ? "y" : "n");
         //this is set once we start the run
     }
 
     if (name == "mask_n_scifi") {
-        int value = o;
+        uint32_t mask = o;
         char buffer [50];
-        sprintf(buffer, "Set Mask Links to " PRINTF_BINARY_PATTERN_INT32, PRINTF_BYTE_TO_BINARY_INT32((long long int) value));
+        sprintf(buffer, "Set Mask Links Scifi to " PRINTF_BINARY_PATTERN_INT32, PRINTF_BYTE_TO_BINARY_INT32((long long int) mask));
         cm_msg(MINFO, "stream_settings_changed", buffer);
-        mup->write_register(SWB_LINK_MASK_SCIFI_REGISTER_W, value);
+        mup->write_register(SWB_LINK_MASK_SCIFI_REGISTER_W, mask);
     }
 
     if (name == "mask_n_pixel") {
-        int value = o;
+        uint32_t mask = o;
         char buffer [50];
-        sprintf(buffer, "Set Mask Links to " PRINTF_BINARY_PATTERN_INT32, PRINTF_BYTE_TO_BINARY_INT32((long long int) value));
+        sprintf(buffer, "Set Mask Links Pixel to " PRINTF_BINARY_PATTERN_INT32, PRINTF_BYTE_TO_BINARY_INT32((long long int) mask));
         cm_msg(MINFO, "stream_settings_changed", buffer);
-        mup->write_register(SWB_LINK_MASK_PIXEL_REGISTER_W, value);
+        mup->write_register(SWB_LINK_MASK_PIXEL_REGISTER_W, mask);
     }
 }
 
@@ -230,8 +229,8 @@ void link_active_settings_changed(odb o){
 void setup_odb(){
 
     // TODO: use me for the default values
-    odb cur_links_odb("/Equipment/Links/Settings/LinkMask");
-    std::bitset<64> cur_link_active_from_odb = get_link_active_from_odb(cur_links_odb);
+    //odb cur_links_odb("/Equipment/Links/Settings/LinkMask");
+    //std::bitset<64> cur_link_active_from_odb = get_link_active_from_odb(cur_links_odb);
 
     // Map /equipment/Stream/Settings
     odb stream_settings = {
@@ -250,29 +249,29 @@ void setup_odb(){
     custom["Farm&"] = "farm.html";
     
     // add error cnts to ODB
-    odb error_settings = {
-        {"DC FIFO ALMOST FUll", 0},
-        {"DC LINK FIFO FULL", 0},
-        {"TAG FIFO FULL", 0},
-        {"MIDAS EVENT RAM FULL", 0},
-        {"STREAM FIFO FULL", 0},
-        {"DMA HALFFULL", 0},
-        {"SKIP EVENT LINK FIFO", 0},
-        {"SKIP EVENT DMA RAM", 0},
-        {"IDLE NOT EVENT HEADER", 0},
-    };
-    error_settings.connect("/Equipment/Stream Logger/Variables", true);
+    //odb error_settings = {
+    //    {"DC FIFO ALMOST FUll", 0},
+    //    {"DC LINK FIFO FULL", 0},
+    //    {"TAG FIFO FULL", 0},
+    //    {"MIDAS EVENT RAM FULL", 0},
+    //    {"STREAM FIFO FULL", 0},
+    //    {"DMA HALFFULL", 0},
+    //    {"SKIP EVENT LINK FIFO", 0},
+    //    {"SKIP EVENT DMA RAM", 0},
+    //    {"IDLE NOT EVENT HEADER", 0},
+    //};
+    //error_settings.connect("/Equipment/Stream Logger/Variables", true);
     
     // Define history panels
-    hs_define_panel("Stream Logger", "MIDAS Bank Builder", {"Stream Logger:DC FIFO ALMOST FUll",
-                                                            "Stream Logger:DC LINK FIFO FULL",
-                                                            "Stream Logger:TAG FIFO FULL",
-                                                            "Stream Logger:MIDAS EVENT RAM FULL",
-                                                            "Stream Logger:STREAM FIFO FULL",
-                                                            "Stream Logger:DMA HALFFULL",
-                                                            "Stream Logger:SKIP EVENT LINK FIFO",
-                                                            "Stream Logger:SKIP EVENT DMA RAM",
-                                                            "Stream Logger:IDLE NOT EVENT HEADER"});
+    //hs_define_panel("Stream Logger", "MIDAS Bank Builder", {"Stream Logger:DC FIFO ALMOST FUll",
+    //                                                        "Stream Logger:DC LINK FIFO FULL",
+    //                                                        "Stream Logger:TAG FIFO FULL",
+    //                                                        "Stream Logger:MIDAS EVENT RAM FULL",
+    //                                                        "Stream Logger:STREAM FIFO FULL",
+    //                                                        "Stream Logger:DMA HALFFULL",
+    //                                                        "Stream Logger:SKIP EVENT LINK FIFO",
+    //                                                        "Stream Logger:SKIP EVENT DMA RAM",
+    //                                                        "Stream Logger:IDLE NOT EVENT HEADER"});
 }
 
 void setup_watches(){
