@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+   <meta charset="UTF-8">
+   <link rel="stylesheet" href="midas.css">
+   <script src="controls.js"></script>
+   <script src="midas.js"></script>
+   <script src="mhttpd.js"></script>
+   <title>DispCounters</title>
+</head>
+
+
+
+<body class="mcss" onload="mhttpd_init('DispCounters');">
+
+<!-- header and side navigation will be filled in mhttpd_start -->
+<div id="mheader"></div>
+<div id="msidenav"></div>
+
+<div id="mmain">
+    <table class="mtable">
+        <tr>
+            <th colspan="16" class="mtableheader">Counters</th>
+        </tr>
+        <tr>
+            <td style="width: 250;">
+               nHits:
+            </td>
+            <td>
+               <div class="modbvalue" data-odb-path="/Equipement/SciFi/Variables/Counters/nHits"></div>
+            </td>
+        </tr>
+        <tr>
+            <td>
+               Time :
+            </td>
+            <td>
+               <div class="modbvalue" data-odb-path="/Equipement/SciFi/Variables/Counters/Time"></div>
+            </td>
+        </tr>
+        <tr>
+            <td>
+                nBadFrames :
+            </td>
+            <td>
+               <div class="modbvalue" data-odb-path="/Equipement/SciFi/Variables/Counters/nBadFrames"></div>
+            </td>
+        </tr>
+        <tr>
+            <td>
+                nFrames :
+            </td>
+            <td>
+               <div class="modbvalue" data-odb-path="/Equipement/SciFi/Variables/Counters/nFrames"></div>
+            </td>
+        </tr>
+        <tr>
+            <td>
+                nErrorsLVDS :
+            </td>
+            <td>
+               <div class="modbvalue" data-odb-path="/Equipement/SciFi/Variables/Counters/nErrorsLVDS"></div>
+            </td>
+        </tr>
+        <tr>
+            <td>
+                nWordsLVDS :
+            </td>
+            <td>
+               <div class="modbvalue" data-odb-path="/Equipement/SciFi/Variables/Counters/nWordsLVDS"></div>
+            </td>
+        </tr>
+        <tr>
+            <td>
+                nErrorsPRBS :
+            </td>
+            <td>
+               <div class="modbvalue" data-odb-path="/Equipement/SciFi/Variables/Counters/nErrorsPRBS"></div>
+            </td>
+        </tr>
+        <tr>
+            <td>
+                nWordsPRBS :
+            </td>
+            <td>
+               <div class="modbvalue" data-odb-path="/Equipement/SciFi/Variables/Counters/nWordsPRBS"></div>
+            </td>
+        </tr>
+        <tr>
+            <td>
+                nDatasyncloss :
+            </td>
+            <td>
+               <div class="modbvalue" data-odb-path="/Equipement/SciFi/Variables/Counters/nDatasyncloss"></div>
+            </td>
+        </tr>
+
+
+        
+        
+
+
+    </table>
+
+    <table class="mtable">
+        <tr>
+            <th colspan="16" class="mtableheader">FEB Run State</th>
+        </tr>
+        <tr>
+            <td style="width: 275px;">
+                Bypass enabled:
+            </td>
+            <td>
+               <div class="modbvalue" data-odb-path="/Equipement/SciFi/Variables/Feb Run State/Bypass enabled"></div>
+            </td>
+        </tr>
+
+        <tr>
+            <td>
+                Run state :
+            </td>
+            <td>
+               <div class="modbvalue" data-odb-path="/Equipement/SciFi/Variables/FEB Run State/Run state"></div>
+            </td>
+        </tr>
+    </table>
+
+
+
+    <table class="mtable">
+
+        <tr>
+            <th colspan="16" class="mtableheader">FEB datapath status</th>
+        </tr>
+        <tr>
+            <td style="width: 200px;">
+                PLL locked:
+            </td>
+            <td>
+               <div class="modbvalue" data-odb-path="/Equipement/SciFi/Variables/FEB datapath status/PLL locked"></div>
+            </td>
+        </tr>
+
+        <tr>
+            <td>
+                Buffer full :
+            </td>
+            <td>
+               <div class="modbvalue" data-odb-path="/Equipement/SciFi/Variables/FEB datapath status/Buffer full"></div>
+            </td>
+        </tr>
+
+        <tr>
+            <td>
+                Frame desync :
+            </td>
+            <td>
+               <div class="modbvalue" data-odb-path="/Equipement/SciFi/Variables/FEB datapath status/Frame desync"></div>
+            </td>
+        </tr>
+
+        <tr>
+            <td>
+                DPA locked :
+            </td>
+            <td>
+               <div class="modbvalue" data-odb-path="/Equipement/SciFi/Variables/FEB datapath status/DPA locked"></div>
+            </td>
+        </tr>
+
+        <tr>
+            <td>
+                RX ready :
+            </td>
+            <td>
+               <div class="modbvalue" data-odb-path="/Equipement/SciFi/Variables/FEB datapath status/RX ready"></div>
+            </td>
+        </tr>
+
+    </table>
+
+
+</div>
+
+</body>
+</html>
