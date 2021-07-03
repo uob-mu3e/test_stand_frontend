@@ -183,7 +183,11 @@ void stream_settings_changed(odb o)
 
     if (name == "Datagen Enable") {
         cm_msg(MINFO, "stream_settings_changed", "Set Disable to %s", o ? "y" : "n");
-        //this is set once we start the run
+        if (o) {
+            mup->write_register(SWB_READOUT_STATE_REGISTER_W, 0x3);
+        } else {
+            mup->write_register(SWB_READOUT_STATE_REGISTER_W, 0x42);
+        }
     }
 
     if (name == "mask_n_scifi") {
@@ -242,7 +246,7 @@ void setup_odb(){
         {"dma_buf_size", int(dma_buf_size)}
     };
 
-    stream_settings.connect("/Equipment/Stream/Settings", true);
+    stream_settings.connect("/Equipment/Stream/Settings");
 
     // add custom page to ODB
     odb custom("/Custom");
@@ -627,7 +631,7 @@ uint32_t check_event(T* buffer, uint32_t idx, uint32_t* pdata) {
     //printf("Header Buffer: %8.8x\n", buffer[idx]);
     //printf("Data: %8.8x\n", buffer[idx+4+eventDataSize/4-1]);
 
-    if ( !(buffer[idx+4+eventDataSize/4-1] == 0xAFFEAFFE or buffer[idx+4+eventDataSize/4-1] == 0xFC00009C) ) {
+    if ( !(buffer[idx+4+eventDataSize/4-1] == 0xAFFEAFFE or buffer[idx+4+eventDataSize/4-1] == 0xFC00009C or buffer[idx+4+eventDataSize/4-1] == 0xFC00019C) ) {
       printf("Data: %8.8x\n", buffer[idx+4+eventDataSize/4-2]);
       return -1;
     }
@@ -688,12 +692,15 @@ INT read_stream_thread(void *param) {
         if ( current_pixel_mask_n != 0 && current_scifi_mask_n != 0 ) {
             current_readout_register ^= 1UL << 7;
             mu.write_register(SWB_READOUT_STATE_REGISTER_W, current_readout_register);
+            cout << "1state: " << hex << mu.read_register_rw(SWB_READOUT_STATE_REGISTER_W) << endl;
         } else if ( current_pixel_mask_n != 0 && current_scifi_mask_n == 0 ) {
             current_readout_register |= (1 << 7);
             mu.write_register(SWB_READOUT_STATE_REGISTER_W, current_readout_register);
+            cout << "2state: " << hex << mu.read_register_rw(SWB_READOUT_STATE_REGISTER_W) << endl;
         } else if ( current_pixel_mask_n == 0 && current_scifi_mask_n != 0 ) {
-            current_readout_register |= (0 << 7);
+            current_readout_register &= ~(1 << 7);
             mu.write_register(SWB_READOUT_STATE_REGISTER_W, current_readout_register);
+            cout << "3state: " << hex << mu.read_register_rw(SWB_READOUT_STATE_REGISTER_W) << endl;
         } else {
             continue;
         }
@@ -710,7 +717,23 @@ INT read_stream_thread(void *param) {
 //         sleep(1);
         mu.write_register(RESET_REGISTER_W, 0x0);
 
-        while ( (mu.read_register_ro(0x1C) & 1) == 0  ) {}
+
+        while ( (mu.read_register_ro(0x1C) & 1) == 0 ) {
+            // check mask for timeout
+            if ( mu.read_register_rw(SWB_LINK_MASK_PIXEL_REGISTER_W) == 0 && mu.read_register_rw(SWB_LINK_MASK_SCIFI_REGISTER_W) == 0 ) {
+                 break;
+            } else if ( mu.read_register_rw(SWB_LINK_MASK_PIXEL_REGISTER_W) != 0 && mu.read_register_rw(SWB_LINK_MASK_SCIFI_REGISTER_W) != 0 ) {
+                continue;
+            } else if ( mu.read_register_rw(SWB_LINK_MASK_PIXEL_REGISTER_W) != 0 ) {
+                current_readout_register = mu.read_register_rw(SWB_READOUT_STATE_REGISTER_W);
+                current_readout_register |= (1 << 7);
+                mu.write_register(SWB_READOUT_STATE_REGISTER_W, current_readout_register);
+            } else if ( mu.read_register_rw(SWB_LINK_MASK_SCIFI_REGISTER_W) != 0 ) {
+                current_readout_register = mu.read_register_rw(SWB_READOUT_STATE_REGISTER_W);
+                current_readout_register &= ~(1 << 7);
+                mu.write_register(SWB_READOUT_STATE_REGISTER_W, current_readout_register);
+           }
+        }
 
         uint32_t words_written = mu.read_register_ro(0x32);
 
@@ -721,6 +744,9 @@ INT read_stream_thread(void *param) {
         mu.write_register(GET_N_DMA_WORDS_REGISTER_W, 0x0);
         // reset all
         mu.write_register(RESET_REGISTER_W, reset_reg);
+
+        // check mask
+        if ( mu.read_register_rw(SWB_LINK_MASK_PIXEL_REGISTER_W) == 0 && mu.read_register_rw(SWB_LINK_MASK_SCIFI_REGISTER_W) == 0 ) continue;
         
         // and get lastWritten / endofevent
         // NOTE (24.06.2021): for the moment we dont really care for the endofevent
@@ -728,7 +754,7 @@ INT read_stream_thread(void *param) {
         lastlastWritten = 0;
         uint32_t lastWritten = mu.last_written_addr();
         //uint32_t endofevent = mu.last_endofevent_addr();
- 
+
         // walk events to find end of last event
         uint32_t offset = 0;
         uint32_t cnt = 0;
@@ -753,7 +779,7 @@ INT read_stream_thread(void *param) {
             // check enough space for data
             if(offset + eventLength / 4 > lastWritten) break;
             uint32_t size_dma_buf = check_event(dma_buf, offset, pdata);
-            printf("data2: %8.8x offset: %8.8x lastwritten: %8.8x sizeEvent: %d\n", dma_buf[offset], offset, lastWritten, size_dma_buf);
+            //printf("data2: %8.8x offset: %8.8x lastwritten: %8.8x sizeEvent: %d\n", dma_buf[offset], offset, lastWritten, size_dma_buf);
             if ( size_dma_buf == -1 ) {
                 printf("size_dma_buf == -1\n");
                 printf("Events written %d\n", cnt);
