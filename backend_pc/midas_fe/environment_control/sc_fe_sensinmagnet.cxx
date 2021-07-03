@@ -229,6 +229,25 @@ INT frontend_init()
    hs_define_panel("Environment", "Oxygen", {"SensInMagnet:Env_US2 - O2-7-top",
                                              "SensInMagnet:Env_US3 - O2-6-central",
                                              "SensInMagnet:Env_DS3 - O2-11-bottom"});
+   // Temperature
+   hs_define_panel("Environment", "Temperature", {"SensInMagnet:PCMini52_T", 
+                                                  "SensInMagnet:LM35_Fibre_US",
+                                                  "SensInMagnet:LM35_FEC1_US", 
+                                                  "SensInMagnet:LM35_top_US", 
+                                                  "SensInMagnet:LM35_Fibre_DS",
+                                                  "SensInMagnet:LM35_FEC1_DS", 
+                                                  "SensInMagnet:LM35_top_DS"}); 
+   // Humidity
+   hs_define_panel("Environment", "Humidity", {"SensInMagnet:PCMini52_RH", 
+                                               "SensInMagnet:HIH4040_top_US",
+                                               "SensInMagnet:HIH4040_top_DS", 
+                                               "SensInMagnet:HIH4040_bottom_US", 
+                                               "SensInMagnet:HIH4040_central_US",
+                                               "SensInMagnet:HIH4040_bottom_DS", 
+                                               "SensInMagnet:HIH4040_central_DS"}); 
+   // Water
+   hs_define_panel("Environment", "Water", {"SensInMagnet:Water_US",
+                                             "SensInMagnet:Water_DS"});
 
 
    return CM_SUCCESS;
