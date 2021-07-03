@@ -50,13 +50,14 @@ using midas::odb;
  * */
 
 // TODO: Can we automatically sync this with the NIOS code?
+// Should be possible like done with SCIFI_CTRL_DUMMY_REGISTER_W
 #define SC_REG_OFFSET 0xff60
 #define FE_DPMON_STATUS_REG    (SC_REG_OFFSET+0x4)
 #define FE_DPMON_DPALOCK_REG   (SC_REG_OFFSET+0x5)
 #define FE_DPMON_RXRDY_REG     (SC_REG_OFFSET+0x6)
 #define FE_DPMON_RESERVED_REG  (SC_REG_OFFSET+0x7)
-#define FE_DUMMYCTRL_REG       (SC_REG_OFFSET+0x8)
-#define FE_DPCTRL_REG          (SC_REG_OFFSET+0x9)
+#define FE_DUMMYCTRL_REG       SCIFI_CTRL_DUMMY_REGISTER_W
+#define FE_DPCTRL_REG          SCIFI_CTRL_DP_REGISTER_W
 #define FE_SUBDET_RESET_REG    (SC_REG_OFFSET+0xa)
 #define FE_RESETSKEW_GLOBALS_REG  (SC_REG_OFFSET+0xb)
 #define FE_SPIDATA_ADDR		0
