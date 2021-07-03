@@ -174,7 +174,7 @@ architecture arch of fe_block_v2 is
     signal ffly_rx_data             : std_logic_vector(127 downto 0);
     signal ffly_rx_datak            : std_logic_vector(15 downto 0);
 
-    signal fpga_id_reg              : std_logic_vector(N_LINKS*16-1 downto 0);
+    signal fpga_id_reg              : std_logic_vector(15 downto 0);
 
     signal ffly_tx_data             : std_logic_vector(127 downto 0) :=
                                           X"000000" & work.mudaq.D28_5
@@ -198,6 +198,11 @@ architecture arch of fe_block_v2 is
     signal arriaV_temperature_temp  : std_logic_vector(7 downto 0);
     type temp_state_t               is (convert, clear);
     signal temp_state               :  temp_state_t;
+
+    signal ffly_pwr                 : std_logic_vector(127 downto 0); -- RX optical power in mW
+    signal ffly_temp                : std_logic_vector(15 downto 0);  -- temperature in °C
+    signal ffly_alarm               : std_logic_vector(63 downto 0);  -- latched alarm bits
+    signal ffly_vcc                 : std_logic_vector(31 downto 0);  -- operating voltagein units of 100 uV 
     
     -- Max 10 SPI 
     signal adc_reg                  : work.util.slv32_array_t(4 downto 0);
@@ -320,6 +325,14 @@ begin
         i_max10_version             => max10_version,
         i_max10_status              => max10_status,
         i_programming_status        => programming_status,
+
+        i_ffly_pwr                  => ffly_pwr,
+        i_ffly_temp                 => ffly_temp,
+        i_ffly_alarm                => ffly_alarm,
+        i_ffly_vcc                  => ffly_vcc,
+        
+        i_si45_intr_n               => i_si45_intr_n,
+        i_si45_lol_n                => i_si45_lol_n,
 
         -- outputs 156--------------------------------------------
         o_reg_cmdlen                => reg_cmdlen,
@@ -533,7 +546,7 @@ begin
         end if;
     end process;
 
-
+		 
     --TODO: do we need two independent link test modules for both fibers?
     e_link_test : entity work.linear_shift_link
     generic map (
@@ -589,7 +602,7 @@ begin
 
     e_mscb : entity work.mscb
     generic map (
-        CLK_MHZ_g => 156.25--,
+        g_CLK_MHZ => 156.25--,
     )
     port map (
         i_avs_address           => av_mscb.address(3 downto 0),
@@ -657,7 +670,12 @@ begin
         o_avs_waitrequest               => av_ffly.waitrequest,
 
         o_testclkout                    => open,
-        o_testout                       => open--,
+        o_testout                       => open,
+
+        o_pwr                           => ffly_pwr,
+        o_temp                          => ffly_temp,
+        o_vcc                           => ffly_vcc,
+        o_alarm                         => ffly_alarm
     );
 
     e_max10_interface : entity work.max10_interface
@@ -676,9 +694,9 @@ begin
         io_SPI_D3           => io_max10_spi_D3,
     
         adc_reg             => adc_reg,
-        max10_version       => max10_version,
-        max10_status        => max10_status,
-        programming_status  => programming_status,
+        o_max10_version     => max10_version,
+        o_max10_status      => max10_status,
+        o_programming_status=> programming_status,
 
         programming_ctrl    => programming_ctrl,
         programming_data    => programming_data,

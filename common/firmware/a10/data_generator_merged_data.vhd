@@ -176,9 +176,9 @@ begin
 						o_state 				<= x"D";
 						global_time 			<= global_time + '1';
 						o_data(37 downto 32) 	<= sh_marker;
-                    	o_data(31 downto 28) 	<= "0000";
-                    	o_data(27 downto 22) 	<= "111111";
-                    	o_data(21 downto 16) 	<= global_time(9 downto 4);
+                    	o_data(31 downto 26) 	<= "111111";
+                    	o_data(25 downto 23) 	<= "000";
+                    	o_data(22 downto 16) 	<= global_time(10 downto 4);
                     	o_data(15 downto 0)		<= lsfr_overflow;
 						overflow_idx 			:= 0;
 						current_overflow		:= lsfr_overflow;

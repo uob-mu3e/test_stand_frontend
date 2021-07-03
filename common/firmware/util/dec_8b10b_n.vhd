@@ -29,7 +29,7 @@ begin
 
     generate_dec_8b10b : for i in 0 to N_BYTES_g-1 generate
     begin
-        e_enc_8b10b : entity work.dec_8b10b_v2
+        e_enc_8b10b : entity work.dec_8b10b
         port map (
             i_data => i_data(i*10 + 9 downto 0 + i*10),
             i_disp => disp(i),

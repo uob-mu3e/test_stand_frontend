@@ -33,7 +33,7 @@ GENERIC (
 PORT (
     clk                         : in    std_logic; -- 156.25 clk input
     reset                       : in    std_logic;
-    fpga_ID_in                  : in    std_logic_vector(N_LINKS*16-1 downto 0); -- will be set by 15 jumpers in the end, set this to something random for now
+    fpga_ID_in                  : in    std_logic_vector(15 downto 0); -- will be set by 15 jumpers in the end, set this to something random for now
     FEB_type_in                 : in    std_logic_vector(5  downto 0); -- Type of the frontendboard (111010: mupix, 111000: mutrig, DO NOT USE 000111 or 000000 HERE !!!!)
     run_state                   : in    run_state_t;
     run_number                  : in    std_logic_vector(31 downto 0);
@@ -127,11 +127,11 @@ g_merger: for i in N_LINKS-1 downto 0 generate
     
     signal usedw_data_fifo                      : std_logic_vector(FIFO_ADDR_WIDTH-1 downto 0);
     signal usedw_slowcontrol_fifo               : std_logic_vector(FIFO_ADDR_WIDTH-1 downto 0);
-    
-----------------begin data merger------------------------
+    signal data_fifo_reset                      : std_logic;
+    ---------------begin data merger------------------------
 begin 
 
-    e_data_overflow_check: entity work.overflow_check
+    e_data_overflow_check: entity work.overflow_check -- TODO: counter how often, stop run etc when overflow
     generic map(
         FIFO_ADDR_WIDTH => FIFO_ADDR_WIDTH--,
     )
@@ -160,16 +160,19 @@ begin
         o_wdata         => i_data_in_slowcontrol_checked--,
     );
 
+    -- reset the data fifo in idle
+    data_fifo_reset     <= '1' when ( run_state = RUN_STATE_IDLE or reset = '1' ) else '0';
     e_common_fifo_data: entity work.ip_scfifo
     generic map(
         ADDR_WIDTH      => FIFO_ADDR_WIDTH,
         DATA_WIDTH      => 36,
         SHOWAHEAD       => "ON",
+		  REGOUT          => 0,
         DEVICE          => "Stratix IV"--,
     )
     port map (
         clock           => clk,
-        sclr            => reset,
+        sclr            => data_fifo_reset,
         data            => i_data_in_checked,
         wrreq           => data_write_req_checked,
         full            => open,
@@ -186,6 +189,7 @@ begin
         ADDR_WIDTH      => FIFO_ADDR_WIDTH,
         DATA_WIDTH      => 36,
         SHOWAHEAD       => "ON",
+		  REGOUT          => 0,
         DEVICE          => "Stratix IV"--,
     )
     port map (
@@ -221,7 +225,7 @@ begin
         -- if the merger stays in read slowcontrol or read data for 2^16 cycles --> trigger merger timeout
         if ( merger_state = prev_merger_state and merger_state /= idle ) then
             if ( merger_timeout_counter = 10000 ) then
-                merger_state                    <= idle;
+                merger_state                    <= idle; -- TODO: do i do when state Something merger_state <= something;
                 slowcontrol_read_req            <= '0';
                 data_read_req                   <= '0';
                 data_is_k(4*i+3 downto 4*i)     <= MERGER_TIMEOUT_DATAK;
@@ -246,7 +250,7 @@ begin
                     data_is_k(4*i+3 downto 4*i)             <= "0001";
                     data_out (32*i+31 downto 26+32*i)       <= "010101";
                     data_out (32*i+25 downto 24+32*i)       <= "00";
-                    data_out (32*i+23 downto 8 +32*i)       <= fpga_ID_in(16+i*16-1 downto i*16);
+                    data_out (32*i+23 downto 8 +32*i)       <= fpga_ID_in;
                     data_out (32*i+7  downto 0 +32*i)       <= x"bc";
 
                     merger_state                            <= sending_data;
@@ -327,7 +331,7 @@ begin
                     data_is_k(4*i+3 downto 4*i)             <= "0001";
                     data_out(32*i+31 downto 26+32*i)        <= "000111";
                     data_out(32*i+25 downto 24+32*i)        <= data_in_slowcontrol(35 downto 34);
-                    data_out(32*i+23 downto 8 +32*i)        <= fpga_ID_in(16+i*16-1 downto i*16);
+                    data_out(32*i+23 downto 8 +32*i)        <= fpga_ID_in;
                     data_out(32*i+ 7 downto 0 +32*i)        <= x"bc";
                     merger_state                            <= sending_slowcontrol; -- go to sending slowcontrol state next
 
@@ -345,7 +349,7 @@ begin
                 elsif ( data_in_slowcontrol(33 downto 32) = "11" ) then -- end of packet marker
                     merger_state                            <= idle;
                     slowcontrol_read_req                    <= '0';
-                    data_out(32*i+31 downto 32*i)           <= x"000000" & K284;
+                    data_out(32*i+31 downto 32*i)           <= x"000000" & K284; -- K285 is 000000BC, K284 is XX, cofusing -> change
                     data_is_k(4*i+3 downto 4*i)             <= K284_datak;
                 else
                     slowcontrol_read_req                    <= '1';
@@ -379,7 +383,7 @@ begin
                     data_is_k(4*i+3 downto 4*i)             <= "0001";
                     data_out(32*i+31 downto 26+32*i)        <= "000111";
                     data_out(32*i+25 downto 24+32*i)        <= data_in_slowcontrol(35 downto 34);
-                    data_out(32*i+23 downto 8 +32*i)        <= fpga_ID_in(16+i*16-1 downto i*16);
+                    data_out(32*i+23 downto 8 +32*i)        <= fpga_ID_in;
                     data_out(32*i+ 7 downto 0 +32*i)        <= x"bc";
                     merger_state                            <= sending_slowcontrol; -- go to sending slowcontrol state next
                 end if;
@@ -416,6 +420,7 @@ begin
                     (run_state=RUN_STATE_TERMINATING and can_terminate='1')
                     ) then
                     -- allows run end for idle and sending data, run end in state sending_data is always packet end
+                    data_read_req                           <= '1';
                     terminated(i)                           <= '1';
                     data_out(32*i+31 downto 32*i)           <= RUN_END;
                     data_is_k(4*i+3 downto 4*i)             <= RUN_END_DATAK;
@@ -431,7 +436,7 @@ begin
                     data_is_k(4*i+3 downto 4*i)             <= "0001";
                     data_out(32*i+31 downto 26+32*i)        <= "000111";
                     data_out(32*i+25 downto 24+32*i)        <= data_in_slowcontrol(35 downto 34);
-                    data_out(32*i+23 downto 8 +32*i)        <= fpga_ID_in(16+i*16-1 downto i*16);
+                    data_out(32*i+23 downto 8 +32*i)        <= fpga_ID_in;
                     data_out(32*i+ 7 downto 0 +32*i)        <= x"bc";
                     merger_state                            <= sending_slowcontrol; -- go to sending slowcontrol state next
 
@@ -441,7 +446,7 @@ begin
                     data_is_k(4*i+3 downto 4*i)             <= "0001";
                     data_out(32*i+31 downto 26+32*i)        <= FEB_type_in;
                     data_out(32*i+25 downto 24+32*i)        <= "00";
-                    data_out(32*i+23 downto 8 +32*i)        <= fpga_ID_in(16+i*16-1 downto i*16);
+                    data_out(32*i+23 downto 8 +32*i)        <= fpga_ID_in;
                     data_out(32*i+ 7 downto 0 +32*i)        <= x"bc";
                     merger_state                            <= sending_data; -- go to sending data state next
                 end if;

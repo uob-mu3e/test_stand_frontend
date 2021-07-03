@@ -48,7 +48,7 @@ MutrigConfig::paras_t MutrigConfig::parameters_ch = {
         make_param("cml_sc",            1, 1),
         make_param("dmon_en",           1, 1),
         make_param("dmon_sw",           1, 1),
-        make_param("tdctest_n",           1, 1),
+        make_param("tdctest_n",         1, 1),
         make_param("amonctrl",          3, 1),
         make_param("comp_spi",          2, 1),
         make_param("sipm_sc",           1, 1),
@@ -60,7 +60,7 @@ MutrigConfig::paras_t MutrigConfig::parameters_ch = {
         make_param("inputbias_sc",      1, 1),
         make_param("inputbias",         6, 1),
         make_param("ethresh",           8, 1),
-        make_param("ebias",              3, 1),
+        make_param("ebias",             3, 1),
         make_param("pole_sc",           1, 1),
         make_param("pole",              6, 1),
         make_param("cml",               4, 1),
@@ -85,7 +85,9 @@ MutrigConfig::paras_t MutrigConfig::parameters_header = {
         make_param("short_event_mode",      1, 1), //fast transmission mode
         make_param("pll_setcoarse",         1, 1),
         make_param("pll_envomonitor",       1, 1),
-        make_param("disable_coarse",        1, 1)
+        make_param("disable_coarse",        1, 1),
+        make_param("pll_lol_dbg",           1, 1),
+        make_param("en_ch_evt_cnt",         1, 1)
     };
 
 MutrigConfig::paras_t MutrigConfig::parameters_footer = {
@@ -96,44 +98,46 @@ MutrigConfig::paras_t MutrigConfig::parameters_footer = {
         make_param("coin_xbar_lower_tx_idac", 6, 1),
 //coincidence logic matrix
         make_param("coin_mat_xbl", 3, 1),
-        make_param("coin_mat_0", 3, 1),
-        make_param("coin_mat_1", 3, 1),
-        make_param("coin_mat_2", 3, 1),
-        make_param("coin_mat_3", 3, 1),
-        make_param("coin_mat_4", 3, 1),
-        make_param("coin_mat_5", 3, 1),
-        make_param("coin_mat_6", 3, 1),
-        make_param("coin_mat_7", 3, 1),
-        make_param("coin_mat_8", 3, 1),
-        make_param("coin_mat_9", 3, 1),
-        make_param("coin_mat_10", 3, 1),
-        make_param("coin_mat_11", 3, 1),
-        make_param("coin_mat_12", 3, 1),
-        make_param("coin_mat_13", 3, 1),
-        make_param("coin_mat_14", 3, 1),
-        make_param("coin_mat_15", 3, 1),
-        make_param("coin_mat_16", 3, 1),
-        make_param("coin_mat_17", 3, 1),
-        make_param("coin_mat_18", 3, 1),
-        make_param("coin_mat_19", 3, 1),
-        make_param("coin_mat_20", 3, 1),
-        make_param("coin_mat_21", 3, 1),
-        make_param("coin_mat_22", 3, 1),
-        make_param("coin_mat_23", 3, 1),
-        make_param("coin_mat_24", 3, 1),
-        make_param("coin_mat_25", 3, 1),
-        make_param("coin_mat_26", 3, 1),
-        make_param("coin_mat_27", 3, 1),
-        make_param("coin_mat_28", 3, 1),
-        make_param("coin_mat_29", 3, 1),
-        make_param("coin_mat_30", 3, 1),
-        make_param("coin_mat_31", 3, 1),
+        make_param("coin_mat_0", 6, 1),
+        make_param("coin_mat_1", 6, 1),
+        make_param("coin_mat_2", 6, 1),
+        make_param("coin_mat_3", 6, 1),
+        make_param("coin_mat_4", 6, 1),
+        make_param("coin_mat_5", 6, 1),
+        make_param("coin_mat_6", 6, 1),
+        make_param("coin_mat_7", 6, 1),
+        make_param("coin_mat_8", 6, 1),
+        make_param("coin_mat_9", 6, 1),
+        make_param("coin_mat_10", 6, 1),
+        make_param("coin_mat_11", 6, 1),
+        make_param("coin_mat_12", 6, 1),
+        make_param("coin_mat_13", 6, 1),
+        make_param("coin_mat_14", 6, 1),
+        make_param("coin_mat_15", 6, 1),
+        make_param("coin_mat_16", 6, 1),
+        make_param("coin_mat_17", 6, 1),
+        make_param("coin_mat_18", 6, 1),
+        make_param("coin_mat_19", 6, 1),
+        make_param("coin_mat_20", 6, 1),
+        make_param("coin_mat_21", 6, 1),
+        make_param("coin_mat_22", 6, 1),
+        make_param("coin_mat_23", 6, 1),
+        make_param("coin_mat_24", 6, 1),
+        make_param("coin_mat_25", 6, 1),
+        make_param("coin_mat_26", 6, 1),
+        make_param("coin_mat_27", 6, 1),
+        make_param("coin_mat_28", 6, 1),
+        make_param("coin_mat_29", 6, 1),
+        make_param("coin_mat_30", 6, 1),
+        make_param("coin_mat_31", 6, 1),
         make_param("coin_mat_xbu", 3, 1),
 //coincidence logic crossbar / upper
         make_param("coin_xbar_upper_rx_ena",  1, 1),
         make_param("coin_xbar_upper_tx_ena",  1, 1),
         make_param("coin_xbar_upper_tx_vdac", 8, 1),
         make_param("coin_xbar_upper_tx_idac", 6, 1),
+
+        make_param("coin_wnd",   1, 1),
 
         make_param("amon_en",       1, 1),
         make_param("amon_dac",      8, 1),
@@ -162,6 +166,9 @@ MutrigConfig::MutrigConfig() {
     for(const auto& para : parameters_footer )
         addPara(para, "");
 
+    if(length_bits != 2719) {
+        cm_msg(MERROR,"MutrigConfig","Bitpattern is not 2719 bits long!");
+    }
     // allocate memory for bitpattern
     length = length_bits/8;
     if( length_bits%8 > 0 ) length++;
@@ -177,8 +184,12 @@ MutrigConfig::~MutrigConfig() {
     delete[] bitpattern_w;
 }
 
-void MutrigConfig::setParameterODBpp(odb o, std::string paraName){
+void MutrigConfig::setParameterODBpp(std::string paraName, odb o){
     setParameter(paraName, o[paraName]);
+}
+
+void MutrigConfig::setParameterODBpp(std::string paraName, odb o, int channel){
+    setParameter(paraName + "_" + std::to_string(channel) , o[paraName]);
 }
 
 void MutrigConfig::Parse_GLOBAL_from_struct(odb o){
@@ -250,37 +261,37 @@ void MutrigConfig::Parse_TDC_from_struct(odb o){
 
 
 void MutrigConfig::Parse_CH_from_struct(odb o, int channel){
-    MutrigConfig::setParameterODBpp("mask_" + std::to_string(channel), o);
-    MutrigConfig::setParameterODBpp("recv_all_" + std::to_string(channel), o);
-    MutrigConfig::setParameterODBpp("tthresh_" + std::to_string(channel), o);
-    MutrigConfig::setParameterODBpp("tthresh_sc_" + std::to_string(channel), o);
-    MutrigConfig::setParameterODBpp("ethresh_" + std::to_string(channel), o);
-    MutrigConfig::setParameterODBpp("ebias_" + std::to_string(channel), o);
-    MutrigConfig::setParameterODBpp("sipm_" + std::to_string(channel), o);
-    MutrigConfig::setParameterODBpp("sipm_sc_" + std::to_string(channel), o);
-    MutrigConfig::setParameterODBpp("inputbias_" + std::to_string(channel), o);
-    MutrigConfig::setParameterODBpp("inputbias_sc_" + std::to_string(channel), o);
-    MutrigConfig::setParameterODBpp("pole_" + std::to_string(channel), o);
-    MutrigConfig::setParameterODBpp("pole_sc_" + std::to_string(channel), o);
-    MutrigConfig::setParameterODBpp("ampcom_" + std::to_string(channel), o);
-    MutrigConfig::setParameterODBpp("ampcom_sc_" + std::to_string(channel), o);
-    MutrigConfig::setParameterODBpp("cml_" + std::to_string(channel), o);
-    MutrigConfig::setParameterODBpp("cml_sc_" + std::to_string(channel), o);
-    MutrigConfig::setParameterODBpp("amonctrl_" + std::to_string(channel), o);
-    MutrigConfig::setParameterODBpp("comp_spi_" + std::to_string(channel), o);
-    MutrigConfig::setParameterODBpp("tdctest_n_" + std::to_string(channel), o);
-    MutrigConfig::setParameterODBpp("sswitch_" + std::to_string(channel), o);
-    MutrigConfig::setParameterODBpp("delay_" + std::to_string(channel), o);
-    MutrigConfig::setParameterODBpp("pole_en_n_" + std::to_string(channel), o);
-    MutrigConfig::setParameterODBpp("energy_c_en_" + std::to_string(channel), o);
-    MutrigConfig::setParameterODBpp("energy_r_en_" + std::to_string(channel), o);
-    MutrigConfig::setParameterODBpp("cm_sensing_high_r_" + std::to_string(channel), o);
-    MutrigConfig::setParameterODBpp("amon_en_n_" + std::to_string(channel), o);
-    MutrigConfig::setParameterODBpp("edge_" + std::to_string(channel), o);
-    MutrigConfig::setParameterODBpp("edge_cml_" + std::to_string(channel), o);
-    MutrigConfig::setParameterODBpp("dmon_en_" + std::to_string(channel), o);
-    MutrigConfig::setParameterODBpp("dmon_sw_" + std::to_string(channel), o);
-    MutrigConfig::setParameterODBpp("coin_mat_" + std::to_string(channel), o);
+    MutrigConfig::setParameterODBpp("mask", o, channel);
+    MutrigConfig::setParameterODBpp("recv_all", o, channel);
+    MutrigConfig::setParameterODBpp("tthresh", o, channel);
+    MutrigConfig::setParameterODBpp("tthresh_sc", o, channel);
+    MutrigConfig::setParameterODBpp("ethresh", o, channel);
+    MutrigConfig::setParameterODBpp("ebias", o, channel);
+    MutrigConfig::setParameterODBpp("sipm", o, channel);
+    MutrigConfig::setParameterODBpp("sipm_sc", o, channel);
+    MutrigConfig::setParameterODBpp("inputbias", o, channel);
+    MutrigConfig::setParameterODBpp("inputbias_sc", o, channel);
+    MutrigConfig::setParameterODBpp("pole", o, channel);
+    MutrigConfig::setParameterODBpp("pole_sc", o, channel);
+    MutrigConfig::setParameterODBpp("ampcom", o, channel);
+    MutrigConfig::setParameterODBpp("ampcom_sc", o, channel);
+    MutrigConfig::setParameterODBpp("cml", o, channel);
+    MutrigConfig::setParameterODBpp("cml_sc", o, channel);
+    MutrigConfig::setParameterODBpp("amonctrl", o, channel);
+    MutrigConfig::setParameterODBpp("comp_spi", o, channel);
+    MutrigConfig::setParameterODBpp("tdctest_n", o, channel);
+    MutrigConfig::setParameterODBpp("sswitch", o, channel);
+    MutrigConfig::setParameterODBpp("delay", o, channel);
+    MutrigConfig::setParameterODBpp("pole_en_n", o, channel);
+    MutrigConfig::setParameterODBpp("energy_c_en", o, channel);
+    MutrigConfig::setParameterODBpp("energy_r_en", o, channel);
+    MutrigConfig::setParameterODBpp("cm_sensing_high_r", o, channel);
+    MutrigConfig::setParameterODBpp("amon_en_n", o, channel);
+    MutrigConfig::setParameterODBpp("edge", o, channel);
+    MutrigConfig::setParameterODBpp("edge_cml", o, channel);
+    MutrigConfig::setParameterODBpp("dmon_en", o, channel);
+    MutrigConfig::setParameterODBpp("dmon_sw", o, channel);
+    MutrigConfig::setParameterODBpp("coin_mat", o, channel);
 }
 
 

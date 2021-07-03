@@ -15,7 +15,6 @@ entity mupix_datapath is
 port (
     i_reset_n           : in  std_logic;
     i_reset_n_regs      : in  std_logic;
-    i_reset_n_lvds      : in  std_logic;
 
     i_clk156            : in  std_logic;
     i_clk125            : in  std_logic;
@@ -39,9 +38,7 @@ port (
     i_sync_reset_cnt    : in  std_logic;
     i_fpga_id           : in  std_logic_vector(7 downto 0);
     i_run_state_125     : in  run_state_t;
-    i_run_state_156     : in  run_state_t;
-    o_hotfix_reroute    : out work.util.slv32_array_t(35 downto 0); -- TODO: fix problem and remove
-    i_hotfix_backroute  : in  std_logic--;
+    i_run_state_156     : in  run_state_t--;
 );
 end mupix_datapath;
 
@@ -55,6 +52,7 @@ architecture rtl of mupix_datapath is
     signal rx_data                  : work.util.slv8_array_t(35 downto 0);
     signal rx_k                     : std_logic_vector(35 downto 0);
     signal lvds_status              : work.util.slv32_array_t(35 downto 0);
+    signal lvds_invert              : std_logic;
     signal data_valid               : std_logic_vector(35 downto 0);
 
     -- hits + flag to indicate a word as a hit, after unpacker
@@ -111,13 +109,8 @@ architecture rtl of mupix_datapath is
     signal multichip_ro_overflow    : std_logic_vector(31 downto 0);
 
     signal link_enable              : std_logic_vector(35 downto 0);
-    signal link_enable_125          : std_logic_vector(35 downto 0);
     signal lvds_link_mask           : std_logic_vector(35 downto 0);
-
-    -- count hits ena
-    signal hits_ena_count           : std_logic_vector(31 downto 0);
-    signal time_counter             : unsigned(31 downto 0);
-    signal rate_counter             : unsigned(31 downto 0);
+    signal lvds_link_mask_reg       : std_logic_vector(35 downto 0);
 
     signal coarsecounters           : reg24array(35 downto 0);
     signal coarsecounter_enas       : std_logic_vector(35 downto 0);
@@ -147,6 +140,18 @@ architecture rtl of mupix_datapath is
     signal sorter_inject            : std_logic_vector(31 downto 0);
     signal sorter_inject_prev       : std_logic;
 
+    signal hit_ena_cnt_select       : std_logic_vector( 7 downto 0);
+    signal hit_ena_cnt              : std_logic_vector(31 downto 0);
+    signal hit_ena_counters         : reg32array(35 downto 0);
+    signal hit_ena_counters_reg     : reg32array(35 downto 0);
+    signal hitsorter_in_ena_counters_reg: reg32array(11 downto 0);
+    signal hitsorter_in_ena_counters: reg32array(11 downto 0);
+    signal hitsorter_in_ena_cnt     : std_logic_vector(31 downto 0);
+    signal hitsorter_in_ena_cnt_sel : std_logic_vector( 3 downto 0);
+    signal hitsorter_out_ena_cnt    : std_logic_vector(31 downto 0);
+    signal hitsorter_out_ena_cnt_reg: std_logic_vector(31 downto 0);
+    signal reset_n_lvds             : std_logic;
+
 begin
 
     reset_156_n <= '0' when (i_run_state_156=RUN_STATE_SYNC) else '1';
@@ -155,7 +160,7 @@ begin
     
 ------------------------------------------------------------------------------------
 ---------------------- registers ---------------------------------------------------
-    e_mupix_reg_mapping : work.mupix_reg_mapping
+    e_mupix_datapath_reg_mapping : work.mupix_datapath_reg_mapping
     port map (
         i_clk156                    => i_clk156,
         i_clk125                    => i_clk125,
@@ -168,8 +173,8 @@ begin
         i_reg_wdata                 => i_reg_wdata,
 
         -- inputs  156--------------------------------------------
-        i_lvds_data_valid           => (others => '0'),
-        --i_lvds_status               => lvds_status,
+        i_lvds_data_valid           => (others => '0'), -- not in use, is contained in lvds_status, April 2021
+        i_lvds_status               => lvds_status,
 
         -- inputs  125 (how to sync)------------------------------
         i_sorter_counters           => sorter_counters,
@@ -177,26 +182,33 @@ begin
         --i_coarsecounter             => coarsecounters(MP_LINK_ORDER(to_integer(unsigned(delta_ts_link_select)))),
         i_ts_global                 => counter125(23 downto 0),
         i_last_sorter_hit           => last_sorter_hit,
+        i_mp_hit_ena_cnt            => hit_ena_cnt,
+        i_mp_sorter_in_hit_ena_cnt  => hitsorter_in_ena_cnt,
+        i_mp_sorter_out_hit_ena_cnt => hitsorter_out_ena_cnt_reg,
 
         -- outputs 156--------------------------------------------
         o_mp_datagen_control        => mp_datagen_control_reg,
         o_mp_lvds_link_mask         => lvds_link_mask,
+        o_mp_lvds_invert            => lvds_invert,
         o_mp_readout_mode           => mp_readout_mode,
         o_mp_data_bypass_select     => data_bypass_select,
         o_mp_delta_ts_link_select   => delta_ts_link_select,
 
         -- outputs 125-------------------------------------------------
         o_sorter_delay              => sorter_delay,
-        o_sorter_inject             => sorter_inject--,
+        o_sorter_inject             => sorter_inject,
+        o_mp_reset_n_lvds           => reset_n_lvds,
+        o_mp_hit_ena_cnt_select     => hit_ena_cnt_select,
+        o_mp_hit_ena_cnt_sorter_sel => hitsorter_in_ena_cnt_sel--,
     );
-    o_hotfix_reroute<= lvds_status; --TODO: fix this!!
 
 ------------------------------------------------------------------------------------
 ---------------------- LVDS Receiver part ------------------------------------------
     lvds_block : work.receiver_block_mupix
     port map(
-        i_reset_n           => i_reset_n_lvds,
+        i_reset_n           => reset_n_lvds,
         i_nios_clk          => i_clk156,
+        i_clk_global        => i_clk125,
         checker_rst_n       => (others => '1'),--TODO: What is this ? M.Mueller
         rx_in               => lvds_data_in,
         rx_inclock_A        => i_lvds_rx_inclock_A,
@@ -204,13 +216,13 @@ begin
 
         o_rx_status         => lvds_status,
         o_rx_ready          => data_valid,
-        i_rx_invert         => i_hotfix_backroute,
-        rx_data             => rx_data,
-        rx_k                => rx_k--,
+        i_rx_invert         => lvds_invert,
+        o_rx_data           => rx_data,
+        o_rx_k              => rx_k--,
     );
 
     -- use a link mask to disable channels from being used in the data processing
-    link_enable <= data_valid and not lvds_link_mask;
+    link_enable <= data_valid and not lvds_link_mask_reg;
 
 --------------------------------------------------------------------------------------
 --------------------- Unpack the data ------------------------------------------------
@@ -228,7 +240,7 @@ begin
         clk                 => i_clk125,
         datain              => rx_data(MP_LINK_ORDER(i)), 
         kin                 => rx_k(MP_LINK_ORDER(i)), 
-        readyin             => link_enable_125(MP_LINK_ORDER(i)),
+        readyin             => link_enable(MP_LINK_ORDER(i)),
         i_mp_readout_mode   => mp_readout_mode,
         o_ts                => ts_unpacker(i),
         o_chip_ID           => chip_ID_unpacker(i),
@@ -238,33 +250,48 @@ begin
         o_hit_ena           => hits_ena_unpacker(i),
         o_coarsecounter     => open,--coarsecounters(i),
         o_coarsecounter_ena => open,--coarsecounter_enas(i),
+        o_hit_ena_counter   => hit_ena_counters(i),
+        i_run_state_125     => i_run_state_125,
         errorcounter        => unpack_errorcounter(i) -- could be useful!
     );
 
     END GENERATE genunpack;
 
-    -- count hits_ena
-    process(i_clk125)
+    process(i_clk156)
     begin
-        if rising_edge(i_clk125) then
-            if (time_counter > x"7735940") then
-                hits_ena_count  <= std_logic_vector(rate_counter)(31 downto 0);
-            time_counter        <= (others => '0');
-            rate_counter        <= (others => '0');
-         else
-            -- overflow can not happen here
-            rate_counter        <= rate_counter + to_unsigned(work.util.count_bits(hits_ena), 32);
-            time_counter        <= time_counter + 1;
-         end if;
-       end if;
+        if(rising_edge(i_clk156)) then
+            hit_ena_counters_reg            <= hit_ena_counters;
+            hitsorter_in_ena_counters_reg   <= hitsorter_in_ena_counters;
+            hitsorter_out_ena_cnt_reg       <= hitsorter_out_ena_cnt;
+
+            if(to_integer(unsigned(hit_ena_cnt_select))<36) then
+                hit_ena_cnt <= hit_ena_counters_reg(to_integer(unsigned(hit_ena_cnt_select)));
+            else
+                hit_ena_cnt <= (others => '0');
+            end if;
+
+            if(to_integer(unsigned(hitsorter_in_ena_cnt_sel))<12) then
+                hitsorter_in_ena_cnt <= hitsorter_in_ena_counters_reg(to_integer(unsigned(hitsorter_in_ena_cnt_sel)));
+            else
+                hitsorter_in_ena_cnt <= (others => '0');
+            end if;
+        end if;
     end process;
+
+
 
     process(i_clk125, reset_125_n)
     begin
         if(reset_125_n = '0')then
-            counter125      <= (others => '0');
-            last_sorter_hit <= (others => '0');
+            counter125                  <= (others => '0');
+            last_sorter_hit             <= (others => '0');
+            hitsorter_out_ena_cnt       <= (others => '0');
+            hitsorter_in_ena_counters   <= (others => (others => '0'));
+            hits_sorter_in_ena          <= (others => '0');
+
         elsif(rising_edge(i_clk125))then
+            lvds_link_mask_reg  <= lvds_link_mask;
+
             if(i_sync_reset_cnt = '1')then
                 counter125 <= (others => '0');
             else
@@ -273,6 +300,12 @@ begin
 
             if(sorter_out_is_hit='1') then
                 last_sorter_hit <= fifo_wdata_hs(31 downto 0);
+            end if;
+
+            if(i_run_state_125 = RUN_STATE_RUNNING) then
+                if(sorter_out_is_hit='1') then 
+                        hitsorter_out_ena_cnt <= hitsorter_out_ena_cnt + '1';
+                end if;
             end if;
 
             sorter_inject_prev <= sorter_inject(MP_SORTER_INJECT_ENABLE_BIT);
@@ -284,6 +317,14 @@ begin
                 hits_sorter_in      <= hits_sorter_in_buf;
                 hits_sorter_in_ena  <= hits_sorter_in_ena_buf;
             end if;
+
+            for i in 0 to 11 loop
+                if(i_run_state_125 = RUN_STATE_RUNNING) then
+                    if(hits_sorter_in_ena(i)='1') then 
+                        hitsorter_in_ena_counters(i) <= hitsorter_in_ena_counters(i) + '1';
+                    end if;
+                end if;
+            end loop;
 
             if(mp_datagen_control_reg(MP_DATA_GEN_SORT_IN_BIT) = '1') then
                 ts      <= ts_gen;
@@ -401,22 +442,22 @@ begin
     sync_fifo_cnt : entity work.ip_dcfifo
     generic map(
         ADDR_WIDTH  => 4,
-        DATA_WIDTH  => 1+36+32,
+        DATA_WIDTH  => 1+36,
         SHOWAHEAD   => "OFF",
         OVERFLOW    => "ON",
+		  REGOUT      => 0,
         DEVICE      => "Arria V"--,
     )
     port map(
         aclr            => '0',
-        data            => fifo_write & fifo_wdata & hits_ena_count,
+        data            => fifo_write & fifo_wdata,
         rdclk           => i_clk156,
         rdreq           => '1',
         rdempty         => sync_fifo_empty,
         wrclk           => i_clk125,
         wrreq           => '1',
-        q(31 downto 0)  => open,--o_hits_ena_count,
-        q(67 downto 32) => sync_fifo_wdata_out,
-        q(68)           => sync_fifo_write_out--,
+        q(35 downto 0)  => sync_fifo_wdata_out,
+        q(36)           => sync_fifo_write_out--,
     );
 
     process(i_clk156)
@@ -430,25 +471,6 @@ begin
         end if;
     end if;
     end process;
-
-    sync_fifo_2 : entity work.ip_dcfifo
-    generic map(
-        ADDR_WIDTH  => 4,
-        DATA_WIDTH  => 36,
-        SHOWAHEAD   => "OFF",
-        OVERFLOW    => "ON",
-        DEVICE      => "Arria V"--,
-    )
-    port map(
-        aclr    => '0',
-        data    => link_enable,
-        rdclk   => i_clk125,
-        rdreq   => '1',
-        wrclk   => i_clk156,
-        wrreq   => '1',
-        q(35 downto 0) => link_enable_125--,
-    );
-
 
     -- bypass hitsorter and put data of a single MP directly on a seperate optical link
     process(i_clk125)
@@ -470,6 +492,7 @@ begin
         DATA_WIDTH  => 32,
         SHOWAHEAD   => "OFF",
         OVERFLOW    => "ON",
+		  REGOUT      => 0,
         DEVICE      => "Arria V"--,
     )
     port map(

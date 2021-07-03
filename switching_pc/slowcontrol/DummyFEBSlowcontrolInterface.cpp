@@ -97,7 +97,7 @@ int DummyFEBSlowcontrolInterface::FEB_read(const uint32_t FPGA_ID, const uint32_
 
 }
 
-int DummyFEBSlowcontrolInterface::FEBsc_NiosRPC(uint32_t FPGA_ID, uint16_t command, vector<vector<uint32_t> > payload_chunks)
+int DummyFEBSlowcontrolInterface::FEBsc_NiosRPC(uint32_t FPGA_ID [[maybe_unused]], uint16_t command [[maybe_unused]], vector<vector<uint32_t> > payload_chunks [[maybe_unused]])
 {
      return ERRCODES::OK;
 }

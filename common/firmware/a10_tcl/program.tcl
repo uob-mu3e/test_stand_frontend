@@ -6,6 +6,8 @@
 source [ file join [ file dirname [ info script ] ] "cfi1616.tcl" ]
 source [ file join [ file dirname [ info script ] ] "quartus.tcl" ]
 
+source [ file join [ file dirname [ info script ] ] "../util/altera/mm.tcl" ]
+
 package require fileutil
 
 set BLOCK_SIZE 0x40000
@@ -140,26 +142,6 @@ set sof "output_files/top.sof"
 set elf_addr 0x05E40000
 set elf "software/app/main.elf"
 
-set proc_paths [ get_service_paths processor ]
-set mm_paths [ get_service_paths master ]
-set mm_index -1
-
-proc mm_claim { { index -1 } } {
-    if { $index == $::mm_index } {
-        return
-    }
-    if { [ info exists ::mm ] } {
-        ::close_service master $::mm
-        unset ::mm
-    }
-    if { $index >= 0 } {
-        set path [ lindex $::mm_paths $index ]
-        puts "INFO: claim master '$path'"
-        set ::mm [ ::claim_service master $path "" ]
-    }
-    set ::mm_index $index
-}
-
 proc program_test { addr } {
     set tmp [ ::fileutil::tempfile ]
     try {
@@ -186,12 +168,10 @@ proc program_test { addr } {
 #puts "INFO: stop processor"
 #processor_stop $nios
 
-mm_claim 0
+mm_claim /devices/10A*/phy*/master
 
 #?t ?c program_file $mm $elf_addr $elf
 #?t ?c program_file $mm $sof_addr $sof
-
-#mm_claim
 
 #puts "INFO: start processor"
 #processor_run $nios

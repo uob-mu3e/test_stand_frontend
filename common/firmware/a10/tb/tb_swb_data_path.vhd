@@ -14,7 +14,7 @@ architecture arch of tb_swb_data_path is
     constant CLK_MHZ : real := 10000.0; -- MHz
     constant g_NLINKS_TOTL : integer := 64;
     constant g_NLINKS_FARM : integer := 8;
-    constant g_NLINKS_DATA : integer := 12;
+    constant g_NLINKS_DATA : integer := 10;
 
     signal clk, clk_fast, reset_n : std_logic := '0';
     --! data link signals
@@ -26,7 +26,7 @@ architecture arch of tb_swb_data_path is
 
     signal resets_n_156, resets_n_250 : std_logic_vector(31 downto 0) := (others => '0');
 
-    signal counter : work.util.slv32_array_t(5+(g_NLINKS_DATA*3)-1 downto 0);
+    signal counter : work.util.slv32_array_t(5+(g_NLINKS_DATA*5)-1 downto 0);
     
     signal farm_data : work.util.slv32_array_t(g_NLINKS_FARM - 1  downto 0);
     signal farm_datak : work.util.slv4_array_t(g_NLINKS_FARM - 1  downto 0);
@@ -47,12 +47,12 @@ begin
     --! ------------------------------------------------------------------------
     --! ------------------------------------------------------------------------
     --! ------------------------------------------------------------------------
-    --! USE_GEN_LINK | USE_STREAM | USE_MERGER | USE_LINK | USE_GEN_MERGER | USE_FARM | SWB_READOUT_LINK_REGISTER_W | EFFECT                                                                         | WORKS 
+    --! USE_GEN_LINK | USE_STREAM | USE_MERGER | USE_GEN_MERGER | USE_FARM | SWB_READOUT_LINK_REGISTER_W | EFFECT                                                                         | WORKS 
     --! ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-    --! 1            | 0          | 0          | 1        | 0              | 0        | n                           | Generate data for all 64 links, readout link n via DAM                         | x
-    --! 1            | 1          | 0          | 0        | 0              | 0        | -                           | Generate data for all 64 links, simple merging of links, readout via DAM       | x
-    --! 1            | 0          | 1          | 0        | 0              | 0        | -                           | Generate data for all 64 links, time merging of links, readout via DAM         | x
-    --! 0            | 0          | 0          | 0        | 1              | 1        | -                           | Generate time merged data, send to farm                                        | x
+    --! 1            | 0          | 0          | 0              | 0        | n                           | Generate data for all 64 links, readout link n via DAM                         | x
+    --! 1            | 1          | 0          | 0              | 0        | -                           | Generate data for all 64 links, simple merging of links, readout via DAM       | x
+    --! 1            | 0          | 1          | 0              | 0        | -                           | Generate data for all 64 links, time merging of links, readout via DAM         | x
+    --! 0            | 0          | 0          | 1              | 1        | -                           | Generate time merged data, send to farm                                        | x
     resets_n_156(RESET_BIT_DATAGEN)                             <= '0', '1' after (1.0 us / CLK_MHZ);
     writeregs_156(DATAGENERATOR_DIVIDER_REGISTER_W)             <= x"00000002";
     writeregs_156(SWB_READOUT_STATE_REGISTER_W)(USE_BIT_GEN_LINK)   <= '1';
@@ -60,11 +60,10 @@ begin
     -- writeregs_250(SWB_READOUT_STATE_REGISTER_W)(5 downto 0)     <= "0100";
     writeregs_250(SWB_READOUT_STATE_REGISTER_W)(USE_BIT_STREAM)     <= '0';
     writeregs_250(SWB_READOUT_STATE_REGISTER_W)(USE_BIT_MERGER)     <= '1';
-    writeregs_250(SWB_READOUT_STATE_REGISTER_W)(USE_BIT_LINK)       <= '0';
     writeregs_250(SWB_READOUT_STATE_REGISTER_W)(USE_BIT_GEN_MERGER) <= '0';
     writeregs_250(SWB_READOUT_STATE_REGISTER_W)(USE_BIT_FARM)       <= '0';
         
-    writeregs_250(SWB_LINK_MASK_PIXEL_REGISTER_W)               <= x"00000FFF";
+    writeregs_250(SWB_LINK_MASK_PIXEL_REGISTER_W)               <= x"00000005";
     writeregs_250(SWB_READOUT_LINK_REGISTER_W)                  <= x"00000001";
     writeregs_250(GET_N_DMA_WORDS_REGISTER_W)                   <= (others => '1');
     writeregs_250(DMA_REGISTER_W)(DMA_BIT_ENABLE)               <= '1';
@@ -99,18 +98,19 @@ begin
         
         i_rx             => rx,
         i_rx_k           => rx_k,
-        i_rmask_n        => mask_n,
+            
+        i_rmask_n        => mask_n(g_NLINKS_DATA - 1 downto 0),
 
         i_writeregs_156  => writeregs_156,
         i_writeregs_250  => writeregs_250,
 
-        o_counter        => counter,
+        o_counter_156    => open,
+        o_counter_250    => open,
 
         i_dmamemhalffull => '0',
         
-        o_farm_data      => farm_data,
-        o_farm_datak     => farm_datak,
-        o_fram_wen       => fram_wen,
+        o_farm_data      => open,
+        o_farm_data_valid=> open,
 
         o_dma_wren       => dma_wren,
         o_dma_done       => dma_done,

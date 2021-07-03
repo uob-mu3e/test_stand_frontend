@@ -33,6 +33,14 @@ port (
     i_max10_status              : in  std_logic_vector(31 downto 0) := x"CCCCCCCC";  
     i_programming_status        : in  std_logic_vector(31 downto 0) := x"CCCCCCCC";
 
+    i_ffly_pwr                  : in   std_logic_vector(127 downto 0); -- RX optical power in mW
+    i_ffly_temp                 : in   std_logic_vector(15 downto 0);  -- temperature in °C
+    i_ffly_alarm                : in   std_logic_vector(63 downto 0);  -- latched alarm bits
+    i_ffly_vcc                  : in   std_logic_vector(31 downto 0);  -- operating voltagein units of 100 uV 
+    
+    i_si45_intr_n               : in   std_logic_vector(1 downto 0);
+    i_si45_lol_n                : in   std_logic_vector(1 downto 0);
+
     -- outputs 156--------------------------------------------
     o_reg_cmdlen                : out std_logic_vector(31 downto 0);
     o_reg_offset                : out std_logic_vector(31 downto 0);
@@ -70,9 +78,9 @@ architecture rtl of feb_reg_mapping is
     signal test_write               : std_logic;
     signal test_read_data           : std_logic_vector(31 downto 0);
     signal test_write_data          : std_logic_vector(31 downto 0);
-	 
+
 -- Prolong enable
-	signal addr_ena_del					: std_logic_vector(5 downto 0);
+    signal addr_ena_del					: std_logic_vector(5 downto 0);
 
 begin
 
@@ -84,7 +92,7 @@ begin
 
     if i_reset_n = '0' then
         o_programming_ctrl <= (others => '0');   
-		  o_programming_data_ena  <= '0';
+        o_programming_data_ena  <= '0';
         o_programming_addr_ena  <= '0';
         
     elsif rising_edge(i_clk_156) then
@@ -92,14 +100,14 @@ begin
         regaddr             := to_integer(unsigned(i_reg_add(7 downto 0)));
 
         o_programming_data_ena  <= '0';
-		  if(addr_ena_del = "000000") then
-				o_programming_addr_ena  <= '0';
-			else 
-				o_programming_addr_ena  <= '1';
-			end if;
-			
-			addr_ena_del <= addr_ena_del(4 downto 0) & '0';
-				
+        if(addr_ena_del = "000000") then -- this is here so that the 50 MHz clock does not miss the ena signal ? (M.Mueller)
+            o_programming_addr_ena  <= '0';
+        else 
+            o_programming_addr_ena  <= '1';
+        end if;
+
+        addr_ena_del <= addr_ena_del(4 downto 0) & '0';
+
         test_read           <= '0';
         test_write          <= '0';
 
@@ -223,15 +231,63 @@ begin
         if ( regaddr = PROGRAMMING_ADDR_W and i_reg_we = '1' ) then
             o_programming_addr  <= i_reg_wdata;
             o_programming_addr_ena  <= '1';
-				addr_ena_del <= "111111";
+            addr_ena_del <= "111111";
         end if;  
         if ( regaddr = PROGRAMMING_DATA_W and i_reg_we = '1' ) then
             o_programming_data  <= i_reg_wdata;
             o_programming_data_ena  <= '1';
         end if;  
 
-        --TODO: Fireflies
-
+        -- Fireflies
+        if ( regaddr = FIREFLY1_TEMP_REGISTER_R and i_reg_re = '1' ) then
+            o_reg_rdata <= x"000000" & i_ffly_temp(7 downto 0);
+        end if;
+        if ( regaddr = FIREFLY2_TEMP_REGISTER_R and i_reg_re = '1' ) then
+            o_reg_rdata <= x"000000" & i_ffly_temp(15 downto 8);
+        end if;
+        if ( regaddr = FIREFLY1_VOLT_REGISTER_R and i_reg_re = '1' ) then
+            o_reg_rdata <= x"0000" & i_ffly_vcc(15 downto 0);
+        end if;
+        if ( regaddr = FIREFLY2_VOLT_REGISTER_R and i_reg_re = '1' ) then
+            o_reg_rdata <= x"0000" & i_ffly_vcc(31 downto 16);
+        end if;
+        if ( regaddr = FIREFLY1_RX1_POW_REGISTER_R and i_reg_re = '1' ) then
+            o_reg_rdata <= x"0000" & i_ffly_pwr(15 downto 0);
+        end if;
+        if ( regaddr = FIREFLY1_RX2_POW_REGISTER_R and i_reg_re = '1' ) then
+            o_reg_rdata <= x"0000" & i_ffly_pwr(31 downto 16);
+        end if;
+        if ( regaddr = FIREFLY1_RX3_POW_REGISTER_R and i_reg_re = '1' ) then
+            o_reg_rdata <= x"0000" & i_ffly_pwr(47 downto 32);
+        end if;
+        if ( regaddr = FIREFLY1_RX4_POW_REGISTER_R and i_reg_re = '1' ) then
+            o_reg_rdata <= x"0000" & i_ffly_pwr(63 downto 48);
+        end if;
+        if ( regaddr = FIREFLY2_RX1_POW_REGISTER_R and i_reg_re = '1' ) then
+            o_reg_rdata <= x"0000" & i_ffly_pwr(79 downto 64);
+        end if;
+        if ( regaddr = FIREFLY2_RX2_POW_REGISTER_R and i_reg_re = '1' ) then
+            o_reg_rdata <= x"0000" & i_ffly_pwr(95 downto 80);
+        end if;
+        if ( regaddr = FIREFLY2_RX3_POW_REGISTER_R and i_reg_re = '1' ) then
+            o_reg_rdata <= x"0000" & i_ffly_pwr(111 downto 96);
+        end if;
+        if ( regaddr = FIREFLY2_RX4_POW_REGISTER_R and i_reg_re = '1' ) then
+            o_reg_rdata <= x"0000" & i_ffly_pwr(127 downto 112);
+        end if;	
+        if ( regaddr = FIREFLY1_ALARM_REGISTER_R and i_reg_re = '1' ) then
+            o_reg_rdata <= i_ffly_alarm(31 downto 0);
+        end if;
+        if ( regaddr = FIREFLY2_ALARM_REGISTER_R and i_reg_re = '1' ) then
+            o_reg_rdata <= i_ffly_alarm(63 downto 32);
+        end if;
+        
+        -- SI chips
+        if ( regaddr = SI_STATUS_REGISTER and i_reg_re = '1' ) then
+            o_reg_rdata(1 downto 0) <= i_si45_intr_n;
+            o_reg_rdata(3 downto 2) <= i_si45_lol_n;
+            o_reg_rdata(31 downto 4) <= (others => '0');
+        end if;
 
         -- NON-incrementing reads/writes TEST
         if ( regaddr = NONINCREMENTING_TEST_REGISTER_RW and i_reg_re = '1' ) then

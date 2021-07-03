@@ -420,8 +420,7 @@ void cr_settings_changed(odb o)
 
    if(it != cb->reset_protocol.commands.end()){
 
-       odb settings;
-       settings.connect("/Equipment/Clock Reset/Settings");
+       odb settings("/Equipment/Clock Reset/Settings");
        addressed = settings["Addressed"];
        int address =0;
        if(addressed){
@@ -438,7 +437,7 @@ void cr_settings_changed(odb o)
                 cb->write_command(name,0,address);
               else
                  cb->write_command(name);
-              o = FALSE; //TODO: Check if this works...
+              o = false; //TODO: Check if this works...
            }
        } else {
            // Run prepare needs the run number
@@ -452,7 +451,7 @@ void cr_settings_changed(odb o)
                     cb->write_command(name,run,address);
                  else
                     cb->write_command(name,run);
-                 o = FALSE; //TODO: Check if this works...
+                 o = false; //TODO: Check if this works...
               }
            } else {
                // Take the payload from the payload ODB field
@@ -465,7 +464,7 @@ void cr_settings_changed(odb o)
                        cb->write_command(name,payload,address);
                      else
                        cb->write_command(name,payload);
-                    o = FALSE; //TODO: Check if this works...
+                    o = false; //TODO: Check if this works...
                }
            }
        }
@@ -489,7 +488,7 @@ void link_settings_changed(odb o)
 
       //A FEB is only disabled if both SC and datataking are disabled. Typically these settings are linked,
       //here we do not enforce any kind of consistency.
-      for(int i = 0; i < MAX_N_FRONTENDBOARDS; i++){
+      for(uint32_t i = 0; i < MAX_N_FRONTENDBOARDS; i++){
           if(value[i] == FEBLINKMASK::OFF){
               cb->write_command("Disable",0,i);
           } else {
@@ -504,13 +503,25 @@ void prepare_run_on_request(odb o){
     cm_msg(MINFO, "prepare_run_on_request", "Execute Run Prepare on request called");
 
     vector<int> request = o;
+    
+    bool norequest = true;
+    for(uint32_t i=0; i < request.size(); i++){
+        if(request[i])
+            norequest = false;
+    }
+
+    if(norequest)
+        return;
+
+
+
 
     odb a("/Equipment/Links/Settings/SwitchingBoardMask");
     vector<int> active = a;
 
     bool allok = true;
     bool notalloff = false;
-    for(int i=0; i < MAX_N_SWITCHINGBOARDS; i++){
+    for(uint32_t i=0; i < MAX_N_SWITCHINGBOARDS; i++){
         printf("%i : %i : %i\n", i, request[i], active[i]);
         allok = allok && ((request[i] > 0) || (active[i] == 0));
         notalloff = notalloff || active[i];
@@ -526,7 +537,7 @@ void prepare_run_on_request(odb o){
         cb->write_command("Run Prepare",run);
 
         // reset requests
-        for(int i=0; i < MAX_N_SWITCHINGBOARDS; i++){
+        for(uint32_t i=0; i < MAX_N_SWITCHINGBOARDS; i++){
             active[i] =0;
         }
 
@@ -543,7 +554,7 @@ void setup_odb(){
 
     odb settings = {
         {"Active" , true},
-        {"IP", "0.0.0.0"},//"192.168.0.220"},
+        {"IP", "192.168.0.220"},
         {"Port", 50001},
         {"N_READBACK", 4},
         {"TX_CLK_MASK", 0x0AA},

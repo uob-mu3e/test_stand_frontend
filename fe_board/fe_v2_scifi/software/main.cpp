@@ -3,7 +3,7 @@
 
 #include "include/xcvr.h"
 
-#include "../../fe/software/si5345_fe_v2.h"
+#include "../../fe/software/si5345_fe_v2_mutrig.h"
 si5345_t si5345_1 { SPI_SI_BASE, 0 };
 si5345_t si5345_2 { SPI_SI_BASE, 1 };
 
@@ -22,7 +22,6 @@ SMB_t SMB(sc);
 
 //definition of callback function for slow control packets
 alt_u16 sc_t::callback(alt_u16 cmd, volatile alt_u32* data, alt_u16 n) {
-    printf("sc_t::callback\n");
     return SMB.sc_callback(cmd,data,n);
 }
 
@@ -31,7 +30,7 @@ int main() {
     base_init();
 
     si5345_2.init();
-    usleep(500000);
+    usleep(5000000);
     si5345_1.init();
     //mscb.init();
     sc.init();
@@ -40,7 +39,7 @@ int main() {
     while (1) {
         printf("\n");
         printf("[fe_dummy] -------- menu --------\n");
-	printf("ID: 0x%08x\n", ram->data[0xFFFB]);
+        printf("ID: 0x%08x\n", ram->data[0xFF03]);
 
         printf("\n");
         printf("  [1] => Firefly channels\n");

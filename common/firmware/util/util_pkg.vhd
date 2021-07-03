@@ -28,6 +28,8 @@ package util is
     type slv16_array_t is array ( natural range <> ) of slv16_t;
     subtype slv32_t is std_logic_vector(31 downto 0);
     type slv32_array_t is array ( natural range <> ) of slv32_t;
+    subtype slv34_t is std_logic_vector(33 downto 0);
+    type slv34_array_t is array ( natural range <> ) of slv34_t;
     subtype slv37_t is std_logic_vector(36 downto 0);
     type slv37_array_t is array ( natural range <> ) of slv37_t;
     subtype slv38_t is std_logic_vector(37 downto 0);
@@ -45,7 +47,8 @@ package util is
     subtype slv256_t is std_logic_vector(255 downto 0);
     type slv256_array_t is array ( natural range <> ) of slv256_t;
 
-    type natural_array_t is array(integer range<>) of natural;
+    type integer_array_t is array( natural range <> ) of integer;
+    type natural_array_t is array( natural range <> ) of natural;
 
     --! 8b/10b words
     constant D16_2 : std_logic_vector(7 downto 0) := X"50";
@@ -104,6 +107,18 @@ package util is
     end record;
 
 
+
+    function value_if (
+        condition : boolean;
+        value_true : std_logic_vector;
+        value_false : std_logic_vector--;
+    ) return std_logic_vector;
+
+    function value_if (
+        condition : boolean;
+        value_true : integer;
+        value_false : integer--;
+    ) return integer;
 
     -- Greatest Common Divisor
     function gcd (
@@ -276,6 +291,32 @@ end package;
 
 package body util is
 
+    function value_if (
+        condition : boolean;
+        value_true : std_logic_vector;
+        value_false : std_logic_vector--;
+    ) return std_logic_vector is
+    begin
+        if ( condition ) then
+            return value_true;
+        else
+            return value_false;
+        end if;
+    end function;
+
+    function value_if (
+        condition : boolean;
+        value_true : integer;
+        value_false : integer--;
+    ) return integer is
+    begin
+        if ( condition ) then
+            return value_true;
+        else
+            return value_false;
+        end if;
+    end function;
+
     function gcd (
         p, q : positive--;
     ) return positive is
@@ -364,7 +405,7 @@ package body util is
         n : natural--;
     ) return std_logic_vector is
     begin
-        return shift_right(v, n mod v'length) or shift_left(v, v'length - n mod v'length);
+        return shift_right(v, n) or shift_left(v, v'length - n);
     end function;
 
     function rotate_left (
@@ -372,7 +413,7 @@ package body util is
         n : natural--;
     ) return std_logic_vector is
     begin
-        return shift_left(v, n mod v'length) or shift_right(v, v'length - n mod v'length);
+        return shift_left(v, n) or shift_right(v, v'length - n);
     end function;
 
     function resize (

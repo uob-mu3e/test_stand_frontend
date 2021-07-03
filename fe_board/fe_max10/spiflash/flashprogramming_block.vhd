@@ -47,7 +47,12 @@ entity flashprogramming_block is
         spi_arria_byte_from_arria            : in std_logic_vector(7 downto 0);
         spi_arria_byte_en                    : in std_logic;     
         spi_arria_addr                       : in std_logic_vector(6 downto 0);
-        addr_from_arria                      : in std_logic_vector(23 downto 0)
+        addr_from_arria                      : in std_logic_vector(23 downto 0);
+
+        -- Backplane SPI interface
+        spi_bp_byte_from_bp               : in std_logic_vector(7 downto 0);
+        spi_bp_byte_en                    : in std_logic;     
+        spi_bp_addr                       : in std_logic_vector(7 downto 0)    
     );
 end entity flashprogramming_block;
 
@@ -83,7 +88,7 @@ architecture RTL of flashprogramming_block is
             arriawriting6, arriawriting7, arriafifowriting, arriawriting8, programming);
         signal spiflashstate : spiflashstate_type;
         signal fifo_req_last                        : std_logic;
-        signal arria_write_req_last                  : std_logic;
+        signal arria_write_req_last                 : std_logic;
         signal fifo_read_pulse                      : std_logic;
         signal wcounter                             : std_logic_vector(15 downto 0);
 
@@ -108,8 +113,6 @@ architecture RTL of flashprogramming_block is
         signal fpp_timeout                          : std_logic;
         signal fpp_debug                            : std_logic_vector(7 downto 0);
 
-        signal addrlast                             : std_logic_vector(23 downto 0);
-
 begin
 
     spi_flash_data_from_flash <= spi_flash_data_from_flash_int;
@@ -120,25 +123,26 @@ if ( reset_n = '0' ) then
     spiflashstate                   <= idle;
     spi_flash_granted_programmer    <= '0';
     fifo_req_last                   <= '0';
-    arria_write_req_last             <= '0';
+    arria_write_req_last            <= '0';
     spiflash_to_fifo_we				<= '0';
     fifopiotoggle_last			    <= '0';
     arriawriting                    <= '0';
     spi_strobe_arria                <= '0';
     spi_continue_arria              <= '0';
     status                          <= (others => '0');
-    addrlast                        <= (others => '0');
 
 
 elsif ( clk100'event and clk100 = '1' ) then
     fifopiotoggle_last			    <= spi_flash_fifo_data_nios(8);
     fifo_req_last                   <= spi_flash_ctrl(7);
-    arria_write_req_last             <= control(0);
+    arria_write_req_last            <= control(0);
     spiflash_to_fifo_we 	     	<= '0';
       
 
     status(0) <= arriawriting;
     status(1) <= spi_busy;
+    status(15) <= spiflashfifo_full;
+    status(14) <= spiflashfifo_empty;
 
     status(16)              <= fpga_conf_done;
     status(17)              <= fpga_nstatus;
@@ -147,7 +151,7 @@ elsif ( clk100'event and clk100 = '1' ) then
     status(23 downto 20)    <= (others => '0');    
     status(31 downto 24)    <= fpp_debug;
 
-    status(15 downto 2) <= (others => '0');
+    status(13 downto 2) <= (others => '0');
 
     case spiflashstate is
     when idle =>
@@ -162,29 +166,26 @@ elsif ( clk100'event and clk100 = '1' ) then
 
         if(control(0) = '1' and arria_write_req_last = '0') then -- here we start the sequence for erasing 
                                                                  -- and writing an spi flash block
-                                                                 -- we only erase if we just passed a 64K block boundary
-
-            addrlast <= addr_from_arria;                                                
+                                                                 -- we only erase if we just passed a 64K block boundary                                               
             if(addr_from_arria(15 downto 0) = X"0000") then                                                    
                 spiflashstate  <= arriawriting1;
                 arriawriting   <= '1';
             else 
                 spiflashstate  <= arriawriting5;
                 arriawriting   <= '1';
-            end if;    
-
-            --if((unsigned(addr_from_arria) /= 0 and unsigned(addr_from_arria) - unsigned(addrlast) /= 256) or spiflashfifo_empty = '1')then
-            --    status(31 downto 20) <= addr_from_arria(23 downto 12);
-            --end if;    
+            end if;   
 
         end if;    
 
             
-        if(spi_arria_byte_en = '1' and spi_arria_addr = FEBSPI_ADDR_PROGRAMMING_WFIFO) then
-            spiflash_to_fifo_we <= '1';
+        if(spi_bp_byte_en = '1' and spi_bp_addr = "0" & FEBSPI_ADDR_PROGRAMMING_WFIFO) then
+            spiflash_to_fifo_we  <= '1';
+            spiflashfifo_data_in <= spi_bp_byte_from_bp;
+        elsif (spi_arria_byte_en = '1' and spi_arria_addr = FEBSPI_ADDR_PROGRAMMING_WFIFO) then
+            spiflash_to_fifo_we  <= '1';
             spiflashfifo_data_in <= spi_arria_byte_from_arria;
         elsif(fifopiotoggle_last /= spi_flash_fifo_data_nios(8)) then
-            spiflash_to_fifo_we <= '1';
+            spiflash_to_fifo_we  <= '1';
             spiflashfifo_data_in <= spi_flash_fifo_data_nios(7 downto 0);
         end if;
 
@@ -260,7 +261,7 @@ elsif ( clk100'event and clk100 = '1' ) then
     when arriafifowriting => -- start writing
         status(9)               <= '1';
         spi_command_arria       <= COMMAND_QUAD_PAGE_PROGRAM;
-        spi_addr_arria          <= addr_from_arria;
+        spi_addr_arria          <= addr_from_arria;       
         spi_continue_arria      <= '1';
         spi_strobe_arria        <= '1';
         wcounter                <= wcounter + 1;
@@ -414,7 +415,7 @@ scfifo_component : altera_mf.altera_mf_components.scfifo
             use_eab => "ON"
     )
     PORT MAP (
-            aclr => '0',
+            aclr => control(1),
             clock => clk100,
             data => spiflashfifo_data_in, 
             rdreq => read_spiflashfifo,

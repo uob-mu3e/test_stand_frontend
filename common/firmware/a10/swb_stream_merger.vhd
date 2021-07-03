@@ -6,12 +6,12 @@ use ieee.numeric_std.all;
 -- merge packets delimited by SOP and EOP from N input streams
 entity swb_stream_merger is
 generic (
-    W : positive := 38;
+    W : positive := 34;
     N : positive--;
 );
 port (
     -- input streams
-    i_rdata     : in    work.util.slv38_array_t(N - 1 downto 0);
+    i_rdata     : in    work.util.slv34_array_t(N - 1 downto 0);
     i_rsop      : in    std_logic_vector(N-1 downto 0);
     i_reop      : in    std_logic_vector(N-1 downto 0);
     i_rempty    : in    std_logic_vector(N-1 downto 0);
@@ -39,7 +39,7 @@ architecture arch of swb_stream_merger is
 
     signal rdata : std_logic_vector(N*W-1 downto 0);
     signal rempty : std_logic_vector(N-1 downto 0);
-    signal wdata, q_stream : std_logic_vector(35 downto 0);
+    signal wdata, q_stream : std_logic_vector(33 downto 0);
     signal datak : std_logic_vector(3 downto 0);
     signal wfull, we : std_logic;
 
@@ -70,7 +70,7 @@ begin
         o_rack      => o_rack,
 
         -- output stream
-        o_wdata(35 downto 0) => wdata,
+        o_wdata(33 downto 0) => wdata,
         o_wsop      => open,
         o_weop      => open,
         i_wfull     => wfull,
@@ -82,9 +82,10 @@ begin
 
     e_stream_fifo : entity work.ip_scfifo
     generic map (
-        ADDR_WIDTH => 8,
-        DATA_WIDTH => 36,
-        DEVICE => "Arria 10"--,
+        ADDR_WIDTH  => 8,
+        DATA_WIDTH  => 34,
+        REGOUT      => 0, 
+        DEVICE      => "Arria 10"--,
     )
     port map (
         q               => q_stream,
@@ -98,14 +99,8 @@ begin
     );
 
     --! only output data not datak
-    o_wdata <= q_stream(35 downto 4);
-    datak   <= q_stream(3 downto 0);
-    
-    o_wsop <=
-        '1' when datak = "0001" and q_stream(11 downto 4) = x"BC"
-        else '0';
-    o_weop <=
-        '1' when datak = "0001" and q_stream(11 downto 4) = x"9C"
-        else '0';
+    o_wdata <= q_stream(31 downto 0);
+    o_wsop <= '1' when q_stream(33 downto 32) = "10" else '0';
+    o_weop <= '1' when q_stream(33 downto 32) = "01" else '0';
 
 end architecture;

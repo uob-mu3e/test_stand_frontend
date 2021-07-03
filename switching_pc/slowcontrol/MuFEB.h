@@ -41,12 +41,14 @@ class MuFEB {
       virtual uint16_t GetNumFPGAs() const {return febs.size();}
       virtual uint16_t GetModulesPerFEB() const {return 0;}
       virtual uint16_t GetASICSPerModule() const {return 0;}
+      virtual uint16_t GetASICSPerFEB() const {return GetASICSPerModule() * GetModulesPerFEB();}
 
       //Parameter FPGA_ID refers to global numbering, i.e. before mapping
       int ReadBackRunState(uint16_t FPGA_ID);
       void ReadBackAllRunState(){for(size_t i=0;i<febs.size();i++) ReadBackRunState(i);};
 
       int WriteFEBID();
+      int WriteSorterDelay(uint16_t FPGA_ID, uint32_t delay);
       void ReadFirmwareVersionsToODB();
 
       void LoadFirmware(std::string filename, uint16_t FPGA_ID);
@@ -58,6 +60,11 @@ class MuFEB {
       DWORD *fill_SSFE(DWORD * pdata);
       DWORD *read_SSFE_OneFEB(DWORD * pdata, uint32_t index, uint32_t version);
 
+      DWORD *fill_SSSO(DWORD * pdata);
+      DWORD *read_SSSO_OneFEB(DWORD * pdata, uint32_t index);
+
+      const vector<mappedFEB> getFEBs() const {return febs;}
+      const uint8_t getSB_number() const {return SB_number;}
 
 protected:
 
@@ -69,11 +76,11 @@ protected:
       const uint8_t SB_number;
 
       //Mapping from ASIC number to FPGA_ID and ASIC_ID
-      virtual uint16_t FPGAid_from_ID(int asic) const {return 0;}; //global asic number to global FEB number
-      virtual uint16_t ASICid_from_ID(int asic) const {return 0;}; //global asic number to FEB-local asic number
+      virtual uint16_t FPGAid_from_ID(int asic [[maybe_unused]]) const {return 0;}; //global asic number to global FEB number
+      virtual uint16_t ASICid_from_ID(int asic [[maybe_unused]]) const {return 0;}; //global asic number to FEB-local asic number
 
       //Return typeID for building FEB ID map
-      virtual FEBTYPE GetTypeID() const {return FEBTYPE::Undefined;}
+      virtual FEBTYPE GetTypeID() const {return FEBTYPE::Unused;}
       virtual bool IsSecondary([[maybe_unused]] int t){return false;}
 
       //Conversions for slow control values

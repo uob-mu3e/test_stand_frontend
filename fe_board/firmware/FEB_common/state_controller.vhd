@@ -26,6 +26,9 @@ use work.mudaq.all;
 
 
 ENTITY state_controller is
+generic (
+    FULL_VERSION_g : boolean := true--;
+);
 port (
     reset_link_8bData   : in    std_logic_vector(7 downto 0); -- input reset line
 
@@ -70,179 +73,363 @@ BEGIN
 
     -- address
 
-    --- transition process
-    process(i_clk, i_reset_n, addressed)
-    begin
-    if ( i_reset_n = '0' ) then
-        state <= RUN_STATE_IDLE;
-        payload_byte_counter <= 0;
-        recieving_payload <= '0';
-        reset_mask <= (others =>'0');
-        link_test_payload <= (others =>'0');
-        sync_test_payload <= (others =>'0');
-        runnumber <= (others =>'0');
-        --
-    elsif (rising_edge(i_clk) and addressed = '1') then
+    trans_full: if FULL_VERSION_g generate
+        --- transition process
+        process(i_clk, i_reset_n, addressed)
+        begin
+        if ( i_reset_n = '0' ) then
+            state <= RUN_STATE_IDLE;
+            payload_byte_counter <= 0;
+            recieving_payload <= '0';
+            reset_mask <= (others =>'0');
+            link_test_payload <= (others =>'0');
+            sync_test_payload <= (others =>'0');
+            runnumber <= (others =>'0');
+            --
+        elsif (rising_edge(i_clk) and addressed = '1') then
 
-        if recieving_payload = '1' then -- recieve payload
-            payload_byte_counter <= payload_byte_counter - 1;
-            if payload_byte_counter = 1 then
-                recieving_payload <= '0';
+            if recieving_payload = '1' then -- recieve payload
+                payload_byte_counter <= payload_byte_counter - 1;
+                if payload_byte_counter = 1 then
+                    recieving_payload <= '0';
+                end if;
+
+                -- write payload to correct output
+                case state is
+                when RUN_STATE_PREP =>
+                    runnumber((payload_byte_counter ) * 8 - 1 downto (payload_byte_counter-1)*8) <= reset_link_8bData;
+                when RUN_STATE_LINK_TEST =>
+                    link_test_payload((payload_byte_counter ) * 8 - 1 downto (payload_byte_counter-1)*8) <= reset_link_8bData;
+                when RUN_STATE_SYNC_TEST =>
+                    sync_test_payload((payload_byte_counter ) * 8 - 1 downto (payload_byte_counter-1)*8) <= reset_link_8bData;
+                when RUN_STATE_RESET =>
+                    reset_mask((payload_byte_counter ) * 8 - 1 downto (payload_byte_counter-1)*8) <= reset_link_8bData;
+                when others => -- should not happen
+                end case;
+
+            else  -- command incoming --> listen and do stuff
+                case state is
+                ------------ idle ------------
+                when RUN_STATE_IDLE =>
+                    if reset_link_8bData = x"10" then -- run prepare
+                        recieving_payload <= '1';
+                        payload_byte_counter <= 4;
+                        state <= RUN_STATE_PREP;
+                    elsif reset_link_8bData = x"20" then -- start link test
+                        recieving_payload <= '1';
+                        payload_byte_counter <= 2;
+                        state <= RUN_STATE_LINK_TEST;
+                    elsif reset_link_8bData = x"24" then -- start sync test
+                        recieving_payload <= '1';
+                        payload_byte_counter <= 2;
+                        state <= RUN_STATE_SYNC_TEST;
+                    elsif reset_link_8bData = x"30" then -- reset
+                        recieving_payload <= '1';
+                        payload_byte_counter <= 2;
+                        state <= RUN_STATE_RESET;
+                    elsif reset_link_8bData = x"33" then -- disable
+                        --state <= RUN_STATE_OUT_OF_DAQ;
+                    else
+                        state <= RUN_STATE_IDLE;
+                    end if;
+
+                ------------ run prepare --------------
+                when RUN_STATE_PREP =>
+                    if reset_link_8bData = x"11" then -- sync
+                        state <= RUN_STATE_SYNC;
+                    elsif reset_link_8bData = x"14" then -- abort run
+                        state <= RUN_STATE_IDLE;
+                    elsif reset_link_8bData = x"30" then -- reset
+                        state <= RUN_STATE_RESET;
+                        recieving_payload <= '1';
+                        payload_byte_counter <= 2;
+                    elsif reset_link_8bData = x"33" then -- disable
+                        state <= RUN_STATE_OUT_OF_DAQ;
+                    else
+                        state <= RUN_STATE_PREP;
+                    end if;
+
+                ------------ sync --------------
+                when RUN_STATE_SYNC =>
+                    if reset_link_8bData = x"12" then -- start run
+                        state <= RUN_STATE_RUNNING;
+                    elsif reset_link_8bData = x"14" then -- abort run
+                        state <= RUN_STATE_IDLE;
+                    elsif reset_link_8bData = x"30" then -- reset
+                        state <= RUN_STATE_RESET;
+                        recieving_payload <= '1';
+                        payload_byte_counter <= 2;
+                    elsif reset_link_8bData = x"33" then -- disable
+                        state <= RUN_STATE_OUT_OF_DAQ;
+                    else
+                        state <= RUN_STATE_SYNC;
+                    end if;
+
+                ------------ running --------------
+                when RUN_STATE_RUNNING =>
+                    if reset_link_8bData = x"13" then -- end run
+                        state <= RUN_STATE_TERMINATING;
+                    elsif reset_link_8bData = x"14" then -- abort run
+                        state <= RUN_STATE_IDLE;
+                    elsif reset_link_8bData = x"30" then -- reset
+                        state <= RUN_STATE_RESET;
+                        recieving_payload <= '1';
+                        payload_byte_counter <= 2;
+                    elsif reset_link_8bData = x"33" then -- disable
+                        state <= RUN_STATE_OUT_OF_DAQ;
+                    else
+                        state <= RUN_STATE_RUNNING;
+                    end if;
+
+                ------------ terminating --------------
+                when RUN_STATE_TERMINATING =>
+                    if terminated = '1' then -- terminating finished
+                        state <= RUN_STATE_IDLE;
+                    elsif reset_link_8bData = x"14" then -- abort run
+                        state <= RUN_STATE_IDLE;
+                    elsif reset_link_8bData = x"30" then -- reset
+                        state <= RUN_STATE_RESET;
+                        recieving_payload <= '1';
+                        payload_byte_counter <= 2;
+                    elsif reset_link_8bData = x"33" then -- disable
+                        state <= RUN_STATE_OUT_OF_DAQ;
+                    else
+                        state <= RUN_STATE_TERMINATING;
+                    end if;
+
+               ------------ link test --------------
+               when RUN_STATE_LINK_TEST =>
+                    if reset_link_8bData = x"21" then -- stop link test
+                        state <= RUN_STATE_IDLE;
+                    elsif reset_link_8bData = x"30" then -- reset
+                        state <= RUN_STATE_RESET;
+                        recieving_payload <= '1';
+                        payload_byte_counter <= 2;
+                    elsif reset_link_8bData = x"33" then -- disable
+                        state <= RUN_STATE_OUT_OF_DAQ;
+                    else
+                        state <= RUN_STATE_LINK_TEST;
+                    end if;
+
+               ------------ sync test --------------
+               when RUN_STATE_SYNC_TEST =>
+                    if reset_link_8bData = x"25" then -- stop sync test
+                        state <= RUN_STATE_IDLE;
+                    elsif reset_link_8bData = x"30" then -- reset
+                        state <= RUN_STATE_RESET;
+                        recieving_payload <= '1';
+                        payload_byte_counter <= 2;
+                    elsif reset_link_8bData = x"33" then -- disable
+                        state <= RUN_STATE_OUT_OF_DAQ;
+                    else
+                        state <= RUN_STATE_SYNC_TEST;
+                    end if;
+
+                ------------ reset state --------------
+                when RUN_STATE_RESET =>
+                    if reset_link_8bData = x"31" then -- reset finished
+                        state <= RUN_STATE_IDLE;
+                    elsif reset_link_8bData = x"33" then -- disable
+                        state <= RUN_STATE_OUT_OF_DAQ;
+                    else
+                        state <= RUN_STATE_RESET;
+                    end if;
+
+                when RUN_STATE_OUT_OF_DAQ =>
+                    if reset_link_8bData = x"32" then -- enable
+                        state <= RUN_STATE_IDLE;
+                    end if;
+
+                when others =>
+                    state <= RUN_STATE_IDLE;
+
+                end case;
             end if;
-
-            -- write payload to correct output
-            case state is
-            when RUN_STATE_PREP =>
-                runnumber((payload_byte_counter ) * 8 - 1 downto (payload_byte_counter-1)*8) <= reset_link_8bData;
-            when RUN_STATE_LINK_TEST =>
-                link_test_payload((payload_byte_counter ) * 8 - 1 downto (payload_byte_counter-1)*8) <= reset_link_8bData;
-            when RUN_STATE_SYNC_TEST =>
-                sync_test_payload((payload_byte_counter ) * 8 - 1 downto (payload_byte_counter-1)*8) <= reset_link_8bData;
-            when RUN_STATE_RESET =>
-                reset_mask((payload_byte_counter ) * 8 - 1 downto (payload_byte_counter-1)*8) <= reset_link_8bData;
-            when others => -- should not happen
-            end case;
-
-        else  -- command incoming --> listen and do stuff
-            case state is
-            ------------ idle ------------
-            when RUN_STATE_IDLE =>
-                if reset_link_8bData = x"10" then -- run prepare
-                    recieving_payload <= '1';
-                    payload_byte_counter <= 4;
-                    state <= RUN_STATE_PREP;
-                elsif reset_link_8bData = x"20" then -- start link test
-                    recieving_payload <= '1';
-                    payload_byte_counter <= 2;
-                    state <= RUN_STATE_LINK_TEST;
-                elsif reset_link_8bData = x"24" then -- start sync test
-                    recieving_payload <= '1';
-                    payload_byte_counter <= 2;
-                    state <= RUN_STATE_SYNC_TEST;
-                elsif reset_link_8bData = x"30" then -- reset
-                    recieving_payload <= '1';
-                    payload_byte_counter <= 2;
-                    state <= RUN_STATE_RESET;
-                elsif reset_link_8bData = x"33" then -- disable
-                    state <= RUN_STATE_OUT_OF_DAQ;
-                else
-                    state <= RUN_STATE_IDLE;
-                end if;
-
-            ------------ run prepare --------------
-            when RUN_STATE_PREP =>
-                if reset_link_8bData = x"11" then -- sync
-                    state <= RUN_STATE_SYNC;
-                elsif reset_link_8bData = x"14" then -- abort run
-                    state <= RUN_STATE_IDLE;
-                elsif reset_link_8bData = x"30" then -- reset
-                    state <= RUN_STATE_RESET;
-                    recieving_payload <= '1';
-                    payload_byte_counter <= 2;
-                elsif reset_link_8bData = x"33" then -- disable
-                    state <= RUN_STATE_OUT_OF_DAQ;
-                else
-                    state <= RUN_STATE_PREP;
-                end if;
-
-            ------------ sync --------------
-            when RUN_STATE_SYNC =>
-                if reset_link_8bData = x"12" then -- start run
-                    state <= RUN_STATE_RUNNING;
-                elsif reset_link_8bData = x"14" then -- abort run
-                    state <= RUN_STATE_IDLE;
-                elsif reset_link_8bData = x"30" then -- reset
-                    state <= RUN_STATE_RESET;
-                    recieving_payload <= '1';
-                    payload_byte_counter <= 2;
-                elsif reset_link_8bData = x"33" then -- disable
-                    state <= RUN_STATE_OUT_OF_DAQ;
-                else
-                    state <= RUN_STATE_SYNC;
-                end if;
-
-            ------------ running --------------
-            when RUN_STATE_RUNNING =>
-                if reset_link_8bData = x"13" then -- end run
-                    state <= RUN_STATE_TERMINATING;
-                elsif reset_link_8bData = x"14" then -- abort run
-                    state <= RUN_STATE_IDLE;
-                elsif reset_link_8bData = x"30" then -- reset
-                    state <= RUN_STATE_RESET;
-                    recieving_payload <= '1';
-                    payload_byte_counter <= 2;
-                elsif reset_link_8bData = x"33" then -- disable
-                    state <= RUN_STATE_OUT_OF_DAQ;
-                else
-                    state <= RUN_STATE_RUNNING;
-                end if;
-
-            ------------ terminating --------------
-            when RUN_STATE_TERMINATING =>
-                if terminated = '1' then -- terminating finished
-                    state <= RUN_STATE_IDLE;
-                elsif reset_link_8bData = x"14" then -- abort run
-                    state <= RUN_STATE_IDLE;
-                elsif reset_link_8bData = x"30" then -- reset
-                    state <= RUN_STATE_RESET;
-                    recieving_payload <= '1';
-                    payload_byte_counter <= 2;
-                elsif reset_link_8bData = x"33" then -- disable
-                    state <= RUN_STATE_OUT_OF_DAQ;
-                else
-                    state <= RUN_STATE_TERMINATING;
-                end if;
-
-           ------------ link test --------------
-           when RUN_STATE_LINK_TEST =>
-                if reset_link_8bData = x"21" then -- stop link test
-                    state <= RUN_STATE_IDLE;
-                elsif reset_link_8bData = x"30" then -- reset
-                    state <= RUN_STATE_RESET;
-                    recieving_payload <= '1';
-                    payload_byte_counter <= 2;
-                elsif reset_link_8bData = x"33" then -- disable
-                    state <= RUN_STATE_OUT_OF_DAQ;
-                else
-                    state <= RUN_STATE_LINK_TEST;
-                end if;
-
-           ------------ sync test --------------
-           when RUN_STATE_SYNC_TEST =>
-                if reset_link_8bData = x"25" then -- stop sync test
-                    state <= RUN_STATE_IDLE;
-                elsif reset_link_8bData = x"30" then -- reset
-                    state <= RUN_STATE_RESET;
-                    recieving_payload <= '1';
-                    payload_byte_counter <= 2;
-                elsif reset_link_8bData = x"33" then -- disable
-                    state <= RUN_STATE_OUT_OF_DAQ;
-                else
-                    state <= RUN_STATE_SYNC_TEST;
-                end if;
-
-            ------------ reset state --------------
-            when RUN_STATE_RESET =>
-                if reset_link_8bData = x"31" then -- reset finished
-                    state <= RUN_STATE_IDLE;
-                elsif reset_link_8bData = x"33" then -- disable
-                    state <= RUN_STATE_OUT_OF_DAQ;
-                else
-                    state <= RUN_STATE_RESET;
-                end if;
-
-            when RUN_STATE_OUT_OF_DAQ =>
-                if reset_link_8bData = x"32" then -- enable
-                    state <= RUN_STATE_IDLE;
-                end if;
-
-            when others =>
-                state <= RUN_STATE_IDLE;
-
-            end case;
         end if;
-    end if;
-    end process;
+        end process;
+    end generate;
+
+    
+    trans_not_full: if not FULL_VERSION_g generate
+        --- transition process
+        process(i_clk, i_reset_n, addressed)
+        begin
+        if ( i_reset_n = '0' ) then
+            state <= RUN_STATE_IDLE;
+            payload_byte_counter <= 0;
+            recieving_payload <= '0';
+            reset_mask <= (others =>'0');
+            link_test_payload <= (others =>'0');
+            sync_test_payload <= (others =>'0');
+            runnumber <= (others =>'0');
+            --
+        elsif (rising_edge(i_clk) and addressed = '1') then
+
+            if recieving_payload = '1' then -- recieve payload
+                payload_byte_counter <= payload_byte_counter - 1;
+                if payload_byte_counter = 1 then
+                    recieving_payload <= '0';
+                end if;
+
+                -- write payload to correct output
+                case state is
+                when RUN_STATE_PREP =>
+                    runnumber((payload_byte_counter ) * 8 - 1 downto (payload_byte_counter-1)*8) <= reset_link_8bData;
+                when RUN_STATE_LINK_TEST =>
+                    link_test_payload((payload_byte_counter ) * 8 - 1 downto (payload_byte_counter-1)*8) <= reset_link_8bData;
+                when RUN_STATE_SYNC_TEST =>
+                    sync_test_payload((payload_byte_counter ) * 8 - 1 downto (payload_byte_counter-1)*8) <= reset_link_8bData;
+                when RUN_STATE_RESET =>
+                    reset_mask((payload_byte_counter ) * 8 - 1 downto (payload_byte_counter-1)*8) <= reset_link_8bData;
+                when others => -- should not happen
+                end case;
+
+            else  -- command incoming --> listen and do stuff
+                case state is
+                ------------ idle ------------
+                when RUN_STATE_IDLE =>
+                    if reset_link_8bData = x"10" then -- run prepare
+                        recieving_payload <= '1';
+                        payload_byte_counter <= 4;
+                        state <= RUN_STATE_PREP;
+                    --elsif reset_link_8bData = x"20" then -- start link test
+                    --    recieving_payload <= '1';
+                    --    payload_byte_counter <= 2;
+                    --    state <= RUN_STATE_LINK_TEST;
+                    --elsif reset_link_8bData = x"24" then -- start sync test
+                    --    recieving_payload <= '1';
+                    --    payload_byte_counter <= 2;
+                    --    state <= RUN_STATE_SYNC_TEST;
+                    elsif reset_link_8bData = x"30" then -- reset
+                        recieving_payload <= '1';
+                        payload_byte_counter <= 2;
+                        state <= RUN_STATE_RESET;
+                    elsif reset_link_8bData = x"33" then -- disable
+                        --state <= RUN_STATE_OUT_OF_DAQ;
+                    else
+                        state <= RUN_STATE_IDLE;
+                    end if;
+
+                ------------ run prepare --------------
+                when RUN_STATE_PREP =>
+                    if reset_link_8bData = x"11" then -- sync
+                        state <= RUN_STATE_SYNC;
+                    elsif reset_link_8bData = x"14" then -- abort run
+                        state <= RUN_STATE_IDLE;
+                    elsif reset_link_8bData = x"30" then -- reset
+                        state <= RUN_STATE_RESET;
+                        recieving_payload <= '1';
+                        payload_byte_counter <= 2;
+                    elsif reset_link_8bData = x"33" then -- disable
+                        --state <= RUN_STATE_OUT_OF_DAQ;
+                    else
+                        state <= RUN_STATE_PREP;
+                    end if;
+
+                ------------ sync --------------
+                when RUN_STATE_SYNC =>
+                    if reset_link_8bData = x"12" then -- start run
+                        state <= RUN_STATE_RUNNING;
+                    elsif reset_link_8bData = x"14" then -- abort run
+                        state <= RUN_STATE_IDLE;
+                    elsif reset_link_8bData = x"30" then -- reset
+                        state <= RUN_STATE_RESET;
+                        recieving_payload <= '1';
+                        payload_byte_counter <= 2;
+                    elsif reset_link_8bData = x"33" then -- disable
+                        --state <= RUN_STATE_OUT_OF_DAQ;
+                    else
+                        state <= RUN_STATE_SYNC;
+                    end if;
+
+                ------------ running --------------
+                when RUN_STATE_RUNNING =>
+                    if reset_link_8bData = x"13" then -- end run
+                        state <= RUN_STATE_TERMINATING;
+                    elsif reset_link_8bData = x"14" then -- abort run
+                        state <= RUN_STATE_IDLE;
+                    elsif reset_link_8bData = x"30" then -- reset
+                        state <= RUN_STATE_RESET;
+                        recieving_payload <= '1';
+                        payload_byte_counter <= 2;
+                    elsif reset_link_8bData = x"33" then -- disable
+                        --state <= RUN_STATE_OUT_OF_DAQ;
+                    else
+                        state <= RUN_STATE_RUNNING;
+                    end if;
+
+                ------------ terminating --------------
+                when RUN_STATE_TERMINATING =>
+                    if terminated = '1' then -- terminating finished
+                        state <= RUN_STATE_IDLE;
+                    elsif reset_link_8bData = x"14" then -- abort run
+                        state <= RUN_STATE_IDLE;
+                    elsif reset_link_8bData = x"30" then -- reset
+                        state <= RUN_STATE_RESET;
+                        recieving_payload <= '1';
+                        payload_byte_counter <= 2;
+                    elsif reset_link_8bData = x"33" then -- disable
+                        --state <= RUN_STATE_OUT_OF_DAQ;
+                    else
+                        state <= RUN_STATE_TERMINATING;
+                    end if;
+
+               ------------ link test --------------
+               when RUN_STATE_LINK_TEST =>
+                    if reset_link_8bData = x"21" then -- stop link test
+                        state <= RUN_STATE_IDLE;
+                    elsif reset_link_8bData = x"30" then -- reset
+                        state <= RUN_STATE_RESET;
+                        recieving_payload <= '1';
+                        payload_byte_counter <= 2;
+                    elsif reset_link_8bData = x"33" then -- disable
+                        --state <= RUN_STATE_OUT_OF_DAQ;
+                    else
+                        --state <= RUN_STATE_LINK_TEST;
+                        state <= RUN_STATE_IDLE;
+                    end if;
+
+               ------------ sync test --------------
+               when RUN_STATE_SYNC_TEST =>
+                    if reset_link_8bData = x"25" then -- stop sync test
+                        state <= RUN_STATE_IDLE;
+                    elsif reset_link_8bData = x"30" then -- reset
+                        state <= RUN_STATE_RESET;
+                        recieving_payload <= '1';
+                        payload_byte_counter <= 2;
+                    elsif reset_link_8bData = x"33" then -- disable
+                        --state <= RUN_STATE_OUT_OF_DAQ;
+                    else
+                        --state <= RUN_STATE_SYNC_TEST;
+                        state <= RUN_STATE_IDLE;
+                    end if;
+
+                ------------ reset state --------------
+                when RUN_STATE_RESET =>
+                    if reset_link_8bData = x"31" then -- reset finished
+                        state <= RUN_STATE_IDLE;
+                    elsif reset_link_8bData = x"33" then -- disable
+                        --state <= RUN_STATE_OUT_OF_DAQ;
+                    else
+                        state <= RUN_STATE_RESET;
+                    end if;
+
+                when RUN_STATE_OUT_OF_DAQ =>
+                    --if reset_link_8bData = x"32" then -- enable
+                        state <= RUN_STATE_IDLE;
+                    --end if;
+
+                when others =>
+                    state <= RUN_STATE_IDLE;
+
+                end case;
+            end if;
+        end if;
+        end process;
+    end generate;
+
+
+
 
     -- address process
     process(i_clk, i_reset_n)

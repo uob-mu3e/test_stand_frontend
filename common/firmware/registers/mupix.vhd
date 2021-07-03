@@ -80,6 +80,15 @@ package mupix is
     type mp_link_order_t    is array (35 downto 0) of integer;
     constant MP_LINK_ORDER  : mp_link_order_t := (33,31,29,35,32,28,34,30,27,26,25,20,24,23,21,22,19,18,15,11,9,17,13,10,16,14,12,5,3,2,6,4,1,8,7,0);
 
+    -- following mp links are inverted on DAB integration run version:
+        --0,19,30,35
+    -- more links are inverted on the FEB:
+        -- 12,14,16,27,34,35
+    -- additional inverts: (we dont know from where, list is incomplete):
+        -- 11,15,32,28,  2,3,5,24,23,21,20,25,26,28,32,29,31,10,13,17 
+    -- additional inverts found in the integration run cage before craning:(with this the list is hopefully complete)
+        -- 0,7,8,18,19,22,9,30,33,1,4,6
+      constant MP_LINK_INVERT : std_logic_vector(35 downto 0) := "011110111111111101111111111111111110";
 
 
     type ts_array_t                 is array (natural range <>) of std_logic_vector(10 downto 0);

@@ -114,6 +114,7 @@ begin
     generic map (
         ADDR_WIDTH      => 12,
         DATA_WIDTH      => 12,
+        REGOUT          => 0, 
         DEVICE          => "Arria 10"--,
     )
     port map (
@@ -124,9 +125,6 @@ begin
         q               => r_fifo_data,
         full            => tag_fifo_full,
         empty           => tag_fifo_empty,
-        almost_empty    => open,
-        almost_full     => open,
-        usedw           => open,
         sclr            => not i_reset_n_250--,
     );
 
@@ -282,11 +280,13 @@ begin
 
         when bank_data =>
             -- check again if the fifo is empty
-            if ( i_rempty = '0' ) then
+            if ( i_rempty = '0' and i_rx /= x"FFFFFFFF" ) then
                 w_ram_en            <= '1';
                 w_ram_add           <= w_ram_add + 1;
                 if ( i_trailer = '1' ) then
-                    w_ram_data      <= x"0FC0009C";
+                    w_ram_data(31 downto 12)    <= x"FC000";
+                    w_ram_data(11 downto 8)     <= "00" & i_rx(9 downto 8);
+                    w_ram_data(7 downto 0)      <= x"9C";
                 else
                     w_ram_data      <= i_rx;
                 end if;

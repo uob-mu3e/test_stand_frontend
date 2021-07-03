@@ -25,8 +25,6 @@ entity mupix_ctrl is
         o_reg_rdata         : out std_logic_vector(31 downto 0);
         i_reg_we            : in  std_logic;
         i_reg_wdata         : in  std_logic_vector(31 downto 0);
-        i_hotfix_reroute    : in work.util.slv32_array_t(35 downto 0);
-        o_hotfix_backroute  : out std_logic;
         o_clock             : out std_logic_vector( 3 downto 0);
         o_SIN               : out std_logic_vector( 3 downto 0);
         o_mosi              : out std_logic_vector( 3 downto 0);
@@ -36,8 +34,10 @@ end entity mupix_ctrl;
 
 architecture RTL of mupix_ctrl is
 
-    signal mp_fifo_clear            : std_logic_vector(5 downto 0);
+    signal mp_fifo_clear            : std_logic_vector(5 downto 0) := (others => '0');
     signal config_storage_input_data: std_logic_vector(32*5 + 31 downto 0);
+    signal config_storage_in_all    : std_logic_vector(31 downto 0);
+    signal config_storage_in_all_we : std_logic;
     signal is_writing               : std_logic_vector(5 downto 0);
     signal is_writing_this_round    : std_logic_vector(5 downto 0);
     signal config_storage_write     : std_logic_vector(5 downto 0);
@@ -61,6 +61,7 @@ architecture RTL of mupix_ctrl is
     signal mp_ctrl_state            : mp_ctrl_state_type;
     type spi_bit_state_type         is (beforepulse, duringpulse, afterpulse);
     signal spi_bit_state            : spi_bit_state_type;
+    signal spi_busy                 : std_logic;
 
     signal spi_dout                 : std_logic;
     signal spi_clk                  : std_logic;
@@ -72,7 +73,7 @@ begin
 
     slow_down <= slow_down_buf(15 downto 0);
 
-    e_mupix_reg_mapping : entity work.mupix_reg_mapping
+    e_mupix_ctrl_reg_mapping : entity work.mupix_ctrl_reg_mapping
     port map (
         i_clk156                    => i_clk,
         i_reset_n                   => i_reset_n,
@@ -84,12 +85,14 @@ begin
         i_reg_wdata                 => i_reg_wdata,
 
         -- inputs  156--------------------------------------------
-        i_lvds_status => i_hotfix_reroute,
-        o_mp_lvds_invert => o_hotfix_backroute,
+        i_mp_spi_busy               => spi_busy,
+
         -- outputs 156--------------------------------------------
         o_mp_ctrl_data              => config_storage_input_data,
         o_mp_fifo_write             => config_storage_write,
         o_mp_fifo_clear             => mp_fifo_clear,
+        o_mp_ctrl_data_all          => config_storage_in_all,
+        o_mp_ctrl_data_all_we       => config_storage_in_all_we,
         o_mp_ctrl_enable            => enable_shift_reg_6,
         o_mp_ctrl_chip_config_mask  => chip_select_mask,
         o_mp_ctrl_invert_29         => invert_29_bitpos,
@@ -105,6 +108,9 @@ begin
 
         i_data                      => config_storage_input_data,
         i_wrreq                     => config_storage_write,
+
+        i_data_all                  => config_storage_in_all,
+        i_wrreq_all                 => config_storage_in_all_we,
 
         o_data                      => config_data,
         o_is_writing                => is_writing,
@@ -138,6 +144,7 @@ begin
             wait_cnt    <= wait_cnt + 1;
             o_mosi      <= (others => spi_dout);
             o_clock     <= (others => spi_clk);
+            spi_busy    <= '1';
             --if(invert_csn = '1') then 
                 o_csn       <= not chip_select_n;
             --else
@@ -147,6 +154,7 @@ begin
             case mp_ctrl_state is
                 when idle =>
                     waiting_for_load_round  <= (others => '0');
+                    spi_busy                <= '0';
 
                     if(or_reduce(is_writing) = '1') then
                         mp_ctrl_state   <= load_config;

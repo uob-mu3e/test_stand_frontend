@@ -24,7 +24,7 @@ function Motherboard(x,y,dx,dy){
 		c.fillRect(this.x, this.y,this.dx, this.dy);
 
         c.fillStyle = "Black";
-        c.font = "12px Arial";
+        c.font = "12px Arial, sans-serif";
         c.fillText(this.current, this.x+40, this.y+100);
         c.fillText(this.voltage, this.x+100, this.y+100);
         c.fillText(this.fans, this.x+40, this.y+200);
@@ -52,13 +52,13 @@ function RXFirefly(x,y,dx,dy){
         c.fillRect(this.x, this.y,this.dx, this.dy);
 
         c.fillStyle = "White";
-        c.font = "20px Arial";
+        c.font = "20px Arial, sans-serif";
         c.fillText("RX", this.x+5, this.y+130);
-        c.font = "12px Arial";
+        c.font = "12px Arial, sans-serif";
         c.fillText(this.voltage, this.x+90, this.y+110);
         c.fillText(this.temp, this.x+90, this.y+130);
 
-        c.font = "9px Arial";
+        c.font = "9px Arial, sans-serif";
         c.fillText("LOS", this.x+5, this.y+10);
         for(var i=0; i < 12; i++){
             if(this.los[i])
@@ -101,13 +101,13 @@ function TXFirefly(x,y,dx,dy, name){
         c.fillRect(this.x, this.y,this.dx, this.dy);
 
         c.fillStyle = "White";
-        c.font = "20px Arial";
+        c.font = "20px Arial, sans-serif";
         c.fillText(this.name, this.x+5, this.y+130);
-        c.font = "12px Arial";
+        c.font = "12px Arial, sans-serif";
         c.fillText(this.voltage, this.x+90, this.y+110);
         c.fillText(this.temp, this.x+90, this.y+130);
 
-        c.font = "8px Arial";
+        c.font = "8px Arial, sans-serif";
         c.fillText("L A I", this.x+5, this.y+10);
         for(var i=0; i < 12; i++){
             if(this.los[i])
@@ -161,10 +161,10 @@ function Daughterboard(x,y,dx,dy, index){
 			c.fillStyle = "rgb(100,200,100)"
 			c.fillRect( this.x, this.y, this.dx, this.dy);
 			c.fillStyle = "Black";
-			c.font = "20px Arial";
+			c.font = "20px Arial, sans-serif";
 			c.fillText(index, this.x+5, this.y+this.dy-5);
 			c.fillStyle = "Black";
-			c.font = "12px Arial";
+			c.font = "12px Arial, sans-serif";
 			c.fillText(this.current, this.x+40, this.y+this.dy-5);
 			c.fillText(this.voltage, this.x+100, this.y+this.dy-5);
 		}
@@ -212,7 +212,7 @@ function Firefly(x,y,dx,dy, daughter, index){
                 c.fillRect( this.x, this.y+dy, this.dx, 15);
             }
             c.fillStyle = this.tempcolour;
-            c.font = "12px Arial";
+            c.font = "12px Arial, sans-serif";
             c.fillText(this.temp, this.x+10, this.y+this.dy+12);
 		}
 	}
@@ -222,13 +222,13 @@ function Firefly(x,y,dx,dy, daughter, index){
 			c.fillStyle = "rgb(20,20,20)";
 			c.fillRect( this.lx, this.ly, this.ldx, this.ldy);
             c.fillStyle = "White";
-            c.font = "20px Arial";
+            c.font = "20px Arial, sans-serif";
             c.fillText(this.daughter+"-"+this.index, this.lx+5, this.ly+130);
-            c.font = "12px Arial";
+            c.font = "12px Arial, sans-serif";
             c.fillText(this.voltage, this.lx+90, this.ly+110);
             c.fillText(this.temp, this.lx+90, this.ly+130);
 
-            c.font = "8px Arial";
+            c.font = "8px Arial, sans-serif";
             c.fillText("L A I", this.lx+5, this.ly+10);
             for(var i=0; i < 12; i++){
                 if(this.los[i])

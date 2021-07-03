@@ -26,7 +26,8 @@ public:
     void Parse_GLOBAL_from_struct(odb o);
     void Parse_TDC_from_struct(odb o);
     void Parse_CH_from_struct(odb o, int channel);
-    void setParameterODBpp(odb o, std::string paraName);
+    void setParameterODBpp(std::string paraName, odb o);
+    void setParameterODBpp(std::string paraName, odb o, int channel);
 
 private:
     static paras_t parameters_ch;                             ///< static which stores the parameters for each channel (name, nbits, endian)

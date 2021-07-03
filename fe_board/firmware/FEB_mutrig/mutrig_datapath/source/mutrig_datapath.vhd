@@ -14,7 +14,7 @@ use work.mutrig.all;
 
 entity mutrig_datapath is
 generic(
-	IS_SCITILE : std_logic := '1';
+    IS_SCITILE : std_logic := '1';
     N_MODULES           : integer range 1 to 2 := 1;
     N_ASICS             : positive := 1;
     N_LINKS             : positive := 1;
@@ -22,7 +22,7 @@ generic(
     LVDS_PLL_FREQ       : real := 125.0;
     LVDS_DATA_RATE      : real := 1250.0;
     GEN_DUMMIES         : boolean := TRUE;
-	INPUT_SIGNFLIP : std_logic_vector(31 downto 0):=x"00000000";
+    INPUT_SIGNFLIP : std_logic_vector(31 downto 0):=x"00000000";
     C_CHANNELNO_PREFIX_A: std_logic_vector:=""; --use prefix value as the first bits (MSBs) of the chip number field. Leave empty to append nothing and use all bits from Input # numbering
     C_CHANNELNO_PREFIX_B: std_logic_vector:=""
     --(e.g. Tiles,  one module with up to 16 ASICs, PREFIX="")
@@ -403,7 +403,7 @@ u_mux_A : entity work.framebuilder_mux
         i_timestamp_clk     => i_ts_clk,
         i_timestamp_rst     => i_ts_rst,
     --event data inputs interface
-            i_source_data   => s_fifos_data(N_ASICS-1 downto 0),
+        i_source_data       => s_fifos_data(N_ASICS-1 downto 0),
         i_source_empty      => s_fifos_empty(N_ASICS-1 downto 0),
         o_source_rd         => s_fifos_rd(N_ASICS-1 downto 0),
     --event data output interface to big buffer storage

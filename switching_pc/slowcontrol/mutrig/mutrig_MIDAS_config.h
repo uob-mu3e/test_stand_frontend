@@ -185,6 +185,8 @@ typedef struct {
     BOOL      pll_setcoarse;
     BOOL      short_event_mode;
     BOOL      pll_envomonitor;
+    BOOL      pll_lol_dbg;
+    BOOL      en_ch_evt_cnt;
 } MUTRIG_GLOBAL;
 
 static odb MUTRIG_GLOBAL_SETTINGS = {
@@ -195,12 +197,14 @@ static odb MUTRIG_GLOBAL_SETTINGS = {
     {"gen_idle", false},
     {"ms_debug", false},
     {"prbs_debug", false},
-    {"rbs_single", false},
+    {"prbs_single", false},
     {"sync_ch_rst", false},
     {"disable_coarse", false},
     {"pll_setcoarse", false},
     {"short_event_mode", false},
     {"pll_envomonitor", false},
+    {"pll_lol_dbg", false},
+    {"en_ch_evt_cnt", false},
 };
 
 #endif

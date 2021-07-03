@@ -453,6 +453,7 @@ alt_u16 scifi_module_t::callback(alt_u16 cmd, volatile alt_u32* data, alt_u16 n)
         break;
     case CMD_MUTRIG_ASIC_CFG:
         //configure ASIC
+        printf("CMD_MUTRIG_ASIC_CFG\n");
         status=configure_asic(data[0],(alt_u8*) &(data[1]));
         if(sc->ram->regs.scifi.ctrl.dummy&1){
            //when configured as dummy do the spi transaction,

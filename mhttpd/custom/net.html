@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+    <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -9,26 +9,31 @@
     <script src="obsolete.js"> </script>
     
         <script>
+        function reload_trigger(){
+            document.getElementById("reloadID").innerHTML="";
+        }
+        
         function reloadAll(jsonData){
-            var nunknown=jsonData["nunknown"];
-            var ndns=jsonData["ndns"];
-            var nleased=jsonData["nleased"];
-            var nreserved=jsonData["nreserved"];
-            var unknownips=(jsonData["unknownips"]+'').split(',');
-            var reservedips=(jsonData["reservedips"]+'').split(',');
-            var reservedhostnames=(jsonData["reservedhostnames"]+'').split(',');
-            var reservedmacs=(jsonData["reservedmacs"]+'').split(',');
-            var leasedips=(jsonData["leasedips"]+'').split(',');
-            var leasedhostnames=(jsonData["leasedhostnames"]+'').split(',');
-            var leasedmacs=(jsonData["leasedmacs"]+'').split(',');
-            var dnsips=(jsonData["dnsips"]+'').split(',');
-            var dnshostnames=(jsonData["dnshostnames"]+'').split(',');
-            var expiration=(jsonData["expiration"]+'').split(',');
             
-            var usercmdReserve=jsonData["usercmdreserve"];
-            var usercmdRmReserve=jsonData["usercmdrmreserve"];
+            var obj = JSON.parse(jsonData);
             
-            var str="";
+            var nunknown=obj.nunknown;
+            var ndns=obj.ndns;
+            var nleased=obj.nleased;
+            var nreserved=obj.nreserved;
+            var unknownips=obj.unknownips;
+            var reservedips=obj.reservedips;
+            var reservedhostnames=obj.reservedhostnames;
+            var reservedmacs=obj.reservedmacs;
+            var leasedips=obj.leasedips;
+            var leasedhostnames=obj.leasedhostnames;
+            var leasedmacs=obj.leasedmacs;
+            var dnsips=obj.dnsips;
+            var dnshostnames=obj.dnshostnames;
+            var expiration=obj.expiration;
+            var usercmdReserve=obj.usercmdreserve;
+            var usercmdRmReserve=obj.usercmdrmreserve;
+            var str="";                          
             
             for(i=0; i<nunknown; i++){
                 str+="<tr><td>"+unknownips[i]+"</td></tr>";
@@ -54,7 +59,7 @@
                     str+="<tr><td colspan=\"10\">"+leasedips[i]+"</td><td colspan=\"30\">"+leasedmacs[i]+"</td><td colspan=\"40\">"+leasedhostnames[i]+"</td><td colspan=\"20\">"+expiration[i]+"</td></tr>";
             }
             document.getElementById("leased").innerHTML="";
-            document.getElementById("leased").innerHTML="<table class=\"mtable\" width=\"100%\"><tr><td colspan=\"100\" class=\"mtableheader\"> DHCP Leases: "+nleased+"</td></tr><tr><td colspan=\"10\">IP</td> <td colspan=\"30\">MAC</td> <td colspan=\"40\">Hostname</td> <td colspan=\"20\">Expiration date</td>  </tr> "+str+"</table>";
+            document.getElementById("leased").innerHTML="<table class=\"mtable\" width=\"100%\"><tr><td colspan=\"100\" class=\"mtableheader\"> DHCP Leases: "+nleased+"</td></tr><tr><td colspan=\"10\">IP</td> <td colspan=\"30\">MAC</td> <td colspan=\"40\">Hostname</td> <td colspan=\"20\">last update</td>  </tr> "+str+"</table>";
             
             str="";
             for(i=0; i<ndns; i++){
@@ -80,13 +85,13 @@
     
     <title>network control</title>
 </head>
-<body class="mcss" onload="mhttpd_init('myPage');">
+<body class="mcss" onload="mhttpd_init('myPage'); ">
 
 <!-- header and side navigation will be filled in mhttpd_start -->
 <div id="mheader"></div>
 <div id="msidenav"></div>
 <div id="mmain">
-<div name="modb" data-odb-path="/Equipment/DHCP DNS/Settings" onchange="reloadAll(this.value)"> </div >
+<div name="modb" data-odb-path="/Equipment/DHCP DNS/Settings" onchange="reloadAll(this.value)" id="reloadID" onload="reloadAll(this.value)"> </div >
 
     <div id="unknown">
     <table class="mtable" width="100%" id="unknown">

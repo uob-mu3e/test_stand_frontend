@@ -25,3 +25,5 @@ set_global_assignment -name VHDL_FILE [file join $::quartus(qip_path) "hitcounte
 set_global_assignment -name VHDL_FILE [file join $::quartus(qip_path) "hitcounter/source/cec_clk.vhd"]
 #set_global_assignment -name VHDL_FILE [file join $::quartus(qip_path) "mutrig_reset.vhd"]
 set_global_assignment -name VHDL_FILE [file join $::quartus(qip_path) "mutrig_components.vhd"]
+set_global_assignment -name VHDL_FILE [file join $::quartus(qip_path) "scifi_reg_mapping.vhd"]
+set_global_assignment -name VHDL_FILE [file join $::quartus(qip_path) "lapse_counter.vhd"]

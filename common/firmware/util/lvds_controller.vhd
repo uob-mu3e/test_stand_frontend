@@ -135,7 +135,11 @@ begin
                     -- TODO: fix realign conditions
                     if( i_data /= i_align_pattern) then
                         stable_counter      <= stable_counter + '1';
-                    elsif (stable_counter = i_loss_lock_words) then
+                    else 
+                        stable_counter      <= (others => '0');
+                    end if;
+
+                    if (stable_counter = i_loss_lock_words) then
                         o_pll_areset    <= '1';
                         o_rx_reset      <= '1';
                         o_dpa_lock_reset<= '1';
@@ -146,8 +150,6 @@ begin
                         o_cda_reset     <= '0';
                         o_fifo_reset    <= '0';
                         data_align      <= '0';
-                    else 
-                        stable_counter      <= (others => '0');
                     end if;
 
                 when others =>

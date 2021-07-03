@@ -100,11 +100,11 @@ int ipbus::write(uint32_t addr, vector<uint32_t> data, bool nonicrementing)
         //cout << "wa :" << std::hex << addr << endl;
 
         if(nwords < 256){
-            for(int i=0; i < data.size(); i++)
+            for(size_t i=0; i < data.size(); i++)
                 sendbuffer.push_back(data[i]);
             nwords -= 256;
         } else {
-            for(int i=0; i < 255; i++)
+            for(size_t i=0; i < 255; i++)
                 sendbuffer.push_back(data[i]);
             nwords -= 255;
         }
@@ -335,6 +335,7 @@ int ipbus::ReadFromSocket(vector<uint32_t> & rbuffer)
     int nbyte =0;
     boost::system::error_code err;
     try{
+        usleep(1200); // depends on cable length, the value 1200 is for the setup in the integration run May 2021
         nbyte = socket.receive_from(buffer(rbuffer), remote_endpoint, 0, err);
         if(err == boost::asio::error::try_again){
             cout << "Trying again, nbyte " << nbyte << endl;

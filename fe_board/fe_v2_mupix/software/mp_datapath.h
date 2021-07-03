@@ -3,7 +3,7 @@ struct mupix_datapath_t {
     mupix_datapath_t(sc_t* sc_): sc(sc_){};
     
     void menu() {
-        auto& regs = sc->ram->regs.scifi;
+        //auto& regs = sc->ram->regs.scifi;
         alt_u32 datagenreg = 0x0;
         char str[2] = {0};
         
@@ -29,6 +29,7 @@ struct mupix_datapath_t {
             printf("  [5] => print sorter counters\n");
             printf("  [6] => set data bypass select\n");
             printf("  [7] => write sorter inject reg\n");
+            printf("  [8] => print hit ena counters\n");
             
             if((sc->ram->data[0xFF65] >> 4) & 1U){
                 printf("\n DataGen RATE: Full Stream\n");
@@ -110,11 +111,27 @@ struct mupix_datapath_t {
                     str[0] = wait_key();
                     datagenreg = datagenreg*16+strtol(str,NULL,16);
                 }
-
                 printf("setting reg to 0x%08x\n", datagenreg);
-                sc->ram->data[0xFFBE] = datagenreg;
-                datagenreg = 0x0;
-                sc->ram->data[0xFFBE] = datagenreg;
+                
+                for(int i=0; i<10000; i++){
+                    sc->ram->data[0xFFBE] = datagenreg;
+                    sc->ram->data[0xFFBE] = 0x0;
+                    usleep(50);
+                }
+                break;
+            case '8':
+                printf("link hit counters:\n");
+                sc->ram->data[0xFFC0] = 0x0;
+                for(int i=0; i<36; i++){
+                    printf("%i: 0x%08x\n",i,sc->ram->data[0xFFBF]);
+                }
+                printf("sorter input hit counters:\n");
+                sc->ram->data[0xFFC2] = 0x0;
+                for(int i=0; i<12; i++){
+                    printf("%i: 0x%08x\n",i,sc->ram->data[0xFFC1]);
+                }
+                printf("sorter output hit counter:\n");
+                printf("  0x%08x\n",sc->ram->data[0xFFC3]);
                 break;
             case 'q':
                 return;
