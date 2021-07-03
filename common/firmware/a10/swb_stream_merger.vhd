@@ -84,7 +84,8 @@ begin
     generic map (
         ADDR_WIDTH  => 8,
         DATA_WIDTH  => 34,
-        REGOUT      => 0, 
+        REGOUT      => 0,
+        RAM_OUT_REG => "ON",
         DEVICE      => "Arria 10"--,
     )
     port map (
