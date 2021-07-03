@@ -239,14 +239,22 @@ INT frontend_init()
 
    // History Panels
    // Pixel_Temperatures
-   hs_define_panel("Environment", "Pixel_Temp",{"US L0-0","US L0-1","US L0-2","US L0-3",
-						"US L0-4","US L0-5","US L0-6","US L0-7",
-						"US L1-0","US L1-1","US L1-2","US L1-3","US L1-4",
-						"US L1-5","US L1-6","US L1-7","US L1-7","US L1-9",
-						"DS L0-0","DS L0-1","DS L0-2","DS L0-3",
-						"DS L0-4","DS L0-5","DS L0-6","DS L0-7",
-						"DS L1-0","DS L1-1","DS L1-2","DS L1-3","DS L1-4",
-						"DS L1-5","DS L1-6","DS L1-7","DS L1-7","DS L1-9"
+   hs_define_panel("Environment", "Pixel_Temp",{"Pixel_Temperatures:US L0-0","Pixel_Temperatures:US L0-1",
+						"Pixel_Temperatures:US L0-2","Pixel_Temperatures:US L0-3",
+						"Pixel_Temperatures:US L0-4","Pixel_Temperatures:US L0-5",
+						"Pixel_Temperatures:US L0-6","Pixel_Temperatures:US L0-7",
+						"Pixel_Temperatures:US L1-0","Pixel_Temperatures:US L1-1",
+						"Pixel_Temperatures:US L1-2","Pixel_Temperatures:US L1-3","Pixel_Temperatures:US L1-4",
+						"Pixel_Temperatures:US L1-5","Pixel_Temperatures:US L1-6",
+						"Pixel_Temperatures:US L1-7","Pixel_Temperatures:US L1-7","Pixel_Temperatures:US L1-9",
+						"Pixel_Temperatures:DS L0-0","Pixel_Temperatures:DS L0-1",
+						"Pixel_Temperatures:DS L0-2","Pixel_Temperatures:DS L0-3",
+						"Pixel_Temperatures:DS L0-4","Pixel_Temperatures:DS L0-5",
+						"Pixel_Temperatures:DS L0-6","Pixel_Temperatures:DS L0-7",
+						"Pixel_Temperatures:DS L1-0","Pixel_Temperatures:DS L1-1",
+						"Pixel_Temperatures:DS L1-2","Pixel_Temperatures:DS L1-3","Pixel_Temperatures:DS L1-4",
+						"Pixel_Temperatures:DS L1-5","Pixel_Temperatures:DS L1-6",
+						"Pixel_Temperatures:DS L1-7","Pixel_Temperatures:DS L1-7","Pixel_Temperatures:DS L1-9"
 						});
 
 
