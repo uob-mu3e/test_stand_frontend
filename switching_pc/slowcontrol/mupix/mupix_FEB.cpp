@@ -128,8 +128,6 @@ int MupixFEB::ConfigureASICs(){
              std::cout<<"Timeout"<<std::endl;
              cm_msg(MERROR, "setup_mupix", "FEB Mupix SPI timeout");
          }else{
-
-            // TODO: write LVDS MASK here
             
             feb_sc.FEB_write(SP_ID, 0xFF48, chip_select_mask);
 
@@ -156,7 +154,6 @@ int MupixFEB::ConfigureASICs(){
       }
 
       // reset lvds links
-      std::cout << "RESET" << std::endl;
       feb_sc.FEB_register_write(SP_ID, MP_RESET_LVDS_N_REGISTER_W, 0x0);
       feb_sc.FEB_register_write(SP_ID, MP_RESET_LVDS_N_REGISTER_W, 0x1);
 
