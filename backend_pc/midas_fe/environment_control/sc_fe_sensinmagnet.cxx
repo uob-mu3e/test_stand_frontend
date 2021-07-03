@@ -18,6 +18,7 @@
 #include "device/mscbdev.h"
 #include "device/mscbhvr.h"
 #include "odbxx.h"
+#include "history.h"
 
 /*-- Globals -------------------------------------------------------*/
 
@@ -221,6 +222,14 @@ INT frontend_init()
    // Water
    mscb_define("SensInMagnet", "Input", mscb_driver, "mscb400.mu3e", 65535,  0, "Water_US"                , 0.005, 1.0, 0.000); //no factor in Luigis history
    mscb_define("SensInMagnet", "Input", mscb_driver, "mscb400.mu3e", 65535,  9, "Water_DS"                , 0.005, 1.0, 0.000);
+
+
+   // History Panels
+   // O2 sensors (with useful outputs)
+   hs_define_panel("Environment", "Oxygen", {"SensInMagnet:Env_US2 - O2-7-top",
+                                             "SensInMagnet:Env_US3 - O2-6-central",
+                                             "SensInMagnet:Env_DS3 - O2-11-bottom"});
+
 
    return CM_SUCCESS;
 }
