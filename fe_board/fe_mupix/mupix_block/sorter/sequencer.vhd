@@ -109,7 +109,7 @@ elsif(clk'event and clk = '1') then
 		if(fifo_empty = '1') then
 			command_enable 		<= '0';
 			do_fifo_reading 	:= true;
-			current_block		<= current_block;
+			current_block		<= block_from_fifo;
 		elsif(from_fifo(HASMEMBIT) = '0') then
 			do_fifo_reading 	:= true;
 			subaddr				<= (others => '0');
