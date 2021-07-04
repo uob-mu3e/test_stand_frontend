@@ -577,12 +577,12 @@ begin
             -- SubHeader to the 256 bit out
             when wait_for_sh_written =>
                 header_trailer_we <= "01";
---                if ( wait_cnt = "1000"  ) then
---                    wait_cnt <= (others => '0');
+                if ( wait_cnt = "1000"  ) then
+                    wait_cnt <= (others => '0');
                     merge_state <= merge_hits;
---                else
---                    wait_cnt <= wait_cnt + '1';
---                end if;
+                else
+                    wait_cnt <= wait_cnt + '1';
+                end if;
 
             when merge_hits =>
                 if ( error_shtime = '1' ) then

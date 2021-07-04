@@ -316,7 +316,7 @@ begin
         g_NLINKS_TOTL           => 64,
         g_NLINKS_FARM           => g_NLINKS_FARM_PIXEL,
         g_NLINKS_DATA           => g_NLINKS_DATA_PIXEL,
-        LINK_FIFO_ADDR_WIDTH    => 10,
+        LINK_FIFO_ADDR_WIDTH    => 13,
         TREE_w                  => 10,
         TREE_r                  => 10,
         SWB_ID                  => SWB_ID,
