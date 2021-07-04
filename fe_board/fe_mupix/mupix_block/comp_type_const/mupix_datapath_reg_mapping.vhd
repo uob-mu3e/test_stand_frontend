@@ -73,15 +73,15 @@ architecture rtl of mupix_datapath_reg_mapping is
     signal reg_delay                : std_logic;
 begin
 
-    process(i_clk125)
-    begin
-        if(rising_edge(i_clk125)) then
-            if(reg_delay = '1') then
-                o_sorter_inject <= mp_sorter_inject;
-                o_sorter_delay  <= mp_sorter_delay;
-            end if;
-        end if;
-    end process;
+    --process(i_clk125)
+    --begin
+        --if(rising_edge(i_clk125)) then
+            --if(reg_delay = '1') then
+                o_sorter_inject <= (others => '0');
+                o_sorter_delay  <= (others => '0');
+            --end if;
+        --end if;
+    --end process;
 
     gen_mask_order: for i in 0 to 35 generate
         mp_lvds_link_mask_ordered(i)         <= mp_lvds_link_mask(MP_LINK_ORDER(i));
