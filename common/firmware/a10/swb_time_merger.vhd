@@ -60,6 +60,7 @@ architecture arch of swb_time_merger is
     signal rdata : work.util.slv38_array_t(g_NLINKS_FARM-1 downto 0);
     signal rempty, wfull, ren, wen, wen_reg, ren_merger : std_logic;
     signal link_number : std_logic_vector(5 downto 0);
+    signal chipID : std_logic_vector(6 downto 0);
 
     type merge_state_type is (wait_for_pre, get_ts_1, get_ts_2, get_sh, hit, delay, get_tr);
     signal merge_state : merge_state_type;
@@ -322,6 +323,15 @@ begin
     o_header_debug  <= '1' when rdata_debug_s(37 downto 32) = pre_marker else '0';
     o_trailer_debug <= '1' when rdata_debug_s(37 downto 32) = tr_marker else '0';
     link_number     <= rdata_debug_s(37 downto 32);
-    o_q_debug       <= rdata_debug_s(31 downto 0);
+    e_lookup : entity work.chip_lookup_int_2021
+    port map ( i_fpgaID => rdata_debug_s(35 downto 32), i_chipID => rdata_debug_s(25 downto 22), o_chipID => chipID );
+    o_q_debug <= rdata_debug_s(31 downto 0) when  rdata_debug_s(37 downto 32) = pre_marker or 
+                                                  rdata_debug_s(37 downto 32) = tr_marker  or 
+                                                  rdata_debug_s(37 downto 32) = ts1_marker or 
+                                                  rdata_debug_s(37 downto 32) = ts2_marker or 
+                                                  rdata_debug_s(37 downto 32) = err_marker or 
+                                                  DATA_TYPE /= x"01" else
+                 "111111" & x"FFFF" & rdata_debug_s(25 downto 16) when rdata_debug_s(37 downto 32) = sh_marker else
+                 rdata_debug_s(31 downto 28) & chipID & rdata_debug_s(21 downto 1);
 
 end architecture;

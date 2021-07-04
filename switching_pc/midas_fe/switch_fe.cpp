@@ -861,8 +861,8 @@ try{ // TODO: What can throw here?? Why?? Is there another way to handle this??
       return CM_TRANSITION_CANCELED;
    }
 
-   set_equipment_status(equipment[EQUIPMENT_ID::SciFi].name, "Scintillating...", "lightBlue");
-   set_equipment_status(equipment[EQUIPMENT_ID::Mupix].name, "Running...", "lightGreen");
+   set_equipment_status(equipment[EQUIPMENT_ID::SciFi].name, "Scintillating...", "mblue");
+   set_equipment_status(equipment[EQUIPMENT_ID::Mupix].name, "Running...", "mgreen");
    return CM_SUCCESS;
 }catch(...){return CM_TRANSITION_CANCELED;}
 }

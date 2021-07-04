@@ -116,9 +116,9 @@ begin
         t_q_last(11 downto  8) <= last(107 downto 104);
         t_q_last( 7 downto  4) <= last(69 downto 66);
         t_q_last( 3 downto  0) <= last(31 downto 28);
-        o_wrfull               <= (wrfull_last0 and wrfull_last1) or wrfull_last2;
-        wrfull_s               <= (wrfull_last0 and wrfull_last1) or wrfull_last2;
-        o_rdempty              <= rdempty_last0 and rdempty_last1;
+        o_wrfull               <= wrfull_last2; --(wrfull_last0 and wrfull_last1) or 
+        wrfull_s               <= wrfull_last2; --(wrfull_last0 and wrfull_last1) or 
+        o_rdempty              <= rdempty_last2;--(rdempty_last0 and rdempty_last1) or 
         o_rdempty_debug        <= rdempty_last2;
     end generate gen_last_layer;
     
@@ -152,45 +152,45 @@ begin
         o_mask_n(i) <= i_mask_n(i) or i_mask_n(i + size);
 
         gen_last_layer : IF last_layer = '1' and i < g_NLINKS_DATA GENERATE
-            e_last_fifo_data : entity work.ip_dcfifo_mixed_widths
-            generic map(
-                ADDR_WIDTH_w    => 11,
-                DATA_WIDTH_w    => 32,
-                ADDR_WIDTH_r    => 8,
-                DATA_WIDTH_r    => 32*8,
-                DEVICE          => "Arria 10"--,
-            )
-            port map (
-                aclr    => reset_fifo(i),
-                data    => data(i)(31 downto 0),
-                rdclk   => i_clk,
-                rdreq   => i_rdreq(i),
-                wrclk   => i_clk,
-                wrreq   => wrreq(i),
-                q       => last_data,
-                rdempty => rdempty_last0(i),
-                wrfull  => wrfull_last0(i)--,
-            );
-
-            e_last_fifo_link : entity work.ip_dcfifo_mixed_widths
-            generic map(
-                ADDR_WIDTH_w    => 11,
-                DATA_WIDTH_w    => 6,
-                ADDR_WIDTH_r    => 8,
-                DATA_WIDTH_r    => 6*8,
-                DEVICE          => "Arria 10"--,
-            )
-            port map (
-                aclr    => reset_fifo(i),
-                data    => data(i)(37 downto 32),
-                rdclk   => i_clk,
-                rdreq   => i_rdreq(i),
-                wrclk   => i_clk,
-                wrreq   => wrreq(i),
-                q       => last_link,
-                rdempty => rdempty_last1(i),
-                wrfull  => wrfull_last1(i)--,
-            );
+--            e_last_fifo_data : entity work.ip_dcfifo_mixed_widths
+--            generic map(
+--                ADDR_WIDTH_w    => 11,
+--                DATA_WIDTH_w    => 32,
+--                ADDR_WIDTH_r    => 8,
+--                DATA_WIDTH_r    => 32*8,
+--                DEVICE          => "Arria 10"--,
+--            )
+--            port map (
+--                aclr    => reset_fifo(i),
+--                data    => data(i)(31 downto 0),
+--                rdclk   => i_clk,
+--                rdreq   => i_rdreq(i),
+--                wrclk   => i_clk,
+--                wrreq   => wrreq(i),
+--                q       => last_data,
+--                rdempty => rdempty_last0(i),
+--                wrfull  => wrfull_last0(i)--,
+--            );
+--
+--            e_last_fifo_link : entity work.ip_dcfifo_mixed_widths
+--            generic map(
+--                ADDR_WIDTH_w    => 11,
+--                DATA_WIDTH_w    => 6,
+--                ADDR_WIDTH_r    => 8,
+--                DATA_WIDTH_r    => 6*8,
+--                DEVICE          => "Arria 10"--,
+--            )
+--            port map (
+--                aclr    => reset_fifo(i),
+--                data    => data(i)(37 downto 32),
+--                rdclk   => i_clk,
+--                rdreq   => i_rdreq(i),
+--                wrclk   => i_clk,
+--                wrreq   => wrreq(i),
+--                q       => last_link,
+--                rdempty => rdempty_last1(i),
+--                wrfull  => wrfull_last1(i)--,
+--            );
 
             e_last_fifo_link_debug : entity work.ip_dcfifo_mixed_widths
             generic map(

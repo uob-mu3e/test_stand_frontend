@@ -141,6 +141,14 @@ int MutrigFEB::ConfigureASICs(){
                 //the configuration bitpattern is written to the RAM
                 //rpc_status = m_mu.FEBsc_NiosRPC(FPGAid_from_ID(asic), feb::CMD_MUTRIG_ASIC_CFG, {{reinterpret_cast<uint32_t*>(&asic),1},{reinterpret_cast<uint32_t*>(config->bitpattern_w), config->length_32bits}});
                 vector<vector<uint32_t>> payload;
+                //printf("ASIC %d\n", asic);
+                //uint32_t nb = 340;
+                //do{
+                //    nb--;
+                //    printf("%02X ",reinterpret_cast<uint8_t*>(config->bitpattern_w)[nb]);
+                //}while(nb>0);
+                //printf("\n");
+
                 payload.push_back(vector<uint32_t>(reinterpret_cast<uint32_t*>(config->bitpattern_w),reinterpret_cast<uint32_t*>(config->bitpattern_w)+config->length_32bits));
                 // TODO: we make modulo number of asics per module here since each FEB has only # ASIC from 0 to asics per module but
                 // here we loop until total number of asics which is asics per module times # of FEBs

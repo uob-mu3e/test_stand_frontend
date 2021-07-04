@@ -557,7 +557,8 @@ begin
                                 sheader_time(I) <= i_rdata(I)(25 downto 16);
                             end if;
                         end if;
-                        v_overflow := v_overflow or i_rdata(I)(15 downto 0);
+                        -- TODO: For int run we take this one out
+                        --v_overflow := v_overflow or i_rdata(I)(15 downto 0);
                     END LOOP;
                     header_trailer(15 downto 0) <= v_overflow;
                     header_trailer_we <= "10";
@@ -576,17 +577,17 @@ begin
             -- SubHeader to the 256 bit out
             when wait_for_sh_written =>
                 header_trailer_we <= "01";
-                if ( wait_cnt = "1000"  ) then
-                    wait_cnt <= (others => '0');
+--                if ( wait_cnt = "1000"  ) then
+--                    wait_cnt <= (others => '0');
                     merge_state <= merge_hits;
-                else
-                    wait_cnt <= wait_cnt + '1';
-                end if;
+--                else
+--                    wait_cnt <= wait_cnt + '1';
+--                end if;
 
             when merge_hits =>
                 if ( error_shtime = '1' ) then
                     cnt_shtime_error <= cnt_shtime_error + '1';
-                    merge_state <= error_state;
+                    --merge_state <= error_state;
                 end if;
 
                 -- check if sheader time is equal
