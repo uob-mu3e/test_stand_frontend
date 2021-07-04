@@ -30,6 +30,8 @@ architecture arch of swb_data_demerger is
     type   data_demerge_state is (idle, receiving_data, receiving_slowcontrol);
     signal demerge_state :          data_demerge_state;
     signal slowcontrol_type :       std_logic_vector(1 downto 0);
+    signal prev_i_data :            std_logic_vector(31 downto 0);
+    signal prev_i_datak :            std_logic_vector(3 downto 0);
 
 ----------------begin data_demerge------------------------
 begin
@@ -44,6 +46,8 @@ begin
             o_sck               <= "0001";
             o_rc                <= x"000000"& work.util.K28_5;
             o_rck               <= "0001";
+            prev_i_data         <= (others => '0');
+            prev_i_datak        <= (others => '0');
 
         elsif (rising_edge(i_clk)) then
             o_data              <= x"000000"& work.util.K28_5;
@@ -52,6 +56,8 @@ begin
             o_sck               <= "0001";
             o_rc                <= x"000000"& work.util.K28_5;
             o_rck               <= "0001";
+            prev_i_data         <= i_data;
+            prev_i_datak        <= i_datak;
 
             case demerge_state is
 
@@ -80,6 +86,9 @@ begin
                             demerge_state       <= idle;
                             o_data              <= i_data;
                             o_datak             <= i_datak;
+                        elsif((i_data = prev_i_data) and (i_datak = prev_i_datak) then
+                            o_data              <= x"000000BC";
+                            o_datak             <= "0001";
                         else
                              o_data             <= i_data;
                              o_datak            <= i_datak;
