@@ -241,7 +241,7 @@ begin
 
     process(lvds_firefly_clk)
     begin
-    if falling_edge(lvds_firefly_clk) then
+    if rising_edge(lvds_firefly_clk) then
         run_state_125_reg <= run_state_125;
         if(run_state_125_reg = RUN_STATE_SYNC)then
             fast_reset_A    <= '1';
