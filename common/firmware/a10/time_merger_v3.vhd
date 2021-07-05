@@ -158,9 +158,11 @@ begin
                         '1' when merge_state = wait_for_pre and i_rsop(i) = '0' and i_rempty(i) = '0' else
                         '1' when merge_state = get_time1 and time_wait = check_ones else
                         '1' when merge_state = get_time2 and time_wait = check_ones else
-                        -- TODO: here we should wait for the shop_wait but for the int run we dont care
-                        '1' when merge_state = wait_for_sh and shop_or_trailer_wait = check_ones and full_6(0) = '0' else
-                        '1' when merge_state = wait_for_sh and i_rshop(i) = '0' and i_rempty(i) = '0' else
+                        -- TODO: here we should wait for the shop_wait but for the int run we dont care 
+                        --'1' when merge_state = wait_for_sh and shop_wait = check_ones  and full_6(0) = '0' else
+                        '1' when merge_state = wait_for_sh and shop_or_trailer_wait = check_ones and i_reop(i) = '0' and full_6(0) = '0' else
+                        -- TODO: also again for the int run we check if the word is not a trailer
+                        '1' when merge_state = wait_for_sh and i_rshop(i) = '0' and i_reop(i) = '0' and i_rempty(i) = '0' else
                         '1' when merge_state = trailer and full_6(0) = '0' else
                         '1' when merge_state = merge_hits and sop_wait(i) = '0' and shop_wait(i) = '0' and eop_wait(i) = '0' and i_rempty(i) = '0' and wrfull_0(i) = '0' else
                         '0';
