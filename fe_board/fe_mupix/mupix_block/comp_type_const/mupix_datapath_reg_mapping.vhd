@@ -69,7 +69,8 @@ architecture rtl of mupix_datapath_reg_mapping is
     signal mp_hit_ena_cnt_sorter_sel: std_logic_vector( 3 downto 0);
     signal mp_sorter_delay          : ts_t;
     signal mp_reset_n_lvds          : std_logic := '1';
-
+    signal lvds_status              : work.util.slv32_array_t(35 downto 0);
+    signal lvds_status2             : work.util.slv32_array_t(35 downto 0);
     signal reg_delay                : std_logic;
 begin
 
@@ -107,6 +108,8 @@ begin
             o_mp_hit_ena_cnt_select     <= mp_hit_ena_cnt_select;
             o_mp_hit_ena_cnt_sorter_sel <= mp_hit_ena_cnt_sorter_sel;
             o_mp_reset_n_lvds           <= mp_reset_n_lvds;
+            lvds_status                 <= lvds_status2;
+            lvds_status2                <= i_lvds_status;
 
             regaddr             := to_integer(unsigned(i_reg_add(7 downto 0)));
             o_reg_rdata         <= x"CCCCCCCC";
@@ -159,7 +162,7 @@ begin
 
             for I in 0 to MUPIX_LVDS_STATUS_BLOCK_LENGTH-1 loop 
                 if ( regaddr = I + MP_LVDS_STATUS_START_REGISTER_W and i_reg_re = '1' ) then
-                    o_reg_rdata <= i_lvds_status(MP_LINK_ORDER(I));
+                    o_reg_rdata <= lvds_status(MP_LINK_ORDER(I));
                 end if;
             end loop;
 
