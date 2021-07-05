@@ -160,9 +160,9 @@ begin
         end if;
 
         -- reset phase
-        if ( regaddr = RESET_PHASE_REGISTER_R and i_reg_re = '1' ) then
-            o_reg_rdata <= x"0000" & reset_phase;
-        end if;
+--        if ( regaddr = RESET_PHASE_REGISTER_R and i_reg_re = '1' ) then
+--            o_reg_rdata <= x"0000" & reset_phase;
+--        end if;
 
         -- ArriaV temperature
         if ( regaddr = ARRIA_TEMP_REGISTER_RW and i_reg_re = '1' ) then
@@ -195,21 +195,21 @@ begin
             o_reg_rdata(i_fpga_type'range) <= i_fpga_type;
         end if;
         --max ADC data--
-        if ( regaddr = MAX10_ADC_0_1_REGISTER_R and i_reg_re = '1' ) then
-            o_reg_rdata <= adc_reg(0);
-        end if;
-        if ( regaddr = MAX10_ADC_2_3_REGISTER_R and i_reg_re = '1' ) then
-            o_reg_rdata <= adc_reg(1);
-        end if;
-        if ( regaddr = MAX10_ADC_4_5_REGISTER_R and i_reg_re = '1' ) then
-            o_reg_rdata <= adc_reg(2);
-        end if;
-        if ( regaddr = MAX10_ADC_6_7_REGISTER_R and i_reg_re = '1' ) then
-            o_reg_rdata <= adc_reg(3);
-        end if;
-        if ( regaddr = MAX10_ADC_8_9_REGISTER_R and i_reg_re = '1' ) then
-            o_reg_rdata <= adc_reg(4);
-        end if;
+--        if ( regaddr = MAX10_ADC_0_1_REGISTER_R and i_reg_re = '1' ) then
+--            o_reg_rdata <= adc_reg(0);
+--        end if;
+--        if ( regaddr = MAX10_ADC_2_3_REGISTER_R and i_reg_re = '1' ) then
+--            o_reg_rdata <= adc_reg(1);
+--        end if;
+--        if ( regaddr = MAX10_ADC_4_5_REGISTER_R and i_reg_re = '1' ) then
+--            o_reg_rdata <= adc_reg(2);
+--        end if;
+--        if ( regaddr = MAX10_ADC_6_7_REGISTER_R and i_reg_re = '1' ) then
+--            o_reg_rdata <= adc_reg(3);
+--        end if;
+--        if ( regaddr = MAX10_ADC_8_9_REGISTER_R and i_reg_re = '1' ) then
+--            o_reg_rdata <= adc_reg(4);
+--        end if;
         -- Max firmware version
         if ( regaddr = MAX10_VERSION_REGISTER_R and i_reg_re = '1' ) then
             o_reg_rdata <= i_max10_version;
@@ -272,40 +272,40 @@ begin
         if ( regaddr = FIREFLY2_RX4_POW_REGISTER_R and i_reg_re = '1' ) then
             o_reg_rdata <= x"0000" & i_ffly_pwr(127 downto 112);
         end if;	
-        if ( regaddr = FIREFLY1_ALARM_REGISTER_R and i_reg_re = '1' ) then
-            o_reg_rdata <= i_ffly_alarm(31 downto 0);
-        end if;
-        if ( regaddr = FIREFLY2_ALARM_REGISTER_R and i_reg_re = '1' ) then
-            o_reg_rdata <= i_ffly_alarm(63 downto 32);
-        end if;
+--        if ( regaddr = FIREFLY1_ALARM_REGISTER_R and i_reg_re = '1' ) then
+--            o_reg_rdata <= i_ffly_alarm(31 downto 0);
+--        end if;
+--        if ( regaddr = FIREFLY2_ALARM_REGISTER_R and i_reg_re = '1' ) then
+--            o_reg_rdata <= i_ffly_alarm(63 downto 32);
+--        end if;
 
         -- NON-incrementing reads/writes TEST
-        if ( regaddr = NONINCREMENTING_TEST_REGISTER_RW and i_reg_re = '1' ) then
-            o_reg_rdata <= test_read_data;
-            test_read   <= '1';
-        end if;
-        if ( regaddr = NONINCREMENTING_TEST_REGISTER_RW and i_reg_we = '1' ) then
-            test_write_data <= i_reg_wdata;
-            test_write      <= '1';
-        end if;
+--        if ( regaddr = NONINCREMENTING_TEST_REGISTER_RW and i_reg_re = '1' ) then
+--            o_reg_rdata <= test_read_data;
+--            test_read   <= '1';
+--        end if;
+--        if ( regaddr = NONINCREMENTING_TEST_REGISTER_RW and i_reg_we = '1' ) then
+--            test_write_data <= i_reg_wdata;
+--            test_write      <= '1';
+--        end if;
 
     end if;
     end process;
     
-    nonincrementing_rw_test_fifo: entity work.ip_scfifo
-    generic map(
-        ADDR_WIDTH      => 4,
-        DATA_WIDTH      => 32,
-        SHOWAHEAD       => "ON",
-        DEVICE          => "Arria V"--,
-    )
-    port map (
-        clock           => i_clk_156,
-        sclr            => '0',
-        data            => test_write_data,
-        wrreq           => test_write,
-        q               => test_read_data,
-        rdreq           => test_read--,
-    );
+--    nonincrementing_rw_test_fifo: entity work.ip_scfifo
+--    generic map(
+--        ADDR_WIDTH      => 4,
+--        DATA_WIDTH      => 32,
+--        SHOWAHEAD       => "ON",
+--        DEVICE          => "Arria V"--,
+--    )
+--    port map (
+--        clock           => i_clk_156,
+--        sclr            => '0',
+--        data            => test_write_data,
+--        wrreq           => test_write,
+--        q               => test_read_data,
+--        rdreq           => test_read--,
+--    );
     
 end architecture;

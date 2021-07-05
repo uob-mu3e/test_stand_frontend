@@ -121,12 +121,12 @@ begin
             ---- datapath ---------------------------------------------------
             -----------------------------------------------------------------
 
-            if ( regaddr = MP_READOUT_MODE_REGISTER_W and i_reg_we = '1' ) then
-                mp_readout_mode <= i_reg_wdata;
-            end if;
-            if ( regaddr = MP_READOUT_MODE_REGISTER_W and i_reg_re = '1' ) then
-                o_reg_rdata <= mp_readout_mode;
-            end if;
+--            if ( regaddr = MP_READOUT_MODE_REGISTER_W and i_reg_we = '1' ) then
+--                mp_readout_mode <= i_reg_wdata;
+--            end if;
+--            if ( regaddr = MP_READOUT_MODE_REGISTER_W and i_reg_re = '1' ) then
+--                o_reg_rdata <= mp_readout_mode;
+--            end if;
 
             if ( regaddr = MP_LVDS_LINK_MASK_REGISTER_W and i_reg_we = '1' ) then
                 mp_lvds_link_mask(31 downto 0) <= i_reg_wdata;
@@ -150,12 +150,12 @@ begin
                 o_reg_rdata(31 downto 4)<= (others => '0');
             end if;
 
-            if ( regaddr = MP_DATA_GEN_CONTROL_REGISTER_W and i_reg_we = '1' ) then
-                mp_datagen_control <= i_reg_wdata;
-            end if;
-            if ( regaddr = MP_DATA_GEN_CONTROL_REGISTER_W and i_reg_re = '1' ) then
-                o_reg_rdata <= mp_datagen_control;
-            end if;
+--            if ( regaddr = MP_DATA_GEN_CONTROL_REGISTER_W and i_reg_we = '1' ) then
+--                mp_datagen_control <= i_reg_wdata;
+--            end if;
+--            if ( regaddr = MP_DATA_GEN_CONTROL_REGISTER_W and i_reg_re = '1' ) then
+--                o_reg_rdata <= mp_datagen_control;
+--            end if;
 
             for I in 0 to MUPIX_LVDS_STATUS_BLOCK_LENGTH-1 loop 
                 if ( regaddr = I + MP_LVDS_STATUS_START_REGISTER_W and i_reg_re = '1' ) then
@@ -174,59 +174,59 @@ begin
                 mp_sorter_delay <= i_reg_wdata(TSRANGE);
             end if;
 
-            for I in 0 to NSORTERCOUNTERS-1 loop 
-                if ( regaddr = I + MP_SORTER_COUNTER_REGISTER_R and i_reg_re = '1' ) then
-                    o_reg_rdata <= i_sorter_counters(I);
-                end if;
-            end loop;
+--            for I in 0 to NSORTERCOUNTERS-1 loop 
+--                if ( regaddr = I + MP_SORTER_COUNTER_REGISTER_R and i_reg_re = '1' ) then
+--                    o_reg_rdata <= i_sorter_counters(I);
+--                end if;
+--            end loop;
 
-            if ( regaddr = MP_DATA_BYPASS_SELECT_REGISTER_W and i_reg_we = '1' ) then
-                mp_data_bypass_select <= i_reg_wdata;
-            end if;
-            if ( regaddr = MP_DATA_BYPASS_SELECT_REGISTER_W and i_reg_re = '1' ) then
-                o_reg_rdata <= mp_data_bypass_select;
-            end if;
+--            if ( regaddr = MP_DATA_BYPASS_SELECT_REGISTER_W and i_reg_we = '1' ) then
+--                mp_data_bypass_select <= i_reg_wdata;
+--            end if;
+--            if ( regaddr = MP_DATA_BYPASS_SELECT_REGISTER_W and i_reg_re = '1' ) then
+--                o_reg_rdata <= mp_data_bypass_select;
+--            end if;
 
-            if ( regaddr = MP_LAST_SORTER_HIT_REGISTER_R and i_reg_re = '1' ) then
-                o_reg_rdata <= i_last_sorter_hit;
-            end if;
+--            if ( regaddr = MP_LAST_SORTER_HIT_REGISTER_R and i_reg_re = '1' ) then
+--                o_reg_rdata <= i_last_sorter_hit;
+--            end if;
 
-            if ( regaddr = MP_SORTER_INJECT_REGISTER_W and i_reg_we = '1' ) then
-                mp_sorter_inject <= i_reg_wdata;
-            end if;
-            if ( regaddr = MP_SORTER_INJECT_REGISTER_W and i_reg_re = '1' ) then
-                o_reg_rdata <= mp_sorter_inject;
-            end if;
+--            if ( regaddr = MP_SORTER_INJECT_REGISTER_W and i_reg_we = '1' ) then
+--                mp_sorter_inject <= i_reg_wdata;
+--            end if;
+--            if ( regaddr = MP_SORTER_INJECT_REGISTER_W and i_reg_re = '1' ) then
+--                o_reg_rdata <= mp_sorter_inject;
+--            end if;
 
-            if ( regaddr = MP_HIT_ENA_CNT_SELECT_REGISTER_W and i_reg_we = '1' ) then
-                mp_hit_ena_cnt_select <= i_reg_wdata(7 downto 0);
-            end if;
-            if ( regaddr = MP_HIT_ENA_CNT_SELECT_REGISTER_W and i_reg_re = '1' ) then
-                o_reg_rdata( 7 downto 0) <= mp_hit_ena_cnt_select;
-                o_reg_rdata(31 downto 8) <= (others => '0');
-            end if;
+--            if ( regaddr = MP_HIT_ENA_CNT_SELECT_REGISTER_W and i_reg_we = '1' ) then
+--                mp_hit_ena_cnt_select <= i_reg_wdata(7 downto 0);
+--            end if;
+--            if ( regaddr = MP_HIT_ENA_CNT_SELECT_REGISTER_W and i_reg_re = '1' ) then
+--                o_reg_rdata( 7 downto 0) <= mp_hit_ena_cnt_select;
+--                o_reg_rdata(31 downto 8) <= (others => '0');
+--            end if;
+--
+--            if ( regaddr = MP_HIT_ENA_CNT_REGISTER_R and i_reg_re = '1' ) then
+--                o_reg_rdata             <= i_mp_hit_ena_cnt;
+--                mp_hit_ena_cnt_select   <= std_logic_vector(to_unsigned(to_integer(unsigned(mp_hit_ena_cnt_select)) + 1,8));
+--            end if;
 
-            if ( regaddr = MP_HIT_ENA_CNT_REGISTER_R and i_reg_re = '1' ) then
-                o_reg_rdata             <= i_mp_hit_ena_cnt;
-                mp_hit_ena_cnt_select   <= std_logic_vector(to_unsigned(to_integer(unsigned(mp_hit_ena_cnt_select)) + 1,8));
-            end if;
+--            if ( regaddr = MP_HIT_ENA_CNT_SORTER_SELECT_REGISTER_W and i_reg_we = '1' ) then
+--                mp_hit_ena_cnt_sorter_sel <= i_reg_wdata(3 downto 0);
+--            end if;
+--            if ( regaddr = MP_HIT_ENA_CNT_SORTER_SELECT_REGISTER_W and i_reg_re = '1' ) then
+--                o_reg_rdata( 3 downto 0) <= mp_hit_ena_cnt_sorter_sel;
+--                o_reg_rdata(31 downto 4) <= (others => '0');
+--            end if;
+--
+--            if ( regaddr = MP_HIT_ENA_CNT_SORTER_IN_REGISTER_R and i_reg_re = '1' ) then
+--                o_reg_rdata                 <= i_mp_sorter_in_hit_ena_cnt;
+--                mp_hit_ena_cnt_sorter_sel   <= std_logic_vector(to_unsigned(to_integer(unsigned(mp_hit_ena_cnt_sorter_sel)) + 1,4));
+--            end if;
 
-            if ( regaddr = MP_HIT_ENA_CNT_SORTER_SELECT_REGISTER_W and i_reg_we = '1' ) then
-                mp_hit_ena_cnt_sorter_sel <= i_reg_wdata(3 downto 0);
-            end if;
-            if ( regaddr = MP_HIT_ENA_CNT_SORTER_SELECT_REGISTER_W and i_reg_re = '1' ) then
-                o_reg_rdata( 3 downto 0) <= mp_hit_ena_cnt_sorter_sel;
-                o_reg_rdata(31 downto 4) <= (others => '0');
-            end if;
-
-            if ( regaddr = MP_HIT_ENA_CNT_SORTER_IN_REGISTER_R and i_reg_re = '1' ) then
-                o_reg_rdata                 <= i_mp_sorter_in_hit_ena_cnt;
-                mp_hit_ena_cnt_sorter_sel   <= std_logic_vector(to_unsigned(to_integer(unsigned(mp_hit_ena_cnt_sorter_sel)) + 1,4));
-            end if;
-
-            if ( regaddr = MP_HIT_ENA_CNT_SORTER_OUT_REGISTER_R and i_reg_re = '1' ) then
-                o_reg_rdata                 <= i_mp_sorter_out_hit_ena_cnt;
-            end if;
+--            if ( regaddr = MP_HIT_ENA_CNT_SORTER_OUT_REGISTER_R and i_reg_re = '1' ) then
+--                o_reg_rdata                 <= i_mp_sorter_out_hit_ena_cnt;
+--            end if;
 
             if ( regaddr = MP_RESET_LVDS_N_REGISTER_W and i_reg_we = '1' ) then
                 mp_reset_n_lvds <= i_reg_wdata(0);
