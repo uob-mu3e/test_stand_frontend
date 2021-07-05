@@ -46,6 +46,11 @@ architecture rtl of mupix_ctrl_reg_mapping is
     signal mp_ctrl_chip_config_mask : std_logic_vector(31 downto 0);
     signal mp_ctrl_invert_29        : std_logic;
     signal mp_ctrl_invert_csn       : std_logic;
+    signal mp_fifo_clear            : std_logic_vector( 5 downto 0);
+    signal mp_ctrl_enable           : std_logic_vector( 5 downto 0);
+    signal mp_ctrl_data_all         : std_logic_vector(31 downto 0);
+    signal mp_ctrl_data_all_we      : std_logic;
+    signal mp_spi_busy              : std_logic;
 
     begin
 
@@ -68,15 +73,19 @@ architecture rtl of mupix_ctrl_reg_mapping is
             o_reg_rdata                 <= x"CCCCCCCC";
             o_mp_fifo_write             <= (others => '0');
             o_mp_ctrl_data_all_we       <= '0';
-
+            o_mp_fifo_clear             <= mp_fifo_clear;
+            o_mp_ctrl_enable            <= mp_ctrl_enable;
+            o_mp_ctrl_data_all          <= mp_ctrl_data_all;
+            o_mp_ctrl_data_all_we       <= mp_ctrl_data_all_we;
+            mp_spi_busy                 <= i_mp_spi_busy;
 
             -----------------------------------------------------------------
             ---- mupix ctrl -------------------------------------------------
             -----------------------------------------------------------------
 
             if ( regaddr = MP_CTRL_ENABLE_REGISTER_W and i_reg_we = '1' ) then
-                o_mp_fifo_clear  <= i_reg_wdata(CLEAR_TDAC_FIFO_BIT downto CLEAR_BIAS_FIFO_BIT);
-                o_mp_ctrl_enable <= i_reg_wdata(WR_TDAC_BIT downto WR_BIAS_BIT);
+                mp_fifo_clear  <= i_reg_wdata(CLEAR_TDAC_FIFO_BIT downto CLEAR_BIAS_FIFO_BIT);
+                mp_ctrl_enable <= i_reg_wdata(WR_TDAC_BIT downto WR_BIAS_BIT);
             end if;
 
 --            if ( regaddr = MP_CTRL_CONF_REGISTER_W and i_reg_we = '1' ) then
@@ -128,12 +137,12 @@ architecture rtl of mupix_ctrl_reg_mapping is
             end if;
 
             if ( regaddr = MP_CTRL_ALL_REGISTER_W and i_reg_we = '1' ) then
-                o_mp_ctrl_data_all      <= i_reg_wdata;
-                o_mp_ctrl_data_all_we   <= '1';
+                mp_ctrl_data_all      <= i_reg_wdata;
+                mp_ctrl_data_all_we   <= '1';
             end if;
 
             if ( regaddr = MP_CTRL_SPI_BUSY_REGISTER_R and i_reg_re = '1' ) then
-                o_reg_rdata(0) <= i_mp_spi_busy;
+                o_reg_rdata(0) <= mp_spi_busy;
                 o_reg_rdata(31 downto 1) <= (others => '0');
             end if;
 
