@@ -59,7 +59,7 @@ for ( int asic=0; asic<10; asic++ ) {
     if ( asic == 0 ) {
         //feb_sc.FEB_register_write(0, MP_LVDS_LINK_MASK_REGISTER_W, 0x1C7);
         //feb_sc.FEB_register_write(0, MP_LVDS_LINK_MASK2_REGISTER_W, 0x7);
-        feb_sc.FEB_register_write(0, MP_LVDS_LINK_MASK_REGISTER_W, 0x004C01AD);
+        feb_sc.FEB_register_write(0, MP_LVDS_LINK_MASK_REGISTER_W, 0x0);//0x004C01AD);
         feb_sc.FEB_register_write(0, MP_LVDS_LINK_MASK2_REGISTER_W, 0x0);
     }
                                                                                 

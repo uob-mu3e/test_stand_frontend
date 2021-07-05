@@ -692,36 +692,41 @@ INT read_stream_thread(void *param) {
         if ( current_pixel_mask_n != 0 && current_scifi_mask_n != 0 ) {
             current_readout_register ^= 1UL << 7;
             mu.write_register(SWB_READOUT_STATE_REGISTER_W, current_readout_register);
-            cout << "1state: " << hex << mu.read_register_rw(SWB_READOUT_STATE_REGISTER_W) << endl;
+            //cout << "1state: " << hex << mu.read_register_rw(SWB_READOUT_STATE_REGISTER_W) << endl;
         } else if ( current_pixel_mask_n != 0 && current_scifi_mask_n == 0 ) {
             current_readout_register |= (1 << 7);
             mu.write_register(SWB_READOUT_STATE_REGISTER_W, current_readout_register);
-            cout << "2state: " << hex << mu.read_register_rw(SWB_READOUT_STATE_REGISTER_W) << endl;
+            //cout << "2state: " << hex << mu.read_register_rw(SWB_READOUT_STATE_REGISTER_W) << endl;
         } else if ( current_pixel_mask_n == 0 && current_scifi_mask_n != 0 ) {
             current_readout_register &= ~(1 << 7);
             mu.write_register(SWB_READOUT_STATE_REGISTER_W, current_readout_register);
-            cout << "3state: " << hex << mu.read_register_rw(SWB_READOUT_STATE_REGISTER_W) << endl;
+            //cout << "3state: " << hex << mu.read_register_rw(SWB_READOUT_STATE_REGISTER_W) << endl;
         } else {
+            //cout << "4state: " << endl;
             continue;
         }
 
+        // disable dma
+        mu.disable();
         // start dma
         mu.enable_continous_readout(0);
 
         // wait for requested data
         // request to read dma_buffer_size/2 (count in blocks of 256 bits)
-        mu.write_register(0xC, max_requested_words / (256/32));
+        mu.write_register(GET_N_DMA_WORDS_REGISTER_W, max_requested_words / (256/32));
+        cout << "request " << max_requested_words << endl;
 
         // reset data path
-        mu.write_register_wait(RESET_REGISTER_W, reset_reg, 100);
-//         sleep(1);
+        mu.write_register(RESET_REGISTER_W, reset_reg);
+        usleep(10);
         mu.write_register(RESET_REGISTER_W, 0x0);
 
 
         while ( (mu.read_register_ro(0x1C) & 1) == 0 ) {
             // check mask for timeout
+            usleep(10);
             if ( mu.read_register_rw(SWB_LINK_MASK_PIXEL_REGISTER_W) == 0 && mu.read_register_rw(SWB_LINK_MASK_SCIFI_REGISTER_W) == 0 ) {
-                 break;
+                break;
             } else if ( mu.read_register_rw(SWB_LINK_MASK_PIXEL_REGISTER_W) != 0 && mu.read_register_rw(SWB_LINK_MASK_SCIFI_REGISTER_W) != 0 ) {
                 continue;
             } else if ( mu.read_register_rw(SWB_LINK_MASK_PIXEL_REGISTER_W) != 0 ) {

@@ -192,24 +192,23 @@ begin
 --                wrfull  => wrfull_last1(i)--,
 --            );
 
-            e_last_fifo_link_debug : entity work.ip_dcfifo_mixed_widths
+            e_last_fifo_link_debug : entity work.ip_scfifo
             generic map(
-                ADDR_WIDTH_w    => 11,
-                DATA_WIDTH_w    => 38,
-                ADDR_WIDTH_r    => 8,
-                DATA_WIDTH_r    => 38,
-                DEVICE          => "Arria 10"--,
+                ADDR_WIDTH    => 11,
+                DATA_WIDTH    => 38,
+                RAM_OUT_REG   => "ON",
+                DEVICE        => "Arria 10"--,
             )
             port map (
-                aclr    => reset_fifo(i),
+                
                 data    => data(i),
-                rdclk   => i_clk,
-                rdreq   => i_rdreq(i),
-                wrclk   => i_clk,
                 wrreq   => wrreq(i),
+                rdreq   => i_rdreq(i),
+                clock   => i_clk,
                 q       => o_last_link_debug,
-                rdempty => rdempty_last2(i),
-                wrfull  => wrfull_last2(i)--,
+                full    => wrfull_last2(i),
+                empty   => rdempty_last2(i),
+                sclr    => reset_fifo(i)--,
             );
 
         END GENERATE;

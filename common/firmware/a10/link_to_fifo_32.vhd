@@ -121,13 +121,13 @@ begin
                     cnt_sub <= cnt_sub + '1';
                 end if;
                 
-                hit_reg <= i_rx;
-                
-                if ( SKIP_DOUBLE_SUB = 1 and i_rx = hit_reg ) then
-                    rx_156_wen <= '0';
-                else
+--                hit_reg <= i_rx;
+--                
+--                if ( SKIP_DOUBLE_SUB = 1 and i_rx = hit_reg ) then
+--                    rx_156_wen <= '0';
+--                else
                     rx_156_wen <= '1';
-                end if;
+--                end if;
 
             when skip_data =>
                 if ( i_rx(7 downto 0) = x"9C" and i_rx_k = "0001" ) then
@@ -157,7 +157,6 @@ begin
         rdclk       => i_clk_250,
         q           => o_q,
         rdempty     => o_rdempty,
-        rdusedw     => open,
         wrfull      => wrfull,
         wrusedw     => wrusedw,
         aclr        => not i_reset_n_250--,
