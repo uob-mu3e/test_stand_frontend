@@ -57,9 +57,10 @@ int MupixFEB::ConfigureASICs(){
 for ( int asic=0; asic<10; asic++ ) {
     
     if ( asic == 0 ) {
-        feb_sc.FEB_register_write(0, MP_LVDS_LINK_MASK_REGISTER_W, 0x1C7);
-        feb_sc.FEB_register_write(0, MP_LVDS_LINK_MASK2_REGISTER_W, 0x7);
-        //feb_sc.FEB_register_write(0, MP_LVDS_LINK_MASK_REGISTER_W, 0x0);
+        //feb_sc.FEB_register_write(0, MP_LVDS_LINK_MASK_REGISTER_W, 0x1C7);
+        //feb_sc.FEB_register_write(0, MP_LVDS_LINK_MASK2_REGISTER_W, 0x7);
+        feb_sc.FEB_register_write(0, MP_LVDS_LINK_MASK_REGISTER_W, 0x004C01AD);
+        feb_sc.FEB_register_write(0, MP_LVDS_LINK_MASK2_REGISTER_W, 0x0);
     }
                                                                                 
     if ( asic == 1 ) {
@@ -86,19 +87,21 @@ for ( int asic=0; asic<10; asic++ ) {
                                                                                 
     if ( asic == 5 ) {
         //feb_sc.FEB_register_write(5, MP_LVDS_LINK_MASK_REGISTER_W, 0x38000);
-        feb_sc.FEB_register_write(5, MP_LVDS_LINK_MASK_REGISTER_W, 0x0);
+        feb_sc.FEB_register_write(5, MP_LVDS_LINK_MASK_REGISTER_W, 0xA0008A00);
         //feb_sc.FEB_register_write(5, MP_LVDS_LINK_MASK2_REGISTER_W, 0xE);
-        feb_sc.FEB_register_write(5, MP_LVDS_LINK_MASK2_REGISTER_W, 0x0);
+        feb_sc.FEB_register_write(5, MP_LVDS_LINK_MASK2_REGISTER_W, 0x00000002);
     }
                                                                               
     if ( asic == 6 ) {
         //feb_sc.FEB_register_write(6, MP_LVDS_LINK_MASK_REGISTER_W, 0x381FF);
-        feb_sc.FEB_register_write(6, MP_LVDS_LINK_MASK_REGISTER_W, 0x0);
+        feb_sc.FEB_register_write(6, MP_LVDS_LINK_MASK_REGISTER_W, 0x004C01FF);
+        feb_sc.FEB_register_write(6, MP_LVDS_LINK_MASK2_REGISTER_W, 0x0);
     }
                                                                                
     if ( asic == 7 ) {
         //feb_sc.FEB_register_write(7, MP_LVDS_LINK_MASK_REGISTER_W, 0x1C0);
-        feb_sc.FEB_register_write(7, MP_LVDS_LINK_MASK_REGISTER_W, 0x0);
+        feb_sc.FEB_register_write(7, MP_LVDS_LINK_MASK_REGISTER_W, 0x0000002C);
+        feb_sc.FEB_register_write(7, MP_LVDS_LINK_MASK2_REGISTER_W, 0x0);
     }
                                                                                
     if ( asic == 8 ) {
