@@ -160,11 +160,11 @@ begin
 --                o_reg_rdata <= mp_datagen_control;
 --            end if;
 
-            for I in 0 to MUPIX_LVDS_STATUS_BLOCK_LENGTH-1 loop 
-                if ( regaddr = I + MP_LVDS_STATUS_START_REGISTER_W and i_reg_re = '1' ) then
-                    o_reg_rdata <= lvds_status(MP_LINK_ORDER(I));
-                end if;
-            end loop;
+--            for I in 0 to MUPIX_LVDS_STATUS_BLOCK_LENGTH-1 loop 
+--                if ( regaddr = I + MP_LVDS_STATUS_START_REGISTER_W and i_reg_re = '1' ) then
+--                    o_reg_rdata <= lvds_status(MP_LINK_ORDER(I));
+--                end if;
+--            end loop;
 
             if ( regaddr = MP_LVDS_INVERT_REGISTER_W and i_reg_we = '1' ) then
                 mp_lvds_invert <= i_reg_wdata(0);
