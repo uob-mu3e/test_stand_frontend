@@ -53,6 +53,60 @@ void invert_datastream(uint32_t * datastream) {
 int MupixFEB::ConfigureASICs(){
    printf("MupixFEB::ConfigureASICs()\n");
    cm_msg(MINFO, "MupixFEB" , "Configuring sensors under prefix %s/Settings/ASICs/", odb_prefix);
+
+for ( int asic=0; asic<10; asic++ ) {
+    
+    if ( asic == 0 ) {
+        feb_sc.FEB_register_write(0, MP_LVDS_LINK_MASK_REGISTER_W, 0x1C7);
+        feb_sc.FEB_register_write(0, MP_LVDS_LINK_MASK2_REGISTER_W, 0x7);
+        //feb_sc.FEB_register_write(0, MP_LVDS_LINK_MASK_REGISTER_W, 0x0);
+    }
+                                                                                
+    if ( asic == 1 ) {
+        //feb_sc.FEB_register_write(1, MP_LVDS_LINK_MASK2_REGISTER_W, 0xE);
+        feb_sc.FEB_register_write(1, MP_LVDS_LINK_MASK2_REGISTER_W, 0x0);
+    }
+                                                                                
+    if ( asic == 2 ) {
+        //feb_sc.FEB_register_write(2, MP_LVDS_LINK_MASK_REGISTER_W, 0xE);
+        feb_sc.FEB_register_write(2, MP_LVDS_LINK_MASK_REGISTER_W, 0x0);
+    }
+                                                                                
+    if ( asic == 3 ) {
+        //feb_sc.FEB_register_write(3, MP_LVDS_LINK_MASK_REGISTER_W, 0xC003F03F);
+        feb_sc.FEB_register_write(3, MP_LVDS_LINK_MASK_REGISTER_W, 0x0);
+        //feb_sc.FEB_register_write(3, MP_LVDS_LINK_MASK2_REGISTER_W, 0x1);
+        feb_sc.FEB_register_write(3, MP_LVDS_LINK_MASK2_REGISTER_W, 0x0);
+    }
+                                                                                
+    if ( asic == 4 ) {
+        feb_sc.FEB_register_write(4, MP_LVDS_LINK_MASK_REGISTER_W, 0x0);
+        feb_sc.FEB_register_write(4, MP_LVDS_LINK_MASK_REGISTER_W, 0x0);
+    }
+                                                                                
+    if ( asic == 5 ) {
+        //feb_sc.FEB_register_write(5, MP_LVDS_LINK_MASK_REGISTER_W, 0x38000);
+        feb_sc.FEB_register_write(5, MP_LVDS_LINK_MASK_REGISTER_W, 0x0);
+        //feb_sc.FEB_register_write(5, MP_LVDS_LINK_MASK2_REGISTER_W, 0xE);
+        feb_sc.FEB_register_write(5, MP_LVDS_LINK_MASK2_REGISTER_W, 0x0);
+    }
+                                                                              
+    if ( asic == 6 ) {
+        //feb_sc.FEB_register_write(6, MP_LVDS_LINK_MASK_REGISTER_W, 0x381FF);
+        feb_sc.FEB_register_write(6, MP_LVDS_LINK_MASK_REGISTER_W, 0x0);
+    }
+                                                                               
+    if ( asic == 7 ) {
+        //feb_sc.FEB_register_write(7, MP_LVDS_LINK_MASK_REGISTER_W, 0x1C0);
+        feb_sc.FEB_register_write(7, MP_LVDS_LINK_MASK_REGISTER_W, 0x0);
+    }
+                                                                               
+    if ( asic == 8 ) {
+        //feb_sc.FEB_register_write(8, MP_LVDS_LINK_MASK_REGISTER_W, 0x7);
+        feb_sc.FEB_register_write(8, MP_LVDS_LINK_MASK_REGISTER_W, 0x0);
+    }
+}
+
    int status = mupix::midasODB::MapForEachASIC(hDB,odb_prefix,[this](mupix::MupixConfig* config, int asic){
       uint32_t rpc_status;
       bool TDACsNotFound = false;
