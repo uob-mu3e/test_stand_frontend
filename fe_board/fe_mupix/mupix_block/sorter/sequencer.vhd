@@ -36,6 +36,7 @@ architecture rtl of sequencer is
 
 type state_type is (idle, header1, header2, subheader, hits, footer);
 signal state: state_type;
+signal state_last: state_type;
 
 signal current_block:	block_t;
 constant block_max:		block_t := (others => '1');
@@ -51,6 +52,8 @@ signal overflowts : std_logic_vector(15 downto 0);
 signal fifo_empty_last : std_logic;
 signal fifo_reading_last: boolean;
 signal newblocknext_reg : boolean;
+
+signal timesinceheader : integer;
 
 begin
 
@@ -69,18 +72,25 @@ if(reset_n = '0') then
 	overflowts		<= (others => '0');
 	domem			<= '0';
 	fifo_empty_last	<= '1';
+	timesinceheader <= 0;
 elsif(clk'event and clk = '1') then
 
 	read_fifo		<= '0';
 
 	fifo_empty_last	<= fifo_empty;
 	
+	state_last <= state;
 
 	do_fifo_reading := false;
 	newblocknext 	:= from_fifo(TSBLOCKINFIFORANGE) /= current_block;
 	newblocknext_reg <= newblocknext;
 	block_from_fifo <= from_fifo(TSBLOCKINFIFORANGE);
-
+	
+    if(state /= idle) then
+        timesinceheader <= timesinceheader + 1;
+    end if;
+	
+	
 	-- State machine for creating commands: We want to send a HEADER once per TS overflow, a SUBHEADER for every block
 	-- and ordered read commands for the hits, where the read commands contain both the memory address (corresponding to the TS)
 	-- and the MUX setting (corresponding to the input channel).
@@ -92,6 +102,7 @@ elsif(clk'event and clk = '1') then
 	when header1 => 
 		outcommand 		<= COMMAND_HEADER1;
 		command_enable 	<= '1';
+		timesinceheader <= 0;
 		state			<= header2;
 	when header2 =>
 		outcommand 		<= COMMAND_HEADER2;
@@ -107,7 +118,6 @@ elsif(clk'event and clk = '1') then
 		-- Look at FIFO - either it is empty or it shows a word with hits - then process them
 		-- or it is one without, then we can output the next subheader, or in case of overflow, the next header
 		if(fifo_empty = '1') then
-			command_enable 		<= '0';
 			do_fifo_reading 	:= true;
 			current_block		<= block_from_fifo;
 		elsif(from_fifo(HASMEMBIT) = '0') then
@@ -214,8 +224,19 @@ elsif(clk'event and clk = '1') then
 		command_enable 	<= '1';
 		state			<= header1;
 		current_block	<= (others => '0');
+    when others =>
+        state <= idle;
 	end case;
 
+	    
+    if(timesinceheader > 3000) then
+        do_fifo_reading := true;
+        
+        if(from_fifo(TSBLOCKINFIFORANGE) = block_max) then
+            state <= footer;
+        end if;
+    end if;
+	
 
 	fifo_reading_last <= do_fifo_reading;
 	
