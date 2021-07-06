@@ -121,19 +121,13 @@ elsif(clk'event and clk = '1') then
 				state 			<= subheader;
 			end if;
 		else
-	--		if(block_from_fifo /= current_block)then
-	--			state 				<= subheader;
-	--			subaddr				<= (others => '0');
-	--				current_block		<= block_from_fifo;
-	--		else	
-				if(from_fifo(3 downto 0) = "0001" and from_fifo(11 downto 8) = "0000") then
-                	do_fifo_reading 	:= true;
-            	else 
-                	do_fifo_reading 	:= false;
-            	end if;
-				state				<= hits;
-				subaddr				<= "0000";
-	--		end if;
+			if(from_fifo(3 downto 0) = "0001" and from_fifo(11 downto 8) = "0000") then
+               	do_fifo_reading 	:= true;
+           	else 
+               	do_fifo_reading 	:= false;
+           	end if;
+			state				<= hits;
+			subaddr				<= "0000";
 		end if;
 		
 	when hits =>
@@ -153,10 +147,6 @@ elsif(clk'event and clk = '1') then
 				do_fifo_reading := true;
 			end if;	
 			
-            --if(counters_reg(3 downto 0) = "0001" and counters_reg(11 downto 8) = "0000" and fifo_empty = '0' and newblocknext) then
-			--	do_fifo_reading := true;
-			--end if;	
-			
             if(counters_reg(3 downto 0) = "0001" and counters_reg(11 downto 8) = "0001" and counters_reg(19 downto 16) = "0000" and fifo_empty = '0' and not newblocknext) then
 				do_fifo_reading := true;
 			end if;	
@@ -172,19 +162,16 @@ elsif(clk'event and clk = '1') then
 					else
 						state 			<= subheader;
 						do_fifo_reading 	:= true;
-                        --if((from_fifo(3 downto 0) = "0001" and from_fifo(11 downto 8) = "0000"  and fifo_empty = '0') -- only one hit in the next packet, move ahead
-                        --or from_fifo(HASMEMBIT) = '0') then -- just a header, also move ahead
-                        --    do_fifo_reading 	:= true;
-                        --else 
-                        --    do_fifo_reading 	:= false;
-                        --end if;
 					end if;
 				else -- we stay in block
-                    if((from_fifo(3 downto 0) = "0001" and from_fifo(11 downto 8) = "0000"  and fifo_empty = '0') -- only one hit in the next packet, move ahead
+                    if((from_fifo(3 downto 0) = "0001" and from_fifo(11 downto 8) = "0000") -- only one hit in the next packet, move ahead
                         or from_fifo(HASMEMBIT) = '0') then
                         do_fifo_reading 	:= true;
-                    else
+                    elsif((from_fifo(3 downto 0) > "0001") or (from_fifo(11 downto 8) > "0000")) then
                         do_fifo_reading 	:= false;
+                    else
+                        -- should not get here, read FIFO to prevent getting stuck
+                        do_fifo_reading 	:= true;
                     end if;
 					subaddr				<= "0000";
 				end if;
@@ -209,10 +196,11 @@ elsif(clk'event and clk = '1') then
 			elsif(newblocknext) then -- the next block is a new one
 				do_fifo_reading 	:= true;
 				current_block <= block_from_fifo;
-				if(current_block = block_max) then
+				if(block_from_fifo = block_max) then
 					state			<= footer;
 				else
 					state 			<= subheader;
+					do_fifo_reading 	:= true;
 				end if;
 			else
 				do_fifo_reading 	:= true;
