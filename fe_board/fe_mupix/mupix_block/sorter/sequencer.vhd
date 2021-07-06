@@ -114,8 +114,9 @@ elsif(clk'event and clk = '1') then
 			do_fifo_reading 	:= true;
 			subaddr				<= (others => '0');
 			current_block		<= block_from_fifo;	
-			if(current_block = block_max) then
-				state			<= footer;
+			if(block_from_fifo = block_max) then
+				state			    <= footer;
+				command_enable 		<= '0';
 			else
 				state 			<= subheader;
 			end if;
