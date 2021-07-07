@@ -84,7 +84,9 @@ elsif(clk'event and clk = '1') then
 	do_fifo_reading := false;
 	newblocknext 	:= from_fifo(TSBLOCKINFIFORANGE) /= current_block;
 	newblocknext_reg <= newblocknext;
-	block_from_fifo <= from_fifo(TSBLOCKINFIFORANGE);
+	if(fifo_empty = '0') then
+		block_from_fifo <= from_fifo(TSBLOCKINFIFORANGE);
+	end if;
 	
     if(state /= idle) then
         timesinceheader <= timesinceheader + 1;
@@ -120,6 +122,7 @@ elsif(clk'event and clk = '1') then
 		if(fifo_empty = '1') then
 			do_fifo_reading 	:= true;
 			current_block		<= block_from_fifo;
+			command_enable 		<= '0';
 		elsif(from_fifo(HASMEMBIT) = '0') then
 			do_fifo_reading 	:= true;
 			subaddr				<= (others => '0');
@@ -145,8 +148,7 @@ elsif(clk'event and clk = '1') then
 		-- active TS
 		outcommand(COMMANDBITS-1)	<= '0'; -- Hits, not a command
 		outcommand(TSRANGE)			<= fifo_reg(TSINFIFORANGE); 
-		
-		current_block <= block_from_fifo;
+
 
 		if(domem = '1') then
 			outcommand(COMMANDBITS-2 downto TIMESTAMPSIZE+4) <= counters_reg(7 downto 4);
@@ -232,7 +234,7 @@ elsif(clk'event and clk = '1') then
     if(timesinceheader > 3000) then
         do_fifo_reading := true;
         
-        if(from_fifo(TSBLOCKINFIFORANGE) = block_max) then
+        if(from_fifo(TSBLOCKINFIFORANGE) = block_max and fifo_empty = '0') then
             state <= footer;
         end if;
     end if;
