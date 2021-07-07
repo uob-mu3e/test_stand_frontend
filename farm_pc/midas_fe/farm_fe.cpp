@@ -182,11 +182,28 @@ void stream_settings_changed(odb o)
     }
 
     if (name == "Datagen Enable") {
-        cm_msg(MINFO, "stream_settings_changed", "Set Disable to %s", o ? "y" : "n");
+        cm_msg(MINFO, "stream_settings_changed", "Set Disable Datagen to %s", o ? "y" : "n");
         if (o) {
-            mup->write_register(SWB_READOUT_STATE_REGISTER_W, 0x3);
+            uint32_t current_state = mup->read_register_rw(SWB_READOUT_STATE_REGISTER_W);
+            current_state |= (1 << 0);
+            mup->write_register(SWB_READOUT_STATE_REGISTER_W, current_state);
         } else {
-            mup->write_register(SWB_READOUT_STATE_REGISTER_W, 0x42);
+            uint32_t current_state = mup->read_register_rw(SWB_READOUT_STATE_REGISTER_W);
+            current_state &= ~(1 << 0);
+            mup->write_register(SWB_READOUT_STATE_REGISTER_W, current_state);
+        }
+    }
+
+    if (name == "use_merger") {
+        cm_msg(MINFO, "stream_settings_changed", "Set Disable Merger to %s", o ? "y" : "n");
+        if (o) {
+            uint32_t current_state = mup->read_register_rw(SWB_READOUT_STATE_REGISTER_W);
+            current_state |= (1 << 2);
+            mup->write_register(SWB_READOUT_STATE_REGISTER_W, current_state);
+        } else {
+            uint32_t current_state = mup->read_register_rw(SWB_READOUT_STATE_REGISTER_W);
+            current_state &= ~(1 << 2);
+            mup->write_register(SWB_READOUT_STATE_REGISTER_W, current_state);
         }
     }
 
@@ -242,6 +259,7 @@ void setup_odb(){
         {"Datagen Enable", false},     // bool
         {"mask_n_scifi", 0x0},         // int
         {"mask_n_pixel", 0x0},         // int
+        {"use_merger", false},         // int
         {"dma_buf_nwords", int(dma_buf_nwords)},
         {"dma_buf_size", int(dma_buf_size)}
     };
@@ -411,9 +429,17 @@ INT begin_of_run(INT run_number, char *error)
    if(stream_settings["Datagen Enable"]) {
         int divider = stream_settings["Datagen Divider"];
         cm_msg(MINFO,"farm_fe", "Use datagenerator with divider register %d", divider);
-        // readout datagen
-        mu.write_register(SWB_READOUT_STATE_REGISTER_W, 0x3);
-        mu.write_register(DATAGENERATOR_DIVIDER_REGISTER_W, divider);
+        if(stream_settings["use_merger"]) {
+            // readout merger
+            mu.write_register(SWB_READOUT_STATE_REGISTER_W, 0x5);
+        } else {
+            // readout stream
+            mu.write_register(SWB_READOUT_STATE_REGISTER_W, 0x3);
+            mu.write_register(DATAGENERATOR_DIVIDER_REGISTER_W, divider);
+        }
+   } else if(stream_settings["use_merger"]) {
+        // readout links with merger
+        mu.write_register(SWB_READOUT_STATE_REGISTER_W, 0x44);
    } else {
         cm_msg(MINFO,"farm_fe", "Use link data");
         // readout link
