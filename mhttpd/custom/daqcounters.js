@@ -161,7 +161,7 @@ function generateSwitchingTable(table, counters){
 
     for(var feb=0; feb < 12; feb++){
         let row = table.insertRow();
-        for(var i=0; i < 10; i++){
+        for(var i=0; i < 9; i++){
             let cell = row.insertCell();
             let text = document.createTextNode(0);
             cell.appendChild(text);
