@@ -72,7 +72,7 @@ architecture rtl of mupix_ctrl_reg_mapping is
             regaddr                     := to_integer(unsigned(i_reg_add(7 downto 0)));
             o_reg_rdata                 <= x"CCCCCCCC";
             o_mp_fifo_write             <= (others => '0');
-            o_mp_ctrl_data_all_we       <= '0';
+            --o_mp_ctrl_data_all_we       <= '0';
             o_mp_fifo_clear             <= mp_fifo_clear;
             o_mp_ctrl_enable            <= mp_ctrl_enable;
             o_mp_ctrl_data_all          <= mp_ctrl_data_all;
@@ -139,6 +139,8 @@ architecture rtl of mupix_ctrl_reg_mapping is
             if ( regaddr = MP_CTRL_ALL_REGISTER_W and i_reg_we = '1' ) then
                 mp_ctrl_data_all      <= i_reg_wdata;
                 mp_ctrl_data_all_we   <= '1';
+            else
+                mp_ctrl_data_all_we   <= '0';
             end if;
 
             if ( regaddr = MP_CTRL_SPI_BUSY_REGISTER_R and i_reg_re = '1' ) then
