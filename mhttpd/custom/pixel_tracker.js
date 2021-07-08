@@ -264,8 +264,10 @@ var ladder_clicked = function(ladname) {
     var port = lads[ladname]["json_node"]["Temperature_parameters"]["port"]
     var channela = lads[ladname]["json_node"]["Temperature_parameters"]["channel"]
     var input_channel = from_portchannel_to_input(port, channela)
-    var link_temp = "/Equipment/Pixel-SC-Temperature/Variables/Input[" + input_channel + "]"
-    document.getElementById("ladder_temp_read_volt").setAttribute("data-odb-path", link_temp)
+    var link_temp = "/Equipment/Pixel_Temperatures/Variables/Input[" + input_channel + "]"
+    document.getElementById("ladder_temp_read_volt").textContent = "Converted directly"
+    //link_temp = "/Equipment/Pixel_/Converted/Temperature_" + input_channel
+    document.getElementById("ladder_temp_read_c").setAttribute("data-odb-path", link_temp)
 
     document.getElementById("chip_header").style["visibility"] = "visible"
     document.getElementById("pixel_select").style["visibility"] = "visible"
@@ -616,7 +618,7 @@ var setup = function () {
     list_chips_configuration(document.getElementById("multiple_chip_configuration_us"), "Upstream")
     list_chips_configuration(document.getElementById("multiple_chip_configuration_ds"), "Downstream")
 
-    setup_listeners()
+    //setup_listeners()
     create_ladder_legend()
 }
 
