@@ -715,22 +715,22 @@ INT read_stream_thread(void *param) {
         uint32_t current_pixel_mask_n = mu.read_register_rw(SWB_LINK_MASK_PIXEL_REGISTER_W);
         uint32_t current_scifi_mask_n = mu.read_register_rw(SWB_LINK_MASK_SCIFI_REGISTER_W);
 
-        if ( current_pixel_mask_n != 0 && current_scifi_mask_n != 0 ) {
-            current_readout_register ^= 1UL << 7;
-            mu.write_register(SWB_READOUT_STATE_REGISTER_W, current_readout_register);
-            //cout << "1state: " << hex << mu.read_register_rw(SWB_READOUT_STATE_REGISTER_W) << endl;
-        } else if ( current_pixel_mask_n != 0 && current_scifi_mask_n == 0 ) {
+//        if ( current_pixel_mask_n != 0 && current_scifi_mask_n != 0 ) {
+//            current_readout_register ^= 1UL << 7;
+//            mu.write_register(SWB_READOUT_STATE_REGISTER_W, current_readout_register);
+//            //cout << "1state: " << hex << mu.read_register_rw(SWB_READOUT_STATE_REGISTER_W) << endl;
+//        } else if ( current_pixel_mask_n != 0 && current_scifi_mask_n == 0 ) {
             current_readout_register |= (1 << 7);
             mu.write_register(SWB_READOUT_STATE_REGISTER_W, current_readout_register);
             //cout << "2state: " << hex << mu.read_register_rw(SWB_READOUT_STATE_REGISTER_W) << endl;
-        } else if ( current_pixel_mask_n == 0 && current_scifi_mask_n != 0 ) {
-            current_readout_register &= ~(1 << 7);
-            mu.write_register(SWB_READOUT_STATE_REGISTER_W, current_readout_register);
-            //cout << "3state: " << hex << mu.read_register_rw(SWB_READOUT_STATE_REGISTER_W) << endl;
-        } else {
-            //cout << "4state: " << endl;
-            continue;
-        }
+//        } else if ( current_pixel_mask_n == 0 && current_scifi_mask_n != 0 ) {
+//            current_readout_register &= ~(1 << 7);
+//            mu.write_register(SWB_READOUT_STATE_REGISTER_W, current_readout_register);
+//            //cout << "3state: " << hex << mu.read_register_rw(SWB_READOUT_STATE_REGISTER_W) << endl;
+//        } else {
+//            //cout << "4state: " << endl;
+//            continue;
+//        }
 
         // disable dma
         mu.disable();
@@ -740,30 +740,32 @@ INT read_stream_thread(void *param) {
         // wait for requested data
         // request to read dma_buffer_size/2 (count in blocks of 256 bits)
         mu.write_register(GET_N_DMA_WORDS_REGISTER_W, max_requested_words / (256/32));
-        cout << "request " << max_requested_words << endl;
+        //cout << "request " << max_requested_words << endl;
 
         // reset data path
         mu.write_register(RESET_REGISTER_W, reset_reg);
         usleep(10);
         mu.write_register(RESET_REGISTER_W, 0x0);
 
-
+        uint32_t cnt_loop = 0;
         while ( (mu.read_register_ro(0x1C) & 1) == 0 ) {
-            // check mask for timeout
-            usleep(10);
-            if ( mu.read_register_rw(SWB_LINK_MASK_PIXEL_REGISTER_W) == 0 && mu.read_register_rw(SWB_LINK_MASK_SCIFI_REGISTER_W) == 0 ) {
-                break;
-            } else if ( mu.read_register_rw(SWB_LINK_MASK_PIXEL_REGISTER_W) != 0 && mu.read_register_rw(SWB_LINK_MASK_SCIFI_REGISTER_W) != 0 ) {
-                continue;
-            } else if ( mu.read_register_rw(SWB_LINK_MASK_PIXEL_REGISTER_W) != 0 ) {
-                current_readout_register = mu.read_register_rw(SWB_READOUT_STATE_REGISTER_W);
-                current_readout_register |= (1 << 7);
-                mu.write_register(SWB_READOUT_STATE_REGISTER_W, current_readout_register);
-            } else if ( mu.read_register_rw(SWB_LINK_MASK_SCIFI_REGISTER_W) != 0 ) {
-                current_readout_register = mu.read_register_rw(SWB_READOUT_STATE_REGISTER_W);
-                current_readout_register &= ~(1 << 7);
-                mu.write_register(SWB_READOUT_STATE_REGISTER_W, current_readout_register);
-           }
+            if (cnt_loop == 100000) break;
+            cnt_loop++;
+//             check mask for timeout
+            usleep(100);
+//            if ( mu.read_register_rw(SWB_LINK_MASK_PIXEL_REGISTER_W) == 0 && mu.read_register_rw(SWB_LINK_MASK_SCIFI_REGISTER_W) == 0 ) {
+//                break;
+//            } else if ( mu.read_register_rw(SWB_LINK_MASK_PIXEL_REGISTER_W) != 0 && mu.read_register_rw(SWB_LINK_MASK_SCIFI_REGISTER_W) != 0 ) {
+//                continue;
+//            } else if ( mu.read_register_rw(SWB_LINK_MASK_PIXEL_REGISTER_W) != 0 ) {
+//                current_readout_register = mu.read_register_rw(SWB_READOUT_STATE_REGISTER_W);
+//                current_readout_register |= (1 << 7);
+//                mu.write_register(SWB_READOUT_STATE_REGISTER_W, current_readout_register);
+//            } else if ( mu.read_register_rw(SWB_LINK_MASK_SCIFI_REGISTER_W) != 0 ) {
+//                current_readout_register = mu.read_register_rw(SWB_READOUT_STATE_REGISTER_W);
+//                current_readout_register &= ~(1 << 7);
+//                mu.write_register(SWB_READOUT_STATE_REGISTER_W, current_readout_register);
+//           }
         }
 
         uint32_t words_written = mu.read_register_ro(0x32);
@@ -778,6 +780,9 @@ INT read_stream_thread(void *param) {
 
         // check mask
         if ( mu.read_register_rw(SWB_LINK_MASK_PIXEL_REGISTER_W) == 0 && mu.read_register_rw(SWB_LINK_MASK_SCIFI_REGISTER_W) == 0 ) continue;
+
+        // check cnt loop
+        if (cnt_loop == 100000) continue;
         
         // and get lastWritten / endofevent
         // NOTE (24.06.2021): for the moment we dont really care for the endofevent
