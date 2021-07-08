@@ -57,65 +57,53 @@ int MupixFEB::ConfigureASICs(){
 for ( int asic=0; asic<10; asic++ ) {
     
     if ( asic == 0 ) {
-        //feb_sc.FEB_register_write(0, MP_LVDS_LINK_MASK_REGISTER_W, 0x1C7);
-        //feb_sc.FEB_register_write(0, MP_LVDS_LINK_MASK2_REGISTER_W, 0x7);
-        feb_sc.FEB_register_write(0, MP_LVDS_LINK_MASK_REGISTER_W, 0x0);//0x004C01AD);
+        feb_sc.FEB_register_write(0, MP_LVDS_LINK_MASK_REGISTER_W, 0x7);
         feb_sc.FEB_register_write(0, MP_LVDS_LINK_MASK2_REGISTER_W, 0x0);
     }
                                                                                 
     if ( asic == 1 ) {
-        //feb_sc.FEB_register_write(1, MP_LVDS_LINK_MASK2_REGISTER_W, 0xE);
-        feb_sc.FEB_register_write(1, MP_LVDS_LINK_MASK_REGISTER_W, 0xA000002C);
-        feb_sc.FEB_register_write(1, MP_LVDS_LINK_MASK2_REGISTER_W, 0x00000002);
+        feb_sc.FEB_register_write(1, MP_LVDS_LINK_MASK_REGISTER_W, 0x0);
+        feb_sc.FEB_register_write(1, MP_LVDS_LINK_MASK2_REGISTER_W, 0x0);
     }
                                                                                 
     if ( asic == 2 ) {
-        //feb_sc.FEB_register_write(2, MP_LVDS_LINK_MASK_REGISTER_W, 0xE);
-        feb_sc.FEB_register_write(2, MP_LVDS_LINK_MASK_REGISTER_W, 0xF8008A2C);
-        feb_sc.FEB_register_write(2, MP_LVDS_LINK_MASK2_REGISTER_W, 0x0000000F);
+        feb_sc.FEB_register_write(2, MP_LVDS_LINK_MASK_REGISTER_W, 0x38000);
+        feb_sc.FEB_register_write(2, MP_LVDS_LINK_MASK2_REGISTER_W, 0xE);
     }
                                                                                 
     if ( asic == 3 ) {
-        //feb_sc.FEB_register_write(3, MP_LVDS_LINK_MASK_REGISTER_W, 0xC003F03F);
         feb_sc.FEB_register_write(3, MP_LVDS_LINK_MASK_REGISTER_W, 0x0);
-        //feb_sc.FEB_register_write(3, MP_LVDS_LINK_MASK2_REGISTER_W, 0x1);
         feb_sc.FEB_register_write(3, MP_LVDS_LINK_MASK2_REGISTER_W, 0x0);
     }
                                                                                 
     if ( asic == 4 ) {
-        feb_sc.FEB_register_write(4, MP_LVDS_LINK_MASK_REGISTER_W, 0xFFFD5000);
-        feb_sc.FEB_register_write(4, MP_LVDS_LINK_MASK2_REGISTER_W, 0x0000000F);
+        feb_sc.FEB_register_write(4, MP_LVDS_LINK_MASK_REGISTER_W, 0x0);
+        feb_sc.FEB_register_write(4, MP_LVDS_LINK_MASK2_REGISTER_W, 0x0);
     }
                                                                                 
     if ( asic == 5 ) {
-        //feb_sc.FEB_register_write(5, MP_LVDS_LINK_MASK_REGISTER_W, 0x38000);
-        feb_sc.FEB_register_write(5, MP_LVDS_LINK_MASK_REGISTER_W, 0xA0008A00);
-        //feb_sc.FEB_register_write(5, MP_LVDS_LINK_MASK2_REGISTER_W, 0xE);
-        feb_sc.FEB_register_write(5, MP_LVDS_LINK_MASK2_REGISTER_W, 0x00000002);
+        feb_sc.FEB_register_write(5, MP_LVDS_LINK_MASK_REGISTER_W, 0x7);
+        feb_sc.FEB_register_write(5, MP_LVDS_LINK_MASK2_REGISTER_W, 0x0);
     }
                                                                               
     if ( asic == 6 ) {
-        //feb_sc.FEB_register_write(6, MP_LVDS_LINK_MASK_REGISTER_W, 0x381FF);
-        feb_sc.FEB_register_write(6, MP_LVDS_LINK_MASK_REGISTER_W, 0x07FC8BFF);
+        feb_sc.FEB_register_write(6, MP_LVDS_LINK_MASK_REGISTER_W, 0x0);
         feb_sc.FEB_register_write(6, MP_LVDS_LINK_MASK2_REGISTER_W, 0x0);
     }
                                                                                
     if ( asic == 7 ) {
-        //feb_sc.FEB_register_write(7, MP_LVDS_LINK_MASK_REGISTER_W, 0x1C0);
-        feb_sc.FEB_register_write(7, MP_LVDS_LINK_MASK_REGISTER_W, 0x0000002C);
+        feb_sc.FEB_register_write(7, MP_LVDS_LINK_MASK_REGISTER_W, 0x0);
         feb_sc.FEB_register_write(7, MP_LVDS_LINK_MASK2_REGISTER_W, 0x0);
     }
                                                                                
     if ( asic == 8 ) {
-        //feb_sc.FEB_register_write(8, MP_LVDS_LINK_MASK_REGISTER_W, 0x7);
-        feb_sc.FEB_register_write(8, MP_LVDS_LINK_MASK_REGISTER_W, 0xF80001FF);
-        feb_sc.FEB_register_write(8, MP_LVDS_LINK_MASK2_REGISTER_W, 0x0000000F);
+        feb_sc.FEB_register_write(8, MP_LVDS_LINK_MASK_REGISTER_W, 0x0);
+        feb_sc.FEB_register_write(8, MP_LVDS_LINK_MASK2_REGISTER_W, 0x0);
     }
 
     if ( asic == 9 ) {
-        //feb_sc.FEB_register_write(9, MP_LVDS_LINK_MASK_REGISTER_W, 0x7);
-        feb_sc.FEB_register_write(9, MP_LVDS_LINK_MASK_REGISTER_W, 0xF8000000);
-        feb_sc.FEB_register_write(9, MP_LVDS_LINK_MASK2_REGISTER_W, 0x0000000F);
+        feb_sc.FEB_register_write(9, MP_LVDS_LINK_MASK_REGISTER_W, 0x0);
+        feb_sc.FEB_register_write(9, MP_LVDS_LINK_MASK2_REGISTER_W, 0x0);
     }
 }
 
