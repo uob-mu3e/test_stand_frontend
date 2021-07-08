@@ -40,6 +40,8 @@ port (
 
     i_lvds_data_in          : in  std_logic_vector(35 downto 0);
 
+    i_ext_trigger           : in    std_logic := '0';
+
     i_reset                 : in  std_logic;
     -- 156.25 MHz
     i_clk156                   : in  std_logic;
@@ -103,6 +105,8 @@ begin
         i_lvds_rx_inclock_B => i_lvds_rx_inclock_B,
 
         lvds_data_in        => i_lvds_data_in,
+
+        i_ext_trigger       => i_ext_trigger,
 
         i_reg_add           => i_reg_add,
         i_reg_re            => i_reg_re,

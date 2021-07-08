@@ -107,6 +107,8 @@ port (
     o_run_state_125 : out   work.mudaq.run_state_t;
     o_run_state_156 : out   work.mudaq.run_state_t;
 
+    i_ext_trigger   : in    std_logic := '0';
+
     -- nios clock (async)
     i_nios_clk      : in    std_logic;
     o_nios_clk_mon  : out   std_logic;
@@ -217,6 +219,9 @@ architecture arch of fe_block_v2 is
     signal programming_addr_ena     : std_logic;
     signal programming_addr_ena_reg : std_logic;
 
+    signal ts_counter               : std_logic_vector(31 downto 0);
+    signal ext_trigger_reg          : std_logic_vector(3 downto 0);
+
 begin
 
     --v_reg: version_reg 
@@ -229,6 +234,18 @@ begin
     if rising_edge(i_clk_156) then
         o_run_state_156 <= run_state_156_resetsys;
         run_state_156   <= run_state_156_resetsys;
+        ext_trigger_reg <= ext_trigger_reg(2 downto 0) & i_ext_trigger;
+    end if;
+    end process;
+
+    process(i_clk_125)
+    begin
+    if rising_edge(i_clk_125) then
+        if (run_state_125 = RUN_STATE_SYNC) then
+            ts_counter  <= (others => '0');
+        else
+            ts_counter  <= std_logic_vector(to_unsigned(to_integer(unsigned(ts_counter)) + 1, 32));
+        end if;
     end if;
     end process;
 
@@ -330,7 +347,7 @@ begin
         i_ffly_temp                 => ffly_temp,
         i_ffly_alarm                => ffly_alarm,
         i_ffly_vcc                  => ffly_vcc,
-
+        
         -- outputs 156--------------------------------------------
         o_reg_cmdlen                => reg_cmdlen,
         o_reg_offset                => reg_offset,
@@ -513,6 +530,7 @@ begin
 
         data_write_req             => i_fifo_write,
         i_data_in                  => i_fifo_wdata,
+
         o_fifos_almost_full        => o_fifos_almost_full,
 
         override_data_in           => linktest_data,
@@ -543,7 +561,7 @@ begin
         end if;
     end process;
 
-		 
+
     --TODO: do we need two independent link test modules for both fibers?
     e_link_test : entity work.linear_shift_link
     generic map (
