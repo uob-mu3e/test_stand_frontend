@@ -297,11 +297,14 @@ uint32_t MupixFEB::ReadBackLVDSNumHitsInMupixFormat(uint16_t FPGA_ID, uint16_t L
 
 DWORD* MupixFEB::ReadLVDSCounters(DWORD* pdata, uint16_t FPGA_ID)
 {
-    for(uint32_t i=0; i<lvds_links_per_feb; i++){ // TODO: set currect LVDS links number
+    for(uint32_t i=0; i<64; i++){ // TODO: set currect LVDS links number
+        ReadBackLVDSStatus(pdata, FPGA_ID, i);
+        // TODO: intrun fix for lvds configuration
+        if (i>=lvds_links_per_feb) continue;
         // Link ID
         *(DWORD*)pdata++ = i;
         // read lvds status
-        *(DWORD*)pdata++ = ReadBackLVDSStatus(pdata, FPGA_ID, i);
+        *(DWORD*)pdata++ = ReadBackLVDSStatus(pdata, FPGA_ID, 0);
         // number of hits from link
         *(DWORD*)pdata++ = ReadBackLVDSNumHits(FPGA_ID, i);
         // number of hits from link in mupix format
