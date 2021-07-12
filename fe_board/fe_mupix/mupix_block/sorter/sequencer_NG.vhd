@@ -44,24 +44,27 @@ signal counters_reg: std_logic_vector(MEMCOUNTERRANGE);
 signal subaddr:			counter_t;
 signal dohits: std_logic;
 signal from_fifo_reg	: sorterfifodata_t;
-signal fifo_empty_reg: std_logic;
+signal read_fifo_int: std_logic;
+signal fifo_reg_valid: std_logic;
+signal fifo_reg_new: std_logic;
 
 begin
 
+read_fifo <= read_fifo_int;
 
 process(reset_n, clk)
-	variable do_fifo_reading : std_logic;
+	variable stop_fifo_reading : std_logic;
 begin
 if (reset_n = '0') then	
 	running 		<= '0';
 	running_last 	<= '0';
 	output 			<= none;
-	read_fifo 		<= '0';
-	fifo_empty_reg	<= '1';
 	dohits			<= '0';
+	read_fifo_int	<= '0';
+	fifo_reg_valid	<= '0';
+	fifo_reg_new	<= '0';
 elsif (clk'event and clk = '1') then
-	do_fifo_reading := '0';
-	read_fifo 		<= '0';
+	stop_fifo_reading := '0';
 	running_last 	<= running;
 	if (running = '0')then
 		if (fifo_empty = '0') then
@@ -70,18 +73,21 @@ elsif (clk'event and clk = '1') then
 	else
 		if (running_last = '0' and running = '1') then
 			output <= header1;
-			do_fifo_reading := '1';
+			stop_fifo_reading	:= '1';
 		elsif (output = header1) then
 			output <= header2;
+			stop_fifo_reading	:= '1';
 		elsif (output = header2) then
 			output <= subheader;
 			current_block <= from_fifo_reg(TSBLOCKINFIFORANGE);
-			if (from_fifo_reg(HASMEMBIT) = '0') then
-				do_fifo_reading := '1';
+			if (from_fifo_reg(HASMEMBIT) = '1') then
+				stop_fifo_reading := '1';
 			end if;
 		elsif (output = footer) then
 			output <= header1;
+			stop_fifo_reading	:= '1';
 		elsif (dohits = '1') then
+			stop_fifo_reading	:= '1';
 			if(counters_reg(3 downto 0) = "0001") then -- switch chip
 				counters_reg(counters_reg'left-8 downto 0)	 <= counters_reg(counters_reg'left downto 8);
 				counters_reg(counters_reg'left downto counters_reg'left-7)	 <= (others => '0');
@@ -96,37 +102,35 @@ elsif (clk'event and clk = '1') then
 			end if;
 		elsif (from_fifo_reg(TSBLOCKINFIFORANGE) /= current_block) then
 			output 			<= subheader;
-			do_fifo_reading := '1';
 			current_block <= from_fifo_reg(TSBLOCKINFIFORANGE);
 			if(current_block = block_max) then
 				output 			<= footer;
-				do_fifo_reading := '0';
+				stop_fifo_reading := '1';
 			end if;
-		elsif (from_fifo(HASMEMBIT) = '1' and fifo_empty_reg = '0') then
+		elsif (from_fifo(HASMEMBIT) = '1' and fifo_reg_new = '1') then
 			output 			<= hits;
 			counters_reg	<= from_fifo_reg(MEMCOUNTERRANGE);
 			subaddr			<= "0000";
-			do_fifo_reading := '1';
+			stop_fifo_reading := '1';
 			dohits			<= '1';
-		elsif (from_fifo_reg(HASMEMBIT) = '0' and fifo_empty_reg = '0') then
+		elsif (from_fifo_reg(HASMEMBIT) = '0' and fifo_reg_new = '1') then
 			output 			<= none;
-			do_fifo_reading := '1';
 		else -- fifo empty
 			output 			<= none;
 		end if;
 	end if;
 
-	if(do_fifo_reading = '1') then
-		from_fifo_reg	<= from_fifo;
-		read_fifo		<= '1';
-		fifo_empty_reg	<= fifo_empty;
-	end if;	
-	if(fifo_empty_reg = '1' and fifo_empty = '0') then
-		from_fifo_reg	<= from_fifo;
-		read_fifo		<= '1';
-		fifo_empty_reg	<= fifo_empty;
-	end if;	 
+	read_fifo_int	<= '0';
+	if(fifo_empty = '0' and stop_fifo_reading = '0') then
+		read_fifo_int		<= '1';
+	end if;
 
+	fifo_reg_new <= '0';
+	if(read_fifo_int = '1' and fifo_empty = '0') then
+		from_fifo_reg	<= from_fifo;
+		fifo_reg_valid	<= '1';
+		fifo_reg_new	<= '1';
+	end if;
 end if;
 end process;
 

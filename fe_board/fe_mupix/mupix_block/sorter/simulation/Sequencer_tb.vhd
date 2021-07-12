@@ -70,7 +70,7 @@ begin
             almost_full_value => 120,
             intended_device_family => "Arria V",
             lpm_numwords => 128,
-            lpm_showahead => "ON",
+            lpm_showahead => "OFF",
             lpm_type => "scfifo",
             lpm_width => SORTERFIFORANGE'left + 1,
             lpm_widthu => 7,
