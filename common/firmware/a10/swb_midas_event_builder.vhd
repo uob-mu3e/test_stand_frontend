@@ -114,7 +114,6 @@ begin
     generic map (
         ADDR_WIDTH      => 12,
         DATA_WIDTH      => 12,
-        REGOUT          => 0, 
         DEVICE          => "Arria 10"--,
     )
     port map (

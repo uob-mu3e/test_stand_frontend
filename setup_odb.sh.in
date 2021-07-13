@@ -1,5 +1,6 @@
 #!/bin/bash
 
+SOURCE=@PROJECT_SOURCE_DIR@
 odbedit -c clean
 
 odbedit -c 'mkdir Custom'

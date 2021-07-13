@@ -91,6 +91,7 @@ void setup_watches();
 
 INT init_mudaq();
 
+uint64_t get_link_active_from_odb(odb o);
 void link_active_settings_changed(odb);
 void stream_settings_changed(odb);
 /*-- Equipment list ------------------------------------------------*/
@@ -118,7 +119,7 @@ EQUIPMENT equipment[] = {
      EQ_PERIODIC,                /* equipment type */
      0,                      /* event source crate 0, all stations */
      "MIDAS",                /* format */
-     TRUE,                   /* enabled */
+     FALSE,                   /* enabled */
      RO_ALWAYS  | RO_ODB,             /* read only when running */
      1000,                    /* poll for 1s */
      0,                      /* stop run after this event limit */
@@ -175,25 +176,52 @@ void stream_settings_changed(odb o)
     cm_msg(MINFO, "stream_settings_changed", "Stream stettings changed");
 
     if (name == "Datagen Divider") {
-        int value = o;
-        cm_msg(MINFO, "stream_settings_changed", "Set Divider to %d", value);
-        mup->write_register(DATAGENERATOR_DIVIDER_REGISTER_W, o);
+        uint32_t divider = o;
+        cm_msg(MINFO, "stream_settings_changed", "Set Divider to %d", divider);
+        mup->write_register(DATAGENERATOR_DIVIDER_REGISTER_W, divider);
     }
 
     if (name == "Datagen Enable") {
-        bool value = o;
-        cm_msg(MINFO, "stream_settings_changed", "Set Disable to %d", value);
-        //this is set once we start the run
+        cm_msg(MINFO, "stream_settings_changed", "Set Disable Datagen to %s", o ? "y" : "n");
+        if (o) {
+            uint32_t current_state = mup->read_register_rw(SWB_READOUT_STATE_REGISTER_W);
+            current_state |= (1 << 0);
+            mup->write_register(SWB_READOUT_STATE_REGISTER_W, current_state);
+        } else {
+            uint32_t current_state = mup->read_register_rw(SWB_READOUT_STATE_REGISTER_W);
+            current_state &= ~(1 << 0);
+            mup->write_register(SWB_READOUT_STATE_REGISTER_W, current_state);
+        }
     }
 
-    if (name == "Mask Links") {
-        int value = o;
+    if (name == "use_merger") {
+        cm_msg(MINFO, "stream_settings_changed", "Set Disable Merger to %s", o ? "y" : "n");
+        if (o) {
+            uint32_t current_state = mup->read_register_rw(SWB_READOUT_STATE_REGISTER_W);
+            current_state |= (1 << 2);
+            mup->write_register(SWB_READOUT_STATE_REGISTER_W, current_state);
+        } else {
+            uint32_t current_state = mup->read_register_rw(SWB_READOUT_STATE_REGISTER_W);
+            current_state &= ~(1 << 2);
+            mup->write_register(SWB_READOUT_STATE_REGISTER_W, current_state);
+        }
+    }
+
+    if (name == "mask_n_scifi") {
+        uint32_t mask = o;
         char buffer [50];
-        sprintf(buffer, "Set Mask Links to " PRINTF_BINARY_PATTERN_INT32, PRINTF_BYTE_TO_BINARY_INT32((long long int) value));
+        sprintf(buffer, "Set Mask Links Scifi to " PRINTF_BINARY_PATTERN_INT32, PRINTF_BYTE_TO_BINARY_INT32((long long int) mask));
         cm_msg(MINFO, "stream_settings_changed", buffer);
-        mup->write_register(SWB_LINK_MASK_PIXEL_REGISTER_W, value);
+        mup->write_register(SWB_LINK_MASK_SCIFI_REGISTER_W, mask);
     }
 
+    if (name == "mask_n_pixel") {
+        uint32_t mask = o;
+        char buffer [50];
+        sprintf(buffer, "Set Mask Links Pixel to " PRINTF_BINARY_PATTERN_INT32, PRINTF_BYTE_TO_BINARY_INT32((long long int) mask));
+        cm_msg(MINFO, "stream_settings_changed", buffer);
+        mup->write_register(SWB_LINK_MASK_PIXEL_REGISTER_W, mask);
+    }
 }
 
 void link_active_settings_changed(odb o){
@@ -221,46 +249,51 @@ void link_active_settings_changed(odb o){
 // ODB Setup //////////////////////////////
 void setup_odb(){
 
+    // TODO: use me for the default values
+    //odb cur_links_odb("/Equipment/Links/Settings/LinkMask");
+    //std::bitset<64> cur_link_active_from_odb = get_link_active_from_odb(cur_links_odb);
+
     // Map /equipment/Stream/Settings
     odb stream_settings = {
         {"Datagen Divider", 1000},     // int
         {"Datagen Enable", false},     // bool
-        {"Mask Links", 0x0}, // int
+        {"mask_n_scifi", 0x0},         // int
+        {"mask_n_pixel", 0x0},         // int
+        {"use_merger", false},         // int
         {"dma_buf_nwords", int(dma_buf_nwords)},
-        {"dma_buf_size", int(dma_buf_size)},
-        {"Use Scifi not Pixel Debug Data", 0x0}, // int 
+        {"dma_buf_size", int(dma_buf_size)}
     };
 
-    stream_settings.connect("/Equipment/Stream/Settings", true);
+    stream_settings.connect("/Equipment/Stream/Settings");
 
     // add custom page to ODB
     odb custom("/Custom");
     custom["Farm&"] = "farm.html";
     
     // add error cnts to ODB
-    odb error_settings = {
-        {"DC FIFO ALMOST FUll", 0},
-        {"DC LINK FIFO FULL", 0},
-        {"TAG FIFO FULL", 0},
-        {"MIDAS EVENT RAM FULL", 0},
-        {"STREAM FIFO FULL", 0},
-        {"DMA HALFFULL", 0},
-        {"SKIP EVENT LINK FIFO", 0},
-        {"SKIP EVENT DMA RAM", 0},
-        {"IDLE NOT EVENT HEADER", 0},
-    };
-    error_settings.connect("/Equipment/Stream Logger/Variables", true);
+    //odb error_settings = {
+    //    {"DC FIFO ALMOST FUll", 0},
+    //    {"DC LINK FIFO FULL", 0},
+    //    {"TAG FIFO FULL", 0},
+    //    {"MIDAS EVENT RAM FULL", 0},
+    //    {"STREAM FIFO FULL", 0},
+    //    {"DMA HALFFULL", 0},
+    //    {"SKIP EVENT LINK FIFO", 0},
+    //    {"SKIP EVENT DMA RAM", 0},
+    //    {"IDLE NOT EVENT HEADER", 0},
+    //};
+    //error_settings.connect("/Equipment/Stream Logger/Variables", true);
     
     // Define history panels
-    hs_define_panel("Stream Logger", "MIDAS Bank Builder", {"Stream Logger:DC FIFO ALMOST FUll",
-                                                            "Stream Logger:DC LINK FIFO FULL",
-                                                            "Stream Logger:TAG FIFO FULL",
-                                                            "Stream Logger:MIDAS EVENT RAM FULL",
-                                                            "Stream Logger:STREAM FIFO FULL",
-                                                            "Stream Logger:DMA HALFFULL",
-                                                            "Stream Logger:SKIP EVENT LINK FIFO",
-                                                            "Stream Logger:SKIP EVENT DMA RAM",
-                                                            "Stream Logger:IDLE NOT EVENT HEADER"});
+    //hs_define_panel("Stream Logger", "MIDAS Bank Builder", {"Stream Logger:DC FIFO ALMOST FUll",
+    //                                                        "Stream Logger:DC LINK FIFO FULL",
+    //                                                        "Stream Logger:TAG FIFO FULL",
+    //                                                        "Stream Logger:MIDAS EVENT RAM FULL",
+    //                                                        "Stream Logger:STREAM FIFO FULL",
+    //                                                        "Stream Logger:DMA HALFFULL",
+    //                                                        "Stream Logger:SKIP EVENT LINK FIFO",
+    //                                                        "Stream Logger:SKIP EVENT DMA RAM",
+    //                                                        "Stream Logger:IDLE NOT EVENT HEADER"});
 }
 
 void setup_watches(){
@@ -392,25 +425,29 @@ INT begin_of_run(INT run_number, char *error)
    uint32_t reg=mu.read_register_rw(DATAGENERATOR_REGISTER_W);
    odb stream_settings;
    stream_settings.connect("/Equipment/Stream/Settings");
-   uint32_t use_pixel = !stream_settings["Use Scifi not Pixel Debug Data"];
 
    if(stream_settings["Datagen Enable"]) {
         int divider = stream_settings["Datagen Divider"];
         cm_msg(MINFO,"farm_fe", "Use datagenerator with divider register %d", divider);
-        // readout datagen
-        mu.write_register(SWB_READOUT_STATE_REGISTER_W, 0x3 | (use_pixel << 7));
-        mu.write_register(DATAGENERATOR_DIVIDER_REGISTER_W, divider);
+        if(stream_settings["use_merger"]) {
+            // readout merger
+            mu.write_register(SWB_READOUT_STATE_REGISTER_W, 0x5);
+        } else {
+            // readout stream
+            mu.write_register(SWB_READOUT_STATE_REGISTER_W, 0x3);
+            mu.write_register(DATAGENERATOR_DIVIDER_REGISTER_W, divider);
+        }
+   } else if(stream_settings["use_merger"]) {
+        // readout links with merger
+        mu.write_register(SWB_READOUT_STATE_REGISTER_W, 0x44);
    } else {
         cm_msg(MINFO,"farm_fe", "Use link data");
         // readout link
-        mu.write_register(SWB_READOUT_STATE_REGISTER_W, 0x42 | (use_pixel << 7));
+        mu.write_register(SWB_READOUT_STATE_REGISTER_W, 0x42);
    }
 
-   if ( use_pixel = 1 ) {
-       mu.write_register(SWB_LINK_MASK_PIXEL_REGISTER_W, stream_settings["Mask Links"]);
-   } else {
-       mu.write_register(SWB_LINK_MASK_SCIFI_REGISTER_W, stream_settings["Mask Links"]);
-   }
+   mu.write_register(SWB_LINK_MASK_PIXEL_REGISTER_W, stream_settings["mask_n_pixel"]);
+   mu.write_register(SWB_LINK_MASK_SCIFI_REGISTER_W, stream_settings["mask_n_scifi"]);
   
    // reset lastlastwritten
    lastlastWritten = 0;
@@ -478,6 +515,7 @@ INT end_of_run(INT run_number, char *error)
     mu.write_register(DATAGENERATOR_DIVIDER_REGISTER_W, 0x0);
     mu.write_register(SWB_READOUT_STATE_REGISTER_W, 0x0);
     mu.write_register(SWB_LINK_MASK_PIXEL_REGISTER_W, 0x0);
+    mu.write_register(SWB_LINK_MASK_SCIFI_REGISTER_W, 0x0);
     mu.write_register(SWB_READOUT_LINK_REGISTER_W, 0x0);
     mu.write_register(GET_N_DMA_WORDS_REGISTER_W, 0x0);
     // reset data path
@@ -619,7 +657,7 @@ uint32_t check_event(T* buffer, uint32_t idx, uint32_t* pdata) {
     //printf("Header Buffer: %8.8x\n", buffer[idx]);
     //printf("Data: %8.8x\n", buffer[idx+4+eventDataSize/4-1]);
 
-    if ( !(buffer[idx+4+eventDataSize/4-1] == 0xAFFEAFFE or buffer[idx+4+eventDataSize/4-1] == 0xFC00009C) ) {
+    if ( !(buffer[idx+4+eventDataSize/4-1] == 0xAFFEAFFE or buffer[idx+4+eventDataSize/4-1] == 0xFC00009C or buffer[idx+4+eventDataSize/4-1] == 0xFC00019C) ) {
       printf("Data: %8.8x\n", buffer[idx+4+eventDataSize/4-2]);
       return -1;
     }
@@ -672,19 +710,63 @@ INT read_stream_thread(void *param) {
             continue;
         }
 
+        // change readout state to switch between pixel and scifi
+        uint32_t current_readout_register = mu.read_register_rw(SWB_READOUT_STATE_REGISTER_W);
+        uint32_t current_pixel_mask_n = mu.read_register_rw(SWB_LINK_MASK_PIXEL_REGISTER_W);
+        uint32_t current_scifi_mask_n = mu.read_register_rw(SWB_LINK_MASK_SCIFI_REGISTER_W);
+
+//        if ( current_pixel_mask_n != 0 && current_scifi_mask_n != 0 ) {
+//            current_readout_register ^= 1UL << 7;
+//            mu.write_register(SWB_READOUT_STATE_REGISTER_W, current_readout_register);
+//            //cout << "1state: " << hex << mu.read_register_rw(SWB_READOUT_STATE_REGISTER_W) << endl;
+//        } else if ( current_pixel_mask_n != 0 && current_scifi_mask_n == 0 ) {
+            current_readout_register |= (1 << 7);
+            mu.write_register(SWB_READOUT_STATE_REGISTER_W, current_readout_register);
+            //cout << "2state: " << hex << mu.read_register_rw(SWB_READOUT_STATE_REGISTER_W) << endl;
+//        } else if ( current_pixel_mask_n == 0 && current_scifi_mask_n != 0 ) {
+//            current_readout_register &= ~(1 << 7);
+//            mu.write_register(SWB_READOUT_STATE_REGISTER_W, current_readout_register);
+//            //cout << "3state: " << hex << mu.read_register_rw(SWB_READOUT_STATE_REGISTER_W) << endl;
+//        } else {
+//            //cout << "4state: " << endl;
+//            continue;
+//        }
+
+        // disable dma
+        mu.disable();
         // start dma
         mu.enable_continous_readout(0);
 
         // wait for requested data
         // request to read dma_buffer_size/2 (count in blocks of 256 bits)
-        mu.write_register(0xC, max_requested_words / (256/32));
+        mu.write_register(GET_N_DMA_WORDS_REGISTER_W, max_requested_words / (256/32));
+        //cout << "request " << max_requested_words << endl;
 
         // reset data path
-        mu.write_register_wait(RESET_REGISTER_W, reset_reg, 100);
-//         sleep(1);
+        mu.write_register(RESET_REGISTER_W, reset_reg);
+        usleep(10);
         mu.write_register(RESET_REGISTER_W, 0x0);
-        
-        while ( (mu.read_register_ro(0x1C) & 1) == 0 ) {}
+
+        uint32_t cnt_loop = 0;
+        while ( (mu.read_register_ro(0x1C) & 1) == 0 ) {
+            if (cnt_loop == 100000) break;
+            cnt_loop++;
+//             check mask for timeout
+            usleep(100);
+//            if ( mu.read_register_rw(SWB_LINK_MASK_PIXEL_REGISTER_W) == 0 && mu.read_register_rw(SWB_LINK_MASK_SCIFI_REGISTER_W) == 0 ) {
+//                break;
+//            } else if ( mu.read_register_rw(SWB_LINK_MASK_PIXEL_REGISTER_W) != 0 && mu.read_register_rw(SWB_LINK_MASK_SCIFI_REGISTER_W) != 0 ) {
+//                continue;
+//            } else if ( mu.read_register_rw(SWB_LINK_MASK_PIXEL_REGISTER_W) != 0 ) {
+//                current_readout_register = mu.read_register_rw(SWB_READOUT_STATE_REGISTER_W);
+//                current_readout_register |= (1 << 7);
+//                mu.write_register(SWB_READOUT_STATE_REGISTER_W, current_readout_register);
+//            } else if ( mu.read_register_rw(SWB_LINK_MASK_SCIFI_REGISTER_W) != 0 ) {
+//                current_readout_register = mu.read_register_rw(SWB_READOUT_STATE_REGISTER_W);
+//                current_readout_register &= ~(1 << 7);
+//                mu.write_register(SWB_READOUT_STATE_REGISTER_W, current_readout_register);
+//           }
+        }
 
         uint32_t words_written = mu.read_register_ro(0x32);
 
@@ -695,6 +777,12 @@ INT read_stream_thread(void *param) {
         mu.write_register(GET_N_DMA_WORDS_REGISTER_W, 0x0);
         // reset all
         mu.write_register(RESET_REGISTER_W, reset_reg);
+
+        // check mask
+        if ( mu.read_register_rw(SWB_LINK_MASK_PIXEL_REGISTER_W) == 0 && mu.read_register_rw(SWB_LINK_MASK_SCIFI_REGISTER_W) == 0 ) continue;
+
+        // check cnt loop
+        if (cnt_loop == 100000) continue;
         
         // and get lastWritten / endofevent
         // NOTE (24.06.2021): for the moment we dont really care for the endofevent
@@ -702,7 +790,7 @@ INT read_stream_thread(void *param) {
         lastlastWritten = 0;
         uint32_t lastWritten = mu.last_written_addr();
         //uint32_t endofevent = mu.last_endofevent_addr();
- 
+
         // walk events to find end of last event
         uint32_t offset = 0;
         uint32_t cnt = 0;
@@ -727,7 +815,7 @@ INT read_stream_thread(void *param) {
             // check enough space for data
             if(offset + eventLength / 4 > lastWritten) break;
             uint32_t size_dma_buf = check_event(dma_buf, offset, pdata);
-            printf("data2: %8.8x offset: %8.8x lastwritten: %8.8x sizeEvent: %d\n", dma_buf[offset], offset, lastWritten, size_dma_buf);
+            //printf("data2: %8.8x offset: %8.8x lastwritten: %8.8x sizeEvent: %d\n", dma_buf[offset], offset, lastWritten, size_dma_buf);
             if ( size_dma_buf == -1 ) {
                 printf("size_dma_buf == -1\n");
                 printf("Events written %d\n", cnt);
@@ -758,4 +846,22 @@ INT read_stream_thread(void *param) {
     signal_readout_thread_active(0, FALSE);
 
     return 0;
+}
+
+uint64_t get_link_active_from_odb(odb o){
+
+   /* get link active from odb */
+   uint64_t link_active_from_odb = 0;
+   for(uint32_t link = 0; link < MAX_LINKS_PER_SWITCHINGBOARD; link++) {
+      // TODO: for Int run we only have on switch -> offset is zero
+      int offset = 0;//MAX_LINKS_PER_SWITCHINGBOARD * switch_id;
+      int cur_mask = o[offset + link];
+      if((cur_mask == FEBLINKMASK::ON) || (cur_mask == FEBLINKMASK::DataOn)){
+        //a standard FEB link (SC and data) is considered enabled if RX and TX are. 
+	    //a secondary FEB link (only data) is enabled if RX is.
+	    //Here we are concerned only with run transitions and slow control, the farm frontend may define this differently.
+        link_active_from_odb += (1 << link);
+      }
+   }
+   return link_active_from_odb;
 }

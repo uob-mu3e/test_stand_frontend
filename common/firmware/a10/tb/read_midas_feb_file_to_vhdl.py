@@ -1,6 +1,6 @@
 import midas.file_reader
 
-mfile = midas.file_reader.MidasFile('run00198.mid')
+mfile = midas.file_reader.MidasFile('/home/mu3e/online/online/run00086.mid')
 
 list_feb0 = []
 list_feb2 = []

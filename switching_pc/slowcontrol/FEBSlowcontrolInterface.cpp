@@ -282,7 +282,7 @@ int FEBSlowcontrolInterface::FEB_register_read(const uint32_t FPGA_ID, const uin
 
 void FEBSlowcontrolInterface::FEBsc_resetMain()
 {
-    cm_msg(MINFO, "FEB_slowcontrol" , "Resetting slow control main");
+    //cm_msg(MINFO, "FEB_slowcontrol" , "Resetting slow control main");
     //clear memory to avoid sending old packets again -- TODO: should not be necessary
     for(int i = 0; i <= 64*1024; i++){
         mdev.write_memory_rw(i, 0);
@@ -295,8 +295,7 @@ void FEBSlowcontrolInterface::FEBsc_resetMain()
 
 void FEBSlowcontrolInterface::FEBsc_resetSecondary()
 {
-    cm_msg(MINFO, "FEB_slowcontrol" , "Resetting slow control secondary");
-    cout << "FEB_slowcontrol::FEBsc_resetSecondary(): " << endl;
+    //cm_msg(MINFO, "FEB_slowcontrol" , "Resetting slow control secondary");
     //reset our pointer
     m_FEBsc_rmem_addr=0;
     //reset fpga entity

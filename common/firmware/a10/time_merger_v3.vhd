@@ -70,7 +70,7 @@ architecture arch of time_merger_v3 is
     signal shtime : std_logic_vector(9 downto 0);
     signal wait_cnt_pre, wait_cnt_sh, wait_cnt_merger : std_logic_vector(31 downto 0);
     signal header_trailer : std_logic_vector(37 downto 0);
-    signal sop_wait, shop_wait, eop_wait, time_wait : std_logic_vector(g_NLINKS_DATA - 1 downto 0);
+    signal sop_wait, shop_wait, shop_or_trailer_wait, eop_wait, time_wait : std_logic_vector(g_NLINKS_DATA - 1 downto 0);
     signal gtime1, gtime2 : work.util.slv34_array_t(g_NLINKS_DATA - 1 downto 0);
     signal wait_cnt : std_logic_vector(3 downto 0);
 
@@ -149,17 +149,21 @@ begin
                         i_rshop(i) when i_rempty(i) = '0' else '0';
         eop_wait(i) <=  '1' when i_mask_n(i) = '0' else
                         i_reop(i) when i_rempty(i) = '0' else '0';
+        shop_or_trailer_wait(i) <= shop_wait(i) or eop_wait(i);
         time_wait(i)<=  '1' when i_mask_n(I) = '0' else
                         '1' when ( merge_state = get_time1 or merge_state = get_time2 ) and i_rempty(I) = '0' else
                         '0';
         o_rack(i)   <=  '0' when i_mask_n(i) = '0' else
-                        '1' when merge_state = wait_for_pre and sop_wait = check_ones and full_6(0) = '0' else
+                        '1' when merge_state = wait_for_pre and sop_wait = check_ones and full_6(0) = '0' and i_rempty(i) = '0' else
                         '1' when merge_state = wait_for_pre and i_rsop(i) = '0' and i_rempty(i) = '0' else
-                        '1' when merge_state = get_time1 and time_wait = check_ones else
-                        '1' when merge_state = get_time2 and time_wait = check_ones else
-                        '1' when merge_state = wait_for_sh and shop_wait = check_ones and full_6(0) = '0' else
-                        '1' when merge_state = wait_for_sh and i_rshop(i) = '0' and i_rempty(i) = '0' else
-                        '1' when merge_state = trailer and full_6(0) = '0' else
+                        '1' when merge_state = get_time1 and time_wait = check_ones and i_rempty(i) = '0' else
+                        '1' when merge_state = get_time2 and time_wait = check_ones and i_rempty(i) = '0' else
+                        -- TODO: here we should wait for the shop_wait but for the int run we dont care 
+                        --'1' when merge_state = wait_for_sh and shop_wait = check_ones  and full_6(0) = '0' else
+                        '1' when merge_state = wait_for_sh and shop_or_trailer_wait = check_ones and i_reop(i) = '0' and full_6(0) = '0' and i_rempty(i) = '0' else
+                        -- TODO: also again for the int run we check if the word is not a trailer
+                        '1' when merge_state = wait_for_sh and i_rshop(i) = '0' and i_reop(i) = '0' and i_rempty(i) = '0' else
+                        '1' when merge_state = trailer and full_6(0) = '0' and i_rempty(i) = '0' else
                         '1' when merge_state = merge_hits and sop_wait(i) = '0' and shop_wait(i) = '0' and eop_wait(i) = '0' and i_rempty(i) = '0' and wrfull_0(i) = '0' else
                         '0';
         merger_finish(i) <= '0' when sop_wait(i) = '0' and shop_wait(i) = '0' and eop_wait(i) = '0' else '1';
@@ -184,7 +188,8 @@ begin
             end if;
             end process;
 
-            data_0(i)  <=   work.util.link_36_to_std(i) & i_rdata(i)(31 downto 0)   when merger_finish(i) = '0' and merge_state = merge_hits else
+            data_0(i)  <=   tree_padding                                            when merger_finish(i) = '0' and merge_state = merge_hits and eop_wait(i) = '1' else
+                            work.util.link_36_to_std(i) & i_rdata(i)(31 downto 0)   when merger_finish(i) = '0' and merge_state = merge_hits else
                             tree_padding                                            when merger_finish(i) = '1' and merge_state = merge_hits else
                             (others => '0');
             wrreq_0(i) <= '1' when merge_state = merge_hits and i_rempty(i) = '0' and wrfull_0(i) = '0' else '0';
@@ -532,7 +537,8 @@ begin
                 --end if;
 
                 -- readout until all fifos have sub header
-                if ( shop_wait = check_ones and full_6(0) = '0' ) then
+                -- TODO: here we should wait for shop_wait but for the int run we dont care
+                if ( shop_or_trailer_wait = check_ones and full_6(0) = '0' ) then
                     merge_state <= wait_for_sh_written;
                     -- reset signals
                     wait_cnt_sh <= (others => '0');
@@ -557,7 +563,8 @@ begin
                                 sheader_time(I) <= i_rdata(I)(25 downto 16);
                             end if;
                         end if;
-                        v_overflow := v_overflow or i_rdata(I)(15 downto 0);
+                        -- TODO: For int run we take this one out
+                        --v_overflow := v_overflow or i_rdata(I)(15 downto 0);
                     END LOOP;
                     header_trailer(15 downto 0) <= v_overflow;
                     header_trailer_we <= "10";
@@ -586,7 +593,7 @@ begin
             when merge_hits =>
                 if ( error_shtime = '1' ) then
                     cnt_shtime_error <= cnt_shtime_error + '1';
-                    merge_state <= error_state;
+                    --merge_state <= error_state;
                 end if;
 
                 -- check if sheader time is equal
@@ -605,7 +612,8 @@ begin
 
                 -- change state
                 -- TODO error if sh is not there
-                if ( shop_wait = check_ones and alignment_done = '1' ) then
+                -- TODO her we should wait for shop_wait but we dont care
+                if ( shop_or_trailer_wait = check_ones and alignment_done = '1' ) then
                     merge_state <= wait_for_sh;
                 end if;
 

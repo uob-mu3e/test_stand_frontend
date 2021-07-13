@@ -13,6 +13,7 @@ use ieee.std_logic_unsigned.all;
 
 entity link_to_fifo_32 is
 generic (
+    SKIP_DOUBLE_SUB      : positive := 0;
     LINK_FIFO_ADDR_WIDTH : positive := 10--;
 );
 port (
@@ -48,6 +49,8 @@ architecture arch of link_to_fifo_32 is
     signal rx_156_data : std_logic_vector(33 downto 0);
     signal rx_156_wen, almost_full, wrfull : std_logic;
     signal wrusedw : std_logic_vector(LINK_FIFO_ADDR_WIDTH - 1 downto 0);
+    
+    signal hit_reg : std_logic_vector(31 downto 0);
 
 begin
 
@@ -72,6 +75,7 @@ begin
         cnt_events          <= (others => '0');
         rx_156_wen          <= '0';
         cnt_skip_data       <= (others => '0');
+        hit_reg             <= (others => '0');
         link_to_fifo_state  <= idle;
         --
     elsif ( rising_edge(i_clk_156) ) then
@@ -116,8 +120,14 @@ begin
                     rx_156_data(33 downto 32) <= "11"; -- sub header
                     cnt_sub <= cnt_sub + '1';
                 end if;
-
-                rx_156_wen <= '1';
+                
+                hit_reg <= i_rx;
+                
+                if ( SKIP_DOUBLE_SUB = 1 and i_rx = hit_reg ) then
+                    rx_156_wen <= '0';
+                else
+                    rx_156_wen <= '1';
+                end if;
 
             when skip_data =>
                 if ( i_rx(7 downto 0) = x"9C" and i_rx_k = "0001" ) then
@@ -147,7 +157,6 @@ begin
         rdclk       => i_clk_250,
         q           => o_q,
         rdempty     => o_rdempty,
-        rdusedw     => open,
         wrfull      => wrfull,
         wrusedw     => wrusedw,
         aclr        => not i_reset_n_250--,
