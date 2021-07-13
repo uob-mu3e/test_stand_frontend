@@ -130,7 +130,7 @@ begin
     tofifo_counters(TSBLOCKINFIFORANGE)     <= "0000000";
     write_counterfifo   <= '1';
     wait for WRITECLK_PERIOD;
-    tofifo_counters(TSBLOCKINFIFORANGE)     <= "0000000";
+    tofifo_counters(TSINFIFORANGE)          <= "00000000001";
     tofifo_counters(HASMEMBIT)              <= '1';
     tofifo_counters(0)                      <= '1';
     write_counterfifo                       <= '1';
