@@ -131,9 +131,11 @@ begin
     write_counterfifo   <= '1';
     wait for WRITECLK_PERIOD;
     tofifo_counters(TSBLOCKINFIFORANGE)     <= "0000000";
+    tofifo_counters(HASMEMBIT)              <= '1';
     tofifo_counters(0)                      <= '1';
-    write_counterfifo   <= '1';
+    write_counterfifo                       <= '1';
     wait for WRITECLK_PERIOD;
+    tofifo_counters     <= (others => '0');
     write_counterfifo   <= '0';
     for i in 0 to 2000 loop
         wait for 9*WRITECLK_PERIOD;

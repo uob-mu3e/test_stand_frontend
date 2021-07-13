@@ -76,12 +76,12 @@ elsif (clk'event and clk = '1') then
 			stop_fifo_reading	:= '1';
 		elsif (output = header1) then
 			output <= header2;
-			stop_fifo_reading	:= '1';
 		elsif (output = header2) then
 			output <= subheader;
 			current_block <= from_fifo_reg(TSBLOCKINFIFORANGE);
 			if (from_fifo_reg(HASMEMBIT) = '1') then
 				stop_fifo_reading := '1';
+				counters_reg <= from_fifo_reg(MEMCOUNTERRANGE);
 			end if;
 		elsif (output = footer) then
 			output <= header1;
@@ -107,7 +107,7 @@ elsif (clk'event and clk = '1') then
 				output 			<= footer;
 				stop_fifo_reading := '1';
 			end if;
-		elsif (from_fifo(HASMEMBIT) = '1' and fifo_reg_new = '1') then
+		elsif (from_fifo_reg(HASMEMBIT) = '1' and fifo_reg_new = '1') then
 			output 			<= hits;
 			counters_reg	<= from_fifo_reg(MEMCOUNTERRANGE);
 			subaddr			<= "0000";
@@ -156,7 +156,7 @@ elsif(clk'event and clk = '1') then
 		when hits =>
 			command_enable 									 <= '1';
 			outcommand(COMMANDBITS-1)						 <= '0'; -- Hits, not a command
-			outcommand(TSRANGE)								 <= current_block; 
+			outcommand(TSRANGE)								 <= from_fifo_reg(TSINFIFORANGE); 
 			outcommand(COMMANDBITS-2 downto TIMESTAMPSIZE+4) <= counters_reg(7 downto 4);
 			outcommand(COMMANDBITS-6 downto TIMESTAMPSIZE)   <= subaddr;
 		when footer =>
