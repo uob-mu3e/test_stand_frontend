@@ -15,12 +15,12 @@ add wave -noupdate -radix hexadecimal /sequencer_tb/read_counterfifo
 add wave -noupdate -radix hexadecimal /sequencer_tb/dut/read_fifo_int
 add wave -noupdate -radix hexadecimal /sequencer_tb/counterfifo_empty
 add wave -noupdate /sequencer_tb/dut/fifo_empty_last
-add wave -noupdate -radix hexadecimal /sequencer_tb/dut/fifo_reg_new
-add wave -noupdate -radix hexadecimal /sequencer_tb/dut/fifo_reg_valid
+add wave -noupdate /sequencer_tb/dut/fifo_new
+add wave -noupdate /sequencer_tb/dut/read_token
 add wave -noupdate -divider Sequencing
 add wave -noupdate -radix hexadecimal /sequencer_tb/dut/output
 add wave -noupdate -radix hexadecimal /sequencer_tb/dut/current_block
-add wave -noupdate /sequencer_tb/dut/current_ts
+add wave -noupdate -radix hexadecimal /sequencer_tb/dut/current_ts
 add wave -noupdate -radix hexadecimal /sequencer_tb/dut/counters_reg
 add wave -noupdate -radix hexadecimal /sequencer_tb/dut/subaddr
 add wave -noupdate -radix hexadecimal /sequencer_tb/dut/dohits
@@ -28,8 +28,8 @@ add wave -noupdate -divider Output
 add wave -noupdate -radix hexadecimal /sequencer_tb/outcommand
 add wave -noupdate -radix hexadecimal /sequencer_tb/command_enable
 TreeUpdate [SetDefaultTree]
-WaveRestoreCursors {{Cursor 1} {0 ps} 0}
-quietly wave cursor active 0
+WaveRestoreCursors {{Cursor 1} {3002145 ps} 0}
+quietly wave cursor active 1
 configure wave -namecolwidth 505
 configure wave -valuecolwidth 100
 configure wave -justifyvalue left
@@ -44,4 +44,4 @@ configure wave -griddelta 40
 configure wave -timeline 0
 configure wave -timelineunits ns
 update
-WaveRestoreZoom {0 ps} {162622 ps}
+WaveRestoreZoom {1706325 ps} {1868947 ps}
