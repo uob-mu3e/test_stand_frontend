@@ -67,10 +67,13 @@ architecture rtl of mupix_datapath_reg_mapping is
     signal mp_sorter_inject         : std_logic_vector(31 downto 0);
     signal mp_hit_ena_cnt_select    : std_logic_vector( 7 downto 0);
     signal mp_hit_ena_cnt_sorter_sel: std_logic_vector( 3 downto 0);
+    signal mp_hit_lvds_status_sel   : std_logic_vector( 5 downto 0);
     signal mp_sorter_delay          : ts_t;
     signal mp_reset_n_lvds          : std_logic := '1';
-
+    signal lvds_status              : work.util.slv32_array_t(35 downto 0);
+    signal lvds_status2             : std_logic_vector(31 downto 0);
     signal reg_delay                : std_logic;
+
 begin
 
     process(i_clk125)
@@ -84,7 +87,7 @@ begin
     end process;
 
     gen_mask_order: for i in 0 to 35 generate
-        mp_lvds_link_mask_ordered(i)         <= mp_lvds_link_mask(MP_LINK_ORDER(i));
+        mp_lvds_link_mask_ordered(MP_LINK_ORDER(i))         <= mp_lvds_link_mask(i);
     end generate;
 
     process (i_clk156, i_reset_n)
@@ -107,6 +110,8 @@ begin
             o_mp_hit_ena_cnt_select     <= mp_hit_ena_cnt_select;
             o_mp_hit_ena_cnt_sorter_sel <= mp_hit_ena_cnt_sorter_sel;
             o_mp_reset_n_lvds           <= mp_reset_n_lvds;
+            lvds_status                 <= i_lvds_status;
+            lvds_status2                <= lvds_status(MP_LINK_ORDER(to_integer(unsigned(mp_hit_lvds_status_sel))));
 
             regaddr             := to_integer(unsigned(i_reg_add(7 downto 0)));
             o_reg_rdata         <= x"CCCCCCCC";
@@ -157,17 +162,24 @@ begin
                 o_reg_rdata <= mp_datagen_control;
             end if;
 
-            for I in 0 to MUPIX_LVDS_STATUS_BLOCK_LENGTH-1 loop 
-                if ( regaddr = I + MP_LVDS_STATUS_START_REGISTER_W and i_reg_re = '1' ) then
-                    o_reg_rdata <= i_lvds_status(MP_LINK_ORDER(I));
-                end if;
-            end loop;
+------------------------prev. Version, problem with timing ----------------------------------------
+--            for I in 0 to MUPIX_LVDS_STATUS_BLOCK_LENGTH-1 loop 
+--                if ( regaddr = I + MP_LVDS_STATUS_START_REGISTER_W and i_reg_re = '1' ) then
+--                    o_reg_rdata <= lvds_status(MP_LINK_ORDER(I));
+--                end if;
+--            end loop;
+---------------------------------------------------------------------------------------------------
+            if ( regaddr = MP_LVDS_STATUS_START_REGISTER_W and i_reg_re = '1' ) then
+                    o_reg_rdata <= lvds_status2;
+                    mp_hit_lvds_status_sel   <= std_logic_vector(to_unsigned(to_integer(unsigned(mp_hit_lvds_status_sel)) + 1,6));
+            end if;
 
             if ( regaddr = MP_LVDS_INVERT_REGISTER_W and i_reg_we = '1' ) then
                 mp_lvds_invert <= i_reg_wdata(0);
             end if;
             if ( regaddr = MP_LVDS_INVERT_REGISTER_W and i_reg_re = '1' ) then
                 o_reg_rdata <= (0 => mp_lvds_invert, others => '0');
+                mp_hit_lvds_status_sel <= (others => '0'); -- TODO: move this somewhere 
             end if;
 
             if ( regaddr = MP_SORTER_DELAY_REGISTER_W and i_reg_we = '1' ) then
