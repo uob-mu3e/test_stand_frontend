@@ -19,11 +19,18 @@ struct si534x_t : si_t {
         printf("status:\n");
         printf("  SYSINCAL = %d\n", read(0x000C));
 
-        alt_u8 los_oof = read(0x000D);
-        los_oof >>= get_in_sel(); // select input (in_sel)
-        printf("  LOS/OOF = %d/%d\n", (los_oof & 0x01) != 0, (los_oof & 0x10) != 0);
+        alt_u8 los_oof = read(0x000D) >> get_in_sel(); // select input (in_sel)
+        alt_u8 los_oof_flg = read(0x0012) >> get_in_sel();
+        printf("  LOS/OOF (FLG) = %d/%d (%d/%d)\n",
+            (los_oof & 0x01) != 0, (los_oof & 0x10) != 0,
+            (los_oof_flg & 0x01) != 0, (los_oof_flg & 0x10) != 0
+        );
         alt_u8 lol_hold = read(0x000E);
-        printf("  LOL/HOLD = %d/%d\n", (lol_hold & 0x02) != 0, (lol_hold & 0x20) != 0);
+        alt_u8 lol_hold_flg = read(0x0013);
+        printf("  LOL/HOLD (FLG) = %d/%d (%d/%d)\n",
+            (lol_hold & 0x02) != 0, (lol_hold & 0x20) != 0,
+            (lol_hold_flg & 0x02) != 0, (lol_hold_flg & 0x20) != 0
+        );
     }
 
     void read_design_id(char design_id[8]) {
@@ -154,8 +161,10 @@ struct si534x_t : si_t {
             printf("\n");
 
             printf("SI%04X:\n", pn_base);
-            printf("  [R] => reset\n");
-            printf("  [r] => read regs\n");
+            printf("  [R] => soft reset\n");
+            printf("  [r] => reset flags\n");
+            printf("  [p] => print regs\n");
+            printf("  [q] => exit\n");
 
             printf("Select entry ...\n");
             char cmd = wait_key();
@@ -163,7 +172,11 @@ struct si534x_t : si_t {
             case 'R':
                 soft_reset();
                 break;
-            case 'r': {
+            case 'r':
+                write(0x0012, 0); // LOS/OOF_FLG
+                write(0x0013, 0); // LOL/HOLD_FLG
+                break;
+            case 'p': {
                 printf("select page (0): ");
                 char page = wait_key();
                 if('0' <= page && page <= '9') page = page - '0';

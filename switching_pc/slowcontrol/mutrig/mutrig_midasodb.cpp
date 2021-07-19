@@ -35,7 +35,7 @@ int setup_db(const char* prefix, MutrigFEB* FEB_interface){
     unsigned int nasics = FEB_interface->GetNumASICs();
     sprintf(set_str, "%s/Settings/Daq", prefix);
     if(nasics == 0){
-        cm_msg(MINFO, "mutrig_midasodb::setup_db", "Number of ASICs is 0, will not continue to build DB. Consider to delete ODB subtree %s", prefix);
+        cm_msg(MINFO, "mutrig_midasodb::setup_db", "Number of MuTRiGs is 0, will not continue to build DB. Consider to delete ODB subtree %s", prefix);
         return DB_SUCCESS;
     }
     cm_msg(MINFO, "mutrig_midasodb::setup_db", "For ODB subtree %s, number of ASICs is set to %u", prefix, nasics);
@@ -53,13 +53,15 @@ int setup_db(const char* prefix, MutrigFEB* FEB_interface){
 
 
     // use lambda function for passing FEB_interface
-    auto on_settings_changed_partial =
-            [&FEB_interface](odb o) { 
-                return MutrigFEB::on_settings_changed(
-                    o, FEB_interface
-                );
-            };
-    settings_daq.watch(on_settings_changed_partial);
+    // TODO: don't set watch here for the moment use the one in switch_fe
+//    auto on_settings_changed_partial =
+//            [&FEB_interface](odb o) {
+//                return MutrigFEB::on_settings_changed(
+//                    o, FEB_interface
+//                );
+//            };
+
+//    settings_daq.watch(on_settings_changed_partial);
 
     /* Map Equipment/SciFi/ASICs/TDCs and /Equipment/Scifi/ASICs/Channels
      * (structure defined in mutrig_MIDAS_config.h) */

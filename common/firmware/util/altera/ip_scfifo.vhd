@@ -44,6 +44,7 @@ ENTITY ip_scfifo IS
         ADDR_WIDTH          : positive := 8;
         DATA_WIDTH          : positive := 8;
         SHOWAHEAD           : string   := "ON";
+        RAM_OUT_REG         : string   := "OFF";
         REGOUT              : integer  := 1;
         DEVICE              : string   := "Stratix IV";
         ALMOST_FULL_LIMIT   : positive := 1--;
@@ -131,7 +132,7 @@ BEGIN
 
 	scfifo_component : scfifo
 	GENERIC MAP (
-		add_ram_output_register => "OFF",
+		add_ram_output_register => RAM_OUT_REG,
 		almost_empty_value => 2**(ADDR_WIDTH/2),
 		almost_full_value => almost_full_c,
 		intended_device_family => DEVICE,

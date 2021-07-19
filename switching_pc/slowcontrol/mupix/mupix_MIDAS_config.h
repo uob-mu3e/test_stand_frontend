@@ -47,6 +47,7 @@ static odb MUPIX_GLOBAL_SETTINGS = {
 #define MUPIX_DAQ_DEFINED
 
 typedef struct {
+  INT default_th_int_run_2021;
   BOOL dummy_config;
   BOOL dummy_data;
   INT dummy_data_n;
@@ -59,6 +60,7 @@ typedef struct {
 } MUPIX_DAQ;
 
 static odb MUPIX_DAQ_SETTINGS = {
+    {"default_th_int_run_2021", 0x52},
     {"dummy_config", false},
     {"dummy_data", false},
     {"dummy_data_n", 255},
@@ -282,6 +284,18 @@ static odb MUPIX_VDACS_SETTINGS = {
     {"VDAC1", 0},
     {"ref_Vss", 184}
 };
+
+#endif
+
+#ifndef MUPIX_PSLL_DEFINED
+#define MUPIX_PSLL_DEFINED
+
+//// PSLL
+/// TODO: we need this for different SWBs in the future for now its only central
+constexpr uint32_t per_fe_PSLL_size = 4;
+constexpr uint32_t lvds_links_per_feb = 36;
+const std::string banknamePSLL = "PSLL";
+const std::string namestrPSLL = "Names PSLL";
 
 #endif
 

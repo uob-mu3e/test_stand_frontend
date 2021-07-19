@@ -71,6 +71,7 @@ begin
 		case state is
 		
 				when init =>
+					stateout(3 downto 0) <= x"1";
 					mem_addr_o 	<= mem_addr_o + '1';
 					mem_data_o	<= (others => '0');
 					mem_wren_o  <= '1';
@@ -80,17 +81,15 @@ begin
 					end if;		
 
 				when waiting =>
-					stateout(3 downto 0) <= x"1";
-					
+					stateout(3 downto 0) <= x"2";
 					--LOOP link mux take the last one for prio
 					link_mux:
 					FOR i in 0 to NLINKS - 1 LOOP
-						if (  i_link_enable(i)='1'
+						if ( i_link_enable(i)='1'
 							and link_data_in(i)(7 downto 0) = x"BC"
 							and link_data_in_k(i) = "0001"
 							and link_data_in(i)(31 downto 26) = "000111"
 						) then
-							stateout(3 downto 0) <= x"1";
 							mem_addr_o <= mem_addr_o + '1';
 							mem_data_o <= link_data_in(i);
 							mem_wren_o <= '1';
@@ -100,7 +99,7 @@ begin
 					END LOOP;
 
 				when starting =>
-					stateout(3 downto 0) <= x"2";
+					stateout(3 downto 0) <= x"3";
 					if (link_data_in_k(current_link) = "0000") then
 						mem_addr_o <= mem_addr_o + '1';
 						mem_data_o <= link_data_in(current_link);

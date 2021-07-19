@@ -330,6 +330,9 @@ begin
         i_ffly_temp                 => ffly_temp,
         i_ffly_alarm                => ffly_alarm,
         i_ffly_vcc                  => ffly_vcc,
+        
+        i_si45_intr_n               => i_si45_intr_n,
+        i_si45_lol_n                => i_si45_lol_n,
 
         -- outputs 156--------------------------------------------
         o_reg_cmdlen                => reg_cmdlen,
@@ -599,7 +602,7 @@ begin
 
     e_mscb : entity work.mscb
     generic map (
-        CLK_MHZ_g => 156.25--,
+        g_CLK_MHZ => 156.25--,
     )
     port map (
         i_avs_address           => av_mscb.address(3 downto 0),

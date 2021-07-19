@@ -1,0 +1,36 @@
+#!/bin/bash
+
+SOURCE=@PROJECT_SOURCE_DIR@
+odbedit -c clean
+
+odbedit -c 'mkdir Custom'
+odbedit -d Custom -c 'create STRING Path'
+odbedit -c "set Custom/Path $SOURCE/mhttpd/custom"
+
+
+# create custom page for manalyzer
+odbedit -d Custom -c 'create STRING OnlineAna'
+odbedit -d Custom -c 'create STRING Mu3eDisplay'
+odbedit -c 'set Custom/OnlineAna manalyzer/OnlineAna.html'
+odbedit -c 'set Custom/Mu3eDisplay manalyzer/Mu3eDisplay.html'
+
+#set mhttpd to run http
+odbedit -c 'set "Experiment/http redirect to https" "n"'
+odbedit -c 'set "WebServer/insecure port passwords" "n"'
+odbedit -c 'set "WebServer/insecure port host list" "n"'
+odbedit -c 'set "WebServer/Enable insecure port" "y"'
+odbedit -c 'set "Experiment/Security/Enable non-localhost RPC" "y"'
+odbedit -c 'set "Experiment/Security/Disable RPC hosts check" "y"'
+odbedit -c 'set "Experiment/Security/Enable IPv6" "n"'
+
+odbedit -c 'set Logger/History/FILE/Active y'
+odbedit -c 'set Logger/History/MIDAS/Active n'
+
+odbedit -c 'set Programs/Logger/Required y'
+odbedit -c 'set "Programs/Logger/Start command" "mlogger -D"'
+
+odbedit -c 'set Programs/mserver/Required y'
+odbedit -c 'set "Programs/mserver/Start command" "mserver -D"'
+
+odbedit -c 'set Programs/msysmon/Required y'
+odbedit -c 'set "Programs/msysmon/Start command" "msysymon-nvidia -D"'

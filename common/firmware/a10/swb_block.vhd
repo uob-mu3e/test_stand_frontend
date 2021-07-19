@@ -316,7 +316,7 @@ begin
         g_NLINKS_TOTL           => 64,
         g_NLINKS_FARM           => g_NLINKS_FARM_PIXEL,
         g_NLINKS_DATA           => g_NLINKS_DATA_PIXEL,
-        LINK_FIFO_ADDR_WIDTH    => 10,
+        LINK_FIFO_ADDR_WIDTH    => 13,
         TREE_w                  => 10,
         TREE_r                  => 10,
         SWB_ID                  => SWB_ID,
@@ -360,48 +360,48 @@ begin
     --! ------------------------------------------------------------------------
     --! ------------------------------------------------------------------------
     --! ------------------------------------------------------------------------
-   e_swb_data_path_scifi : entity work.swb_data_path
-   generic map (
-       g_NLINKS_TOTL           => 64,
-       g_NLINKS_FARM           => g_NLINKS_FARM_SCIFI,
-       g_NLINKS_DATA           => g_NLINKS_DATA_SCIFI,
-       LINK_FIFO_ADDR_WIDTH    => 10,
-       TREE_w                  => 10,
-       TREE_r                  => 10,
-       SWB_ID                  => SWB_ID,
-       -- Data type: x"01" = pixel, x"02" = scifi, x"03" = tiles
-       DATA_TYPE               => x"02"--;
-   )
-   port map(
-        i_clk_156        => i_clk_156,
-        i_clk_250        => i_clk_250,
-
-        i_reset_n_156    => i_resets_n_156(RESET_BIT_DATA_PATH),
-        i_reset_n_250    => i_resets_n_250(RESET_BIT_DATA_PATH),
-
-        i_resets_n_156   => i_resets_n_156,
-        i_resets_n_250   => i_resets_n_250,
-
-        i_rx             => rx_data_scifi,
-        i_rx_k           => rx_data_k_scifi,
-        i_rmask_n        => scifi_mask_n(g_NLINKS_DATA_SCIFI-1 downto 0),
-
-        i_writeregs_156  => i_writeregs_156,
-        i_writeregs_250  => i_writeregs_250,
-
-        o_counter_156    => counter_swb_data_scifi_156,
-        o_counter_250    => counter_swb_data_scifi_250,
-
-        i_dmamemhalffull => i_dmamemhalffull,
-
-        o_farm_data      => scifi_farm_data,
-        o_farm_data_valid=> scifi_farm_data_valid,
-
-        o_dma_wren       => scifi_dma_wren,
-        o_dma_done       => scifi_dma_done,
-        o_endofevent     => scifi_dma_endofevent,
-        o_dma_data       => scifi_dma_data--;
-   );
+--   e_swb_data_path_scifi : entity work.swb_data_path
+--   generic map (
+--       g_NLINKS_TOTL           => 64,
+--       g_NLINKS_FARM           => g_NLINKS_FARM_SCIFI,
+--       g_NLINKS_DATA           => g_NLINKS_DATA_SCIFI,
+--       LINK_FIFO_ADDR_WIDTH    => 10,
+--       TREE_w                  => 10,
+--       TREE_r                  => 10,
+--       SWB_ID                  => SWB_ID,
+--       -- Data type: x"01" = pixel, x"02" = scifi, x"03" = tiles
+--       DATA_TYPE               => x"02"--;
+--   )
+--   port map(
+--        i_clk_156        => i_clk_156,
+--        i_clk_250        => i_clk_250,
+--
+--        i_reset_n_156    => i_resets_n_156(RESET_BIT_DATA_PATH),
+--        i_reset_n_250    => i_resets_n_250(RESET_BIT_DATA_PATH),
+--
+--        i_resets_n_156   => i_resets_n_156,
+--        i_resets_n_250   => i_resets_n_250,
+--
+--        i_rx             => rx_data_scifi,
+--        i_rx_k           => rx_data_k_scifi,
+--        i_rmask_n        => scifi_mask_n(g_NLINKS_DATA_SCIFI-1 downto 0),
+--
+--        i_writeregs_156  => i_writeregs_156,
+--        i_writeregs_250  => i_writeregs_250,
+--
+--        o_counter_156    => counter_swb_data_scifi_156,
+--        o_counter_250    => counter_swb_data_scifi_250,
+--
+--        i_dmamemhalffull => i_dmamemhalffull,
+--
+--        o_farm_data      => scifi_farm_data,
+--        o_farm_data_valid=> scifi_farm_data_valid,
+--
+--        o_dma_wren       => scifi_dma_wren,
+--        o_dma_done       => scifi_dma_done,
+--        o_endofevent     => scifi_dma_endofevent,
+--        o_dma_data       => scifi_dma_data--;
+--   );
 
 
     --! SWB data path Tile

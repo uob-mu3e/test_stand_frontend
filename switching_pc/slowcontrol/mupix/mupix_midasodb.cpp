@@ -6,7 +6,9 @@
 #include "mupix_MIDAS_config.h"
 #include "mupix_midasodb.h"
 #include "odbxx.h"
+#include "link_constants.h"
 using midas::odb;
+using namespace std;
 
 namespace mupix { namespace midasODB {
 
@@ -32,7 +34,7 @@ int setup_db(const char* prefix, MupixFEB* FEB_interface, bool init_FEB){
     settings_asics_global["Num boards"] = nasics;
 
     if(nasics==0){
-        cm_msg(MINFO,"mupix_midasodb::setup_db","Number of ASICs is 0, will not continue to build DB. Consider to delete ODB subtree %s",prefix);
+        cm_msg(MINFO,"mupix_midasodb::setup_db","Number of Mupixes is 0, will not continue to build DB. Consider to delete ODB subtree %s",prefix);
     return DB_SUCCESS;
     }
 
@@ -85,7 +87,56 @@ int setup_db(const char* prefix, MupixFEB* FEB_interface, bool init_FEB){
         sprintf(set_str, "%s/Settings/VDACS/%u", prefix, i);
         settings_vdacs.connect(set_str, true);
     }
+
+    // PSLL Bank setup
+    /* Default values for /Equipment/Mupix/Settings */
+    odb settings = {
+        {namestrPSLL.c_str(), std::array<std::string, per_fe_PSLL_size*N_FEBS_MUPIX_INT_2021*lvds_links_per_feb>{}}
+    };
+
+    // TODO: why do I have to connect here? In switch_fe.cpp we do first the naming and than we connect
+    settings.connect(set_str, true);
+
+    create_psll_names_in_odb(settings, N_FEBS_MUPIX_INT_2021, lvds_links_per_feb);
+
+    sprintf(set_str, "%s/Settings", prefix);
+    settings.connect(set_str, true);
+
+    /* Default values for /Equipment/Mupix/Variables */
+    odb variables = {
+        {banknamePSLL.c_str(), std::array<int, per_fe_PSLL_size*N_FEBS_MUPIX_INT_2021*lvds_links_per_feb>{}}
+    };
+
+    sprintf(set_str, "%s/Variables", prefix);
+    variables.connect(set_str, true);
+
     return DB_SUCCESS;
+}
+
+void create_psll_names_in_odb(odb & settings, uint32_t N_FEBS_MUPIX, uint32_t N_LINKS){
+    int bankindex = 0;
+
+    for(uint32_t i=0; i < N_FEBS_MUPIX; i++){
+        for(uint32_t j=0; j < N_LINKS; j++){
+            string name = "FEB" + to_string(i) + " LVDS" + to_string(j);
+
+            string * s = new string(name);
+            (*s) += " INDEX";
+            settings[namestrPSLL.c_str()][bankindex++] = s;
+
+            s = new string(name);
+            (*s) += " STATUS LVDS";
+            settings[namestrPSLL.c_str()][bankindex++] = s;
+
+            s = new string(name);
+            (*s) += " NUM HITS LVDS";
+            settings[namestrPSLL.c_str()][bankindex++] = s;
+
+            s = new string(name);
+            (*s) += " NUM MuPix HITS LVDS";
+            settings[namestrPSLL.c_str()][bankindex++] = s;
+        }
+    }
 }
 
 

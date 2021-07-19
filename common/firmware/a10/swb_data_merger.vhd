@@ -39,7 +39,6 @@ architecture arch of swb_data_merger is
     type merge_state_type is (wait_for_pre, get_ts_1, get_ts_2, get_sh, hit, delay, get_tr, error_state);
     signal merge_state : merge_state_type;
 
-    signal o_data_reg : std_logic_vector(127 downto 0);
     signal hit_reg    : std_logic_vector(NLINKS * 38 - 1  downto 0);
     signal hit_reg_cnt : integer;
     signal header_state : std_logic_vector(5 downto 0);
@@ -62,7 +61,6 @@ begin
     begin
         if ( i_reset_n = '0' ) then
             o_data      <= (others => '1');
-            o_data_reg  <= (others => '1');
             o_data_valid<= (others => '0');
             hit_reg     <= (others => '1');
             TS          <= (others => '0');
@@ -227,8 +225,6 @@ begin
                     -- send out data if tr is there
                     -- every link is getting K.28.4 = 9C for tr
                     merge_state             <= wait_for_pre;
-                    -- reset reg data for next preamble
-                    o_data_reg               <= (others => '1');
                     FOR I in NLINKS - 1 downto 0 LOOP
                         o_data(I * 32 + 31 downto I * 32)   <= x"000000" & K28_4;
                         o_data_valid(I * 2 + 1 downto I * 2)     <= "01"; -- trailer
@@ -250,7 +246,6 @@ begin
 
                 when others =>
                     merge_state <= wait_for_pre;
-                    o_data_reg  <= (others => '1');
                     hit_reg     <= (others => '0');
                     hit_reg_cnt <= 0;
 

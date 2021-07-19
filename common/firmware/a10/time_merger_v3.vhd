@@ -10,13 +10,13 @@ use work.mudaq.all;
 -- merge packets delimited by SOP and EOP from N input streams
 entity time_merger_v3 is
 generic (
-    W : positive := 64+12;
-    TIMEOUT : std_logic_vector(31 downto 0) := x"FFFFFFFF";
-    TREE_DEPTH_w : positive := 8;
-    TREE_DEPTH_r : positive := 8;
-    g_NLINKS_DATA : positive := 12;
+    W               : positive := 64+12;
+    TIMEOUT         : std_logic_vector(31 downto 0) := x"FFFFFFFF";
+    TREE_DEPTH_w    : positive := 8;
+    TREE_DEPTH_r    : positive := 8;
+    g_NLINKS_DATA   : positive := 12;
     -- Data type: x"01" = pixel, x"02" = scifi, x"03" = tiles
-    DATA_TYPE : std_logic_vector(7 downto 0) := x"01"--;
+    DATA_TYPE       : std_logic_vector(7 downto 0) := x"01"--;
 );
 port (
     -- input streams
@@ -26,19 +26,29 @@ port (
     i_rshop         : in    std_logic_vector(g_NLINKS_DATA - 1 downto 0); -- sub header of packet (SHOP)
     i_rempty        : in    std_logic_vector(g_NLINKS_DATA - 1 downto 0);
     i_mask_n        : in    std_logic_vector(g_NLINKS_DATA - 1 downto 0);
-    i_link          : in    integer;
     o_rack          : out   std_logic_vector(g_NLINKS_DATA - 1 downto 0); -- read ACK
 
     -- output stream
     o_rdata         : out   std_logic_vector(W-1 downto 0);
+    o_rdata_debug   : out   std_logic_vector(37 downto 0);
     i_ren           : in    std_logic;
     o_empty         : out   std_logic;
+    o_rdempty_debug : out   std_logic;
 
     -- error outputs
-    o_error_pre     : out std_logic_vector(g_NLINKS_DATA - 1 downto 0);
-    o_error_sh      : out std_logic_vector(g_NLINKS_DATA - 1 downto 0);
-    o_error_gtime   : out std_logic_vector(1 downto 0);
-    o_error_shtime  : out std_logic;
+    o_error_pre     : out   std_logic_vector(g_NLINKS_DATA - 1 downto 0);
+    o_error_sh      : out   std_logic_vector(g_NLINKS_DATA - 1 downto 0);
+    o_error_gtime   : out   std_logic_vector(1 downto 0);
+    o_error_shtime  : out   std_logic;
+
+    -- counters
+    -- cnt_gtime1_error;
+    -- cnt_gtime2_error;
+    -- cnt_shtime_error;
+    -- wait_cnt_pre;
+    -- wait_cnt_sh;
+    -- wait_cnt_merger;
+    o_counters      : out   work.util.slv32_array_t(5 downto 0);
 
     i_reset_n       : in    std_logic;
     i_clk           : in    std_logic--;
@@ -60,7 +70,7 @@ architecture arch of time_merger_v3 is
     signal shtime : std_logic_vector(9 downto 0);
     signal wait_cnt_pre, wait_cnt_sh, wait_cnt_merger : std_logic_vector(31 downto 0);
     signal header_trailer : std_logic_vector(37 downto 0);
-    signal sop_wait, shop_wait, eop_wait, time_wait : std_logic_vector(g_NLINKS_DATA - 1 downto 0);
+    signal sop_wait, shop_wait, shop_or_trailer_wait, eop_wait, time_wait : std_logic_vector(g_NLINKS_DATA - 1 downto 0);
     signal gtime1, gtime2 : work.util.slv34_array_t(g_NLINKS_DATA - 1 downto 0);
     signal wait_cnt : std_logic_vector(3 downto 0);
 
@@ -68,6 +78,7 @@ architecture arch of time_merger_v3 is
     signal error_gtime1, error_gtime2, error_shtime, error_merger : std_logic;
     signal header_trailer_we : std_logic_vector(1 downto 0);
     signal error_pre, error_sh : std_logic_vector(g_NLINKS_DATA - 1 downto 0);
+    signal check_link : integer range 0 to g_NLINKS_DATA - 1;
 
     -- merger tree
     type fifo_width_t is array (6 downto 0) of integer;
@@ -75,22 +86,26 @@ architecture arch of time_merger_v3 is
     constant write_width : fifo_width_t := (32+6, 32+6, 32+6, 32+6, 32+6, 32+6, 32+6);
     constant generate_fifos : fifo_width_t := (1, 2, 4, 8, 16, 32, 64);
 
-    signal data_0 : work.util.slv38_array_t(generate_fifos(0) - 1 downto 0);
-    signal q_0, q_0_reg, q_0_reg_reg : work.util.slv38_array_t(generate_fifos(0) - 1 downto 0);
+    -- layer0
+    signal data_0, q_0 : work.util.slv38_array_t(generate_fifos(0) - 1 downto 0);
     signal rdreq_0, wrreq_0, rdempty_0, wrfull_0, reset_0 : std_logic_vector(generate_fifos(0) - 1 downto 0);
-    signal rdreq_0_reg, rdempty_0_reg, wrfull_0_reg : std_logic_vector(generate_fifos(0) - 1 downto 0);
-    signal rdreq_0_reg_reg, rdempty_0_reg_reg, wrfull_0_reg_reg : std_logic_vector(generate_fifos(0) - 1 downto 0);
     signal mask_n_0 : std_logic_vector(generate_fifos(0) - 1 downto 0) := (others => '0');
+    -- layer1
     signal q_1 : work.util.slv38_array_t(generate_fifos(1) - 1 downto 0);
-    signal q_2 : work.util.slv38_array_t(generate_fifos(2) - 1 downto 0);
-    signal q_3 : work.util.slv38_array_t(generate_fifos(3) - 1 downto 0);
-    signal q_4 : work.util.slv38_array_t(generate_fifos(4) - 1 downto 0);
-    signal q_5 : work.util.slv38_array_t(generate_fifos(5) - 1 downto 0);
     signal rdempty_1, rdreq_1, mask_n_1 : std_logic_vector(generate_fifos(1) - 1 downto 0);
+    -- layer2
+    signal q_2 : work.util.slv38_array_t(generate_fifos(2) - 1 downto 0);
     signal rdempty_2, rdreq_2, mask_n_2 : std_logic_vector(generate_fifos(2) - 1 downto 0);
+    -- layer3
+    signal q_3 : work.util.slv38_array_t(generate_fifos(3) - 1 downto 0);
     signal rdempty_3, rdreq_3, mask_n_3 : std_logic_vector(generate_fifos(3) - 1 downto 0);
+    -- layer4
+    signal q_4 : work.util.slv38_array_t(generate_fifos(4) - 1 downto 0);
     signal rdempty_4, rdreq_4, mask_n_4 : std_logic_vector(generate_fifos(4) - 1 downto 0);
+    -- layer5
+    signal q_5 : work.util.slv38_array_t(generate_fifos(5) - 1 downto 0);
     signal rdempty_5, rdreq_5, mask_n_5 : std_logic_vector(generate_fifos(5) - 1 downto 0);
+    -- layer6
     signal full_6  : std_logic_vector(generate_fifos(6) - 1 downto 0);
     signal alignment_done : std_logic := '0';
     signal last_layer_state : std_logic_vector(7 downto 0);
@@ -98,7 +113,11 @@ architecture arch of time_merger_v3 is
 
     -- debug signals
     signal rdata_last_layer : std_logic_vector(W - 1 downto 0);
+    signal rdata_last_layer_debug : std_logic_vector(37 downto 0);
     signal rdata_hit_time : std_logic_vector(4 * 8 - 1 downto 0);
+
+    -- counters
+    signal cnt_gtime1_error, cnt_gtime2_error, cnt_shtime_error : std_logic_vector(31 downto 0);
 
 begin
 
@@ -109,6 +128,13 @@ begin
     o_error_pre         <= error_pre;
     o_error_sh          <= error_sh;
     o_rdata             <= rdata_last_layer;
+    o_rdata_debug       <= rdata_last_layer_debug;
+    o_counters(0)       <= cnt_gtime1_error;
+    o_counters(1)       <= cnt_gtime2_error;
+    o_counters(2)       <= cnt_shtime_error;
+    o_counters(3)       <= wait_cnt_pre;
+    o_counters(4)       <= wait_cnt_sh;
+    o_counters(5)       <= wait_cnt_merger;
 
     -- debug signals
     gen_hit_data : FOR i in 0 to 7 GENERATE
@@ -123,17 +149,21 @@ begin
                         i_rshop(i) when i_rempty(i) = '0' else '0';
         eop_wait(i) <=  '1' when i_mask_n(i) = '0' else
                         i_reop(i) when i_rempty(i) = '0' else '0';
+        shop_or_trailer_wait(i) <= shop_wait(i) or eop_wait(i);
         time_wait(i)<=  '1' when i_mask_n(I) = '0' else
                         '1' when ( merge_state = get_time1 or merge_state = get_time2 ) and i_rempty(I) = '0' else
                         '0';
         o_rack(i)   <=  '0' when i_mask_n(i) = '0' else
-                        '1' when merge_state = wait_for_pre and sop_wait = check_ones and full_6(0) = '0' else
+                        '1' when merge_state = wait_for_pre and sop_wait = check_ones and full_6(0) = '0' and i_rempty(i) = '0' else
                         '1' when merge_state = wait_for_pre and i_rsop(i) = '0' and i_rempty(i) = '0' else
-                        '1' when merge_state = get_time1 and time_wait = check_ones else
-                        '1' when merge_state = get_time2 and time_wait = check_ones else
-                        '1' when merge_state = wait_for_sh and shop_wait = check_ones and full_6(0) = '0' else
-                        '1' when merge_state = wait_for_sh and i_rshop(i) = '0' and i_rempty(i) = '0' else
-                        '1' when merge_state = trailer and full_6(0) = '0' else
+                        '1' when merge_state = get_time1 and time_wait = check_ones and i_rempty(i) = '0' else
+                        '1' when merge_state = get_time2 and time_wait = check_ones and i_rempty(i) = '0' else
+                        -- TODO: here we should wait for the shop_wait but for the int run we dont care 
+                        --'1' when merge_state = wait_for_sh and shop_wait = check_ones  and full_6(0) = '0' else
+                        '1' when merge_state = wait_for_sh and shop_or_trailer_wait = check_ones and i_reop(i) = '0' and full_6(0) = '0' and i_rempty(i) = '0' else
+                        -- TODO: also again for the int run we check if the word is not a trailer
+                        '1' when merge_state = wait_for_sh and i_rshop(i) = '0' and i_reop(i) = '0' and i_rempty(i) = '0' else
+                        '1' when merge_state = trailer and full_6(0) = '0' and i_rempty(i) = '0' else
                         '1' when merge_state = merge_hits and sop_wait(i) = '0' and shop_wait(i) = '0' and eop_wait(i) = '0' and i_rempty(i) = '0' and wrfull_0(i) = '0' else
                         '0';
         merger_finish(i) <= '0' when sop_wait(i) = '0' and shop_wait(i) = '0' and eop_wait(i) = '0' else '1';
@@ -158,68 +188,47 @@ begin
             end if;
             end process;
 
-            data_0(i)  <=   work.util.link_36_to_std(i) & i_rdata(i)(31 downto 0)   when merger_finish(i) = '0' and merge_state = merge_hits else
+            data_0(i)  <=   tree_padding                                            when merger_finish(i) = '0' and merge_state = merge_hits and eop_wait(i) = '1' else
+                            work.util.link_36_to_std(i) & i_rdata(i)(31 downto 0)   when merger_finish(i) = '0' and merge_state = merge_hits else
                             tree_padding                                            when merger_finish(i) = '1' and merge_state = merge_hits else
                             (others => '0');
             wrreq_0(i) <= '1' when merge_state = merge_hits and i_rempty(i) = '0' and wrfull_0(i) = '0' else '0';
 
-            e_link_fifo : entity work.ip_dcfifo_mixed_widths
+--            e_link_fifo : entity work.ip_scfifo
+--            generic map(
+--                ADDR_WIDTH      => TREE_DEPTH_w,
+--                DATA_WIDTH      => write_width(0),
+--                RAM_OUT_REG     => "ON",
+--                DEVICE          => "Arria 10"--,
+--            )
+--            port map (
+--                sclr    => reset_0(i),
+--                data    => data_0(i),
+--                clock   => i_clk,
+--                rdreq   => rdreq_0(i),
+--                wrreq   => wrreq_0(i),
+--                q       => q_0(i),
+--                empty   => rdempty_0(i),
+--                full    => wrfull_0(i)--,
+--            );
+            
+            e_link_fifo : entity work.ip_dcfifo
             generic map(
-                ADDR_WIDTH_w => TREE_DEPTH_w,
-                DATA_WIDTH_w => write_width(0),
-                ADDR_WIDTH_r => TREE_DEPTH_r,
-                DATA_WIDTH_r => read_width(0),
-                DEVICE       => "Arria 10"--,
+                ADDR_WIDTH  => TREE_DEPTH_w,
+                DATA_WIDTH  => write_width(0),
+                DEVICE      => "Arria 10"--,
             )
             port map (
-                aclr    => reset_0(i),
-                data    => data_0(i),
-                rdclk   => i_clk,
-                rdreq   => rdreq_0(i),
-                wrclk   => i_clk,
-                wrreq   => wrreq_0(i),
-                q       => q_0(i),
-                rdempty => rdempty_0(i),
-                wrfull  => wrfull_0(i)--,
+                data        => data_0(i),
+                wrreq       => wrreq_0(i),
+                rdreq       => rdreq_0(i),
+                wrclk       => i_clk,
+                rdclk       => i_clk,
+                q           => q_0(i),
+                rdempty     => rdempty_0(i),
+                wrfull      => wrfull_0(i),
+                aclr        => reset_0(i)--,
             );
-
-            -- reg for FIFO outputs (timing)
-            rdreq_0(i) <= '1' when rdempty_0(i) = '0' and wrfull_0_reg(i) = '0' else '0';
-            rdreq_0_reg(i) <= '1' when rdempty_0_reg(i) = '0' and wrfull_0_reg_reg(i) = '0' else '0';
-            process(i_clk, reset_0(i))
-            begin
-            if ( reset_0(i) = '1' ) then
-                rdempty_0_reg(i)    <= '1';
-                wrfull_0_reg(i)     <= '0';
-                q_0_reg(i)          <= (others => '0');
-                rdempty_0_reg_reg(i)<= '1';
-                wrfull_0_reg_reg(i) <= '0';
-                q_0_reg_reg(i)      <= (others => '0');
-                --
-            elsif ( rising_edge(i_clk) ) then
-
-                if ( rdreq_0(i) = '1' ) then
-                    q_0_reg(i)       <= q_0(i);
-                    wrfull_0_reg(i)  <= '1';
-                    rdempty_0_reg(i) <= '0';
-                end if;
-
-                if ( rdreq_0_reg(i) = '1' ) then
-                    q_0_reg_reg(i)   <= q_0_reg(i);
-                    wrfull_0_reg(i)  <= '0';
-                    rdempty_0_reg(i) <= '1';
-
-                    wrfull_0_reg_reg(i)  <= '1';
-                    rdempty_0_reg_reg(i) <= '0';
-                end if;
-
-                if ( rdreq_0_reg_reg(i) = '1' ) then
-                    wrfull_0_reg_reg(i)  <= '0';
-                    rdempty_0_reg_reg(i) <= '1';
-                end if;
-
-            end if;
-            end process;
 
         END GENERATE;
 
@@ -233,8 +242,8 @@ begin
         compare_fifos => generate_fifos(0), gen_fifos => generate_fifos(1), DATA_TYPE => DATA_TYPE--,
     )
     port map (
-        i_data          => q_0_reg_reg,
-        i_rdempty       => rdempty_0_reg_reg,
+        i_data          => q_0,
+        i_rdempty       => rdempty_0,
         i_rdreq         => rdreq_1,
         i_merge_state   => merger_state_signal,
         i_mask_n        => mask_n_0,
@@ -243,7 +252,7 @@ begin
 
         o_q             => q_1,
         o_rdempty       => rdempty_1,
-        o_rdreq         => rdreq_0_reg_reg,
+        o_rdreq         => rdreq_0,
         o_mask_n        => mask_n_1,
         o_layer_state   => open,
         o_wrfull        => open,
@@ -372,6 +381,8 @@ begin
         i_data_h_t      => header_trailer,
 
         o_last          => rdata_last_layer,
+        o_last_link_debug   => rdata_last_layer_debug,
+        o_rdempty_debug(0)  => o_rdempty_debug,
         o_rdempty(0)    => o_empty,
         o_rdreq         => rdreq_5,
         o_mask_n        => open,
@@ -409,6 +420,10 @@ begin
         v_overflow := (others => '0');
         wait_cnt <= (others => '0');
         TF := (others => '0');
+        check_link <= 0;
+        cnt_gtime1_error <= (others => '0');
+        cnt_gtime2_error <= (others => '0');
+        cnt_shtime_error <= (others => '0');
         --
     elsif rising_edge(i_clk) then
 
@@ -416,6 +431,13 @@ begin
         header_trailer_we   <= "00";
         v_overflow  := (others => '0');
         TF          := (others => '0');
+
+        FOR i in 0 to g_NLINKS_DATA - 1 LOOP
+            if ( i_mask_n(I) = '1' ) then
+                check_link <= I;
+                exit;
+            end if;
+        END LOOP;
 
         case merge_state is
             when wait_for_pre =>
@@ -451,7 +473,7 @@ begin
             when compare_time1 =>
                 -- compare MSB from FPGA time
                 FOR I in g_NLINKS_DATA - 1 downto 0 LOOP
-                    if ( gtime1(I) /= gtime1(i_link) and i_mask_n(I) = '1' ) then
+                    if ( gtime1(I) /= gtime1(check_link) and i_mask_n(I) = '1' ) then
                         error_gtime1 <= '1';
                     end if;
                 END LOOP;
@@ -464,13 +486,14 @@ begin
                     gtime1 <= (others => (others => '0'));
                     -- send gtime1
                     header_trailer(37 downto 32) <= ts1_marker;
-                    header_trailer(31 downto 0) <= gtime1(i_link)(31 downto 0);
+                    header_trailer(31 downto 0) <= gtime1(check_link)(31 downto 0);
                     header_trailer_we <= "10";
                 end if;
-                -- dont check at the moment
-                -- elsif ( error_gtime1 = '1' ) then
+                -- dont go into error_state at the moment
+                if ( error_gtime1 = '1' ) then
                 --     merge_state <= error_state;
-                -- end if;
+                    cnt_gtime1_error <= cnt_gtime1_error + '1';
+                end if;
 
             -- TODO: change this to one cycle
             when get_time2 =>
@@ -485,7 +508,7 @@ begin
             when compare_time2 =>
                 -- compare LSB from FPGA time
                 FOR I in g_NLINKS_DATA - 1 downto 0 LOOP
-                    if ( gtime2(I) /= gtime2(i_link) and i_mask_n(I) = '1' ) then
+                    if ( gtime2(I) /= gtime2(check_link) and i_mask_n(I) = '1' ) then
                         error_gtime2 <= '1';
                     end if;
                 END LOOP;
@@ -498,13 +521,14 @@ begin
                     gtime2 <= (others => (others => '0'));
                     -- send gtime2
                     header_trailer(37 downto 32) <= ts2_marker;
-                    header_trailer(31 downto 0) <= gtime2(i_link)(31 downto 0);
+                    header_trailer(31 downto 0) <= gtime2(check_link)(31 downto 0);
                     header_trailer_we <= "10";
                 end if;
                 -- dont check at the moment
-                --elsif ( error_gtime2 = '1' ) then
+                if ( error_gtime2 = '1' ) then
                 --   merge_state <= error_state;
-                --end if;
+                    cnt_gtime2_error <= cnt_gtime2_error + '1';
+                end if;
 
             when wait_for_sh =>
                 -- dont check at the moment
@@ -513,7 +537,8 @@ begin
                 --end if;
 
                 -- readout until all fifos have sub header
-                if ( shop_wait = check_ones and full_6(0) = '0' ) then
+                -- TODO: here we should wait for shop_wait but for the int run we dont care
+                if ( shop_or_trailer_wait = check_ones and full_6(0) = '0' ) then
                     merge_state <= wait_for_sh_written;
                     -- reset signals
                     wait_cnt_sh <= (others => '0');
@@ -522,12 +547,12 @@ begin
                     -- zeros & sub header & zeros & datak
                     header_trailer(37 downto 32) <= sh_marker;
                     -- send sub header time -- check later if equal
-                    header_trailer(31 downto 23) <= i_rdata(i_link)(31 downto 23);
+                    header_trailer(31 downto 16) <= i_rdata(check_link)(31 downto 16);
                     if ( DATA_TYPE = x"01" ) then
                         shtime(9 downto 7) <= (others => '0');
-                        shtime(6 downto 0) <= i_rdata(i_link)(22 downto 16);
+                        shtime(6 downto 0) <= i_rdata(check_link)(22 downto 16);
                     elsif ( DATA_TYPE = x"02" ) then
-                        shtime <= i_rdata(i_link)(25 downto 16);
+                        shtime <= i_rdata(check_link)(25 downto 16);
                     end if;
                     FOR I in g_NLINKS_DATA - 1 downto 0 LOOP
                         if ( i_mask_n(I) = '1' ) then
@@ -538,7 +563,8 @@ begin
                                 sheader_time(I) <= i_rdata(I)(25 downto 16);
                             end if;
                         end if;
-                        v_overflow := v_overflow or i_rdata(I)(15 downto 0);
+                        -- TODO: For int run we take this one out
+                        --v_overflow := v_overflow or i_rdata(I)(15 downto 0);
                     END LOOP;
                     header_trailer(15 downto 0) <= v_overflow;
                     header_trailer_we <= "10";
@@ -566,7 +592,8 @@ begin
 
             when merge_hits =>
                 if ( error_shtime = '1' ) then
-                    merge_state <= error_state;
+                    cnt_shtime_error <= cnt_shtime_error + '1';
+                    --merge_state <= error_state;
                 end if;
 
                 -- check if sheader time is equal
@@ -585,7 +612,8 @@ begin
 
                 -- change state
                 -- TODO error if sh is not there
-                if ( shop_wait = check_ones and alignment_done = '1' ) then
+                -- TODO her we should wait for shop_wait but we dont care
+                if ( shop_or_trailer_wait = check_ones and alignment_done = '1' ) then
                     merge_state <= wait_for_sh;
                 end if;
 

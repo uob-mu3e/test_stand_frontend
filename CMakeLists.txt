@@ -63,14 +63,20 @@ set(LIBMUTRIG_DIR ${PROJECT_SOURCE_DIR}/common/libmutrig)
 set(LIBMALIBU_DIR ${PROJECT_SOURCE_DIR}/common/libMALIBU)
 set(INCMUDAQ_DIR ${PROJECT_SOURCE_DIR}/common/include)
 
-# hack to compile rootana after source set_env.sh
-set(ENV{MIDAS_DIR} "")
-set(ENV{MIDAS_EXPTAB} "")
-set(ENV{MIDASSYS} "")
-set(ENV{MIDAS_EXP_NAME} "")
-
 # on some older boxes, wpedantic and MIDAS do not mix
 add_subdirectory(modules)
+# Should be found after this
+find_package(Midas HINTS modules/midas REQUIRED)
+# To be implemented in midas/MidasConfig.cmake at some point
+set (MIDASSYS ${MIDAS_LIBRARY_DIRS}/..)
+message(STATUS "MIDASSYS = ${MIDASSYS}")
+list (APPEND MIDAS_INCLUDE_DIRS
+    ${MIDASSYS}/midas/manalyzer
+    ${MIDASSYS}/midas/midasio
+    ${MIDASSYS}/midas/mvodb
+    )
+link_directories(${MIDAS_LIBRARY_DIRS})
+include_directories(${MIDAS_INCLUDE_DIRS})
 add_subdirectory(common)
 add_subdirectory(backend_pc)
 #add_subdirectory(common/kerneldriver)
@@ -117,6 +123,9 @@ install(FILES ${CMAKE_CURRENT_BINARY_DIR}/set_env.sh DESTINATION ./)
 
 configure_file(make_links.sh.in make_links.sh @ONLY)
 install(FILES ${CMAKE_CURRENT_BINARY_DIR}/make_links.sh DESTINATION ./)
+
+configure_file(setup_odb.sh.in setup_odb.sh @ONLY)
+install(FILES ${CMAKE_CURRENT_BINARY_DIR}/setup_odb.sh DESTINATION ./)
 
 configure_file(start_daq.sh.in start_daq.sh @ONLY)
 install(FILES ${CMAKE_CURRENT_BINARY_DIR}/start_daq.sh DESTINATION bin

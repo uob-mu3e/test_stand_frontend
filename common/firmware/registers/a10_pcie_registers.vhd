@@ -94,6 +94,9 @@ package a10_pcie_registers is
             constant USE_BIT_GEN_MERGE                              : integer := 0;
         constant FARM_ID_REGISTER_W                             : integer := 16#25#;
         constant FARM_REQ_EVENTS_W                              : integer := 16#26#;
+        constant FARM_CTL_REGISTER_W                            : integer := 16#27#;
+            constant USE_BIT_PIXEL_ONLY                             : integer := 0;
+            constant USE_BIT_SCIFI_ONLY                             : integer := 1;
 
         -- Registers above 0x36 are in use for the PCIe controller/DMA
         constant DMA2_CTRL_ADDR_LOW_REGISTER_W                  : integer := 16#36#;
@@ -136,7 +139,7 @@ package a10_pcie_registers is
         constant DMA_STATUS_R                                   : integer := 16#11#;
             constant DMA_DATA_WEN                                   : integer:= 0;
             constant DMA_CONTROL_WEN                                : integer:= 1;
-        constant PLL_LOCKED_BIT                                 : integer := 16#12#;
+        constant PLL_LOCKED_REGISTER_R                          : integer := 16#12#;
         constant DEBUG_SC                                       : integer := 16#13#;
         constant DMA_HALFFUL_REGISTER_R                         : integer := 16#14#;
         constant DMA_NOTHALFFUL_REGISTER_R                      : integer := 16#15#;

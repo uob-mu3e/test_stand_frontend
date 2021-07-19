@@ -21,7 +21,7 @@ HMP4040Driver::HMP4040Driver(std::string n, EQUIPMENT_INFO* inf) : PowerDriver(n
 INT HMP4040Driver::ConnectODB()
 {
 	InitODBArray();
-	INT status = PowerDriver::ConnectODB();
+    PowerDriver::ConnectODB();
 	settings["port"](5025);
 	settings["reply timout"](300);
 	settings["min reply"](2); //minimum reply , 2 chars , not 3 (not fully figured out why)
@@ -131,13 +131,13 @@ INT HMP4040Driver::Init()
  	variables["Demand OVP Level"]=OVPlevel;
  	
  	//watch functions
- 	variables["Current Limit"].watch(  [&](midas::odb &arg) { this->CurrentLimitChanged(); }  );
- 	variables["Set State"].watch(  [&](midas::odb &arg) { this->SetStateChanged(); }  );
-	variables["Demand Voltage"].watch(  [&](midas::odb &arg) { this->DemandVoltageChanged(); }  );
-	variables["Demand OVP Level"].watch(  [&](midas::odb &arg) { this->DemandOVPLevelChanged(); }  );
+    variables["Current Limit"].watch(  [&](midas::odb &arg [[maybe_unused]]) { this->CurrentLimitChanged(); }  );
+    variables["Set State"].watch(  [&](midas::odb &arg  [[maybe_unused]]) { this->SetStateChanged(); }  );
+    variables["Demand Voltage"].watch(  [&](midas::odb &arg  [[maybe_unused]]) { this->DemandVoltageChanged(); }  );
+    variables["Demand OVP Level"].watch(  [&](midas::odb &arg  [[maybe_unused]]) { this->DemandOVPLevelChanged(); }  );
 
 
-	settings["Read ESR"].watch(  [&](midas::odb &arg) { this->ReadESRChanged(); }  );
+    settings["Read ESR"].watch(  [&](midas::odb &arg  [[maybe_unused]]) { this->ReadESRChanged(); }  );
  	
 	return FE_SUCCESS;
 }
@@ -153,11 +153,13 @@ bool HMP4040Driver::AskPermissionToTurnOn(int channel) //extra check whether it 
 INT HMP4040Driver::ReadAll()
 {
 	INT err;
+	INT err_accumulated;
 	int nChannels = instrumentID.size();
 	//update local book keeping
 	for(int i=0; i<nChannels; i++)
 	{
 		bool bvalue = ReadState(i,err);
+		err_accumulated = err;
 		if(state[i]!=bvalue) //only update odb if there is a change
 		{
 			state[i]=bvalue;
@@ -165,6 +167,7 @@ INT HMP4040Driver::ReadAll()
 		}
  	
  		float fvalue = ReadVoltage(i,err);
+		err_accumulated = err_accumulated | err;
 		if( fabs(voltage[i]-fvalue) > fabs(relevantchange*voltage[i]) )
 		{
 			voltage[i]=fvalue;
@@ -172,6 +175,7 @@ INT HMP4040Driver::ReadAll()
 		}
   	
 		fvalue = ReadCurrent(i,err);
+		err_accumulated = err_accumulated | err;
 		if( fabs(current[i]-fvalue) > fabs(relevantchange*current[i]) )
 		{
 			current[i]=fvalue;
@@ -179,6 +183,7 @@ INT HMP4040Driver::ReadAll()
 		}
 		
 		fvalue = ReadOVPLevel(i,err);
+		err_accumulated = err_accumulated | err;
 		if( fabs(OVPlevel[i]-fvalue) > fabs(relevantchange*OVPlevel[i]) )
 		{
 			OVPlevel[i]=fvalue;
@@ -186,7 +191,7 @@ INT HMP4040Driver::ReadAll()
 		}
   	
   	
-	 	if(err!=FE_SUCCESS) return err;		
+	 	if(err_accumulated!=FE_SUCCESS) return err_accumulated & 0xFFFE; //remove the success bit if there is any		
 	}
 	
 	std::vector<std::string> error_queue = ReadErrorQueue(-1,err);

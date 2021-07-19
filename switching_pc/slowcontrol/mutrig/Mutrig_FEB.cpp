@@ -14,6 +14,7 @@ Contents:       Definition of functions to talk to a mutrig-based FEB. Designed 
 #include "mfe.h" //for set_equipment_status
 
 #include "../include/feb.h"
+#include "scifi_registers.h"
 using namespace mu3e::daq;
 
 #include "MutrigConfig.h"
@@ -49,13 +50,14 @@ using midas::odb;
  * */
 
 // TODO: Can we automatically sync this with the NIOS code?
+// Should be possible like done with SCIFI_CTRL_DUMMY_REGISTER_W
 #define SC_REG_OFFSET 0xff60
 #define FE_DPMON_STATUS_REG    (SC_REG_OFFSET+0x4)
 #define FE_DPMON_DPALOCK_REG   (SC_REG_OFFSET+0x5)
 #define FE_DPMON_RXRDY_REG     (SC_REG_OFFSET+0x6)
 #define FE_DPMON_RESERVED_REG  (SC_REG_OFFSET+0x7)
-#define FE_DUMMYCTRL_REG       (SC_REG_OFFSET+0x8)
-#define FE_DPCTRL_REG          (SC_REG_OFFSET+0x9)
+#define FE_DUMMYCTRL_REG       SCIFI_CTRL_DUMMY_REGISTER_W
+#define FE_DPCTRL_REG          SCIFI_CTRL_DP_REGISTER_W
 #define FE_SUBDET_RESET_REG    (SC_REG_OFFSET+0xa)
 #define FE_RESETSKEW_GLOBALS_REG  (SC_REG_OFFSET+0xb)
 #define FE_SPIDATA_ADDR		0
@@ -83,9 +85,9 @@ int MutrigFEB::WriteAll(){
     std::string odb_str(set_str);
     odb odb_set_str(odb_str);
     // use lambda function for passing this
-    odb_set_str.watch([this](odb &o){
-        on_settings_changed(o, this);
-    });
+//    odb_set_str.watch([this](odb &o){
+//        on_settings_changed(o, this);
+//    });
     return 0;
 }
 
@@ -108,59 +110,109 @@ int MutrigFEB::MapForEach(std::function<int(mutrig::MutrigConfig* /*mutrig confi
 //ASIC configuration:
 //Configure all asics under prefix (e.g. prefix="/Equipment/SciFi")
 int MutrigFEB::ConfigureASICs(){
-      cm_msg(MINFO, "setup_mutrig" , "Configuring MuTRiG asics under prefix %s/Settings/ASICs/", odb_prefix);
-      int status = MapForEach([this](mutrig::MutrigConfig* config, int asic){
-        uint32_t rpc_status;
-        //mapping
-        uint16_t SB_ID=febs[FPGAid_from_ID(asic)].SB_Number();
-        uint16_t SP_ID=febs[FPGAid_from_ID(asic)].SB_Port();
-        uint16_t FA_ID=ASICid_from_ID(asic);
+    cm_msg(MINFO, "setup_mutrig" , "Configuring MuTRiG asics under prefix %s/Settings/ASICs/", odb_prefix);
+    int status = MapForEach([this](mutrig::MutrigConfig* config, int asic){
+            uint32_t rpc_status;
+            
+            //mapping
+            uint16_t SB_ID=febs[FPGAid_from_ID(asic)].SB_Number();
+            uint16_t SP_ID=febs[FPGAid_from_ID(asic)].SB_Port();
+            uint16_t FA_ID=ASICid_from_ID(asic);
 
-        if(!febs[FPGAid_from_ID(asic)].IsScEnabled()){
-          printf(" [skipped -nonenable]\n");
-          return FE_SUCCESS;
+            if(!febs[FPGAid_from_ID(asic)].IsScEnabled()){
+                printf(" [skipped -nonenable]\n");
+                return FE_SUCCESS;
+            }
+            if(SB_ID!= SB_number){
+                printf(" [skipped -SB]\n");
+                return FE_SUCCESS;
+            }
+            //printf("\n");
+
+            cm_msg(MINFO,
+                    "setup_mutrig" ,
+                    "Configuring MuTRiG asic %s/Settings/ASICs/%i/: Mapped to FEB%u -> SB%u.%u  ASIC #%d",
+                    odb_prefix,asic,FPGAid_from_ID(asic),SB_ID,SP_ID,FA_ID);
+
+
+            try {
+                //Write ASIC number & Configuraton
+                //ASIC number is the lowest byte of the command that's written to CMD_LEN_REGISTER_RW,
+                //the configuration bitpattern is written to the RAM
+                //rpc_status = m_mu.FEBsc_NiosRPC(FPGAid_from_ID(asic), feb::CMD_MUTRIG_ASIC_CFG, {{reinterpret_cast<uint32_t*>(&asic),1},{reinterpret_cast<uint32_t*>(config->bitpattern_w), config->length_32bits}});
+                vector<vector<uint32_t>> payload;
+                //printf("ASIC %d\n", asic);
+                //uint32_t nb = 340;
+                //do{
+                //    nb--;
+                //    printf("%02X ",reinterpret_cast<uint8_t*>(config->bitpattern_w)[nb]);
+                //}while(nb>0);
+                //printf("\n");
+
+                payload.push_back(vector<uint32_t>(reinterpret_cast<uint32_t*>(config->bitpattern_w),reinterpret_cast<uint32_t*>(config->bitpattern_w)+config->length_32bits));
+                // TODO: we make modulo number of asics per module here since each FEB has only # ASIC from 0 to asics per module but
+                // here we loop until total number of asics which is asics per module times # of FEBs
+                rpc_status = feb_sc.FEBsc_NiosRPC(SP_ID, feb::CMD_MUTRIG_ASIC_CFG | (asic % GetASICSPerFEB()), payload);
+            } catch(std::exception& e) {
+                cm_msg(MERROR, "setup_mutrig", "Communication error while configuring MuTRiG %d: %s", asic, e.what());
+                set_equipment_status(equipment_name, "SB-FEB Communication error", "red");
+                return FE_ERR_HW; //note: return of lambda function
+            }
+            if(rpc_status!=FEB_REPLY_SUCCESS){
+                //configuration mismatch, report and break foreach-loop
+                set_equipment_status(equipment_name,  "MuTRiG config failed", "red");
+                cm_msg(MERROR, "setup_mutrig", "MuTRiG configuration error for ASIC %i", (asic % GetASICSPerFEB()));
+                return FE_SUCCESS;//note: return of lambda function
+            }
+            return FE_SUCCESS;//note: return of lambda function
+    });//MapForEach
+    return status; //status of foreach function, SUCCESS when no error.
+}
+
+int MutrigFEB::ChangeTDCTest(bool o){
+    cm_msg(MINFO, "SciFi ChangeTDCTest" , o ? "Turning on test pulses" : "Turning off test pulses");
+    int status = feb_sc.ERRCODES::OK;
+    for(size_t FPGA_ID = 0; FPGA_ID < febs.size(); FPGA_ID++){
+        auto FEB = febs[FPGA_ID];
+        if(!FEB.IsScEnabled())
+            continue; //skip disabled fibers
+        uint32_t regvalue;
+        status = feb_sc.FEB_register_read(FEB.SB_Port(), SCIFI_CNT_CTRL_REGISTER_W, regvalue);
+        if(status != feb_sc.ERRCODES::OK) {
+            cm_msg(MINFO, "SciFi ChangeTDCTest" , "Could not read control register");
+            continue;
         }
-        if(SB_ID!= SB_number){
-          printf(" [skipped -SB]\n");
-          return FE_SUCCESS;
+
+        if(o)
+            regvalue |= (1<<31);
+        else
+            regvalue &= ~(1<<31);
+
+        status = feb_sc.FEB_register_write(FEB.SB_Port(), SCIFI_CNT_CTRL_REGISTER_W, regvalue);
+    }
+    return status;
+}
+int MutrigFEB::ConfigureASICsAllOff(){
+    cm_msg(MINFO, "ConfigureASICsAllOff" , "Configuring all SciFi ASICs in the ALL_OFF Mode");
+    int status = SUCCESS;
+    for(size_t FPGA_ID = 0; FPGA_ID < febs.size(); FPGA_ID++){
+        auto FEB = febs[FPGA_ID];
+        if(!FEB.IsScEnabled())
+            continue; //skip disabled fibers
+        auto rpc_ret = feb_sc.FEBsc_NiosRPC(FEB.SB_Port(), feb::CMD_MUTRIG_ASIC_OFF, {});
+        if (rpc_ret < 0){
+            cm_msg(MERROR, "ConfigureASICsAllOff" , "Received negative return value from FEBsc_NiosRPC()");
+            continue;
         }
-      //printf("\n");
-
-        cm_msg(MINFO,
-               "setup_mutrig" ,
-               "Configuring MuTRiG asic %s/Settings/ASICs/%i/: Mapped to FEB%u -> SB%u.%u  ASIC #%d",
-               odb_prefix,asic,FPGAid_from_ID(asic),SB_ID,SP_ID,FA_ID);
-
-
-      try {
-         //Write ASIC number & Configuraton
-         //ASIC number is the lowest byte of the command that's written to CMD_LEN_REGISTER_RW,
-         //the configuration bitpattern is written to the RAM
-        //rpc_status = m_mu.FEBsc_NiosRPC(FPGAid_from_ID(asic), feb::CMD_MUTRIG_ASIC_CFG, {{reinterpret_cast<uint32_t*>(&asic),1},{reinterpret_cast<uint32_t*>(config->bitpattern_w), config->length_32bits}});
-          vector<vector<uint32_t> > payload;
-          payload.push_back(vector<uint32_t>(reinterpret_cast<uint32_t*>(config->bitpattern_w),reinterpret_cast<uint32_t*>(config->bitpattern_w)+config->length_32bits));
-          rpc_status = feb_sc.FEBsc_NiosRPC(SP_ID, feb::CMD_MUTRIG_ASIC_CFG | asic, payload);
-      } catch(std::exception& e) {
-          cm_msg(MERROR, "setup_mutrig", "Communication error while configuring MuTRiG %d: %s", asic, e.what());
-          set_equipment_status(equipment_name, "SB-FEB Communication error", "red");
-          return FE_ERR_HW; //note: return of lambda function
-      }
-      if(rpc_status!=FEB_REPLY_SUCCESS){
-         //configuration mismatch, report and break foreach-loop
-         set_equipment_status(equipment_name,  "MuTRiG config failed", "red");
-         cm_msg(MERROR, "setup_mutrig", "MuTRiG configuration error for ASIC %i", asic);
-         return FE_ERR_HW;//note: return of lambda function
-      }
-      return FE_SUCCESS;//note: return of lambda function
-   });//MapForEach
-   return status; //status of foreach function, SUCCESS when no error.
+    }
+    return status;
 }
 
 int MutrigFEB::ResetCounters(uint16_t FPGA_ID){
-   //map to SB fiber
-   auto FEB = febs[FPGA_ID];
-   if(!FEB.IsScEnabled()) return SUCCESS; //skip disabled fibers
-   if(FEB.SB_Number()!= SB_number) return SUCCESS; //skip commands not for this SB
+    //map to SB fiber
+    auto FEB = febs[FPGA_ID];
+    if(!FEB.IsScEnabled()) return SUCCESS; //skip disabled fibers
+    if(FEB.SB_Number()!= SB_number) return SUCCESS; //skip commands not for this SB
 
     auto rpc_ret = feb_sc.FEBsc_NiosRPC(FEB.SB_Port(), feb::CMD_MUTRIG_CNT_RESET, {});
     return rpc_ret;
@@ -169,12 +221,28 @@ int MutrigFEB::ResetCounters(uint16_t FPGA_ID){
 int MutrigFEB::ReadBackCounters(uint16_t FPGA_ID){
    //map to SB fiber
    auto FEB = febs[FPGA_ID];
-   if(!FEB.IsScEnabled()) return SUCCESS; //skip disabled fibers
-   if(FEB.SB_Number()!= SB_number) return SUCCESS; //skip commands not for this SB
+   if(!FEB.IsScEnabled())
+       return SUCCESS; //skip disabled fibers
+   if(FEB.SB_Number()!= SB_number)
+       return SUCCESS; //skip commands not for this SB
 
-    auto rpc_ret = feb_sc.FEBsc_NiosRPC(FEB.SB_Port(), feb::CMD_MUTRIG_CNT_READ, {});
+   auto rpc_ret = feb_sc.FEBsc_NiosRPC(FEB.SB_Port(), feb::CMD_MUTRIG_CNT_READ, {});
    //retrieve results
 
+   if(rpc_ret < 0) {
+       cm_msg(MINFO, "ReadBackCounters", "RPC Returned %d for FPGA_ID %u", rpc_ret, FPGA_ID);
+       return SUCCESS; // TODO: Proper error code
+   }
+
+   // rpc_ret is number of ASICs n, times 5 counters,
+   // times (1 nominator + 2 denominator values)
+   // The vector val is filled like
+   // asic 1 counter 1 nominator
+   // asic 1 counter 1 denominator upper 32 bit
+   // asic 1 counter 1 denominator lower 32 bit
+   // asic 1 counter 2 nominator
+   // [...]
+   // asic n counter 5 denominator lower 32 bit
    vector<uint32_t> val(rpc_ret*5*3);
 
    feb_sc.FEB_read(FEB.SB_Port(), FEBSlowcontrolInterface::OFFSETS::FEBsc_RPC_DATAOFFSET,
@@ -187,7 +255,7 @@ int MutrigFEB::ReadBackCounters(uint16_t FPGA_ID){
    char path[255];
    uint32_t value;
    uint32_t odbval;
-   for(auto nASIC=0;nASIC<rpc_ret;nASIC++){
+   for(auto nASIC=0 + FPGA_ID * GetASICSPerFEB(); nASIC < rpc_ret + FPGA_ID * GetASICSPerFEB(); nASIC++){
 
        // get midas odb object
        sprintf(path,"%s/Variables/Counters", odb_prefix);
@@ -595,30 +663,30 @@ void MutrigFEB::setWaitForAllSticky(uint32_t FPGA_ID, bool value){
 //reset all asics (digital part, CC, fsms, etc.)
 void MutrigFEB::chipReset(uint16_t FPGA_ID){
     uint32_t val=0;
-    //m_mu.FEBsc_read(FPGA_ID, &val, 1 , (uint32_t) FE_SUBDET_RESET_REG);
+    //m_mu.FEBsc_read(FPGA_ID, &val, 1 , (uint32_t) SCIFI_CTRL_RESET_REGISTER_W);
     //constant reset should not happen...
     //assert(!GET_FE_SUBDET_REST_BIT_CHIP(val));
     //set and clear reset
         val=reg_setBit(val,0,true);
-    feb_sc.FEB_register_write(FPGA_ID, FE_SUBDET_RESET_REG, val);
+    feb_sc.FEB_register_write(FPGA_ID, SCIFI_CTRL_RESET_REGISTER_W, val);
     std::this_thread::sleep_for(std::chrono::milliseconds(1));
     val=reg_setBit(val,0,false);
-    feb_sc.FEB_register_write(FPGA_ID, FE_SUBDET_RESET_REG, val);
+    feb_sc.FEB_register_write(FPGA_ID, SCIFI_CTRL_RESET_REGISTER_W, val);
 }
 
 //reset full datapath upstream from merger
 void MutrigFEB::DataPathReset(uint16_t FPGA_ID){
     uint32_t val=0;
-    //m_mu.FEBsc_read(FPGA_ID, &val, 1 , (uint32_t) FE_SUBDET_RESET_REG);
+    //m_mu.FEBsc_read(FPGA_ID, &val, 1 , (uint32_t) SCIFI_CTRL_RESET_REGISTER_W);
     //constant reset should not happen...
     //assert(!GET_FE_SUBDET_REST_BIT_DPATH(val));
     //set and clear reset
-        val=reg_setBit(val,1,true);
+    val=reg_setBit(val,1,true);
     //do not expect a reply in write below, the data generator is in reset (not having sent a trailer) and this may block the data merger sending a slow control reply (TODO: this should be fixed in firmware!)
-   feb_sc.FEB_register_write(FPGA_ID, FE_SUBDET_RESET_REG, val);
-   std::this_thread::sleep_for(std::chrono::milliseconds(1));
-   val=reg_setBit(val,1,false);
-   feb_sc.FEB_register_write(FPGA_ID, FE_SUBDET_RESET_REG, val);
+    feb_sc.FEB_register_write(FPGA_ID, SCIFI_CTRL_RESET_REGISTER_W, val);
+    std::this_thread::sleep_for(std::chrono::milliseconds(1));
+    val=reg_setBit(val,1,false);
+    feb_sc.FEB_register_write(FPGA_ID, SCIFI_CTRL_RESET_REGISTER_W, val);
 }
 
 //reset lvds receivers
@@ -626,10 +694,10 @@ void MutrigFEB::LVDS_RX_Reset(uint16_t FPGA_ID){
     uint32_t val=0;
     //set and clear reset
     val=reg_setBit(val,2,true);
-    feb_sc.FEB_register_write(FPGA_ID, FE_SUBDET_RESET_REG, val);
+    feb_sc.FEB_register_write(FPGA_ID, SCIFI_CTRL_RESET_REGISTER_W, val);
     std::this_thread::sleep_for(std::chrono::milliseconds(1));
     val=reg_setBit(val,2,false);
-    feb_sc.FEB_register_write(FPGA_ID, FE_SUBDET_RESET_REG, val);
+    feb_sc.FEB_register_write(FPGA_ID, SCIFI_CTRL_RESET_REGISTER_W, val);
 }
 
 //set reset skew configuration

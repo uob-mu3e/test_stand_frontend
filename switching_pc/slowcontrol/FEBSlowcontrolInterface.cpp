@@ -38,7 +38,7 @@ FEBSlowcontrolInterface::~FEBSlowcontrolInterface()
  *      start addr(32b, user parameter)
  *      (N-2)*data(32b, user parameter)
  *
- *      1 word as dummy: 0x00000000
+ *      1 word as dummy: 0x00000000 NOTE: MK: why this?
  *      Write length from 0xBC -> 0x9c to SC_MAIN_LENGTH_REGISTER_W
  *      Write enable to SC_MAIN_ENABLE_REGISTER_W
  */
@@ -114,22 +114,30 @@ int FEBSlowcontrolInterface::FEB_write(const uint32_t FPGA_ID, const uint32_t st
 
     // check for acknowledge packet
     count = 0;
-    while(count<10){
+    while(count<20){
         if(FEBsc_read_packets() > 0 && sc_packet_deque.front().IsWR()) break;
+        // for some reason there is a read acknowledge at the front of the queue...
+        if(FEBsc_read_packets() > 0 ){
+            cout << "wrong packet type" << endl;
+            sc_packet_deque.pop_front();
+        };
+
         count++;
         std::this_thread::sleep_for(std::chrono::microseconds(20));
     }
-    if(count==10){
+    if(count==20){
         cm_msg(MERROR, "MudaqDevice::FEBsc_write" , "Timeout occured waiting for reply");
         cm_msg(MERROR, "MudaqDevice::FEBsc_write", "Wanted to write to FPGA %d, Addr %d, length %zu", FPGA_ID, startaddr, data.size());
         return ERRCODES::FPGA_TIMEOUT;
     }
     if(!sc_packet_deque.front().Good()){
         cm_msg(MERROR, "MudaqDevice::FEBsc_write" , "Received bad packet");
+        sc_packet_deque.pop_front();
         return ERRCODES::BAD_PACKET;
     }
     if(!sc_packet_deque.front().IsResponse()){
         cm_msg(MERROR, "MudaqDevice::FEBsc_write" , "Received request packet, this should not happen...");
+        sc_packet_deque.pop_front();
         return ERRCODES::BAD_PACKET;
     }
 
@@ -193,26 +201,44 @@ int FEBSlowcontrolInterface::FEB_read(const uint32_t FPGA_ID, const uint32_t sta
 
     int count = 0;
     while(count<10){
-        if(FEBsc_read_packets() > 0 && sc_packet_deque.front().IsRD()) break;
+        int retval = FEBsc_read_packets();
+        if(retval > 0 && sc_packet_deque.front().IsRD()) break;
+        // for some reason there is a write acknowledge at the front of the queue...
+        if(retval > 0 ){
+            cout << "wrong packet type" << endl;
+            sc_packet_deque.pop_front();
+            return ERRCODES::BAD_PACKET;
+        };
+        if(retval < 0){
+            cout << "Receiving failed, resetting" << endl;
+            FEBsc_resetSecondary();
+            return ERRCODES::BAD_PACKET;
+        }
         count++;
         std::this_thread::sleep_for(std::chrono::microseconds(20));
     }
     if(count==10){
         cm_msg(MERROR, "MudaqDevice::FEBsc_read" , "Timeout occured waiting for reply");
-        cm_msg(MERROR, "MudaqDevice::FEBsc_read", "Wanted to read from FPGA %d, Addr %d, length %zu", FPGA_ID, startaddr, data.size());
+        cm_msg(MERROR, "MudaqDevice::FEBsc_read",  "Wanted to read from FPGA %d, Addr %d, length %zu, memaddr %d", FPGA_ID, startaddr, data.size(), m_FEBsc_rmem_addr);
         return ERRCODES::FPGA_TIMEOUT;
     }
     if(!sc_packet_deque.front().Good()){
-        cm_msg(MERROR, "MudaqDevice::FEBsc_read" , "Received bad packet");
+        cm_msg(MERROR, "MudaqDevice::FEBsc_read" , "Received bad packet, resetting");
+        sc_packet_deque.pop_front();
+        FEBsc_resetSecondary();
         return ERRCODES::BAD_PACKET;
     }
     if(!sc_packet_deque.front().IsResponse()){
-        cm_msg(MERROR, "MudaqDevice::FEBsc_read" , "Received request packet, this should not happen...");
+        cm_msg(MERROR, "MudaqDevice::FEBsc_read" , "Received request packet, this should not happen..., resetting");
+        sc_packet_deque.pop_front();
+        FEBsc_resetSecondary();
         return ERRCODES::BAD_PACKET;
     }
     if(sc_packet_deque.front().GetLength()!=data.size()){
         cm_msg(MERROR, "MudaqDevice::FEBsc_read", "Wanted to read from FPGA %d, Addr %d, length %zu", FPGA_ID, startaddr, data.size());
-        cm_msg(MERROR, "MudaqDevice::FEBsc_read" , "Received packet fails size check, communication error");
+        cm_msg(MERROR, "MudaqDevice::FEBsc_read" , "Received packet fails size check, communication error, resetting");
+        sc_packet_deque.pop_front();
+        FEBsc_resetSecondary();
         return ERRCODES::WRONG_SIZE;
     }
 
@@ -256,7 +282,7 @@ int FEBSlowcontrolInterface::FEB_register_read(const uint32_t FPGA_ID, const uin
 
 void FEBSlowcontrolInterface::FEBsc_resetMain()
 {
-    cm_msg(MINFO, "FEB_slowcontrol" , "Resetting slow control main");
+    //cm_msg(MINFO, "FEB_slowcontrol" , "Resetting slow control main");
     //clear memory to avoid sending old packets again -- TODO: should not be necessary
     for(int i = 0; i <= 64*1024; i++){
         mdev.write_memory_rw(i, 0);
@@ -269,26 +295,23 @@ void FEBSlowcontrolInterface::FEBsc_resetMain()
 
 void FEBSlowcontrolInterface::FEBsc_resetSecondary()
 {
-    cm_msg(MINFO, "FEB_slowcontrol" , "Resetting slow control secondary");
-    cout << "FEB_slowcontrol::FEBsc_resetSecondary(): " << endl;
+    //cm_msg(MINFO, "FEB_slowcontrol" , "Resetting slow control secondary");
     //reset our pointer
     m_FEBsc_rmem_addr=0;
     //reset fpga entity
     mdev.toggle_register(RESET_REGISTER_W, SET_RESET_BIT_SC_SECONDARY(0), 1000);
     //wait until SECONDARY is reset, clearing the ram takes time
     uint16_t timeout_cnt=0;
-    // TODO: we clear a fixed size memory at a fixed frequency - we KNOW how long this takes
-    // TODO: do we need to clear the memory or is this just nice to have?
-    //poll register until reset. Should be 0xff... during reset and zero after, but we might be bombarded with packets, so give some margin for data to enter.
-    while((mdev.read_register_ro(MEM_WRITEADDR_LOW_REGISTER_R) > 0xff) && timeout_cnt++ < 50){
+    // poll register until addr of sc secondary is 0xffff (and of init state)
+    // NOTE: we have to wait 2**16 * 156.25MHz here, but we wait a bit longer
+    while ( (mdev.read_register_ro(SC_STATE_REGISTER_R) & 0x20000000) != 0x20000000 ) {
+    //while((mdev.read_register_ro(MEM_WRITEADDR_LOW_REGISTER_R) == 0x0) && timeout_cnt++ < 500){
         std::this_thread::sleep_for(std::chrono::milliseconds(1));
         printf("."); fflush(stdout);
     };
     if(timeout_cnt>=50){
-        cout << "\n ERROR: Slow control secondary reset FAILED with timeout\n";
-    }else{
-        cout << " DONE\n";
-    };
+        cm_msg(MERROR, "FEBsc_resetSecondary()", "Slow control secondary reset FAILED with timeout");
+    }
 }
 
 int FEBSlowcontrolInterface::FEBsc_NiosRPC(uint32_t FPGA_ID, uint16_t command, vector<vector<uint32_t> > payload_chunks)
@@ -326,10 +349,10 @@ int FEBSlowcontrolInterface::FEBsc_NiosRPC(uint32_t FPGA_ID, uint16_t command, v
     while(1){
         if(++timeout_cnt >= 500) return ERRCODES::NIOS_RPC_TIMEOUT;
         std::this_thread::sleep_for(std::chrono::milliseconds(2));
-        status=FEB_register_read(FPGA_ID, 0xf0, readback);
+        status=FEB_register_read(FPGA_ID, CMD_LEN_REGISTER_RW, readback);
         if(status < 0)
-            return status
-                    ;
+            return status;
+
         if(timeout_cnt > 5) printf("MudaqDevice::FEBsc_NiosRPC(): Polling for command %x @%d: %x, %x\n",command,timeout_cnt,readback[0],readback[0]&0xffff0000);
         if((readback[0]&0xffff0000) == 0) break;
     }
@@ -341,11 +364,14 @@ int FEBSlowcontrolInterface::FEBsc_read_packets()
 
 
     int packetcount = 0;
+    int waitcount =0;
     uint32_t fpga_rmem_addr=(mdev.read_register_ro(MEM_WRITEADDR_LOW_REGISTER_R)+1) & 0xffff;
     while(fpga_rmem_addr!=m_FEBsc_rmem_addr){
 
-        if ((mdev.read_memory_ro(m_FEBsc_rmem_addr) & 0x1c0000bc) != 0x1c0000bc)
-            return 0; //TODO: correct when no event is to be written?
+        if ((mdev.read_memory_ro(m_FEBsc_rmem_addr) & 0x1c0000bc) != 0x1c0000bc){
+            cout << "Start pattern not seen at addr " << std::hex << m_FEBsc_rmem_addr << " seeing " << mdev.read_memory_ro(m_FEBsc_rmem_addr) << std::dec << endl;
+            return -1;
+        }
 
         // the eqaulity case is taken care of by the while condition
         if(((fpga_rmem_addr > m_FEBsc_rmem_addr) && (fpga_rmem_addr-m_FEBsc_rmem_addr < MIN_SC_MESSAGE_SIZE))

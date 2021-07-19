@@ -127,8 +127,8 @@ g_merger: for i in N_LINKS-1 downto 0 generate
     
     signal usedw_data_fifo                      : std_logic_vector(FIFO_ADDR_WIDTH-1 downto 0);
     signal usedw_slowcontrol_fifo               : std_logic_vector(FIFO_ADDR_WIDTH-1 downto 0);
-    
-----------------begin data merger------------------------
+    signal data_fifo_reset                      : std_logic;
+    ---------------begin data merger------------------------
 begin 
 
     e_data_overflow_check: entity work.overflow_check -- TODO: counter how often, stop run etc when overflow
@@ -160,16 +160,19 @@ begin
         o_wdata         => i_data_in_slowcontrol_checked--,
     );
 
+    -- reset the data fifo in idle
+    data_fifo_reset     <= '1' when ( run_state = RUN_STATE_IDLE or reset = '1' ) else '0';
     e_common_fifo_data: entity work.ip_scfifo
     generic map(
         ADDR_WIDTH      => FIFO_ADDR_WIDTH,
         DATA_WIDTH      => 36,
         SHOWAHEAD       => "ON",
+		  REGOUT          => 0,
         DEVICE          => "Stratix IV"--,
     )
     port map (
         clock           => clk,
-        sclr            => reset,
+        sclr            => data_fifo_reset,
         data            => i_data_in_checked,
         wrreq           => data_write_req_checked,
         full            => open,
@@ -186,6 +189,7 @@ begin
         ADDR_WIDTH      => FIFO_ADDR_WIDTH,
         DATA_WIDTH      => 36,
         SHOWAHEAD       => "ON",
+		  REGOUT          => 0,
         DEVICE          => "Stratix IV"--,
     )
     port map (
@@ -416,6 +420,7 @@ begin
                     (run_state=RUN_STATE_TERMINATING and can_terminate='1')
                     ) then
                     -- allows run end for idle and sending data, run end in state sending_data is always packet end
+                    data_read_req                           <= '1';
                     terminated(i)                           <= '1';
                     data_out(32*i+31 downto 32*i)           <= RUN_END;
                     data_is_k(4*i+3 downto 4*i)             <= RUN_END_DATAK;
