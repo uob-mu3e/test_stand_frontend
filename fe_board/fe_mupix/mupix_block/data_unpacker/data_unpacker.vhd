@@ -93,6 +93,7 @@ architecture RTL of data_unpacker is
     signal gray_TS              : std_logic;
     signal gray_TS2             : std_logic;
     signal hit_ena_counter      : std_logic_vector(31 downto 0);
+	 signal running				  : std_logic;
 
     function convert_lvds_to_chip_id (
         lvds_ID       : integer;
@@ -213,15 +214,22 @@ begin
             cnt4                <= "00";
             data_mode           <= '0'; -- indicates if all counter mode or actual hit data
             counter_seen        <= '0';
+				running 				  <= '0';
             hit_ena_counter     <= (others => '0');
         elsif rising_edge(clk) then
 
             link_flag_reg       <= '0';
             coarse_reg          <= '0';
             hit_reg             <= '0';
+				
+				if(i_run_state_125=RUN_STATE_RUNNING)then
+					running <= '1';
+				else
+					running <= '0';
+				end if;
 
             o_hit_ena_counter   <= hit_ena_counter;
-            if(hit_ena = '1' and i_run_state_125=RUN_STATE_RUNNING) then 
+            if(hit_ena = '1' and running = '1') then 
                 hit_ena_counter <= hit_ena_counter + '1';
             end if;
 
