@@ -52,10 +52,15 @@ set(INCMUDAQ_DIR ${PROJECT_SOURCE_DIR}/common/include)
 
 # on some older boxes, wpedantic and MIDAS do not mix
 add_subdirectory(modules)
-# Should be found after this
-find_package(Midas HINTS modules/midas REQUIRED)
+find_package(Midas REQUIRED
+    HINTS
+        $ENV{MIDASSYS}
+        ~/midas
+        ~/online/modules/midas
+        #${CMAKE_CURRENT_SOURCE_DIR}/../midas
+        )
 # To be implemented in midas/MidasConfig.cmake at some point
-set (MIDASSYS ${MIDAS_LIBRARY_DIRS}/..)
+get_filename_component(MIDASSYS ${MIDAS_LIBRARY_DIRS} DIRECTORY)
 message(STATUS "MIDASSYS = ${MIDASSYS}")
 list (APPEND MIDAS_INCLUDE_DIRS
     ${MIDASSYS}/midas/manalyzer
