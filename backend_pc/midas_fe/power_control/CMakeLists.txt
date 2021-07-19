@@ -1,8 +1,8 @@
 add_executable(power
     GenesysDriver.cpp  power.cpp        TCPClient.cpp
     HMP4040Driver.cpp  PowerDriver.cpp
-    ${MIDASSYS}/drivers/class/multi
-    ${MIDASSYS}/drivers/device/mscbdev
+    ${MIDASSYS}/drivers/class/multi.cxx
+    ${MIDASSYS}/drivers/device/mscbdev.cxx
     ${MIDASSYS}/mscb/src/mscb.cxx
     )
 target_include_directories(power
