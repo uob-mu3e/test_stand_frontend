@@ -23,8 +23,6 @@ port (
     i_lvds_rx_inclock_B : in  std_logic;
     lvds_data_in        : in  std_logic_vector(35 downto 0);
 
-    i_ext_trigger       : in    std_logic := '0';
-
     i_reg_add           : in  std_logic_vector(7 downto 0);
     i_reg_re            : in  std_logic;
     o_reg_rdata         : out std_logic_vector(31 downto 0);
@@ -153,7 +151,6 @@ architecture rtl of mupix_datapath is
     signal hitsorter_out_ena_cnt    : std_logic_vector(31 downto 0);
     signal hitsorter_out_ena_cnt_reg: std_logic_vector(31 downto 0);
     signal reset_n_lvds             : std_logic;
-    signal ext_trigger_reg          : std_logic_vector(3 downto 0);
 
 begin
 
@@ -291,11 +288,9 @@ begin
             hitsorter_out_ena_cnt       <= (others => '0');
             hitsorter_in_ena_counters   <= (others => (others => '0'));
             hits_sorter_in_ena          <= (others => '0');
-            ext_trigger_reg             <= (others => '0');
 
         elsif(rising_edge(i_clk125))then
             lvds_link_mask_reg  <= lvds_link_mask;
-            ext_trigger_reg     <= ext_trigger_reg(2 downto 0) & i_ext_trigger;
 
             if(i_sync_reset_cnt = '1')then
                 counter125 <= (others => '0');
@@ -314,20 +309,14 @@ begin
             end if;
 
             sorter_inject_prev <= sorter_inject(MP_SORTER_INJECT_ENABLE_BIT);
-            --if(sorter_inject_prev = '0' and sorter_inject(MP_SORTER_INJECT_ENABLE_BIT) = '1' and (to_integer(unsigned(sorter_inject(MP_SORTER_INJECT_SELECT_RANGE))) < 12)) then
-            --    hits_sorter_in      <= (others => sorter_inject);
-            --    hits_sorter_in_ena  <= (others => '0');
-            --    hits_sorter_in_ena(to_integer(unsigned(sorter_inject(MP_SORTER_INJECT_SELECT_RANGE)))) <= '1';
-            --else
-                hits_sorter_in(10 downto 0)         <= hits_sorter_in_buf(10 downto 0);
-                hits_sorter_in_ena(10 downto 0)     <= hits_sorter_in_ena_buf(10 downto 0);
-                if(ext_trigger_reg(3)='0' and ext_trigger_reg(2)='1') then
-                    hits_sorter_in(11)              <= x"FFFF00" & counter125(7 downto 0); -- What to put here ?
-                    hits_sorter_in_ena(11)          <= '1';
-                else
-                    hits_sorter_in_ena(11)          <= '0';
-                end if;
-            --end if;
+            if(sorter_inject_prev = '0' and sorter_inject(MP_SORTER_INJECT_ENABLE_BIT) = '1' and (to_integer(unsigned(sorter_inject(MP_SORTER_INJECT_SELECT_RANGE))) < 12)) then
+                hits_sorter_in      <= (others => sorter_inject);
+                hits_sorter_in_ena  <= (others => '0');
+                hits_sorter_in_ena(to_integer(unsigned(sorter_inject(MP_SORTER_INJECT_SELECT_RANGE)))) <= '1';
+            else
+                hits_sorter_in      <= hits_sorter_in_buf;
+                hits_sorter_in_ena  <= hits_sorter_in_ena_buf;
+            end if;
 
             for i in 0 to 11 loop
                 if(i_run_state_125 = RUN_STATE_RUNNING) then

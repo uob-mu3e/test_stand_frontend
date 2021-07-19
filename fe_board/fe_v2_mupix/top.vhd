@@ -89,7 +89,7 @@ entity top is
 
         -- LEDs, test points and buttons
         PushButton                  : in    std_logic_vector(1 downto 0);
-        FPGA_Test                   : in    std_logic_vector(7 downto 0);
+        FPGA_Test                   : out   std_logic_vector(7 downto 0);
 
         --LCD
         lcd_csn                     : out   std_logic;--//2.5V    //LCD Chip Select
@@ -230,8 +230,6 @@ begin
 
         i_lvds_data_in          => data_in_D & data_in_C & data_in_B & data_in_A,
 
-        i_ext_trigger           => fpga_test(0),
-
         i_reset                 => not pb_db(1),
         -- 156.25 MHz
         i_clk156                => transceiver_pll_clock(0),
@@ -354,8 +352,6 @@ begin
         o_run_state_156     => run_state_156,
         i_ack_run_prep_permission => ack_run_prep_permission,
 
-        i_ext_trigger       => fpga_test(0),
-
         -- clocks
         i_nios_clk          => spare_clk_osc,
         o_nios_clk_mon      => lcd_data(0),
@@ -371,4 +367,8 @@ begin
     max10_spi_sclk <= '1'; -- This is temporary until we only have v2.1 boards with the
     -- correct connection; for now we use it to know 2.1 from 2.0
 
+
+    FPGA_Test(0) <= transceiver_pll_clock(0);
+    FPGA_Test(1) <= lvds_firefly_clk;
+    FPGA_Test(2) <= clk_125_top;
 end rtl;
