@@ -11,7 +11,7 @@ if [[ "$OSTYPE" == "darwin"* ]]; then
     export DYLD_LIBRARY_PATH="${LIBDIR}${DYLD_LIBRARY_PATH:+:}${DYLD_LIBRARY_PATH}";
 fi
 
-export MIDASSYS="${SOURCE}/modules/midas"
+export MIDASSYS=@MIDASSYS@
 export MIDAS_EXPTAB="${SOURCE}/online/exptab"
 export MIDAS_EXPT_NAME="Mu3e"
 if [ ! -f "${MIDAS_EXPTAB}" ]; then

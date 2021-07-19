@@ -44,19 +44,6 @@ message("here we set GLVND to default (https://cmake.org/cmake/help/git-stage/po
 set(OpenGL_GL_PREFERENCE GLVND)
 find_package(OpenGL)
 
-find_package(CUDA)
-
-if (CUDA_FOUND)
-    message("-- CUDA ${CUDA_VERSION_MAJOR}.${CUDA_VERSION_MINOR} was found at ${CUDA_TOOLKIT_ROOT_DIR}")
-    list(APPEND CUDA_NVCC_FLAGS "-DVERBOSE;-g")
-    #list(APPEND CUDA_NVCC_FLAGS "-arch=compute_30;-DVERBOSE;-g")
-    include_directories(${CUDA_TOOLKIT_ROOT_DIR}/include)
-else(CUDA_FOUND)
-    message("* CUDA is not found")
-    #   message(FATAL_ERROR "Not all CUDA libraries are found")
-    message("Not all CUDA libraries are found")
-endif(CUDA_FOUND)
-
 set(LIBMUDAQ_DIR ${PROJECT_SOURCE_DIR}/common/libmudaq)
 set(LIBMUPIX_DIR ${PROJECT_SOURCE_DIR}/common/libmupix)
 set(LIBMUTRIG_DIR ${PROJECT_SOURCE_DIR}/common/libmutrig)
@@ -65,10 +52,15 @@ set(INCMUDAQ_DIR ${PROJECT_SOURCE_DIR}/common/include)
 
 # on some older boxes, wpedantic and MIDAS do not mix
 add_subdirectory(modules)
-# Should be found after this
-find_package(Midas HINTS modules/midas REQUIRED)
+find_package(Midas REQUIRED
+    HINTS
+        $ENV{MIDASSYS}
+        ~/midas
+        ~/online/modules/midas
+        #${CMAKE_CURRENT_SOURCE_DIR}/../midas
+        )
 # To be implemented in midas/MidasConfig.cmake at some point
-set (MIDASSYS ${MIDAS_LIBRARY_DIRS}/..)
+get_filename_component(MIDASSYS ${MIDAS_LIBRARY_DIRS} DIRECTORY)
 message(STATUS "MIDASSYS = ${MIDASSYS}")
 list (APPEND MIDAS_INCLUDE_DIRS
     ${MIDASSYS}/midas/manalyzer
