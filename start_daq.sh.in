@@ -7,10 +7,6 @@ LIBDIR=${PREFIX}/lib
 
 source "${PREFIX}/set_env.sh"
 
-CUDA=@CUDA_FOUND@
-
-echo "$CUDA"
-
 cd "${SOURCE}/online"
 
 
