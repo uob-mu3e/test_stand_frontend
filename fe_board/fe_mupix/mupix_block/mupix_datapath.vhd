@@ -322,7 +322,7 @@ begin
                 hits_sorter_in(10 downto 0)         <= hits_sorter_in_buf(10 downto 0);
                 hits_sorter_in_ena(10 downto 0)     <= hits_sorter_in_ena_buf(10 downto 0);
                 if(ext_trigger_reg(3)='0' and ext_trigger_reg(2)='1') then
-                    hits_sorter_in(11)              <= x"FFFFFF" & counter125(7 downto 0); -- What to put here ?
+                    hits_sorter_in(11)              <= x"FFFF00" & counter125(7 downto 0); -- What to put here ?
                     hits_sorter_in_ena(11)          <= '1';
                 else
                     hits_sorter_in_ena(11)          <= '0';
