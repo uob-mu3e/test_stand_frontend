@@ -1,6 +1,6 @@
 # Mu3e online repository
 
-- current development branch is `v0.11_dev`
+- current development branch is `v0.12_dev`
 - Documentation and manual are under construction in the wiki associated to this repo
 
 ## Current "fixes" with MIDAS tag ced039e, cuda 10 or cuda 8

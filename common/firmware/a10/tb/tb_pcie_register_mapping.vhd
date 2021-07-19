@@ -9,59 +9,44 @@ end entity tb_pcie_register_mapping;
 
 architecture TB of tb_pcie_register_mapping is
 
-    constant dataclk_period : time := 4 ns;
-    constant pcieclk_period : time := 2 ns;
+    constant CLK_MHZ : real := 10000.0; -- MHz
     
-    signal dataclk : std_logic;
-    signal pcieclk : std_logic;
+    signal dataclk : std_logic := '0';
+    signal pcieclk : std_logic := '0';
+    signal reset_n : std_logic;
 
     signal rregs_156 : work.util.slv32_array_t(63 downto 0);
 
 begin
 
-	--dataclk
-	process begin
-		dataclk <= '0';
-		wait for dataclk_period/2;
-		dataclk <= '1';
-		wait for dataclk_period/2;
-	end process;
+    pcieclk <= not pcieclk  after (0.1 us / CLK_MHZ);
+    dataclk <= not dataclk  after (0.5 us / CLK_MHZ);
+    reset_n <= '0', '1'     after (1.0 us / CLK_MHZ);
 	
-	--pcieclk
-	process begin
-		pcieclk <= '0';
-		wait for pcieclk_period/2;
-		pcieclk <= '1';
-		wait for pcieclk_period/2;
-	end process;
-	
-	rregs_156(10) <= x"FFFFFFFF";
-	rregs_156(12) <= x"BBBBBBBB";
+	rregs_156(62) <= x"FFFFFFFF";
+	rregs_156(63) <= x"BBBBBBBB";
 
     e_mapping : entity work.pcie_register_mapping
         port map(
             --! register inputs for pcie0
-            i_pcie0_rregs_156   => rregs_156,
-            i_pcie0_rregs_250   => (others => (others => '0')),
+            i_pcie0_rregs_A   => (others => (others => '0')),
+            i_pcie0_rregs_B   => rregs_156,
+            i_pcie0_rregs_C   => (others => (others => '0')),  
 
-            --! register inputs for pcie1
-            i_pcie1_rregs_156  => (others => (others => '0')),
-            i_pcie1_rregs_250  => (others => (others => '0')),
-    
             --! register inputs for pcie0 from a10_block
-            i_local_pcie0_rregs_156 => (others => (others => '0')),
-            i_local_pcie0_rregs_250 => (others => (others => '0')),
+            i_local_pcie0_rregs_A => (others => (others => '0')),
+            i_local_pcie0_rregs_B => (others => (others => '0')),
+            i_local_pcie0_rregs_C => (others => (others => '0')),
 
-            --! register outputs for pcie0/1
+            --! register outputs for pcie0
             o_pcie0_rregs       => open,
-            o_pcie1_rregs       => open,
+
+            i_reset_n         => reset_n,
 
             -- slow 156 MHz clock
-            i_clk_156           => dataclk,
-
-            -- fast 250 MHz clock
-            i_pcie0_clk         => pcieclk,
-            i_pcie1_clk         => pcieclk--,
+            i_clk_A           => pcieclk,
+            i_clk_B           => dataclk,
+            i_clk_C           => dataclk--,
     );
     
 end TB;

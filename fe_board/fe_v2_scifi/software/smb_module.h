@@ -24,6 +24,7 @@ struct SMB_t {
     //ASIC configuration
     //write slow control pattern over SPI, returns 0 if readback value matches written, otherwise -1. Does not include CSn line switching.
     int spi_write_pattern(alt_u32 spi_slave, const alt_u8* bitpattern);
+    int spi2_write_pattern(alt_u32 spi_slave, const alt_u8* bitpattern);
     int spi_write_pattern_nb(alt_u32 spi_slave, alt_u16 nBytes, alt_u8 byteValue); 
     //write and verify pattern twice, toggle i2c lines via i2c
     alt_u16     configure_asic(alt_u32 asic, const alt_u8* bitpattern);

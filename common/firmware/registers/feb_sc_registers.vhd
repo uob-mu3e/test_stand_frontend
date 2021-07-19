@@ -70,6 +70,8 @@ package feb_sc_registers is
     constant PROGRAMmING_STATUS_R               :   integer := 16#28#;
     constant PROGRAMMING_ADDR_W                 :   integer := 16#29#;  
     constant PROGRAMMING_DATA_W                 :   integer := 16#2A#;
+    
+    constant SI_STATUS_REGISTER                 :   integer := 16#2B#;
 
 
     -- Registers 0x25 to 0x3F are reserved for further generic use
@@ -128,7 +130,8 @@ package feb_sc_registers is
     constant CHIP_DACS_USEDW_R                  :   integer := 16#B9#;
     constant REG_HITS_ENA_COUNT_R               :   integer := 16#BA#;
     constant SORTER_DELAY_RW                    :   integer := 16#BF#;
-    constant SORTER_COUNTER_R                   :   integer := 16#C0#; -- 40 counters
+    constant SORTER_COUNTER_R                   :   integer := 16#C0#; 
+    -- 40 counters
     -- next free register at 16#E8#
 
 

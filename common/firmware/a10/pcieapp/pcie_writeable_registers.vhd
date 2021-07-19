@@ -8,57 +8,53 @@
 
 library ieee;
 use ieee.std_logic_1164.all;
-use ieee.std_logic_unsigned.all;
 use ieee.numeric_std.all;
 
 use work.mudaq.all;
 
-
 entity pcie_writeable_registers is
 port (
-    o_writeregs_B               : out   reg32array_pcie;
-	 o_regwritten_B :			out   std_logic_vector(63 downto 0);
-    i_clk_B                     : in    std_logic := '0';
-	 
-	 o_writeregs_C               : out   reg32array_pcie;
-	 o_regwritten_C :			out   std_logic_vector(63 downto 0);
-    i_clk_C                     : in    std_logic := '0';
+    o_writeregs_B   : out   reg32array_pcie;
+    o_regwritten_B  : out   std_logic_vector(63 downto 0);
+    i_clk_B         : in    std_logic := '0';
 
-		local_rstn:				in		std_logic;
-		refclk:					in		std_logic;
+    o_writeregs_C   : out   reg32array_pcie;
+    o_regwritten_C  : out   std_logic_vector(63 downto 0);
+    i_clk_C         : in    std_logic := '0';
 
-		-- from IF
-		rx_st_data0 :  		in 	STD_LOGIC_VECTOR (255 DOWNTO 0);
-		rx_st_eop0 :  			in		STD_LOGIC;
-		rx_st_sop0 :  			in 	STD_LOGIC;
-		rx_st_ready0 :			out 	STD_LOGIC;
-		rx_st_valid0 :			in 	STD_LOGIC;
-		rx_bar :					in 	STD_LOGIC;
+    local_rstn      : in    std_logic;
+    refclk          : in    std_logic;
 
-		-- registers
-		writeregs :				out	reg32array_pcie;
-		regwritten :			out   std_logic_vector(63 downto 0);
+    -- from IF
+    rx_st_data0     : in    STD_LOGIC_VECTOR (255 DOWNTO 0);
+    rx_st_eop0      : in    STD_LOGIC;
+    rx_st_sop0      : in    STD_LOGIC;
+    rx_st_ready0    : out   STD_LOGIC;
+    rx_st_valid0    : in    STD_LOGIC;
+    rx_bar          : in    STD_LOGIC;
 
-		-- to response engine
-		readaddr :				out std_logic_vector(5 downto 0);
-		readlength :			out std_logic_vector(9 downto 0);
-		header2 :				out std_logic_vector(31 downto 0);
-		readen :					out std_logic;
-		inaddr32_w			: out STD_LOGIC_VECTOR (31 DOWNTO 0)
+    -- registers
+    writeregs       : out   reg32array_pcie;
+    regwritten      : out   std_logic_vector(63 downto 0);
+
+    -- to response engine
+    readaddr        : out   std_logic_vector(5 downto 0);
+    readlength      : out   std_logic_vector(9 downto 0);
+    header2         : out   std_logic_vector(31 downto 0);
+    readen          : out   std_logic;
+    inaddr32_w      : out   STD_LOGIC_VECTOR (31 DOWNTO 0)
 );
 end entity;
-
-
 
 architecture RTL of pcie_writeable_registers is
 
 	type receiver_state_type is (reset, waiting);
 	signal state : receiver_state_type;
-	
+
 	signal inaddr32 : 			std_logic_vector(31 downto 0);
 	signal regaddr  : 			std_logic_vector(5 downto 0);
 	signal regaddr_reg  : 		std_logic_vector(5 downto 0);
-	
+
 	-- Decoding PCIe TLP headers
 	signal fmt : 		std_logic_vector(1 downto 0);
 	signal ptype :    std_logic_vector(4 downto 0);
@@ -75,23 +71,18 @@ architecture RTL of pcie_writeable_registers is
 	signal word3 : std_logic_vector(31 downto 0);
 	signal word4 : std_logic_vector(31 downto 0);
 
-	
 	signal be3	 : std_logic;
 	signal be4	 : std_logic;
 
     signal be3_prev : std_logic;
     signal be4_prev : std_logic;
-	
-	
+
 	signal addr3: 	 std_logic_vector(5 downto 0);
 	signal addr4:	 std_logic_vector(5 downto 0);
 
-	
 	-- registers
 	signal writeregs_r	: reg32array_pcie;
 	signal regwritten_r : std_logic_vector(63 downto 0);
-	
-	constant zero32	:  std_logic_vector(31 downto 0) := "00000000000000000000000000000000";
 
     signal writeregs_B : reg32array_pcie;
     signal regwritten_B : std_logic_vector(63 downto 0);
@@ -110,10 +101,9 @@ begin
 	-- Endian chasing for addresses
 	inaddr32 <= rx_st_data0(95 downto 66) & "00";
 	--inaddr32 <= rx_st_data0(95 downto 74) & "1" & rx_st_data0(72 downto 66) & "00";
-	
+
 	regaddr	<= inaddr32(7 downto 2);
-	
-	
+
 	-- decode TLP
 	fmt		<=		rx_st_data0(30 downto 29);
 	ptype		<=		rx_st_data0(28 downto 24);
@@ -124,34 +114,29 @@ begin
 	plength	<= 	rx_st_data0(9 downto 8) & rx_st_data0(7 downto 0);
 	fdw_be	<= 	rx_st_data0(35 downto 32);
 	ldw_be	<= 	rx_st_data0(39 downto 36);
-	
+
 	writeregs <= writeregs_r;
-	
+
 	process(local_rstn, refclk)
-	
-	variable regaddr_var : std_logic_vector(5 downto 0);
-	variable length_var  : std_logic_vector(9 downto 0);
-	
-	begin	
-	
+	begin
 	if(local_rstn = '0') then
 		state 			<= reset;
 		rx_st_ready0    <= '0';
-		writeregs_r		<= (others => zero32);
+		writeregs_r		<= (others => (others => '0'));
 		regwritten		<= (others => '0');
 
-	
+
 	elsif (refclk'event and refclk = '1') then
 		regwritten <= regwritten_r;
-	
+
 		readen	<= '0';
-		word3		<= rx_st_data0(127 downto 96);	
+		word3		<= rx_st_data0(127 downto 96);
 		word4		<= rx_st_data0(159 downto 128);
 		regwritten_r		<= (others => '0');
-		
 
-		
-		
+
+
+
 		-- do the actual writing
 		if (be3 = '1') then
 			writeregs_r(TO_INTEGER(UNSIGNED(addr3))) <= word3;
@@ -161,17 +146,17 @@ begin
 			writeregs_r(TO_INTEGER(UNSIGNED(addr4))) <= word4;
 			regwritten_r(TO_INTEGER(UNSIGNED(addr4))) <= '1';
 		end if;
-	
-		
-	
-		
+
+
+
+
 		case state is
 			when reset =>
 				state 			<= waiting;
 				rx_st_ready0   <= '0';
 				be3				<= '0';
 				be4				<= '0';
-	-------------------------------------------------------------------------------------			
+	-------------------------------------------------------------------------------------
 			when waiting =>
 				be3				<= '0';
 				be4				<= '0';
@@ -196,7 +181,7 @@ begin
 							end if;
 							state <= waiting;
 						end if; -- if aligned
-					elsif(fmt = "00" and ptype = "00000") then -- 32 bit memory read request 	
+					elsif(fmt = "00" and ptype = "00000") then -- 32 bit memory read request
 						inaddr32_w <= rx_st_data0(95 downto 66) & "00";
 						readaddr		<= regaddr;
 						readlength 	<= plength;
@@ -206,7 +191,7 @@ begin
 					end if; -- 32 bit write/read request
 				end if; -- if Start of Packet
 				state <= waiting;
-		end case;	
+		end case;
 	end if; -- if clk event
 	end process;
 
@@ -264,16 +249,14 @@ begin
     elsif rising_edge(i_clk_B) then
         if ( writeregs_B_fifo_rempty = '0' ) then
             writeregs_B(to_integer(unsigned(writeregs_B_fifo_rdata(37 downto 32)))) <= writeregs_B_fifo_rdata(31 downto 0);
-				regwritten_B(to_integer(unsigned(writeregs_B_fifo_rdata(37 downto 32)))) <= '1';
+            regwritten_B(to_integer(unsigned(writeregs_B_fifo_rdata(37 downto 32)))) <= '1';
         end if;
         --
     end if;
     end process;
-	 
-	 
-	 
-	 o_writeregs_C <= writeregs_C;
-	 o_regwritten_C <= regwritten_C;
+
+    o_writeregs_C <= writeregs_C;
+    o_regwritten_C <= regwritten_C;
 
     writeregs_C_fifo_wdata <=
         ( addr3 & word3 ) when ( be3_prev = '1' ) else
@@ -316,7 +299,7 @@ begin
     elsif rising_edge(i_clk_C) then
         if ( writeregs_C_fifo_rempty = '0' ) then
             writeregs_C(to_integer(unsigned(writeregs_C_fifo_rdata(37 downto 32)))) <= writeregs_C_fifo_rdata(31 downto 0);
-				regwritten_C(to_integer(unsigned(writeregs_C_fifo_rdata(37 downto 32)))) <= '1';
+            regwritten_C(to_integer(unsigned(writeregs_C_fifo_rdata(37 downto 32)))) <= '1';
         end if;
         --
     end if;

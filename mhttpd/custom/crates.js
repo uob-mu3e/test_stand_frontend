@@ -11,7 +11,7 @@ function write_temperature(name, temp, x, y){
         tempcolour = "Red";
 
     cc.fillStyle = tempcolour;
-    cc.font = "12px Arial";
+    cc.font = "12px Arial, sans-serif";
     cc.textAlign = "right";
     cc.fillText(name + " " + temp.toFixed(0)  + " C", x, y);
     cc.textAlign = "left";
@@ -19,7 +19,7 @@ function write_temperature(name, temp, x, y){
 
 function write_voltage(name, volt, x, y){
     cc.fillStyle = "Black";
-    cc.font = "12px Arial";
+    cc.font = "12px Arial, sans-serif";
     cc.textAlign = "right";
     cc.fillText(name + " " + volt.toFixed(2)  + " V", x, y);
     cc.textAlign = "left";
@@ -43,12 +43,12 @@ function FEB(x,y,dx,dy, slot){
         cc.fillRect(this.x, this.y,this.dx, this.dy);
 
         cc.fillStyle = "Black";
-        cc.font = "12px Arial";
+        cc.font = "12px Arial, sans-serif";
         cc.fillText("Slot " + this.slot, this.x+10, this.y+15);
 
         if(this.index >= 0){
             cc.fillStyle = "Black";
-            cc.font = "12px Arial";
+            cc.font = "12px Arial, sans-serif";
             cc.fillText("FEB " + this.index, this.x+10, this.y+30);
         }
 
@@ -98,11 +98,11 @@ function Crate(x,y,dx,dy, index){
         cc.fillRect(this.x, this.y,this.dx, this.dy);
 
         cc.fillStyle = "Black";
-        cc.font = "20px Arial";
+        cc.font = "20px Arial, sans-serif";
         cc.fillText("Crate " + this.index, this.x+10, this.y+20);
 
         cc.fillStyle = "Black";
-        cc.font = "12px Arial";
+        cc.font = "12px Arial, sans-serif";
         cc.fillText(this.mscb_node + " / " + this.mscb_device, this.x+90, this.y+20);
 
         write_voltage("20V", this.U24, this.x+70, this.y+40);

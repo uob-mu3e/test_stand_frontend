@@ -152,8 +152,8 @@ architecture rtl of top is
     signal dma_data_wren, dmamem_endofevent, pcie0_dma0_hfull : std_logic;
     signal dma_data : std_logic_vector(255 downto 0);
 
-    signal rx_data_raw, rx_data, tx_data : work.util.slv32_array_t(15 downto 0);
-    signal rx_datak_raw, rx_datak, tx_datak : work.util.slv4_array_t(15 downto 0);
+    signal rx_data_raw, rx_data, tx_data : work.util.slv32_array_t(15 downto 0) := (others => X"000000BC");
+    signal rx_datak_raw, rx_datak, tx_datak : work.util.slv4_array_t(15 downto 0) := (others => "0001");
 
 begin
 
@@ -243,6 +243,7 @@ begin
         o_xcvr0_rx_datak                => rx_datak_raw,
         i_xcvr0_tx_data                 => tx_data,
         i_xcvr0_tx_datak                => tx_datak,
+        i_xcvr0_clk                     => clk_156,
 
         -- PCIe0
         i_pcie0_rx                      => PCIE_RX_p,
@@ -334,6 +335,8 @@ begin
         g_NLINKS_FARM_TOTL      => g_NLINKS_FARM_TOTL,
         g_NLINKS_FARM_PIXEL     => g_NLINKS_FARM_PIXEL,
         g_NLINKS_DATA_PIXEL     => g_NLINKS_DATA_PIXEL,
+        g_NLINKS_FARM_SCIFI     => g_NLINKS_FARM_SCIFI,
+        g_NLINKS_DATA_SCIFI     => g_NLINKS_DATA_SCIFI,
         SWB_ID                  => SWB_ID--,
     )
     port map (
@@ -363,8 +366,8 @@ begin
         o_endofevent    => dmamem_endofevent,
         o_dma_data      => dma_data,
 
-        o_farm_data     => open,
-        o_farm_datak    => open,
+        o_farm_tx_data  => open,
+        o_farm_tx_datak => open,
 
         --! 250 MHz clock / reset_n
         i_reset_n_250   => reset_pcie0_n,

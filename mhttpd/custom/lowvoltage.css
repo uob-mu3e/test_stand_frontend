@@ -1,0 +1,77 @@
+#BoxButtons {
+    background-color: white;
+    width: 300px;
+    border: 15px solid lightskyblue;
+    padding: 50px;                                                 
+    margin: 20px;
+}
+
+.button {
+  background-color: #f11717; 
+  border: none;
+  color: white;
+  padding: 20px;
+  text-align: center;
+  text-decoration: none;
+  display: inline-block;
+  font-size: 50px;
+  margin: 4px 2px;
+  cursor: pointer;
+  border-radius: 50%;
+  box-shadow: 0 9px #999;
+}
+
+.button:hover { background-color: #9c0c0c; }
+
+.button:active {
+  background-color: #9c0c0c;
+  box-shadow: 0 5px #666;
+  transform: translateY(4px);
+}
+
+
+.ButtonSciFiON {
+  background-color: #4CAF50; 
+  border: none;
+  color: white;
+  padding: 20px;
+  text-align: center;
+  text-decoration: none;
+  display: inline-block;
+  font-size: 20px;
+  margin: 4px 2px;
+  cursor: pointer;
+  border-radius: 15px;
+  box-shadow: 0 9px #999;
+}
+
+.ButtonSciFiON:hover { background-color: #3e8e41; }
+
+.ButtonSciFiON:active {
+  background-color: #3e8e41;
+  box-shadow: 0 5px #666;
+  transform: translateY(4px);
+}
+
+.ButtonSciFiOFF {
+  background-color: #f11717; 
+  border: none;
+  color: white;
+  padding: 20px;
+  text-align: center;
+  text-decoration: none;
+  display: inline-block;
+  font-size: 20px;
+  margin: 4px 2px;
+  cursor: pointer;
+  border-radius: 15px;
+  box-shadow: 0 9px #999;
+}
+
+.ButtonSciFiOFF:hover { background-color: #9c0c0c; }
+
+.ButtonSciFiOFF:active {
+  background-color: #9c0c0c;
+  box-shadow: 0 5px #666;
+  transform: translateY(4px);
+}

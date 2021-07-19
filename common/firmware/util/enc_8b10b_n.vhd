@@ -28,7 +28,7 @@ begin
 
     generate_enc_8b10b : for i in 0 to N_BYTES_g-1 generate
     begin
-        e_enc_8b10b : entity work.enc_8b10b_v2
+        e_enc_8b10b : entity work.enc_8b10b
         port map (
             i_data => i_datak(i) & i_data(i*8 + 7 downto 0 + i*8),
             i_disp => disp(i),

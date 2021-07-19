@@ -15,7 +15,6 @@ entity mupix_datapath is
 port (
     i_reset_n           : in  std_logic;
     i_reset_n_regs      : in  std_logic;
-    i_reset_n_lvds      : in  std_logic;
 
     i_clk156            : in  std_logic;
     i_clk125            : in  std_logic;
@@ -151,6 +150,7 @@ architecture rtl of mupix_datapath is
     signal hitsorter_in_ena_cnt_sel : std_logic_vector( 3 downto 0);
     signal hitsorter_out_ena_cnt    : std_logic_vector(31 downto 0);
     signal hitsorter_out_ena_cnt_reg: std_logic_vector(31 downto 0);
+    signal reset_n_lvds             : std_logic;
 
 begin
 
@@ -197,6 +197,7 @@ begin
         -- outputs 125-------------------------------------------------
         o_sorter_delay              => sorter_delay,
         o_sorter_inject             => sorter_inject,
+        o_mp_reset_n_lvds           => reset_n_lvds,
         o_mp_hit_ena_cnt_select     => hit_ena_cnt_select,
         o_mp_hit_ena_cnt_sorter_sel => hitsorter_in_ena_cnt_sel--,
     );
@@ -205,7 +206,7 @@ begin
 ---------------------- LVDS Receiver part ------------------------------------------
     lvds_block : work.receiver_block_mupix
     port map(
-        i_reset_n           => i_reset_n_lvds,
+        i_reset_n           => reset_n_lvds,
         i_nios_clk          => i_clk156,
         i_clk_global        => i_clk125,
         checker_rst_n       => (others => '1'),--TODO: What is this ? M.Mueller
@@ -286,6 +287,7 @@ begin
             last_sorter_hit             <= (others => '0');
             hitsorter_out_ena_cnt       <= (others => '0');
             hitsorter_in_ena_counters   <= (others => (others => '0'));
+            hits_sorter_in_ena          <= (others => '0');
 
         elsif(rising_edge(i_clk125))then
             lvds_link_mask_reg  <= lvds_link_mask;
@@ -443,6 +445,7 @@ begin
         DATA_WIDTH  => 1+36,
         SHOWAHEAD   => "OFF",
         OVERFLOW    => "ON",
+		  REGOUT      => 0,
         DEVICE      => "Arria V"--,
     )
     port map(
@@ -489,6 +492,7 @@ begin
         DATA_WIDTH  => 32,
         SHOWAHEAD   => "OFF",
         OVERFLOW    => "ON",
+		  REGOUT      => 0,
         DEVICE      => "Arria V"--,
     )
     port map(

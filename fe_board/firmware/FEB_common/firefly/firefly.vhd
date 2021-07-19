@@ -424,7 +424,7 @@ begin
         end if;    
     end process;
 
-    udec_8b10b : entity work.dec_8b10b 
+    udec_8b10b : entity work.dec_8b10b_old
     port map(
         RESET => not i_reset_125_rx_n,
         RBYTECLK => lvds_rx_clk,
@@ -667,6 +667,7 @@ begin
         DATA_WIDTH  => 8,
         SHOWAHEAD   => "OFF",
         OVERFLOW    => "ON",
+		  REGOUT      => 0,
         DEVICE      => "Arria V"--,
     )
     port map(
@@ -685,6 +686,7 @@ begin
         DATA_WIDTH  => 220,
         SHOWAHEAD   => "OFF",
         OVERFLOW    => "ON",
+		  REGOUT      => 0,
         DEVICE      => "Arria V"--,
     )
     port map(
@@ -715,6 +717,7 @@ begin
         DATA_WIDTH  => 280,
         SHOWAHEAD   => "OFF",
         OVERFLOW    => "ON",
+		  REGOUT      => 0,
         DEVICE      => "Arria V"--,
     )
     port map(
@@ -752,6 +755,7 @@ begin
         DATA_WIDTH  => 9,
         SHOWAHEAD   => "OFF",
         OVERFLOW    => "ON",
+		  REGOUT      => 0,
         DEVICE      => "Arria V"--,
     )
     port map(

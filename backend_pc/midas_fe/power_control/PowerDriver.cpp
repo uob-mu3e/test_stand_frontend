@@ -1,12 +1,20 @@
 #include "PowerDriver.h"
+#include <thread>
 
 PowerDriver::PowerDriver()
 {
 	std::cout << "Warning: empty base class instantiated" << std::endl;
 }
 
-PowerDriver::PowerDriver(std::string n, EQUIPMENT_INFO* inf) : info{inf}, name{n}
+PowerDriver::PowerDriver(std::string n, EQUIPMENT_INFO* inf) : info{inf}, name{n}, read{0}, stop{0}, readstatus(FE_ERR_DISABLED), n_read_faults(0)
 {
+}
+
+PowerDriver::~PowerDriver()
+{
+    stop = 1;
+    if(readthread.joinable())
+        readthread.join();
 }
 
 
@@ -15,10 +23,12 @@ INT PowerDriver::ConnectODB()
 	//general settings
 	settings.connect("/Equipment/"+name+"/Settings");
 	settings["IP"]("10.10.10.10");
+	settings["Use Hostname"](true);
+	settings["Hostname"]("");
 	settings["NChannels"](2);
-	settings["Global Reset On FE Start"](true);
+	settings["Global Reset On FE Start"](false);
 	settings["Read ESR"](false);
-
+	
 	//variables
 	variables.connect("/Equipment/"+name+"/Variables");
   
@@ -29,7 +39,20 @@ INT PowerDriver::ConnectODB()
 
 INT PowerDriver::Connect()
 {
-	client = new TCPClient(settings["IP"],settings["port"],settings["reply timout"]);
+	std::string hostname = "";
+	if(settings["Use Hostname"] == true)
+	{
+		hostname = settings["Hostname"];
+		//make a hostname from the eq name
+		if (hostname.length() < 2)
+		{
+			hostname = name;
+			std::transform( hostname.begin(), hostname.end(), hostname.begin(), [](unsigned char c){ return std::tolower(c); } );
+			settings["Hostname"] = hostname;
+			std::cout << " set hostname key as " << settings["Hostname"] << std::endl;
+		}
+	}
+	client = new TCPClient(settings["IP"],settings["port"],settings["reply timout"],hostname);
 	ss_sleep(100);
 	std::string ip = settings["IP"];
 	min_reply_length = settings["min reply"];
@@ -40,8 +63,24 @@ INT PowerDriver::Connect()
 		return FE_ERR_HW;
 	}		
 	else cm_msg(MINFO,"power_fe","Init Connection to %s alive",ip.c_str());
+
+    //Also start the read thread here
+    readthread = std::thread(&PowerDriver::ReadLoop, this);
 	
-	return FE_SUCCESS;
+    return FE_SUCCESS;
+}
+
+void PowerDriver::ReadLoop()
+{
+    while(!stop){
+        if(!read){
+            std::this_thread::sleep_for(std::chrono::milliseconds(1000));
+        } else {
+            std::this_thread::sleep_for(std::chrono::milliseconds(100));
+            readstatus = ReadAll();
+            read = 0;
+        }
+    }
 }
 
 
@@ -95,6 +134,7 @@ void PowerDriver::Print()
 
 
 
+
 float PowerDriver::Read(std::string cmd, INT& error)
 {
 	error = FE_SUCCESS;
@@ -103,12 +143,19 @@ float PowerDriver::Read(std::string cmd, INT& error)
 	client->Write(cmd);
 	std::this_thread::sleep_for(std::chrono::milliseconds(client->GetWaitTime()));
 	success = client->ReadReply(&reply,min_reply_length);
+    float value = 0.;
 	if(!success)
 	{
 		cm_msg(MERROR, "Power supply read ... ", "could not read after command %s", cmd.c_str());
 		error = FE_ERR_DRIVER;		
 	}
-	float value = std::stof(reply);
+    try {
+	    value = std::stof(reply);
+    }
+    catch (const std::exception& e) {
+        cm_msg(MERROR, "Power supply read...", "could not convert to float %s (%s)", reply.c_str(), e.what());
+        error = FE_ERR_DRIVER;
+    }
 	return value;
 }
 
@@ -120,6 +167,9 @@ std::string PowerDriver::ReadIDCode(int index, INT& error)
 	bool success;
 	std::string reply="";
 	error=FE_SUCCESS;
+
+    // From here on we grab the mutex until the end of the function: One transaction at a time
+    const std::lock_guard<std::mutex> lock(power_mutex);
 
 	if(index>=0) SelectChannel(instrumentID[index]);
 
@@ -145,6 +195,9 @@ std::vector<std::string> PowerDriver::ReadErrorQueue(int index, INT& error)
 	std::string reply="";
 	error=FE_SUCCESS;
 
+    // From here on we grab the mutex until the end of the function: One transaction at a time
+    const std::lock_guard<std::mutex> lock(power_mutex);
+
 	if(index>=0) SelectChannel(instrumentID[index]);
 
 	std::vector<std::string> error_queue;
@@ -157,7 +210,8 @@ std::vector<std::string> PowerDriver::ReadErrorQueue(int index, INT& error)
 		success = client->ReadReply(&reply,min_reply_length);
 		if(!success)
 		{
-			cm_msg(MERROR, "Power supply read ... ", "could not read error supply with address %d", instrumentID[index]);
+			if(index >=0){ cm_msg(MERROR, "Power supply read ... ", "could not read error supply with address %d", instrumentID[index]); }
+			else { cm_msg(MERROR, "Power supply read ... ", "could not read error supply ");}
 			error = FE_ERR_DRIVER;
 		}
 		//std::cout << " error queue " << reply << std::endl;
@@ -174,6 +228,9 @@ int PowerDriver::ReadESR(int index, INT& error)
 	bool success;
 	std::string reply="";
 	error=FE_SUCCESS;
+
+    // From here on we grab the mutex until the end of the function: One transaction at a time
+    const std::lock_guard<std::mutex> lock(power_mutex);
 
 	if(index>=0) SelectChannel(instrumentID[index]);
 
@@ -198,6 +255,9 @@ WORD PowerDriver::ReadQCGE(int index, INT& error)
 	std::string reply="";
 	error=FE_SUCCESS;
 
+    // From here on we grab the mutex until the end of the function: One transaction at a time
+    const std::lock_guard<std::mutex> lock(power_mutex);
+
 	if(index>=0) SelectChannel(instrumentID[index]);
 	
 	cmd = "STAT:QUES?\n";
@@ -221,7 +281,10 @@ bool PowerDriver::ReadState(int index,INT& error)
 	bool success;
 	std::string reply;
 	error=FE_SUCCESS;
-	bool value;
+    bool value =false;
+
+    // From here on we grab the mutex until the end of the function: One transaction at a time
+    const std::lock_guard<std::mutex> lock(power_mutex);
   
 	if(index>=0) SelectChannel(instrumentID[index]);
   
@@ -252,6 +315,9 @@ bool PowerDriver::ReadState(int index,INT& error)
 
 float PowerDriver::ReadVoltage(int index,INT& error)
 {
+    // From here on we grab the mutex until the end of the function: One transaction at a time
+    const std::lock_guard<std::mutex> lock(power_mutex);
+
 	error = FE_SUCCESS;
 	float value = 0.0;
 	if( SelectChannel(instrumentID[index]) )  {	  value = Read("MEAS:VOLT?\n",error);	}
@@ -262,6 +328,9 @@ float PowerDriver::ReadVoltage(int index,INT& error)
 
 float PowerDriver::ReadSetVoltage(int index,INT& error)
 {
+    // From here on we grab the mutex until the end of the function: One transaction at a time
+    const std::lock_guard<std::mutex> lock(power_mutex);
+
   error = FE_SUCCESS;
 	float value = 0.0;
   if(SelectChannel(instrumentID[index]))  {	  value = Read("VOLT?\n",error);	}
@@ -272,6 +341,9 @@ float PowerDriver::ReadSetVoltage(int index,INT& error)
 
 float PowerDriver::ReadCurrent(int index,INT& error)
 {
+    // From here on we grab the mutex until the end of the function: One transaction at a time
+    const std::lock_guard<std::mutex> lock(power_mutex);
+
   error = FE_SUCCESS;
 	float value = 0.0;
   if(SelectChannel(instrumentID[index]))  {	  value = Read("MEAS:CURR?\n",error);	}
@@ -282,11 +354,26 @@ float PowerDriver::ReadCurrent(int index,INT& error)
 
 float PowerDriver::ReadCurrentLimit(int index,INT& error)
 {
+    // From here on we grab the mutex until the end of the function: One transaction at a time
+    const std::lock_guard<std::mutex> lock(power_mutex);
+
   error = FE_SUCCESS;
 	float value = 0.0;
   if(SelectChannel(instrumentID[index]))  {	  value = Read("CURR?\n",error);	}
 	else error = FE_ERR_DRIVER;
   return value; 
+}
+
+float PowerDriver::ReadOVPLevel(int index,INT& error)
+{
+    // From here on we grab the mutex until the end of the function: One transaction at a time
+    const std::lock_guard<std::mutex> lock(power_mutex);
+
+	error = FE_SUCCESS;
+	float value = 0.0;
+	if( SelectChannel(instrumentID[index]) )  {	  value = Read("VOLT:PROT:LEV?\n",error);	}
+		else error = FE_ERR_DRIVER;
+	return value; 
 }
 
 
@@ -297,6 +384,9 @@ float PowerDriver::ReadCurrentLimit(int index,INT& error)
 
 bool PowerDriver::Set(std::string cmd, INT& error)
 {
+    // From here on we grab the mutex until the end of the function: One transaction at a time
+    const std::lock_guard<std::mutex> lock(power_mutex);
+
 	bool success;
 	client->Write(cmd);
 	std::this_thread::sleep_for(std::chrono::milliseconds(client->GetWaitTime()));
@@ -319,6 +409,7 @@ void PowerDriver::SetCurrentLimit(int index, float value,INT& error)
   	return;  	
   }
   
+
   if( SelectChannel(instrumentID[index]) ) //'channel' is already instrument channel
   {
 	bool success = Set("CURR "+std::to_string(value)+"\n",error);
@@ -351,7 +442,10 @@ void PowerDriver::SetState(int index, bool value,INT& error)
 			return;
 		}
 	}
-	  
+
+    // From here on we grab the mutex until the end of the function: One transaction at a time
+    const std::lock_guard<std::mutex> lock(power_mutex);
+
 	if( SelectChannel(instrumentID[index]) )
 	{
 		if(value==true) { cmd="OUTP:STAT 1\n"; }
@@ -376,7 +470,7 @@ void PowerDriver::SetVoltage(int index, float value,INT& error)
 		error=FE_ERR_DRIVER;
 		return;  	
 	}
-  
+    
 	if( SelectChannel(instrumentID[index]) ) // module address in the daisy chain to select channel, or 1/2/3/4 for the HAMEG
 	{
 		bool success = Set("VOLT "+std::to_string(value)+"\n",error);
@@ -387,6 +481,37 @@ void PowerDriver::SetVoltage(int index, float value,INT& error)
 			variables["Voltage"][index]=voltage[index];
 			current[index]=ReadCurrent(index,error);
 			variables["Current"][index]=current[index];
+		}		
+	}
+	else error=FE_ERR_DRIVER;
+}
+
+
+void PowerDriver::SetOVPLevel(int index, float value,INT& error)
+{
+	error = FE_SUCCESS;
+	if(value<-0.1 || value > 25.) //check valid range 
+	{
+		cm_msg(MERROR, "Power supply ... ", "voltage protection level of %f not allowed",value );
+		variables["Demand OVP Level"][index]=OVPlevel[index]; //disable request
+		error=FE_ERR_DRIVER;
+		return;  	
+	}
+  
+
+
+	if( SelectChannel(instrumentID[index]) ) // module address in the daisy chain to select channel, or 1/2/3/4 for the HAMEG
+	{
+		bool success = Set("VOLT:PROT:LEV "+std::to_string(value)+"\n",error);
+		if(!success) error=FE_ERR_DRIVER;
+		else // read changes
+		{
+			voltage[index]=ReadVoltage(index,error);
+			variables["Voltage"][index]=voltage[index];
+			current[index]=ReadCurrent(index,error);
+			variables["Current"][index]=current[index];
+			OVPlevel[index]=ReadOVPLevel(index,error);
+			variables["OVP Level"][index]=OVPlevel[index];
 		}		
 	}
 	else error=FE_ERR_DRIVER;
@@ -437,8 +562,8 @@ void PowerDriver::SetStateChanged()
 		}			
 	}
 	
-	if(nChannelsChanged < 1) cm_msg(MINFO, "Power ... ", "changing %s state request failed",name.c_str());
-	else // read changes back from device 
+	//if(nChannelsChanged < 1) cm_msg(MINFO, "Power ... ", "changing %s state request failed",name.c_str()); //this is triggered, even when it works. Maybe a double call or so? FW
+	//else // read changes back from device 
 	{
 		int nChannels = instrumentID.size();
 		for(int i = 0; i<nChannels; i++ ) 
@@ -473,6 +598,29 @@ void PowerDriver::DemandVoltageChanged()
 	}	
 	if(nChannelsChanged < 1) cm_msg(MINFO, "Genesys supply ... ", "changing voltage request rejected");
 }
+
+
+void PowerDriver::DemandOVPLevelChanged()
+{
+	INT err;
+	int nChannelsChanged = 0;
+	for(unsigned int i=0; i<OVPlevel.size(); i++)
+	{
+		float value = variables["Demand OVP Level"][i];
+		if( fabs(value-OVPlevel[i]) > fabs(relevantchange*OVPlevel[i]) ) //compare to local book keeping, look for significant change
+		{
+			SetOVPLevel(i,value,err);
+			if(err!=FE_SUCCESS ) cm_msg(MERROR, "Power ... ", "changing %s voltage protection level of channel %d to %f failed, error %d", name.c_str(), instrumentID[i],value,err);
+			else
+			{
+				cm_msg(MINFO, "Power ... ", "changing %s voltage protection level of channel %d to %f", name.c_str(), instrumentID[i],value);
+				nChannelsChanged++;
+			}
+		}			
+	}	
+	if(nChannelsChanged < 1) cm_msg(MINFO, "Genesys supply ... ", "changing voltage protection level request rejected");
+}
+
 
 
 

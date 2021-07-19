@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <link rel="stylesheet" href="midas.css">
+    <script src="controls.js"></script>
+    <script src="midas.js"></script>
+    <script src="mhttpd.js"></script>
+    <title>DAQ counters</title>
+</head>
+<body class="mcss" onload="mhttpd_init('myPage');">
+
+<!-- header and side navigation will be filled in mhttpd_start -->
+<div id="mheader"></div>
+<div id="msidenav"></div>
+
+<div name="modb" data-odb-path="/Equipment/Switching/Variables/SCSO" onchange="update_scso(this.value)"></div>
+<div name="modb" data-odb-path="/Equipment/Switching/Variables/SCCN" onchange="update_sccn(this.value)"></div>
+<div name="modb" data-odb-path="/Equipment/Mupix/Variables/PSLL" onchange="update_psll(this.value)"></div>
+
+<!-- this is intended for the 2021 integration run, extension to more FEBs needs to be
+ worked out -->
+<div id="mmain">
+</div>
+<script src="daqcounters.js"></script>
+</body>
+</html>

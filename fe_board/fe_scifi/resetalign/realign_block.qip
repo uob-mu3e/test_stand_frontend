@@ -1,4 +1,6 @@
 #
 
 set_global_assignment -name VHDL_FILE [file join $::quartus(qip_path) "source/pll_ip.vhd"]
+set_global_assignment -name VHDL_FILE [file join $::quartus(qip_path) "source/pll_resetalign.vhd"]
+set_global_assignment -name VERILOG_FILE [file join $::quartus(qip_path) "source/pll_resetalign_0002.v"]
 set_global_assignment -name VHDL_FILE [file join $::quartus(qip_path) "source/clockalign_block.vhd"]

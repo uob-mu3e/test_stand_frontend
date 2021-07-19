@@ -47,6 +47,12 @@ int MuFEB::WriteFEBID(){
     return 0;
 }
 
+int MuFEB::WriteSorterDelay(uint16_t FPGA_ID, uint32_t delay)
+{
+    std::vector<uint32_t> data(1,delay);
+    feb_sc.FEB_register_write(FPGA_ID, SORTER_DELAY_RW, data);
+}
+
 void MuFEB::ReadFirmwareVersionsToODB()
 {
     vector<uint32_t> arria(1);
@@ -72,10 +78,11 @@ void MuFEB::ReadFirmwareVersionsToODB()
             cm_msg(MINFO,"MuFEB::ReadFirmwareVersionsToODB", "Failed to read Max status register");
          else{
              // TODO: Handle this properly
-             if(GET_MAX10_STATUS_BIT_SPI_ARRIA_CLK(max[0]))
-                febversions[FEB.GetLinkID()] = 20;
-             else
-                febversions[FEB.GetLinkID()] = 20;
+             //if(GET_MAX10_STATUS_BIT_SPI_ARRIA_CLK(max[0]))
+             //   febversions[FEB.GetLinkID()] = 20;
+             //else
+             //   febversions[FEB.GetLinkID()] = 20;
+             //cm_msg(MINFO, "ReadFirmwareVersionsToODB", "Max10 Status: %d, febversions[FEB.GetLinkID()] = 20/21?", GET_MAX10_STATUS_BIT_SPI_ARRIA_CLK(max[0]));
          }
     }
 }
@@ -83,7 +90,7 @@ void MuFEB::ReadFirmwareVersionsToODB()
 void MuFEB::LoadFirmware(std::string filename, uint16_t FPGA_ID)
 {
 
-    auto FEB = febs[FPGA_ID];
+    auto FEB = febs.at(FPGA_ID);
 
     FILE * f = fopen(filename.c_str(), "rb");
     if(!f){
@@ -126,7 +133,6 @@ void MuFEB::LoadFirmware(std::string filename, uint16_t FPGA_ID)
                 if(ec != FEBSlowcontrolInterface::ERRCODES::OK){
                     printf("Error reading back!\n");
                     feb_sc.FEB_register_write(FEB.SB_Port(),PROGRAMMING_CTRL_W,0);
-                    return;
                 }
                 count++;
                 usleep(100);
@@ -135,7 +141,6 @@ void MuFEB::LoadFirmware(std::string filename, uint16_t FPGA_ID)
             if(count == limit){
                 printf("Timeout\n");
                 feb_sc.FEB_register_write(FEB.SB_Port(),PROGRAMMING_CTRL_W,0);
-                return;
             }
         }
         pos  += 256;
@@ -156,7 +161,7 @@ void MuFEB::LoadFirmware(std::string filename, uint16_t FPGA_ID)
 
 int MuFEB::ReadBackRunState(uint16_t FPGA_ID){
     //map to SB fiber
-    auto FEB = febs[FPGA_ID];
+    auto FEB = febs.at(FPGA_ID);
 
     //skip disabled fibers
     if(!FEB.IsScEnabled())
@@ -169,6 +174,9 @@ int MuFEB::ReadBackRunState(uint16_t FPGA_ID){
    vector<uint32_t> val(2);
    char set_str[255];
    int status = feb_sc.FEB_register_read(FEB.SB_Port(), RUN_STATE_RESET_BYPASS_REGISTER_RW , val);
+
+   //printf("FEB %d, state 0x%08x\n", FPGA_ID, val[0]);
+
    if(status!=FEBSlowcontrolInterface::ERRCODES::OK) return status;
 
    //val[0] is reset_bypass register
@@ -194,19 +202,24 @@ int MuFEB::ReadBackRunState(uint16_t FPGA_ID){
 }
 
 uint32_t MuFEB::ReadBackMergerRate(uint16_t FPGA_ID){
-    auto FEB = febs[FPGA_ID];
-    if(!FEB.IsScEnabled()) return SUCCESS; //skip disabled fibers
-    if(FEB.SB_Number()!=SB_number) return SUCCESS; //skip commands not for this SB
 
+    if ( febs.size() == 0 | febs.size() <= FPGA_ID ) return 0; // return 0 if there is no feb
+
+    auto FEB = febs.at(FPGA_ID);
+    if(!FEB.IsScEnabled()) return 0; //skip disabled fibers
+    if(FEB.SB_Number()!=SB_number) return 0; //skip commands not for this SB
     vector<uint32_t> mergerRate(1);
     feb_sc.FEB_register_read(FEB.SB_Port(), MERGER_RATE_REGISTER_R, mergerRate);
     return mergerRate[0];
 }
 
 uint32_t MuFEB::ReadBackResetPhase(uint16_t FPGA_ID){
-    auto FEB = febs[FPGA_ID];
-    if(!FEB.IsScEnabled()) return SUCCESS; //skip disabled fibers
-    if(FEB.SB_Number()!=SB_number) return SUCCESS; //skip commands not for this SB
+
+    if ( febs.size() == 0 | febs.size() <= FPGA_ID ) return 0; // return 0 if there is no feb
+
+    auto FEB = febs.at(FPGA_ID);
+    if(!FEB.IsScEnabled()) return 0; //skip disabled fibers
+    if(FEB.SB_Number()!=SB_number) return 0; //skip commands not for this SB
 
     vector<uint32_t> resetPhase(1);
     feb_sc.FEB_register_read(FEB.SB_Port(), RESET_PHASE_REGISTER_R, resetPhase);
@@ -214,9 +227,12 @@ uint32_t MuFEB::ReadBackResetPhase(uint16_t FPGA_ID){
 }
 
 uint32_t MuFEB::ReadBackTXReset(uint16_t FPGA_ID){
-    auto FEB = febs[FPGA_ID];
-    if(!FEB.IsScEnabled()) return SUCCESS; //skip disabled fibers
-    if(FEB.SB_Number()!=SB_number) return SUCCESS; //skip commands not for this SB
+
+    if ( febs.size() == 0 | febs.size() <= FPGA_ID ) return 0; // return 0 if there is no feb
+
+    auto FEB = febs.at(FPGA_ID);
+    if(!FEB.IsScEnabled()) return 0; //skip disabled fibers
+    if(FEB.SB_Number()!=SB_number) return 0; //skip commands not for this SB
 
     vector<uint32_t> TXReset(1);
     feb_sc.FEB_register_read(FEB.SB_Port(), RESET_OPTICAL_LINKS_REGISTER_RW, TXReset);
@@ -312,6 +328,54 @@ DWORD *MuFEB::read_SSFE_OneFEB(DWORD *pdata, uint32_t index, uint32_t version)
     *(float*)pdata++ = ((float)fireflydata[11])/1E7f; // FF2 RX4 Power
     *pdata++ = fireflydata[12]; // FF2 Alarms
 
+    return pdata;
+}
+
+DWORD *MuFEB::fill_SSSO(DWORD *pdata)
+{
+    uint32_t index = 0;
+
+    for(auto FEB: febs){
+       if(!FEB.IsScEnabled()) continue; //skip disabled fibers
+       if(FEB.SB_Number()!=SB_number) continue;
+
+       uint32_t port = FEB.SB_Port();
+       // Fill in zeroes for non-existing ports
+       while(index < port){
+            // 39 is per_fe_SSSO_size - need to find a header for that...
+            for(uint32_t j=0; j < 39; j++){
+                *pdata++ = 0;
+             }
+           index++;
+       }
+
+       // And here we actually fill the bank
+        pdata = read_SSSO_OneFEB(pdata, index);
+        index++;
+    }
+
+
+
+    // Fill in zeroes for non-existing ports
+    while(index < N_FEBS[SB_number]){
+        for(uint32_t j=0; j < 39; j++){
+            *pdata++ = 0;
+         }
+       index++;
+    }
+    return pdata;
+}
+
+DWORD *MuFEB::read_SSSO_OneFEB(DWORD *pdata, uint32_t index)
+{
+    uint32_t data;
+    // Start with FEB index
+    *pdata++ = index;
+    vector<uint32_t> sorterdata(38);
+    // Read the sorter counters (different meaning for scifi, but maybe put in the same spot??)
+    feb_sc.FEB_register_read(index, SORTER_COUNTER_R, sorterdata);
+    for(uint32_t i=0; i < 38; i++)
+        *pdata++ = sorterdata[i];
     return pdata;
 }
 

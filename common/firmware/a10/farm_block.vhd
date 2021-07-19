@@ -214,7 +214,7 @@ begin
     END GENERATE;
     gen_ddr_cnt : FOR I in 16 to 19 GENERATE
         o_counter(I) <= counter_ddr(I-16);
-    END GENeRATE;
+    END GENERATE;
     
     o_status(0) <= pixel_error_link_to_fifo;
     o_status(1) <= scifi_error_link_to_fifo;
@@ -436,6 +436,7 @@ begin
         o_ren_scifi     => scifi_ren,
         
         i_farm_id       => i_writeregs_pcie(FARM_ID_REGISTER_W),
+        i_builder_ctl   => i_writeregs_pcie(FARM_CTL_REGISTER_W),
 
         -- DDR
         o_data          => data_in,

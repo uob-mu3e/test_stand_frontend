@@ -2,15 +2,17 @@
 #include <iostream>
 #include <chrono>
 #include <thread>
+#include "midas.h"
 
 
 using boost::asio::ip::tcp;
 
-TCPClient::TCPClient(std::string IP,int P, int to)
+TCPClient::TCPClient(std::string IP, int P, int to,  std::string hn)
 {
 	socket = new ip::tcp::socket(io_service);
 	ip = IP;
 	port = P;
+	hostname = hn;
 	default_wait = 7;
 	read_time_out = to;
 	read_stop = "\n";
@@ -19,7 +21,20 @@ TCPClient::TCPClient(std::string IP,int P, int to)
 bool TCPClient::Connect()
 {
 	boost::system::error_code ec;
-	socket->connect( tcp::endpoint( boost::asio::ip::address::from_string(ip), port ) , ec);
+	if(hostname.length()<1)
+	{
+		socket->connect( tcp::endpoint( boost::asio::ip::address::from_string(ip), port ) , ec);
+	}
+	else {
+		std::cout << "hostname " << hostname << std::endl;
+		boost::asio::ip::tcp::resolver resolver(io_service);
+		boost::asio::ip::tcp::resolver::query query(hostname, "");
+		boost::asio::ip::tcp::resolver::iterator iter = resolver.resolve(query);
+		boost::asio::ip::tcp::endpoint endpoint = iter->endpoint();
+		endpoint.port(port);
+		std::cout << " ip derived " << endpoint.address() << " " << endpoint.port() << std::endl;
+		socket->connect( endpoint , ec);
+	}
 	if (ec)
 	{
 	  std::cout << " socket->connect failed with err:" << ec << std::endl;
@@ -99,7 +114,12 @@ bool TCPClient::ReadReply(std::string *str,int min_size)
 	
   //read
   streambuf buf; 
-  read_until(*socket, buf, read_stop); 
+  try{
+      read_until(*socket, buf, read_stop); 
+  } catch(...) {
+      cm_msg(MERROR, "ReadReply", "read_until failed");
+  }
+
   std::string data = buffer_cast<const char*>(buf.data());
   //std::cout << "data : " << data << std::endl; 
   //std::size_t found = data.find('\r');

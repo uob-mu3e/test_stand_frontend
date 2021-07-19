@@ -50,6 +50,7 @@ port (
     -- outputs 125-------------------------------------------------
     o_sorter_delay              : out ts_t;
     o_sorter_inject             : out std_logic_vector(31 downto 0) := (others => '0');
+    o_mp_reset_n_lvds           : out std_logic;
     o_mp_hit_ena_cnt_select     : out std_logic_vector( 7 downto 0) := (others => '0');
     o_mp_hit_ena_cnt_sorter_sel : out std_logic_vector( 3 downto 0) := (others => '0')--;
 );
@@ -67,6 +68,7 @@ architecture rtl of mupix_datapath_reg_mapping is
     signal mp_hit_ena_cnt_select    : std_logic_vector( 7 downto 0);
     signal mp_hit_ena_cnt_sorter_sel: std_logic_vector( 3 downto 0);
     signal mp_sorter_delay          : ts_t;
+    signal mp_reset_n_lvds          : std_logic := '1';
 
     signal reg_delay                : std_logic;
 begin
@@ -104,6 +106,7 @@ begin
             o_mp_data_bypass_select     <= mp_data_bypass_select;
             o_mp_hit_ena_cnt_select     <= mp_hit_ena_cnt_select;
             o_mp_hit_ena_cnt_sorter_sel <= mp_hit_ena_cnt_sorter_sel;
+            o_mp_reset_n_lvds           <= mp_reset_n_lvds;
 
             regaddr             := to_integer(unsigned(i_reg_add(7 downto 0)));
             o_reg_rdata         <= x"CCCCCCCC";
@@ -223,6 +226,14 @@ begin
 
             if ( regaddr = MP_HIT_ENA_CNT_SORTER_OUT_REGISTER_R and i_reg_re = '1' ) then
                 o_reg_rdata                 <= i_mp_sorter_out_hit_ena_cnt;
+            end if;
+
+            if ( regaddr = MP_RESET_LVDS_N_REGISTER_W and i_reg_we = '1' ) then
+                mp_reset_n_lvds <= i_reg_wdata(0);
+            end if;
+            if ( regaddr = MP_RESET_LVDS_N_REGISTER_W and i_reg_re = '1' ) then
+                o_reg_rdata(0) <= mp_reset_n_lvds;
+                o_reg_rdata(31 downto 1) <= (others => '0');
             end if;
 
         end if;

@@ -1,19 +1,18 @@
 #
 
+set_global_assignment -name QIP_FILE [ file join $::quartus(qip_path) "altera/include.qip" ]
+
 # include sdc files
-foreach f [ lsort [ glob -directory $::quartus(qip_path) \
+foreach f [ lsort [ glob -directory $::quartus(qip_path) -nocomplain \
     "*.sdc" \
 ] ] {
     set_global_assignment -name SDC_FILE $f
 }
 
 # include vhd files
-foreach f [ lsort [ glob -directory $::quartus(qip_path) \
+foreach f [ lsort [ glob -directory $::quartus(qip_path) -nocomplain \
     "*.vhd" \
     "8b10b/*.vhd" \
 ] ] {
     set_global_assignment -name VHDL_FILE $f
 }
-
-#histogram needs RAM- the path here is somewhat brittle
-set_global_assignment -name VHDL_FILE $::quartus(qip_path)/../../../common/firmware/s4/ip_ram.vhd
