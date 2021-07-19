@@ -24,15 +24,15 @@
                 <div class="col-xs-4 b-r padding_bottom_70">
                     <!---div class="scrll_hide"-->
                     <div class="row" style="width: 500px; margin-left: 10px">
+                        <div class="col-xs-4 b-r padding_bottom_70" style="padding-left: 0px; padding-right: 0px">
+                            <div id="ladder_legend">
+                                <h3>Legend</h3>
+                            </div>
+                        </div>
                         <div class="col-xs-8 b-r padding_bottom_70" style="border-right: 0px;">
                             <div class="scrll_hide">
                                 <div id="L0_US" style="position: relative;height: 350px">
                                     <h1 style="color: #5e9ca0;">Layer 0 Upstream</h1>
-                                    <p>As seen from outside the cage</p>
-
-                                </div>
-                                <div id="L1_US" style="position: relative;height: 400px">
-                                    <h1 style="color: #5e9ca0;">Layer 1 Upstream</h1>
                                     <p>As seen from outside the cage</p>
 
                                 </div>
@@ -41,16 +41,16 @@
                                     <p>As seen from outside the cage</p>
 
                                 </div>
+                                <div id="L1_US" style="position: relative;height: 400px">
+                                    <h1 style="color: #5e9ca0;">Layer 1 Upstream</h1>
+                                    <p>As seen from outside the cage</p>
+
+                                </div>
                                 <div id="L1_DS" style="position: relative;height: 400px">
                                     <h1 style="color: #5e9ca0;">Layer 1 Downstream</h1>
                                     <p>As seen from outside the cage</p>
 
                                 </div>
-                            </div>
-                        </div>
-                        <div class="col-xs-4 b-r padding_bottom_70" style="padding-left: 0px; padding-right: 0px">
-                            <div id="ladder_legend">
-                                <h3>Legend</h3>
                             </div>
                         </div>
                     </div>
@@ -112,7 +112,7 @@
                             </div>
                             <div>
                                 <h4 style="display: table-cell;">Celsius : </h4>
-                                <div id="ladder_temp_read_c" style="display: table-cell;"></div>
+                                <div id="ladder_temp_read_c" class="modbvalue" data-odb-path="/Equipment/Pixel-SC-Temperature/Variables/Input[0]" style="display: table-cell;"></div>
                             </div>
                         </div>
                         <div id="chip_header" style="visibility: hidden;">

@@ -420,8 +420,7 @@ void cr_settings_changed(odb o)
 
    if(it != cb->reset_protocol.commands.end()){
 
-       odb settings;
-       settings.connect("/Equipment/Clock Reset/Settings");
+       odb settings("/Equipment/Clock Reset/Settings");
        addressed = settings["Addressed"];
        int address =0;
        if(addressed){
@@ -438,7 +437,7 @@ void cr_settings_changed(odb o)
                 cb->write_command(name,0,address);
               else
                  cb->write_command(name);
-              o = FALSE; //TODO: Check if this works...
+              o = false; //TODO: Check if this works...
            }
        } else {
            // Run prepare needs the run number
@@ -452,7 +451,7 @@ void cr_settings_changed(odb o)
                     cb->write_command(name,run,address);
                  else
                     cb->write_command(name,run);
-                 o = FALSE; //TODO: Check if this works...
+                 o = false; //TODO: Check if this works...
               }
            } else {
                // Take the payload from the payload ODB field
@@ -465,7 +464,7 @@ void cr_settings_changed(odb o)
                        cb->write_command(name,payload,address);
                      else
                        cb->write_command(name,payload);
-                    o = FALSE; //TODO: Check if this works...
+                    o = false; //TODO: Check if this works...
                }
            }
        }
@@ -504,6 +503,18 @@ void prepare_run_on_request(odb o){
     cm_msg(MINFO, "prepare_run_on_request", "Execute Run Prepare on request called");
 
     vector<int> request = o;
+    
+    bool norequest = true;
+    for(uint32_t i=0; i < request.size(); i++){
+        if(request[i])
+            norequest = false;
+    }
+
+    if(norequest)
+        return;
+
+
+
 
     odb a("/Equipment/Links/Settings/SwitchingBoardMask");
     vector<int> active = a;

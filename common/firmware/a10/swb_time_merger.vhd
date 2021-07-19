@@ -37,6 +37,7 @@ port (
 
     -- output strem
     o_q             : out   std_logic_vector(W-1 downto 0);
+    i_debug         : in    std_logic;
     o_q_debug       : out   std_logic_vector(31 downto 0);
     o_rempty        : out   std_logic;
     o_rempty_debug  : out   std_logic;
@@ -55,14 +56,11 @@ end entity;
 architecture arch of swb_time_merger is
 
     signal rdata_s, wdata, wdata_reg, fifo_q : std_logic_vector(W-1 downto 0);
-    signal q_debug_head : std_logic_vector(1 downto 0);
-    signal debug_data : std_logic_vector(32 * g_NLINKS_FARM - 1 downto 0);
-    signal debug_head : std_logic_vector(2 * g_NLINKS_FARM - 1 downto 0);
-    signal wdata_debug : std_logic_vector(34 * g_NLINKS_FARM - 1 downto 0);
+    signal rdata_debug_s : std_logic_vector(37 downto 0);
     signal rdata : work.util.slv38_array_t(g_NLINKS_FARM-1 downto 0);
-    signal rempty, wfull, ren, wen, wen_reg : std_logic;
+    signal rempty, wfull, ren, wen, wen_reg, ren_merger : std_logic;
     signal link_number : std_logic_vector(5 downto 0);
-    signal rempty_debug_data, rempty_debug_head : std_logic;
+    signal chipID : std_logic_vector(6 downto 0);
 
     type merge_state_type is (wait_for_pre, get_ts_1, get_ts_2, get_sh, hit, delay, get_tr);
     signal merge_state : merge_state_type;
@@ -104,7 +102,9 @@ begin
 
         -- output stream
         o_rdata                 => rdata_s,
-        i_ren                   => ren,--not rempty and not wfull,
+        o_rdata_debug           => rdata_debug_s,
+        o_rdempty_debug         => o_rempty_debug,
+        i_ren                   => ren_merger,--not rempty and not wfull,
         o_empty                 => rempty,
         
         -- error outputs
@@ -191,6 +191,7 @@ begin
              '1' when merge_state = hit and header_idx = 8 and trailer_idx = 8 and ts1_idx = 8 and ts2_idx = 8 and sh_idx = 8 and rempty = '0' and wen_reg = '0' and wfull = '0'  else 
              '0';
 
+    ren_merger <= ren when i_debug = '0' else i_ren;
 
     --! read/write data from time merger
     mupix_time_merger : IF DATA_TYPE = x"01" or DATA_TYPE = x"02" GENERATE
@@ -201,7 +202,6 @@ begin
                 wen         <= '0';
                 merge_state <= wait_for_pre;
                 wdata       <= (others => '0');
-                wdata_debug <= (others => '0');
                 wdata_reg   <= (others => '1');
                 wen_reg     <= '0';
             elsif rising_edge(i_clk) then
@@ -209,15 +209,12 @@ begin
                 wen_reg     <= '0';
                 wdata_reg   <= (others => '1');
                 wdata       <= (others => '0');
-                wdata_debug <= (others => '1');
                 if ( wfull = '0' and rempty = '0' ) then
                     case merge_state is
                         when wait_for_pre =>
                             if ( header_idx /= 8 ) then
                                 merge_state <= get_ts_1;
                                 wdata(37 downto 0) <= rdata(header_idx);
-                                wdata_debug(31 downto 0) <= rdata(header_idx)(31 downto 0);
-                                wdata_debug(33 downto 32) <= "10";
                                 wen <= '1';
                             end if;
 
@@ -225,7 +222,6 @@ begin
                             if ( ts1_idx /= 8 ) then
                                 merge_state <= get_ts_2;
                                 wdata(37 downto 0) <= rdata(ts1_idx);
-                                wdata_debug(31 downto 0) <= rdata(ts1_idx)(31 downto 0);
                                 wen <= '1';
                             end if;
 
@@ -233,7 +229,6 @@ begin
                             if ( ts2_idx /= 8 ) then
                                 merge_state <= get_sh;
                                 wdata(37 downto 0) <= rdata(ts2_idx);
-                                wdata_debug(31 downto 0) <= rdata(ts2_idx)(31 downto 0);
                                 wen <= '1';
                             end if;
 
@@ -241,7 +236,6 @@ begin
                             if ( sh_idx /= 8 ) then
                                 merge_state <= delay;
                                 wdata(37 downto 0) <= rdata(sh_idx);
-                                wdata_debug(31 downto 0) <= rdata(sh_idx)(31 downto 0);
                                 wen <= '1';
                             end if;
                             if ( sh_idx /= 7 and sh_idx /= 8 ) then
@@ -257,7 +251,6 @@ begin
                             if ( wen_reg = '1' ) then
                                 wdata <= wdata_reg;
                                 for i in 0 to 7 loop
-                                    wdata_debug(34 * i + 31 downto 34 * i) <= wdata_reg(38 * i + 31 downto 38 * i);
                                 end loop;
                                 wen <= '1';
                             end if;
@@ -269,10 +262,8 @@ begin
                                 for i in 0 to 7 loop
                                     if ( i <= (trailer_idx - 1) ) then
                                         wdata(38 * i + 37 downto 38 * i) <= rdata(i);
-                                        wdata_debug(34 * i + 31 downto 34 * i) <= rdata(i)(31 downto 0);
                                     else
                                         wdata(38 * i + 37 downto 38 * i) <= tree_padding;
-                                        wdata_debug(34 * i + 31 downto 34 * i) <= tree_padding(31 downto 0);
                                     end if;
                                 end loop;
                             elsif ( sh_idx /= 8 ) then
@@ -280,16 +271,13 @@ begin
                                 for i in 0 to 7 loop
                                     if ( i <= (sh_idx - 1) ) then 
                                         wdata(38 * i + 37 downto 38 * i) <= rdata(i);
-                                        wdata_debug(34 * i + 31 downto 34 * i) <= rdata(i)(31 downto 0);
                                     else
                                         wdata(38 * i + 37 downto 38 * i) <= tree_padding;
-                                        wdata_debug(34 * i + 31 downto 34 * i) <= tree_padding(31 downto 0);
                                     end if;
                                 end loop;
                             else
                                 for i in 0 to 7 loop
                                     wdata(38 * i + 37 downto 38 * i) <= rdata(i);
-                                    wdata_debug(34 * i + 31 downto 34 * i) <= rdata(i)(31 downto 0);
                                 end loop;
                             end if;
                             wen <= '1';
@@ -298,8 +286,6 @@ begin
                             if ( trailer_idx /= 8 ) then
                                 merge_state <= wait_for_pre;
                                 wdata(37 downto 0) <= rdata(trailer_idx);
-                                wdata_debug(31 downto 0) <= rdata(trailer_idx)(31 downto 0);
-                                wdata_debug(33 downto 32) <= "01";
                                 wen <= '1';
                             end if;
 
@@ -310,7 +296,6 @@ begin
             end if;
         end process;
     END GENERATE;
-
 
     e_swb_time_fifo : entity work.ip_scfifo
     generic map (
@@ -328,61 +313,25 @@ begin
         sclr            => not i_reset_n,
         clock           => i_clk--,
     );
-
-    gen_debug_data:
-    FOR i in 0 to g_NLINKS_FARM-1 GENERATE
-        debug_data(32 * i + 31 downto 32 * i)   <= wdata_debug(34 * i + 31 downto 34 * i);
-        debug_head(2 * i + 1 downto 2 * i)      <= wdata_debug(34 * i + 33 downto 34 * i + 32);
-    END GENERATE;
-
-    e_debug_fifo_data : entity work.ip_dcfifo_mixed_widths
-    generic map(
-        ADDR_WIDTH_w    => 9,
-        DATA_WIDTH_w    => 32*g_NLINKS_FARM,
-        ADDR_WIDTH_r    => 12,
-        DATA_WIDTH_r    => 32,
-        DEVICE          => "Arria 10"--,
-    )
-    port map (
-        aclr    => not i_reset_n,
-        data    => debug_data,
-        rdclk   => i_clk,
-        rdreq   => i_ren,
-        wrclk   => i_clk,
-        wrreq   => wen,
-        q       => o_q_debug,
-        rdempty => rempty_debug_data,
-        wrfull  => open--, -- should be okay since the FIFO above has the same size
-    );
-
-    e_debug_fifo_header : entity work.ip_dcfifo_mixed_widths
-    generic map(
-        ADDR_WIDTH_w    => 9,
-        DATA_WIDTH_w    => 2*g_NLINKS_FARM,
-        ADDR_WIDTH_r    => 12,
-        DATA_WIDTH_r    => 2,
-        DEVICE          => "Arria 10"--,
-    )
-    port map (
-        aclr    => not i_reset_n,
-        data    => debug_head,
-        rdclk   => i_clk,
-        rdreq   => i_ren,
-        wrclk   => i_clk,
-        wrreq   => wen,
-        q       => q_debug_head,
-        rdempty => rempty_debug_head,
-        wrfull  => open--, -- should be okay since the FIFO above has the same size
-    );
     
+    -- data path
     o_header    <= '1' when fifo_q(37 downto 32) = pre_marker else '0';
     o_trailer   <= '1' when fifo_q(37 downto 32) = tr_marker else '0';
     o_q         <= fifo_q;
 
     -- debug path
-    o_header_debug  <= '1' when q_debug_head = "10" else '0';
-    o_trailer_debug <= '1' when q_debug_head = "01" else '0';
-    link_number     <= fifo_q(37 downto 32);
-    o_rempty_debug  <= rempty_debug_data and rempty_debug_head;
+    o_header_debug  <= '1' when rdata_debug_s(37 downto 32) = pre_marker else '0';
+    o_trailer_debug <= '1' when rdata_debug_s(37 downto 32) = tr_marker else '0';
+    link_number     <= rdata_debug_s(37 downto 32);
+    e_lookup : entity work.chip_lookup_int_2021
+    port map ( i_fpgaID => rdata_debug_s(35 downto 32), i_chipID => rdata_debug_s(25 downto 22), o_chipID => chipID );
+    o_q_debug <= rdata_debug_s(31 downto 0) when  rdata_debug_s(37 downto 32) = pre_marker or 
+                                                  rdata_debug_s(37 downto 32) = tr_marker  or 
+                                                  rdata_debug_s(37 downto 32) = ts1_marker or 
+                                                  rdata_debug_s(37 downto 32) = ts2_marker or 
+                                                  rdata_debug_s(37 downto 32) = err_marker or 
+                                                  DATA_TYPE /= x"01" else
+                 "111111" & x"FFFF" & rdata_debug_s(25 downto 16) when rdata_debug_s(37 downto 32) = sh_marker else
+                 rdata_debug_s(31 downto 28) & chipID & rdata_debug_s(21 downto 1);
 
 end architecture;

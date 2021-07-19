@@ -1,3 +1,65 @@
+function generateLVDSMupixTableHead(table, febname){
+    let thead = table.createTHead();
+    let row1 = thead.insertRow();
+    let th = document.createElement("th");
+    th.setAttribute("colspan","12");
+    let text = document.createTextNode(febname);
+    th.appendChild(text);
+    row1.appendChild(th);
+
+    let row2 = thead.insertRow();
+
+    th = document.createElement("th");
+    text = document.createTextNode("LVDS ID");
+    th.appendChild(text);
+    row2.appendChild(th);
+
+    th = document.createElement("th");
+    text = document.createTextNode("RX READY");
+    th.appendChild(text);
+    row2.appendChild(th);
+
+    th = document.createElement("th");
+    text = document.createTextNode("RX STATE");
+    th.appendChild(text);
+    row2.appendChild(th);
+
+    th = document.createElement("th");
+    text = document.createTextNode("PLL LOCK");
+    th.appendChild(text);
+    row2.appendChild(th);
+
+    th = document.createElement("th");
+    text = document.createTextNode("DISP ERROR");
+    th.appendChild(text);
+    row2.appendChild(th);
+
+    th = document.createElement("th");
+    text = document.createTextNode("Num Hits");
+    th.appendChild(text);
+    row2.appendChild(th);
+
+    th = document.createElement("th");
+    text = document.createTextNode("Num Mupix Hits");
+    th.appendChild(text);
+    row2.appendChild(th);
+}
+
+
+function generateLVDSMupixTable(table, counters, feb){
+
+    for(var lvds=0; lvds < 36; lvds++){
+        let row = table.insertRow();
+        for(var i=0; i < 7; i++){
+            let cell = row.insertCell();
+            let text = document.createTextNode(0);
+            cell.appendChild(text);
+            counters.push(text);
+        }
+    }
+}
+
+
 function generateSwitchingTableHead(table){
     let thead = table.createTHead();
     let row1 = thead.insertRow();
@@ -7,6 +69,7 @@ function generateSwitchingTableHead(table){
     th.appendChild(text);
     row1.appendChild(th);
 }
+
 
 function generateSwitchingTable(table, counters){
 
@@ -98,7 +161,7 @@ function generateSwitchingTable(table, counters){
 
     for(var feb=0; feb < 12; feb++){
         let row = table.insertRow();
-        for(var i=0; i < 10; i++){
+        for(var i=0; i < 9; i++){
             let cell = row.insertCell();
             let text = document.createTextNode(0);
             cell.appendChild(text);
@@ -106,7 +169,6 @@ function generateSwitchingTable(table, counters){
         }
     }
 }
-
 
 
 function generateSorterTableHead(table, febname){
@@ -126,6 +188,7 @@ function generateSorterTableHead(table, febname){
         row2.appendChild(th);
     }
 }
+
 
 function generateSorterTable(table, counters, fractions, inside){
 
@@ -233,18 +296,21 @@ function generateSorterTable(table, counters, fractions, inside){
 
 }
 
-var counters =[];
-var fractions =[];
-var inside=[];
+var counters = [];
+var fractions = [];
+var inside = [];
 
 var switchingcounters = [];
 
+var mupixlvdsstatus = [];
+
+
 function init(){
-   let main =  document.getElementById("mmain");
+    let main =  document.getElementById("mmain");
 
     // Switching counter table
     let swdiv =  document.createElement("div");
-    swdiv.setAttribute("style","float:left");
+    swdiv.setAttribute("style","float:left, margin-right=20%");
     main.appendChild(swdiv);
 
     let swtab = document.createElement("table");
@@ -259,7 +325,11 @@ function init(){
     // Loop over pixel FEBs
     for(var i=0; i < 10; i++){
         let div =  document.createElement("div");
-        div.setAttribute("style","float:left");
+        if ( i === 9){
+            div.setAttribute("style","float:left, margin-right=20%");
+        } else {
+            div.setAttribute("style","float:left");
+        }
         main.appendChild(div);
 
         counters.push([]);
@@ -275,6 +345,22 @@ function init(){
         div.appendChild(tab);
     }
 
+    // Pixel FEBs LVDS Links
+    for(var feb=0; feb < 10; feb++){
+        let lvdsdiv =  document.createElement("div");
+        lvdsdiv.setAttribute("style","float:left");
+        main.appendChild(lvdsdiv);
+
+        let lvdstab = document.createElement("table");
+        lvdstab.setAttribute("class","mtable");
+        lvdstab.setAttribute("style","margin-left: 0.5em");
+        generateLVDSMupixTable(lvdstab, mupixlvdsstatus, feb);
+        generateLVDSMupixTableHead(lvdstab, "LVDS Mupix FEB "+feb)
+
+        lvdsdiv.appendChild(lvdstab);
+    }
+
+
     mjsonrpc_db_get_values(["/Equipment/Switching/Variables/SCSO"]).then(function(rpc) {
         update_scso(rpc.result.data[0]);
      }).catch(function(error) {
@@ -287,6 +373,12 @@ function init(){
         mjsonrpc_error_alert(error);
      });
 
+    mjsonrpc_db_get_values(["/Equipment/Mupix/Variables/PSLL"]).then(function(rpc) {
+        update_psll(rpc.result.data[0]);
+     }).catch(function(error) {
+        mjsonrpc_error_alert(error);
+     });
+
 }
 
 init();
@@ -295,8 +387,6 @@ function update_scso(valuex){
     var value = valuex;
     if(typeof valuex === 'string')
         value = JSON.parse(valuex);
-
-
 
     for(var feb=0; feb < 10; feb++){
         var sum = 0;
@@ -318,7 +408,6 @@ function update_scso(valuex){
                fractions[feb][input].parentNode.style.color = "red";
         }
         inside[feb][0].nodeValue = sum;
-
     }
 }
 
@@ -332,4 +421,42 @@ function update_sccn(valuex){
     for(var input=0; input <112; input++){
         switchingcounters[input].nodeValue = value[input];
     }
+}
+
+function update_psll(valuex){
+    var value = valuex;
+    if(typeof valuex === 'string')
+        value = JSON.parse(valuex);
+
+    console.log(value);
+
+    for(var feb=0; feb < 10; feb++){
+        for(var lvds=0; lvds < 36; lvds++){
+            for(var i=0; i < 7; i++){
+                if ( i >= 1 && i <= 4 ) {
+                    if ( i === 1 ) {
+                        // RX READY
+                        mupixlvdsstatus[i+feb*36*7+lvds*7].nodeValue = ((value[1+feb*36*4+lvds*4] >> 31) & 0x1).toString(16);
+                    }
+                    if ( i === 2 ) {
+                        // RX STATE
+                        mupixlvdsstatus[i+feb*36*7+lvds*7].nodeValue = ((value[1+feb*36*4+lvds*4] >> 29) & 0x3).toString(16);
+                    }
+                    if ( i === 3 ) {
+                        // PLL LOCK
+                        mupixlvdsstatus[i+feb*36*7+lvds*7].nodeValue = ((value[1+feb*36*4+lvds*4] >> 28) & 0x1).toString(16);
+                    }
+                    if ( i === 4 ) {
+                        // DISP ERROR
+                        mupixlvdsstatus[i+feb*36*7+lvds*7].nodeValue = (value[1+feb*36*4+lvds*4] & 0x0FFFFFFF).toString(16);
+                    }
+                } else if ( i > 4){
+                    mupixlvdsstatus[i+feb*36*7+lvds*7].nodeValue = value[i-3+feb*36*4+lvds*4];
+                } else {
+                    mupixlvdsstatus[i+feb*36*7+lvds*7].nodeValue = (value[i+feb*36*4+lvds*4]);
+                }
+            }
+        }
+    }
+
 }

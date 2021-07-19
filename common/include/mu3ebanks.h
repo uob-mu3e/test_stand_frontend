@@ -234,5 +234,4 @@ void create_sscn_names_in_odb(odb & settings, int switch_id){
 }
 
 
-
 #endif // MU3EBANKS_H

@@ -195,7 +195,8 @@ begin
         --       If its full stop --> tell MIDAS --> stop run --> no event mixing
         e_link_to_fifo_32 : entity work.link_to_fifo_32
         generic map (
-            LINK_FIFO_ADDR_WIDTH => LINK_FIFO_ADDR_WIDTH--;
+            SKIP_DOUBLE_SUB      => 1,
+            LINK_FIFO_ADDR_WIDTH => LINK_FIFO_ADDR_WIDTH--,
         )
         port map (
             i_rx            => rx(i),
@@ -215,7 +216,7 @@ begin
             i_clk_156       => i_clk_156,
 
             i_reset_n_250   => reset_250_n,
-            i_clk_250       => i_clk_250--;
+            i_clk_250       => i_clk_250--,
         );
   
         sop(i)  <= '1' when rx_q(i)(33 downto 32) = "10" else '0';
@@ -280,6 +281,7 @@ begin
 
         -- output stream
         o_q             => merger_rdata,
+        i_debug         => i_writeregs_250(SWB_READOUT_STATE_REGISTER_W)(USE_BIT_MERGER),
         o_q_debug       => merger_rdata_debug,
         o_rempty        => merger_rempty,
         o_rempty_debug  => merger_rempty_debug,
@@ -372,23 +374,24 @@ begin
         o_state     => open--,
     );
 
-    e_merger_fifo : entity work.ip_scfifo
-    generic map (
-        ADDR_WIDTH      => 10,
-        DATA_WIDTH      => W,
-        RAM_OUT_REG     => "ON",
-        DEVICE          => "Arria 10"--,
-    )
-    port map (
-        data            => gen_data,
-        wrreq           => gen_we,
-        rdreq           => gen_re,
-        clock           => i_clk_250,
-        q               => gen_q,
-        full            => gen_full,
-        empty           => gen_rempty,
-        sclr            => not reset_250_n--,
-    );
+--    e_merger_fifo : entity work.ip_scfifo
+--    generic map (
+--        ADDR_WIDTH      => 10,
+--        DATA_WIDTH      => W,
+--        RAM_OUT_REG     => "ON",
+--        REGOUT          => 1,
+--        DEVICE          => "Arria 10"--,
+--    )
+--    port map (
+--        data            => gen_data,
+--        wrreq           => gen_we,
+--        rdreq           => gen_re,
+--        clock           => i_clk_250,
+--        q               => gen_q,
+--        full            => gen_full,
+--        empty           => gen_rempty,
+--        sclr            => not reset_250_n--,
+--    );
 
 
     --! swb_data_merger

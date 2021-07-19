@@ -18,6 +18,9 @@ const uint32_t MAX_N_FRONTENDBOARDS = MAX_N_SWITCHINGBOARDS*MAX_LINKS_PER_SWITCH
 /* Number of FEBs in final system */
 constexpr uint32_t N_FEBS[MAX_N_SWITCHINGBOARDS] = {34, 33, 33, 12};
 
+/* Number of Mupix FEBs in Int-Run 2021 */
+constexpr uint32_t N_FEBS_MUPIX_INT_2021 = 10;
+
 constexpr uint32_t N_FEBS_TOTAL = N_FEBS[0]+N_FEBS[1]+N_FEBS[2]+N_FEBS[3];
 
 /* Number of crates in final system */

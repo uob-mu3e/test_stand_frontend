@@ -287,6 +287,7 @@ begin
             last_sorter_hit             <= (others => '0');
             hitsorter_out_ena_cnt       <= (others => '0');
             hitsorter_in_ena_counters   <= (others => (others => '0'));
+            hits_sorter_in_ena          <= (others => '0');
 
         elsif(rising_edge(i_clk125))then
             lvds_link_mask_reg  <= lvds_link_mask;
@@ -444,6 +445,7 @@ begin
         DATA_WIDTH  => 1+36,
         SHOWAHEAD   => "OFF",
         OVERFLOW    => "ON",
+		  REGOUT      => 0,
         DEVICE      => "Arria V"--,
     )
     port map(
@@ -490,6 +492,7 @@ begin
         DATA_WIDTH  => 32,
         SHOWAHEAD   => "OFF",
         OVERFLOW    => "ON",
+		  REGOUT      => 0,
         DEVICE      => "Arria V"--,
     )
     port map(

@@ -63,7 +63,7 @@ begin
     writeregs_250(SWB_READOUT_STATE_REGISTER_W)(USE_BIT_GEN_MERGER) <= '0';
     writeregs_250(SWB_READOUT_STATE_REGISTER_W)(USE_BIT_FARM)       <= '0';
         
-    writeregs_250(SWB_LINK_MASK_PIXEL_REGISTER_W)               <= x"00000005";
+    writeregs_250(SWB_LINK_MASK_PIXEL_REGISTER_W)               <= x"00000048";
     writeregs_250(SWB_READOUT_LINK_REGISTER_W)                  <= x"00000001";
     writeregs_250(GET_N_DMA_WORDS_REGISTER_W)                   <= (others => '1');
     writeregs_250(DMA_REGISTER_W)(DMA_BIT_ENABLE)               <= '1';

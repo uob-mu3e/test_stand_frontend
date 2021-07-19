@@ -114,22 +114,30 @@ int FEBSlowcontrolInterface::FEB_write(const uint32_t FPGA_ID, const uint32_t st
 
     // check for acknowledge packet
     count = 0;
-    while(count<10){
+    while(count<20){
         if(FEBsc_read_packets() > 0 && sc_packet_deque.front().IsWR()) break;
+        // for some reason there is a read acknowledge at the front of the queue...
+        if(FEBsc_read_packets() > 0 ){
+            cout << "wrong packet type" << endl;
+            sc_packet_deque.pop_front();
+        };
+
         count++;
         std::this_thread::sleep_for(std::chrono::microseconds(20));
     }
-    if(count==10){
+    if(count==20){
         cm_msg(MERROR, "MudaqDevice::FEBsc_write" , "Timeout occured waiting for reply");
         cm_msg(MERROR, "MudaqDevice::FEBsc_write", "Wanted to write to FPGA %d, Addr %d, length %zu", FPGA_ID, startaddr, data.size());
         return ERRCODES::FPGA_TIMEOUT;
     }
     if(!sc_packet_deque.front().Good()){
         cm_msg(MERROR, "MudaqDevice::FEBsc_write" , "Received bad packet");
+        sc_packet_deque.pop_front();
         return ERRCODES::BAD_PACKET;
     }
     if(!sc_packet_deque.front().IsResponse()){
         cm_msg(MERROR, "MudaqDevice::FEBsc_write" , "Received request packet, this should not happen...");
+        sc_packet_deque.pop_front();
         return ERRCODES::BAD_PACKET;
     }
 
@@ -193,26 +201,44 @@ int FEBSlowcontrolInterface::FEB_read(const uint32_t FPGA_ID, const uint32_t sta
 
     int count = 0;
     while(count<10){
-        if(FEBsc_read_packets() > 0 && sc_packet_deque.front().IsRD()) break;
+        int retval = FEBsc_read_packets();
+        if(retval > 0 && sc_packet_deque.front().IsRD()) break;
+        // for some reason there is a write acknowledge at the front of the queue...
+        if(retval > 0 ){
+            cout << "wrong packet type" << endl;
+            sc_packet_deque.pop_front();
+            return ERRCODES::BAD_PACKET;
+        };
+        if(retval < 0){
+            cout << "Receiving failed, resetting" << endl;
+            FEBsc_resetSecondary();
+            return ERRCODES::BAD_PACKET;
+        }
         count++;
         std::this_thread::sleep_for(std::chrono::microseconds(20));
     }
     if(count==10){
         cm_msg(MERROR, "MudaqDevice::FEBsc_read" , "Timeout occured waiting for reply");
-        cm_msg(MERROR, "MudaqDevice::FEBsc_read", "Wanted to read from FPGA %d, Addr %d, length %zu", FPGA_ID, startaddr, data.size());
+        cm_msg(MERROR, "MudaqDevice::FEBsc_read",  "Wanted to read from FPGA %d, Addr %d, length %zu, memaddr %d", FPGA_ID, startaddr, data.size(), m_FEBsc_rmem_addr);
         return ERRCODES::FPGA_TIMEOUT;
     }
     if(!sc_packet_deque.front().Good()){
-        cm_msg(MERROR, "MudaqDevice::FEBsc_read" , "Received bad packet");
+        cm_msg(MERROR, "MudaqDevice::FEBsc_read" , "Received bad packet, resetting");
+        sc_packet_deque.pop_front();
+        FEBsc_resetSecondary();
         return ERRCODES::BAD_PACKET;
     }
     if(!sc_packet_deque.front().IsResponse()){
-        cm_msg(MERROR, "MudaqDevice::FEBsc_read" , "Received request packet, this should not happen...");
+        cm_msg(MERROR, "MudaqDevice::FEBsc_read" , "Received request packet, this should not happen..., resetting");
+        sc_packet_deque.pop_front();
+        FEBsc_resetSecondary();
         return ERRCODES::BAD_PACKET;
     }
     if(sc_packet_deque.front().GetLength()!=data.size()){
         cm_msg(MERROR, "MudaqDevice::FEBsc_read", "Wanted to read from FPGA %d, Addr %d, length %zu", FPGA_ID, startaddr, data.size());
-        cm_msg(MERROR, "MudaqDevice::FEBsc_read" , "Received packet fails size check, communication error");
+        cm_msg(MERROR, "MudaqDevice::FEBsc_read" , "Received packet fails size check, communication error, resetting");
+        sc_packet_deque.pop_front();
+        FEBsc_resetSecondary();
         return ERRCODES::WRONG_SIZE;
     }
 
@@ -256,7 +282,7 @@ int FEBSlowcontrolInterface::FEB_register_read(const uint32_t FPGA_ID, const uin
 
 void FEBSlowcontrolInterface::FEBsc_resetMain()
 {
-    cm_msg(MINFO, "FEB_slowcontrol" , "Resetting slow control main");
+    //cm_msg(MINFO, "FEB_slowcontrol" , "Resetting slow control main");
     //clear memory to avoid sending old packets again -- TODO: should not be necessary
     for(int i = 0; i <= 64*1024; i++){
         mdev.write_memory_rw(i, 0);
@@ -269,8 +295,7 @@ void FEBSlowcontrolInterface::FEBsc_resetMain()
 
 void FEBSlowcontrolInterface::FEBsc_resetSecondary()
 {
-    cm_msg(MINFO, "FEB_slowcontrol" , "Resetting slow control secondary");
-    cout << "FEB_slowcontrol::FEBsc_resetSecondary(): " << endl;
+    //cm_msg(MINFO, "FEB_slowcontrol" , "Resetting slow control secondary");
     //reset our pointer
     m_FEBsc_rmem_addr=0;
     //reset fpga entity
@@ -285,10 +310,8 @@ void FEBSlowcontrolInterface::FEBsc_resetSecondary()
         printf("."); fflush(stdout);
     };
     if(timeout_cnt>=50){
-        cout << "\n ERROR: Slow control secondary reset FAILED with timeout\n";
-    }else{
-        cout << " DONE\n";
-    };
+        cm_msg(MERROR, "FEBsc_resetSecondary()", "Slow control secondary reset FAILED with timeout");
+    }
 }
 
 int FEBSlowcontrolInterface::FEBsc_NiosRPC(uint32_t FPGA_ID, uint16_t command, vector<vector<uint32_t> > payload_chunks)
@@ -328,8 +351,8 @@ int FEBSlowcontrolInterface::FEBsc_NiosRPC(uint32_t FPGA_ID, uint16_t command, v
         std::this_thread::sleep_for(std::chrono::milliseconds(2));
         status=FEB_register_read(FPGA_ID, CMD_LEN_REGISTER_RW, readback);
         if(status < 0)
-            return status
-                    ;
+            return status;
+
         if(timeout_cnt > 5) printf("MudaqDevice::FEBsc_NiosRPC(): Polling for command %x @%d: %x, %x\n",command,timeout_cnt,readback[0],readback[0]&0xffff0000);
         if((readback[0]&0xffff0000) == 0) break;
     }
@@ -339,16 +362,26 @@ int FEBSlowcontrolInterface::FEBsc_NiosRPC(uint32_t FPGA_ID, uint16_t command, v
 int FEBSlowcontrolInterface::FEBsc_read_packets()
 {
     int packetcount = 0;
+    int waitcount =0;
     uint32_t fpga_rmem_addr=(mdev.read_register_ro(MEM_WRITEADDR_LOW_REGISTER_R)+1) & 0xffff;
     while(fpga_rmem_addr!=m_FEBsc_rmem_addr){
 
-        if ((mdev.read_memory_ro(m_FEBsc_rmem_addr) & 0x1c0000bc) != 0x1c0000bc)
-            return 0; //TODO: correct when no event is to be written?
-
-        if(((fpga_rmem_addr > m_FEBsc_rmem_addr) && (fpga_rmem_addr-m_FEBsc_rmem_addr) < 4)
-            || (MUDAQ_MEM_RO_LEN - m_FEBsc_rmem_addr + fpga_rmem_addr) <4   ){ // This is the wraparound case
-            cout << "Incomplete packet!" << endl;
+        if ((mdev.read_memory_ro(m_FEBsc_rmem_addr) & 0x1c0000bc) != 0x1c0000bc){
+            cout << "Start pattern not seen at addr " << std::hex << m_FEBsc_rmem_addr << " seeing " << mdev.read_memory_ro(m_FEBsc_rmem_addr) << std::dec << endl;
             return -1;
+        }
+
+        if(((fpga_rmem_addr > m_FEBsc_rmem_addr) && (fpga_rmem_addr-m_FEBsc_rmem_addr) < 4)  // equal case taken care of by while condition
+            || ((fpga_rmem_addr > m_FEBsc_rmem_addr) && (MUDAQ_MEM_RO_LEN - m_FEBsc_rmem_addr + fpga_rmem_addr) <4)   ){ // This is the wraparound case
+            cout << "Incomplete packet (header)! at " << std::hex << m_FEBsc_rmem_addr << std::dec << endl;
+            std::this_thread::sleep_for(std::chrono::milliseconds(1));
+            fpga_rmem_addr=(mdev.read_register_ro(MEM_WRITEADDR_LOW_REGISTER_R)+1) & 0xffff;
+            waitcount++;
+            if(waitcount > 10){
+                cout << "Timeout whilst waiting for rest of message" << endl;
+                return -1;
+            }
+            continue;
         }
 
         SC_reply_packet packet;
@@ -359,10 +392,19 @@ int FEBSlowcontrolInterface::FEBsc_read_packets()
         packet.push_back(mdev.read_memory_ro(m_FEBsc_rmem_addr)); //save length word
         rmenaddrIncr();
 
-        if(((fpga_rmem_addr > m_FEBsc_rmem_addr) && (fpga_rmem_addr-m_FEBsc_rmem_addr) < packet.GetLength() +1)
-            || (MUDAQ_MEM_RO_LEN - m_FEBsc_rmem_addr + fpga_rmem_addr) < packet.GetLength() + 1  ){ // This is the wraparound case
-            cout << "Incomplete packet!" << endl;
-            return -1;
+        int count = 0;
+
+        while(((fpga_rmem_addr >= m_FEBsc_rmem_addr) && (fpga_rmem_addr-m_FEBsc_rmem_addr) < packet.GetLength() +1)
+            || ((fpga_rmem_addr > m_FEBsc_rmem_addr) && (MUDAQ_MEM_RO_LEN - m_FEBsc_rmem_addr + fpga_rmem_addr) < packet.GetLength() + 1 ) ){ // This is the wraparound case
+
+            std::this_thread::sleep_for(std::chrono::milliseconds(1));
+            fpga_rmem_addr=(mdev.read_register_ro(MEM_WRITEADDR_LOW_REGISTER_R)+1) & 0xffff;
+            cout << "Incomplete packet (body)! at " << std::hex << m_FEBsc_rmem_addr << " " << fpga_rmem_addr <<std::dec << endl;
+            count++;
+            if(count > 10){
+                cout << "Timeout whilst waiting for rest of message" << endl;
+                return -1;
+            }
         }
         for (uint32_t i = 0; i < packet.GetLength(); i++) {
             packet.push_back(mdev.read_memory_ro(m_FEBsc_rmem_addr)); //save data

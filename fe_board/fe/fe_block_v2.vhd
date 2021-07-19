@@ -330,6 +330,9 @@ begin
         i_ffly_temp                 => ffly_temp,
         i_ffly_alarm                => ffly_alarm,
         i_ffly_vcc                  => ffly_vcc,
+        
+        i_si45_intr_n               => i_si45_intr_n,
+        i_si45_lol_n                => i_si45_lol_n,
 
         -- outputs 156--------------------------------------------
         o_reg_cmdlen                => reg_cmdlen,

@@ -39,12 +39,12 @@ end entity mupix_ctrl_config_storage;
 
 architecture RTL of mupix_ctrl_config_storage is
 
-    signal fifo_read                : std_logic_vector(5 downto 0);
-    signal fifo_clear               : std_logic_vector(5 downto 0);
-    signal fifo_write               : std_logic_vector(5 downto 0);
+    signal fifo_read                : std_logic_vector(5 downto 0) := (others => '0');
+    signal fifo_clear               : std_logic_vector(5 downto 0) := (others => '0');
+    signal fifo_write               : std_logic_vector(5 downto 0) := (others => '0');
     signal fifo_wdata               : reg32array(5 downto 0);
     signal fifo_wdata_final         : reg32array(5 downto 0);
-    signal fifo_write_final         : std_logic_vector(5 downto 0);
+    signal fifo_write_final         : std_logic_vector(5 downto 0) := (others => '0');
     signal data_buffer              : std_logic_vector(32*6-1 downto 0);
     type bitpos_t                   is array (5 downto 0) of integer range 31 downto 0;
     type bitpos_global_t            is array (5 downto 0) of integer range 1000 downto 0; -- TODO: how to max(MP_CONFIG_REGS_LENGTH) in vhdl ?
@@ -133,35 +133,37 @@ begin
                     when 6 =>
                         -- 18 Bias Bits
                         fifo_write(WR_BIAS_BIT) <= '1';
-                        fifo_wdata(WR_BIAS_BIT) <= i_data_all(31 downto 14) & x"000" & "00";
+                        fifo_wdata(WR_BIAS_BIT) <= i_data_all(31 downto 16) & x"0000";
 
-                        -- 14 leftover
-                        data_in_leftovers(13 downto 0) <= i_data_all(13 downto 0);
+                        -- 16 leftover
+                        data_in_leftovers(15 downto 0) <= i_data_all(15 downto 0);
                     when 7 to 8 =>
                         -- 64 CONF Bits
                         fifo_write(WR_CONF_BIT) <= '1';
-                        fifo_wdata(WR_CONF_BIT) <= data_in_leftovers(13 downto 0) & i_data_all(31 downto 14);
+                        fifo_wdata(WR_CONF_BIT) <= data_in_leftovers(15 downto 0) & i_data_all(31 downto 16);
                         
-                        -- 14 leftover
-                        data_in_leftovers(13 downto 0) <= i_data_all(13 downto 0);
+                        -- 16 leftover
+                        data_in_leftovers(15 downto 0) <= i_data_all(15 downto 0);
                      when 9 =>
-                        -- 26 CONF Bits  (14 from leftover, 12 from input --> 20 new leftover)
+                        -- 26 CONF Bits  (16 from leftover, 10 from input --> 22 new leftover)
                         fifo_write(WR_CONF_BIT) <= '1';
-                        fifo_wdata(WR_CONF_BIT) <= data_in_leftovers(31 downto 18) & i_data_all(31 downto 20) & "000000";
+                        fifo_wdata(WR_CONF_BIT) <= data_in_leftovers(15 downto 0) & i_data_all(31 downto 22) & "000000";
                         
-                        -- 20 leftover
-                        data_in_leftovers(19 downto 0) <= i_data_all(19 downto 0);
+                        -- 22 leftover
+                        data_in_leftovers(21 downto 0) <= i_data_all(21 downto 0);
                      when 10 to 11 => 
-                        -- 64 VDAC Bits  (20 from leftover, 12 from input --> 20 new leftover)
+                        -- 64 VDAC Bits  (22 from leftover, 10 from input --> 22 new leftover)
                         fifo_write(WR_VDAC_BIT) <= '1';
-                        fifo_wdata(WR_VDAC_BIT) <= data_in_leftovers(19 downto 0) & i_data_all(31 downto 20);
+                        fifo_wdata(WR_VDAC_BIT) <= data_in_leftovers(21 downto 0) & i_data_all(31 downto 22);
                         
-                        -- 20 leftover
-                        data_in_leftovers(19 downto 0) <= i_data_all(19 downto 0);
+                        -- 22 leftover
+                        data_in_leftovers(21 downto 0) <= i_data_all(21 downto 0);
                      when 12 =>
-                        -- 16 VDAC Bits  (16 from leftover --> no new leftover)
+                        -- 16 VDAC Bits  (16 from leftover)
                         fifo_write(WR_VDAC_BIT) <= '1';
-                        fifo_wdata(WR_VDAC_BIT) <= data_in_leftovers(19 downto 4) & x"0000";
+                        fifo_wdata(WR_VDAC_BIT) <= data_in_leftovers(21 downto 6) & x"0000";
+                        -- 6 new leftover ... but will throw them away here since this probably makes the software easier when col, tdac and test are read from file instead of odb
+                        -- --> col tac and test are 32 bit aligned and do not overlap with odb config
                         
                         -- 32 COL Bits
                         fifo_write(WR_COL_BIT) <= '1';
@@ -203,6 +205,7 @@ begin
             ADDR_WIDTH      => integer(ceil(log2(real(MP_CONFIG_REGS_LENGTH(I))))),
             DATA_WIDTH      => 32,
             SHOWAHEAD       => "ON",
+            REGOUT          => 0,
             DEVICE          => "ARRIA V"--,
         )
         port map (
