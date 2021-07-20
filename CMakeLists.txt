@@ -65,7 +65,6 @@ find_package(Midas REQUIRED
     HINTS
         $ENV{MIDASSYS}
         ~/midas
-        ~/online/modules/midas
         #${CMAKE_CURRENT_SOURCE_DIR}/../midas
         )
 # To be implemented in midas/MidasConfig.cmake at some point
