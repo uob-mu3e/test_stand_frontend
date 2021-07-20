@@ -1,11 +1,6 @@
 #!/bin/bash
 
-PREFIX="@CMAKE_INSTALL_PREFIX@"
 SOURCE="@PROJECT_SOURCE_DIR@"
-BINDIR="${PREFIX}/bin"
-BINDIRMIDAS="${SOURCE}/modules/midas/bin"
-LIBDIR="${PREFIX}/lib"
-
 ONLINE_DIR="${SOURCE}/online"
 
 cd "$ONLINE_DIR"
