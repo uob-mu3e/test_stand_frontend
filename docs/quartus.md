@@ -73,3 +73,5 @@ cd $QUARTUS_ROOTDIR/linux64/perl/bin
 mv perl perl_old
 ln -s /usr/bin/perl
 ```
+
+- [Transceiver Architecture in Stratix IV Devices](https://www.intel.com/content/dam/www/programmable/us/en/pdfs/literature/hb/stratix-iv/stx4_siv52001.pdf)

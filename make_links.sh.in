@@ -1,15 +1,10 @@
-#
+#!/bin/bash
 
-PREFIX=@CMAKE_INSTALL_PREFIX@
-SOURCE=@PROJECT_SOURCE_DIR@
-BINDIR=${PREFIX}/bin
-BINDIRMIDAS=${SOURCE}/modules/midas/bin
-LIBDIR=${PREFIX}/lib
-
+SOURCE="@PROJECT_SOURCE_DIR@"
 ONLINE_DIR="${SOURCE}/online"
 
 cd "$ONLINE_DIR"
-ln -sf "${SOURCE}/modules/midas/resources"
+ln -sf "@MIDASSYS@/resources"
 ln -sf "${SOURCE}/modules/analyzer/packages/mu3edisplay/config"
 ln -sf "${SOURCE}/modules/analyzer/packages/mu3edisplay/dist"
 ln -sf "${SOURCE}/modules/analyzer/packages/rootana/examples"

@@ -209,7 +209,7 @@ void stream_settings_changed(odb o)
 
     if (name == "mask_n_scifi") {
         uint32_t mask = o;
-        char buffer [50];
+        char buffer [255];
         sprintf(buffer, "Set Mask Links Scifi to " PRINTF_BINARY_PATTERN_INT32, PRINTF_BYTE_TO_BINARY_INT32((long long int) mask));
         cm_msg(MINFO, "stream_settings_changed", buffer);
         mup->write_register(SWB_LINK_MASK_SCIFI_REGISTER_W, mask);
@@ -217,7 +217,7 @@ void stream_settings_changed(odb o)
 
     if (name == "mask_n_pixel") {
         uint32_t mask = o;
-        char buffer [50];
+        char buffer [255];
         sprintf(buffer, "Set Mask Links Pixel to " PRINTF_BINARY_PATTERN_INT32, PRINTF_BYTE_TO_BINARY_INT32((long long int) mask));
         cm_msg(MINFO, "stream_settings_changed", buffer);
         mup->write_register(SWB_LINK_MASK_PIXEL_REGISTER_W, mask);
