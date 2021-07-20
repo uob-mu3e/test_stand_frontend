@@ -1,9 +1,9 @@
 #!/bin/bash
 
-PREFIX=@CMAKE_INSTALL_PREFIX@
-SOURCE=@PROJECT_SOURCE_DIR@
-BINDIR=${PREFIX}/bin
-LIBDIR=${PREFIX}/lib
+PREFIX="@CMAKE_INSTALL_PREFIX@"
+SOURCE="@PROJECT_SOURCE_DIR@"
+BINDIR="${PREFIX}/bin"
+LIBDIR="${PREFIX}/lib"
 
 source "${PREFIX}/set_env.sh"
 
@@ -34,7 +34,7 @@ if [[ "$CUDA" = "TRUE" ]]; then
     xterm -hold -e "msysmon-nvidia" &
 else
     xterm -hold -e "msysmon" &
-fi;
+fi
 sleep 0.2
 xterm -hold -e "switch_fe" &
 sleep 0.2
