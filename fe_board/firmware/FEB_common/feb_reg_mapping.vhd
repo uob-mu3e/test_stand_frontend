@@ -290,32 +290,32 @@ begin
         end if;
 
         -- NON-incrementing reads/writes TEST
-        if ( regaddr = NONINCREMENTING_TEST_REGISTER_RW and i_reg_re = '1' ) then
-            o_reg_rdata <= test_read_data;
-            test_read   <= '1';
-        end if;
-        if ( regaddr = NONINCREMENTING_TEST_REGISTER_RW and i_reg_we = '1' ) then
-            test_write_data <= i_reg_wdata;
-            test_write      <= '1';
-        end if;
+--        if ( regaddr = NONINCREMENTING_TEST_REGISTER_RW and i_reg_re = '1' ) then
+--            o_reg_rdata <= test_read_data;
+--            test_read   <= '1';
+--        end if;
+--        if ( regaddr = NONINCREMENTING_TEST_REGISTER_RW and i_reg_we = '1' ) then
+--            test_write_data <= i_reg_wdata;
+--            test_write      <= '1';
+--        end if;
 
     end if;
     end process;
     
-    nonincrementing_rw_test_fifo: entity work.ip_scfifo
-    generic map(
-        ADDR_WIDTH      => 4,
-        DATA_WIDTH      => 32,
-        SHOWAHEAD       => "ON",
-        DEVICE          => "Arria V"--,
-    )
-    port map (
-        clock           => i_clk_156,
-        sclr            => '0',
-        data            => test_write_data,
-        wrreq           => test_write,
-        q               => test_read_data,
-        rdreq           => test_read--,
-    );
+--    nonincrementing_rw_test_fifo: entity work.ip_scfifo
+--    generic map(
+--        ADDR_WIDTH      => 4,
+--        DATA_WIDTH      => 32,
+--        SHOWAHEAD       => "ON",
+--        DEVICE          => "Arria V"--,
+--    )
+--    port map (
+--        clock           => i_clk_156,
+--        sclr            => '0',
+--        data            => test_write_data,
+--        wrreq           => test_write,
+--        q               => test_read_data,
+--        rdreq           => test_read--,
+--    );
     
 end architecture;

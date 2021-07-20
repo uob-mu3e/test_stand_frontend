@@ -160,6 +160,7 @@ architecture rtl of top is
     signal spi_ss_n                 : std_logic_vector(15 downto 0);
 
     signal run_state_125            : run_state_t;
+    signal run_state_125_reg        : run_state_t;
     signal run_state_156            : run_state_t;
     signal ack_run_prep_permission  : std_logic;
 
@@ -223,7 +224,7 @@ begin
         o_data_bypass           => data_bypass,
         o_data_bypass_we        => data_bypass_we,
 
-        i_run_state_125           => run_state_125,
+        i_run_state_125           => run_state_125_reg,
         i_run_state_156           => run_state_156,
         o_ack_run_prep_permission => ack_run_prep_permission,
 
@@ -240,8 +241,9 @@ begin
 
     process(lvds_firefly_clk)
     begin
-    if falling_edge(lvds_firefly_clk) then
-        if(run_state_125 = RUN_STATE_SYNC)then
+    if rising_edge(lvds_firefly_clk) then
+        run_state_125_reg <= run_state_125;
+        if(run_state_125_reg = RUN_STATE_SYNC)then
             fast_reset_A    <= '1';
             fast_reset_B    <= '1';
             fast_reset_C    <= '1';

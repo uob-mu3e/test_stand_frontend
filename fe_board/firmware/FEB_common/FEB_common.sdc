@@ -30,3 +30,8 @@ set_false_path -from {fe_block_v2:e_fe_block|max10_interface:e_max10_interface|m
 set_false_path -from {fe_block_v2:e_fe_block|max10_interface:e_max10_interface|programming_status*} -to {fe_block_v2:e_fe_block|max10_interface:e_max10_interface|o_programming_status*}
 set_false_path -from {fe_block_v2:e_fe_block|feb_reg_mapping:e_reg_mapping|o_programming_addr_ena} -to {fe_block_v2:e_fe_block|max10_interface:e_max10_interface|programming_addr_ena_reg}
 set_false_path -from {fe_block_v2:e_fe_block|feb_reg_mapping:e_reg_mapping|o_programming_addr*} -to {fe_block_v2:e_fe_block|max10_interface:e_max10_interface|max_spi_data_to_max*}
+set_false_path -from {*} -to {*max10_interface|o_programming_status*}
+
+# int run emergeny REMOVE THIS AGAIN
+# no need for the nios to be able to read somehting ever (mupix feb only, do not merge !!!)
+set_false_path -from {fe_block_v2:e_fe_block|nios:e_nios*} -to {*_reg_mapping|o_reg_rdata*}

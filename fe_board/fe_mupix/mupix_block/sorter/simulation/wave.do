@@ -80,6 +80,7 @@ add wave -noupdate -expand -group Sequencer -radix hexadecimal /hitsorter_tb/dut
 add wave -noupdate -expand -group Sequencer -radix hexadecimal /hitsorter_tb/dut/seq/domem
 add wave -noupdate -expand -group Sequencer -radix hexadecimal /hitsorter_tb/dut/seq/newblocknext_reg
 add wave -noupdate -expand -group Sequencer -radix hexadecimal /hitsorter_tb/dut/seq/current_block
+add wave -noupdate -expand -group Sequencer /hitsorter_tb/dut/seq/block_from_fifo
 add wave -noupdate -expand -group Sequencer -radix hexadecimal /hitsorter_tb/dut/seq/fifo_reg
 add wave -noupdate -expand -group Sequencer -radix hexadecimal /hitsorter_tb/dut/seq/subaddr
 add wave -noupdate -expand -group Sequencer -radix hexadecimal /hitsorter_tb/dut/seq/overflowts

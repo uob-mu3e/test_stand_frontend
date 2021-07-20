@@ -1,10 +1,6 @@
 #ifndef mupix_H_
 #define mupix_H_
 
-#include "default_mupix_dacs.h"
-
-#include "sc_mupix.h"
-
 //declaration of interface to scifi module: hardware access, menu, slow control handler
 struct mupix_t {
     sc_t* sc;
@@ -131,13 +127,10 @@ struct mupix_t {
             
             printf("pll_lock should always be '1', rx_state 0: wait for dpa_lock 1: alignment 2:ok, disp_err is only counting in rx_state 2\n");
             printf("order is CON2 ModuleA chip1 ABC, chip2 ABC, .. ModuleB chip1 ABC .. CON3..\n");
-            for(int i=0; i<36; i++){
-                value = sc->ram->data[0xFF66+i];
-		if ( i<10) {	
-	        	printf("0%i ready: %01x  rx_state: %01x  pll_lock: %01x  disp_err: %01x\n ",i,value>>31,(value>>29) & 0x3,(value>>28) & 0x1,value & 0x0FFFFFFF);
-		} else  {
-	        	printf("%i ready: %01x  rx_state: %01x  pll_lock: %01x  disp_err: %01x\n ",i,value>>31,(value>>29) & 0x3,(value>>28) & 0x1,value & 0x0FFFFFFF);
-		}
+            for(int i=0; i<64; i++){
+                value = sc->ram->data[0xFF66];
+                if (i>36) continue;
+                printf("%i ready: %01x  rx_state: %01x  pll_lock: %01x  disp_err: %01x\n ",i,value>>31,(value>>29) & 0x3,(value>>28) & 0x1,value & 0x0FFFFFFF);
             }
             printf("----------------------------\n");
             usleep(200000);
