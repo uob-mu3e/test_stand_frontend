@@ -14,9 +14,9 @@
 #include <stdlib.h>
 #include <stdarg.h>
 #include  <signal.h>
-#include "../../../../modules/midas/include/midas.h"
-#include "../../../../modules/midas/include/mfe.h"
-#include "../../../../modules/midas/include/msystem.h"
+#include "midas.h"
+#include "mfe.h"
+#include "msystem.h"
 //#include "scpi.h"
 
 /*---- globals -----------------------------------------------------*/
