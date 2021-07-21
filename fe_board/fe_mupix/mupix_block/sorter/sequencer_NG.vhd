@@ -102,10 +102,19 @@ elsif (clk'event and clk = '1') then
 	else
 		if(blockchange = '1')then
 			output 			<= subheader;
+			copy_fifo		:= '0';
 			blockchange 	<= '0';
+			if(counters_reg(3 downto 0) = "0000" and counters_reg(11 downto 8) = "0000")then
+				copy_fifo				:= '1';
+			end if;
 		elsif(hasmem = '1')then
 			output 			<= hits;
 			copy_fifo		:= '0';
+
+			if(counters_reg(3 downto 0) = "0001" and counters_reg(11 downto 8) = "0000")then
+				hasmem					<= '0';
+			end if;
+
 			if(counters_reg(3 downto 0) = "0001") then -- switch chip
 				counters_reg(counters_reg'left-8 downto 0)	 <= counters_reg(counters_reg'left downto 8);
 				counters_reg(counters_reg'left downto counters_reg'left-7)	 <= (others => '0');
@@ -118,25 +127,32 @@ elsif (clk'event and clk = '1') then
 				subaddr_to_out			 <= subaddr;
 				chip_to_out				<=  counters_reg(7 downto 4);
 			end if;
+			if(counters_reg(3 downto 0) = "0001" and counters_reg(11 downto 8) = "0000") then
+				copy_fifo				:= '1';
+			end if;
 		else
 			output			<= none;
-		end if;
-		if(counters_reg(3 downto 0) = "0001" and counters_reg(11 downto 8) = "0000")then
-			hasmem					<= '0';
 			copy_fifo				:= '1';
 		end if;
+		--if((counters_reg(3 downto 0) = "0001" and counters_reg(11 downto 8) = "0000") or
+		--   (counters_reg(3 downto 0) = "0000" and counters_reg(11 downto 8) = "0000"))then
+		--	copy_fifo				:= '1';
+		--end if;
 	end if;		
 
+	if(no_copy_next = '1')then
+		copy_fifo := '0';
+	end if;
+
 	-- When to continue reading the FIFO
-	if(from_fifo(HASMEMBIT) = '0' or fifo_empty = '1' or (from_fifo(3 downto 0) = "0001" and from_fifo(11 downto 8) = "0000"))then
+	if(from_fifo(HASMEMBIT) = '0' or fifo_empty = '1' or (from_fifo(3 downto 0) = "0001" and from_fifo(11 downto 8) = "0000")
+		or copy_fifo = '1') then
 		read_fifo_int <= '1';
 	else
 		read_fifo_int <= '0';
 	end if;
 
-	if(no_copy_next = '1')then
-		copy_fifo := '0';
-	end if;
+
 
 	
 	if(read_fifo_int = '1' and fifo_empty_last = '0')then
