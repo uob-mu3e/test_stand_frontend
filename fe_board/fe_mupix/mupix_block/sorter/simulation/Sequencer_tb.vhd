@@ -59,6 +59,7 @@ signal      counterfifo_empty               : std_logic;
 
 signal      outcommand                      : command_t;
 signal      command_enable                  : std_logic;
+signal      outoverflow                     : std_logic_vector(15 downto 0);
 
 begin
 
@@ -102,7 +103,7 @@ dut: entity work.sequencer_ng
 		read_fifo	=> read_counterfifo,
 		outcommand	=> outcommand,				
 		command_enable	=> command_enable,		
-		outoverflow	 => open);				
+		outoverflow	 => outoverflow);				
 
 wclockgen: process
 begin
@@ -374,7 +375,32 @@ begin
     tofifo_counters(7 downto 0)             <= "00000001";
     write_counterfifo   <= '1';    
     wait for 9*WRITECLK_PERIOD;
-    tofifo_counters(TSINFIFORANGE)          <= "00101010000";
+    tofifo_counters(TSINFIFORANGE)          <= "00000010000";
+    tofifo_counters(HASMEMBIT)              <= '1';
+    tofifo_counters(MEMOVERFLOWBIT)         <= '1';
+    tofifo_counters(7 downto 0)             <= "00000001";
+    write_counterfifo   <= '1';    
+    wait for WRITECLK_PERIOD;
+    tofifo_counters     <= (others => '0');
+    write_counterfifo   <= '0';
+    wait for 9*WRITECLK_PERIOD;
+    tofifo_counters(TSINFIFORANGE)          <= "00000100000";
+    tofifo_counters(HASMEMBIT)              <= '0';
+    tofifo_counters(MEMOVERFLOWBIT)         <= '0';
+    tofifo_counters(7 downto 0)             <= "00000000";
+    write_counterfifo   <= '1';    
+    wait for WRITECLK_PERIOD;
+    tofifo_counters     <= (others => '0');
+    write_counterfifo   <= '0';
+    wait for 9*WRITECLK_PERIOD;
+    tofifo_counters(TSINFIFORANGE)          <= "00000110000";
+    tofifo_counters(HASMEMBIT)              <= '1';
+    tofifo_counters(MEMOVERFLOWBIT)         <= '1';
+    tofifo_counters(7 downto 0)             <= "00000000";
+    write_counterfifo   <= '1';    
+    wait for WRITECLK_PERIOD;
+    tofifo_counters     <= (others => '0');
+    write_counterfifo   <= '0';
     wait for WRITECLK_PERIOD;
     tofifo_counters     <= (others => '0');
     write_counterfifo   <= '0';

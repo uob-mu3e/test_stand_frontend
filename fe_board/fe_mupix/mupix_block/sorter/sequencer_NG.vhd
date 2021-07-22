@@ -48,12 +48,16 @@ signal subaddr:			counter_t;
 signal subaddr_to_out:  counter_t;
 signal chip_to_out:		counter_t;
 signal hasmem:			std_logic;
+signal hasoverflow:		std_logic;
 signal fifo_empty_last:	std_logic;
 signal fifo_new: 		std_logic;
 signal read_fifo_int: 	std_logic;
 signal make_header:		std_logic_vector(1 downto 0);
 signal blockchange:		std_logic;
 signal no_copy_next:	std_logic;
+
+signal overflowts 		: std_logic_vector(15 downto 0);
+signal overflow_to_out  : std_logic_vector(15 downto 0);
 
 begin
 
@@ -71,7 +75,7 @@ if (reset_n = '0') then
 	fifo_new		<= '0';
 	current_block	<= block_max;
 	no_copy_next	<= '0';
-
+	overflowts			<= (others => '0');
 elsif (clk'event and clk = '1') then
 
 	
@@ -104,13 +108,18 @@ elsif (clk'event and clk = '1') then
 			output 			<= subheader;
 			copy_fifo		:= '0';
 			blockchange 	<= '0';
+			overflow_to_out		<= overflowts;
+			overflowts			<= (others => '0');
+			if(hasmem = '0' and hasoverflow = '1') then
+				overflowts		<= (others => '1'); -- Note that overflow gets sent with the next subheader!
+			end if;
 			if(counters_reg(3 downto 0) = "0000" and counters_reg(11 downto 8) = "0000")then
 				copy_fifo				:= '1';
 			end if;
 		elsif(hasmem = '1')then
 			output 			<= hits;
 			copy_fifo		:= '0';
-
+			overflowts(conv_integer(current_ts(TSINBLOCKRANGE))) <= hasoverflow;
 			if(counters_reg(3 downto 0) = "0001" and counters_reg(11 downto 8) = "0000")then
 				hasmem					<= '0';
 			end if;
@@ -132,12 +141,12 @@ elsif (clk'event and clk = '1') then
 			end if;
 		else
 			output			<= none;
-			copy_fifo				:= '1';
+			copy_fifo		:= '1';
+
+			if(hasmem = '0' and hasoverflow = '1')then
+				overflowts(conv_integer(current_ts(TSINBLOCKRANGE))) <= hasoverflow;
+			end if;
 		end if;
-		--if((counters_reg(3 downto 0) = "0001" and counters_reg(11 downto 8) = "0000") or
-		--   (counters_reg(3 downto 0) = "0000" and counters_reg(11 downto 8) = "0000"))then
-		--	copy_fifo				:= '1';
-		--end if;
 	end if;		
 
 	if(no_copy_next = '1')then
@@ -170,7 +179,12 @@ elsif (clk'event and clk = '1') then
 		current_ts	 	<= from_fifo(TSINFIFORANGE);
 		counters_reg	<= from_fifo(MEMCOUNTERRANGE);
 		hasmem 			<= from_fifo(HASMEMBIT);
+		hasoverflow		<= from_fifo(MEMOVERFLOWBIT);
 		subaddr			<= "0000";
+		if(from_fifo(HASMEMBIT)='1' and from_fifo(3 downto 0) = "0000")then --there was an overflow, no hits for this TS
+			hasmem			<= '0';
+			hasoverflow		<= '1';
+		end if;
 		if(from_fifo(TSBLOCKINFIFORANGE) /= current_block)then
 			blockchange <= '1';
 			if(from_fifo(TSBLOCKINFIFORANGE) = block_zero)then
@@ -189,6 +203,7 @@ begin
 if(reset_n = '0') then	
 	command_enable 	<= '0';
 	outcommand		<= (others => '0');
+	outoverflow		<= (others => '0');
 elsif(clk'event and clk = '1') then
 	case output is
 		when none =>
@@ -204,6 +219,7 @@ elsif(clk'event and clk = '1') then
 			outcommand 					<= COMMAND_SUBHEADER;
 			outcommand(TSBLOCKRANGE)	<= ts_to_out(TSBLOCKRANGE);
 			outcommand(TSNONBLOCKRANGE)	<= (others => '0');
+			outoverflow					<= overflow_to_out;
 			command_enable 	<= '1';
 		when hits =>
 			command_enable 									 <= '1';
