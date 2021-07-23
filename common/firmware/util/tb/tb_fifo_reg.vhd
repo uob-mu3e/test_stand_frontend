@@ -52,47 +52,9 @@ begin
         full  => wrfull--,
     );
     
-    rdreq <= '1' when rdempty = '0' and reg_full = '0' else '0';
-    reg_rdreq <= '1' when reg_empty = '0' and reg_reg_full = '0' else '0';
-
-    process(clk, reset_n)
-    begin
-    if ( reset_n = '0' ) then
-        reg_empty <= '1';
-        reg_full  <= '0';
-        q_reg     <= (others => '0');
-        reg_reg_empty <= '1';
-        reg_reg_full  <= '0';
-        q_reg_reg <= (others => '0');
-        --
-    elsif ( rising_edge(clk) ) then
-
-        if ( rdreq = '1' ) then
-            q_reg       <= q;
-            reg_full    <= '1';
-            reg_empty   <= '0';
-        end if;
-
-        if ( reg_rdreq = '1' ) then
-            q_reg_reg <= q_reg;
-            reg_full  <= '0';
-            reg_empty <= '1';
-
-            reg_reg_full    <= '1';
-            reg_reg_empty   <= '0';
-        end if;
-
-        if ( reg_reg_rdreq = '1' ) then
-            reg_reg_full <= '0';
-            reg_reg_empty <= '1';
-        end if;
-
-    end if;
-    end process;
-
-    reg_reg_rdreq <= '1' when reg_reg_empty = '0' else '0';
+    rdreq <= '1' when rdempty = '0' else '0';
     
-    a <= q_reg_reg(7 downto 0);
-    b <= q_reg_reg(15 downto 8);
+    a <= q(7 downto 0);
+    b <= q(15 downto 8);
 
 end architecture;
