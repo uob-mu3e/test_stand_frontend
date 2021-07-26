@@ -485,7 +485,7 @@ scfifo_component : scfifo
                 almost_full_value => 120,
                 intended_device_family => "Arria V",
                 lpm_numwords => 128,
-                lpm_showahead => "ON",
+                lpm_showahead => "OFF",
                 lpm_type => "scfifo",
                 lpm_width => SORTERFIFORANGE'left + 1,
                 lpm_widthu => 7,
@@ -640,7 +640,6 @@ elsif (writeclk'event and writeclk = '1') then
 		end loop;
 		
 		mem_overflow_del1 	<= mem_overflow;
-		--block_empty_del1	<= block_empty;
 		stopwrite_del1		<= stopwrite;
 		blockchange_del1	<= blockchange;
 		
@@ -664,7 +663,6 @@ elsif (writeclk'event and writeclk = '1') then
 		
 		
 		mem_overflow_del2 	<= mem_overflow_del1;
-		--block_empty_del2	<= block_empty_del1;
 		stopwrite_del2		<= stopwrite_del1;
 		blockchange_del2	<= blockchange_del1;
 		
@@ -681,7 +679,6 @@ elsif (writeclk'event and writeclk = '1') then
 				tofifo_counters(MEMOVERFLOWBIT)	<= '1';
 				tofifo_counters(MEMCOUNTERRANGE)	<= counter2chipszero;
 				creditchange := creditchange - 1;
-				tofifo_counters(0)                  <= '1';
 			end if;
 						
 			if(blockchange_del2 = '1') then
@@ -693,7 +690,7 @@ elsif (writeclk'event and writeclk = '1') then
 			creditchange := creditchange  -1;
 		elsif(stopwrite_del2 ='1' and blockchange_del2 = '1') then -- we were overfull and have suppressed hits
 			write_counterfifo <= '1';
-			tofifo_counters <= tsread - "100" & "0" & "1" & mem_countchips_m2;
+			tofifo_counters <= tsread - "100" & "0" & "1" & counter2chipszero;
 			creditchange := creditchange  -1;
 		end if;
 		credittemp <= credittemp + creditchange;
@@ -713,7 +710,7 @@ end process;
 
 
 -- Here we generate the sequence of read commands etc.
-seq:entity work.sequencer 
+seq:entity work.sequencer_ng 
 	port map(
 		reset_n							=> reset_n,
 		clk								=> writeclk,
