@@ -9,6 +9,31 @@
 -- The ouput command has the TS in the LSBs, followed by four bits hit address
 -- four bits channel/chip ID and the MSB inciating command (1) or hit (0)
 
+-- In a bit more detail: For every TS which is either containg hits or marking the 
+-- change of (16 TS) block, the main sorter file writes to a FIFO in the format
+
+-- Timestamp | non-emmpty flag (hasmem)| Overflow bit|...|...|Chip Nr y | Nhits Chip y | Chip Nr x | Nhits Chip x
+-- Note that the counters are right-stacked, i.e. the rightmost counter is from the first chip with hits and so on
+-- If there are no more hits, the counter is 0
+
+-- The FIFO is of the conventional (non show-ahead) type
+-- It is almost equally tricky to make sure the FIFO is read whenever possible in showahead and non-showahead mode
+-- After the integration run I decided that this way is easier to reason about
+
+-- This input is then turned into a series of commands corresponding directly to the output of the sorter, i.e.
+-- Header 1
+-- Header 2
+-- Subheader
+-- Hit
+-- Hit
+-- ...
+-- Subheader
+-- ...
+-- ...
+-- Footer
+--
+-- For the hits we output in which memory (i.e. chip) they are at which position (TS plus hit number)
+
 
 library ieee;
 use ieee.std_logic_1164.all;
@@ -102,10 +127,7 @@ elsif (clk'event and clk = '1') then
 	elsif(make_header = "01")then
 		output <= header2;
 		make_header 	<= "00";
-		no_copy_next	<= '0';
-	else
-		if(blockchange = '1')then
-			output 			<= subheader;
+		no_copy_next	<= '0';araldit 2011
 			copy_fifo		:= '0';
 			blockchange 	<= '0';
 			overflow_to_out		<= overflowts;
