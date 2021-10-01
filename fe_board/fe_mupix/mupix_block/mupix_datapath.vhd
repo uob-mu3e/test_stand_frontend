@@ -46,7 +46,7 @@ architecture rtl of mupix_datapath is
 
     signal reset_156_n              : std_logic;
     signal reset_125_n              : std_logic;
-    signal sorter_reset_n           : std_logic;
+    signal sorter_reset_n           : std_logic := '0';
 
     -- signals after mux
     signal rx_data                  : work.util.slv8_array_t(35 downto 0);
@@ -92,7 +92,7 @@ architecture rtl of mupix_datapath is
     signal data_bypass_we           : std_logic;
     signal data_bypass_select       : std_logic_vector(31 downto 0);
 
-    signal running                  : std_logic;
+    signal running                  : std_logic := '0';
 
     -- error signal output from unpacker
     signal unpack_errorcounter      : work.util.slv32_array_t(35 downto 0);
@@ -154,9 +154,27 @@ architecture rtl of mupix_datapath is
 
 begin
 
-    reset_156_n <= '0' when (i_run_state_156=RUN_STATE_SYNC) else '1';
-    reset_125_n <= '0' when (i_run_state_125=RUN_STATE_SYNC) else '1';
-
+	process(i_clk156)
+   begin
+		if(rising_edge(i_clk156)) then
+			if(i_run_state_156=RUN_STATE_SYNC) then
+				reset_156_n <= '0';
+			else 
+				reset_156_n <=  '1';
+			end if;
+		end if;
+	end process;
+	
+	process(i_clk125)
+   begin
+		if(rising_edge(i_clk125)) then
+			if(i_run_state_125=RUN_STATE_SYNC) then
+				reset_125_n <= '0';
+			else 
+				reset_125_n <=  '1';
+			end if;
+		end if;
+	end process;
     
 ------------------------------------------------------------------------------------
 ---------------------- registers ---------------------------------------------------
@@ -379,9 +397,22 @@ begin
         hits_sorter_in_buf(i)       <= row_hs(i) & col_hs(i) & tot_hs(i)(4 downto 0) & ts_hs(i);
     END GENERATE;
 
-    running         <= '1' when i_run_state_125 = RUN_STATE_RUNNING else '0';
-    sorter_reset_n  <= '0' when i_run_state_125 = RUN_STATE_IDLE else '1';
-
+	 process(i_clk125)
+	 begin
+	 if(rising_edge(i_clk125))then
+		if(i_run_state_125 = RUN_STATE_RUNNING) then
+			running         <= '1';
+		else
+			running         <= '0';
+		end if;
+		if(i_run_state_125 = RUN_STATE_IDLE) then
+			sorter_reset_n  <= '0';
+		else 
+			sorter_reset_n  <= '1';
+		end if;
+	 end if;
+	 end process;
+	 
     sorter: work.hitsorter_wide
     port map(
         reset_n         => sorter_reset_n,

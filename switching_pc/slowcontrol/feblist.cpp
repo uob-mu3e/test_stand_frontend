@@ -72,7 +72,7 @@ void FEBList::RebuildFEBList()
                 lastPrimary=mFEBs.size();
                 mFEBs.push_back({ID,linkmask[ID],name_link.c_str(),febcrate[ID], febslot[ID], febversion[ID]});
                 mpFEBs.push_back(mFEBs.back());
-                printf(reportStr,"TX Fiber %d is mapped to Link %u \"%s\"                            --> SB=%u.%u %s",
+                sprintf(reportStr,"TX Fiber %d is mapped to Link %u \"%s\"  --> SB=%u.%u %s",
                         ID,mFEBs[lastPrimary].GetLinkID(),mFEBs[lastPrimary].GetLinkName().c_str(),
                         mFEBs[lastPrimary].SB_Number(),mFEBs[lastPrimary].SB_Port(),
                         !mFEBs[lastPrimary].IsScEnabled()?"\t[SC disabled]":"");

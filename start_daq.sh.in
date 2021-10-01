@@ -1,31 +1,14 @@
 #!/bin/bash
-# start_daq.sh
 
-PREFIX=@CMAKE_INSTALL_PREFIX@
-SOURCE=@PROJECT_SOURCE_DIR@
-BINDIR=${PREFIX}/bin
-LIBDIR=${PREFIX}/lib
+PREFIX="@CMAKE_INSTALL_PREFIX@"
+SOURCE="@PROJECT_SOURCE_DIR@"
+BINDIR="${PREFIX}/bin"
+LIBDIR="${PREFIX}/lib"
 
 source "${PREFIX}/set_env.sh"
 
-CUDA=@CUDA_FOUND@
-
-echo "$CUDA"
-
 cd "${SOURCE}/online"
 
-odbedit -c clean
-
-odbedit -c 'mkdir Custom'
-odbedit -d Custom -c 'create STRING Path'
-odbedit -c "set Custom/Path $SOURCE/mhttpd/custom"
-
-
-# create custom page for manalyzer
-odbedit -d Custom -c 'create STRING OnlineAna'
-odbedit -d Custom -c 'create STRING Mu3eDisplay'
-odbedit -c 'set Custom/OnlineAna manalyzer/OnlineAna.html'
-odbedit -c 'set Custom/Mu3eDisplay manalyzer/Mu3eDisplay.html'
 
 #create custom pages for DAQ slow control
 #odbedit -d Custom -c 'create STRING SC'
@@ -51,7 +34,7 @@ if [[ "$CUDA" = "TRUE" ]]; then
     xterm -hold -e "msysmon-nvidia" &
 else
     xterm -hold -e "msysmon" &
-fi;
+fi
 sleep 0.2
 xterm -hold -e "switch_fe" &
 sleep 0.2
@@ -61,17 +44,3 @@ xterm -hold -e "mlogger" &
 
 sleep 2
 
-#set mhttpd to run http
-odbedit -c 'set "Experiment/http redirect to https" "n"'
-
-odbedit -c 'set Logger/History/FILE/Active y'
-odbedit -c 'set Logger/History/MIDAS/Active n'
-
-odbedit -c 'set Programs/Logger/Required y'
-odbedit -c 'set "Programs/Logger/Start command" "mlogger -D"'
-
-odbedit -c 'set Programs/mserver/Required y'
-odbedit -c 'set "Programs/mserver/Start command" "mserver -D"'
-
-odbedit -c 'set Programs/msysmon/Required y'
-odbedit -c 'set "Programs/msysmon/Start command" "msysymon-nvidia -D"'

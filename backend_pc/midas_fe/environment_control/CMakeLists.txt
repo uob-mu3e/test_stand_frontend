@@ -1,11 +1,54 @@
-cmake_minimum_required(VERSION 3.1)
+# Sensors in Magnet
+add_executable(sc_fe_sensinmagnet 
+   sc_fe_sensinmagnet.cxx
+   ${MIDASSYS}/src/mfe.cxx
+   ${MIDASSYS}/drivers/class/multi.cxx
+   ${MIDASSYS}/drivers/device/mscbdev.cxx
+   ${MIDASSYS}/mscb/src/mscb.cxx)
 
-file(GLOB SOURCES "*.cpp")
-file(GLOB INC "*.h")
+target_include_directories(sc_fe_sensinmagnet PRIVATE
+   ${MIDASSYS}/include 
+   ${MIDASSYS}/drivers
+   ${MIDASSYS}/mxml
+   ${MIDASSYS}/mscb/include)
 
-add_executable(env_control ${SOURCES} ${PROJECT_SOURCE_DIR}/modules/midas/drivers/class/multi.cxx ${PROJECT_SOURCE_DIR}/modules/midas/drivers/device/mscbdev.cxx ${PROJECT_SOURCE_DIR}/modules/midas/mscb/src/mscb.cxx ${PROJECT_SOURCE_DIR}/modules/midas/drivers/class/hv.cxx)
-target_include_directories(env_control PRIVATE ${MIDAS_DIR}/include ${MXML_DIR} ${INC} ${PROJECT_SOURCE_DIR}/modules/midas/drivers/ ${PROJECT_SOURCE_DIR}/modules/midas/mscb/include)
-target_link_libraries(env_control mfe midas rt dl pthread util ${Boost_LIBRARIES})
+target_link_libraries(sc_fe_sensinmagnet midas)
+
+# add required linux libraries
+if (${CMAKE_SYSTEM_NAME} MATCHES Linux)
+   target_link_libraries(sc_fe_sensinmagnet
+      pthread
+      util
+      rt
+      dl) 
+endif() 
 
 
-install(TARGETS env_control DESTINATION bin)
+# PixelTemps
+add_executable(sc_fe_pixelTemps 
+   sc_fe_pixelTemps.cxx
+   ${MIDASSYS}/src/mfe.cxx
+   ${MIDASSYS}/drivers/class/multi.cxx
+   ${MIDASSYS}/drivers/device/mscbdev.cxx
+   ${MIDASSYS}/mscb/src/mscb.cxx)
+
+target_include_directories(sc_fe_pixelTemps PRIVATE
+   ${MIDASSYS}/include 
+   ${MIDASSYS}/drivers
+   ${MIDASSYS}/mxml
+   ${MIDASSYS}/mscb/include)
+
+target_link_libraries(sc_fe_pixelTemps midas)
+
+# add required linux libraries
+if (${CMAKE_SYSTEM_NAME} MATCHES Linux)
+   target_link_libraries(sc_fe_pixelTemps
+      pthread
+      util
+      rt
+      dl) 
+endif() 
+
+
+install(TARGETS sc_fe_sensinmagnet DESTINATION bin)
+install(TARGETS sc_fe_pixelTemps DESTINATION bin)

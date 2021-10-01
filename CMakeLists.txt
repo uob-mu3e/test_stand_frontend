@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.1)
 
-project(mu3e_online VERSION 0.12 LANGUAGES CXX)
+project(mu3e_online LANGUAGES CXX)
 
 if(CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT)
     set(CMAKE_INSTALL_PREFIX "${CMAKE_SOURCE_DIR}/install" CACHE PATH "" FORCE)
@@ -51,10 +51,6 @@ if (CUDA_FOUND)
     list(APPEND CUDA_NVCC_FLAGS "-DVERBOSE;-g")
     #list(APPEND CUDA_NVCC_FLAGS "-arch=compute_30;-DVERBOSE;-g")
     include_directories(${CUDA_TOOLKIT_ROOT_DIR}/include)
-else(CUDA_FOUND)
-    message("* CUDA is not found")
-    #   message(FATAL_ERROR "Not all CUDA libraries are found")
-    message("Not all CUDA libraries are found")
 endif(CUDA_FOUND)
 
 set(LIBMUDAQ_DIR ${PROJECT_SOURCE_DIR}/common/libmudaq)
@@ -63,14 +59,24 @@ set(LIBMUTRIG_DIR ${PROJECT_SOURCE_DIR}/common/libmutrig)
 set(LIBMALIBU_DIR ${PROJECT_SOURCE_DIR}/common/libMALIBU)
 set(INCMUDAQ_DIR ${PROJECT_SOURCE_DIR}/common/include)
 
-# hack to compile rootana after source set_env.sh
-set(ENV{MIDAS_DIR} "")
-set(ENV{MIDAS_EXPTAB} "")
-set(ENV{MIDASSYS} "")
-set(ENV{MIDAS_EXP_NAME} "")
-
 # on some older boxes, wpedantic and MIDAS do not mix
 add_subdirectory(modules)
+find_package(Midas REQUIRED
+    HINTS
+        $ENV{MIDASSYS}
+        ~/midas
+        #${CMAKE_CURRENT_SOURCE_DIR}/../midas
+        )
+# To be implemented in midas/MidasConfig.cmake at some point
+get_filename_component(MIDASSYS ${MIDAS_LIBRARY_DIRS} DIRECTORY)
+message(STATUS "MIDASSYS = ${MIDASSYS}")
+list (APPEND MIDAS_INCLUDE_DIRS
+    ${MIDASSYS}/midas/manalyzer
+    ${MIDASSYS}/midas/midasio
+    ${MIDASSYS}/midas/mvodb
+    )
+link_directories(${MIDAS_LIBRARY_DIRS})
+include_directories(${MIDAS_INCLUDE_DIRS})
 add_subdirectory(common)
 add_subdirectory(backend_pc)
 #add_subdirectory(common/kerneldriver)
@@ -117,6 +123,12 @@ install(FILES ${CMAKE_CURRENT_BINARY_DIR}/set_env.sh DESTINATION ./)
 
 configure_file(make_links.sh.in make_links.sh @ONLY)
 install(FILES ${CMAKE_CURRENT_BINARY_DIR}/make_links.sh DESTINATION ./)
+
+configure_file(setup_odb.sh.in setup_odb.sh @ONLY)
+install(FILES ${CMAKE_CURRENT_BINARY_DIR}/setup_odb.sh DESTINATION ./)
+
+configure_file(setup_mhttpd.sh.in setup_mhttpd.sh @ONLY)
+install(FILES ${CMAKE_CURRENT_BINARY_DIR}/setup_mhttpd.sh DESTINATION ./)
 
 configure_file(start_daq.sh.in start_daq.sh @ONLY)
 install(FILES ${CMAKE_CURRENT_BINARY_DIR}/start_daq.sh DESTINATION bin

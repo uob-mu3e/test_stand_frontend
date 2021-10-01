@@ -1,4 +1,3 @@
-cmake_minimum_required(VERSION 3.0)
 set_source_files_properties(power_supply_fe.c PROPERTIES LANGUAGE CXX )
 set_source_files_properties(keithley2611Bdev.c PROPERTIES LANGUAGE CXX )
 set_source_files_properties(hmp4040dev.c PROPERTIES LANGUAGE CXX )

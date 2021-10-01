@@ -128,6 +128,7 @@ g_merger: for i in N_LINKS-1 downto 0 generate
     signal usedw_data_fifo                      : std_logic_vector(FIFO_ADDR_WIDTH-1 downto 0);
     signal usedw_slowcontrol_fifo               : std_logic_vector(FIFO_ADDR_WIDTH-1 downto 0);
     signal data_fifo_reset                      : std_logic;
+
     ---------------begin data merger------------------------
 begin 
 
@@ -162,11 +163,12 @@ begin
 
     -- reset the data fifo in idle
     data_fifo_reset     <= '1' when ( run_state = RUN_STATE_IDLE or reset = '1' ) else '0';
-    e_common_fifo_data: entity work.ip_scfifo_not_broken
+    e_common_fifo_data: entity work.ip_scfifo
     generic map(
         ADDR_WIDTH      => FIFO_ADDR_WIDTH,
         DATA_WIDTH      => 36,
         SHOWAHEAD       => "ON",
+        REGOUT          => 0,
         DEVICE          => "Stratix IV"--,
     )
     port map (
@@ -183,11 +185,12 @@ begin
         usedw           => usedw_data_fifo--,
     );
     
-    e_common_fifo_sc: entity work.ip_scfifo_not_broken
+    e_common_fifo_sc: entity work.ip_scfifo
     generic map(
         ADDR_WIDTH      => FIFO_ADDR_WIDTH,
         DATA_WIDTH      => 36,
         SHOWAHEAD       => "ON",
+        REGOUT          => 0,
         DEVICE          => "Stratix IV"--,
     )
     port map (

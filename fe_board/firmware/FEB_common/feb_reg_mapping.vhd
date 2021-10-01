@@ -37,6 +37,9 @@ port (
     i_ffly_temp                 : in   std_logic_vector(15 downto 0);  -- temperature in °C
     i_ffly_alarm                : in   std_logic_vector(63 downto 0);  -- latched alarm bits
     i_ffly_vcc                  : in   std_logic_vector(31 downto 0);  -- operating voltagein units of 100 uV 
+    
+    i_si45_intr_n               : in   std_logic_vector(1 downto 0);
+    i_si45_lol_n                : in   std_logic_vector(1 downto 0);
 
     -- outputs 156--------------------------------------------
     o_reg_cmdlen                : out std_logic_vector(31 downto 0);
@@ -160,9 +163,9 @@ begin
         end if;
 
         -- reset phase
---        if ( regaddr = RESET_PHASE_REGISTER_R and i_reg_re = '1' ) then
---            o_reg_rdata <= x"0000" & reset_phase;
---        end if;
+        if ( regaddr = RESET_PHASE_REGISTER_R and i_reg_re = '1' ) then
+            o_reg_rdata <= x"0000" & reset_phase;
+        end if;
 
         -- ArriaV temperature
         if ( regaddr = ARRIA_TEMP_REGISTER_RW and i_reg_re = '1' ) then
@@ -195,21 +198,21 @@ begin
             o_reg_rdata(i_fpga_type'range) <= i_fpga_type;
         end if;
         --max ADC data--
---        if ( regaddr = MAX10_ADC_0_1_REGISTER_R and i_reg_re = '1' ) then
---            o_reg_rdata <= adc_reg(0);
---        end if;
---        if ( regaddr = MAX10_ADC_2_3_REGISTER_R and i_reg_re = '1' ) then
---            o_reg_rdata <= adc_reg(1);
---        end if;
---        if ( regaddr = MAX10_ADC_4_5_REGISTER_R and i_reg_re = '1' ) then
---            o_reg_rdata <= adc_reg(2);
---        end if;
---        if ( regaddr = MAX10_ADC_6_7_REGISTER_R and i_reg_re = '1' ) then
---            o_reg_rdata <= adc_reg(3);
---        end if;
---        if ( regaddr = MAX10_ADC_8_9_REGISTER_R and i_reg_re = '1' ) then
---            o_reg_rdata <= adc_reg(4);
---        end if;
+        if ( regaddr = MAX10_ADC_0_1_REGISTER_R and i_reg_re = '1' ) then
+            o_reg_rdata <= adc_reg(0);
+        end if;
+        if ( regaddr = MAX10_ADC_2_3_REGISTER_R and i_reg_re = '1' ) then
+            o_reg_rdata <= adc_reg(1);
+        end if;
+        if ( regaddr = MAX10_ADC_4_5_REGISTER_R and i_reg_re = '1' ) then
+            o_reg_rdata <= adc_reg(2);
+        end if;
+        if ( regaddr = MAX10_ADC_6_7_REGISTER_R and i_reg_re = '1' ) then
+            o_reg_rdata <= adc_reg(3);
+        end if;
+        if ( regaddr = MAX10_ADC_8_9_REGISTER_R and i_reg_re = '1' ) then
+            o_reg_rdata <= adc_reg(4);
+        end if;
         -- Max firmware version
         if ( regaddr = MAX10_VERSION_REGISTER_R and i_reg_re = '1' ) then
             o_reg_rdata <= i_max10_version;
@@ -272,12 +275,19 @@ begin
         if ( regaddr = FIREFLY2_RX4_POW_REGISTER_R and i_reg_re = '1' ) then
             o_reg_rdata <= x"0000" & i_ffly_pwr(127 downto 112);
         end if;	
---        if ( regaddr = FIREFLY1_ALARM_REGISTER_R and i_reg_re = '1' ) then
---            o_reg_rdata <= i_ffly_alarm(31 downto 0);
---        end if;
---        if ( regaddr = FIREFLY2_ALARM_REGISTER_R and i_reg_re = '1' ) then
---            o_reg_rdata <= i_ffly_alarm(63 downto 32);
---        end if;
+        if ( regaddr = FIREFLY1_ALARM_REGISTER_R and i_reg_re = '1' ) then
+            o_reg_rdata <= i_ffly_alarm(31 downto 0);
+        end if;
+        if ( regaddr = FIREFLY2_ALARM_REGISTER_R and i_reg_re = '1' ) then
+            o_reg_rdata <= i_ffly_alarm(63 downto 32);
+        end if;
+        
+        -- SI chips
+        if ( regaddr = SI_STATUS_REGISTER and i_reg_re = '1' ) then
+            o_reg_rdata(1 downto 0) <= i_si45_intr_n;
+            o_reg_rdata(3 downto 2) <= i_si45_lol_n;
+            o_reg_rdata(31 downto 4) <= (others => '0');
+        end if;
 
         -- NON-incrementing reads/writes TEST
 --        if ( regaddr = NONINCREMENTING_TEST_REGISTER_RW and i_reg_re = '1' ) then

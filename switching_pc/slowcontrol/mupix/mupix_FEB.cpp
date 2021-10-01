@@ -53,6 +53,60 @@ void invert_datastream(uint32_t * datastream) {
 int MupixFEB::ConfigureASICs(){
    printf("MupixFEB::ConfigureASICs()\n");
    cm_msg(MINFO, "MupixFEB" , "Configuring sensors under prefix %s/Settings/ASICs/", odb_prefix);
+
+for ( int asic=0; asic<10; asic++ ) {
+    
+    if ( asic == 0 ) {
+        feb_sc.FEB_register_write(0, MP_LVDS_LINK_MASK_REGISTER_W, 0x7);
+        feb_sc.FEB_register_write(0, MP_LVDS_LINK_MASK2_REGISTER_W, 0x0);
+    }
+                                                                                
+    if ( asic == 1 ) {
+        feb_sc.FEB_register_write(1, MP_LVDS_LINK_MASK_REGISTER_W, 0x0);
+        feb_sc.FEB_register_write(1, MP_LVDS_LINK_MASK2_REGISTER_W, 0x0);
+    }
+                                                                                
+    if ( asic == 2 ) {
+        feb_sc.FEB_register_write(2, MP_LVDS_LINK_MASK_REGISTER_W, 0x38000);
+        feb_sc.FEB_register_write(2, MP_LVDS_LINK_MASK2_REGISTER_W, 0xE);
+    }
+                                                                                
+    if ( asic == 3 ) {
+        feb_sc.FEB_register_write(3, MP_LVDS_LINK_MASK_REGISTER_W, 0x0);
+        feb_sc.FEB_register_write(3, MP_LVDS_LINK_MASK2_REGISTER_W, 0x0);
+    }
+                                                                                
+    if ( asic == 4 ) {
+        feb_sc.FEB_register_write(4, MP_LVDS_LINK_MASK_REGISTER_W, 0x0);
+        feb_sc.FEB_register_write(4, MP_LVDS_LINK_MASK2_REGISTER_W, 0x0);
+    }
+                                                                                
+    if ( asic == 5 ) {
+        feb_sc.FEB_register_write(5, MP_LVDS_LINK_MASK_REGISTER_W, 0x7);
+        feb_sc.FEB_register_write(5, MP_LVDS_LINK_MASK2_REGISTER_W, 0x0);
+    }
+                                                                              
+    if ( asic == 6 ) {
+        feb_sc.FEB_register_write(6, MP_LVDS_LINK_MASK_REGISTER_W, 0x0);
+        feb_sc.FEB_register_write(6, MP_LVDS_LINK_MASK2_REGISTER_W, 0x0);
+    }
+                                                                               
+    if ( asic == 7 ) {
+        feb_sc.FEB_register_write(7, MP_LVDS_LINK_MASK_REGISTER_W, 0x0);
+        feb_sc.FEB_register_write(7, MP_LVDS_LINK_MASK2_REGISTER_W, 0x0);
+    }
+                                                                               
+    if ( asic == 8 ) {
+        feb_sc.FEB_register_write(8, MP_LVDS_LINK_MASK_REGISTER_W, 0x0);
+        feb_sc.FEB_register_write(8, MP_LVDS_LINK_MASK2_REGISTER_W, 0x0);
+    }
+
+    if ( asic == 9 ) {
+        feb_sc.FEB_register_write(9, MP_LVDS_LINK_MASK_REGISTER_W, 0x0);
+        feb_sc.FEB_register_write(9, MP_LVDS_LINK_MASK2_REGISTER_W, 0x0);
+    }
+}
+
    int status = mupix::midasODB::MapForEachASIC(hDB,odb_prefix,[this](mupix::MupixConfig* config, int asic){
       uint32_t rpc_status;
       bool TDACsNotFound = false;
@@ -128,7 +182,7 @@ int MupixFEB::ConfigureASICs(){
              std::cout<<"Timeout"<<std::endl;
              cm_msg(MERROR, "setup_mupix", "FEB Mupix SPI timeout");
          }else{
-            std::cout << "Chip select mask = " << std::hex << chip_select_mask << std::endl;
+            
             feb_sc.FEB_write(SP_ID, 0xFF48, chip_select_mask);
 
             // TODO: include headers for addr.
@@ -136,7 +190,10 @@ int MupixFEB::ConfigureASICs(){
             feb_sc.FEB_write(SP_ID, 0xFF40, 0x00000FC0); // reset Mupix config fifos
             feb_sc.FEB_write(SP_ID, 0xFF40, 0x00000000);
             feb_sc.FEB_write(SP_ID, 0xFF49, 0x00000003); // idk, have to look it up
+	    
+            // We now only write the default configuration for testing
             rpc_status = feb_sc.FEB_write(SP_ID, 0xFF4A, payload,true);
+           
          }
       } catch(std::exception& e) {
           cm_msg(MERROR, "setup_mupix", "Communication error while configuring MuPix %d: %s", asic, e.what());
@@ -150,9 +207,14 @@ int MupixFEB::ConfigureASICs(){
          return FE_ERR_HW;//note: return of lambda function
       }
 
+      // reset lvds links
+      feb_sc.FEB_register_write(SP_ID, MP_RESET_LVDS_N_REGISTER_W, 0x0);
+      feb_sc.FEB_register_write(SP_ID, MP_RESET_LVDS_N_REGISTER_W, 0x1);
+
       return FE_SUCCESS;//note: return of lambda function
    });//MapForEach
-   return status; //status of foreach function, SUCCESS when no error.
+
+    return status; //status of foreach function, SUCCESS when no error.
 }
 
 //MIDAS callback function for FEB register Setter functions
@@ -203,6 +265,24 @@ unsigned char reverse(unsigned char b) {
    return b;
 }
 
+uint32_t MupixFEB::ReadBackLVDSStatus(DWORD* pdata, uint16_t FPGA_ID, uint16_t LVDS_ID)
+{
+    auto FEB = febs.at(FPGA_ID);
+
+    //skip disabled fibers
+    if(!FEB.IsScEnabled())
+        return 0;
+
+    //skip commands not for this SB
+    if(FEB.SB_Number()!=SB_number)
+        return 0;
+    
+    uint32_t val;
+    int status = feb_sc.FEB_register_read(FEB.SB_Port(), MP_LVDS_STATUS_START_REGISTER_W + LVDS_ID, val);
+    
+    return val;
+}
+
 uint32_t MupixFEB::ReadBackLVDSNumHits(uint16_t FPGA_ID, uint16_t LVDS_ID)
 {
     //cm_msg(MINFO, "MupixFEB::ReadBackLVDSNumHits" , "Implement Me");
@@ -213,4 +293,23 @@ uint32_t MupixFEB::ReadBackLVDSNumHitsInMupixFormat(uint16_t FPGA_ID, uint16_t L
 {
     //cm_msg(MINFO, "MupixFEB::ReadBackLVDSNumHitsInMupixFormat" , "Implement Me");
     return 0;
+}
+
+DWORD* MupixFEB::ReadLVDSCounters(DWORD* pdata, uint16_t FPGA_ID)
+{
+    for(uint32_t i=0; i<64; i++){ // TODO: set currect LVDS links number
+        ReadBackLVDSStatus(pdata, FPGA_ID, i);
+        // TODO: intrun fix for lvds configuration
+        if (i>=lvds_links_per_feb) continue;
+        // Link ID
+        *(DWORD*)pdata++ = i;
+        // read lvds status
+        *(DWORD*)pdata++ = ReadBackLVDSStatus(pdata, FPGA_ID, 0);
+        // number of hits from link
+        *(DWORD*)pdata++ = ReadBackLVDSNumHits(FPGA_ID, i);
+        // number of hits from link in mupix format
+        *(DWORD*)pdata++ = ReadBackLVDSNumHitsInMupixFormat(FPGA_ID, i);
+
+    };
+    return pdata;
 }

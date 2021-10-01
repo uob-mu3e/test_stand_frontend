@@ -53,13 +53,15 @@ int setup_db(const char* prefix, MutrigFEB* FEB_interface){
 
 
     // use lambda function for passing FEB_interface
-    auto on_settings_changed_partial =
-            [&FEB_interface](odb o) { 
-                return MutrigFEB::on_settings_changed(
-                    o, FEB_interface
-                );
-            };
-    settings_daq.watch(on_settings_changed_partial);
+    // TODO: don't set watch here for the moment use the one in switch_fe
+//    auto on_settings_changed_partial =
+//            [&FEB_interface](odb o) {
+//                return MutrigFEB::on_settings_changed(
+//                    o, FEB_interface
+//                );
+//            };
+
+//    settings_daq.watch(on_settings_changed_partial);
 
     /* Map Equipment/SciFi/ASICs/TDCs and /Equipment/Scifi/ASICs/Channels
      * (structure defined in mutrig_MIDAS_config.h) */

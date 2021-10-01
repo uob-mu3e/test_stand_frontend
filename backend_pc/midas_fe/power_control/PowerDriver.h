@@ -9,6 +9,10 @@
 #define POWERDRIVER_H
 
 #include <iostream>
+#include <thread>
+#include <mutex>
+#include <atomic>
+
 #include "midas.h"
 #include "odbxx.h"
 #include "TCPClient.h"
@@ -21,11 +25,15 @@ class PowerDriver{
 	
 		PowerDriver();
 		PowerDriver(std::string, EQUIPMENT_INFO*);
+        virtual ~PowerDriver();
 		
 		virtual INT ConnectODB();
 		INT Connect();
 		virtual INT Init(){return FE_ERR_DRIVER;};
 		virtual INT ReadAll(){return FE_ERR_DRIVER;}
+    INT GetReadStatus(){return readstatus;}
+    void ReadLoop();
+    void StartReading(){read = 1;}
 		virtual void ReadESRChanged(){};
 		std::vector<bool> GetState() const { return state; }
 		std::vector<float> GetVoltage() const { return voltage; }
@@ -35,6 +43,7 @@ class PowerDriver{
 		bool Initialized() const { return initialized; }
 		bool Enabled();
 		void SetInitialized() { initialized = true; }
+		void UnsetInitialized() { initialized = false; }
 		std::string ReadIDCode(int,INT&);
 		
 		virtual bool AskPermissionToTurnOn(int) { std::cout << "Ask permissions in derived class!" << std::endl; return false;};
@@ -50,9 +59,14 @@ class PowerDriver{
 		
 		
 		EQUIPMENT_INFO GetInfo() { return *info; } //by value, so you cant modify the original
+
+		void AddReadFault(){n_read_faults = n_read_faults + 1;}
+		void ResetNReadFaults(){ n_read_faults = 0; }
+		int GetNReadFaults() { return n_read_faults; }
 		
 
 	protected:
+
 	
 		//read
 		float Read(std::string,INT&);
@@ -83,6 +97,15 @@ class PowerDriver{
 		midas::odb variables;
 		
 		TCPClient* client;
+
+    std::mutex power_mutex;
+    std::thread readthread;
+
+    std::atomic<int> read;
+    std::atomic<int> stop;
+    std::atomic<INT> readstatus;
+
+		int n_read_faults;
 		
 		float relevantchange;
 

@@ -141,7 +141,8 @@ INT GenesysDriver::Init()
 	}
   
 	settings["Identification Code"]=idCode;
-	settings["Questionable Condition Register"]=QCGEreg;
+	
+	variables["Questionable Condition Register"]=QCGEreg;
   
 	variables["State"]=state; //push to odb
 	variables["Set State"]=state; //the init function can not change the on/off state of the supply
@@ -278,13 +279,14 @@ INT GenesysDriver::ReadAll()
 {
 	int nChannels = instrumentID.size();
 	INT err;
-	
+	INT err_accumulated;
 	bool status_reg_update = false;
 	
 	//update local book keeping
 	for(int i=0; i<nChannels; i++)
 	{
 		bool bvalue = ReadState(i,err);
+		err_accumulated = err;
 		if(state[i]!=bvalue) //only update odb if there is a change
 		{
 			state[i]=bvalue;
@@ -292,6 +294,7 @@ INT GenesysDriver::ReadAll()
 		}
  	
  		float fvalue = ReadVoltage(i,err);
+		err_accumulated = err_accumulated | err;
 		if( fabs(voltage[i]-fvalue) > fabs(relevantchange*voltage[i]) )
 		{
 			voltage[i]=fvalue;
@@ -299,6 +302,7 @@ INT GenesysDriver::ReadAll()
 		}
   	
 		fvalue = ReadCurrent(i,err);
+		err_accumulated = err_accumulated | err;
 		if( fabs(current[i]-fvalue) > fabs(relevantchange*current[i]) )
 		{
 			current[i]=fvalue;
@@ -306,6 +310,7 @@ INT GenesysDriver::ReadAll()
 		}
 		
 		fvalue = ReadOVPLevel(i,err);
+		err_accumulated = err_accumulated | err;
 		if( fabs(OVPlevel[i]-fvalue) > fabs(relevantchange*OVPlevel[i]) )
 		{
 			OVPlevel[i]=fvalue;
@@ -325,7 +330,7 @@ INT GenesysDriver::ReadAll()
 			status_reg_update = true;
 		}
 		
-	 	if(err!=FE_SUCCESS) return err;		
+	 	if(err_accumulated!=FE_SUCCESS) return err_accumulated & 0xFFFE;	
 	}
 	
 	if(status_reg_update)

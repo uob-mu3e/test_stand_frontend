@@ -39,12 +39,12 @@ end entity mupix_ctrl_config_storage;
 
 architecture RTL of mupix_ctrl_config_storage is
 
-    signal fifo_read                : std_logic_vector(5 downto 0);
-    signal fifo_clear               : std_logic_vector(5 downto 0);
-    signal fifo_write               : std_logic_vector(5 downto 0);
+    signal fifo_read                : std_logic_vector(5 downto 0) := (others => '0');
+    signal fifo_clear               : std_logic_vector(5 downto 0) := (others => '0');
+    signal fifo_write               : std_logic_vector(5 downto 0) := (others => '0');
     signal fifo_wdata               : reg32array(5 downto 0);
     signal fifo_wdata_final         : reg32array(5 downto 0);
-    signal fifo_write_final         : std_logic_vector(5 downto 0);
+    signal fifo_write_final         : std_logic_vector(5 downto 0) := (others => '0');
     signal data_buffer              : std_logic_vector(32*6-1 downto 0);
     type bitpos_t                   is array (5 downto 0) of integer range 31 downto 0;
     type bitpos_global_t            is array (5 downto 0) of integer range 1000 downto 0; -- TODO: how to max(MP_CONFIG_REGS_LENGTH) in vhdl ?
@@ -200,11 +200,12 @@ begin
         fifo_wdata_final(I) <= i_data(I*32 + 31 downto I*32) when i_wrreq(I)='1' else fifo_wdata(I);
         fifo_write_final(I) <= i_wrreq(I) or fifo_write(I);
         
-        mp_ctrl_storage_fifo: entity work.ip_scfifo_not_broken
+        mp_ctrl_storage_fifo: entity work.ip_scfifo
         generic map(
             ADDR_WIDTH      => integer(ceil(log2(real(MP_CONFIG_REGS_LENGTH(I))))),
             DATA_WIDTH      => 32,
             SHOWAHEAD       => "ON",
+            REGOUT          => 0,
             DEVICE          => "ARRIA V"--,
         )
         port map (

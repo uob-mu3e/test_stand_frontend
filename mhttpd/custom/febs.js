@@ -152,9 +152,9 @@ function Feb(x,y,dx,dy, index){
             tbar(this.ff1_temp      ,this.x+74, this.y+2, this.dy-4);
 
             rxdot(this.ff1_rx1, this.x+80, this.y+6);
-            rxdot(this.ff1_rx2, this.x+86, this.y+6);
-            //rxdot(this.ff1_rx3, this.x+80, this.y+12);
-            rxdot(this.ff1_rx4, this.x+86, this.y+12); //RX4 currently not used
+            //rxdot(this.ff1_rx2, this.x+86, this.y+6);
+            rxdot(this.ff1_rx3, this.x+80, this.y+12);
+            rxdot(this.ff1_rx4, this.x+86, this.y+12);
 
             cc.fillStyle = "Black";
             cc.font = "10px Arial, sans-serif";

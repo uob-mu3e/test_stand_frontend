@@ -13,6 +13,55 @@ struct mupix_t {
 
     const uint8_t  n_ASICS=1;
 
+    void test_mupix_write() {
+        printf("running mupix test write function ..\n");
+        printf("Chip mask     was set to : 0x%08x\n", sc->ram->data[0xFF48]);
+        printf("SPI slow down was set to : 0x%08x  (do not use 0 !)\n", sc->ram->data[0xFF47]);
+        
+        // example: writing to BIAS shift reg
+        
+        // clear config fifos
+        sc->ram->data[0xFF40]=0x00000FC0;
+        sc->ram->data[0xFF40]=0x00000000;
+        
+        // invert 29 bit shift reg order ? (no sure if i took the correct one in firmware) --> set bit 0 to 1
+        // invert csn ? --> set bit 1 to 1
+        sc->ram->data[0xFF49]=0x00000003;
+        
+        // write data for the  complete BIAS reg into FEB storage
+        sc->ram->data[0xFF41]=0x2A000A03;
+        sc->ram->data[0xFF41]=0xFA3F002F;
+        sc->ram->data[0xFF41]=0x1E041041;
+        sc->ram->data[0xFF41]=0x041E9A51;
+        sc->ram->data[0xFF41]=0x40280000;
+        sc->ram->data[0xFF41]=0x1400C20A;
+        sc->ram->data[0xFF41]=0x028A0000;
+        
+        //write conf defaults
+        sc->ram->data[0xFF42]=0x001F0002;
+        sc->ram->data[0xFF42]=0x00380000;
+        sc->ram->data[0xFF42]=0xFC09F000;
+
+        
+        // write vdac defaults
+        sc->ram->data[0xFF43]=0x00720000;
+        sc->ram->data[0xFF43]=0x52000046;
+        sc->ram->data[0xFF43]=0x00B80000;
+        
+        // zero the rest
+        for(int i = 0; i<30; i++){
+        sc->ram->data[0xFF44]=0x00000000;}
+        
+        for(int i = 0; i<30; i++){
+        sc->ram->data[0xFF45]=0x00000000;}
+        
+        for(int i = 0; i<30; i++){
+        sc->ram->data[0xFF46]=0x00000000;}
+
+        sc->ram->data[0xFF40]=63;
+        sc->ram->data[0xFF40]=0;
+        return;
+    }
 
     void mupix_write_all_off(){
         
@@ -37,6 +86,30 @@ struct mupix_t {
         for(int i = 0; i<85; i++){
         sc->ram->data[0xFF4A]=0x00000000;}
     }
+    
+    void test_write_all() {
+        
+        sc->ram->data[0xFF40]=0x00000FC0;
+        sc->ram->data[0xFF40]=0x00000000;
+        sc->ram->data[0xFF49]=0x00000003;
+        
+        sc->ram->data[0xFF4A]=0x2A000A03;
+        sc->ram->data[0xFF4A]=0xFA3F002F;
+        sc->ram->data[0xFF4A]=0x1E041041;
+        sc->ram->data[0xFF4A]=0x041E9A51;
+        sc->ram->data[0xFF4A]=0x40280000;
+        sc->ram->data[0xFF4A]=0x1400C20A;
+        sc->ram->data[0xFF4A]=0x028A001F;
+        sc->ram->data[0xFF4A]=0x00020038;
+        sc->ram->data[0xFF4A]=0x0000FC09;
+        sc->ram->data[0xFF4A]=0xF0001C80;
+        sc->ram->data[0xFF4A]=0x00148000;
+        sc->ram->data[0xFF4A]=0x11802E00;
+    
+        for(int i = 0; i<85; i++){
+        sc->ram->data[0xFF4A]=0x00000000;}
+
+    }
 
     void menu_lvds() {
         alt_u32 value = 0x0;
@@ -54,8 +127,9 @@ struct mupix_t {
             
             printf("pll_lock should always be '1', rx_state 0: wait for dpa_lock 1: alignment 2:ok, disp_err is only counting in rx_state 2\n");
             printf("order is CON2 ModuleA chip1 ABC, chip2 ABC, .. ModuleB chip1 ABC .. CON3..\n");
-            for(int i=0; i<36; i++){
-                value = sc->ram->data[0xFF66+i];
+            for(int i=0; i<64; i++){
+                value = sc->ram->data[0xFF66];
+                if (i>36) continue;
                 printf("%i ready: %01x  rx_state: %01x  pll_lock: %01x  disp_err: %01x\n ",i,value>>31,(value>>29) & 0x3,(value>>28) & 0x1,value & 0x0FFFFFFF);
             }
             printf("----------------------------\n");
@@ -102,6 +176,8 @@ struct mupix_t {
                 printf("  [4] => invert lvds in\n");
             }
             printf("  [5] => set lvds mask\n");
+            printf("  [6] => test write all\n");
+            printf("  [7] => write sorter delay\n");
             printf("  [q] => exit\n");
 
             printf("Select entry ...\n");
@@ -111,6 +187,7 @@ struct mupix_t {
                 mupix_write_all_off();
                 break;
             case '0':
+                test_mupix_write();
                 break;
             case '1':
                 value = 0x0;
@@ -160,6 +237,12 @@ struct mupix_t {
                 printf("setting lvds mask to 0x%01x%08x\n",value2, value);
                 sc->ram->data[0xFF61]=value;
                 sc->ram->data[0xFF62]=value2;
+                break;
+            case '6':
+                test_write_all();
+                break;
+            case '7':
+                sc->ram->data[0xFF91]=10;
                 break;
             case 'q':
                 return;
