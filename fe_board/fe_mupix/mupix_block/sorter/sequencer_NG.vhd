@@ -127,7 +127,10 @@ elsif (clk'event and clk = '1') then
 	elsif(make_header = "01")then
 		output <= header2;
 		make_header 	<= "00";
-		no_copy_next	<= '0';araldit 2011
+		no_copy_next	<= '0';
+	else
+		if(blockchange = '1') then
+			output			<= subheader;
 			copy_fifo		:= '0';
 			blockchange 	<= '0';
 			overflow_to_out		<= overflowts;
