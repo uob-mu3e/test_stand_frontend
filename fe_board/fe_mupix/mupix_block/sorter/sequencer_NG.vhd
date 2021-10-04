@@ -12,7 +12,7 @@
 -- In a bit more detail: For every TS which is either containg hits or marking the 
 -- change of (16 TS) block, the main sorter file writes to a FIFO in the format
 
--- Timestamp | non-emmpty flag (hasmem)| Overflow bit|...|...|Chip Nr y | Nhits Chip y | Chip Nr x | Nhits Chip x
+-- Timestamp | non-empty flag (hasmem)| Overflow bit|...|...|Chip Nr y | Nhits Chip y | Chip Nr x | Nhits Chip x
 -- Note that the counters are right-stacked, i.e. the rightmost counter is from the first chip with hits and so on
 -- If there are no more hits, the counter is 0
 
@@ -33,6 +33,8 @@
 -- Footer
 --
 -- For the hits we output in which memory (i.e. chip) they are at which position (TS plus hit number)
+--
+-- Has to be reset between runs
 
 
 library ieee;
@@ -100,9 +102,9 @@ if (reset_n = '0') then
 	fifo_new		<= '0';
 	current_block	<= block_max;
 	no_copy_next	<= '0';
-	overflowts			<= (others => '0');
+	overflowts		<= (others => '0');
+	make_header 	<= "00";
 elsif (clk'event and clk = '1') then
-
 	
 	running_last 	<= running;
 	if (running = '0')then
@@ -122,10 +124,10 @@ elsif (clk'event and clk = '1') then
 		output 			<= footer;
 		make_header 	<= "10";
 	elsif(make_header = "10")then
-		output <= header1;
+		output 			<= header1;
 		make_header 	<= "01";
 	elsif(make_header = "01")then
-		output <= header2;
+		output 			<= header2;
 		make_header 	<= "00";
 		no_copy_next	<= '0';
 	else
@@ -138,6 +140,7 @@ elsif (clk'event and clk = '1') then
 			if(hasmem = '0' and hasoverflow = '1') then
 				overflowts		<= (others => '1'); -- Note that overflow gets sent with the next subheader!
 			end if;
+			-- Why 11 downto 8? We should be able to remove that
 			if(counters_reg(3 downto 0) = "0000" and counters_reg(11 downto 8) = "0000")then
 				copy_fifo				:= '1';
 			end if;
@@ -187,7 +190,10 @@ elsif (clk'event and clk = '1') then
 	end if;
 
 
-
+	-- fifo_new means that there is valid output at the FIFO, which has not yet been copied
+	-- to the respective variables
+	-- copy_fifo means that the current set of variables was processed and they can be replaced
+	-- with the fifo output
 	
 	if(read_fifo_int = '1' and fifo_empty_last = '0')then
 		if(copy_fifo = '1')then
@@ -213,7 +219,7 @@ elsif (clk'event and clk = '1') then
 		if(from_fifo(TSBLOCKINFIFORANGE) /= current_block)then
 			blockchange <= '1';
 			if(from_fifo(TSBLOCKINFIFORANGE) = block_zero)then
-				make_header <= "1" & running_last;
+				make_header  <= "1" & running_last; -- this ensures that we do not output a footer at run start
 				no_copy_next <= '1';
 			end if;
 		else
@@ -245,7 +251,7 @@ elsif(clk'event and clk = '1') then
 			outcommand(TSBLOCKRANGE)	<= ts_to_out(TSBLOCKRANGE);
 			outcommand(TSNONBLOCKRANGE)	<= (others => '0');
 			outoverflow					<= overflow_to_out;
-			command_enable 	<= '1';
+			command_enable 				<= '1';
 		when hits =>
 			command_enable 									 <= '1';
 			outcommand(COMMANDBITS-1)						 <= '0'; -- Hits, not a command
