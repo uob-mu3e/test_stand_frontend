@@ -64,10 +64,6 @@ constant MUPIX_LVDS_STATUS_BLOCK_LENGTH     : integer := 36;
         constant INVERT_TS_BIT                  :  integer := 0;
         -- if set: TS2 is inverted
         constant INVERT_TS2_BIT                 :  integer := 1;
-        -- if set: TS is grey-decoded
-        constant GRAY_TS_BIT                    :  integer := 2;
-        -- if set: TS2 is grey-decoded
-        constant GRAY_TS2_BIT                   :  integer := 3;
         -- bits to select different chip id numbering modes (layers etc.)
         -- not in use at the moment
         subtype  CHIP_ID_MODE_RANGE             is integer range 5 downto 4;
