@@ -9,6 +9,7 @@
 library ieee;
 use ieee.std_logic_1164.all;
 use ieee.numeric_std.all;
+use ieee.std_logic_misc.all;
 
 entity sc_ram is
 generic (
@@ -61,6 +62,9 @@ architecture arch of sc_ram is
     signal read_delay_shift_reg_type    : std_logic_vector(READ_DELAY_g downto 0) := (others => '0'); -- 0: Arria, 1: Nios
 
     signal internal_ram_return_queue    : reg32_array(READ_DELAY_g downto 0);
+
+    signal avs_waitrequest : std_logic;
+    signal avs_cmd_buf     : std_logic := '0';
 
 begin
 
@@ -142,10 +146,12 @@ begin
     process(i_clk, i_reset_n)
     begin
         if ( i_reset_n = '0' ) then
+            avs_cmd_buf     <= '0';
 
         elsif rising_edge(i_clk) then
             -- defaults
             o_ram_rvalid    <= '0';
+            avs_cmd_buf     <= i_avs_read or i_avs_write;
         
             -- delay internal ram by the same amount of cycles as the sc regs
             -- (avoids collisions between read response from internal ram and sc reg)
@@ -163,6 +169,33 @@ begin
         end if;
     end process;
 
+
+    o_avs_waitrequest <= avs_waitrequest;
+    avs_waitrequest <=
+        '1' when ( i_ram_re = '1' 
+                or i_ram_we = '1' 
+                or (or_reduce(read_delay_shift_reg_type) = '1' and read_delay_shift_reg_type(READ_DELAY_g) = '0')
+                or (avs_cmd_buf = '0' and (i_avs_read = '1' or i_avs_write = '1')))
+            else '0';
+        
+    --1: nios avm needs to wait when: 
+            -- sc_rx wants to read something right now (*)
+            -- sc_rx wants to write something right now
+            -- there is a read of the nios in the queue (or_reduce(...)), but it has not arrived yet (it is not at position READ_DELAY_g)
+            -- nios wants to put something into the queue now (rising edge on i_avs_read or i_avs_write)
+            
+            -- (*): -- TODO: this is not save, we might lose a valid word in internal_ram_return_queue(READ_DELAY_g) here ... do something about it
+            --      -- can we do something about it ? 
+            --      -- avm waitrequest does two things:
+                        --1: permission to send the next read/write and 
+                        --2: sign that the read data is here and should be read now
+            --      -- but here we need something that does only 2.
+            --      -- buffer avm read return in this case ? .. it should just be max. one word
+            --
+            -- somthing like 
+            -- when read_delay_shift_reg_type(READ_DELAY_g) = '1' and i_ram_re or we = '1' (reply for nios arrives but we cannot allow next rw from nios right now)
+            -- then buffer_word <= internal_ram_return_queue / i_reg_rdata
+            -- and next time we can reply and allow next rw reply with buffer word instead of internal_ram_return_queue/i_reg_rdata to nios
 
     -- internal RAM
     e_iram : entity work.ram_1r1w
