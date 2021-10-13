@@ -446,7 +446,7 @@ begin
     end process;
 
 
-    e_sc_ram : entity work.sc_ram
+    e_sc_ram : entity work.sc_ram_new
     generic map (
         RAM_ADDR_WIDTH_g => to_integer(unsigned(FEB_SC_RAM_SIZE))--,--14--,
     )

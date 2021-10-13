@@ -13,8 +13,8 @@ use work.mudaq.all;
 entity sc_node is
 generic (
     DELAY_g                 : positive := 1;   -- Time delay that should be introduced in this node
-    SUM_OF_SLAVE_DELAYS_g   : positive--;      -- Sum of all lower node delays (delay between o_slave_re=1 and arrival of i_slave_rdata)
-    SLAVE0_ADDR_MATCH_g     : std_logic_vector(7 downto 0) := "--------";
+    SUM_OF_SLAVE_DELAYS_g   : positive;        -- Sum of all lower node delays (delay between o_slave_re=1 and arrival of i_slave_rdata)
+    SLAVE0_ADDR_MATCH_g     : std_logic_vector(7 downto 0) := "--------"--;
         -- Pattern to match with i_master_addr in order to connect re/we to slave0 ("-" is don't care)
         -- connects to slave1 if no match
         -- Default "--------" connects to slave0
@@ -44,8 +44,8 @@ port (
 end entity;
 
 architecture arch of sc_node is
-    signal s0_return_queue      : reg32_array(DELAY_g downto 0);
-    signal s1_return_queue      : reg32_array(DELAY_g downto 0);
+    signal s0_return_queue      : reg32array(DELAY_g downto 0);
+    signal s1_return_queue      : reg32array(DELAY_g downto 0);
     signal slave0_re            : std_logic;
     signal slave1_re            : std_logic;
 
@@ -68,8 +68,7 @@ begin
     process(i_clk, i_reset_n)
     begin
     if ( i_reset_n = '0' ) then
-        s0_return_queue_bool <= (others => '1');
-        s1_return_queue_bool <= (others => '1');
+        return_queue_S01_switch <= (others => '0');
     elsif rising_edge(i_clk) then
         for I in 0 to DELAY_g-1 loop
             s0_return_queue(I)      <= s0_return_queue(I+1);

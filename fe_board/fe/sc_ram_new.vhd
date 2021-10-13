@@ -10,8 +10,9 @@ library ieee;
 use ieee.std_logic_1164.all;
 use ieee.numeric_std.all;
 use ieee.std_logic_misc.all;
+use work.mudaq.all;
 
-entity sc_ram is
+entity sc_ram_new is
 generic (
     RAM_ADDR_WIDTH_g : positive := 16;
     READ_DELAY_g     : positive := 6--;
@@ -46,7 +47,7 @@ port (
 );
 end entity;
 
-architecture arch of sc_ram is
+architecture arch of sc_ram_new is
 
     signal iram_addr : std_logic_vector(15 downto 0);
     signal iram_we : std_logic;
@@ -61,7 +62,7 @@ architecture arch of sc_ram is
     signal read_delay_shift_reg         : std_logic_vector(READ_DELAY_g downto 0) := (others => '0');
     signal read_delay_shift_reg_type    : std_logic_vector(READ_DELAY_g downto 0) := (others => '0'); -- 0: Arria, 1: Nios
 
-    signal internal_ram_return_queue    : reg32_array(READ_DELAY_g downto 0);
+    signal internal_ram_return_queue    : reg32array(READ_DELAY_g downto 0);
 
     signal avs_waitrequest : std_logic;
     signal avs_cmd_buf     : std_logic := '0';
@@ -89,7 +90,7 @@ begin
             if(i_ram_we='1') then -- write from Arria10
 
                 -- sc regs if addr >= 0xFF00
-                if(i_ram_addr(15 downto 8)= 0xFF) then
+                if(i_ram_addr(15 downto 8)= x"FF") then
                     o_reg_we        <= '1';
                 end if;
                 o_reg_wdata     <= i_ram_wdata;
@@ -103,7 +104,7 @@ begin
             elsif(i_ram_re='1') then -- read from Arria10
                 read_delay_shift_reg(0) <= '1';
 
-                if(i_ram_addr(15 downto 8)= 0xFF) then
+                if(i_ram_addr(15 downto 8)= x"FF") then
                     o_reg_re        <= '1';
                 end if;
                 o_reg_addr      <= i_ram_addr(7 downto 0);
@@ -114,7 +115,7 @@ begin
             elsif(i_avs_write='1') then -- write from nios
 
                 -- sc regs if addr >= 0xFF00
-                if(i_avs_address(15 downto 8)= 0xFF) then
+                if(i_avs_address(15 downto 8)= x"FF") then
                     o_reg_we        <= '1';
                 end if;
                 o_reg_wdata     <= i_avs_writedata;
@@ -129,7 +130,7 @@ begin
                 read_delay_shift_reg(0)         <= '1';
                 read_delay_shift_reg_type(0)    <= '1';
 
-                if(i_ram_addr(15 downto 8)= 0xFF) then
+                if(i_ram_addr(15 downto 8)= x"FF") then
                     o_reg_re            <= '1';
                 end if;
                 o_reg_addr      <= i_avs_address(7 downto 0);
@@ -155,7 +156,7 @@ begin
         
             -- delay internal ram by the same amount of cycles as the sc regs
             -- (avoids collisions between read response from internal ram and sc reg)
-            internal_ram_return_queue => internal_ram_return_queue(READ_DELAY_g-1 downto 0) & iram_rdata;
+            internal_ram_return_queue <= internal_ram_return_queue(READ_DELAY_g-1 downto 0) & iram_rdata;
 
             if(read_delay_shift_reg(READ_DELAY_g) = '1') then
                 if(read_delay_shift_reg_type(READ_DELAY_g) = '0') then --respond to Arria10
