@@ -197,6 +197,9 @@ begin
             -- then buffer_word <= internal_ram_return_queue / i_reg_rdata
             -- and next time we can reply and allow next rw reply with buffer word instead of internal_ram_return_queue/i_reg_rdata to nios
 
+            -- OR:
+            -- export read_data_valid from avm
+
     -- internal RAM
     e_iram : entity work.ram_1r1w
     generic map (
