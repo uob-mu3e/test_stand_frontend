@@ -145,7 +145,6 @@ architecture arch of fe_block_v2 is
 
     signal sc_ram, sc_reg           : work.util.rw_t;
     signal fe_reg                   : work.util.rw_t;
-    signal subdet_reg               : work.util.rw_t;
 
     signal reg_cmdlen               : std_logic_vector(31 downto 0);
     signal reg_offset               : std_logic_vector(31 downto 0);
@@ -272,36 +271,38 @@ begin
     o_spi_si_ss_n <= spi_si_ss_n;
 
 
-
     -- map slow control address space
 
-    -- subdetector regs : 0x40-0xFF
-    o_subdet_reg_addr <= sc_reg.addr(7 downto 0);
-    o_subdet_reg_re <= subdet_reg.re;
-      subdet_reg.re <= sc_reg.re when ( sc_reg.addr(REG_AREA_RANGE) /= REG_AREA_GENERIC ) else '0';
-    o_subdet_reg_we <= sc_reg.we when ( sc_reg.addr(REG_AREA_RANGE) /= REG_AREA_GENERIC ) else '0';
-    o_subdet_reg_wdata <= sc_reg.wdata;
+    e_sc_node: entity work.sc_node
+    generic map(
+        SUM_OF_SLAVE_DELAYS_g <= 2, -- TODO
+        SLAVE0_ADDR_MATCH_g   <= "00------"
+    );
+    port map(
+        i_clk           <= i_clk_156,
+        i_reset_n       <= reset_156_n,
 
-    -- local regs 
-    fe_reg.addr <= sc_reg.addr;
-    fe_reg.re <= sc_reg.re when ( sc_reg.addr(REG_AREA_RANGE) = REG_AREA_GENERIC ) else '0';
-    fe_reg.we <= sc_reg.we when ( sc_reg.addr(REG_AREA_RANGE) = REG_AREA_GENERIC ) else '0';
-    fe_reg.wdata <= sc_reg.wdata;
+        -- to upper SC nodes 0x00-0xFF
+        i_master_addr   <= sc_reg.addr,
+        i_master_re     <= sc_reg.re,
+        o_master_rdata  <= sc_reg.rdata,
+        i_master_we     <= sc_reg.we,
+        i_master_wdata  <= sc_reg.wdata,
 
-    -- select valid rdata
-    sc_reg.rdata <=
-        i_subdet_reg_rdata when ( subdet_reg.rvalid = '1' ) else
-        fe_reg.rdata when ( fe_reg.rvalid = '1' ) else
-        X"CCCCCCCC";
+        -- to feb common regs 0x00-0x3F
+        o_slave0_addr   <= fe_reg.addr,
+        o_slave0_re     <= fe_reg.re,
+        i_slave0_rdata  <= fe_reg.rdata,
+        o_slave0_we     <= fe_reg.we,
+        o_slave0_wdata  <= fe_reg.wdata,
 
-    process(i_clk_156)
-    begin
-    if rising_edge(i_clk_156) then
-        subdet_reg.rvalid   <= subdet_reg.re;
-        fe_reg.rvalid       <= fe_reg.re;
-    end if;
-    end process;
-
+        -- to subdetector regs 0x40-0xFF
+        o_slave1_addr   <= o_subdet_reg_addr,
+        o_slave1_re     <= o_subdet_reg_re,
+        i_slave1_rdata  <= i_subdet_reg_rdata,
+        o_slave1_we     <= o_subdet_reg_we,
+        o_slave1_wdata  <= o_subdet_reg_wdata
+    );
 
     e_reg_mapping : entity work.feb_reg_mapping
     port map (
@@ -546,7 +547,6 @@ begin
         end if;
     end process;
 
-		 
     --TODO: do we need two independent link test modules for both fibers?
     e_link_test : entity work.linear_shift_link
     generic map (

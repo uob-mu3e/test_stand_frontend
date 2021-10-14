@@ -12,8 +12,9 @@ use work.mudaq.all;
 
 entity sc_node is
 generic (
-    DELAY_g                 : positive := 1;   -- Time delay that should be introduced in this node
-    SUM_OF_SLAVE_DELAYS_g   : positive;        -- Sum of all lower node delays (delay between o_slave_re=1 and arrival of i_slave_rdata)
+    ADD_SLAVE0_DELAY_g      : positive := 1; -- Delay to introduce for i_slave0_rdata
+    ADD_SLAVE1_DELAY_g      : positive := 1; -- Delay to introduce for i_slave1_rdata
+    N_REPLY_CYCLES_g        : positive := 1; -- cycles between i_master_re and arrival of o_master_rdata
     SLAVE0_ADDR_MATCH_g     : std_ulogic_vector(7 downto 0) := "--------"--;
         -- Pattern to match with i_master_addr in order to connect re/we to slave0 ("-" is don't care)
         -- connects to slave1 if no match
@@ -44,24 +45,26 @@ port (
 end entity;
 
 architecture arch of sc_node is
-    signal s0_return_queue      : reg32array(DELAY_g downto 0);
-    signal s1_return_queue      : reg32array(DELAY_g downto 0);
+    signal s0_return_queue      : reg32array(ADD_SLAVE0_DELAY_g downto 0);
+    signal s1_return_queue      : reg32array(ADD_SLAVE1_DELAY_g downto 0);
     signal slave0_re            : std_logic;
     signal slave1_re            : std_logic;
 
     -- in this vector 0: slave0, 1: slave 1
-    signal return_queue_S01_switch : std_logic_vector(DELAY_g + SUM_OF_SLAVE_DELAYS_g downto 0);
+    signal return_queue_S01_switch : std_logic_vector(N_REPLY_CYCLES_g downto 0);
 
 begin
+    assert ( ADD_SLAVE0_DELAY_g > N_REPLY_CYCLES_g ) report "test" severity error;
+    assert ( ADD_SLAVE1_DELAY_g > N_REPLY_CYCLES_g ) report "test" severity error;
 
     -- return part ------------------------------------
     o_slave0_re <= slave0_re;
     o_slave1_re <= slave1_re;
 
-    return_queue_S01_switch(DELAY_g + SUM_OF_SLAVE_DELAYS_g) <= slave1_re;
+    return_queue_S01_switch(N_REPLY_CYCLES_g) <= slave1_re;
 
-    s0_return_queue(DELAY_g) <= i_slave0_rdata;
-    s1_return_queue(DELAY_g) <= i_slave1_rdata;
+    s0_return_queue(ADD_SLAVE0_DELAY_g) <= i_slave0_rdata;
+    s1_return_queue(ADD_SLAVE1_DELAY_g) <= i_slave1_rdata;
 
     o_master_rdata           <= s1_return_queue(0) when return_queue_S01_switch(0)='1' else s0_return_queue(0);
 
@@ -70,13 +73,9 @@ begin
     if ( i_reset_n = '0' ) then
         return_queue_S01_switch <= (others => '0');
     elsif rising_edge(i_clk) then
-        for I in 0 to DELAY_g-1 loop
-            s0_return_queue(I)      <= s0_return_queue(I+1);
-            s1_return_queue(I)      <= s1_return_queue(I+1);
-        end loop;
-        for I in 0 to SUM_OF_SLAVE_DELAYS_g + DELAY_g - 1 loop
-            return_queue_S01_switch(I) <= return_queue_S01_switch(I+1);
-        end loop;
+        s0_return_queue(ADD_SLAVE0_DELAY_g-1 downto 0) <= s0_return_queue(ADD_SLAVE0_DELAY_g downto 1);
+        s1_return_queue(ADD_SLAVE1_DELAY_g-1 downto 0) <= s1_return_queue(ADD_SLAVE1_DELAY_g downto 1);
+        return_queue_S01_switch(N_REPLY_CYCLES_g-1 downto 0) <= return_queue_S01_switch(N_REPLY_CYCLES_g downto 1);
     end if;
     end process;
 
