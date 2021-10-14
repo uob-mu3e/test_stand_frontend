@@ -14,7 +14,7 @@ entity sc_node is
 generic (
     DELAY_g                 : positive := 1;   -- Time delay that should be introduced in this node
     SUM_OF_SLAVE_DELAYS_g   : positive;        -- Sum of all lower node delays (delay between o_slave_re=1 and arrival of i_slave_rdata)
-    SLAVE0_ADDR_MATCH_g     : std_logic_vector(7 downto 0) := "--------"--;
+    SLAVE0_ADDR_MATCH_g     : std_ulogic_vector(7 downto 0) := "--------"--;
         -- Pattern to match with i_master_addr in order to connect re/we to slave0 ("-" is don't care)
         -- connects to slave1 if no match
         -- Default "--------" connects to slave0
@@ -101,7 +101,7 @@ begin
         o_slave0_wdata  <= i_master_wdata;
         o_slave1_wdata  <= i_master_wdata;
 
-        if(i_master_addr ?= SLAVE0_ADDR_MATCH_g) then
+        if( to_stdulogicvector(i_master_addr) ?= SLAVE0_ADDR_MATCH_g) then
             slave0_re   <= i_master_re;
             o_slave0_we <= i_master_we;
         else
