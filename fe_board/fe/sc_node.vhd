@@ -14,7 +14,7 @@ entity sc_node is
 generic (
     ADD_SLAVE0_DELAY_g      : positive := 1; -- Delay to introduce for i_slave0_rdata
     ADD_SLAVE1_DELAY_g      : positive := 1; -- Delay to introduce for i_slave1_rdata
-    N_REPLY_CYCLES_g        : positive := 1; -- cycles between i_master_re and arrival of o_master_rdata
+    N_REPLY_CYCLES_g        : positive := 2; -- cycles between i_master_re and arrival of o_master_rdata
     SLAVE0_ADDR_MATCH_g     : std_ulogic_vector(7 downto 0) := "--------"--;
         -- Pattern to match with i_master_addr in order to connect re/we to slave0 ("-" is don't care)
         -- connects to slave1 if no match
@@ -54,8 +54,8 @@ architecture arch of sc_node is
     signal return_queue_S01_switch : std_logic_vector(N_REPLY_CYCLES_g downto 0);
 
 begin
-    assert ( ADD_SLAVE0_DELAY_g > N_REPLY_CYCLES_g ) report "test" severity error;
-    assert ( ADD_SLAVE1_DELAY_g > N_REPLY_CYCLES_g ) report "test" severity error;
+    assert ( ADD_SLAVE0_DELAY_g <= N_REPLY_CYCLES_g ) report "sc_node Delay mismatch, N_REPLY_CYCLES_g is not allowed to be smaller than ADD_SLAVE0_DELAY_g" severity error;
+    assert ( ADD_SLAVE1_DELAY_g <= N_REPLY_CYCLES_g ) report "sc_node Delay mismatch, N_REPLY_CYCLES_g is not allowed to be smaller than ADD_SLAVE1_DELAY_g" severity error;
 
     -- return part ------------------------------------
     o_slave0_re <= slave0_re;
@@ -71,7 +71,7 @@ begin
     process(i_clk, i_reset_n)
     begin
     if ( i_reset_n = '0' ) then
-        return_queue_S01_switch <= (others => '0');
+        return_queue_S01_switch(N_REPLY_CYCLES_g-1 downto 0) <= (others => '0');
     elsif rising_edge(i_clk) then
         s0_return_queue(ADD_SLAVE0_DELAY_g-1 downto 0) <= s0_return_queue(ADD_SLAVE0_DELAY_g downto 1);
         s1_return_queue(ADD_SLAVE1_DELAY_g-1 downto 0) <= s1_return_queue(ADD_SLAVE1_DELAY_g downto 1);
