@@ -6,15 +6,16 @@ entity tb_sc_new is
 end entity;
 
 architecture rtl of tb_sc_new is
-
+signal clk, reset_n : std_logic;
 signal data_in      : std_logic_vector(31 downto 0) := (others => '0');
 signal datak_in     : std_logic_vector( 3 downto 0) := (others => '0');
 
-signal data_out     : std_logic_vector(31 downto 0) := (others => '0');
+signal data_out     : std_logic_vector(35 downto 0) := (others => '0');
 signal data_out_we  : std_logic := '0';
 
 signal sc_ram       : work.util.rw_t;
 signal fe_reg       : work.util.rw_t;
+signal sc_reg       : work.util.rw_t;
 signal subdet_reg   : work.util.rw_t;
 
 signal av_sc_address    : std_logic_vector(15 downto 0) := (others => '0');
@@ -26,7 +27,7 @@ signal av_sc_waitrequest: std_logic := '0';
 
 begin
 
-    clk     <= not clk after (500 ns / CLK_MHZ);
+    clk     <= not clk after (500 ns / 50);
     reset_n <= '0', '1' after 32 ns;
 
     e_sc_rx : entity work.sc_rx
@@ -50,7 +51,7 @@ begin
 
     e_sc_ram : entity work.sc_ram_new
     generic map (
-        RAM_ADDR_WIDTH_g => to_integer(unsigned(FEB_SC_RAM_SIZE))--,--14--,
+        RAM_ADDR_WIDTH_g => 14--,
     )
     port map (
         i_ram_addr              => sc_ram.addr(15 downto 0),
@@ -128,8 +129,6 @@ begin
         i_reset_phase               => (others => '0'),
         i_arriaV_temperature        => (others => '0'),
         i_fpga_type                 => (others => '0'),
-        i_adc_reg                   => (others => '0'),
-        i_max10_version             => (others => '0'),
         i_max10_status              => (others => '0'),
         i_programming_status        => (others => '0'),
 
