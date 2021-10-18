@@ -8,7 +8,6 @@ end entity;
 
 architecture arch of tb_lapse_counter is
 
-    constant CLK_MHZ : real := 1000.0; -- MHz TODO: correct 625MHz and 125MHz
     constant N_CC : integer := 15;
     signal clk, clk_fast, reset_n, reset, en : std_logic := '0';
 
@@ -25,10 +24,10 @@ architecture arch of tb_lapse_counter is
 
 begin
 
-    clk     <= not clk after (0.5 us / CLK_MHZ);
-    clk_fast<= not clk_fast after (0.1 us / CLK_MHZ);
-    reset_n <= '0', '1' after (1.0 us / CLK_MHZ);
-    en      <= '0', '1' after (3.0 us / CLK_MHZ);
+    clk     <= not clk after 8 ns;          -- 125MHz
+    clk_fast<= not clk_fast after 1.6 ns;   -- 625MHz
+    reset_n <= '0', '1' after 1.0 us;
+    en      <= '0', '1' after 3.0 us;
     reset   <= not reset_n;
 
     p_gen_cc: process(clk_fast, reset_n)
