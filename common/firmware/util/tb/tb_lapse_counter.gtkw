@@ -1,33 +1,30 @@
 [*]
-[*] GTKWave Analyzer v3.3.108 (w)1999-2020 BSI
-[*] Wed Feb 17 08:57:41 2021
+[*] GTKWave Analyzer v3.3.109 (w)1999-2020 BSI
+[*] Mon Oct 18 15:42:57 2021
 [*]
-[dumpfile] "/home/makoeppe/mu3e/online/common/firmware/util/tb/.cache/lapse_counter_tb.ghw"
-[dumpfile_mtime] "Wed Feb 17 08:56:11 2021"
-[dumpfile_size] 12080706
-[savefile] "/home/makoeppe/mu3e/online/common/firmware/util/tb/signals_nlapse.gtkw"
-[timestart] 0
-[size] 2560 1440
-[pos] -855 -47
-*-19.000000 6554188000 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
+[dumpfile] "/home/makoeppel/mu3e/online/common/firmware/util/tb/.cache/tb_lapse_counter.ghw"
+[dumpfile_mtime] "Mon Oct 18 15:38:40 2021"
+[dumpfile_size] 11816780
+[savefile] "/home/makoeppel/mu3e/online/common/firmware/util/tb/tb_lapse_counter.gtkw"
+[timestart] 13156779000
+[size] 1366 768
+[pos] -684 -1
+*-20.000000 13159500000 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
 [treeopen] top.
-[treeopen] top.lapse_counter_tb.
-[treeopen] top.lapse_counter_tb.e_lapse_counter.
+[treeopen] top.tb_lapse_counter.
+[treeopen] top.tb_lapse_counter.e_lapse_counter.
 [sst_width] 247
-[signals_width] 395
+[signals_width] 259
 [sst_expanded] 1
-[sst_vpaned_height] 818
-@28
-top.lapse_counter_tb.clk_fast
-@29
-top.lapse_counter_tb.reset_n
-@28
-top.lapse_counter_tb.e_lapse_counter.i_clk
-@420
-top.lapse_counter_tb.e_lapse_counter.nlapses
+[sst_vpaned_height] 303
 @24
-#{top.lapse_counter_tb.e_lapse_counter.i_cc[31:0]} top.lapse_counter_tb.e_lapse_counter.i_cc[14] top.lapse_counter_tb.e_lapse_counter.i_cc[13] top.lapse_counter_tb.e_lapse_counter.i_cc[12] top.lapse_counter_tb.e_lapse_counter.i_cc[11] top.lapse_counter_tb.e_lapse_counter.i_cc[10] top.lapse_counter_tb.e_lapse_counter.i_cc[9] top.lapse_counter_tb.e_lapse_counter.i_cc[8] top.lapse_counter_tb.e_lapse_counter.i_cc[7] top.lapse_counter_tb.e_lapse_counter.i_cc[6] top.lapse_counter_tb.e_lapse_counter.i_cc[5] top.lapse_counter_tb.e_lapse_counter.i_cc[4] top.lapse_counter_tb.e_lapse_counter.i_cc[3] top.lapse_counter_tb.e_lapse_counter.i_cc[2] top.lapse_counter_tb.e_lapse_counter.i_cc[1] top.lapse_counter_tb.e_lapse_counter.i_cc[0]
-#{top.lapse_counter_tb.e_lapse_counter.o_cc[31:0]} top.lapse_counter_tb.e_lapse_counter.o_cc[15] top.lapse_counter_tb.e_lapse_counter.o_cc[14] top.lapse_counter_tb.e_lapse_counter.o_cc[13] top.lapse_counter_tb.e_lapse_counter.o_cc[12] top.lapse_counter_tb.e_lapse_counter.o_cc[11] top.lapse_counter_tb.e_lapse_counter.o_cc[10] top.lapse_counter_tb.e_lapse_counter.o_cc[9] top.lapse_counter_tb.e_lapse_counter.o_cc[8] top.lapse_counter_tb.e_lapse_counter.o_cc[7] top.lapse_counter_tb.e_lapse_counter.o_cc[6] top.lapse_counter_tb.e_lapse_counter.o_cc[5] top.lapse_counter_tb.e_lapse_counter.o_cc[4] top.lapse_counter_tb.e_lapse_counter.o_cc[3] top.lapse_counter_tb.e_lapse_counter.o_cc[2] top.lapse_counter_tb.e_lapse_counter.o_cc[1] top.lapse_counter_tb.e_lapse_counter.o_cc[0]
-#{top.lapse_counter_tb.e_lapse_counter.cc_fpga[14:0]} top.lapse_counter_tb.e_lapse_counter.cc_fpga[14] top.lapse_counter_tb.e_lapse_counter.cc_fpga[13] top.lapse_counter_tb.e_lapse_counter.cc_fpga[12] top.lapse_counter_tb.e_lapse_counter.cc_fpga[11] top.lapse_counter_tb.e_lapse_counter.cc_fpga[10] top.lapse_counter_tb.e_lapse_counter.cc_fpga[9] top.lapse_counter_tb.e_lapse_counter.cc_fpga[8] top.lapse_counter_tb.e_lapse_counter.cc_fpga[7] top.lapse_counter_tb.e_lapse_counter.cc_fpga[6] top.lapse_counter_tb.e_lapse_counter.cc_fpga[5] top.lapse_counter_tb.e_lapse_counter.cc_fpga[4] top.lapse_counter_tb.e_lapse_counter.cc_fpga[3] top.lapse_counter_tb.e_lapse_counter.cc_fpga[2] top.lapse_counter_tb.e_lapse_counter.cc_fpga[1] top.lapse_counter_tb.e_lapse_counter.cc_fpga[0]
+#{top.tb_lapse_counter.e_lapse_counter.o_cc[14:0]} top.tb_lapse_counter.e_lapse_counter.o_cc[14] top.tb_lapse_counter.e_lapse_counter.o_cc[13] top.tb_lapse_counter.e_lapse_counter.o_cc[12] top.tb_lapse_counter.e_lapse_counter.o_cc[11] top.tb_lapse_counter.e_lapse_counter.o_cc[10] top.tb_lapse_counter.e_lapse_counter.o_cc[9] top.tb_lapse_counter.e_lapse_counter.o_cc[8] top.tb_lapse_counter.e_lapse_counter.o_cc[7] top.tb_lapse_counter.e_lapse_counter.o_cc[6] top.tb_lapse_counter.e_lapse_counter.o_cc[5] top.tb_lapse_counter.e_lapse_counter.o_cc[4] top.tb_lapse_counter.e_lapse_counter.o_cc[3] top.tb_lapse_counter.e_lapse_counter.o_cc[2] top.tb_lapse_counter.e_lapse_counter.o_cc[1] top.tb_lapse_counter.e_lapse_counter.o_cc[0]
+@25
+#{top.tb_lapse_counter.e_lapse_counter.i_cc[14:0]} top.tb_lapse_counter.e_lapse_counter.i_cc[14] top.tb_lapse_counter.e_lapse_counter.i_cc[13] top.tb_lapse_counter.e_lapse_counter.i_cc[12] top.tb_lapse_counter.e_lapse_counter.i_cc[11] top.tb_lapse_counter.e_lapse_counter.i_cc[10] top.tb_lapse_counter.e_lapse_counter.i_cc[9] top.tb_lapse_counter.e_lapse_counter.i_cc[8] top.tb_lapse_counter.e_lapse_counter.i_cc[7] top.tb_lapse_counter.e_lapse_counter.i_cc[6] top.tb_lapse_counter.e_lapse_counter.i_cc[5] top.tb_lapse_counter.e_lapse_counter.i_cc[4] top.tb_lapse_counter.e_lapse_counter.i_cc[3] top.tb_lapse_counter.e_lapse_counter.i_cc[2] top.tb_lapse_counter.e_lapse_counter.i_cc[1] top.tb_lapse_counter.e_lapse_counter.i_cc[0]
+@420
+top.tb_lapse_counter.e_lapse_counter.lower
+top.tb_lapse_counter.e_lapse_counter.upper
+top.tb_lapse_counter.e_lapse_counter.nlapses
+top.tb_lapse_counter.e_lapse_counter.cc_fpga
 [pattern_trace] 1
 [pattern_trace] 0

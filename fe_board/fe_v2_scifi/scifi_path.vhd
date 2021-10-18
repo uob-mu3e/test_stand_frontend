@@ -292,7 +292,6 @@ begin
         i_RC_may_generate => i_run_state(RUN_STATE_BITPOS_RUNNING),
         o_RC_all_done => o_run_state_all_done,
         i_en_lapse_counter => '0', --s_en_lapse_counter,
-        i_lower_bnd => (others => '0'), --s_lower_bnd,
         i_upper_bnd => (others => '0'), --s_upper_bnd,
 
         -- monitors

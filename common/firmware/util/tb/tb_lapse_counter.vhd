@@ -8,7 +8,7 @@ end entity;
 
 architecture arch of tb_lapse_counter is
 
-    constant CLK_MHZ : real := 1000.0; -- MHz
+    constant CLK_MHZ : real := 1000.0; -- MHz TODO: correct 625MHz and 125MHz
     constant N_CC : integer := 15;
     signal clk, clk_fast, reset_n, reset, en : std_logic := '0';
 
@@ -16,7 +16,7 @@ architecture arch of tb_lapse_counter is
     signal delay : std_logic_vector(N_CC - 1 downto 0);
 
     signal i_CC : std_logic_vector(N_CC - 1 downto 0);
-    signal o_CC : std_logic_vector(N_CC downto 0);
+    signal o_CC : std_logic_vector(N_CC - 1 downto 0);
     signal COUNT : integer := 32767;
 
     signal CC_BND : std_logic_vector(N_CC - 1 downto 0) := (others => '0');
@@ -56,8 +56,13 @@ begin
 
     e_lapse_counter : entity work.lapse_counter
     generic map (N_CC => N_CC) 
-    port map (  i_clk => clk, i_reset_n => reset_n, i_CC => i_CC, 
-                i_en => en, i_upper_bnd => (others => '0'), 
-                i_lower_bnd => (others => '0'), o_CC => o_CC );
+    port map (  
+        i_clk => clk, 
+        i_reset_n => reset_n, 
+        i_CC => i_CC, 
+        i_en => en, 
+        i_upper_bnd => CC_BND, 
+        o_CC => o_CC 
+    );
 
 end architecture;
