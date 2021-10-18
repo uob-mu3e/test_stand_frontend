@@ -59,7 +59,7 @@ begin
     port map (  
         i_clk => clk, 
         i_reset_n => reset_n, 
-        i_CC => i_CC, 
+        i_CC => unsigned(i_CC), 
         i_en => en, 
         i_upper_bnd => CC_BND, 
         o_CC => o_CC 

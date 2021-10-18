@@ -22,25 +22,20 @@ generic (
     N_CC : positive := 32--;
 );
 port (
-    i_reset_n   : in  std_logic; -- i_run_state(RUN_STATE_BITPOS_SYNC)
-    i_clk       : in  std_logic; -- 125 MHz
+    i_reset_n   : in  std_logic;                            -- i_run_state(RUN_STATE_BITPOS_SYNC)
+    i_clk       : in  std_logic;                            -- 125 MHz
 
-    i_en        : in  std_logic; -- this entity can be enabled disabled via software
-    i_upper_bnd : in  std_logic_vector(N_CC - 1 downto 0); -- upper bnd for the correction (default: 30000)
+    i_en        : in  std_logic;                            -- this entity can be enabled disabled via software
+    i_upper_bnd : in  std_logic_vector(N_CC - 1 downto 0);  -- upper bnd for the correction (default: 30000)
 
-    i_CC        : in  std_logic_vector(N_CC - 1 downto 0); -- counter from the Mutrig @625MHz
-    o_CC        : out std_logic_vector(N_CC - 1 downto 0)  -- corrected Mutrig counter 
+    i_CC        : in  unsigned(N_CC - 1 downto 0);          -- counter from the Mutrig @625MHz
+    o_CC        : out std_logic_vector(N_CC - 1 downto 0)   -- corrected Mutrig counter 
 );
 end lapse_counter;
 
 architecture arch of lapse_counter is
 
-    --signal CC_fpga : std_logic_vector(N_CC - 1 downto 0);
-    --signal  : unsigned(N_CC - 1 downto 0);
-    --signal  : std_logic_vector(N_CC downto 0);
-    --signal nLapses : natural : natural range 0 to 32767 := 0;
-    --signal s_i_CC : std_logic_vector(N_CC downto 0);
-    signal s_o_CC, s_o_CC_reg : unsigned(N_CC - 1 downto 0);
+    signal s_o_CC : unsigned(N_CC - 1 downto 0);
     signal upper, lower, CC_fpga, nLapses : natural range 0 to 32767 := 0;
 
 begin
@@ -53,8 +48,9 @@ begin
         nLapses <= 0;
         CC_fpga <= 0;
     elsif ( rising_edge(i_clk) ) then
-        -- NOTE: In the following we have 5 different edge cases where
-        -- the internal CC_fpga counter would count wrongly
+        -- in the following we have 5 different edge cases where
+        -- the internal CC_fpga counter runs away from the Mutrig 
+        -- counter. To counter this we set the correct next value
         if ( CC_fpga = 32765 ) then
             nLapses <= nLapses + 1;
             CC_fpga <= 3;
@@ -73,14 +69,19 @@ begin
         else
             CC_fpga <= CC_fpga + 5;
         end if;
-        if (s_o_CC  <= 32766 and s_o_CC  >= upper and CC_fpga <= lower) then
-            report "s_o_CC " & work.util.to_hstring(std_logic_vector(s_o_CC));
+        -- for simulation
+        -- synthesis translate_off
+        if (i_CC  <= 32766 and i_CC  >= upper and CC_fpga <= lower) then
+            report "i_CC " & work.util.to_hstring(std_logic_vector(i_CC));
             report "nLapses " & work.util.to_hstring(std_logic_vector(to_unsigned(nLapses, o_CC'length)));
-            report "s_o_CC_reg " & work.util.to_hstring(std_logic_vector(s_o_CC_reg));
+            report "s_o_CC " & work.util.to_hstring(std_logic_vector(s_o_CC));
         end if;
+        if (CC_fpga <= 32767 and CC_fpga >= upper and i_CC <= lower) then
+            report "this case should never happen";
+        end if;
+        -- synthesis translate_on
     end if;
 end process;
-
 
 -- assuming that the default delay is in the range of 
 -- upper=30000 to 32766/7 and 0 to lower=2767
@@ -88,16 +89,12 @@ end process;
 upper       <=  to_integer(unsigned(i_upper_bnd));
 lower       <=  32767 - to_integer(unsigned(i_upper_bnd));
 
--- TODO: I put ranges here bcz its easier to read
--- TODO: tb add check if nLapses is higher than s_o_CC, if nLapse is exp: 2^20 (cc range)
--- TODO: this should never happen, debug counter
-s_o_CC      <=  unsigned(i_CC);
+                -- check if i_CC did not lapse but the interal counter did
+s_o_CC      <=  i_CC - (nLapses - 1) when i_CC    <= 32766 and i_CC    >= upper and CC_fpga <= lower and nLapses > 0 else
+                -- this case should never happen
+                i_CC - (nLapses + 1) when CC_fpga <= 32767 and CC_fpga >= upper and i_CC    <= lower else
+                i_CC - nLapses;
 
-s_o_CC_reg  <=  s_o_CC - (nLapses - 1) when s_o_CC  <= 32766 and s_o_CC  >= upper and CC_fpga <= lower and nLapses > 0 else
-                s_o_CC - (nLapses + 1) when CC_fpga <= 32767 and CC_fpga >= upper and s_o_CC  <= lower else
-                s_o_CC - nLapses;
-
-o_CC        <=  i_CC when i_en = '0' else
-                std_logic_vector(s_o_CC_reg);
+o_CC        <=  std_logic_vector(i_CC) when i_en = '0' else std_logic_vector(s_o_CC);
 
 end architecture;
