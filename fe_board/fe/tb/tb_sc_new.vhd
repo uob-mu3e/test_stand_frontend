@@ -6,7 +6,8 @@ entity tb_sc_new is
 end entity;
 
 architecture rtl of tb_sc_new is
-signal clk, reset_n : std_logic;
+signal clk          : std_logic := '1';
+signal reset_n      : std_logic;
 signal data_in      : std_logic_vector(31 downto 0) := (others => '0');
 signal datak_in     : std_logic_vector( 3 downto 0) := (others => '0');
 

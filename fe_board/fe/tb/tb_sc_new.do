@@ -1,13 +1,22 @@
 onerror {resume}
 quietly WaveActivateNextPane {} 0
-add wave -noupdate /mupix_ctrl_dummy_tb/clk
-add wave -noupdate /mupix_ctrl_dummy_tb/reset_n
-add wave -noupdate /mupix_ctrl_dummy_tb/clock
-add wave -noupdate /mupix_ctrl_dummy_tb/mosi
-add wave -noupdate /mupix_ctrl_dummy_tb/csn
-add wave -noupdate /mupix_ctrl_dummy_tb/e_mupix_ctrl/step
-add wave -noupdate /mupix_ctrl_dummy_tb/e_mupix_ctrl/e_mupix_ctrl/e_mupix_ctrl_config_storage/bitpos_global
-add wave -noupdate /mupix_ctrl_dummy_tb/e_mupix_ctrl/e_mupix_ctrl/e_mupix_ctrl_config_storage/o_data
+add wave -noupdate /tb_sc_new/clk
+add wave -noupdate /tb_sc_new/reset_n
+add wave -noupdate /tb_sc_new/data_in
+add wave -noupdate /tb_sc_new/datak_in
+add wave -noupdate /tb_sc_new/data_out
+add wave -noupdate /tb_sc_new/data_out_we
+add wave -noupdate /tb_sc_new/sc_reg
+add wave -noupdate /tb_sc_new/fe_reg
+add wave -noupdate /tb_sc_new/sc_ram
+add wave -noupdate /tb_sc_new/subdet_reg
+add wave -noupdate /tb_sc_new/av_sc_address
+add wave -noupdate /tb_sc_new/av_sc_read
+add wave -noupdate /tb_sc_new/av_sc_readdata
+add wave -noupdate /tb_sc_new/av_sc_write
+add wave -noupdate /tb_sc_new/av_sc_writedata
+add wave -noupdate /tb_sc_new/av_sc_waitrequest
+
 
 
 TreeUpdate [SetDefaultTree]
@@ -29,6 +38,6 @@ configure wave -timelineunits ns
 update
 radix -hexadecimal
 
-run 5ms
+run 1ms
 
 WaveRestoreZoom 0ns 1000000ns

@@ -148,6 +148,7 @@ begin
     begin
         if ( i_reset_n = '0' ) then
             avs_cmd_buf     <= '0';
+            o_avs_readdata  <= (others => '0');
 
         elsif rising_edge(i_clk) then
             -- defaults
