@@ -467,13 +467,13 @@ u_decoder : entity work.prbs_decoder
 e_lapse_counter_A : entity work.lapse_counter
 generic map ( N_CC => N_CC )
 port map ( i_clk => i_ts_clk, i_reset_n => not i_ts_rst, i_CC => unsigned(s_A_buf_data(20 downto 6)), 
-    i_en => i_en_lapse_counter, i_upper_bnd => i_upper_bnd, o_CC => CC_corrected_A );
+    i_en => i_en_lapse_counter, i_upper_bnd => i_upper_bnd, o_CC => CC_corrected_A, o_cnt => open );
 
 -- generate lapse counter B
 e_lapse_counter_B : entity work.lapse_counter
 generic map ( N_CC => N_CC )
 port map ( i_clk => i_ts_clk, i_reset_n => not i_ts_rst, i_CC => unsigned(s_B_buf_data(20 downto 6)),
-    i_en => i_en_lapse_counter, i_upper_bnd => i_upper_bnd, o_CC => CC_corrected_B );
+    i_en => i_en_lapse_counter, i_upper_bnd => i_upper_bnd, o_CC => CC_corrected_B, o_cnt => open );
 
 --to common fifo buffer:
 o_fifo_wr(0)                    <= s_A_buf_wr;

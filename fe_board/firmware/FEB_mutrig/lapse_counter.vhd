@@ -29,6 +29,7 @@ port (
     i_upper_bnd : in  std_logic_vector(N_CC - 1 downto 0);  -- upper bnd for the correction (default: 30000)
 
     i_CC        : in  unsigned(N_CC - 1 downto 0);          -- counter from the Mutrig @625MHz
+    o_cnt       : out std_logic_vector(63 downto 0);        -- cnt for nLapses (63 downto 32) and CC_fpga <= 32767 case
     o_CC        : out std_logic_vector(N_CC - 1 downto 0)   -- corrected Mutrig counter 
 );
 end lapse_counter;
@@ -36,9 +37,12 @@ end lapse_counter;
 architecture arch of lapse_counter is
 
     signal s_o_CC : unsigned(N_CC - 1 downto 0);
-    signal upper, lower, CC_fpga, nLapses : natural range 0 to 32767 := 0;
+    signal upper, lower, CC_fpga, nLapses, cntCCsmaller : natural range 0 to 32767 := 0;
 
 begin
+
+-- cnt output
+o_cnt <= std_logic_vector(to_unsigned(nLapses, 32)) & std_logic_vector(to_unsigned(cntCCsmaller, 32));
 
 -- counting lapsing of coarse counter
 -- CC lapses every 2^15-1 cycles @ 625MHz. 
@@ -47,6 +51,7 @@ begin
     if ( i_reset_n = '0' ) then
         nLapses <= 0;
         CC_fpga <= 0;
+        cntCCsmaller <= 0;
     elsif ( rising_edge(i_clk) ) then
         -- in the following we have 5 different edge cases where
         -- the internal CC_fpga counter runs away from the Mutrig 
@@ -68,6 +73,9 @@ begin
             CC_fpga <= 5;
         else
             CC_fpga <= CC_fpga + 5;
+        end if;
+        if (CC_fpga <= 32767 and CC_fpga >= upper and i_CC <= lower) then
+            cntCCsmaller <= cntCCsmaller + 1;
         end if;
         -- for simulation
         -- synthesis translate_off
