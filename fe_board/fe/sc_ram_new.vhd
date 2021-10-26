@@ -84,8 +84,8 @@ begin
             iram_we      <= '0';
             o_reg_we     <= '0';
             
-            read_delay_shift_reg        <= read_delay_shift_reg(READ_DELAY_g downto 1) & '0';
-            read_delay_shift_reg_type   <= read_delay_shift_reg_type(READ_DELAY_g downto 1) & '0';
+            read_delay_shift_reg        <= read_delay_shift_reg(READ_DELAY_g-1 downto 0) & '0';
+            read_delay_shift_reg_type   <= read_delay_shift_reg_type(READ_DELAY_g-1 downto 0) & '0';
 
             if(i_ram_we='1') then -- write from Arria10
 

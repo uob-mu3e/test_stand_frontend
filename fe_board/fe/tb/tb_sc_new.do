@@ -38,6 +38,21 @@ configure wave -timelineunits ns
 update
 radix -hexadecimal
 
-run 1ms
+force -freeze /tb_sc_new/data_in x"000000BC"
+force -freeze /tb_sc_new/datak_in x"1"
+run 100ns 
+force -freeze /tb_sc_new/data_in x"1C0000BC"
+run 20ns
+force -freeze /tb_sc_new/data_in x"0000ff25"
+force -freeze /tb_sc_new/datak_in x"0"
+run 20ns
+force -freeze /tb_sc_new/data_in x"00000002"
+run 20ns
+force -freeze /tb_sc_new/data_in x"0000009C"
+force -freeze /tb_sc_new/datak_in x"1"
+run 20ns
+force -freeze /tb_sc_new/data_in x"000000BC"
+run 1000ns
 
-WaveRestoreZoom 0ns 1000000ns
+
+WaveRestoreZoom 0ns 10000ns

@@ -81,8 +81,8 @@ begin
 
     e_sc_node: entity work.sc_node
     generic map(
-        ADD_SLAVE0_DELAY_g  => 1,
-        ADD_SLAVE1_DELAY_g  => 1,
+        ADD_SLAVE0_DELAY_g  => 4,
+        ADD_SLAVE1_DELAY_g  => 4,
         N_REPLY_CYCLES_g    => 2,
         SLAVE0_ADDR_MATCH_g => "00------"
     )
@@ -130,7 +130,8 @@ begin
         i_reset_phase               => (others => '0'),
         i_arriaV_temperature        => (others => '0'),
         i_fpga_type                 => (others => '0'),
-        i_max10_status              => (others => '0'),
+        i_max10_version             => x"89ABCDEF",
+        i_max10_status              => x"01234567",
         i_programming_status        => (others => '0'),
 
         i_ffly_pwr                  => (others => '0'),
