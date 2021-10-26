@@ -74,6 +74,8 @@ begin
     begin
         if ( i_reset_n = '0' ) then
             iram_we         <= '0';
+            o_reg_re        <= '0';
+            o_reg_we        <= '0';
             sc_req_state    <= idle;
             sc_rec_state    <= idle;
             read_delay_shift_reg        <= (others => '0');
@@ -83,7 +85,8 @@ begin
             -- defaults
             iram_we      <= '0';
             o_reg_we     <= '0';
-            
+            o_reg_re     <= '0';
+
             read_delay_shift_reg        <= read_delay_shift_reg(READ_DELAY_g-1 downto 0) & '0';
             read_delay_shift_reg_type   <= read_delay_shift_reg_type(READ_DELAY_g-1 downto 0) & '0';
 

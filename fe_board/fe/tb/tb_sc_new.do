@@ -1,23 +1,8 @@
 onerror {resume}
 quietly WaveActivateNextPane {} 0
-add wave -noupdate /tb_sc_new/clk
-add wave -noupdate /tb_sc_new/reset_n
-add wave -noupdate /tb_sc_new/data_in
-add wave -noupdate /tb_sc_new/datak_in
-add wave -noupdate /tb_sc_new/data_out
-add wave -noupdate /tb_sc_new/data_out_we
-add wave -noupdate /tb_sc_new/sc_reg
-add wave -noupdate /tb_sc_new/fe_reg
-add wave -noupdate /tb_sc_new/sc_ram
-add wave -noupdate /tb_sc_new/subdet_reg
-add wave -noupdate /tb_sc_new/av_sc_address
-add wave -noupdate /tb_sc_new/av_sc_read
-add wave -noupdate /tb_sc_new/av_sc_readdata
-add wave -noupdate /tb_sc_new/av_sc_write
-add wave -noupdate /tb_sc_new/av_sc_writedata
-add wave -noupdate /tb_sc_new/av_sc_waitrequest
-
-
+add wave -noupdate -group tb_top /tb_sc_new/*
+add wave -noupdate -group sc_ram /tb_sc_new/e_sc_ram/*
+add wave -noupdate -group sc_node /tb_sc_new/e_sc_node/*
 
 TreeUpdate [SetDefaultTree]
 WaveRestoreCursors {{Cursor 1} {4127596 ps} 0}
@@ -38,6 +23,7 @@ configure wave -timelineunits ns
 update
 radix -hexadecimal
 
+-- read sc regs
 force -freeze /tb_sc_new/data_in x"000000BC"
 force -freeze /tb_sc_new/datak_in x"1"
 run 100ns 
@@ -52,7 +38,66 @@ force -freeze /tb_sc_new/data_in x"0000009C"
 force -freeze /tb_sc_new/datak_in x"1"
 run 20ns
 force -freeze /tb_sc_new/data_in x"000000BC"
+run 300ns
+-- write to internal RAM
+force -freeze /tb_sc_new/data_in x"1D0000BC"
+run 20ns
+force -freeze /tb_sc_new/data_in x"00000025"
+force -freeze /tb_sc_new/datak_in x"0"
+run 20ns
+force -freeze /tb_sc_new/data_in x"00000003"
+run 20ns
+force -freeze /tb_sc_new/data_in x"00000012"
+run 20ns
+force -freeze /tb_sc_new/data_in x"00000013"
+run 20ns
+force -freeze /tb_sc_new/data_in x"00000014"
+run 20ns
+force -freeze /tb_sc_new/data_in x"0000009C"
+force -freeze /tb_sc_new/datak_in x"1"
+run 20ns
+force -freeze /tb_sc_new/data_in x"000000BC"
+run 300ns
+-- read internal RAM
+force -freeze /tb_sc_new/data_in x"1C0000BC"
+run 20ns
+force -freeze /tb_sc_new/data_in x"00000025"
+force -freeze /tb_sc_new/datak_in x"0"
+run 20ns
+force -freeze /tb_sc_new/data_in x"00000005"
+run 20ns
+force -freeze /tb_sc_new/data_in x"0000009C"
+force -freeze /tb_sc_new/datak_in x"1"
+run 20ns
+force -freeze /tb_sc_new/data_in x"000000BC"
+run 300ns
+-- mixing nios read with sc read
+force -freeze /tb_sc_new/data_in x"1C0000BC"
+run 20ns
+force -freeze /tb_sc_new/data_in x"0000ff25"
+force -freeze /tb_sc_new/datak_in x"0"
+run 20ns
+force -freeze /tb_sc_new/data_in x"00000010"
+run 20ns
+force -freeze /tb_sc_new/data_in x"0000009C"
+force -freeze /tb_sc_new/datak_in x"1"
+run 20ns
+force -freeze /tb_sc_new/data_in x"000000BC"
+run 300ns
+force -freeze /tb_sc_new/av_sc_address x"0000ff25"
+force -freeze /tb_sc_new/av_sc_read '1'
 run 1000ns
-
-
+-- throwing a sc read into an ongoing long nios read
+force -freeze /tb_sc_new/data_in x"1C0000BC"
+run 20ns
+force -freeze /tb_sc_new/data_in x"0000ff26"
+force -freeze /tb_sc_new/datak_in x"0"
+run 20ns
+force -freeze /tb_sc_new/data_in x"00000001"
+run 20ns
+force -freeze /tb_sc_new/data_in x"0000009C"
+force -freeze /tb_sc_new/datak_in x"1"
+run 20ns
+force -freeze /tb_sc_new/data_in x"000000BC"
+run 1000ns
 WaveRestoreZoom 0ns 10000ns
