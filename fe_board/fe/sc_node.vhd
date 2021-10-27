@@ -15,7 +15,7 @@ generic (
     ADD_SLAVE0_DELAY_g      : positive := 1; -- Delay to introduce for i_slave0_rdata
     ADD_SLAVE1_DELAY_g      : positive := 1; -- Delay to introduce for i_slave1_rdata
     N_REPLY_CYCLES_g        : positive := 2; -- cycles between i_master_re and arrival of o_master_rdata
-    SLAVE0_ADDR_MATCH_g     : std_ulogic_vector(7 downto 0) := "--------"--;
+    SLAVE0_ADDR_MATCH_g     : std_ulogic_vector(15 downto 0) := "----------------"--;
         -- Pattern to match with i_master_addr in order to connect re/we to slave0 ("-" is don't care)
         -- connects to slave1 if no match
         -- Default "--------" connects to slave0
@@ -24,19 +24,19 @@ port (
     i_clk           : in    std_logic;
     i_reset_n       : in    std_logic;
 
-    i_master_addr   : in    std_logic_vector(7 downto 0);
+    i_master_addr   : in    std_logic_vector(15 downto 0);
     i_master_re     : in    std_logic;
     o_master_rdata  : out   reg32;
     i_master_we     : in    std_logic;
     i_master_wdata  : in    reg32;
 
-    o_slave0_addr   : out   std_logic_vector(7 downto 0);
+    o_slave0_addr   : out   std_logic_vector(15 downto 0);
     o_slave0_re     : out   std_logic;
     i_slave0_rdata  : in    reg32;
     o_slave0_we     : out   std_logic;
     o_slave0_wdata  : out   reg32;
 
-    o_slave1_addr   : out   std_logic_vector(7 downto 0);
+    o_slave1_addr   : out   std_logic_vector(15 downto 0);
     o_slave1_re     : out   std_logic;
     i_slave1_rdata  : in    reg32;
     o_slave1_we     : out   std_logic;
@@ -50,7 +50,7 @@ architecture arch of sc_node is
     signal slave0_re            : std_logic;
     signal slave1_re            : std_logic;
 
-    -- in this vector 0: slave0, 1: slave 1
+    -- in this vector 0: slave0, 1: slave1
     signal return_queue_S01_switch : std_logic_vector(N_REPLY_CYCLES_g downto 0);
 
 begin

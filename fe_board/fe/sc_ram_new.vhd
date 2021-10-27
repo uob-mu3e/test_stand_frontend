@@ -2,9 +2,6 @@
 -- SC rewrite
 -- Oktober 2021, M.Mueller
 --
--- - ram port has priority
--- - map upper 256 words to reg port
---
 
 library ieee;
 use ieee.std_logic_1164.all;
@@ -36,7 +33,7 @@ port (
     o_avs_waitrequest   : out   std_logic;
 
     -- REG port (master)
-    o_reg_addr          : out   std_logic_vector(7 downto 0);
+    o_reg_addr          : out   std_logic_vector(15 downto 0);
     o_reg_re            : out   std_logic;
     i_reg_rdata         : in    std_logic_vector(31 downto 0) := (others => '0');
     o_reg_we            : out   std_logic;
@@ -49,15 +46,10 @@ end entity;
 
 architecture arch of sc_ram_new is
 
-    signal iram_addr : std_logic_vector(15 downto 0);
-    signal iram_we : std_logic;
-    signal iram_rdata, iram_wdata : std_logic_vector(31 downto 0);
-
-    type sc_req_state_type is (idle, stuff2);
-    type sc_rec_state_type is (idle, stuff2);
-
-    signal sc_req_state : sc_req_state_type := idle;
-    signal sc_rec_state : sc_rec_state_type := idle;
+    signal iram_addr    : std_logic_vector(15 downto 0);
+    signal iram_we      : std_logic;
+    signal iram_rdata   : std_logic_vector(31 downto 0); 
+    signal iram_wdata   : std_logic_vector(31 downto 0);
 
     signal read_delay_shift_reg         : std_logic_vector(READ_DELAY_g downto 0) := (others => '0');
     signal read_delay_shift_reg_type    : std_logic_vector(READ_DELAY_g downto 0) := (others => '0'); -- 0: Arria, 1: Nios
@@ -67,80 +59,49 @@ architecture arch of sc_ram_new is
     signal avs_waitrequest : std_logic;
     signal avs_cmd_buf     : std_logic := '0';
 
-begin
+    -- signals to lvl0 sc_node
+    signal addr          : std_logic_vector(15 downto 0) := (others => '0');
+    signal re            : std_logic := '0';
+    signal rdata         : std_logic_vector(31 downto 0) := (others => '0');
+    signal we            : std_logic := '0';
+    signal wdata         : std_logic_vector(31 downto 0) := (others => '0');
 
+begin
+ 
     -- request process
     process(i_clk, i_reset_n)
     begin
         if ( i_reset_n = '0' ) then
-            iram_we         <= '0';
-            o_reg_re        <= '0';
-            o_reg_we        <= '0';
-            sc_req_state    <= idle;
-            sc_rec_state    <= idle;
+            re              <= '0';
+            we              <= '0';
             read_delay_shift_reg        <= (others => '0');
             read_delay_shift_reg_type   <= (others => '0');
 
         elsif rising_edge(i_clk) then
             -- defaults
-            iram_we      <= '0';
-            o_reg_we     <= '0';
-            o_reg_re     <= '0';
+            we     <= '0';
+            re     <= '0';
 
             read_delay_shift_reg        <= read_delay_shift_reg(READ_DELAY_g-1 downto 0) & '0';
             read_delay_shift_reg_type   <= read_delay_shift_reg_type(READ_DELAY_g-1 downto 0) & '0';
 
             if(i_ram_we='1') then -- write from Arria10
-
-                -- sc regs if addr >= 0xFF00
-                if(i_ram_addr(15 downto 8)= x"FF") then
-                    o_reg_we        <= '1';
-                end if;
-                o_reg_wdata     <= i_ram_wdata;
-                o_reg_addr      <= i_ram_addr(7 downto 0);
-
-                -- internal mem
-                iram_we         <= '1';
-                iram_wdata      <= i_ram_wdata;
-                iram_addr       <= i_ram_addr;
-
+                we      <= '1';
+                wdata   <= i_ram_wdata;
+                addr    <= i_ram_addr;
             elsif(i_ram_re='1') then -- read from Arria10
                 read_delay_shift_reg(0) <= '1';
-
-                if(i_ram_addr(15 downto 8)= x"FF") then
-                    o_reg_re        <= '1';
-                end if;
-                o_reg_addr      <= i_ram_addr(7 downto 0);
-
-                -- internal mem
-                iram_addr       <= i_ram_addr;
-
+                re      <= '1';
+                addr    <= i_ram_addr;
             elsif(i_avs_write='1') then -- write from nios
-
-                -- sc regs if addr >= 0xFF00
-                if(i_avs_address(15 downto 8)= x"FF") then
-                    o_reg_we        <= '1';
-                end if;
-                o_reg_wdata     <= i_avs_writedata;
-                o_reg_addr      <= i_avs_address(7 downto 0);
-                
-                -- internal mem
-                iram_we         <= '1';
-                iram_wdata      <= i_avs_writedata;
-                iram_addr       <= i_avs_address;
-
+                we      <= '1';
+                wdata   <= i_avs_writedata;
+                addr    <= i_avs_address;
             elsif(i_avs_read='1') then -- read from nios
                 read_delay_shift_reg(0)         <= '1';
                 read_delay_shift_reg_type(0)    <= '1';
-
-                if(i_ram_addr(15 downto 8)= x"FF") then
-                    o_reg_re            <= '1';
-                end if;
-                o_reg_addr      <= i_avs_address(7 downto 0);
-
-                -- internal mem
-                iram_addr       <= i_avs_address;
-
+                re      <= '1';
+                addr    <= i_avs_address;
             end if;
         end if;
     end process;
@@ -157,7 +118,7 @@ begin
             -- defaults
             o_ram_rvalid    <= '0';
             avs_cmd_buf     <= i_avs_read or i_avs_write;
-        
+
             -- delay internal ram by the same amount of cycles as the sc regs
             -- (avoids collisions between read response from internal ram and sc reg)
             internal_ram_return_queue <= internal_ram_return_queue(READ_DELAY_g-1 downto 0) & iram_rdata;
@@ -174,7 +135,6 @@ begin
         end if;
     end process;
 
-
     o_avs_waitrequest <= avs_waitrequest;
     avs_waitrequest <=
         '1' when ( i_ram_re = '1' 
@@ -182,7 +142,37 @@ begin
                 or (or_reduce(read_delay_shift_reg_type) = '1' and read_delay_shift_reg_type(READ_DELAY_g) = '0')
                 or (avs_cmd_buf = '0' and (i_avs_read = '1' or i_avs_write = '1')))
             else '0';
+
+
+    lvl0_sc_node: entity work.sc_node
+    generic map (
+        ADD_SLAVE1_DELAY_g  => 6,
+        N_REPLY_CYCLES_g    => 6,
+        SLAVE0_ADDR_MATCH_g => "11111111--------"
+    )
+    port map (
+        i_clk          => i_clk,
+        i_reset_n      => i_reset_n,
         
+        i_master_addr  => addr,
+        i_master_re    => re,
+        o_master_rdata => rdata,
+        i_master_we    => we,
+        i_master_wdata => wdata,
+
+        o_slave0_addr  => o_reg_addr,
+        o_slave0_re    => o_reg_re,
+        i_slave0_rdata => i_reg_rdata,
+        o_slave0_we    => o_reg_we,
+        o_slave0_wdata => o_reg_wdata,
+
+        o_slave1_addr  => iram_addr,
+        o_slave1_re    => open,
+        i_slave1_rdata => iram_rdata,
+        o_slave1_we    => iram_we,
+        o_slave1_wdata => iram_wdata
+    );
+
     --1: nios avm needs to wait when: 
             -- sc_rx wants to read something right now (*)
             -- sc_rx wants to write something right now
@@ -203,7 +193,11 @@ begin
             -- and next time we can reply and allow next rw reply with buffer word instead of internal_ram_return_queue/i_reg_rdata to nios
 
             -- OR:
-            -- export read_data_valid from avm
+            -- export read_data_valid from avm and find out how to do
+                --2: sign that the read data is here and should be read now
+                -- but not 1: permission to send the next read/write
+            -- in av protocol (this is possible ...)
+
 
     -- internal RAM
     e_iram : entity work.ram_1r1w
@@ -221,5 +215,5 @@ begin
         i_we => iram_we,
         i_wclk => i_clk--,
     );
-
+    
 end architecture;

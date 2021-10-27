@@ -69,7 +69,7 @@ begin
         i_avs_writedata         => av_sc_writedata,
         o_avs_waitrequest       => av_sc_waitrequest,
 
-        o_reg_addr              => sc_reg.addr(7 downto 0),
+        o_reg_addr              => sc_reg.addr(15 downto 0),
         o_reg_re                => sc_reg.re,
         i_reg_rdata             => sc_reg.rdata,
         o_reg_we                => sc_reg.we,
@@ -83,29 +83,29 @@ begin
     generic map(
         ADD_SLAVE0_DELAY_g  => 4,
         ADD_SLAVE1_DELAY_g  => 4,
-        N_REPLY_CYCLES_g    => 2,
-        SLAVE0_ADDR_MATCH_g => "00------"
+        N_REPLY_CYCLES_g    => 4,
+        SLAVE0_ADDR_MATCH_g => "--------00------"
     )
     port map(
         i_clk           => clk,
         i_reset_n       => reset_n,
 
         -- to upper SC nodes 0x00-0xFF
-        i_master_addr   => sc_reg.addr(7 downto 0),
+        i_master_addr   => sc_reg.addr(15 downto 0),
         i_master_re     => sc_reg.re,
         o_master_rdata  => sc_reg.rdata,
         i_master_we     => sc_reg.we,
         i_master_wdata  => sc_reg.wdata,
 
         -- to feb common regs 0x00-0x3F
-        o_slave0_addr   => fe_reg.addr(7 downto 0),
+        o_slave0_addr   => fe_reg.addr(15 downto 0),
         o_slave0_re     => fe_reg.re,
         i_slave0_rdata  => fe_reg.rdata,
         o_slave0_we     => fe_reg.we,
         o_slave0_wdata  => fe_reg.wdata,
 
         -- to subdetector regs 0x40-0xFF
-        o_slave1_addr   => subdet_reg.addr(7 downto 0),
+        o_slave1_addr   => subdet_reg.addr(15 downto 0),
         o_slave1_re     => subdet_reg.re,
         i_slave1_rdata  => subdet_reg.rdata,
         o_slave1_we     => subdet_reg.we,
