@@ -12,7 +12,7 @@ use work.mudaq.all;
 entity sc_ram_new is
 generic (
     RAM_ADDR_WIDTH_g : positive := 16;
-    READ_DELAY_g     : positive := 6--;
+    READ_DELAY_g     : positive := 4--;
 );
 port (
     -- RAM port (slave of sx_rx)
@@ -146,8 +146,8 @@ begin
 
     lvl0_sc_node: entity work.sc_node
     generic map (
-        ADD_SLAVE1_DELAY_g  => 6,
-        N_REPLY_CYCLES_g    => 6,
+        ADD_SLAVE1_DELAY_g  => 1,
+        N_REPLY_CYCLES_g    => 5,
         SLAVE0_ADDR_MATCH_g => "11111111--------"
     )
     port map (

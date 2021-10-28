@@ -2,7 +2,9 @@ onerror {resume}
 quietly WaveActivateNextPane {} 0
 add wave -noupdate -group tb_top /tb_sc_new/*
 add wave -noupdate -group sc_ram /tb_sc_new/e_sc_ram/*
-add wave -noupdate -group sc_node /tb_sc_new/e_sc_node/*
+add wave -noupdate -group sc_node_lvl0 /tb_sc_new/e_sc_ram/lvl0_sc_node/*
+add wave -noupdate -group sc_node_lvl1 /tb_sc_new/e_sc_node/*
+add wave -noupdate -group reg_mapping /tb_sc_new/e_reg_mapping/*
 
 TreeUpdate [SetDefaultTree]
 WaveRestoreCursors {{Cursor 1} {4127596 ps} 0}

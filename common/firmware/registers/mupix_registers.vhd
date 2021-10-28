@@ -5,7 +5,7 @@
 -- bit range     , use naming scheme:       ***_RANGE
 -- single bit constant, use naming scheme:  ***_BIT
 
--- REGISTERS above 60: datapath
+-- REGISTERS above 80: datapath
 
 -- M.Mueller, November 2020
 
@@ -15,7 +15,7 @@ use ieee.std_logic_1164.all;
 package mupix_registers is
 
 --(x"60") --(start of the mp_datapath addr-space, 0x40-MUPIX_DATAPATH_ADDR_START is mp_ctrl )
-constant MUPIX_DATAPATH_ADDR_START          : integer := 96;
+constant MUPIX_DATAPATH_ADDR_START          : integer := 128;
 constant MUPIX_LVDS_STATUS_BLOCK_LENGTH     : integer := 36;
 --////////////////////////////////////////////--
 --//////////////////REGISTER MAP//////////////--
@@ -59,7 +59,7 @@ constant MUPIX_LVDS_STATUS_BLOCK_LENGTH     : integer := 36;
 ---- mupix datapath ---------------------------------------------
 -----------------------------------------------------------------
 
-    constant MP_READOUT_MODE_REGISTER_W         :  integer := 16#60#;
+    constant MP_READOUT_MODE_REGISTER_W         :  integer := 16#80#;
         -- if set: TS is inverted
         constant INVERT_TS_BIT                  :  integer := 0;
         -- if set: TS2 is inverted
@@ -74,11 +74,11 @@ constant MUPIX_LVDS_STATUS_BLOCK_LENGTH     : integer := 36;
         -- bits to select different TOT calculation modes
         -- Default is to send TS2 as TOT
         subtype  TOT_MODE_RANGE                 is integer range 8 downto 6;
-    constant MP_LVDS_LINK_MASK_REGISTER_W       :  integer := 16#61#;
-    constant MP_LVDS_LINK_MASK2_REGISTER_W      :  integer := 16#62#;
-    constant MP_LVDS_DATA_VALID_REGISTER_R      :  integer := 16#63#;
-    constant MP_LVDS_DATA_VALID2_REGISTER_R     :  integer := 16#64#;
-    constant MP_DATA_GEN_CONTROL_REGISTER_W     :  integer := 16#65#;
+    constant MP_LVDS_LINK_MASK_REGISTER_W       :  integer := 16#81#;
+    constant MP_LVDS_LINK_MASK2_REGISTER_W      :  integer := 16#82#;
+    constant MP_LVDS_DATA_VALID_REGISTER_R      :  integer := 16#83#;
+    constant MP_LVDS_DATA_VALID2_REGISTER_R     :  integer := 16#84#;
+    constant MP_DATA_GEN_CONTROL_REGISTER_W     :  integer := 16#85#;
         -- hit output probability is 1/(2^(MP_DATA_GEN_HIT_P_RANGE+1)) for each cycle where a hit could be send
         -- (in 125 MHz minus protocol overhead sorter -> merger)
         subtype  MP_DATA_GEN_HIT_P_RANGE        is integer range 3 downto 0;
@@ -93,30 +93,30 @@ constant MUPIX_LVDS_STATUS_BLOCK_LENGTH     : integer := 36;
         -- if set: enable hit generation (set MP_DATA_GEN_ENGAGE_BIT to actually replace sorter output with these hits)
         constant MP_DATA_GEN_ENABLE_BIT         :  integer := 31;
     -- start of lvds status register block, 1 Word for each chip
-    constant MP_LVDS_STATUS_START_REGISTER_W    :  integer := 16#66#;
+    constant MP_LVDS_STATUS_START_REGISTER_W    :  integer := 16#86#;
         subtype  MP_LVDS_STATUS_DISP_ERR_RANGE  is integer range 27 downto 0;
         constant MP_LVDS_STATUS_PLL_LOCKED_BIT  :  integer := 28;
         subtype  MP_LVDS_STATUS_STATE_RANGE     is integer range 30 downto 29;
         constant MP_LVDS_STATUS_READY_BIT       :  integer := 31;
-    constant MP_LVDS_INVERT_REGISTER_W          :  integer := 16#90#;
-    constant MP_SORTER_DELAY_REGISTER_W         :  integer := 16#91#;
+    constant MP_LVDS_INVERT_REGISTER_W          :  integer := 16#B0#;
+    constant MP_SORTER_DELAY_REGISTER_W         :  integer := 16#B1#;
     -- 40 counters
-    constant MP_SORTER_COUNTER_REGISTER_R       :  integer := 16#92#;
-    constant MP_DATA_BYPASS_SELECT_REGISTER_W   :  integer := 16#BB#;
-    constant MP_TS_HISTO_SELECT_REGISTER_W      :  integer := 16#BC#;
+    constant MP_SORTER_COUNTER_REGISTER_R       :  integer := 16#B2#;
+    constant MP_DATA_BYPASS_SELECT_REGISTER_W   :  integer := 16#DB#;
+    constant MP_TS_HISTO_SELECT_REGISTER_W      :  integer := 16#DC#;
         subtype  MP_TS_HISTO_LINK_SELECT_RANGE  is integer range 15 downto 0;
         subtype  MP_TS_HISTO_N_SAMPLE_RANGE     is integer range 31 downto 16;
-    constant MP_LAST_SORTER_HIT_REGISTER_R      :  integer := 16#BD#;
-    constant MP_SORTER_INJECT_REGISTER_W        :  integer := 16#BE#;
+    constant MP_LAST_SORTER_HIT_REGISTER_R      :  integer := 16#DD#;
+    constant MP_SORTER_INJECT_REGISTER_W        :  integer := 16#DE#;
         -- select the input of the sorter to inject to
         subtype MP_SORTER_INJECT_SELECT_RANGE   is integer range 7 downto 4;
         -- rising edge on this bit will trigger a single inject of the word MP_SORTER_INJECT_REGISTER_W at sorter input MP_SORTER_INJECT_REGISTER_W(MP_SORTER_INJECT_SELECT_RANGE)
         constant MP_SORTER_INJECT_ENABLE_BIT    :  integer := 8;
-    constant MP_HIT_ENA_CNT_REGISTER_R          :  integer := 16#BF#;
-    constant MP_HIT_ENA_CNT_SELECT_REGISTER_W   :  integer := 16#C0#;
-    constant MP_HIT_ENA_CNT_SORTER_IN_REGISTER_R :  integer := 16#C1#;
-    constant MP_HIT_ENA_CNT_SORTER_SELECT_REGISTER_W :  integer := 16#C2#;
-    constant MP_HIT_ENA_CNT_SORTER_OUT_REGISTER_R : integer := 16#C3#;
-    constant MP_RESET_LVDS_N_REGISTER_W         :  integer := 16#C4#;
+    constant MP_HIT_ENA_CNT_REGISTER_R          :  integer := 16#DF#;
+    constant MP_HIT_ENA_CNT_SELECT_REGISTER_W   :  integer := 16#E0#;
+    constant MP_HIT_ENA_CNT_SORTER_IN_REGISTER_R :  integer := 16#E1#;
+    constant MP_HIT_ENA_CNT_SORTER_SELECT_REGISTER_W :  integer := 16#E2#;
+    constant MP_HIT_ENA_CNT_SORTER_OUT_REGISTER_R : integer := 16#E3#;
+    constant MP_RESET_LVDS_N_REGISTER_W         :  integer := 16#E4#;
 
 end package mupix_registers;

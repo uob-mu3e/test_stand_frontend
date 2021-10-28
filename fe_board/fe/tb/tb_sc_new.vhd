@@ -14,10 +14,12 @@ signal datak_in     : std_logic_vector( 3 downto 0) := (others => '0');
 signal data_out     : std_logic_vector(35 downto 0) := (others => '0');
 signal data_out_we  : std_logic := '0';
 
-signal sc_ram       : work.util.rw_t;
-signal fe_reg       : work.util.rw_t;
-signal sc_reg       : work.util.rw_t;
-signal subdet_reg   : work.util.rw_t;
+signal sc_ram           : work.util.rw_t;
+signal fe_reg           : work.util.rw_t;
+signal sc_reg           : work.util.rw_t;
+signal subdet_reg       : work.util.rw_t;
+signal mp_ctrl_reg      : work.util.rw_t;
+signal mp_datapath_reg  : work.util.rw_t;
 
 signal av_sc_address    : std_logic_vector(15 downto 0) := (others => '0');
 signal av_sc_read       : std_logic := '0';
@@ -29,7 +31,7 @@ signal av_sc_waitrequest: std_logic := '0';
 begin
 
     clk     <= not clk after (500 ns / 50);
-    reset_n <= '0', '1' after 32 ns;
+    reset_n <= '0', '1' after 30 ns;
 
     e_sc_rx : entity work.sc_rx
     port map (
@@ -81,9 +83,9 @@ begin
 
     e_sc_node: entity work.sc_node
     generic map(
-        ADD_SLAVE0_DELAY_g  => 4,
-        ADD_SLAVE1_DELAY_g  => 4,
-        N_REPLY_CYCLES_g    => 4,
+        --ADD_SLAVE0_DELAY_g  => 4,
+        --ADD_SLAVE1_DELAY_g  => 4,
+        --N_REPLY_CYCLES_g    => 4,
         SLAVE0_ADDR_MATCH_g => "--------00------"
     )
     port map(
@@ -110,6 +112,36 @@ begin
         i_slave1_rdata  => subdet_reg.rdata,
         o_slave1_we     => subdet_reg.we,
         o_slave1_wdata  => subdet_reg.wdata
+    );
+
+    sc_node_mupix: entity work.sc_node
+    generic map (
+        ADD_SLAVE0_DELAY_g  => 1,
+        ADD_SLAVE1_DELAY_g  => 1,
+        N_REPLY_CYCLES_g    => 2,
+        SLAVE0_ADDR_MATCH_g => "--------1-------"
+    )   
+    port map (
+        i_clk          => clk,
+        i_reset_n      => reset_n,
+
+        i_master_addr  => subdet_reg.addr(15 downto 0),
+        i_master_re    => subdet_reg.re,
+        o_master_rdata => subdet_reg.rdata,
+        i_master_we    => subdet_reg.we,
+        i_master_wdata => subdet_reg.wdata,
+
+        o_slave0_addr  => mp_datapath_reg.addr(15 downto 0),
+        o_slave0_re    => mp_datapath_reg.re,
+        i_slave0_rdata => mp_datapath_reg.rdata,
+        o_slave0_we    => mp_datapath_reg.we,
+        o_slave0_wdata => mp_datapath_reg.wdata,
+
+        o_slave1_addr  => mp_ctrl_reg.addr(15 downto 0),
+        o_slave1_re    => mp_ctrl_reg.re,
+        i_slave1_rdata => mp_ctrl_reg.rdata,
+        o_slave1_we    => mp_ctrl_reg.we,
+        o_slave1_wdata => mp_ctrl_reg.wdata
     );
 
     e_reg_mapping : entity work.feb_reg_mapping
@@ -141,6 +173,30 @@ begin
         
         i_si45_intr_n               => (others => '0'),
         i_si45_lol_n                => (others => '0')--,
+    );
+
+    e_reg_mapping_mupix_ctrl: entity work.mupix_ctrl_reg_mapping
+      port map (
+        i_clk156                   => clk,
+        i_reset_n                  => reset_n,
+        i_reg_add                  => mp_ctrl_reg.addr(7 downto 0),
+        i_reg_re                   => mp_ctrl_reg.re,
+        o_reg_rdata                => mp_ctrl_reg.rdata,
+        i_reg_we                   => mp_ctrl_reg.we,
+        i_reg_wdata                => mp_ctrl_reg.wdata,
+        i_mp_spi_busy              => '0'
+    );
+
+    mupix_datapath_reg_mapping_inst: entity work.mupix_datapath_reg_mapping
+      port map (
+        i_clk156                    => clk,
+        i_clk125                    => clk,
+        i_reset_n                   => reset_n,
+        i_reg_add                   => mp_datapath_reg.addr(7 downto 0),
+        i_reg_re                    => mp_datapath_reg.re,
+        o_reg_rdata                 => mp_datapath_reg.rdata,
+        i_reg_we                    => mp_datapath_reg.we,
+        i_reg_wdata                 => mp_datapath_reg.wdata
     );
 
     process
