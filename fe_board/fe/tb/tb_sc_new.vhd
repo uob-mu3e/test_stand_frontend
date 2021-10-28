@@ -83,9 +83,9 @@ begin
 
     e_sc_node: entity work.sc_node
     generic map(
-        --ADD_SLAVE0_DELAY_g  => 4,
+        ADD_SLAVE0_DELAY_g  => 3,
         --ADD_SLAVE1_DELAY_g  => 4,
-        --N_REPLY_CYCLES_g    => 4,
+        N_REPLY_CYCLES_g    => 4,
         SLAVE0_ADDR_MATCH_g => "--------00------"
     )
     port map(
@@ -184,7 +184,7 @@ begin
         o_reg_rdata                => mp_ctrl_reg.rdata,
         i_reg_we                   => mp_ctrl_reg.we,
         i_reg_wdata                => mp_ctrl_reg.wdata,
-        i_mp_spi_busy              => '0'
+        i_mp_spi_busy              => '1'
     );
 
     mupix_datapath_reg_mapping_inst: entity work.mupix_datapath_reg_mapping

@@ -12,7 +12,7 @@ use work.mudaq.all;
 entity sc_ram_new is
 generic (
     RAM_ADDR_WIDTH_g : positive := 16;
-    READ_DELAY_g     : positive := 4--;
+    READ_DELAY_g     : positive := 7--;
 );
 port (
     -- RAM port (slave of sx_rx)
@@ -53,8 +53,6 @@ architecture arch of sc_ram_new is
 
     signal read_delay_shift_reg         : std_logic_vector(READ_DELAY_g downto 0) := (others => '0');
     signal read_delay_shift_reg_type    : std_logic_vector(READ_DELAY_g downto 0) := (others => '0'); -- 0: Arria, 1: Nios
-
-    signal internal_ram_return_queue    : reg32array(READ_DELAY_g downto 0);
 
     signal avs_waitrequest : std_logic;
     signal avs_cmd_buf     : std_logic := '0';
@@ -119,16 +117,12 @@ begin
             o_ram_rvalid    <= '0';
             avs_cmd_buf     <= i_avs_read or i_avs_write;
 
-            -- delay internal ram by the same amount of cycles as the sc regs
-            -- (avoids collisions between read response from internal ram and sc reg)
-            internal_ram_return_queue <= internal_ram_return_queue(READ_DELAY_g-1 downto 0) & iram_rdata;
-
             if(read_delay_shift_reg(READ_DELAY_g) = '1') then
                 if(read_delay_shift_reg_type(READ_DELAY_g) = '0') then --respond to Arria10
                     o_ram_rvalid    <= '1';
-                    o_ram_rdata     <= i_reg_rdata;
+                    o_ram_rdata     <= rdata;
                 else -- respond to nios
-                    o_avs_readdata  <= i_reg_rdata;
+                    o_avs_readdata  <= rdata;
                     -- TODO: search for correct avm_waitrequest timing
                 end if;
             end if;
@@ -146,8 +140,9 @@ begin
 
     lvl0_sc_node: entity work.sc_node
     generic map (
-        ADD_SLAVE1_DELAY_g  => 1,
-        N_REPLY_CYCLES_g    => 5,
+        ADD_SLAVE0_DELAY_g  => 1,
+        ADD_SLAVE1_DELAY_g  => 5,
+        N_REPLY_CYCLES_g    => 6,
         SLAVE0_ADDR_MATCH_g => "11111111--------"
     )
     port map (
