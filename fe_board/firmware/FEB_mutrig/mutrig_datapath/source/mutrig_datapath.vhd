@@ -148,8 +148,8 @@ signal s_receivers_synclosscounter : t_array_32b;
 signal s_SC_reset_counters_125_n : std_logic;
 
 -- lapse counter signals
-signal CC_corrected_A : std_logic_vector(N_CC downto 0);
-signal CC_corrected_B : std_logic_vector(N_CC downto 0);
+signal CC_corrected_A : std_logic_vector(N_CC - 1 downto 0);
+signal CC_corrected_B : std_logic_vector(N_CC - 1 downto 0);
 
 begin
 
@@ -466,13 +466,13 @@ u_decoder : entity work.prbs_decoder
 -- generate lapse counter A
 e_lapse_counter_A : entity work.lapse_counter
 generic map ( N_CC => N_CC )
-port map ( i_clk => i_ts_clk, i_reset_n => not i_ts_rst, i_CC => unsigned(s_A_buf_data(20 downto 6)), 
+port map ( i_clk => i_ts_clk, i_reset_n => not i_ts_rst, i_CC => s_A_buf_data(20 downto 6),
     i_en => i_en_lapse_counter, i_upper_bnd => i_upper_bnd, o_CC => CC_corrected_A, o_cnt => open );
 
 -- generate lapse counter B
 e_lapse_counter_B : entity work.lapse_counter
 generic map ( N_CC => N_CC )
-port map ( i_clk => i_ts_clk, i_reset_n => not i_ts_rst, i_CC => unsigned(s_B_buf_data(20 downto 6)),
+port map ( i_clk => i_ts_clk, i_reset_n => not i_ts_rst, i_CC => s_B_buf_data(20 downto 6),
     i_en => i_en_lapse_counter, i_upper_bnd => i_upper_bnd, o_CC => CC_corrected_B, o_cnt => open );
 
 --to common fifo buffer:
