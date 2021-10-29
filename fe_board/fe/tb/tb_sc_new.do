@@ -113,7 +113,22 @@ run 20ns
 force -freeze /tb_sc_new/data_in x"000000BC"
 run 300ns
 
--- mixing nios read with sc read
+-- read req from nios to feb common registers
+force -freeze /tb_sc_new/av_sc_address x"0000ff25"
+force -freeze /tb_sc_new/av_sc_read '1'
+run 200ns
+force -freeze /tb_sc_new/av_sc_read '0'
+run 200ns
+
+-- write req from nios to feb common registers
+force -freeze /tb_sc_new/av_sc_address x"0000ff25"
+force -freeze /tb_sc_new/av_sc_writedata x"C0FFEE00"
+force -freeze /tb_sc_new/av_sc_write '1'
+run 60ns
+force -freeze /tb_sc_new/av_sc_write '0'
+run 200ns
+
+-- send nios read into sc read
 force -freeze /tb_sc_new/data_in x"1C0000BC"
 run 20ns
 force -freeze /tb_sc_new/data_in x"0000ff25"
@@ -125,22 +140,29 @@ force -freeze /tb_sc_new/data_in x"0000009C"
 force -freeze /tb_sc_new/datak_in x"1"
 run 20ns
 force -freeze /tb_sc_new/data_in x"000000BC"
-run 300ns
-force -freeze /tb_sc_new/av_sc_address x"0000ff25"
+run 180ns
+force -freeze /tb_sc_new/av_sc_address x"0000ff26"
 force -freeze /tb_sc_new/av_sc_read '1'
+run 340ns
+force -freeze /tb_sc_new/av_sc_read '0'
 run 1000ns
 
--- throwing a sc read into an ongoing long nios read
+-- send sc read into nios read
+force -freeze /tb_sc_new/av_sc_address x"0000ff25"
+force -freeze /tb_sc_new/av_sc_read '1'
+run 20ns
 force -freeze /tb_sc_new/data_in x"1C0000BC"
 run 20ns
-force -freeze /tb_sc_new/data_in x"0000ff26"
+force -freeze /tb_sc_new/data_in x"0000ff25"
 force -freeze /tb_sc_new/datak_in x"0"
 run 20ns
-force -freeze /tb_sc_new/data_in x"00000001"
+force -freeze /tb_sc_new/data_in x"00000020"
 run 20ns
 force -freeze /tb_sc_new/data_in x"0000009C"
 force -freeze /tb_sc_new/datak_in x"1"
 run 20ns
 force -freeze /tb_sc_new/data_in x"000000BC"
-run 1000ns
+run 60ns
+force -freeze /tb_sc_new/av_sc_read '0'
+run 2000ns
 WaveRestoreZoom 0ns 10000ns

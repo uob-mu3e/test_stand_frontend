@@ -114,7 +114,6 @@ begin
                 addr                            <= i_avs_address;
                 avs_read_send                   <= '1'; -- nios will keep i_avs_read high until waitreq is deasserted, but we only want 1 read
             elsif(i_avs_write='1' and avs_write_send='0') then -- write from nios
-                read_delay_shift_reg_type(0)    <= '1';
                 we                              <= '1';
                 wdata                           <= i_avs_writedata;
                 addr                            <= i_avs_address;
@@ -149,6 +148,17 @@ begin
         end if;
     end process;
 
+    o_avs_waitrequest <= avs_waitrequest;
+    avs_waitrequest <=
+        '1' when ( i_ram_re = '1' -- we don't have this cycle for the nios --(TODO: check if we can do (i_ram_re='1' and not read_delay_shift_reg_type(READ_DELAY_g) = '1') safely here)
+                or i_ram_we = '1' -- same
+                or re       = '1' -- at end of sc read reply & we have this cycle --> send nios req into pipeline but skip over this cycle with waitreq (or_reduce(...) will apply next cycle)
+                or we       = '1' -- probably not needed, TODO: Simulate
+                or (or_reduce(read_delay_shift_reg_type(READ_DELAY_g downto 0)) = '1') -- nios request in pipeline, waiting for reply
+                or (avs_cmd_buf = '0' and (i_avs_read = '1' or i_avs_write = '1')) -- https://www.intel.com/content/dam/www/programmable/us/en/pdfs/literature/manual/mnl_avalon_spec.pdf
+                or (avs_cmd_buf = '1' and avs_cmd_buf2 = '0')) -- because i dont end up in read_delay_shift_reg_type quick enough
+            else '0';
+
     lvl0_sc_node: entity work.sc_node
     generic map (
         ADD_SLAVE0_DELAY_g  => 1,
@@ -178,35 +188,6 @@ begin
         o_slave1_we    => iram_we,
         o_slave1_wdata => iram_wdata
     );
-
-    o_avs_waitrequest <= avs_waitrequest;
-    avs_waitrequest <=
-        '1' when ( i_ram_re = '1' 
-                or i_ram_we = '1' 
-                or (or_reduce(read_delay_shift_reg_type(READ_DELAY_g downto 0)) = '1')
-                or (avs_cmd_buf = '0' and (i_avs_read = '1' or i_avs_write = '1'))
-                or (avs_cmd_buf = '1' and avs_cmd_buf2 = '0'))
-            else '0';
-
-    -- the tricky bit about this:
-    -- avs waitrequest does two things
-        --1: allow nios to send the next read/write and 
-        --2: sign that the read data is here and should be read now
-    -- in some cases you might want to do "2" but not "1"
-
-
-    -- @ future me if this does not work
-        -- when read_delay_shift_reg_type(READ_DELAY_g) = '1' and (re or we) (reply for nios arrives but we cannot allow next rw from nios right now)
-        -- then buffer_word <= rdata
-        -- and next time we can reply and allow next rw reply with buffer word instead of rdata to nios
-
-        -- OR:
-        -- export read_data_valid from avm and find out how to do
-            --2: sign that the read data is here and should be read now
-            -- but not 1: permission to send the next read/write
-        -- in av protocol (this is possible ...)
-        -- https://www.intel.com/content/dam/www/programmable/us/en/pdfs/literature/manual/mnl_avalon_spec.pdf
-
 
     -- internal RAM  -- TODO: remove from common and move it into scifi block / reduce size by a lot (check scifi) / reduce size only for mupix FEB , etc. ?
                      -- this is 1/12 of the hitsorter mem doing nothing in the mupix FEB
