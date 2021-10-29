@@ -51,11 +51,15 @@ architecture arch of sc_ram_new is
     signal iram_rdata   : std_logic_vector(31 downto 0); 
     signal iram_wdata   : std_logic_vector(31 downto 0);
 
-    signal read_delay_shift_reg         : std_logic_vector(READ_DELAY_g downto 0) := (others => '0');
-    signal read_delay_shift_reg_type    : std_logic_vector(READ_DELAY_g downto 0) := (others => '0'); -- 0: Arria, 1: Nios
+    signal read_delay_shift_reg         : std_logic_vector(READ_DELAY_g   downto 0) := (others => '0');
+    signal read_delay_shift_reg_type    : std_logic_vector(READ_DELAY_g+1 downto 0) := (others => '0'); -- 0: Arria, 1: Nios
+    signal avs_waitrequest_prev         : std_logic := '0';
 
     signal avs_waitrequest : std_logic;
     signal avs_cmd_buf     : std_logic := '0';
+    signal avs_cmd_buf2    : std_logic := '0';
+    signal avs_read_send   : std_logic := '0';
+    signal avs_write_send  : std_logic := '0';
 
     -- signals to lvl0 sc_node
     signal addr          : std_logic_vector(15 downto 0) := (others => '0');
@@ -70,18 +74,30 @@ begin
     process(i_clk, i_reset_n)
     begin
         if ( i_reset_n = '0' ) then
-            re              <= '0';
-            we              <= '0';
+            re                          <= '0';
+            we                          <= '0';
             read_delay_shift_reg        <= (others => '0');
             read_delay_shift_reg_type   <= (others => '0');
+            avs_read_send               <= '0';
+            avs_write_send              <= '0';
+            avs_waitrequest_prev        <= '0';
 
         elsif rising_edge(i_clk) then
-            -- defaults
             we     <= '0';
             re     <= '0';
 
             read_delay_shift_reg        <= read_delay_shift_reg(READ_DELAY_g-1 downto 0) & '0';
-            read_delay_shift_reg_type   <= read_delay_shift_reg_type(READ_DELAY_g-1 downto 0) & '0';
+            read_delay_shift_reg_type   <= read_delay_shift_reg_type(READ_DELAY_g downto 0) & '0'; -- 0: sc_rx, 1: Nios
+            avs_waitrequest_prev        <= avs_waitrequest;
+
+
+            if(read_delay_shift_reg_type(READ_DELAY_g+1)='1') then -- reset avs_read_send whenever we respond to nios
+                avs_read_send                   <= '0';
+            end if;
+
+            if(avs_waitrequest_prev = '0') then -- difference to avs_read_send is that we do not need to wait for the reply here
+                avs_write_send                  <= '0';
+            end if;
 
             if(i_ram_we='1') then -- write from Arria10
                 we      <= '1';
@@ -91,15 +107,18 @@ begin
                 read_delay_shift_reg(0) <= '1';
                 re      <= '1';
                 addr    <= i_ram_addr;
-            elsif(i_avs_write='1') then -- write from nios
-                we      <= '1';
-                wdata   <= i_avs_writedata;
-                addr    <= i_avs_address;
-            elsif(i_avs_read='1') then -- read from nios
+            elsif(i_avs_read='1' and avs_read_send='0') then -- read from nios
                 read_delay_shift_reg(0)         <= '1';
                 read_delay_shift_reg_type(0)    <= '1';
-                re      <= '1';
-                addr    <= i_avs_address;
+                re                              <= '1';
+                addr                            <= i_avs_address;
+                avs_read_send                   <= '1'; -- nios will keep i_avs_read high until waitreq is deasserted, but we only want 1 read
+            elsif(i_avs_write='1' and avs_write_send='0') then -- write from nios
+                read_delay_shift_reg_type(0)    <= '1';
+                we                              <= '1';
+                wdata                           <= i_avs_writedata;
+                addr                            <= i_avs_address;
+                avs_write_send                  <= '1';
             end if;
         end if;
     end process;
@@ -110,12 +129,14 @@ begin
     begin
         if ( i_reset_n = '0' ) then
             avs_cmd_buf     <= '0';
+            avs_cmd_buf2    <= '0';
             o_avs_readdata  <= (others => '0');
 
         elsif rising_edge(i_clk) then
             -- defaults
             o_ram_rvalid    <= '0';
             avs_cmd_buf     <= i_avs_read or i_avs_write;
+            avs_cmd_buf2    <= avs_cmd_buf;
 
             if(read_delay_shift_reg(READ_DELAY_g) = '1') then
                 if(read_delay_shift_reg_type(READ_DELAY_g) = '0') then --respond to Arria10
@@ -123,20 +144,10 @@ begin
                     o_ram_rdata     <= rdata;
                 else -- respond to nios
                     o_avs_readdata  <= rdata;
-                    -- TODO: search for correct avm_waitrequest timing
                 end if;
             end if;
         end if;
     end process;
-
-    o_avs_waitrequest <= avs_waitrequest;
-    avs_waitrequest <=
-        '1' when ( i_ram_re = '1' 
-                or i_ram_we = '1' 
-                or (or_reduce(read_delay_shift_reg_type) = '1' and read_delay_shift_reg_type(READ_DELAY_g) = '0')
-                or (avs_cmd_buf = '0' and (i_avs_read = '1' or i_avs_write = '1')))
-            else '0';
-
 
     lvl0_sc_node: entity work.sc_node
     generic map (
@@ -168,33 +179,37 @@ begin
         o_slave1_wdata => iram_wdata
     );
 
-    --1: nios avm needs to wait when: 
-            -- sc_rx wants to read something right now (*)
-            -- sc_rx wants to write something right now
-            -- there is a read of the nios in the queue (or_reduce(...)), but it has not arrived yet (it is not at position READ_DELAY_g)
-            -- nios wants to put something into the queue now (rising edge on i_avs_read or i_avs_write)
-            
-            -- (*): -- TODO: this is not save, we might lose a valid word in internal_ram_return_queue(READ_DELAY_g) here ... do something about it
-            --      -- can we do something about it ? 
-            --      -- avm waitrequest does two things:
-                        --1: permission to send the next read/write and 
-                        --2: sign that the read data is here and should be read now
-            --      -- but here we need something that does only 2.
-            --      -- buffer avm read return in this case ? .. it should just be max. one word
-            --
-            -- somthing like 
-            -- when read_delay_shift_reg_type(READ_DELAY_g) = '1' and i_ram_re or we = '1' (reply for nios arrives but we cannot allow next rw from nios right now)
-            -- then buffer_word <= internal_ram_return_queue / i_reg_rdata
-            -- and next time we can reply and allow next rw reply with buffer word instead of internal_ram_return_queue/i_reg_rdata to nios
+    o_avs_waitrequest <= avs_waitrequest;
+    avs_waitrequest <=
+        '1' when ( i_ram_re = '1' 
+                or i_ram_we = '1' 
+                or (or_reduce(read_delay_shift_reg_type(READ_DELAY_g downto 0)) = '1')
+                or (avs_cmd_buf = '0' and (i_avs_read = '1' or i_avs_write = '1'))
+                or (avs_cmd_buf = '1' and avs_cmd_buf2 = '0'))
+            else '0';
 
-            -- OR:
-            -- export read_data_valid from avm and find out how to do
-                --2: sign that the read data is here and should be read now
-                -- but not 1: permission to send the next read/write
-            -- in av protocol (this is possible ...)
+    -- the tricky bit about this:
+    -- avs waitrequest does two things
+        --1: allow nios to send the next read/write and 
+        --2: sign that the read data is here and should be read now
+    -- in some cases you might want to do "2" but not "1"
 
 
-    -- internal RAM
+    -- @ future me if this does not work
+        -- when read_delay_shift_reg_type(READ_DELAY_g) = '1' and (re or we) (reply for nios arrives but we cannot allow next rw from nios right now)
+        -- then buffer_word <= rdata
+        -- and next time we can reply and allow next rw reply with buffer word instead of rdata to nios
+
+        -- OR:
+        -- export read_data_valid from avm and find out how to do
+            --2: sign that the read data is here and should be read now
+            -- but not 1: permission to send the next read/write
+        -- in av protocol (this is possible ...)
+        -- https://www.intel.com/content/dam/www/programmable/us/en/pdfs/literature/manual/mnl_avalon_spec.pdf
+
+
+    -- internal RAM  -- TODO: remove from common and move it into scifi block / reduce size by a lot (check scifi) / reduce size only for mupix FEB , etc. ?
+                     -- this is 1/12 of the hitsorter mem doing nothing in the mupix FEB
     e_iram : entity work.ram_1r1w
     generic map (
         g_DATA_WIDTH => 32,
