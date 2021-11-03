@@ -11,7 +11,7 @@ use work.mudaq.all;
 
 entity sc_ram_new is
 generic (
-    RAM_ADDR_WIDTH_g : positive := 16;
+    RAM_ADDR_WIDTH_g : positive := 14;
     READ_DELAY_g     : positive := 7--;
 );
 port (

@@ -64,7 +64,7 @@ begin
 
     return_queue_S01_switch(N_REPLY_CYCLES_g) <= slave1_re;
 
-    s0_return_queue(ADD_SLAVE0_DELAY_g) <= i_slave0_rdata; -- move delay to request part (delay re, we, addr)
+    s0_return_queue(ADD_SLAVE0_DELAY_g) <= i_slave0_rdata; -- moving the delay to the request part and only delay the 16 bit addr instead of the 32 bit rdata does not save registers since one also has to deal with writes & wdata in this case
     s1_return_queue(ADD_SLAVE1_DELAY_g) <= i_slave1_rdata;
 
     o_master_rdata           <= s1_return_queue(0) when return_queue_S01_switch(0)='1' else s0_return_queue(0);
