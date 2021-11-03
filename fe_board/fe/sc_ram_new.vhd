@@ -99,13 +99,13 @@ begin
                 avs_write_send                  <= '0';
             end if;
 
-            if(i_ram_we='1') then -- write from Arria10
-                we      <= '1';
-                wdata   <= i_ram_wdata;
-                addr    <= i_ram_addr;
-            elsif(i_ram_re='1') then -- read from Arria10
+            if(i_ram_re='1') then -- read from Arria10
                 read_delay_shift_reg(0) <= '1';
                 re      <= '1';
+                addr    <= i_ram_addr;
+            elsif(i_ram_we='1') then -- write from Arria10
+                we      <= '1';
+                wdata   <= i_ram_wdata;
                 addr    <= i_ram_addr;
             elsif(i_avs_read='1' and avs_read_send='0') then -- read from nios
                 read_delay_shift_reg(0)         <= '1';
@@ -113,7 +113,7 @@ begin
                 re                              <= '1';
                 addr                            <= i_avs_address;
                 avs_read_send                   <= '1'; -- nios will keep i_avs_read high until waitreq is deasserted, but we only want 1 read
-            elsif(i_avs_write='1' and avs_write_send='0') then -- write from nios
+            elsif(i_avs_write='1' and avs_write_sent='0') then -- write from nios
                 we                              <= '1';
                 wdata                           <= i_avs_writedata;
                 addr                            <= i_avs_address;
@@ -194,7 +194,7 @@ begin
     e_iram : entity work.ram_1r1w
     generic map (
         g_DATA_WIDTH => 32,
-        g_ADDR_WIDTH => RAM_ADDR_WIDTH_g--,
+        g_ADDR_WIDTH => RAM_ADDR_WIDTH_g--,  -- TODO: to 14 bit, lower for mupix, move to subdet. block
     )
     port map (
         i_raddr => iram_addr(RAM_ADDR_WIDTH_g-1 downto 0),

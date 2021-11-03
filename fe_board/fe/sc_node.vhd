@@ -12,6 +12,7 @@ use work.mudaq.all;
 
 entity sc_node is
 generic (
+    -- todo: generic how many slaves, max.4 ; (an 4 nichts anschliessen etc.)
     ADD_SLAVE0_DELAY_g      : positive := 1; -- Delay to introduce for i_slave0_rdata
     ADD_SLAVE1_DELAY_g      : positive := 1; -- Delay to introduce for i_slave1_rdata
     N_REPLY_CYCLES_g        : positive := 2; -- cycles between i_master_re and arrival of o_master_rdata
@@ -63,7 +64,7 @@ begin
 
     return_queue_S01_switch(N_REPLY_CYCLES_g) <= slave1_re;
 
-    s0_return_queue(ADD_SLAVE0_DELAY_g) <= i_slave0_rdata;
+    s0_return_queue(ADD_SLAVE0_DELAY_g) <= i_slave0_rdata; -- move delay to request part (delay re, we, addr)
     s1_return_queue(ADD_SLAVE1_DELAY_g) <= i_slave1_rdata;
 
     o_master_rdata           <= s1_return_queue(0) when return_queue_S01_switch(0)='1' else s0_return_queue(0);
