@@ -58,8 +58,8 @@ architecture arch of sc_ram_new is
     signal avs_waitrequest : std_logic;
     signal avs_cmd_buf     : std_logic := '0';
     signal avs_cmd_buf2    : std_logic := '0';
-    signal avs_read_send   : std_logic := '0';
-    signal avs_write_send  : std_logic := '0';
+    signal avs_read_sent   : std_logic := '0';
+    signal avs_write_sent  : std_logic := '0';
 
     -- signals to lvl0 sc_node
     signal addr          : std_logic_vector(15 downto 0) := (others => '0');
@@ -78,8 +78,8 @@ begin
             we                          <= '0';
             read_delay_shift_reg        <= (others => '0');
             read_delay_shift_reg_type   <= (others => '0');
-            avs_read_send               <= '0';
-            avs_write_send              <= '0';
+            avs_read_sent               <= '0';
+            avs_write_sent              <= '0';
             avs_waitrequest_prev        <= '0';
 
         elsif rising_edge(i_clk) then
@@ -91,12 +91,12 @@ begin
             avs_waitrequest_prev        <= avs_waitrequest;
 
 
-            if(read_delay_shift_reg_type(READ_DELAY_g+1)='1') then -- reset avs_read_send whenever we respond to nios
-                avs_read_send                   <= '0';
+            if(read_delay_shift_reg_type(READ_DELAY_g+1)='1') then -- reset avs_read_sent whenever we respond to nios
+                avs_read_sent                   <= '0';
             end if;
 
-            if(avs_waitrequest_prev = '0') then -- difference to avs_read_send is that we do not need to wait for the reply here
-                avs_write_send                  <= '0';
+            if(avs_waitrequest_prev = '0') then -- difference to avs_read_sent is that we do not need to wait for the reply here
+                avs_write_sent                  <= '0';
             end if;
 
             if(i_ram_re='1') then -- read from Arria10
@@ -107,17 +107,17 @@ begin
                 we      <= '1';
                 wdata   <= i_ram_wdata;
                 addr    <= i_ram_addr;
-            elsif(i_avs_read='1' and avs_read_send='0') then -- read from nios
+            elsif(i_avs_read='1' and avs_read_sent='0') then -- read from nios
                 read_delay_shift_reg(0)         <= '1';
                 read_delay_shift_reg_type(0)    <= '1';
                 re                              <= '1';
                 addr                            <= i_avs_address;
-                avs_read_send                   <= '1'; -- nios will keep i_avs_read high until waitreq is deasserted, but we only want 1 read
+                avs_read_sent                   <= '1'; -- nios will keep i_avs_read high until waitreq is deasserted, but we only want 1 read
             elsif(i_avs_write='1' and avs_write_sent='0') then -- write from nios
                 we                              <= '1';
                 wdata                           <= i_avs_writedata;
                 addr                            <= i_avs_address;
-                avs_write_send                  <= '1';
+                avs_write_sent                  <= '1';
             end if;
         end if;
     end process;
