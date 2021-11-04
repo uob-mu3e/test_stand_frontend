@@ -83,10 +83,9 @@ begin
 
     e_sc_node: entity work.sc_node
     generic map(
-        ADD_SLAVE0_DELAY_g  => 3,
-        --ADD_SLAVE1_DELAY_g  => 4,
+        ADD_SLAVE1_DELAY_g  => 3,
         N_REPLY_CYCLES_g    => 4,
-        SLAVE0_ADDR_MATCH_g => "--------00------"
+        SLAVE1_ADDR_MATCH_g => "--------00------"
     )
     port map(
         i_clk           => clk,
@@ -99,27 +98,24 @@ begin
         i_master_we     => sc_reg.we,
         i_master_wdata  => sc_reg.wdata,
 
-        -- to feb common regs 0x00-0x3F
-        o_slave0_addr   => fe_reg.addr(15 downto 0),
-        o_slave0_re     => fe_reg.re,
-        i_slave0_rdata  => fe_reg.rdata,
-        o_slave0_we     => fe_reg.we,
-        o_slave0_wdata  => fe_reg.wdata,
-
         -- to subdetector regs 0x40-0xFF
-        o_slave1_addr   => subdet_reg.addr(15 downto 0),
-        o_slave1_re     => subdet_reg.re,
-        i_slave1_rdata  => subdet_reg.rdata,
-        o_slave1_we     => subdet_reg.we,
-        o_slave1_wdata  => subdet_reg.wdata
+        o_slave0_addr   => subdet_reg.addr(15 downto 0),
+        o_slave0_re     => subdet_reg.re,
+        i_slave0_rdata  => subdet_reg.rdata,
+        o_slave0_we     => subdet_reg.we,
+        o_slave0_wdata  => subdet_reg.wdata,
+
+        -- to feb common regs 0x00-0x3F
+        o_slave1_addr   => fe_reg.addr(15 downto 0),
+        o_slave1_re     => fe_reg.re,
+        i_slave1_rdata  => fe_reg.rdata,
+        o_slave1_we     => fe_reg.we,
+        o_slave1_wdata  => fe_reg.wdata--,
     );
 
     sc_node_mupix: entity work.sc_node
     generic map (
-        ADD_SLAVE0_DELAY_g  => 1,
-        ADD_SLAVE1_DELAY_g  => 1,
-        N_REPLY_CYCLES_g    => 2,
-        SLAVE0_ADDR_MATCH_g => "--------1-------"
+        SLAVE1_ADDR_MATCH_g => "--------1-------"
     )   
     port map (
         i_clk          => clk,
@@ -131,17 +127,17 @@ begin
         i_master_we    => subdet_reg.we,
         i_master_wdata => subdet_reg.wdata,
 
-        o_slave0_addr  => mp_datapath_reg.addr(15 downto 0),
-        o_slave0_re    => mp_datapath_reg.re,
-        i_slave0_rdata => mp_datapath_reg.rdata,
-        o_slave0_we    => mp_datapath_reg.we,
-        o_slave0_wdata => mp_datapath_reg.wdata,
+        o_slave0_addr  => mp_ctrl_reg.addr(15 downto 0),
+        o_slave0_re    => mp_ctrl_reg.re,
+        i_slave0_rdata => mp_ctrl_reg.rdata,
+        o_slave0_we    => mp_ctrl_reg.we,
+        o_slave0_wdata => mp_ctrl_reg.wdata,
 
-        o_slave1_addr  => mp_ctrl_reg.addr(15 downto 0),
-        o_slave1_re    => mp_ctrl_reg.re,
-        i_slave1_rdata => mp_ctrl_reg.rdata,
-        o_slave1_we    => mp_ctrl_reg.we,
-        o_slave1_wdata => mp_ctrl_reg.wdata
+        o_slave1_addr  => mp_datapath_reg.addr(15 downto 0),
+        o_slave1_re    => mp_datapath_reg.re,
+        i_slave1_rdata => mp_datapath_reg.rdata,
+        o_slave1_we    => mp_datapath_reg.we,
+        o_slave1_wdata => mp_datapath_reg.wdata--,
     );
 
     e_reg_mapping : entity work.feb_reg_mapping

@@ -161,10 +161,9 @@ begin
 
     lvl0_sc_node: entity work.sc_node
     generic map (
-        ADD_SLAVE0_DELAY_g  => 1,
-        ADD_SLAVE1_DELAY_g  => 5,
+        ADD_SLAVE0_DELAY_g  => 5,
         N_REPLY_CYCLES_g    => 6,
-        SLAVE0_ADDR_MATCH_g => "11111111--------"
+        SLAVE1_ADDR_MATCH_g => "11111111--------"
     )
     port map (
         i_clk          => i_clk,
@@ -176,17 +175,17 @@ begin
         i_master_we    => we,
         i_master_wdata => wdata,
 
-        o_slave0_addr  => o_reg_addr,
-        o_slave0_re    => o_reg_re,
-        i_slave0_rdata => i_reg_rdata,
-        o_slave0_we    => o_reg_we,
-        o_slave0_wdata => o_reg_wdata,
+        o_slave0_addr  => iram_addr,
+        o_slave0_re    => open,
+        i_slave0_rdata => iram_rdata,
+        o_slave0_we    => iram_we,
+        o_slave0_wdata => iram_wdata,
 
-        o_slave1_addr  => iram_addr,
-        o_slave1_re    => open,
-        i_slave1_rdata => iram_rdata,
-        o_slave1_we    => iram_we,
-        o_slave1_wdata => iram_wdata
+        o_slave1_addr  => o_reg_addr,
+        o_slave1_re    => o_reg_re,
+        i_slave1_rdata => i_reg_rdata,
+        o_slave1_we    => o_reg_we,
+        o_slave1_wdata => o_reg_wdata--,
     );
 
     -- internal RAM  -- TODO: remove from common and move it into scifi block / reduce size by a lot (check scifi) / reduce size only for mupix FEB , etc. ?
