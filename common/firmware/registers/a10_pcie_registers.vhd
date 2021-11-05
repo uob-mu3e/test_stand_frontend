@@ -5,44 +5,44 @@ use ieee.std_logic_1164.all;
 
 package a10_pcie_registers is
 
-        constant LED_REGISTER_W                                 :  integer := 16#00#; -- DOCR: Used to change LEDs on the boards | FARM
-        constant RESET_REGISTER_W                               :  integer := 16#01#; -- DOCR: Reset Register | ALL
-            constant RESET_BIT_ALL                                  :  integer := 0;  -- DOCB: Reset bit to reset all | ALL
-            constant RESET_BIT_DATAGEN                              :  integer := 1;  -- DOCB: Reset bit for the datagenerator which is generating the link data from FEBs | SWB
-            constant RESET_BIT_BOARD                                :  integer := 2;  -- DOCB: Not used at the moment | ALL
-            constant RESET_BIT_WORDALIGN                            :  integer := 3;  -- DOCB: Not used at the moment | ALL
-            constant RESET_BIT_RECEIVER                             :  integer := 4;  -- DOCB: Not used at the moment | ALL
-            constant RESET_BIT_DATAFIFO                             :  integer := 5;  -- DOCB: Not used at the moment | ALL
-            constant RESET_BIT_FIFOPLL                              :  integer := 6;  -- DOCB: Not used at the moment | ALL
-            constant RESET_BIT_SC_SECONDARY                         :  integer := 7;  -- DOCB: Reset bit for the slowcontrol secondary | SWB
-            constant RESET_BIT_SC_MAIN                              :  integer := 8;  -- DOCB: Reset bit for the slowcontrol main | SWB
-            constant RESET_BIT_PCIE_LOCAL                           :  integer := 9;  -- DOCB: Not used at the moment | ALL
-            constant RESET_BIT_TOP_PROC                             :  integer := 10; -- DOCB: Not used at the moment | ALL
-            constant RESET_BIT_PCIE_APPl                            :  integer := 12; -- DOCB: Not used at the moment | ALL
-            constant RESET_BIT_EVENT_COUNTER                        :  integer := 13; -- DOCB: Reset bit for the swb_data_demerger | SWB
-            constant RESET_BIT_DMA_EVAL                             :  integer := 14; -- DOCB: Reset bit for DMA evaluationg / monitoring for PCIe 0 | ALL
-            constant RESET_BIT_LINK_TEST                            :  integer := 15; -- DOCB: Not used at the moment | ALL
-            constant RESET_BIT_RUN_START_ACK                        :  integer := 16; -- DOCB: Rest bit for seeing the run ack in run_control | SWB
-            constant RESET_BIT_RUN_END_ACK                          :  integer := 17; -- DOCB: Rest bit for seeing the run end in run_control | SWB
-            constant RESET_BIT_NIOS                                 :  integer := 18; -- DOCB: Not used at the moment | ALL
-            constant RESET_BIT_DDR3                                 :  integer := 19; -- DOCB: Reset bit for DDR3 control entitie | FARM
-            constant RESET_BIT_DATAFLOW                             :  integer := 20; -- DOCB: Not used at the moment | ALL
-            constant RESET_BIT_LINK_MERGER                          :  integer := 21; -- DOCB: Not used at the moment | ALL
-            constant RESET_BIT_DATA_PATH                            :  integer := 22; -- DOCB: Reset bit for the data path | SWB
-            constant RESET_BIT_FARM_DATA_PATH                       :  integer := 23; -- DOCB: Reset bit for the data path | SWB
-            constant RESET_BIT_PCIE                                 :  integer := 31; -- DOCB: Not used at the moment | ALL
+        constant LED_REGISTER_W                                 :  integer := 16#00#; -- DOC: Used to change LEDs on the boards | FARM
+        constant RESET_REGISTER_W                               :  integer := 16#01#; -- DOC: Reset Register | ALL
+            constant RESET_BIT_ALL                                  :  integer := 0;  -- DOC: Reset bit to reset all | ALL
+            constant RESET_BIT_DATAGEN                              :  integer := 1;  -- DOC: Reset bit for the datagenerator which is generating the link data from FEBs | SWB
+            constant RESET_BIT_BOARD                                :  integer := 2;  -- DOC: Not used at the moment | ALL
+            constant RESET_BIT_WORDALIGN                            :  integer := 3;  -- DOC: Not used at the moment | ALL
+            constant RESET_BIT_RECEIVER                             :  integer := 4;  -- DOC: Not used at the moment | ALL
+            constant RESET_BIT_DATAFIFO                             :  integer := 5;  -- DOC: Not used at the moment | ALL
+            constant RESET_BIT_FIFOPLL                              :  integer := 6;  -- DOC: Not used at the moment | ALL
+            constant RESET_BIT_SC_SECONDARY                         :  integer := 7;  -- DOC: Reset bit for the slowcontrol secondary | SWB
+            constant RESET_BIT_SC_MAIN                              :  integer := 8;  -- DOC: Reset bit for the slowcontrol main | SWB
+            constant RESET_BIT_PCIE_LOCAL                           :  integer := 9;  -- DOC: Not used at the moment | ALL
+            constant RESET_BIT_TOP_PROC                             :  integer := 10; -- DOC: Not used at the moment | ALL
+            constant RESET_BIT_PCIE_APPl                            :  integer := 12; -- DOC: Not used at the moment | ALL
+            constant RESET_BIT_EVENT_COUNTER                        :  integer := 13; -- DOC: Reset bit for the swb_data_demerger | SWB
+            constant RESET_BIT_DMA_EVAL                             :  integer := 14; -- DOC: Reset bit for DMA evaluationg / monitoring for PCIe 0 | ALL
+            constant RESET_BIT_LINK_TEST                            :  integer := 15; -- DOC: Not used at the moment | ALL
+            constant RESET_BIT_RUN_START_ACK                        :  integer := 16; -- DOC: Rest bit for seeing the run ack in run_control | SWB
+            constant RESET_BIT_RUN_END_ACK                          :  integer := 17; -- DOC: Rest bit for seeing the run end in run_control | SWB
+            constant RESET_BIT_NIOS                                 :  integer := 18; -- DOC: Not used at the moment | ALL
+            constant RESET_BIT_DDR3                                 :  integer := 19; -- DOC: Reset bit for DDR3 control entitie | FARM
+            constant RESET_BIT_DATAFLOW                             :  integer := 20; -- DOC: Not used at the moment | ALL
+            constant RESET_BIT_LINK_MERGER                          :  integer := 21; -- DOC: Not used at the moment | ALL
+            constant RESET_BIT_DATA_PATH                            :  integer := 22; -- DOC: Reset bit for the data path | SWB
+            constant RESET_BIT_FARM_DATA_PATH                       :  integer := 23; -- DOC: Reset bit for the data path | SWB
+            constant RESET_BIT_PCIE                                 :  integer := 31; -- DOC: Not used at the moment | ALL
 
-        constant DATAGENERATOR_REGISTER_W                       : integer := 16#02#;
-            constant DATAGENERATOR_BIT_ENABLE                       : integer := 0;
-            constant DATAGENERATOR_BIT_ENABLE_PIXEL                 : integer := 1;
-            constant DATAGENERATOR_BIT_ENABLE_FIBRE                 : integer := 2;
-            constant DATAGENERATOR_BIT_ENABLE_TILE                  : integer := 3;
-            constant DATAGENERATOR_BIT_ENABLE_TEST                  : integer := 4;
-            constant DATAGENERATOR_BIT_DMA_HALFFUL_MODE             : integer := 5;
-            subtype DATAGENERATOR_FRACCOUNT_RANGE                   is integer range 15 downto 8;
-            subtype DATAGENERATOR_NPIXEL_RANGE                      is integer range 15 downto 8;
-            subtype DATAGENERATOR_NFIBRE_RANGE                      is integer range 23 downto 16;
-            subtype DATAGENERATOR_NTILE_RANGE                       is integer range 31 downto 24;
+        constant DATAGENERATOR_REGISTER_W                       : integer := 16#02#; -- DOC: Register to control the datagenerator which is generating the link data from FEBs | SWB
+            constant DATAGENERATOR_BIT_ENABLE                       : integer := 0;  -- DOC: Not used at the moment | SWB
+            constant DATAGENERATOR_BIT_ENABLE_PIXEL                 : integer := 1;  -- DOC: Bit to enable pixel data | SWB
+            constant DATAGENERATOR_BIT_ENABLE_FIBRE                 : integer := 2;  -- DOC: Bit to enable fibre data | SWB
+            constant DATAGENERATOR_BIT_ENABLE_TILE                  : integer := 3;  -- DOC: Bit to enable tile data | SWB
+            constant DATAGENERATOR_BIT_ENABLE_TEST                  : integer := 4;  -- DOC: Not used at the moment | SWB
+            constant DATAGENERATOR_BIT_DMA_HALFFUL_MODE             : integer := 5;  -- DOC: Not used at the moment | SWB
+            subtype DATAGENERATOR_FRACCOUNT_RANGE                   is integer range 15 downto 8; -- DOC: Not used at the moment | SWB
+            subtype DATAGENERATOR_NPIXEL_RANGE                      is integer range 15 downto 8; -- DOC: Not used at the moment | SWB
+            subtype DATAGENERATOR_NFIBRE_RANGE                      is integer range 23 downto 16; -- DOC: Not used at the moment | SWB
+            subtype DATAGENERATOR_NTILE_RANGE                       is integer range 31 downto 24; -- DOC: Not used at the moment | SWB
 
         constant DATAGENERATOR_DIVIDER_REGISTER_W               : integer := 16#03#;
         constant KWORD_W                                        : integer := 16#04#;

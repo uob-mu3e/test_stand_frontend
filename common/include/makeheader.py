@@ -3,10 +3,9 @@
 # produce a C/C++ header file with corresponding macros
 # Niklaus Berger, 1.3.2017, niberger@uni-mainz.de
 
-# The script also generates a markdown file with a table explaining each register
-# For putting a register into the table add -- DOCR: followed by the explination at the
-# end of the register definition. For having a register with sub-types add -- DOCB: 
-# for each subtype/bit. By adding | BOARD one can add the boards where this reg is used
+# The script also generates a markdown file with a table explaining each register.
+# For putting a register into the table add -- DOC: DISCRIPTION | BOARDNAME at the end of the register definition.
+
 
 import re
 import datetime
@@ -42,8 +41,8 @@ def main(fname, outname):
     docFile = open(outnameDoc, "w")
     docStr = ''
     docStr += '## Doc file for {}\n\n'.format(fname)
-    docStr += '| RegName | Reg/Bit | Doc | Board |\n'
-    docStr += '|---------|-----|-----|-------|\n'
+    docStr += '| RegName | Reg/Bit | Doc | Board | TYPE |\n'
+    docStr += '|---------|-----|-----|-------|------|\n'
     
     print('Generating {} and {}'.format(outname, outnameDoc))
     file = open(outname, "w")
@@ -70,26 +69,32 @@ def main(fname, outname):
             continue
 
         # get doc for reg
-        # docStr += '| RegName | Reg/Bit | Doc | Board |'
-        if re.search(r'-- DOCR', line) is not None:
-            RegName = line.split('-- DOCR: ')[0].split("CONSTANT ")[1].split(" : ")[0]
-            RegBit = line.split('-- DOCR: ')[0].split("16#")[-1].split("#")[0]
-            Doc = line.split('-- DOCR: ')[1].split(" | ")[0]
-            Board = line.split('-- DOCR: ')[1].split(" | ")[1]
-            docStr += '| {} | Reg: 0x{} | {} | {} |\n'.format(RegName, RegBit, Doc, Board)
-        if re.search(r'-- DOCB', line) is not None:
-            RegName = line.split('-- DOCB: ')[0].split("CONSTANT ")[1].split(" : ")[0]
-            RegBit = line.split('-- DOCB: ')[0].split('INTEGER')[-1].split(":= ")[1].split(";")[0]
-            Doc = line.split('-- DOCB: ')[1].split(" | ")[0]
-            Board = line.split('-- DOCB: ')[1].split(" | ")[1]
-            docStr += '| {} | Bit: {} | {} | {} |\n'.format(RegName, RegBit, Doc, Board)
+        # docStr += '| RegName | Reg/Bit | Doc | Board | TYPE |'
+        regtype = "WRITE-REG" if "_W" in line else "READ-REG" if "_W" in line else "-"
+        if '-- DOC:' in line and '_REGISTER_' in line:
+            RegName = line.split('-- DOC: ')[0].split("CONSTANT ")[1].split(" : ")[0]
+            RegBit = line.split('-- DOC: ')[0].split("16#")[-1].split("#")[0]
+            Doc = line.split('-- DOC: ')[1].split(" | ")[0]
+            Board = line.split('-- DOC: ')[1].split(" | ")[1]
+            docStr += '| {} | REG: 0x{} | {} | {} | {} |\n'.format(RegName, RegBit, Doc, Board, regtype)
+        if '-- DOC:' in line and '_BIT_' in line:
+            RegName = line.split('-- DOC: ')[0].split("CONSTANT ")[1].split(" : ")[0]
+            RegBit = line.split('-- DOC: ')[0].split('INTEGER')[-1].split(":= ")[1].split(";")[0]
+            Doc = line.split('-- DOC: ')[1].split(" | ")[0]
+            Board = line.split('-- DOC: ')[1].split(" | ")[1]
+            docStr += '| {} | BIT: {} | {} | {} | {} |\n'.format(RegName, RegBit, Doc, Board, regtype)
+        if '-- DOC:' in line and '_RANGE' in line:
+            RegName = line.split('-- DOC: ')[0].split("SUBTYPE ")[1].split(" IS INTEGER RANGE ")[0]
+            RegBit = line.split('-- DOC: ')[0].split('SUBTYPE ')[-1].split(" IS INTEGER RANGE ")[1].split(";")[0]
+            Doc = line.split('-- DOC: ')[1].split(" | ")[0]
+            Board = line.split('-- DOC: ')[1].split(" | ")[1]
+            docStr += '| {} | RANGE: {} | {} | {} | {} |\n'.format(RegName, RegBit, Doc, Board, regtype)
 
         # match stuff like "constant LED_REGISTER_W :  integer := 16#00#;"	
         match = re.search(r'CONSTANT (\w+_REGISTER\w+) : INTEGER := 16#(\w+)#;', line)
         if match is not None:
             file.write('#define ' + match.group(1) + '\t\t' + '0x' + match.group(2).lower() + '\n')
             continue
-        
 
         # match stuff like "constant DDR3_CONTROL_W :  integer := 16#20#;"
         if len(line.split()) > 1:
