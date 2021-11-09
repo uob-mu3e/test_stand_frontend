@@ -21,7 +21,7 @@ package feb_sc_registers is
     -- as well as the control of the slow control entity itself
 
     constant STATUS_REGISTER_R                  :   integer := 16#00#;
-    constant GIT_HASH_REGISTER_R                :   integer := 16#01#;
+    constant GIT_HASH_REGISTER_R                :   integer := 16#01#; 
     constant FPGA_TYPE_REGISTER_R               :   integer := 16#02#;
     constant FPGA_ID_REGISTER_RW                :   integer := 16#03#;
     constant CMD_LEN_REGISTER_RW                :   integer := 16#04#;
@@ -129,8 +129,8 @@ package feb_sc_registers is
     constant DISABLE_CONDITIONS_FOR_RUN_ACK_RW  :   integer := 16#B8#;  
     constant CHIP_DACS_USEDW_R                  :   integer := 16#B9#;
     constant REG_HITS_ENA_COUNT_R               :   integer := 16#BA#;
-    constant SORTER_DELAY_RW                    :   integer := 16#BF#;
-    constant SORTER_COUNTER_R                   :   integer := 16#C0#; 
+    constant SORTER_DELAY_RW                    :   integer := 16#BF#; -- DOC: Minimum round-trip delay from sync reset going off to hit with TS > 0 appearing at sorter input in 8 ns steps | FEB
+    constant SORTER_COUNTER_R                   :   integer := 16#C0#; -- DOC: Hit counters in the sorter, 40 32 bit counters in total. For the inner pixel FEBs: 12 counters with in-time hits per chip, 12 counters with out-of-time hits per chip, 12 counters with overflows per chip, a counter with the number of output hits and the current credit value. The last two counters are currently reserved for future use | FEB
     -- 40 counters
     -- next free register at 16#E8#
 
