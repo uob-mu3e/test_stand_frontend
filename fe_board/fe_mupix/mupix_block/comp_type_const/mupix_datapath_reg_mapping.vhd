@@ -18,7 +18,7 @@ port (
     i_clk125                    : in  std_logic := '0';
     i_reset_n                   : in  std_logic;
 
-    i_reg_add                   : in  std_logic_vector(7 downto 0);
+    i_reg_add                   : in  std_logic_vector(15 downto 0);
     i_reg_re                    : in  std_logic;
     o_reg_rdata                 : out std_logic_vector(31 downto 0);
     i_reg_we                    : in  std_logic;
@@ -113,7 +113,7 @@ begin
             lvds_status                 <= i_lvds_status;
             lvds_status2                <= lvds_status(MP_LINK_ORDER(to_integer(unsigned(mp_hit_lvds_status_sel))));
 
-            regaddr             := to_integer(unsigned(i_reg_add(7 downto 0)));
+            regaddr             := to_integer(unsigned(i_reg_add));
             o_reg_rdata         <= x"CCCCCCCC";
 
             if(i_reg_we = '1') then

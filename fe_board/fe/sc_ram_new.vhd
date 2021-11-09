@@ -11,7 +11,6 @@ use work.mudaq.all;
 
 entity sc_ram_new is
 generic (
-    RAM_ADDR_WIDTH_g : positive := 14;
     READ_DELAY_g     : positive := 7--;
 );
 port (
@@ -46,11 +45,6 @@ end entity;
 
 architecture arch of sc_ram_new is
 
-    signal iram_addr    : std_logic_vector(15 downto 0);
-    signal iram_we      : std_logic;
-    signal iram_rdata   : std_logic_vector(31 downto 0); 
-    signal iram_wdata   : std_logic_vector(31 downto 0);
-
     signal read_delay_shift_reg         : std_logic_vector(READ_DELAY_g   downto 0) := (others => '0');
     signal read_delay_shift_reg_type    : std_logic_vector(READ_DELAY_g+1 downto 0) := (others => '0'); -- 0: Arria, 1: Nios
     signal avs_waitrequest_prev         : std_logic := '0';
@@ -69,7 +63,13 @@ architecture arch of sc_ram_new is
     signal wdata         : std_logic_vector(31 downto 0) := (others => '0');
 
 begin
- 
+
+    o_reg_addr          <= addr;
+    o_reg_re            <= re;
+    rdata               <= i_reg_rdata;
+    o_reg_we            <= we;
+    o_reg_wdata         <= wdata;
+
     -- request process
     process(i_clk, i_reset_n)
     begin
@@ -159,51 +159,4 @@ begin
                 or (avs_cmd_buf = '1' and avs_cmd_buf2 = '0')) -- because i dont end up in read_delay_shift_reg_type quick enough
             else '0';
 
-    lvl0_sc_node: entity work.sc_node
-    generic map (
-        ADD_SLAVE0_DELAY_g  => 5,
-        N_REPLY_CYCLES_g    => 6,
-        SLAVE1_ADDR_MATCH_g => "11111111--------"
-    )
-    port map (
-        i_clk          => i_clk,
-        i_reset_n      => i_reset_n,
-        
-        i_master_addr  => addr,
-        i_master_re    => re,
-        o_master_rdata => rdata,
-        i_master_we    => we,
-        i_master_wdata => wdata,
-
-        o_slave0_addr  => iram_addr,
-        o_slave0_re    => open,
-        i_slave0_rdata => iram_rdata,
-        o_slave0_we    => iram_we,
-        o_slave0_wdata => iram_wdata,
-
-        o_slave1_addr  => o_reg_addr,
-        o_slave1_re    => o_reg_re,
-        i_slave1_rdata => i_reg_rdata,
-        o_slave1_we    => o_reg_we,
-        o_slave1_wdata => o_reg_wdata--,
-    );
-
-    -- internal RAM  -- TODO: remove from common and move it into scifi block / reduce size by a lot (check scifi) / reduce size only for mupix FEB , etc. ?
-                     -- this is 1/12 of the hitsorter mem doing nothing in the mupix FEB
-    e_iram : entity work.ram_1r1w
-    generic map (
-        g_DATA_WIDTH => 32,
-        g_ADDR_WIDTH => RAM_ADDR_WIDTH_g--,  -- TODO: to 14 bit, lower for mupix, move to subdet. block
-    )
-    port map (
-        i_raddr => iram_addr(RAM_ADDR_WIDTH_g-1 downto 0),
-        o_rdata => iram_rdata,
-        i_rclk => i_clk,
-
-        i_waddr => iram_addr(RAM_ADDR_WIDTH_g-1 downto 0),
-        i_wdata => iram_wdata,
-        i_we => iram_we,
-        i_wclk => i_clk--,
-    );
-    
 end architecture;

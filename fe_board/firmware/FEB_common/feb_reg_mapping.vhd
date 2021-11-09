@@ -15,7 +15,7 @@ port (
     i_clk_156                   : in  std_logic;
     i_reset_n                   : in  std_logic;
 
-    i_reg_add                   : in  std_logic_vector(7 downto 0);
+    i_reg_add                   : in  std_logic_vector(15 downto 0);
     i_reg_re                    : in  std_logic;
     o_reg_rdata                 : out std_logic_vector(31 downto 0);
     i_reg_we                    : in  std_logic;
@@ -97,7 +97,7 @@ begin
         
     elsif rising_edge(i_clk_156) then
         o_reg_rdata         <= X"CCCCCCCC";
-        regaddr             := to_integer(unsigned(i_reg_add(7 downto 0)));
+        regaddr             := to_integer(unsigned(i_reg_add));
 
         o_programming_data_ena  <= '0';
         if(addr_ena_del = "000000") then -- this is here so that the 50 MHz clock does not miss the ena signal ? (M.Mueller)

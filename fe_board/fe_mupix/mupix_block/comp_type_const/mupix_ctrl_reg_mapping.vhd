@@ -17,7 +17,7 @@ port (
     i_clk156                    : in  std_logic;
     i_reset_n                   : in  std_logic;
 
-    i_reg_add                   : in  std_logic_vector(7 downto 0);
+    i_reg_add                   : in  std_logic_vector(15 downto 0);
     i_reg_re                    : in  std_logic;
     o_reg_rdata                 : out std_logic_vector(31 downto 0);
     i_reg_we                    : in  std_logic;
@@ -77,7 +77,7 @@ architecture rtl of mupix_ctrl_reg_mapping is
             o_mp_ctrl_chip_config_mask  <= mp_ctrl_chip_config_mask(11 downto 0);
             o_mp_ctrl_invert_29         <= mp_ctrl_invert_29;
             o_mp_ctrl_invert_csn        <= mp_ctrl_invert_csn;
-            regaddr                     := to_integer(unsigned(i_reg_add(7 downto 0)));
+            regaddr                     := to_integer(unsigned(i_reg_add));
             o_reg_rdata                 <= x"CCCCCCCC";
             o_mp_fifo_write             <= (others => '0');
             --o_mp_ctrl_data_all_we       <= '0';
