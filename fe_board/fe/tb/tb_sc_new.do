@@ -135,7 +135,7 @@ run 300ns
 -- read req from nios to feb common registers
 force -freeze /tb_sc_new/av_sc_address x"0000fc25"
 force -freeze /tb_sc_new/av_sc_read '1'
-run 200ns
+run 160ns
 force -freeze /tb_sc_new/av_sc_read '0'
 run 200ns
 

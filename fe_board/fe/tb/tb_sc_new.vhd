@@ -57,7 +57,7 @@ begin
         i_clk           => clk--,
     );
 
-    e_sc_ram : entity work.sc_ram_new
+    e_sc_ram : entity work.sc_ram
     generic map (
         READ_DELAY_g => 5--,
     )
