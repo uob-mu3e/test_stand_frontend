@@ -96,8 +96,7 @@ port (
     o_max10_spi_csn     : out   std_logic := '1';
 
     -- slow control registers
-    -- subdetector regs : 0x40-0xFF
-    o_subdet_reg_addr   : out   std_logic_vector(7 downto 0);
+    o_subdet_reg_addr   : out   std_logic_vector(15 downto 0);
     o_subdet_reg_re     : out   std_logic;
     i_subdet_reg_rdata  : in    std_logic_vector(31 downto 0) := X"CCCCCCCC";
     o_subdet_reg_we     : out   std_logic;
@@ -218,11 +217,6 @@ architecture arch of fe_block_v2 is
 
 begin
 
-    --v_reg: version_reg 
-    --    PORT MAP(
-    --        data_out    => version_out(27 downto 0)
-    --    );
-
     process(i_clk_156)
     begin
     if rising_edge(i_clk_156) then
@@ -273,37 +267,33 @@ begin
 
     -- map slow control address space
 
-    e_sc_node: entity work.sc_node
+    e_lvl0_sc_node: entity work.sc_node
     generic map(
-        ADD_SLAVE0_DELAY_g  => 1,
-        ADD_SLAVE1_DELAY_g  => 1,
-        N_REPLY_CYCLES_g    => 2,
-        SLAVE0_ADDR_MATCH_g => "00------"
+        ADD_SLAVE1_DELAY_g  => 3,
+        N_REPLY_CYCLES_g    => 4,
+        SLAVE1_ADDR_MATCH_g => "111111----------"--,
     )
     port map(
         i_clk           => i_clk_156,
         i_reset_n       => reset_156_n,
 
-        -- to upper SC nodes 0x00-0xFF
         i_master_addr   => sc_reg.addr(7 downto 0),
         i_master_re     => sc_reg.re,
         o_master_rdata  => sc_reg.rdata,
         i_master_we     => sc_reg.we,
         i_master_wdata  => sc_reg.wdata,
 
-        -- to feb common regs 0x00-0x3F
-        o_slave0_addr   => fe_reg.addr(7 downto 0),
-        o_slave0_re     => fe_reg.re,
-        i_slave0_rdata  => fe_reg.rdata,
-        o_slave0_we     => fe_reg.we,
-        o_slave0_wdata  => fe_reg.wdata,
+        o_slave0_addr   => o_subdet_reg_addr(15 downto 0),
+        o_slave0_re     => o_subdet_reg_re,
+        i_slave0_rdata  => i_subdet_reg_rdata,
+        o_slave0_we     => o_subdet_reg_we,
+        o_slave0_wdata  => o_subdet_reg_wdata,
 
-        -- to subdetector regs 0x40-0xFF
-        o_slave1_addr   => o_subdet_reg_addr(7 downto 0),
-        o_slave1_re     => o_subdet_reg_re,
-        i_slave1_rdata  => i_subdet_reg_rdata,
-        o_slave1_we     => o_subdet_reg_we,
-        o_slave1_wdata  => o_subdet_reg_wdata
+        o_slave1_addr   => fe_reg.addr(15 downto 0),
+        o_slave1_re     => fe_reg.re,
+        i_slave1_rdata  => fe_reg.rdata,
+        o_slave1_we     => fe_reg.we,
+        o_slave1_wdata  => fe_reg.wdata--,
     );
 
     e_reg_mapping : entity work.feb_reg_mapping
@@ -449,9 +439,9 @@ begin
     end process;
 
 
-    e_sc_ram : entity work.sc_ram_new
+    e_sc_ram : entity work.sc_ram
     generic map (
-        RAM_ADDR_WIDTH_g => to_integer(unsigned(FEB_SC_RAM_SIZE))--,--14--,
+        READ_DELAY_g => 5--,
     )
     port map (
         i_ram_addr              => sc_ram.addr(15 downto 0),
@@ -468,7 +458,7 @@ begin
         i_avs_writedata         => av_sc.writedata,
         o_avs_waitrequest       => av_sc.waitrequest,
 
-        o_reg_addr              => sc_reg.addr(7 downto 0),
+        o_reg_addr              => sc_reg.addr(15 downto 0),
         o_reg_re                => sc_reg.re,
         i_reg_rdata             => sc_reg.rdata,
         o_reg_we                => sc_reg.we,

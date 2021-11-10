@@ -23,7 +23,7 @@ port (
     i_lvds_rx_inclock_B : in  std_logic;
     lvds_data_in        : in  std_logic_vector(35 downto 0);
 
-    i_reg_add           : in  std_logic_vector(7 downto 0);
+    i_reg_add           : in  std_logic_vector(15 downto 0);
     i_reg_re            : in  std_logic;
     o_reg_rdata         : out std_logic_vector(31 downto 0);
     i_reg_we            : in  std_logic;

@@ -217,7 +217,7 @@ begin
     e_iram : entity work.ram_1r1w
     generic map (
         g_DATA_WIDTH => 32,
-        g_ADDR_WIDTH => 10--,  -- TODO: to 14 bit, lower for mupix, move to subdet. block
+        g_ADDR_WIDTH => 10--,
     )
     port map (
         i_raddr => iram_addr(10-1 downto 0),
