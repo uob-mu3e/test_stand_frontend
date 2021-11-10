@@ -67,7 +67,7 @@ architecture rtl of mupix_datapath_reg_mapping is
     signal mp_sorter_inject         : std_logic_vector(31 downto 0);
     signal mp_hit_ena_cnt_select    : std_logic_vector( 7 downto 0);
     signal mp_hit_ena_cnt_sorter_sel: std_logic_vector( 3 downto 0);
-    signal mp_hit_lvds_status_sel   : std_logic_vector( 5 downto 0);
+    signal mp_hit_lvds_status_sel   : std_logic_vector( 5 downto 0) := (others => '0');
     signal mp_sorter_delay          : ts_t;
     signal mp_reset_n_lvds          : std_logic := '1';
     signal lvds_status              : work.util.slv32_array_t(35 downto 0);

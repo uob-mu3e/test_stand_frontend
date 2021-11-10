@@ -1,3 +1,8 @@
+quit -sim
+vlib work
+project compileall
+vsim work.tb_sc_new(rtl)
+
 onerror {resume}
 quietly WaveActivateNextPane {} 0
 add wave -noupdate -group tb_top /tb_sc_new/*
@@ -33,7 +38,7 @@ force -freeze /tb_sc_new/datak_in x"1"
 run 100ns 
 force -freeze /tb_sc_new/data_in x"1C0000BC"
 run 20ns
-force -freeze /tb_sc_new/data_in x"0000ff25"
+force -freeze /tb_sc_new/data_in x"0000fC25"
 force -freeze /tb_sc_new/datak_in x"0"
 run 20ns
 force -freeze /tb_sc_new/data_in x"00000002"
@@ -48,7 +53,7 @@ run 300ns
 run 100ns 
 force -freeze /tb_sc_new/data_in x"1D0000BC"
 run 20ns
-force -freeze /tb_sc_new/data_in x"0000ff80"
+force -freeze /tb_sc_new/data_in x"00001006"
 force -freeze /tb_sc_new/datak_in x"0"
 run 20ns
 force -freeze /tb_sc_new/data_in x"00000002"
@@ -63,11 +68,26 @@ run 20ns
 force -freeze /tb_sc_new/data_in x"000000BC"
 run 300ns
 
--- read mupix ctrl and datapath sc regs
+-- read mupix ctrl
 run 100ns 
 force -freeze /tb_sc_new/data_in x"1C0000BC"
 run 20ns
-force -freeze /tb_sc_new/data_in x"0000ff7F"
+force -freeze /tb_sc_new/data_in x"0000040F"
+force -freeze /tb_sc_new/datak_in x"0"
+run 20ns
+force -freeze /tb_sc_new/data_in x"00000003"
+run 20ns
+force -freeze /tb_sc_new/data_in x"0000009C"
+force -freeze /tb_sc_new/datak_in x"1"
+run 20ns
+force -freeze /tb_sc_new/data_in x"000000BC"
+run 300ns
+
+-- read mupix datapath sc regs
+run 100ns 
+force -freeze /tb_sc_new/data_in x"1E0000BC"
+run 20ns
+force -freeze /tb_sc_new/data_in x"00001006"
 force -freeze /tb_sc_new/datak_in x"0"
 run 20ns
 force -freeze /tb_sc_new/data_in x"00000003"
@@ -113,14 +133,14 @@ force -freeze /tb_sc_new/data_in x"000000BC"
 run 300ns
 
 -- read req from nios to feb common registers
-force -freeze /tb_sc_new/av_sc_address x"0000ff25"
+force -freeze /tb_sc_new/av_sc_address x"0000fc25"
 force -freeze /tb_sc_new/av_sc_read '1'
 run 200ns
 force -freeze /tb_sc_new/av_sc_read '0'
 run 200ns
 
 -- write req from nios to feb common registers
-force -freeze /tb_sc_new/av_sc_address x"0000ff25"
+force -freeze /tb_sc_new/av_sc_address x"0000FC25"
 force -freeze /tb_sc_new/av_sc_writedata x"C0FFEE00"
 force -freeze /tb_sc_new/av_sc_write '1'
 run 60ns
@@ -130,7 +150,7 @@ run 200ns
 -- send nios read into sc read
 force -freeze /tb_sc_new/data_in x"1C0000BC"
 run 20ns
-force -freeze /tb_sc_new/data_in x"0000ff25"
+force -freeze /tb_sc_new/data_in x"0000FC25"
 force -freeze /tb_sc_new/datak_in x"0"
 run 20ns
 force -freeze /tb_sc_new/data_in x"00000010"
@@ -140,19 +160,19 @@ force -freeze /tb_sc_new/datak_in x"1"
 run 20ns
 force -freeze /tb_sc_new/data_in x"000000BC"
 run 180ns
-force -freeze /tb_sc_new/av_sc_address x"0000ff26"
+force -freeze /tb_sc_new/av_sc_address x"0000FC26"
 force -freeze /tb_sc_new/av_sc_read '1'
 run 340ns
 force -freeze /tb_sc_new/av_sc_read '0'
 run 1000ns
 
 -- send sc read into nios read
-force -freeze /tb_sc_new/av_sc_address x"0000ff25"
+force -freeze /tb_sc_new/av_sc_address x"0000FC25"
 force -freeze /tb_sc_new/av_sc_read '1'
 run 20ns
 force -freeze /tb_sc_new/data_in x"1C0000BC"
 run 20ns
-force -freeze /tb_sc_new/data_in x"0000ff25"
+force -freeze /tb_sc_new/data_in x"0000FC25"
 force -freeze /tb_sc_new/datak_in x"0"
 run 20ns
 force -freeze /tb_sc_new/data_in x"00000020"

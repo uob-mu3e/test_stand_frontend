@@ -28,10 +28,10 @@ signal av_sc_write      : std_logic := '0';
 signal av_sc_writedata  : std_logic_vector(31 downto 0) := (others => '0');
 signal av_sc_waitrequest: std_logic := '0';
 
-signal iram_addr    : std_logic_vector(15 downto 0);
-signal iram_we      : std_logic;
-signal iram_rdata   : std_logic_vector(31 downto 0); 
-signal iram_wdata   : std_logic_vector(31 downto 0);
+signal iram_addr    : std_logic_vector(15 downto 0) := (others => '0');
+signal iram_we      : std_logic := '0';
+signal iram_rdata   : std_logic_vector(31 downto 0) := (others => '0'); 
+signal iram_wdata   : std_logic_vector(31 downto 0) := (others => '0');
 
 begin
 
@@ -59,7 +59,7 @@ begin
 
     e_sc_ram : entity work.sc_ram_new
     generic map (
-        READ_DELAY_g => 7--,
+        READ_DELAY_g => 5--,
     )
     port map (
         i_ram_addr              => sc_ram.addr(15 downto 0),
@@ -118,7 +118,7 @@ begin
     e_lvl1_sc_node: entity work.sc_node
     generic map (
         SLAVE1_ADDR_MATCH_g => "000000----------",
-        SLAVE2_ADDR_MATCH_g => "00001000--------"--,
+        SLAVE2_ADDR_MATCH_g => "0000------------"--,
     )   
     port map (
         i_clk          => clk,
@@ -201,7 +201,17 @@ begin
         i_reg_re                    => mp_datapath_reg.re,
         o_reg_rdata                 => mp_datapath_reg.rdata,
         i_reg_we                    => mp_datapath_reg.we,
-        i_reg_wdata                 => mp_datapath_reg.wdata
+        i_reg_wdata                 => mp_datapath_reg.wdata,
+        i_lvds_status               => (0 => x"00000001", 
+                                        1 => x"00000002", 
+                                        2 => x"00000003", 
+                                        3 => x"00000004", 
+                                        4 => x"00000005", 
+                                        5 => x"00000006", 
+                                        6 => x"00000007", 
+                                        7 => x"00000008", 
+                                        8 => x"00000009", 
+                                        others => (others => '0'))--,
     );
 
     e_iram : entity work.ram_1r1w
