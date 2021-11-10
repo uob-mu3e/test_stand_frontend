@@ -53,9 +53,6 @@ end entity;
 architecture arch of mupix_block is
 
     signal datapath_reset_n             : std_logic;
-    signal reg_rdata                    : std_logic_vector(31 downto 0);
-    signal reg_rdata_datapath           : std_logic_vector(31 downto 0);
-    signal prev_reg_add                 : std_logic_vector( 7 downto 0);
 
     signal mp_ctrl_reg      : work.util.rw_t;
     signal mp_datapath_reg  : work.util.rw_t;
@@ -72,15 +69,6 @@ architecture arch of mupix_block is
 begin
 
     datapath_reset_n <= '0' when (i_reset='1' or i_run_state_156=RUN_STATE_SYNC) else '1';
-
-    process(i_clk156,i_reset)
-    begin
-        if(rising_edge(i_clk156)) then
-            prev_reg_add <= i_reg_add;
-        end if;
-    end process;
-
-    o_reg_rdata <= reg_rdata_datapath when (to_integer(unsigned(prev_reg_add)) >= MUPIX_DATAPATH_ADDR_START) else reg_rdata;
 
     e_mupix_ctrl : work.mupix_ctrl
     port map (
@@ -133,7 +121,10 @@ begin
     e_lvl1_sc_node: entity work.sc_node
     generic map (
         SLAVE1_ADDR_MATCH_g => "000000----------",
-        SLAVE2_ADDR_MATCH_g => "0000------------"--,
+        SLAVE2_ADDR_MATCH_g => "0000------------",
+        ADD_SLAVE1_DELAY_g  => 3,
+        ADD_SLAVE2_DELAY_g  => 3,
+        N_REPLY_CYCLES_g    => 4--,
     )   
     port map (
         i_clk          => i_clk156,

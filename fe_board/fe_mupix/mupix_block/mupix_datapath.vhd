@@ -131,10 +131,6 @@ architecture rtl of mupix_datapath is
     signal fifo_wdata_gen           : std_logic_vector(35 downto 0);
     signal fifo_write_gen           : std_logic;
 
-    -- Sorter config and diagnositc
-    signal sorter_counters          : sorter_reg_array;
-    signal sorter_delay             : ts_t;
-
     signal last_sorter_hit          : std_logic_vector(31 downto 0);
     signal sorter_out_is_hit        : std_logic;
     signal sorter_inject            : std_logic_vector(31 downto 0);
@@ -152,50 +148,99 @@ architecture rtl of mupix_datapath is
     signal hitsorter_out_ena_cnt_reg: std_logic_vector(31 downto 0);
     signal reset_n_lvds             : std_logic;
 
+    -- sc
+    signal mp_sorter_reg            : work.util.rw_t;
+    signal mp_lvds_rx_reg           : work.util.rw_t;
+    signal mp_datapath_reg          : work.util.rw_t;
+
 begin
 
-	process(i_clk156)
-   begin
-		if(rising_edge(i_clk156)) then
-			if(i_run_state_156=RUN_STATE_SYNC) then
-				reset_156_n <= '0';
-			else 
-				reset_156_n <=  '1';
-			end if;
-		end if;
-	end process;
-	
-	process(i_clk125)
-   begin
-		if(rising_edge(i_clk125)) then
-			if(i_run_state_125=RUN_STATE_SYNC) then
-				reset_125_n <= '0';
-			else 
-				reset_125_n <=  '1';
-			end if;
-		end if;
-	end process;
+    process(i_clk156)
+    begin
+        if(rising_edge(i_clk156)) then
+            if(i_run_state_156=RUN_STATE_SYNC) then
+                reset_156_n <= '0';
+            else 
+                reset_156_n <=  '1';
+            end if;
+        end if;
+    end process;
+
+    process(i_clk125)
+    begin
+        if(rising_edge(i_clk125)) then
+            if(i_run_state_125=RUN_STATE_SYNC) then
+                reset_125_n <= '0';
+            else 
+                reset_125_n <=  '1';
+            end if;
+        end if;
+    end process;
     
 ------------------------------------------------------------------------------------
----------------------- registers ---------------------------------------------------
+---------------------- sc ----------------------------------------------------------
+
+    e_lvl2_sc_node: entity work.sc_node
+    generic map (
+        SLAVE1_ADDR_MATCH_g => "00010000--------",
+        SLAVE2_ADDR_MATCH_g => "00010001--------"--,
+    )
+    port map (
+        i_clk          => i_clk156,
+        i_reset_n      => i_reset_n_regs,
+
+        i_master_addr  => i_reg_add,
+        i_master_re    => i_reg_re,
+        o_master_rdata => o_reg_rdata,
+        i_master_we    => i_reg_we,
+        i_master_wdata => i_reg_wdata,
+
+        o_slave0_addr  => mp_datapath_reg.addr(15 downto 0),
+        o_slave0_re    => mp_datapath_reg.re,
+        i_slave0_rdata => mp_datapath_reg.rdata,
+        o_slave0_we    => mp_datapath_reg.we,
+        o_slave0_wdata => mp_datapath_reg.wdata,
+
+        o_slave1_addr  => mp_sorter_reg.addr(15 downto 0),
+        o_slave1_re    => mp_sorter_reg.re,
+        i_slave1_rdata => mp_sorter_reg.rdata,
+        o_slave1_we    => mp_sorter_reg.we,
+        o_slave1_wdata => mp_sorter_reg.wdata,
+
+        o_slave2_addr  => mp_lvds_rx_reg.addr(15 downto 0),
+        o_slave2_re    => mp_lvds_rx_reg.re,
+        i_slave2_rdata => mp_lvds_rx_reg.rdata,
+        o_slave2_we    => mp_lvds_rx_reg.we,
+        o_slave2_wdata => mp_lvds_rx_reg.wdata--,
+    );
+
+    mp_lvds_rx_reg_mapping_inst: entity work.mp_lvds_rx_reg_mapping
+      port map (
+        i_clk156          => i_clk156,
+        i_reset_n         => i_reset_n_regs,
+
+        i_reg_add         => mp_lvds_rx_reg.addr(15 downto 0),
+        i_reg_re          => mp_lvds_rx_reg.re,
+        o_reg_rdata       => mp_lvds_rx_reg.rdata,
+        i_reg_we          => mp_lvds_rx_reg.we,
+        i_reg_wdata       => mp_lvds_rx_reg.wdata,
+
+        i_lvds_status     => lvds_status--,
+      );
+
     e_mupix_datapath_reg_mapping : work.mupix_datapath_reg_mapping
     port map (
         i_clk156                    => i_clk156,
         i_clk125                    => i_clk125,
         i_reset_n                   => i_reset_n_regs,
 
-        i_reg_add                   => i_reg_add,
-        i_reg_re                    => i_reg_re,
-        o_reg_rdata                 => o_reg_rdata,
-        i_reg_we                    => i_reg_we,
-        i_reg_wdata                 => i_reg_wdata,
-
-        -- inputs  156--------------------------------------------
-        i_lvds_data_valid           => (others => '0'), -- not in use, is contained in lvds_status, April 2021
-        i_lvds_status               => lvds_status,
+        i_reg_add                   => mp_datapath_reg.addr(15 downto 0),
+        i_reg_re                    => mp_datapath_reg.re,
+        o_reg_rdata                 => mp_datapath_reg.rdata,
+        i_reg_we                    => mp_datapath_reg.we,
+        i_reg_wdata                 => mp_datapath_reg.wdata,
 
         -- inputs  125 (how to sync)------------------------------
-        i_sorter_counters           => sorter_counters,
         --i_coarsecounter_ena         => coarsecounter_enas(MP_LINK_ORDER(to_integer(unsigned(delta_ts_link_select)))),
         --i_coarsecounter             => coarsecounters(MP_LINK_ORDER(to_integer(unsigned(delta_ts_link_select)))),
         i_ts_global                 => counter125(23 downto 0),
@@ -213,7 +258,6 @@ begin
         o_mp_delta_ts_link_select   => delta_ts_link_select,
 
         -- outputs 125-------------------------------------------------
-        o_sorter_delay              => sorter_delay,
         o_sorter_inject             => sorter_inject,
         o_mp_reset_n_lvds           => reset_n_lvds,
         o_mp_hit_ena_cnt_select     => hit_ena_cnt_select,
@@ -274,6 +318,11 @@ begin
     );
 
     END GENERATE genunpack;
+
+    --------------------------------------------
+    -- 2 not so interesting processes (one in 156, one in 125 Mhz)
+    -- counting stuff, delaying stuff, etc. nothing really happening here
+    --------------------------------------------
 
     process(i_clk156)
     begin
@@ -397,22 +446,22 @@ begin
         hits_sorter_in_buf(i)       <= row_hs(i) & col_hs(i) & tot_hs(i)(4 downto 0) & ts_hs(i);
     END GENERATE;
 
-	 process(i_clk125)
-	 begin
-	 if(rising_edge(i_clk125))then
-		if(i_run_state_125 = RUN_STATE_RUNNING) then
-			running         <= '1';
-		else
-			running         <= '0';
-		end if;
-		if(i_run_state_125 = RUN_STATE_IDLE) then
-			sorter_reset_n  <= '0';
-		else 
-			sorter_reset_n  <= '1';
-		end if;
-	 end if;
-	 end process;
-	 
+    process(i_clk125)
+        begin
+        if(rising_edge(i_clk125))then
+            if(i_run_state_125 = RUN_STATE_RUNNING) then
+                running         <= '1';
+            else
+                running         <= '0';
+            end if;
+            if(i_run_state_125 = RUN_STATE_IDLE) then
+                sorter_reset_n  <= '0';
+            else 
+                sorter_reset_n  <= '1';
+            end if;
+        end if;
+    end process;
+ 
     sorter: work.hitsorter_wide
     port map(
         reset_n         => sorter_reset_n,
@@ -426,11 +475,16 @@ begin
         out_ena         => fifo_write_hs,
         out_type        => fifo_wdata_hs(35 downto 32),
         out_is_hit      => sorter_out_is_hit,
-        diagnostic_out  => sorter_counters,
-        delay           => sorter_delay--,
+
+        i_clk156        => i_clk156,
+        i_reset_n_regs  => i_reset_n_regs,
+        i_reg_add       => mp_sorter_reg.addr(15 downto 0),
+        i_reg_re        => mp_sorter_reg.re,
+        o_reg_rdata     => mp_sorter_reg.rdata,
+        i_reg_we        => mp_sorter_reg.we,
+        i_reg_wdata     => mp_sorter_reg.wdata--,
     );
 
-    
     output_select : process(i_clk125) -- hitsorter, generator, unsorted ...
     begin
         if(rising_edge(i_clk125))then
@@ -476,7 +530,7 @@ begin
         DATA_WIDTH  => 1+36,
         SHOWAHEAD   => "OFF",
         OVERFLOW    => "ON",
-		  REGOUT      => 0,
+        REGOUT      => 0,
         DEVICE      => "Arria V"--,
     )
     port map(
@@ -523,7 +577,7 @@ begin
         DATA_WIDTH  => 32,
         SHOWAHEAD   => "OFF",
         OVERFLOW    => "ON",
-		  REGOUT      => 0,
+        REGOUT      => 0,
         DEVICE      => "Arria V"--,
     )
     port map(

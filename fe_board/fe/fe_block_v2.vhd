@@ -269,15 +269,15 @@ begin
 
     e_lvl0_sc_node: entity work.sc_node
     generic map(
-        ADD_SLAVE1_DELAY_g  => 3,
-        N_REPLY_CYCLES_g    => 4,
+        ADD_SLAVE1_DELAY_g  => 5,
+        N_REPLY_CYCLES_g    => 6,
         SLAVE1_ADDR_MATCH_g => "111111----------"--,
     )
     port map(
         i_clk           => i_clk_156,
         i_reset_n       => reset_156_n,
 
-        i_master_addr   => sc_reg.addr(7 downto 0),
+        i_master_addr   => sc_reg.addr(15 downto 0),
         i_master_re     => sc_reg.re,
         o_master_rdata  => sc_reg.rdata,
         i_master_we     => sc_reg.we,
@@ -301,7 +301,7 @@ begin
         i_clk_156                   => i_clk_156,
         i_reset_n                   => reset_156_n,
 
-        i_reg_add                   => fe_reg.addr(7 downto 0),
+        i_reg_add                   => fe_reg.addr(15 downto 0),
         i_reg_re                    => fe_reg.re,
         o_reg_rdata                 => fe_reg.rdata,
         i_reg_we                    => fe_reg.we,
@@ -441,7 +441,7 @@ begin
 
     e_sc_ram : entity work.sc_ram
     generic map (
-        READ_DELAY_g => 5--,
+        READ_DELAY_g => 7--,
     )
     port map (
         i_ram_addr              => sc_ram.addr(15 downto 0),
