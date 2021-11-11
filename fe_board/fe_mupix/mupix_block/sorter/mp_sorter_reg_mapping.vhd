@@ -62,28 +62,28 @@ architecture rtl of mp_sorter_reg_mapping is
             -----------------------------------------------------------------
             for I in 0 to 11 loop 
                 if ( regaddr = I + MP_SORTER_NINTIME_REGISTER_R and i_reg_re = '1' ) then
-                    o_reg_rdata <= i_nintime(I);
+                    o_reg_rdata <= nintime(I);
                 end if;
             end loop;
 
             for I in 0 to 11 loop 
                 if ( regaddr = I + MP_SORTER_NOUTOFTIME_REGISTER_R and i_reg_re = '1' ) then
-                    o_reg_rdata <= i_noutoftime(I);
+                    o_reg_rdata <= noutoftime(I);
                 end if;
             end loop;
 
             for I in 0 to 11 loop 
                 if ( regaddr = I + MP_SORTER_NOVERFLOW_REGISTER_R and i_reg_re = '1' ) then
-                    o_reg_rdata <= i_noverflow(I);
+                    o_reg_rdata <= noverflow(I);
                 end if;
             end loop;
 
-            if ( regaddr = MP_SORTER_NOUT_REGISTER_R and i_reg_we = '1' ) then
-                sorter_delay <= i_reg_wdata(TSRANGE);
+            if ( regaddr = MP_SORTER_NOUT_REGISTER_R and i_reg_re = '1' ) then
+                o_reg_rdata <= nout;
             end if;
 
             if ( regaddr = MP_SORTER_CREDIT_REGISTER_R and i_reg_we = '1' ) then
-                sorter_delay <= i_reg_wdata(TSRANGE);
+                o_reg_rdata <= credit;
             end if;
 
             if ( regaddr = MP_SORTER_DELAY_REGISTER_W and i_reg_we = '1' ) then

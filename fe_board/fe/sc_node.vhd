@@ -141,28 +141,37 @@ begin
         o_slave2_we <= '0';
         o_slave3_we <= '0';
 
-        o_slave0_addr   <= i_master_addr;
-        o_slave1_addr   <= i_master_addr;
-        o_slave2_addr   <= i_master_addr;
-        o_slave3_addr   <= i_master_addr;
+        -- Quartus merges these into single registers and fails timing because the fanout is so large if one does this here
+        --o_slave0_addr   <= i_master_addr;
+        --o_slave1_addr   <= i_master_addr;
+        --o_slave2_addr   <= i_master_addr;
+        --o_slave3_addr   <= i_master_addr;
 
-        o_slave0_wdata  <= i_master_wdata;
-        o_slave1_wdata  <= i_master_wdata;
-        o_slave2_wdata  <= i_master_wdata;
-        o_slave3_wdata  <= i_master_wdata;
+        --o_slave0_wdata  <= i_master_wdata;
+        --o_slave1_wdata  <= i_master_wdata;
+        --o_slave2_wdata  <= i_master_wdata;
+        --o_slave3_wdata  <= i_master_wdata;
 
         if( to_stdulogicvector(i_master_addr) ?= SLAVE1_ADDR_MATCH_g) then
-            slave1_re   <= i_master_re;
-            o_slave1_we <= i_master_we;
+            slave1_re       <= i_master_re;
+            o_slave1_we     <= i_master_we;
+            o_slave1_addr   <= i_master_addr;
+            o_slave1_wdata  <= i_master_wdata;
         elsif( to_stdulogicvector(i_master_addr) ?= SLAVE2_ADDR_MATCH_g) then
-            slave2_re   <= i_master_re;
-            o_slave2_we <= i_master_we;
+            slave2_re       <= i_master_re;
+            o_slave2_we     <= i_master_we;
+            o_slave2_addr   <= i_master_addr;
+            o_slave2_wdata  <= i_master_wdata;
         elsif( to_stdulogicvector(i_master_addr) ?= SLAVE3_ADDR_MATCH_g) then
-            slave3_re   <= i_master_re;
-            o_slave3_we <= i_master_we;
+            slave3_re       <= i_master_re;
+            o_slave3_we     <= i_master_we;
+            o_slave3_addr   <= i_master_addr;
+            o_slave3_wdata  <= i_master_wdata;
         else
-            slave0_re   <= i_master_re;
-            o_slave0_we <= i_master_we;
+            slave0_re       <= i_master_re;
+            o_slave0_we     <= i_master_we;
+            o_slave0_addr   <= i_master_addr;
+            o_slave0_wdata  <= i_master_wdata;
         end if;
     end if;
     end process;

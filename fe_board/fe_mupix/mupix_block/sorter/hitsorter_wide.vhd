@@ -184,6 +184,12 @@ signal nintime    : reg_array;
 signal nout       : reg32;
 signal delay      : ts_t;
 
+-- copy of diagnostics (timing)
+signal noutoftime2: reg_array;
+signal noverflow2 : reg_array;
+signal nintime2   : reg_array;
+signal nout2      : reg32;
+
 constant TSONE : ts_t := "00000000001";
 constant TSZERO : ts_t := "00000000000";
 constant TSTHREE : ts_t := "00000000011";
@@ -373,6 +379,7 @@ genmem: for i in NCHIPS-1 downto 0 generate
 
 		
 	elsif (writeclk'event and writeclk = '1') then
+
 		memwren(i) <= '0';
 		
 		tshit(i) 		<= hit_last1(i)(TSRANGE);
@@ -750,7 +757,12 @@ if(reset_n = '0') then
 	terminate_output				<= '0';
 	terminated_output				<= '0';
 elsif(writeclk'event and writeclk = '1') then
-	out_ena							<= '0';
+    noutoftime2 <= noutoftime;
+    noverflow2  <= noverflow;
+    nintime2    <= nintime;
+    nout2       <= nout;
+
+    out_ena							<= '0';
 	out_is_hit						<= '0';
 	for i in NCHIPS-1 downto 0 loop
 		raddr(i)							<= 	readcommand(TSRANGE) & --MSBs: Timestamp 
@@ -831,10 +843,10 @@ e_mp_sorter_reg_mapping: entity work.mp_sorter_reg_mapping
         i_reg_we       => i_reg_we,
         i_reg_wdata    => i_reg_wdata,
 
-        i_nintime      => nintime,
-        i_noutoftime   => noutoftime,
-        i_noverflow    => noverflow,
-        i_nout         => nout,
+        i_nintime      => nintime2,
+        i_noutoftime   => noutoftime2,
+        i_noverflow    => noverflow2,
+        i_nout         => nout2,
         i_credit       => conv_std_logic_vector(credits, 32),
         o_sorter_delay => delay--,
     );
