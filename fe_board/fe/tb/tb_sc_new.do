@@ -9,6 +9,7 @@ add wave -noupdate -group tb_top /tb_sc_new/*
 add wave -noupdate -group sc_ram /tb_sc_new/e_sc_ram/*
 add wave -noupdate -group sc_node_lvl0 /tb_sc_new/e_lvl0_sc_node/*
 add wave -noupdate -group sc_node_lvl1 /tb_sc_new/e_lvl1_sc_node/*
+add wave -noupdate -group sc_node_lvl2 /tb_sc_new/e_lvl2_sc_node/*
 add wave -noupdate -group reg_mapping /tb_sc_new/e_reg_mapping/*
 add wave -noupdate -group reg_mapping_mupix_ctrl /tb_sc_new/e_reg_mapping_mupix_ctrl/*
 add wave -noupdate -group reg_mapping_mupix_datapath /tb_sc_new/e_reg_mapping_mupix_datapath/*
