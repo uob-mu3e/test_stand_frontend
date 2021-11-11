@@ -32,6 +32,12 @@ end entity;
 architecture rtl of mp_sorter_reg_mapping is
     signal sorter_delay         : ts_t;
 
+    signal nintime                   : reg_array;
+    signal noutoftime                : reg_array;
+    signal noverflow                 : reg_array;
+    signal nout                      : reg32;
+    signal credit                    : reg32;
+
     begin
     process (i_clk156, i_reset_n)
         variable regaddr : integer;
@@ -42,6 +48,14 @@ architecture rtl of mp_sorter_reg_mapping is
 
         elsif(rising_edge(i_clk156)) then
             o_sorter_delay              <= sorter_delay;
+
+            -- register sorter signals once in 156 Mhz domain and put a false path between i_nintime and nintime, ...
+            nintime                     <= i_nintime;
+            noutoftime                  <= i_noutoftime;
+            noverflow                   <= i_noverflow;
+            nout                        <= i_nout;
+            credit                      <= i_credit;
+
             regaddr                     := to_integer(unsigned(i_reg_add));
             -----------------------------------------------------------------
             ---- sorter regs ------------------------------------------------
