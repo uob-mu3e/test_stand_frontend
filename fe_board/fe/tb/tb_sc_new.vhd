@@ -20,6 +20,9 @@ signal sc_reg           : work.util.rw_t;
 signal subdet_reg       : work.util.rw_t;
 signal mp_ctrl_reg      : work.util.rw_t;
 signal mp_datapath_reg  : work.util.rw_t;
+signal mp_datapath_reg2 : work.util.rw_t;
+signal mp_lvds_rx_reg   : work.util.rw_t;
+signal mp_sorter_reg    : work.util.rw_t;
 
 signal av_sc_address    : std_logic_vector(15 downto 0) := (others => '0');
 signal av_sc_read       : std_logic := '0';
@@ -59,7 +62,7 @@ begin
 
     e_sc_ram : entity work.sc_ram
     generic map (
-        READ_DELAY_g => 5--,
+        READ_DELAY_g => 7--,
     )
     port map (
         i_ram_addr              => sc_ram.addr(15 downto 0),
@@ -88,8 +91,8 @@ begin
 
     e_lvl0_sc_node: entity work.sc_node
     generic map(
-        ADD_SLAVE1_DELAY_g  => 3,
-        N_REPLY_CYCLES_g    => 4,
+        ADD_SLAVE1_DELAY_g  => 5,
+        N_REPLY_CYCLES_g    => 6,
         SLAVE1_ADDR_MATCH_g => "111111----------"
     )
     port map(
@@ -118,7 +121,10 @@ begin
     e_lvl1_sc_node: entity work.sc_node
     generic map (
         SLAVE1_ADDR_MATCH_g => "000000----------",
-        SLAVE2_ADDR_MATCH_g => "0000------------"--,
+        SLAVE2_ADDR_MATCH_g => "0000------------",
+        ADD_SLAVE1_DELAY_g  => 3,
+        ADD_SLAVE2_DELAY_g  => 3,
+        N_REPLY_CYCLES_g    => 4--,
     )   
     port map (
         i_clk          => clk,
@@ -197,21 +203,87 @@ begin
         i_clk156                    => clk,
         i_clk125                    => clk,
         i_reset_n                   => reset_n,
-        i_reg_add                   => mp_datapath_reg.addr(15 downto 0),
-        i_reg_re                    => mp_datapath_reg.re,
-        o_reg_rdata                 => mp_datapath_reg.rdata,
-        i_reg_we                    => mp_datapath_reg.we,
-        i_reg_wdata                 => mp_datapath_reg.wdata,
+        i_reg_add                   => mp_datapath_reg2.addr(15 downto 0),
+        i_reg_re                    => mp_datapath_reg2.re,
+        o_reg_rdata                 => mp_datapath_reg2.rdata,
+        i_reg_we                    => mp_datapath_reg2.we,
+        i_reg_wdata                 => mp_datapath_reg2.wdata--,
+    );
+
+    e_lvl2_sc_node: entity work.sc_node
+    generic map (
+        SLAVE1_ADDR_MATCH_g => "00010000--------",
+        SLAVE2_ADDR_MATCH_g => "00010001--------"--,
+    )
+    port map (
+        i_clk          => clk,
+        i_reset_n      => reset_n,
+
+        i_master_addr  => mp_datapath_reg.addr(15 downto 0),
+        i_master_re    => mp_datapath_reg.re,
+        o_master_rdata => mp_datapath_reg.rdata,
+        i_master_we    => mp_datapath_reg.we,
+        i_master_wdata => mp_datapath_reg.wdata,
+
+        o_slave0_addr  => mp_datapath_reg2.addr(15 downto 0),
+        o_slave0_re    => mp_datapath_reg2.re,
+        i_slave0_rdata => mp_datapath_reg2.rdata,
+        o_slave0_we    => mp_datapath_reg2.we,
+        o_slave0_wdata => mp_datapath_reg2.wdata,
+
+        o_slave1_addr  => mp_sorter_reg.addr(15 downto 0),
+        o_slave1_re    => mp_sorter_reg.re,
+        i_slave1_rdata => mp_sorter_reg.rdata,
+        o_slave1_we    => mp_sorter_reg.we,
+        o_slave1_wdata => mp_sorter_reg.wdata,
+
+        o_slave2_addr  => mp_lvds_rx_reg.addr(15 downto 0),
+        o_slave2_re    => mp_lvds_rx_reg.re,
+        i_slave2_rdata => mp_lvds_rx_reg.rdata,
+        o_slave2_we    => mp_lvds_rx_reg.we,
+        o_slave2_wdata => mp_lvds_rx_reg.wdata--,
+    );
+
+    mp_lvds_rx_reg_mapping_inst: entity work.mp_lvds_rx_reg_mapping
+      port map (
+        i_clk156          => clk,
+        i_reset_n         => reset_n,
+
+        i_reg_add         => mp_lvds_rx_reg.addr(15 downto 0),
+        i_reg_re          => mp_lvds_rx_reg.re,
+        o_reg_rdata       => mp_lvds_rx_reg.rdata,
+        i_reg_we          => mp_lvds_rx_reg.we,
+        i_reg_wdata       => mp_lvds_rx_reg.wdata,
+
         i_lvds_status               => (0 => x"00000001", 
-                                        1 => x"00000002", 
-                                        2 => x"00000003", 
-                                        3 => x"00000004", 
-                                        4 => x"00000005", 
-                                        5 => x"00000006", 
-                                        6 => x"00000007", 
-                                        7 => x"00000008", 
-                                        8 => x"00000009", 
-                                        others => (others => '0'))--,
+                                1 => x"00000002", 
+                                2 => x"00000003", 
+                                3 => x"00000004", 
+                                4 => x"00000005", 
+                                5 => x"00000006", 
+                                6 => x"00000007", 
+                                7 => x"00000008", 
+                                8 => x"00000009", 
+                                others => (others => '0'))--,
+      );
+
+    e_mp_sorter_reg_mapping: entity work.mp_sorter_reg_mapping
+    port map (
+        i_clk156       => clk,
+        i_reset_n      => reset_n,
+
+        i_reg_add      => mp_sorter_reg.addr(15 downto 0),
+        i_reg_re       => mp_sorter_reg.re,
+        o_reg_rdata    => mp_sorter_reg.rdata,
+        i_reg_we       => mp_sorter_reg.we,
+        i_reg_wdata    => mp_sorter_reg.wdata,
+
+        i_nintime      => (others => x"AFFEAFFE"),
+        i_noutoftime   => (others => x"FFFFFFFF"),
+        i_noverflow    => (others => x"FFFFFFFF"),
+        i_nout         => x"AB585487",
+        i_credit       => x"11447788",
+        o_sorter_delay => open--,
     );
 
     e_iram : entity work.ram_1r1w

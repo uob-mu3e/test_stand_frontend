@@ -19,13 +19,13 @@ port (
     i_reg_we                    : in  std_logic;
     i_reg_wdata                 : in  std_logic_vector(31 downto 0);
 
-    i_nintime                   : reg32array(11 downto 0);
-    i_noutoftime                : reg32array(11 downto 0);
-    i_noverflow                 : reg32array(11 downto 0);
-    i_nout                      : reg32;
-    i_credit                    : reg32;
+    i_nintime                   : in  reg_array;
+    i_noutoftime                : in  reg_array;
+    i_noverflow                 : in  reg_array;
+    i_nout                      : in  reg32;
+    i_credit                    : in  reg32;
 
-    o_sorter_delay              : ts_t--;
+    o_sorter_delay              : out ts_t--;
 );
 end entity;
 

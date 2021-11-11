@@ -64,8 +64,8 @@ end entity;
 architecture arch of sc_node is
     signal s0_return_queue      : reg32array(ADD_SLAVE0_DELAY_g downto 0);
     signal s1_return_queue      : reg32array(ADD_SLAVE1_DELAY_g downto 0);
-    signal s2_return_queue      : reg32array(ADD_SLAVE0_DELAY_g downto 0);
-    signal s3_return_queue      : reg32array(ADD_SLAVE1_DELAY_g downto 0);
+    signal s2_return_queue      : reg32array(ADD_SLAVE2_DELAY_g downto 0);
+    signal s3_return_queue      : reg32array(ADD_SLAVE3_DELAY_g downto 0);
     signal slave0_re            : std_logic;
     signal slave1_re            : std_logic;
     signal slave2_re            : std_logic;
@@ -79,6 +79,8 @@ architecture arch of sc_node is
 begin
     assert ( ADD_SLAVE0_DELAY_g <= N_REPLY_CYCLES_g ) report "sc_node Delay mismatch, N_REPLY_CYCLES_g is not allowed to be smaller than ADD_SLAVE0_DELAY_g" severity error;
     assert ( ADD_SLAVE1_DELAY_g <= N_REPLY_CYCLES_g ) report "sc_node Delay mismatch, N_REPLY_CYCLES_g is not allowed to be smaller than ADD_SLAVE1_DELAY_g" severity error;
+    assert ( ADD_SLAVE2_DELAY_g <= N_REPLY_CYCLES_g ) report "sc_node Delay mismatch, N_REPLY_CYCLES_g is not allowed to be smaller than ADD_SLAVE2_DELAY_g" severity error;
+    assert ( ADD_SLAVE3_DELAY_g <= N_REPLY_CYCLES_g ) report "sc_node Delay mismatch, N_REPLY_CYCLES_g is not allowed to be smaller than ADD_SLAVE3_DELAY_g" severity error;
 
     -- return part ------------------------------------
     o_slave0_re <= slave0_re;
