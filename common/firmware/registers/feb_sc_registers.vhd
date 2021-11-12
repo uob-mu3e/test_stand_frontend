@@ -21,22 +21,22 @@ package feb_sc_registers is
     constant STATUS_REGISTER_R                  :   integer := 16#FC00#;        -- DOC: not in use | FEB_ALL
     constant GIT_HASH_REGISTER_R                :   integer := 16#FC01#;        -- DOC: contains the git hash of used firmware | FEB_ALL
     constant FPGA_TYPE_REGISTER_R               :   integer := 16#FC02#;        -- DOC: contains fpga type 111010: mupix, 111000 : mutrig | FEB_ALL
-    constant FPGA_ID_REGISTER_RW                :   integer := 16#FC03#;        -- DOC: fgpa ID | FEB_ALL
-    constant CMD_LEN_REGISTER_RW                :   integer := 16#FC04#;        -- DOC: length of data to read in a nios rpc call | FEB_ALL
-    constant CMD_OFFSET_REGISTER_RW             :   integer := 16#FC05#;        -- DOC: positon of the data to read in a nios rpc call | FEB_ALL
-    constant RUN_STATE_RESET_BYPASS_REGISTER_RW :   integer := 16#FC06#;        -- DOC: used to bypass the reset system and run without a clock box | FEB_ALL
+    constant FPGA_ID_REGISTER_W                 :   integer := 16#FC03#;        -- DOC: fgpa ID | FEB_ALL
+    constant CMD_LEN_REGISTER_W                 :   integer := 16#FC04#;        -- DOC: length of data to read in a nios rpc call | FEB_ALL
+    constant CMD_OFFSET_REGISTER_W              :   integer := 16#FC05#;        -- DOC: positon of the data to read in a nios rpc call | FEB_ALL
+    constant RUN_STATE_RESET_BYPASS_REGISTER_W  :   integer := 16#FC06#;        -- DOC: used to bypass the reset system and run without a clock box | FEB_ALL
 
     subtype  RUN_STATE_RANGE                    is  integer range 31 downto 16; -- DOC: not in use
     subtype  RESET_BYPASS_RANGE                 is  integer range 7 downto 0;   -- DOC: not in use
     constant RESET_BYPASS_BIT_REQUEST           :   integer := 8;               -- DOC: sends a bypass reset command | FEB_ALL
     constant RESET_BYPASS_BIT_ENABLE            :   integer := 9;               -- DOC: enables the use of the reset bypass | FEB_ALL
 
-    constant RESET_PAYLOAD_REGISTER_RW          :   integer := 16#FC07#;        -- DOC: payload for the reset bypass commands | FEB_ALL
-    constant RESET_OPTICAL_LINKS_REGISTER_RW    :   integer := 16#FC08#;        -- DOC: reset firefly | FEB_ALL
+    constant RESET_PAYLOAD_REGISTER_W           :   integer := 16#FC07#;        -- DOC: payload for the reset bypass commands | FEB_ALL
+    constant RESET_OPTICAL_LINKS_REGISTER_W     :   integer := 16#FC08#;        -- DOC: reset firefly | FEB_ALL
     constant RESET_PHASE_REGISTER_R             :   integer := 16#FC09#;        -- DOC: phase between reset rx clock and global clk | FEB_ALL
     constant MERGER_RATE_REGISTER_R             :   integer := 16#FC0A#;        -- DOC: output rate of the data merger | FEB_ALL
 
-    constant ARRIA_TEMP_REGISTER_RW             :   integer := 16#FC10#;        -- DOC: ARRIAV internal temp sense | FEB_ALL
+    constant ARRIA_TEMP_REGISTER_W              :   integer := 16#FC10#;        -- DOC: ARRIAV internal temp sense | FEB_ALL
     constant MAX10_ADC_0_1_REGISTER_R           :   integer := 16#FC11#;        -- DOC: MAX10 adc data | FEB_ALL
     constant MAX10_ADC_2_3_REGISTER_R           :   integer := 16#FC12#;
     constant MAX10_ADC_4_5_REGISTER_R           :   integer := 16#FC13#;
@@ -59,7 +59,7 @@ package feb_sc_registers is
     constant FIREFLY2_RX4_POW_REGISTER_R        :   integer := 16#FC22#;        -- DOC: received optical power on link 8 | FEB_ALL
     constant FIREFLY2_ALARM_REGISTER_R          :   integer := 16#FC23#;        -- DOC: firefly1 alarm | FEB_ALL
 
-    constant NONINCREMENTING_TEST_REGISTER_RW   :   integer := 16#FC24#;        -- DOC: testing nonincrementing reads/writes to fifo (not in use) | FEB_ALL
+    constant NONINCREMENTING_TEST_REGISTER_W    :   integer := 16#FC24#;        -- DOC: testing nonincrementing reads/writes to fifo (not in use) | FEB_ALL
     constant MAX10_VERSION_REGISTER_R           :   integer := 16#FC25#;        -- DOC: git hash of the max10 firmware | FEB_ALL
     constant MAX10_STATUS_REGISTER_R            :   integer := 16#FC26#;
     constant MAX10_STATUS_BIT_PLL_LOCKED        :   integer := 0;
