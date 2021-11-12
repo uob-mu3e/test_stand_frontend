@@ -13,7 +13,8 @@ generic (
     feb_mapping : work.util.natural_array_t(3 downto 0) := (3,2,1,0);
     PHASE_WIDTH_g : positive := 16;
     NIOS_CLK_MHZ_g : real;
-    N_LINKS : positive := 1--;
+    N_LINKS : positive := 1;
+    SC_READ_DELAY_g : positive := 7--;
 );
 port (
     i_fpga_id       : in    std_logic_vector(7 downto 0);
@@ -269,8 +270,8 @@ begin
 
     e_lvl0_sc_node: entity work.sc_node
     generic map(
-        ADD_SLAVE1_DELAY_g  => 5,
-        N_REPLY_CYCLES_g    => 6,
+        ADD_SLAVE1_DELAY_g  => SC_READ_DELAY_g-2,
+        N_REPLY_CYCLES_g    => SC_READ_DELAY_g-1,
         SLAVE1_ADDR_MATCH_g => "111111----------"--,
     )
     port map(
@@ -441,7 +442,7 @@ begin
 
     e_sc_ram : entity work.sc_ram
     generic map (
-        READ_DELAY_g => 7--,
+        READ_DELAY_g => SC_READ_DELAY_g--,
     )
     port map (
         i_ram_addr              => sc_ram.addr(15 downto 0),

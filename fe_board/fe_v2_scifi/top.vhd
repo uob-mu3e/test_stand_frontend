@@ -171,9 +171,9 @@ begin
 --------------------------------------------------------------------
 --------------------------------------------------------------------
     scifi_csn <= scifi_csn_buf;
-	 
-	 -- stuff which is not used at the moment but PINs need to be tested
-	 lcd_data(2) <= scifi_temp_mutrig or scifi_temp_mutrig2 or scifi_temp_sipm or scifi_temp_sipm2 or scifi_cec_miso or scifi_cec_miso2;
+
+    -- stuff which is not used at the moment but PINs need to be tested
+    lcd_data(2) <= scifi_temp_mutrig or scifi_temp_mutrig2 or scifi_temp_sipm or scifi_temp_sipm2 or scifi_cec_miso or scifi_cec_miso2;
 
 -- assignments of DAB pins: special IOBUF, constant and polarity flips here
     scifi_fifo_ext              <= '0';
@@ -215,7 +215,7 @@ begin
         LVDS_DATA_RATE  => 1250.0--,
     )
     port map (
-        i_reg_addr                  => scifi_reg.addr(7 downto 0),
+        i_reg_addr                  => scifi_reg.addr(15 downto 0),
         i_reg_re                    => scifi_reg.re,
         o_reg_rdata                 => scifi_reg.rdata,
         i_reg_we                    => scifi_reg.we,
@@ -340,7 +340,8 @@ begin
     e_fe_block : entity work.fe_block_v2
     generic map (
         NIOS_CLK_MHZ_g  => 50.0,
-        N_LINKS => N_LINKS--,
+        N_LINKS => N_LINKS,
+        SC_READ_DELAY_g => 5--,
     )
     port map (
         i_fpga_id           => ref_adr,
@@ -397,7 +398,7 @@ begin
         io_max10_spi_D3     => max10_spi_D3,
         o_max10_spi_csn     => max10_spi_csn,
 
-        o_subdet_reg_addr   => scifi_reg.addr(7 downto 0),
+        o_subdet_reg_addr   => scifi_reg.addr(15 downto 0),
         o_subdet_reg_re     => scifi_reg.re,
         i_subdet_reg_rdata  => scifi_reg.rdata,
         o_subdet_reg_we     => scifi_reg.we,

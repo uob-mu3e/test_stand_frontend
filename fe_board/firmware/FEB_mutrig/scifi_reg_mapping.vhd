@@ -19,7 +19,7 @@ port (
     
     i_receivers_usrclk          : in  std_logic;
 
-    i_reg_add                   : in  std_logic_vector(7 downto 0);
+    i_reg_add                   : in  std_logic_vector(15 downto 0);
     i_reg_re                    : in  std_logic;
     o_reg_rdata                 : out std_logic_vector(31 downto 0);
     i_reg_we                    : in  std_logic;
@@ -107,7 +107,7 @@ begin
             subdet_resetdly_reg     <= (others=>'0');
         elsif ( rising_edge(i_clk) ) then
             o_reg_rdata         <= X"CCCCCCCC";
-            regaddr             := to_integer(unsigned(i_reg_add(7 downto 0)));
+            regaddr             := to_integer(unsigned(i_reg_add));
             o_subdet_resetdly_reg_written <= '0';
 
             if ( i_reg_re = '1' and regaddr = SCIFI_CNT_CTRL_REGISTER_W ) then
