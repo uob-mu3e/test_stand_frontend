@@ -361,6 +361,8 @@ int FEBSlowcontrolInterface::FEBsc_NiosRPC(uint32_t FPGA_ID, uint16_t command, v
 
 int FEBSlowcontrolInterface::FEBsc_read_packets()
 {
+
+
     int packetcount = 0;
     int waitcount =0;
     uint32_t fpga_rmem_addr=(mdev.read_register_ro(MEM_WRITEADDR_LOW_REGISTER_R)+1) & 0xffff;
@@ -371,17 +373,11 @@ int FEBSlowcontrolInterface::FEBsc_read_packets()
             return -1;
         }
 
-        if(((fpga_rmem_addr > m_FEBsc_rmem_addr) && (fpga_rmem_addr-m_FEBsc_rmem_addr) < 4)  // equal case taken care of by while condition
-            || ((fpga_rmem_addr > m_FEBsc_rmem_addr) && (MUDAQ_MEM_RO_LEN - m_FEBsc_rmem_addr + fpga_rmem_addr) <4)   ){ // This is the wraparound case
-            cout << "Incomplete packet (header)! at " << std::hex << m_FEBsc_rmem_addr << std::dec << endl;
-            std::this_thread::sleep_for(std::chrono::milliseconds(1));
-            fpga_rmem_addr=(mdev.read_register_ro(MEM_WRITEADDR_LOW_REGISTER_R)+1) & 0xffff;
-            waitcount++;
-            if(waitcount > 10){
-                cout << "Timeout whilst waiting for rest of message" << endl;
-                return -1;
-            }
-            continue;
+        // the eqaulity case is taken care of by the while condition
+        if(((fpga_rmem_addr > m_FEBsc_rmem_addr) && (fpga_rmem_addr-m_FEBsc_rmem_addr < MIN_SC_MESSAGE_SIZE))
+            || ((fpga_rmem_addr < m_FEBsc_rmem_addr) && (MUDAQ_MEM_RO_LEN - m_FEBsc_rmem_addr + fpga_rmem_addr) < MIN_SC_MESSAGE_SIZE)   ){ // This is the wraparound case
+            cout << "Incomplete packet!" << endl;
+            return -1;
         }
 
         SC_reply_packet packet;
@@ -392,25 +388,18 @@ int FEBSlowcontrolInterface::FEBsc_read_packets()
         packet.push_back(mdev.read_memory_ro(m_FEBsc_rmem_addr)); //save length word
         rmenaddrIncr();
 
-        int count = 0;
-
-        while(((fpga_rmem_addr >= m_FEBsc_rmem_addr) && (fpga_rmem_addr-m_FEBsc_rmem_addr) < packet.GetLength() +1)
-            || ((fpga_rmem_addr > m_FEBsc_rmem_addr) && (MUDAQ_MEM_RO_LEN - m_FEBsc_rmem_addr + fpga_rmem_addr) < packet.GetLength() + 1 ) ){ // This is the wraparound case
-
-            std::this_thread::sleep_for(std::chrono::milliseconds(1));
-            fpga_rmem_addr=(mdev.read_register_ro(MEM_WRITEADDR_LOW_REGISTER_R)+1) & 0xffff;
-            cout << "Incomplete packet (body)! at " << std::hex << m_FEBsc_rmem_addr << " " << fpga_rmem_addr <<std::dec << endl;
-            count++;
-            if(count > 10){
-                cout << "Timeout whilst waiting for rest of message" << endl;
-                return -1;
-            }
+        if(((fpga_rmem_addr >= m_FEBsc_rmem_addr) && (fpga_rmem_addr-m_FEBsc_rmem_addr) < packet.GetLength() +1) // Plus 1 for the trailer
+            || ((fpga_rmem_addr < m_FEBsc_rmem_addr) && (MUDAQ_MEM_RO_LEN - m_FEBsc_rmem_addr + fpga_rmem_addr) < packet.GetLength() + 1 ) ){ // This is the wraparound case
+            cout << "Incomplete packet!" << endl;
+            return -1;
         }
+        // Read data
         for (uint32_t i = 0; i < packet.GetLength(); i++) {
             packet.push_back(mdev.read_memory_ro(m_FEBsc_rmem_addr)); //save data
             rmenaddrIncr();
         }
 
+        // Read trailer
         packet.push_back(mdev.read_memory_ro(m_FEBsc_rmem_addr));
         rmenaddrIncr();
 

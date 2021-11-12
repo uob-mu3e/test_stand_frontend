@@ -13,7 +13,7 @@
 #include <stdlib.h>
 #include <math.h>
 #include <string.h>
-#include "../../../../modules/midas/include/midas.h"
+#include "midas.h"
 
 /*
  * Set values: demand voltage, current limit, set channel status

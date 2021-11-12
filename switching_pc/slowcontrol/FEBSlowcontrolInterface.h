@@ -46,6 +46,9 @@ public:
     // TODO: Check what the corect addr is
     enum ADDRS {BROADCAST_ADDR = 0xFFFFFFFF};
 
+    static constexpr uint32_t MIN_SC_MESSAGE_SIZE = 4;
+
+
 protected:
     mudaq::MudaqDevice & mdev;
 
@@ -81,7 +84,7 @@ protected:
     uint32_t m_FEBsc_wmem_addr;
     uint32_t m_FEBsc_rmem_addr;
 
-    void rmenaddrIncr(){m_FEBsc_rmem_addr = m_FEBsc_rmem_addr + 1 == MUDAQ_MEM_RO_LEN ? 0 : m_FEBsc_rmem_addr + 1;}
+    void rmenaddrIncr(){m_FEBsc_rmem_addr = (((m_FEBsc_rmem_addr + 1) == MUDAQ_MEM_RO_LEN) ? 0 : m_FEBsc_rmem_addr + 1);}
 
 
 

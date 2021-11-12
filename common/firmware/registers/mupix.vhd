@@ -67,6 +67,7 @@ package mupix is
     subtype TSBLOCKINFIFORANGE      is integer range TSINFIFORANGE'left downto TSINFIFORANGE'right+BITSPERTSBLOCK;
     subtype TSINBLOCKINFIFORANGE    is integer range TSINFIFORANGE'right+BITSPERTSBLOCK-1  downto TSINFIFORANGE'right;
     subtype SORTERFIFORANGE         is integer range TSINFIFORANGE'left downto 0;
+    subtype TSINBLOCKRANGE          is integer range BITSPERTSBLOCK-1 downto 0;
     
     constant NSORTERCOUNTERS        : integer := 40;
 
