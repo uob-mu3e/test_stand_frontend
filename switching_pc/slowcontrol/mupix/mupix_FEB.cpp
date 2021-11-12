@@ -186,13 +186,13 @@ for ( int asic=0; asic<10; asic++ ) {
             feb_sc.FEB_write(SP_ID, 0xFF48, chip_select_mask);
 
             // TODO: include headers for addr.
-            feb_sc.FEB_write(SP_ID, 0xFF47, 0x0000000F); // SPI slow down reg
-            feb_sc.FEB_write(SP_ID, 0xFF40, 0x00000FC0); // reset Mupix config fifos
-            feb_sc.FEB_write(SP_ID, 0xFF40, 0x00000000);
-            feb_sc.FEB_write(SP_ID, 0xFF49, 0x00000003); // idk, have to look it up
+            feb_sc.FEB_write(SP_ID, MP_CTRL_SLOW_DOWN_REGISTER_W, 0x0000000F); // SPI slow down reg
+            feb_sc.FEB_write(SP_ID, MP_CTRL_ENABLE_REGISTER_W, 0x00000FC0); // reset Mupix config fifos
+            feb_sc.FEB_write(SP_ID, MP_CTRL_ENABLE_REGISTER_W, 0x00000000);
+            feb_sc.FEB_write(SP_ID, MP_CTRL_INVERT_REGISTER_W, 0x00000003);
 	    
             // We now only write the default configuration for testing
-            rpc_status = feb_sc.FEB_write(SP_ID, 0xFF4A, payload,true);
+            rpc_status = feb_sc.FEB_write(SP_ID, MP_CTRL_ALL_REGISTER_W, payload,true);
            
          }
       } catch(std::exception& e) {
