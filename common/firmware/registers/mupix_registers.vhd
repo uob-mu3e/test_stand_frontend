@@ -77,9 +77,9 @@ constant MUPIX_LVDS_STATUS_BLOCK_LENGTH     : integer := 36;
         constant MP_DATA_GEN_ENABLE_BIT         :  integer := 31;       -- DOC: if set: data generator generates hits | MP_FEB
     constant MP_LVDS_INVERT_REGISTER_W          :  integer := 16#1204#;       -- DOC: inverting mupix lvds lines | MP_FEB 
     constant MP_DATA_BYPASS_SELECT_REGISTER_W   :  integer := 16#1205#;       -- DOC: bypass the mupix soter and put input to_integer(THISREG) directly on optical link (implemented but not connected in top) | MP_FEB
-    constant MP_TS_HISTO_SELECT_REGISTER_W      :  integer := 16#1206#;       -- DOC: not in use
-        subtype  MP_TS_HISTO_LINK_SELECT_RANGE  is integer range 15 downto 0; -- DOC: not in use
-        subtype  MP_TS_HISTO_N_SAMPLE_RANGE     is integer range 31 downto 16;-- DOC: not in use
+    constant MP_TS_HISTO_SELECT_REGISTER_W      :  integer := 16#1206#;       -- DOC: not in use | MP_FEB
+        subtype  MP_TS_HISTO_LINK_SELECT_RANGE  is integer range 15 downto 0; -- DOC: not in use | MP_FEB
+        subtype  MP_TS_HISTO_N_SAMPLE_RANGE     is integer range 31 downto 16;-- DOC: not in use | MP_FEB
     constant MP_LAST_SORTER_HIT_REGISTER_R      :  integer := 16#1207#;       -- DOC: register that contains the last mupix hit of the sorter output | MP_FEB
     constant MP_SORTER_INJECT_REGISTER_W        :  integer := 16#1208#;       -- DOC: used to inject single hits at the sorter inputs | MP_FEB
         -- select the input of the sorter to inject to
@@ -94,6 +94,16 @@ constant MUPIX_LVDS_STATUS_BLOCK_LENGTH     : integer := 36;
     constant MP_RESET_LVDS_N_REGISTER_W         :  integer := 16#120F#;       -- DOC: reset register for mupix lvds rx | MP_FEB
 
 -----------------------------------------------------------------
+---- mupix lvds rx (0x1100-0x11FF)-------------------------------
+-----------------------------------------------------------------
+
+    constant MP_LVDS_STATUS_START_REGISTER_W    :  integer := 16#1100#;       -- DOC: start of lvds status register block, 1 Word for each lvds link from here on | MP_FEB
+        subtype  MP_LVDS_STATUS_DISP_ERR_RANGE  is integer range 27 downto 0; -- DOC: Disparity error counter in each lvds status register | MP_FEB 
+        constant MP_LVDS_STATUS_PLL_LOCKED_BIT  :  integer := 28;             -- DOC: PLL locked bit in each lvds status register | MP_FEB 
+        subtype  MP_LVDS_STATUS_STATE_RANGE     is integer range 30 downto 29;-- DOC: status Bit in each lvds status register | MP_FEB 
+        constant MP_LVDS_STATUS_READY_BIT       :  integer := 31;             -- DOC: if set: this mupix lvds link is locked and ready | MP_FEB
+
+-----------------------------------------------------------------
 ---- mupix sorter (0x1000-0x10FF)--------------------------------
 -----------------------------------------------------------------
 
@@ -104,15 +114,5 @@ constant MUPIX_LVDS_STATUS_BLOCK_LENGTH     : integer := 36;
     constant MP_SORTER_NOUT_REGISTER_R          :  integer := 16#1024#;
     constant MP_SORTER_CREDIT_REGISTER_R        :  integer := 16#1025#;
     constant MP_SORTER_DELAY_REGISTER_W         :  integer := 16#1028#;       -- DOC: Minimum round-trip delay from sync reset going off to hit with TS > 0 appearing at sorter input in 8 ns steps | MP_FEB
-
------------------------------------------------------------------
----- mupix lvds rx (0x1100-0x11FF)-------------------------------
------------------------------------------------------------------
-
-    constant MP_LVDS_STATUS_START_REGISTER_W    :  integer := 16#1100#; -- DOC: start of lvds status register block, 1 Word for each lvds link from here on| MP_FEB
-        subtype  MP_LVDS_STATUS_DISP_ERR_RANGE  is integer range 27 downto 0; -- DOC: Disparity error counter in each lvds status register | MP_FEB 
-        constant MP_LVDS_STATUS_PLL_LOCKED_BIT  :  integer := 28;             -- DOC: PLL locked bit in each lvds status register | MP_FEB 
-        subtype  MP_LVDS_STATUS_STATE_RANGE     is integer range 30 downto 29;-- DOC: status Bit in each lvds status register | MP_FEB 
-        constant MP_LVDS_STATUS_READY_BIT       :  integer := 31;             -- DOC: if set: this mupix lvds link is locked and ready | MP_FEB
 
 end package mupix_registers;
