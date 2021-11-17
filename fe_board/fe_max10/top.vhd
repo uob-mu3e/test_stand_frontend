@@ -386,7 +386,9 @@ begin
         programming_control_export  => programming_control_nios
     );
 
-flash_programming_ctrl(30 downto 0) <= (others => '0');
+-- Choose flash image with bp_mode_sel - the emergency image starts at 0xC0 00 00
+flash_programming_ctrl(30 downto 0) <= (22 => '1', 23=> '1', others => '0') when bp_mode_select = "01"
+                                        else (others => '0');
 --flash_programming_ctrl(31)      <= programming_control_nios(0);
 
 

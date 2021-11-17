@@ -250,7 +250,7 @@ elsif ( clk100'event and clk100 = '1' ) then
             spiflashstate <= arriawriting7;
             spi_strobe_arria        <= '0';
         elsif(spi_byte_ready = '1' and spi_flash_data_from_flash_int(1) = '0') then
-            spiflashstate <= arriawriting5;  -- try setting write enable again
+            spiflashstate <= arriawriting5;  -- try setting write enable again (note tha this is a potential endless loop, maybe we should drop that?)
             spi_strobe_arria        <= '0';
         end if;
     when arriawriting7 => -- make sure spi is ready again
@@ -373,6 +373,7 @@ port map(
 );
 
 programming_if : entity work.fpp_programmer
+generic map(COMPRESSION => true)
 port map(
     -- clk & reset
     reset_n             => reset_n,
