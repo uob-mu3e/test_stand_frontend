@@ -1,0 +1,68 @@
+#
+set_location_assignment PIN_AK10 -to clock_A
+set_instance_assignment -name IO_STANDARD "2.5 V" -to clock_A
+
+set_location_assignment PIN_AA10 -to fast_reset_A
+set_instance_assignment -name IO_STANDARD LVDS -to fast_reset_A
+
+
+set_instance_assignment -name INPUT_TERMINATION DIFFERENTIAL -to data_in_A[1]
+set_instance_assignment -name INPUT_TERMINATION DIFFERENTIAL -to data_in_A[2]
+set_instance_assignment -name INPUT_TERMINATION DIFFERENTIAL -to data_in_A[3]
+set_instance_assignment -name INPUT_TERMINATION DIFFERENTIAL -to data_in_A[4]
+set_instance_assignment -name INPUT_TERMINATION DIFFERENTIAL -to data_in_B[1]
+set_instance_assignment -name INPUT_TERMINATION DIFFERENTIAL -to data_in_B[2]
+set_instance_assignment -name INPUT_TERMINATION DIFFERENTIAL -to data_in_B[3]
+set_instance_assignment -name INPUT_TERMINATION DIFFERENTIAL -to data_in_B[4]
+set_instance_assignment -name INPUT_TERMINATION DIFFERENTIAL -to data_in_C[1]
+set_instance_assignment -name INPUT_TERMINATION DIFFERENTIAL -to data_in_C[2]
+set_instance_assignment -name INPUT_TERMINATION DIFFERENTIAL -to data_in_C[3]
+set_instance_assignment -name INPUT_TERMINATION DIFFERENTIAL -to data_in_C[4]
+set_instance_assignment -name INPUT_TERMINATION DIFFERENTIAL -to data_in_D[1]
+set_instance_assignment -name INPUT_TERMINATION DIFFERENTIAL -to data_in_D[2]
+set_instance_assignment -name INPUT_TERMINATION DIFFERENTIAL -to data_in_D[3]
+set_instance_assignment -name INPUT_TERMINATION DIFFERENTIAL -to data_in_D[4]
+set_location_assignment PIN_J12 -to data_in_A[1]
+set_location_assignment PIN_C14 -to data_in_A[2]
+set_location_assignment PIN_A15 -to data_in_A[3]
+set_location_assignment PIN_F15 -to data_in_A[4]
+set_location_assignment PIN_J14 -to data_in_B[1]
+set_location_assignment PIN_C13 -to data_in_B[2]
+set_location_assignment PIN_J11 -to data_in_B[3]
+set_location_assignment PIN_B13 -to data_in_B[4]
+set_location_assignment PIN_AH7 -to data_in_C[1]
+set_location_assignment PIN_AJ4 -to data_in_C[2]
+set_location_assignment PIN_AK3 -to data_in_C[3]
+set_location_assignment PIN_AH1 -to data_in_C[4]
+set_location_assignment PIN_AK22 -to data_in_D[1]
+set_location_assignment PIN_AK21 -to data_in_D[2]
+set_location_assignment PIN_AH20 -to data_in_D[3]
+set_location_assignment PIN_AH18 -to data_in_D[4]
+set_instance_assignment -name IO_STANDARD LVDS -to data_in_A[1]
+set_instance_assignment -name IO_STANDARD LVDS -to data_in_A[2]
+set_instance_assignment -name IO_STANDARD LVDS -to data_in_A[3]
+set_instance_assignment -name IO_STANDARD LVDS -to data_in_A[4]
+set_instance_assignment -name IO_STANDARD LVDS -to data_in_B[1]
+set_instance_assignment -name IO_STANDARD LVDS -to data_in_B[2]
+set_instance_assignment -name IO_STANDARD LVDS -to data_in_B[3]
+set_instance_assignment -name IO_STANDARD LVDS -to data_in_B[4]
+set_instance_assignment -name IO_STANDARD LVDS -to data_in_C[1]
+set_instance_assignment -name IO_STANDARD LVDS -to data_in_C[2]
+set_instance_assignment -name IO_STANDARD LVDS -to data_in_C[3]
+set_instance_assignment -name IO_STANDARD LVDS -to data_in_C[4]
+set_instance_assignment -name IO_STANDARD LVDS -to data_in_D[1]
+set_instance_assignment -name IO_STANDARD LVDS -to data_in_D[2]
+set_instance_assignment -name IO_STANDARD LVDS -to data_in_D[3]
+set_instance_assignment -name IO_STANDARD LVDS -to data_in_D[4]
+
+set_location_assignment PIN_D19 -to csn_A[0]
+set_location_assignment PIN_B7 -to csn_B[0]
+set_location_assignment PIN_AD9 -to csn_C[0]
+set_location_assignment PIN_AB17 -to csn_D[0]
+set_instance_assignment -name IO_STANDARD "2.5 V" -to csn_A[0]
+set_instance_assignment -name IO_STANDARD "2.5 V" -to csn_B[0]
+set_instance_assignment -name IO_STANDARD "2.5 V" -to csn_C[0]
+set_instance_assignment -name IO_STANDARD "2.5 V" -to csn_D[0]
+
+set_location_assignment PIN_AH11 -to mosi_A
+set_instance_assignment -name IO_STANDARD "2.5 V" -to mosi_A
