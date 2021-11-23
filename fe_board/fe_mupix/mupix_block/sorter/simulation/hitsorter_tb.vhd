@@ -85,8 +85,8 @@ begin
 	reset_n	<= '1';
 	wait for 100 ns;
 	running <= '1';
-	--wait for 20000 ns;
-	--running <= '0';
+	wait for 60000 ns;
+	running <= '0';
 	wait;
 end process;
 

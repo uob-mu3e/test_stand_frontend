@@ -50,6 +50,7 @@ entity sequencer_ng is
 	port (
 		reset_n							: in std_logic;										-- async reset
 		clk								: in std_logic;										-- clock
+		runend							: in std_logic;
 		from_fifo						: sorterfifodata_t;
 		fifo_empty						: in std_logic;
 		read_fifo						: out std_logic;
@@ -63,6 +64,7 @@ architecture rtl of sequencer_ng is
 
 signal running: std_logic;
 signal running_last: std_logic;
+signal stopped:	std_logic;
 type output_type is(none, header1, header2, subheader, hits, footer);
 signal output: output_type;
 signal current_block:	block_t;
@@ -96,6 +98,7 @@ begin
 if (reset_n = '0') then	
 	running 		<= '0';
 	running_last 	<= '0';
+	stopped			<= '0';
 	read_fifo_int	<= '0';
 	fifo_empty_last	<= '1';
 	output 			<= none;
@@ -175,7 +178,16 @@ elsif (clk'event and clk = '1') then
 				overflowts(conv_integer(current_ts(TSINBLOCKRANGE))) <= hasoverflow;
 			end if;
 		end if;
-	end if;		
+	end if;	
+
+	-- run end:
+	if(stopped = '1') then
+		output <= none;
+	elsif(runend = '1' and current_block = block_max and fifo_empty = '1' and fifo_empty_last = '1' and stopped = '0') then
+		output <= footer;
+		stopped <= '1';
+	end if;
+
 
 	if(no_copy_next = '1')then
 		copy_fifo := '0';
