@@ -8,7 +8,6 @@ end entity;
 
 architecture arch of tb_lapse_counter is
 
-    constant CLK_MHZ : real := 1000.0; -- MHz
     constant N_CC : integer := 15;
     signal clk, clk_fast, reset_n, reset, en : std_logic := '0';
 
@@ -16,7 +15,7 @@ architecture arch of tb_lapse_counter is
     signal delay : std_logic_vector(N_CC - 1 downto 0);
 
     signal i_CC : std_logic_vector(N_CC - 1 downto 0);
-    signal o_CC : std_logic_vector(N_CC downto 0);
+    signal o_CC : std_logic_vector(N_CC - 1 downto 0);
     signal COUNT : integer := 32767;
 
     signal CC_BND : std_logic_vector(N_CC - 1 downto 0) := (others => '0');
@@ -25,10 +24,10 @@ architecture arch of tb_lapse_counter is
 
 begin
 
-    clk     <= not clk after (0.5 us / CLK_MHZ);
-    clk_fast<= not clk_fast after (0.1 us / CLK_MHZ);
-    reset_n <= '0', '1' after (1.0 us / CLK_MHZ);
-    en      <= '0', '1' after (3.0 us / CLK_MHZ);
+    clk     <= not clk after 8 ns;          -- 125MHz
+    clk_fast<= not clk_fast after 1.6 ns;   -- 625MHz
+    reset_n <= '0', '1' after 1.0 us;
+    en      <= '0', '1' after 3.0 us;
     reset   <= not reset_n;
 
     p_gen_cc: process(clk_fast, reset_n)
@@ -56,8 +55,14 @@ begin
 
     e_lapse_counter : entity work.lapse_counter
     generic map (N_CC => N_CC) 
-    port map (  i_clk => clk, i_reset_n => reset_n, i_CC => i_CC, 
-                i_en => en, i_upper_bnd => (others => '0'), 
-                i_lower_bnd => (others => '0'), o_CC => o_CC );
+    port map (  
+        i_clk => clk, 
+        i_reset_n => reset_n, 
+        i_CC => unsigned(i_CC), 
+        i_en => en, 
+        i_upper_bnd => CC_BND,
+        o_cnt => open,
+        o_CC => o_CC 
+    );
 
 end architecture;
