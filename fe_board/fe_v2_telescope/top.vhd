@@ -1,6 +1,6 @@
 ----------------------------------------
--- Mupix version of the Frontend Board
--- Martin Mueller, September 2020
+-- Mupix telescope version of the Frontend Board
+-- Martin Mueller, Nov 2021
 ----------------------------------------
 
 library ieee;
@@ -201,6 +201,9 @@ begin
     csn_D <= mp_ctrl_csn( 2 downto 0);
 
     e_mupix_block : entity work.mupix_block
+    generic map (
+        IS_TELESCOPE_g  => '1'--,
+    )
     port map (
         i_fpga_id               => ref_adr,
 
@@ -228,7 +231,7 @@ begin
         i_run_state_156           => run_state_156,
         o_ack_run_prep_permission => ack_run_prep_permission,
 
-        i_lvds_data_in          => data_in_D & data_in_C & data_in_B & data_in_A,
+        i_lvds_data_in          => data_in_A(5 downto 1) & data_in_B(4 downto 1) & data_in_C(5 downto 1) & data_in_D(4 downto 1) & "000000000" & "000000000",
 
         i_reset                 => not pb_db(1),
         -- 156.25 MHz

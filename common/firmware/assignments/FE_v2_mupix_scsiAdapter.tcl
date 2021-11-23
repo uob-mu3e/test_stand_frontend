@@ -55,6 +55,14 @@ set_instance_assignment -name IO_STANDARD LVDS -to data_in_D[2]
 set_instance_assignment -name IO_STANDARD LVDS -to data_in_D[3]
 set_instance_assignment -name IO_STANDARD LVDS -to data_in_D[4]
 
+# quick and dirty transceiver placement things (remove again .. maybe)
+set_instance_assignment -name INPUT_TERMINATION DIFFERENTIAL -to data_in_A[5]
+set_instance_assignment -name IO_STANDARD LVDS -to data_in_A[5]
+set_location_assignment PIN_A14 -to data_in_A[5]
+set_instance_assignment -name INPUT_TERMINATION DIFFERENTIAL -to data_in_C[5]
+set_instance_assignment -name IO_STANDARD LVDS -to data_in_C[5]
+set_location_assignment PIN_AB15 -to data_in_C[5]
+
 set_location_assignment PIN_D19 -to csn_A[0]
 set_location_assignment PIN_B7 -to csn_B[0]
 set_location_assignment PIN_AD9 -to csn_C[0]

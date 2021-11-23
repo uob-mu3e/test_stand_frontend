@@ -12,6 +12,9 @@ use work.mudaq.all;
 
 
 entity mupix_datapath is
+    generic(
+        IS_TELESCOPE_g : std_logic := '0'--;
+    );
 port (
     i_reset_n           : in  std_logic;
     i_reset_n_regs      : in  std_logic;
@@ -267,6 +270,9 @@ begin
 ------------------------------------------------------------------------------------
 ---------------------- LVDS Receiver part ------------------------------------------
     lvds_block : work.receiver_block_mupix
+    generic map (
+        IS_TELESCOPE_g  => IS_TELESCOPE_g--,
+    )
     port map(
         i_reset_n           => reset_n_lvds,
         i_nios_clk          => i_clk156,

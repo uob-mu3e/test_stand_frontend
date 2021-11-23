@@ -11,6 +11,9 @@ use work.mudaq.all;
 use work.mupix.all;
 
 entity mupix_block is
+    generic(
+        IS_TELESCOPE_g : std_logic := '0'--;
+    );
 port (
     i_fpga_id               : in  std_logic_vector(7 downto 0);
 
@@ -88,6 +91,9 @@ begin
     );
 
     e_mupix_datapath : work.mupix_datapath
+    generic map (
+        IS_TELESCOPE_g  => IS_TELESCOPE_g--,
+    )
     port map (
         i_reset_n           => datapath_reset_n,
         i_reset_n_regs      => not i_reset,

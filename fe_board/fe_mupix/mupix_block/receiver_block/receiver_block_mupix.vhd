@@ -19,7 +19,8 @@ use work.mupix.all;
 entity receiver_block_mupix is 
     generic(
         NINPUT : integer := 36;
-        NCHIPS : integer := 15
+        NCHIPS : integer := 15;
+        IS_TELESCOPE_g : std_logic := '0'--;
     );
     port (
         i_reset_n       : in  std_logic;
@@ -126,21 +127,41 @@ begin
         locked   => rx_locked(0)
     );
 
-    lvds_rec_small: entity work.lvds_receiver
-    PORT MAP
-    (
-        pll_areset              => not rx_locked(0),
-        rx_channel_data_align   => rx_align(26 downto 0),
-        rx_dpaclock             => rx_dpaclock_A,
-        rx_enable               => rx_enable_A,
-        rx_fifo_reset           => rx_fifo_reset(26 downto 0),
-        rx_in                   => rx_in(26 downto 0),
-        rx_inclock              => rx_inclock_A_pll,
-        rx_reset                => rx_reset(26 downto 0),
-        rx_syncclock            => rx_synclock_A,
-        rx_dpa_locked           => rx_dpa_locked(26 downto 0),
-        rx_out                  => rx_out_temp(269 downto 0)
-    );
+    gen2ndrec: if (IS_TELESCOPE_g='0') GENERATE
+        lvds_rec_small: entity work.lvds_receiver
+        PORT MAP
+        (
+            pll_areset              => not rx_locked(0),
+            rx_channel_data_align   => rx_align(26 downto 0),
+            rx_dpaclock             => rx_dpaclock_A,
+            rx_enable               => rx_enable_A,
+            rx_fifo_reset           => rx_fifo_reset(26 downto 0),
+            rx_in                   => rx_in(26 downto 0),
+            rx_inclock              => rx_inclock_A_pll,
+            rx_reset                => rx_reset(26 downto 0),
+            rx_syncclock            => rx_synclock_A,
+            rx_dpa_locked           => rx_dpa_locked(26 downto 0),
+            rx_out                  => rx_out_temp(269 downto 0)
+        );
+    end generate gen2ndrec;
+
+    gen2ndrec2: if (IS_TELESCOPE_g='1') GENERATE
+        lvds_rec: entity work.lvds_receiver_small
+        PORT MAP
+        (
+            pll_areset              => not rx_locked(1),
+            rx_channel_data_align   => rx_align(26 downto 18),
+            rx_dpaclock             => rx_dpaclock_A,
+            rx_enable               => rx_enable_A,
+            rx_fifo_reset           => rx_fifo_reset(26 downto 18),
+            rx_in                   => rx_in(26 downto 18),
+            rx_inclock              => rx_inclock_A_pll,
+            rx_reset                => rx_reset(26 downto 18),
+            rx_syncclock            => rx_synclock_A,
+            rx_dpa_locked           => rx_dpa_locked(26 downto 18),
+            rx_out                  => rx_out_temp(269 downto 180)--,
+        );
+    end generate gen2ndrec2;
 
     lpll_B: entity work.lvdspll
     PORT MAP
