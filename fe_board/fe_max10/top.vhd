@@ -51,7 +51,7 @@ entity top is
         -- Backplane signals
         board_select            : in std_logic;
         reset_cpu_backplane_n   : in std_logic;
-        reset_fpga_bp_n         : in std_logic;
+        reset_fpga_bp_n         : in std_logic; -- which one is the right one here?
         bp_reset_fpga           : in std_logic;
         bp_mode_select          : in std_logic_vector(1 downto 0);
         mscb_out                : out std_logic;
@@ -160,7 +160,8 @@ begin
     -- signal defaults, clk & resets
     -----------------------
     fpga_reset  <= '0';
-    reset_n     <= pll_locked;
+    reset_n     <= '0' when pll_locked = '0' or (reset_max_bp_n = '0' and board_select = '1')
+                    else '1';
     mscb_ena    <= '0';
 
     e_pll : entity work.ip_altpll
@@ -406,7 +407,11 @@ elsif( max10_osc_clk'event and  max10_osc_clk = '1') then
         if(startupcounter > 5000000)then
             startupcounter <= 5001000;
             flash_programming_ctrl(31) <= '0';
-        end if;     
+            -- Reprogram the FPGA on request from the crate controller
+            if(board_select = '1' and reset_fpga_bp_n = '0') then
+                flash_programming_ctrl(31) <= '1';
+            end if;
+        end if; 
     end if;    
 end if;    
 end process;
