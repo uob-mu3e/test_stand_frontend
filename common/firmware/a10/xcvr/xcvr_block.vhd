@@ -6,6 +6,7 @@ entity xcvr_block is
 generic (
     g_XCVR_NAME : string := "xcvr_a10";
     g_CHANNELS : positive := 6;
+	g_CHANNEL_WIDTH : positive := 32;
     g_XCVR_N : positive := 8; -- g_XCVR_N <= 16
     g_RATE_MBPS : positive := 10000;
     g_REFCLK_MHZ : real := 125.0;
@@ -19,8 +20,14 @@ port (
 
     o_rx_data           : out   work.util.slv32_array_t(g_XCVR_N*g_CHANNELS-1 downto 0);
     o_rx_datak          : out   work.util.slv4_array_t(g_XCVR_N*g_CHANNELS-1 downto 0);
-    i_tx_data           : in    work.util.slv32_array_t(g_XCVR_N*g_CHANNELS-1 downto 0);
-    i_tx_datak          : in    work.util.slv4_array_t(g_XCVR_N*g_CHANNELS-1 downto 0);
+    i_tx_data           : in    work.util.slv32_array_t(g_XCVR_N*g_CHANNELS-1 downto 0) := (others => (others => '0'));
+    i_tx_datak          : in    work.util.slv4_array_t(g_XCVR_N*g_CHANNELS-1 downto 0) := (others => (others => '0'));
+	 
+	o_rx_reset_data     : out   work.util.slv8_array_t(g_XCVR_N*g_CHANNELS-1 downto 0);
+    o_rx_reset_datak    : out   std_logic_vector(g_XCVR_N*g_CHANNELS-1 downto 0);
+    i_tx_reset_data     : in    work.util.slv8_array_t(g_XCVR_N*g_CHANNELS-1 downto 0) := (others => (others => '0'));
+    i_tx_reset_datak    : in    std_logic_vector(g_XCVR_N*g_CHANNELS-1 downto 0) := (others => '0');
+
 
     o_rx_clk            : out   std_logic_vector(g_XCVR_N*g_CHANNELS-1 downto 0);
     i_rx_clk            : in    std_logic_vector(g_XCVR_N*g_CHANNELS-1 downto 0);
@@ -44,10 +51,10 @@ end entity;
 
 architecture arch of xcvr_block is
 
-    type data_array_t is array ( natural range <> ) of std_logic_vector(g_CHANNELS*32-1 downto 0);
+    type data_array_t is array ( natural range <> ) of std_logic_vector(g_CHANNELS*g_CHANNEL_WIDTH-1 downto 0);
     signal rx_data, tx_data : data_array_t(g_XCVR_N-1 downto 0);
 
-    type datak_array_t is array ( natural range <> ) of std_logic_vector(g_CHANNELS*4-1 downto 0);
+    type datak_array_t is array ( natural range <> ) of std_logic_vector(g_CHANNELS*g_CHANNEL_WIDTH/8-1 downto 0);
     signal rx_datak, tx_datak : datak_array_t(g_XCVR_N-1 downto 0);
 
     signal avs_waitrequest : std_logic;
@@ -60,18 +67,33 @@ begin
 
     generate_xcvr : for i in 0 to g_XCVR_N-1 generate
     begin
-        generate_data : for j in 0 to g_CHANNELS-1 generate
-        begin
-            o_rx_data(i*g_CHANNELS+j) <= rx_data(i)(32*j+31 downto 0 + 32*j);
-            o_rx_datak(i*g_CHANNELS+j) <= rx_datak(i)(4*j+3 downto 0 + 4*j);
-            tx_data(i)(32*j+31 downto 0 + 32*j) <= i_tx_data(i*g_CHANNELS+j);
-            tx_datak(i)(4*j+3 downto 0 + 4*j) <= i_tx_datak(i*g_CHANNELS+j);
-        end generate;
+	
+		generate_signals : if ( g_XCVR_NAME = "xcvr_a10" or g_XCVR_NAME = "xcvr_enh" ) generate
+			generate_data : for j in 0 to g_CHANNELS-1 generate
+			begin
+				o_rx_data(i*g_CHANNELS+j) <= rx_data(i)(g_CHANNEL_WIDTH*j+g_CHANNEL_WIDTH-1 downto 0 + g_CHANNEL_WIDTH*j);
+				o_rx_datak(i*g_CHANNELS+j) <= rx_datak(i)(4*j+3 downto 0 + 4*j);
+				tx_data(i)(g_CHANNEL_WIDTH*j+g_CHANNEL_WIDTH-1 downto 0 + g_CHANNEL_WIDTH*j) <= i_tx_data(i*g_CHANNELS+j);
+				tx_datak(i)(4*j+3 downto 0 + 4*j) <= i_tx_datak(i*g_CHANNELS+j);
+			end generate;
+		end generate;
+		
+		generate_signals_reset : if ( g_XCVR_NAME = "xcvr_reset" ) generate
+			generate_data : for j in 0 to g_CHANNELS-1 generate
+			begin
+				o_rx_reset_data(i*g_CHANNELS+j) <= rx_data(i)(g_CHANNEL_WIDTH*j+g_CHANNEL_WIDTH-1 downto 0 + g_CHANNEL_WIDTH*j);
+				o_rx_reset_datak(i*g_CHANNELS+j) <= rx_datak(i)(j);
+				tx_data(i)(g_CHANNEL_WIDTH*j+g_CHANNEL_WIDTH-1 downto 0 + g_CHANNEL_WIDTH*j) <= i_tx_reset_data(i*g_CHANNELS+j);
+				tx_datak(i)(j) <= i_tx_reset_datak(i*g_CHANNELS+j);
+			end generate;
+		end generate;
 
-        generate_xcvr_a10 : if ( g_XCVR_NAME = "xcvr_a10" ) generate
+		generate_xcvr_a10 : if ( g_XCVR_NAME = "xcvr_a10" or g_XCVR_NAME = "xcvr_reset" ) generate
         e_xcvr_a10 : entity work.xcvr_a10
         generic map (
+			g_XCVR_NAME => g_XCVR_NAME,
             NUMBER_OF_CHANNELS_g => g_CHANNELS,
+			CHANNEL_WIDTH_g => g_CHANNEL_WIDTH,
             g_REFCLK_MHZ => g_REFCLK_MHZ,
             g_RATE_MBPS => g_RATE_MBPS,
             g_CLK_MHZ => g_CLK_MHZ--,
@@ -108,6 +130,7 @@ begin
         e_xcvr_enh : entity work.xcvr_enh
         generic map (
             NUMBER_OF_CHANNELS_g => g_CHANNELS,
+			CHANNEL_WIDTH_g => g_CHANNEL_WIDTH,
             g_REFCLK_MHZ => g_REFCLK_MHZ,
             g_RATE_MBPS => g_RATE_MBPS,
             g_CLK_MHZ => g_CLK_MHZ--,
@@ -139,7 +162,6 @@ begin
             i_clk       => i_clk--,
         );
         end generate;
-
         --
     end generate;
 
