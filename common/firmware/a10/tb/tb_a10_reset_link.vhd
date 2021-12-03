@@ -21,12 +21,17 @@ architecture TB of tb_a10_reset_link is
     
     signal reset_state : std_logic_vector(3 downto 0);
 
+    signal delay : std_logic_vector(1 downto 0);
+
 begin
 
     clk <= not clk  after (0.5 us / CLK_MHZ);
     reset_n <= '0', '1'     after (1.0 us / CLK_MHZ);
 	
     e_mapping : entity work.a10_reset_link
+    generic map (
+        g_XCVR2_CHANNELS    => 4--,
+    )
     port map (
 	    o_xcvr_tx_data      => open,
 		o_xcvr_tx_datak     => open,
@@ -35,7 +40,7 @@ begin
 		i_reset_ctl         => wregs(RESET_LINK_CTL_REGISTER_W),
 		i_clk               => clk,
 		
-		o_state_out			=> rregs_156(RESET_LINK_STATUS_REGISTER_R),
+		o_state_out			=> rregs(RESET_LINK_STATUS_REGISTER_R),
 
 		i_reset_n           => reset_n--,
     );
@@ -46,8 +51,13 @@ begin
 		wregs(RESET_LINK_RUN_NUMBER_REGISTER_W) <= (others => '0');
 		wregs(RESET_LINK_CTL_REGISTER_W) <= (others => '0');
 		reset_state <= (others => '0');
+        delay <= (others => '0');
 		-- 
 	elsif(rising_edge(clk))then
+        
+        delay <= delay + '1';
+
+        if ( delay = "00" ) then
 
         case reset_state is
             
@@ -60,15 +70,18 @@ begin
                 reset_state <= "0010";
             
             when "0010" =>
+                wregs(RESET_LINK_CTL_REGISTER_W)(RESET_LINK_RUN_PREPARE_BIT) <= '0';
                 wregs(RESET_LINK_CTL_REGISTER_W)(RESET_LINK_ABORT_RUN_BIT) <= '1';
                 reset_state <= "0011";
-            
+
             when "0011" =>
+                wregs(RESET_LINK_CTL_REGISTER_W)(RESET_LINK_ABORT_RUN_BIT) <= '0';
                 wregs(RESET_LINK_CTL_REGISTER_W)(RESET_LINK_RUN_PREPARE_BIT) <= '1';
                 wregs(RESET_LINK_RUN_NUMBER_REGISTER_W) <= x"BBBBBBBB";
                 reset_state <= "0100";
             
             when "0100" =>
+                wregs(RESET_LINK_CTL_REGISTER_W)(RESET_LINK_RUN_PREPARE_BIT) <= '0';
                 reset_state <= "0101";
             
             when "0101" =>
@@ -85,14 +98,17 @@ begin
                 reset_state <= "1001";
                 
             when "1001" =>
+                wregs(RESET_LINK_CTL_REGISTER_W)(RESET_LINK_SYNC_BIT) <= '0';
                 wregs(RESET_LINK_CTL_REGISTER_W)(RESET_START_RUN_BIT) <= '1';
                 reset_state <= "1010";
                 
             when "1010" =>
+                wregs(RESET_LINK_CTL_REGISTER_W)(RESET_START_RUN_BIT) <= '0';
                 wregs(RESET_LINK_CTL_REGISTER_W)(RESET_END_RUN_BIT) <= '1';
                 reset_state <= "1011";
                 
             when "1011" =>
+                wregs(RESET_LINK_CTL_REGISTER_W)(RESET_END_RUN_BIT) <= '0';
                 wregs(RESET_LINK_CTL_REGISTER_W)(RESET_LINK_SYNC_BIT) <= '1';
                 reset_state <= "1100";
                 
@@ -104,6 +120,7 @@ begin
                 reset_state <= "0000";
                 
         end case;
+        end if;
 	end if;
 	end process memory;
     

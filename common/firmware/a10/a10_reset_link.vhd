@@ -96,7 +96,7 @@ begin
 					when idle =>
 						-- wait for run prepare
 						if ( reg_run_prepare = '0' and i_reset_ctl(RESET_LINK_RUN_PREPARE_BIT) = '1' ) then
-							xcvr_tx_data <= RESET_LINK_ABORT_RUN;
+							xcvr_tx_data <= RESET_LINK_RUN_PREPARE;
 							reset_state  <= rNB0;
 							o_state_out  <= x"00000001";
 						end if;
