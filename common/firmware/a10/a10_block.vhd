@@ -213,7 +213,7 @@ architecture arch of a10_block is
     signal reset_250_n      : std_logic;
     signal clk_250          : std_logic;
     
-    signal reset_C_n      : std_logic;
+    signal reset_C_n      	: std_logic;
 
     signal flash_address    : std_logic_vector(31 downto 0) := (others => '0');
 
@@ -387,7 +387,7 @@ begin
         clk            => pcie0_clk--,
     );
     
-    gen_FARM : if g_FARM = 1 GENERATE
+    gen_FARM : if ( g_FARM = 1 ) GENERATE
         --! generate reset regs for 250 MHz link clk for pcie0
         e_reset_logic_farm : entity work.reset_logic
         port map (
@@ -718,7 +718,7 @@ begin
         NUMBER_OF_CHANNELS_g 	=> g_SFP_CHANNELS,
         CHANNEL_WIDTH_g 		=> 8,
         g_REFCLK_MHZ 			=> 125.0,
-        g_RATE_MBPS 				=> 1250,
+        g_RATE_MBPS 			=> 1250,
         g_CLK_MHZ 				=> g_CLK_MHZ--,
     )
     port map (
@@ -747,14 +747,16 @@ begin
 
     --! PCIe register mapping
     e_register_mapping : entity work.pcie_register_mapping
+	generic map (
+		g_FARM => g_FARM--,
+	)
     port map(
         i_pcie0_rregs_A     => i_pcie0_rregs_A,
         i_pcie0_rregs_B     => i_pcie0_rregs_B,
         i_pcie0_rregs_C     => i_pcie0_rregs_C,
 
         i_local_pcie0_rregs_A   => local_pcie0_rregs_A,
-        i_local_pcie0_rregs_B   => local_pcie0_rregs_B,
-        i_local_pcie0_rregs_C   => local_pcie0_rregs_C,
+		i_local_pcie0_rregs_C	=> local_pcie0_rregs_C,
 
         o_pcie0_rregs       => pcie0_rregs,
 
