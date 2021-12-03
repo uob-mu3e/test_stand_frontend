@@ -196,7 +196,6 @@ begin
         g_XCVR1_CHANNELS => 0,
         g_XCVR1_N => 0,
 		g_XCVR2_CHANNELS => 4,
-        g_XCVR2_N => 1,
         g_PCIE0_X => 8,
         g_PCIE1_X => 0,
         g_FARM    => 0,
@@ -248,7 +247,7 @@ begin
 		-- XCVR2 (1250 Mbps @ 125 MHz)
         i_xcvr2_rx( 3 downto  0)        => QSFPD_RX_p,
         o_xcvr2_tx( 3 downto  0)        => QSFPD_TX_p,
-        i_xcvr2_refclk                  => (others => clk_125),
+        i_xcvr2_refclk                  => clk_125,
         i_xcvr2_clk                     => clk_125,
 
         -- PCIe0

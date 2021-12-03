@@ -12,8 +12,11 @@ use work.a10_pcie_registers.all;
 
 
 entity a10_reset_link is
+generic (
+	g_XCVR2_CHANNELS    : integer := 0--;
+);
 port (
-    o_xcvr_tx_data      : out   work.util.slv8_array_t(3 downto 0);
+    o_xcvr_tx_data      : out   std_logic_vector(g_XCVR2_CHANNELS*8-1 downto 0) := (others => '0');
     o_xcvr_tx_datak     : out   std_logic_vector(3 downto 0);
     
     i_reset_run_number  : in    std_logic_vector(31 downto 0);
@@ -36,18 +39,18 @@ architecture arch of a10_reset_link is
 
 begin
 
-	o_xcvr_tx_data(0)  <= 	xcvr_tx_data when cur_output = "000" else 
-							xcvr_tx_data when cur_output = "111" 
-							else x"BC";
-	o_xcvr_tx_data(1)  <= 	xcvr_tx_data when cur_output = "001" else
-							xcvr_tx_data when cur_output = "111" 
-							else x"BC";
-	o_xcvr_tx_data(2)  <= 	xcvr_tx_data when cur_output = "010" else 
-							xcvr_tx_data when cur_output = "111" 
-							else x"BC";
-	o_xcvr_tx_data(3)  <= 	xcvr_tx_data when cur_output = "011" else 
-							xcvr_tx_data when cur_output = "111" 
-							else x"BC";
+	o_xcvr_tx_data(7 downto 0)   <= xcvr_tx_data when cur_output = "000" else 
+									xcvr_tx_data when cur_output = "111" 
+									else x"BC";
+	o_xcvr_tx_data(15 downto 8)  <= xcvr_tx_data when cur_output = "001" else
+									xcvr_tx_data when cur_output = "111" 
+									else x"BC";
+	o_xcvr_tx_data(23 downto 16) <= xcvr_tx_data when cur_output = "010" else 
+									xcvr_tx_data when cur_output = "111" 
+									else x"BC";
+	o_xcvr_tx_data(31 downto 24) <= xcvr_tx_data when cur_output = "011" else 
+									xcvr_tx_data when cur_output = "111" 
+									else x"BC";
 							
 	o_xcvr_tx_datak(0)  <= 	'0' when cur_output = "000" else 
 							'0' when cur_output = "111" 

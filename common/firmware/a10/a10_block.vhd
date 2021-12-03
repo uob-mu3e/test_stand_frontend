@@ -17,7 +17,6 @@ generic (
     g_XCVR1_RX_P        : work.util.integer_array_t := ( 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15 );
     g_XCVR1_TX_P        : work.util.integer_array_t := ( 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15 );
 	g_XCVR2_CHANNELS    : integer := 0;
-	g_XCVR2_N           : integer := 0;
 	g_XCVR2_RX_P        : work.util.integer_array_t := ( 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15 );
 	g_XCVR2_TX_P        : work.util.integer_array_t := ( 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15 );
     g_SFP_CHANNELS      : integer := 0;
@@ -77,7 +76,7 @@ port (
 	-- XCVR2 (1250 Mbps @ 125 MHz) -- reset link
 	i_xcvr2_rx          : in    std_logic_vector(g_XCVR2_CHANNELS-1 downto 0) := (others => '0');
 	o_xcvr2_tx          : out   std_logic_vector(g_XCVR2_CHANNELS-1 downto 0);
-    i_xcvr2_refclk      : in    std_logic_vector(g_XCVR2_N-1 downto 0) := (others => '0');
+    i_xcvr2_refclk      : in    std_logic := '0';
     i_xcvr2_clk         : in    std_logic := '0';
 
     -- SFP
@@ -243,7 +242,7 @@ architecture arch of a10_block is
     signal xcvr1_rx_datak   : work.util.slv4_array_t(o_xcvr1_rx_datak'range);
     signal xcvr1_tx_data    : work.util.slv32_array_t(i_xcvr1_tx_data'range);
     signal xcvr1_tx_datak   : work.util.slv4_array_t(i_xcvr1_tx_datak'range);
-    signal xcvr2_tx_data    : work.util.slv8_array_t(g_XCVR2_CHANNELS-1 downto 0) := (others => (others => '0'));
+    signal xcvr2_tx_data    : std_logic_vector(g_XCVR2_CHANNELS*8-1 downto 0) := (others => '0');
     signal xcvr2_tx_datak   : std_logic_vector(g_XCVR2_CHANNELS-1 downto 0) := (others => '0');
 
     signal pcie0_clk        : std_logic;
@@ -554,10 +553,9 @@ begin
     generic map (
         g_XCVR_NAME 	=> "xcvr_a10",
         g_XCVR_N 		=> g_XCVR0_N,
-        g_CHANNELS 	=> g_XCVR0_CHANNELS / g_XCVR0_N,
-		g_CHANNEL_WIDTH => 32,
-        g_REFCLK_MHZ => 125.0,
-        g_CLK_MHZ 	=> g_CLK_MHZ--,
+        g_CHANNELS 		=> g_XCVR0_CHANNELS / g_XCVR0_N,
+        g_REFCLK_MHZ 	=> 125.0,
+        g_CLK_MHZ 		=> g_CLK_MHZ--,
     )
     port map (
         o_rx_data           => xcvr0_rx_data,
@@ -612,9 +610,9 @@ begin
     generic map (
         g_XCVR_NAME 	=> "xcvr_enh",
         g_XCVR_N 		=> g_XCVR1_N,
-        g_CHANNELS 	=> g_XCVR1_CHANNELS / g_XCVR1_N,
-        g_REFCLK_MHZ => 125.0,
-        g_CLK_MHZ 	=> g_CLK_MHZ--,
+        g_CHANNELS 		=> g_XCVR1_CHANNELS / g_XCVR1_N,
+        g_REFCLK_MHZ 	=> 125.0,
+        g_CLK_MHZ 		=> g_CLK_MHZ--,
     )
     port map (
         o_rx_data           => xcvr1_rx_data,
@@ -664,45 +662,42 @@ begin
 	 
     -- xcvr_block 1250 Mbps @ 125 MHz (reset link)
     generate_xcvr2_block : if ( g_XCVR2_CHANNELS > 0 ) generate
-    e_xcvr2_block : entity work.xcvr_block
-    generic map (
-        g_XCVR_NAME 	=> "xcvr_reset",
-        g_XCVR_N 		=> g_XCVR2_N,
-        g_CHANNELS 	=> g_XCVR2_CHANNELS / g_XCVR2_N,
-        g_REFCLK_MHZ => 125.0,
+	e_xcvr2_block : entity work.xcvr_a10
+	generic map (
+		g_XCVR_NAME => "xcvr_reset",
+		NUMBER_OF_CHANNELS_g => g_XCVR2_CHANNELS,
+		CHANNEL_WIDTH_g => 8,
+		g_REFCLK_MHZ => 125.0,
 		g_RATE_MBPS => 1250,
-		g_CHANNEL_WIDTH => 8,
-        g_CLK_MHZ 	=> g_CLK_MHZ--,
-    )
-    port map (
-        o_rx_reset_data     => open,
-        o_rx_reset_datak    => open,
+		g_CLK_MHZ => g_CLK_MHZ--,
+	)
+	port map (
+		i_rx_serial => i_xcvr2_rx,
+		o_tx_serial => o_xcvr2_tx,
 
-        i_tx_reset_data     => xcvr2_tx_data,
-        i_tx_reset_datak    => xcvr2_tx_datak,
+		i_refclk    => i_xcvr2_refclk,
 
-        i_tx_clk            => (others => i_clk_125),
-        i_rx_clk            => (others => i_clk_125),
+		i_tx_data   => xcvr2_tx_data,
+		i_tx_datak  => xcvr2_tx_datak,
 
-        i_rx_serial         => i_xcvr2_rx,
-        o_tx_serial         => o_xcvr2_tx,
-
-        i_refclk            => i_xcvr2_refclk,
+		i_rx_clkin  => (others => i_clk_125),
+		i_tx_clkin  => (others => i_clk_125),
 
         i_avs_address       => (others => '0'),
         i_avs_read          => '0',
-        o_avs_readdata      => open,
         i_avs_write         => '0',
         i_avs_writedata     => (others => '0'),
-        o_avs_waitrequest   => open,
 
-        i_reset_n           => i_reset_n,
-        i_clk               => i_clk--,
-    );
+		i_reset_n   => i_reset_n,
+		i_clk       => i_clk--,
+	);
     end generate;
 	
 	generate_reset_link : if ( g_XCVR2_CHANNELS > 0 ) generate
     e_a10_reset_link : entity work.a10_reset_link
+	generic map (
+		g_XCVR2_CHANNELS => 4--,
+	)
     port map (
 	    o_xcvr_tx_data      => xcvr2_tx_data,
 		o_xcvr_tx_datak     => xcvr2_tx_datak,
