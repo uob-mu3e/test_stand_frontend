@@ -88,7 +88,7 @@ begin
 		-- abortding should be always possible
 		if ( reg_abort_run = '0' and i_reset_ctl(RESET_LINK_ABORT_RUN_BIT) = '1' ) then
 			xcvr_tx_data <= RESET_LINK_ABORT_RUN;
-			o_state_out  <= x"00000000";
+			o_state_out  <= RESET_LINK_ABORT_RUN & x"000000";
 			reset_state  <= idle;
 		else
 			case reset_state is
@@ -98,7 +98,7 @@ begin
 						if ( reg_run_prepare = '0' and i_reset_ctl(RESET_LINK_RUN_PREPARE_BIT) = '1' ) then
 							xcvr_tx_data <= RESET_LINK_RUN_PREPARE;
 							reset_state  <= rNB0;
-							o_state_out  <= x"00000001";
+							o_state_out  <= RESET_LINK_RUN_PREPARE & x"000001";
 						end if;
 					
 					when rNB0 =>
@@ -116,14 +116,14 @@ begin
 					when rNB3 =>
 						xcvr_tx_data <= i_reset_run_number(31 downto 24);
 						reset_state  <= sync;
-						o_state_out  <= x"00000002";
+						o_state_out  <= i_reset_run_number;
 						
 					when sync =>
 						-- wait for sync
 						if ( reg_sync = '0' and i_reset_ctl(RESET_LINK_SYNC_BIT) = '1' ) then
 							xcvr_tx_data <= RESET_LINK_SYNC;
 							reset_state  <= start_run;
-							o_state_out  <= x"00000003";
+							o_state_out  <= RESET_LINK_SYNC & x"000003";
 						end if;
 					
 					when start_run =>
@@ -131,7 +131,7 @@ begin
 						if ( reg_start_run = '0' and i_reset_ctl(RESET_START_RUN_BIT) = '1' ) then
 							xcvr_tx_data <= RESET_LINK_START_RUN;
 							reset_state  <= end_run;
-							o_state_out  <= x"00000004";
+							o_state_out  <= RESET_LINK_START_RUN & x"000004";
 						end if;
 						
 					when end_run =>
@@ -139,7 +139,7 @@ begin
 						if ( reg_end_run = '0' and i_reset_ctl(RESET_END_RUN_BIT) = '1' ) then
 							xcvr_tx_data <= RESET_LINK_END_RUN;
 							reset_state  <= idle;
-							o_state_out  <= x"00000000";
+							o_state_out  <= RESET_LINK_END_RUN & x"000000";
 						end if;
 						
 					when others =>
