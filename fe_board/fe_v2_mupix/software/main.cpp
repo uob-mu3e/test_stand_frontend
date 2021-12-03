@@ -77,6 +77,13 @@ int main() {
         case '8':
             mupix_datapath.menu();
             break;
+        case '9':
+            printf("test: 0x%08x\n", ram->data[0xFC2C]);
+            break;
+        case 'a':
+            printf("testwrite:\n");
+            ram->data[0xFC2C]=0xAAAAAAAA;
+            break;
         default:
             printf("invalid command: '%c'\n", cmd);
         }

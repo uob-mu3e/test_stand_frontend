@@ -53,7 +53,9 @@ port (
     o_programming_data          : out std_logic_vector(31 downto 0);
     o_programming_data_ena      : out std_logic;
     o_programming_addr          : out std_logic_vector(31 downto 0);
-    o_programming_addr_ena      : out std_logic--;
+    o_programming_addr_ena      : out std_logic;
+    
+    o_testout                   : out std_logic_vector(31 downto 0)--;
 );
 end entity;
 
@@ -80,8 +82,9 @@ architecture rtl of feb_reg_mapping is
     signal test_write_data          : std_logic_vector(31 downto 0);
 
 -- Prolong enable
-    signal addr_ena_del					: std_logic_vector(5 downto 0);
+    signal addr_ena_del             : std_logic_vector(5 downto 0);
 
+    signal testout                  : std_logic_vector(31 downto 0);
 begin
 
     process(i_clk_156)
@@ -116,6 +119,7 @@ begin
         o_reg_reset_bypass          <= reg_reset_bypass;
         o_reg_reset_bypass_payload  <= reg_reset_bypass_payload;
         o_fpga_id_reg               <= fpga_id_reg;
+        o_testout                   <= testout;
 
         run_state_156               <= i_run_state_156;
         merger_rate_count           <= i_merger_rate_count;
@@ -287,6 +291,14 @@ begin
             o_reg_rdata(1 downto 0) <= i_si45_intr_n;
             o_reg_rdata(3 downto 2) <= i_si45_lol_n;
             o_reg_rdata(31 downto 4) <= (others => '0');
+        end if;
+
+        -- testout
+        if ( regaddr = TEST_OUT_REGISTER and i_reg_re = '1' ) then
+            o_reg_rdata <= testout;
+        end if;
+        if ( regaddr = TEST_OUT_REGISTER and i_reg_we = '1' ) then
+            testout <= i_reg_wdata;
         end if;
 
         -- NON-incrementing reads/writes TEST

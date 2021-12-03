@@ -118,7 +118,8 @@ port (
     o_clk_125_mon   : out   std_logic;
 
     i_areset_n      : in    std_logic;
-    
+
+    o_testout       : out   std_logic_vector(31 downto 0);
     i_testin        : in    std_logic--;
 );
 end entity;
@@ -340,7 +341,8 @@ begin
         o_programming_data          => programming_data,
         o_programming_data_ena      => programming_data_ena,
         o_programming_addr          => programming_addr,
-        o_programming_addr_ena      => programming_addr_ena--,
+        o_programming_addr_ena      => programming_addr_ena,
+        o_testout                   => o_testout--,
     );
 
 

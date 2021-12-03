@@ -8,5 +8,6 @@ endif()
 add_executable(flashprog ${MIDASSYS}/mscb/src/mscb.cxx ${MIDASSYS}/mscb/src/mxml.cxx ${MIDASSYS}/mscb/src/strlcpy.cxx main.cpp)
 
 target_include_directories(flashprog PRIVATE ${MIDASSYS}/mscb/include)
+target_link_libraries(flashprog PRIVATE pthread)
 
 install(TARGETS flashprog DESTINATION bin)
