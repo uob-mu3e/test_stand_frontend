@@ -39,8 +39,8 @@ package a10_pcie_registers is
             constant DATAGENERATOR_BIT_ENABLE_TILE                  : integer := 3;
             constant DATAGENERATOR_BIT_ENABLE_TEST                  : integer := 4;
             constant DATAGENERATOR_BIT_DMA_HALFFUL_MODE             : integer := 5;
-            subtype DATAGENERATOR_FRACCOUNT_RANGE                   is integer range 15 downto 8;
-            subtype DATAGENERATOR_NPIXEL_RANGE                      is integer range 15 downto 8;
+            subtype DATAGENERATOR_FRACCOUNT_RANGE                   is integer range 15 downto  8;
+            subtype DATAGENERATOR_NPIXEL_RANGE                      is integer range 15 downto  8;
             subtype DATAGENERATOR_NFIBRE_RANGE                      is integer range 23 downto 16;
             subtype DATAGENERATOR_NTILE_RANGE                       is integer range 31 downto 24;
 
@@ -76,7 +76,7 @@ package a10_pcie_registers is
         constant SWB_READOUT_LINK_REGISTER_W                    : integer := 16#14#;
         
         constant SWB_COUNTER_REGISTER_W                         : integer := 16#15#;
-            subtype SWB_COUNTER_ADDR_RANGE                          is integer range 7 downto 0;
+            subtype SWB_COUNTER_ADDR_RANGE                          is integer range  7 downto 0;
             subtype SWB_LINK_RANGE                                  is integer range 15 downto 8;
 
         constant DDR3_CONTROL_W                                 : integer := 16#20#;
@@ -106,6 +106,15 @@ package a10_pcie_registers is
 			constant RESET_LINK_ABORT_RUN_BIT						: integer := 4;
 			subtype  RESET_LINK_FEB_RANGE	                        is integer range 31 downto 29;
 		constant RESET_LINK_RUN_NUMBER_REGISTER_W				: integer := 16#29#;
+		constant CLK_LINK_0_REGISTER_W							: integer := 16#30#;
+		constant CLK_LINK_1_REGISTER_W							: integer := 16#31#;
+		constant CLK_LINK_2_REGISTER_W							: integer := 16#32#;
+		constant CLK_LINK_3_REGISTER_W							: integer := 16#33#;
+		constant CLK_LINK_REST_REGISTER_W						: integer := 16#34#;
+			subtype  REST_0_RANGE			                    is integer range  7 downto  0;
+			subtype  REST_1_RANGE			                    is integer range 15 downto  8;
+			subtype  REST_2_RANGE			                    is integer range 23 downto 16;
+			subtype  REST_3_RANGE			                    is integer range 31 downto 24;
 			
 
         -- Registers above 0x36 are in use for the PCIe controller/DMA
