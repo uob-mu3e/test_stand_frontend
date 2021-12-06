@@ -1,5 +1,5 @@
 #
-set_location_assignment PIN_AK10 -to clock_A
+set_location_assignment PIN_AG6 -to clock_A
 set_instance_assignment -name IO_STANDARD "2.5 V" -to clock_A
 
 set_location_assignment PIN_AA10 -to fast_reset_A
@@ -63,14 +63,14 @@ set_instance_assignment -name INPUT_TERMINATION DIFFERENTIAL -to data_in_C[5]
 set_instance_assignment -name IO_STANDARD LVDS -to data_in_C[5]
 set_location_assignment PIN_AB15 -to data_in_C[5]
 
-set_location_assignment PIN_D19 -to csn_A[0]
-set_location_assignment PIN_B7 -to csn_B[0]
-set_location_assignment PIN_AD9 -to csn_C[0]
-set_location_assignment PIN_AB17 -to csn_D[0]
+set_location_assignment PIN_C8 -to csn_A[0]
+set_location_assignment PIN_C15 -to csn_B[0]
+set_location_assignment PIN_AF6 -to csn_C[0]
+set_location_assignment PIN_AC21 -to csn_D[0]
 set_instance_assignment -name IO_STANDARD "2.5 V" -to csn_A[0]
 set_instance_assignment -name IO_STANDARD "2.5 V" -to csn_B[0]
 set_instance_assignment -name IO_STANDARD "2.5 V" -to csn_C[0]
 set_instance_assignment -name IO_STANDARD "2.5 V" -to csn_D[0]
 
-set_location_assignment PIN_AH11 -to mosi_A
+set_location_assignment PIN_AG16 -to mosi_A
 set_instance_assignment -name IO_STANDARD "2.5 V" -to mosi_A
