@@ -65,6 +65,11 @@ entity top is
         -- fast_reset_E                : out   std_logic;
         -- SIN_E                       : out   std_logic;
 
+        -- enable signals for lvds repeaters on scsi adapter card
+        enable_A                    : out   std_logic;
+        enable_B                    : out   std_logic;
+        enable_C                    : out   std_logic;
+        enable_D                    : out   std_logic;
         -- Extra signals
         
         --clock_aux                   : out   std_logic; -- Pin in use for csn_A[2] M.Mueller
@@ -199,6 +204,11 @@ begin
     csn_B <= mp_ctrl_csn( 8 downto 6);
     csn_C <= mp_ctrl_csn( 5 downto 3);
     csn_D <= mp_ctrl_csn( 2 downto 0);
+
+    enable_A <= '1';
+    enable_B <= '1';
+    enable_C <= '1';
+    enable_D <= '1';
 
     e_mupix_block : entity work.mupix_block
     generic map (
