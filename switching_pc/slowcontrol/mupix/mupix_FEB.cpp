@@ -49,7 +49,7 @@ void invert_datastream(uint32_t * datastream) {
 }
 
 int MupixFEB::GetTDACsConfig(std::string path){
-    cm_msg(MINFO, "MupixFEB" , "Get TDACs from file %s", path);
+    cm_msg(MINFO, "MupixFEB" , "Get TDACs from file %s", path.c_str());
     
     return FE_SUCCESS;
 }
