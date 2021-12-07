@@ -396,6 +396,7 @@ void setup_odb(){
             {"Clear WM", false},
             {"Last RM ADD", false},
             {"MupixConfig", false},
+            {"MupixSetTDACConfig", false},
             {"MupixBoard", false},
             {"SciFiConfig", false},
             {"SciFiAllOff", false},
@@ -1335,7 +1336,14 @@ void sc_settings_changed(odb o)
       o = false;
     }
     if (name == "MupixConfig" && o) {
-          int status=mupixfeb->ConfigureASICs();
+          int status=mupixfeb->ConfigureASICs(false);
+          if(status!=SUCCESS){ 
+         	//TODO: what to do? 
+          }
+      o = false;
+    }
+    if (name == "MupixSetTDACConfig" && o) {
+          int status=mupixfeb->ConfigureASICs(true);
           if(status!=SUCCESS){ 
          	//TODO: what to do? 
           }

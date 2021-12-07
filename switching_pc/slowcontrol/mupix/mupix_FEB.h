@@ -47,6 +47,8 @@ class MupixFEB  : public MuFEB{
       //ASIC configuration:
       //Configure all asics under prefix (e.g. prefix="/Equipment/Mupix")
       int ConfigureASICs();
+      //Get the TDACs config from a file
+      int GetTDACsConfig(std::string path);
       //Configure all boards under prefix (e.g. prefix="/Equipment/Mupix")
       int ConfigureBoards();
 

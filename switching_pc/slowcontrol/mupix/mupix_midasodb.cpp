@@ -73,6 +73,7 @@ int setup_db(const char* prefix, MupixFEB* FEB_interface, bool init_FEB){
     auto settings_biasdacs = MUPIX_BIASDACS_SETTINGS;
     auto settings_confdacs = MUPIX_CONFDACS_SETTINGS;
     auto settings_vdacs = MUPIX_VDACS_SETTINGS;
+    auto settings_tdacs = MUPIX_TDACS_SETTINGS;
     
 
     nasics = settings_asics_global["Num asics"];
@@ -86,6 +87,9 @@ int setup_db(const char* prefix, MupixFEB* FEB_interface, bool init_FEB){
         
         sprintf(set_str, "%s/Settings/VDACS/%u", prefix, i);
         settings_vdacs.connect(set_str, true);
+        
+        sprintf(set_str, "%s/Settings/TDACS/%u", prefix, i);
+        settings_tdacs.connect(set_str, true);
     }
 
     // PSLL Bank setup

@@ -37,8 +37,8 @@ typedef struct {
 static odb MUPIX_GLOBAL_SETTINGS = {
         {"Num asics", 0},
         {"Num boards", 0},
-        {"Num rows", 200},
-        {"Num cols", 128},
+        {"Num rows", 250},
+        {"Num cols", 256},
 };
 
 #endif
@@ -283,6 +283,19 @@ static odb MUPIX_VDACS_SETTINGS = {
     {"Baseline", 70},
     {"VDAC1", 0},
     {"ref_Vss", 184}
+};
+
+#endif
+
+#ifndef MUPIX_TDACS_DEFINED
+#define MUPIX_TDACS_DEFINED
+
+typedef struct {
+    STRING TDACFILE;
+} MUPIX_TDACS;
+
+static odb MUPIX_TDACS_SETTINGS = {
+    {"TDACFILE", "default_tdacs_mupix.h"}
 };
 
 #endif
