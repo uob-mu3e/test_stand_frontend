@@ -201,7 +201,7 @@ begin
     mosi_D <= mp_ctrl_mosi(0);
 
     --csn_A <= mp_ctrl_csn(11 downto 9);
-    csn_B <= mp_ctrl_csn( 8 downto 6);
+    csn_B <= not mp_ctrl_csn( 8 downto 6);
     --csn_C <= mp_ctrl_csn( 5 downto 3);
     csn_D <= mp_ctrl_csn( 2 downto 0);
 
