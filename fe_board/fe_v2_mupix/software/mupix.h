@@ -128,7 +128,7 @@ struct mupix_t {
             printf("pll_lock should always be '1', rx_state 0: wait for dpa_lock 1: alignment 2:ok, disp_err is only counting in rx_state 2\n");
             printf("order is CON2 ModuleA chip1 ABC, chip2 ABC, .. ModuleB chip1 ABC .. CON3..\n");
             for(int i=0; i<64; i++){
-                value = sc->ram->data[0xFF66];
+                value = sc->ram->data[0x1100];
                 if (i>36) continue;
                 printf("%i ready: %01x  rx_state: %01x  pll_lock: %01x  disp_err: %01x\n ",i,value>>31,(value>>29) & 0x3,(value>>28) & 0x1,value & 0x0FFFFFFF);
             }
@@ -170,7 +170,7 @@ struct mupix_t {
             printf("  [1] => set mupix config mask\n");
             printf("  [2] => set spi clk slow down reg\n");
             printf("  [3] => print lvds status\n");
-            if((sc->ram->data[0xFF90]) & 1U){
+            if((sc->ram->data[0x1204]) & 1U){
                 printf("  [4] => do not invert lvds in\n");
             }else{
                 printf("  [4] => invert lvds in\n");
@@ -219,7 +219,7 @@ struct mupix_t {
                 menu_lvds();
                 break;
             case '4':
-                sc->ram->data[0xFF90] ^= 1UL;
+                sc->ram->data[0x1204] ^= 1UL;
                 break;
             case '5':
                 value = 0x0;

@@ -192,9 +192,17 @@ begin
         rx_out                  => rx_out_temp(359 downto 270)
     );
 
-    geninvert: FOR i in 0 to 35 GENERATE
-        rx_out(9+10*i downto 10*i) <= not rx_out_temp(9+10*i downto 10*i) when (MP_LINK_INVERT(i) xor i_rx_invert)='0' else rx_out_temp(9+10*i downto 10*i);
-    end generate geninvert;
+
+    geninvert_normal: if (IS_TELESCOPE_g='0') GENERATE
+        geninvert_n: FOR i in 0 to 35 GENERATE
+            rx_out(9+10*i downto 10*i) <= not rx_out_temp(9+10*i downto 10*i) when (MP_LINK_INVERT(i) xor i_rx_invert)='0' else rx_out_temp(9+10*i downto 10*i);
+        end generate geninvert_n;
+    end generate geninvert_normal;
+    geninvert_telescope: if (IS_TELESCOPE_g='1') GENERATE
+        geninvert_t: FOR i in 0 to 35 GENERATE
+            rx_out(9+10*i downto 10*i) <= not rx_out_temp(9+10*i downto 10*i) when (MP_LINK_INVERT_TELESCOPE(i) xor i_rx_invert)='0' else rx_out_temp(9+10*i downto 10*i);
+        end generate geninvert_t;
+    end generate geninvert_telescope;
 
     gendec:
     FOR i in NINPUT-1 downto 0 generate	
