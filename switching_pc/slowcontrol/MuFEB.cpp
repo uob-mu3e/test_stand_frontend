@@ -381,8 +381,6 @@ DWORD *MuFEB::read_SSSO_OneFEB(DWORD *pdata, uint32_t index)
 }
 
 
-
-
 //Helper functions
 uint32_t MuFEB::reg_setBit  (uint32_t reg_in, uint8_t bit, bool value){
     if(value)
@@ -402,8 +400,6 @@ uint32_t MuFEB::reg_getRange(uint32_t reg_in, uint8_t length, uint8_t offset){
 uint32_t MuFEB::reg_setRange(uint32_t reg_in, uint8_t length, uint8_t offset, uint32_t value){
     return (reg_in & ~(((1<<length)-1)<<offset)) | ((value & ((1<<length)-1))<<offset);
 }
-
-
 
 float MuFEB::ArriaVTempConversion(uint32_t reg)
 {

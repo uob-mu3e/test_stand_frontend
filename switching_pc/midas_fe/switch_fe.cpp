@@ -396,6 +396,7 @@ void setup_odb(){
             {"Clear WM", false},
             {"Last RM ADD", false},
             {"MupixConfig", false},
+            {"MupixSetTDACConfig", false},
             {"MupixBoard", false},
             {"SciFiConfig", false},
             {"SciFiAllOff", false},
