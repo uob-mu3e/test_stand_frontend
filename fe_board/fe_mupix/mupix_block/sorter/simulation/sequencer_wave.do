@@ -5,6 +5,7 @@ add wave -noupdate -radix hexadecimal /sequencer_tb/reset
 add wave -noupdate -radix hexadecimal /sequencer_tb/writeclk
 add wave -noupdate -radix hexadecimal /sequencer_tb/dut/running
 add wave -noupdate -radix hexadecimal /sequencer_tb/dut/running_last
+add wave -noupdate /sequencer_tb/runend
 add wave -noupdate -divider {FIFO Write}
 add wave -noupdate -radix hexadecimal /sequencer_tb/tofifo_counters
 add wave -noupdate -radix hexadecimal /sequencer_tb/write_counterfifo

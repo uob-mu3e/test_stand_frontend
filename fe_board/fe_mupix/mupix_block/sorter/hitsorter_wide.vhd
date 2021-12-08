@@ -62,6 +62,7 @@ signal tsreadmemdelay	: ts_t;
 
 signal runstartup : std_logic;
 signal runshutdown: std_logic;
+signal runend	  : std_logic;
 
 -- For hit writing process
 signal hit_last1:	 hit_array;
@@ -135,17 +136,6 @@ signal hashits: std_logic;
 signal mem_overflow: std_logic;
 signal mem_overflow_del1: std_logic;
 signal mem_overflow_del2: std_logic;
-
---signal odd_nnonempty: std_logic_vector(3 downto 0);	
---signal odd_nechips	 : chip_bits_t;
---signal odd_nechips2 : chip_bits_t;
---signal odd_countchips: counter_chips;
---signal odd_countchips_m1: counter2_chips;
---signal odd_countchips_m2: counter2_chips;
---signal hasodd: std_logic;
---signal odd_overflow: std_logic;
---signal odd_overflow_del1: std_logic;
---signal odd_overflow_del2: std_logic;
 
 signal credits: integer range -128 to 127;
 signal credittemp : integer range -256 to 255;
@@ -243,12 +233,16 @@ if(reset_n = '0') then
 	
 	runstartup		<= '0';
 	runshutdown		<= '0';
+	runend			<= '0';
 	
 	tslow 		<= TSZERO;
 	tshi		<= TSZERO;
 	tsread		<= TSZERO;
 	tsreadmemdelay <= TSZERO;
 elsif (writeclk'event and writeclk = '1') then
+
+	tsread	  <= tslow - "11";
+	tsreadmemdelay <= tsread;
 
 	running_last	<= running;
 	running_read_last  <= running_read;
@@ -278,22 +272,25 @@ elsif (writeclk'event and writeclk = '1') then
 			running_read	<= '1';
 			running_seq		<= '1';
 		end if;
-	else
+	elsif(runshutdown = '1') then-- shutdown sequence
 		tshi  <= tshi  + '1';
 		tslow <= tslow + '1';
 		if(tshi = TSZERO) then
 			tshi	<= TSZERO;
 			if(tslow = TSZERO) then
 				tslow <= tszero;
-				runshutdown <= '0';
-				running_read <= '0';
-				running_seq  <= '0';
+				tsread <= tsread + '1';
+				if(tsread - "10100" = TSZERO) then
+					running_read <= '0';
+					runend		 <= '1';
+					running_seq  <= '0';
+				end if;				
 			end if;
 		end if;
+	else
+		tshi	<= TSZERO;	
+		tslow 	<= TSZERO;
 	end if;
-	
-	tsread	  <= tslow - "11";
-	tsreadmemdelay <= tsread;
 end if;
 end process;
 
@@ -729,6 +726,7 @@ seq:entity work.sequencer_ng
 	port map(
 		reset_n							=> reset_n,
 		clk								=> writeclk,
+		runend							=> runend,
 		from_fifo						=> fromfifo_counters,
 		fifo_empty						=> counterfifo_empty,
 		read_fifo						=> read_counterfifo,

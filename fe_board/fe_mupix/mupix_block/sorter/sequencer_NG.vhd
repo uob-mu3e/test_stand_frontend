@@ -9,6 +9,33 @@
 -- The ouput command has the TS in the LSBs, followed by four bits hit address
 -- four bits channel/chip ID and the MSB inciating command (1) or hit (0)
 
+-- In a bit more detail: For every TS which is either containg hits or marking the 
+-- change of (16 TS) block, the main sorter file writes to a FIFO in the format
+
+-- Timestamp | non-empty flag (hasmem)| Overflow bit|...|...|Chip Nr y | Nhits Chip y | Chip Nr x | Nhits Chip x
+-- Note that the counters are right-stacked, i.e. the rightmost counter is from the first chip with hits and so on
+-- If there are no more hits, the counter is 0
+
+-- The FIFO is of the conventional (non show-ahead) type
+-- It is almost equally tricky to make sure the FIFO is read whenever possible in showahead and non-showahead mode
+-- After the integration run I decided that this way is easier to reason about
+
+-- This input is then turned into a series of commands corresponding directly to the output of the sorter, i.e.
+-- Header 1
+-- Header 2
+-- Subheader
+-- Hit
+-- Hit
+-- ...
+-- Subheader
+-- ...
+-- ...
+-- Footer
+--
+-- For the hits we output in which memory (i.e. chip) they are at which position (TS plus hit number)
+--
+-- Has to be reset between runs
+
 
 library ieee;
 use ieee.std_logic_1164.all;
@@ -23,6 +50,7 @@ entity sequencer_ng is
 	port (
 		reset_n							: in std_logic;										-- async reset
 		clk								: in std_logic;										-- clock
+		runend							: in std_logic;
 		from_fifo						: sorterfifodata_t;
 		fifo_empty						: in std_logic;
 		read_fifo						: out std_logic;
@@ -36,6 +64,7 @@ architecture rtl of sequencer_ng is
 
 signal running: std_logic;
 signal running_last: std_logic;
+signal stopped:	std_logic;
 type output_type is(none, header1, header2, subheader, hits, footer);
 signal output: output_type;
 signal current_block:	block_t;
@@ -69,15 +98,16 @@ begin
 if (reset_n = '0') then	
 	running 		<= '0';
 	running_last 	<= '0';
+	stopped			<= '0';
 	read_fifo_int	<= '0';
 	fifo_empty_last	<= '1';
 	output 			<= none;
 	fifo_new		<= '0';
 	current_block	<= block_max;
 	no_copy_next	<= '0';
-	overflowts			<= (others => '0');
+	overflowts		<= (others => '0');
+	make_header 	<= "00";
 elsif (clk'event and clk = '1') then
-
 	
 	running_last 	<= running;
 	if (running = '0')then
@@ -97,15 +127,15 @@ elsif (clk'event and clk = '1') then
 		output 			<= footer;
 		make_header 	<= "10";
 	elsif(make_header = "10")then
-		output <= header1;
+		output 			<= header1;
 		make_header 	<= "01";
 	elsif(make_header = "01")then
-		output <= header2;
+		output 			<= header2;
 		make_header 	<= "00";
 		no_copy_next	<= '0';
 	else
-		if(blockchange = '1')then
-			output 			<= subheader;
+		if(blockchange = '1') then
+			output			<= subheader;
 			copy_fifo		:= '0';
 			blockchange 	<= '0';
 			overflow_to_out		<= overflowts;
@@ -113,6 +143,7 @@ elsif (clk'event and clk = '1') then
 			if(hasmem = '0' and hasoverflow = '1') then
 				overflowts		<= (others => '1'); -- Note that overflow gets sent with the next subheader!
 			end if;
+			-- Why 11 downto 8? We should be able to remove that
 			if(counters_reg(3 downto 0) = "0000" and counters_reg(11 downto 8) = "0000")then
 				copy_fifo				:= '1';
 			end if;
@@ -147,7 +178,16 @@ elsif (clk'event and clk = '1') then
 				overflowts(conv_integer(current_ts(TSINBLOCKRANGE))) <= hasoverflow;
 			end if;
 		end if;
-	end if;		
+	end if;	
+
+	-- run end:
+	if(stopped = '1') then
+		output <= none;
+	elsif(runend = '1' and current_block = block_max and fifo_empty = '1' and fifo_empty_last = '1' and stopped = '0') then
+		output <= footer;
+		stopped <= '1';
+	end if;
+
 
 	if(no_copy_next = '1')then
 		copy_fifo := '0';
@@ -162,7 +202,10 @@ elsif (clk'event and clk = '1') then
 	end if;
 
 
-
+	-- fifo_new means that there is valid output at the FIFO, which has not yet been copied
+	-- to the respective variables
+	-- copy_fifo means that the current set of variables was processed and they can be replaced
+	-- with the fifo output
 	
 	if(read_fifo_int = '1' and fifo_empty_last = '0')then
 		if(copy_fifo = '1')then
@@ -188,7 +231,7 @@ elsif (clk'event and clk = '1') then
 		if(from_fifo(TSBLOCKINFIFORANGE) /= current_block)then
 			blockchange <= '1';
 			if(from_fifo(TSBLOCKINFIFORANGE) = block_zero)then
-				make_header <= "1" & running_last;
+				make_header  <= "1" & running_last; -- this ensures that we do not output a footer at run start
 				no_copy_next <= '1';
 			end if;
 		else
@@ -220,7 +263,7 @@ elsif(clk'event and clk = '1') then
 			outcommand(TSBLOCKRANGE)	<= ts_to_out(TSBLOCKRANGE);
 			outcommand(TSNONBLOCKRANGE)	<= (others => '0');
 			outoverflow					<= overflow_to_out;
-			command_enable 	<= '1';
+			command_enable 				<= '1';
 		when hits =>
 			command_enable 									 <= '1';
 			outcommand(COMMANDBITS-1)						 <= '0'; -- Hits, not a command
