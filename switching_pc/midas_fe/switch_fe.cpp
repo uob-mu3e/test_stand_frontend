@@ -1336,14 +1336,7 @@ void sc_settings_changed(odb o)
       o = false;
     }
     if (name == "MupixConfig" && o) {
-          int status=mupixfeb->ConfigureASICs(false);
-          if(status!=SUCCESS){ 
-         	//TODO: what to do? 
-          }
-      o = false;
-    }
-    if (name == "MupixSetTDACConfig" && o) {
-          int status=mupixfeb->ConfigureASICs(true);
+          int status=mupixfeb->ConfigureASICs();
           if(status!=SUCCESS){ 
          	//TODO: what to do? 
           }

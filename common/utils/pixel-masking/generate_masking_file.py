@@ -1,23 +1,20 @@
 import tkinter as tk
 import numpy as np
+import pandas as pd
 
 
-grid = np.zeros([128, 500])
+grid = np.zeros([256, 250])
 
-def show_entry_fields():
+def set_phy_addr():
     row = int(e1.get())
     col = int(e2.get())
-    if col%2 != 0:
-        row += 250
-    #tk.Label(app, text="row").grid(row=int(e1.get()), col=int(e2.get()))
-    grid[col//2, row] = 1
-    print(col%2)
-    print("Row: {} Col: {}".format(row, col//2))
+    grid[col, row] = 1
+    print("Row: {} Col: {}".format(row, col))
     print(grid)
     
 def clear():
     global grid
-    grid = np.zeros([128, 500])
+    grid = np.zeros([256, 250])
     print(grid)
 
 def transform_col_row_MPX(col, row):
@@ -47,48 +44,41 @@ def transform_col_row_MPX(col, row):
     return int(newcol), int(newrow)
     
 def create():
-    outStr  = "#include <vector>\n"
-    outStr += "#include <cstdint>\n\n"
-    outStr += "uint32_t default_config_mupix[127] = {\n"
+    outList = []
+    curNBits = 0
+    curWord = 0
     for col in range(128):
-        if np.unique(grid[col]).size > 1:
-            outDict[col] = grid[col].tolist()
-    print(outDict)
+        curList = [col]
+        for row in range(500):
+            for b in range(7):
+                curNBits += 1
+                pcol, prow = transform_col_row_MPX(col, row)
+                if b == 6 and grid[pcol, prow] == 1:
+                    curWord = curWord | (1 << curNBits)
+                if curNBits == 31:
+                    curList.append(hex(curWord))
+                    curNBits = 0
+                    curWord = 0
+        outList.append(curList)
+    df = pd.DataFrame(outList)
+    print(df)
+    df.to_csv("tdacs_mupix_{}.csv".format(e3.get()), index=False)
 
-row = []
-col = []
-ilist = []
-jlist = []
-for i in range(128):
-    for j in range(500):
-        c, r = transform_col_row_MPX(i, j)
-        if r <= 249 and r >= 0 and c <= 255 and c >= 0:
-            if j not in jlist:
-                if r not in row:
-                    row.append(r)
-                    jlist.append(j)
-            if i not in ilist:
-                col.append(c)
-                ilist.append(i)
-            else:
-                if c not in col:
-                    col.append(c)
-
-print(np.array(ilist))
-print(np.array(jlist))
-exit()
 app = tk.Tk()
 tk.Label(app, text="row").grid(row=0)
 tk.Label(app, text="col").grid(row=1)
+tk.Label(app, text="chip").grid(row=2)
 
 e1 = tk.Entry(app)
 e2 = tk.Entry(app)
+e3 = tk.Entry(app)
 
 e1.grid(row=0, column=1)
 e2.grid(row=1, column=1)
+e3.grid(row=2, column=1)
 
 tk.Button(app, text='Clear', command=clear).grid(row=3, column=0, sticky=tk.W, pady=4)
-tk.Button(app, text='Set', command=show_entry_fields).grid(row=3, column=1, sticky=tk.W, pady=4)
+tk.Button(app, text='Set', command=set_phy_addr).grid(row=3, column=1, sticky=tk.W, pady=4)
 tk.Button(app, text='Create', command=create).grid(row=3, column=2, sticky=tk.W, pady=4)
 
 tk.mainloop()

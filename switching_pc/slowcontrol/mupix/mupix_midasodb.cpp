@@ -25,13 +25,19 @@ int setup_db(const char* prefix, MupixFEB* FEB_interface, bool init_FEB){
     sprintf(set_str, "%s/Settings/ASICs/Global", prefix);
     auto settings_asics_global = MUPIX_GLOBAL_SETTINGS;
     // global mupix settings from mupix_MIDAS_config.h
-    settings_asics_global.connect(set_str, true); 
+    settings_asics_global.connect(set_str, true);
+
+    // set global FEB values
+    auto global_settings_febs = MUPIX_GLOBAL_FEBS_SETTINGS;
+
+    sprintf(set_str, "%s/Settings/FEBS", prefix);
+    global_settings_febs.connect(set_str, true);
 
     //Set number of ASICs, derived from mapping
     unsigned int nasics = FEB_interface->GetNumASICs();
+    unsigned int nFEBs = FEB_interface->GetNumFPGAs();
     settings_asics_global["Num asics"] = nasics;
-    // TODO why is this the same?
-    settings_asics_global["Num boards"] = nasics;
+    settings_asics_global["Num boards"] = nFEBs;
 
     if(nasics==0){
         cm_msg(MINFO,"mupix_midasodb::setup_db","Number of Mupixes is 0, will not continue to build DB. Consider to delete ODB subtree %s",prefix);
@@ -70,11 +76,11 @@ int setup_db(const char* prefix, MupixFEB* FEB_interface, bool init_FEB){
         // FEB_interface->setMask(i,settings_daq["mask"]i]);
     }
 
+    // set all dac values per asic
     auto settings_biasdacs = MUPIX_BIASDACS_SETTINGS;
     auto settings_confdacs = MUPIX_CONFDACS_SETTINGS;
     auto settings_vdacs = MUPIX_VDACS_SETTINGS;
     auto settings_tdacs = MUPIX_TDACS_SETTINGS;
-    
 
     nasics = settings_asics_global["Num asics"];
         
@@ -91,6 +97,19 @@ int setup_db(const char* prefix, MupixFEB* FEB_interface, bool init_FEB){
         sprintf(set_str, "%s/Settings/TDACS/%u", prefix, i);
         settings_tdacs.connect(set_str, true);
     }
+
+    // set all tdac values per FEB
+    auto settings_febs = MUPIX_FEB_SETTINGS;
+
+    nFEBs = settings_asics_global["Num boards"];
+
+    for(unsigned int i = 0; i < nFEBs; ++i) {
+        sprintf(set_str, "%s/Settings/FEBS/%u", prefix, i);
+        settings_febs.connect(set_str, true);
+    }
+
+    // load tdac json from ODB into feb_interface
+    FEB_interface->SetTDACs();
 
     // PSLL Bank setup
     /* Default values for /Equipment/Mupix/Settings */
@@ -116,6 +135,7 @@ int setup_db(const char* prefix, MupixFEB* FEB_interface, bool init_FEB){
 
     return DB_SUCCESS;
 }
+
 
 void create_psll_names_in_odb(odb & settings, uint32_t N_FEBS_MUPIX, uint32_t N_LINKS){
     int bankindex = 0;

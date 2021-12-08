@@ -20,7 +20,7 @@ Contents:       Definition of functions to talk to a mupix-based FEB.
 using midas::odb;
 
 class MupixFEB  : public MuFEB{
-   private:
+    private:
       std::map<uint8_t,std::map<uint32_t,uint32_t> > m_reg_shadow; /*[FPGA_ID][reg]*/
       MupixFEB(const MupixFEB&)=delete;
     public:
@@ -43,12 +43,17 @@ class MupixFEB  : public MuFEB{
       uint16_t GetNumASICs() const;
       virtual FEBTYPE  GetTypeID() const {return FEBTYPE::Pixel;}
 
+      uint16_t ASICsPerFEB() const;
+
+      // TDAC functions
+      // for each ASIC we have a map for each col which holds a vector for each row information
+      void SetTDACs();
+      vector<std::map<std::string, std::vector<uint32_t>>> GetTDACsJSON() {return TDACsJSON;}
+      vector<std::map<std::string, std::vector<uint32_t>>> TDACsJSON;
 
       //ASIC configuration:
       //Configure all asics under prefix (e.g. prefix="/Equipment/Mupix")
       int ConfigureASICs();
-      //Get the TDACs config from a file
-      int GetTDACsConfig(std::string path);
       //Configure all boards under prefix (e.g. prefix="/Equipment/Mupix")
       int ConfigureBoards();
 
