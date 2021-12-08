@@ -76,21 +76,26 @@ void MupixFEB::SetTDACs() {
         std::ifstream data(TDACFILE);
         std::string line;
         std::map<std::string, std::vector<uint32_t>> parsedCsv;
+        bool firstLine = true;
         while ( std::getline(data, line) )
         {
-            std::stringstream lineStream(line);
-            std::string cell;
-            std::vector<uint32_t> parsedRow;
-            std::string firstValue = "-999";
-            while(std::getline(lineStream, cell, ','))
-            {
-                if ( firstValue == "-999" ) {
-                    firstValue = cell;
-                } else {
-                    parsedRow.push_back(std::stoi(cell));
+            if (firstLine) {
+                firstLine = false;
+            } else {
+                std::stringstream lineStream(line);
+                std::string cell;
+                std::vector<uint32_t> parsedRow;
+                std::string firstValue = "-999";
+                while(std::getline(lineStream, cell, ','))
+                {
+                    if ( firstValue == "-999" ) {
+                        firstValue = cell;
+                    } else {
+                        parsedRow.push_back(std::stoi(cell));
+                    }
                 }
+                parsedCsv.insert(std::pair<std::string, std::vector<uint32_t>>(firstValue, parsedRow));
             }
-            parsedCsv.insert(std::pair<std::string, std::vector<uint32_t>>(firstValue, parsedRow));
         }
         TDACsJSON.push_back(parsedCsv);
     }   
