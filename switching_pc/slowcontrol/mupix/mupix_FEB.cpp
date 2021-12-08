@@ -176,6 +176,7 @@ int MupixFEB::ConfigureASICs(){
             }
 
             // mask all chips but not this one
+            // TODO: make this correct
             uint32_t chip_select_mask = 0xfff; //all chips masked (12 times 1)
             int pos = ASICid_from_ID(asic);
             chip_select_mask &= ((~0x1) << pos);
@@ -196,7 +197,8 @@ int MupixFEB::ConfigureASICs(){
                 std::cout<<"Timeout"<<std::endl;
                 cm_msg(MERROR, "setup_mupix", "FEB Mupix SPI timeout");
             } else { // do the SPI writing 
-                feb_sc.FEB_write(SP_ID, MP_CTRL_CHIP_MASK_REGISTER_W, chip_select_mask);
+                // TODO: make this correct
+                feb_sc.FEB_write(SP_ID, MP_CTRL_CHIP_MASK_REGISTER_W, 0x0);//chip_select_mask);
                 // TODO: include headers for addr.
                 feb_sc.FEB_write(SP_ID, MP_CTRL_SLOW_DOWN_REGISTER_W, 0x0000000F); // SPI slow down reg
                 feb_sc.FEB_write(SP_ID, MP_CTRL_ENABLE_REGISTER_W, 0x00000FC0); // reset Mupix config fifos
