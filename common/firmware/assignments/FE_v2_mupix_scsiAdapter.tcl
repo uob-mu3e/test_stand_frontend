@@ -63,13 +63,13 @@ set_instance_assignment -name INPUT_TERMINATION DIFFERENTIAL -to data_in_C[5]
 set_instance_assignment -name IO_STANDARD LVDS -to data_in_C[5]
 set_location_assignment PIN_AB15 -to data_in_C[5]
 
-#set_location_assignment PIN_C8 -to csn_A[0]
+set_location_assignment PIN_C8 -to csn_A[0]
 set_location_assignment PIN_D15 -to csn_B[0]
-#set_location_assignment PIN_AF6 -to csn_C[0]
+set_location_assignment PIN_AF6 -to csn_C[0]
 set_location_assignment PIN_AC21 -to csn_D[0]
-#set_instance_assignment -name IO_STANDARD LVDS -to csn_A[0]
+set_instance_assignment -name IO_STANDARD LVDS_E_1R -to csn_A[0]
 set_instance_assignment -name IO_STANDARD LVDS -to csn_B[0]
-#set_instance_assignment -name IO_STANDARD LVDS -to csn_C[0]
+set_instance_assignment -name IO_STANDARD LVDS_E_1R -to csn_C[0]
 set_instance_assignment -name IO_STANDARD LVDS -to csn_D[0]
 
 set_location_assignment PIN_AG16 -to mosi_A

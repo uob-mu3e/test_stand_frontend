@@ -107,12 +107,13 @@ constant MUPIX_LVDS_STATUS_BLOCK_LENGTH     : integer := 36;
 ---- mupix sorter (0x1000-0x10FF)--------------------------------
 -----------------------------------------------------------------
 
-    constant MP_SORTER_COUNTER_REGISTER_R       :  integer := 16#1000#;       -- DOC: Hit counters in the sorter, 40 32 bit counters in total. For the inner pixel FEBs: 12 counters with in-time hits per chip, 12 counters with out-of-time hits per chip, 12 counters with overflows per chip, a counter with the number of output hits and the current credit value. The last two counters are currently reserved for future use | MP_FEB
-    constant MP_SORTER_NINTIME_REGISTER_R       :  integer := 16#1000#;
-    constant MP_SORTER_NOUTOFTIME_REGISTER_R    :  integer := 16#100C#;
-    constant MP_SORTER_NOVERFLOW_REGISTER_R     :  integer := 16#1018#;
-    constant MP_SORTER_NOUT_REGISTER_R          :  integer := 16#1024#;
-    constant MP_SORTER_CREDIT_REGISTER_R        :  integer := 16#1025#;
-    constant MP_SORTER_DELAY_REGISTER_W         :  integer := 16#1028#;       -- DOC: Minimum round-trip delay from sync reset going off to hit with TS > 0 appearing at sorter input in 8 ns steps | MP_FEB
+    constant MP_SORTER_COUNTER_REGISTER_R           :  integer := 16#1000#;       -- DOC: Hit counters in the sorter, 40 32 bit counters in total. For the inner pixel FEBs: 12 counters with in-time hits per chip, 12 counters with out-of-time hits per chip, 12 counters with overflows per chip, a counter with the number of output hits and the current credit value. The last two counters are currently reserved for future use | MP_FEB
+    constant MP_SORTER_NINTIME_REGISTER_R           :  integer := 16#1000#;
+    constant MP_SORTER_NOUTOFTIME_REGISTER_R        :  integer := 16#100C#;
+    constant MP_SORTER_NOVERFLOW_REGISTER_R         :  integer := 16#1018#;
+    constant MP_SORTER_NOUT_REGISTER_R              :  integer := 16#1024#;
+    constant MP_SORTER_CREDIT_REGISTER_R            :  integer := 16#1025#;
+    constant MP_SORTER_DELAY_REGISTER_W             :  integer := 16#1028#;       -- DOC: Minimum round-trip delay from sync reset going off to hit with TS > 0 appearing at sorter input in 8 ns steps | MP_FEB
+    constant MP_SORTER_ZERO_SUPPRESSION_REGISTER_W  :  integer := 16#1029#;
 
 end package mupix_registers;

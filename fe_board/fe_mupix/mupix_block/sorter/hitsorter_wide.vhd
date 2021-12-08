@@ -178,11 +178,12 @@ signal terminate_output : std_logic;
 signal terminated_output : std_logic;
 
 -- diagnostics
-signal noutoftime : reg_array;
-signal noverflow  : reg_array;
-signal nintime    : reg_array;
-signal nout       : reg32;
-signal delay      : ts_t;
+signal noutoftime       : reg_array;
+signal noverflow        : reg_array;
+signal nintime          : reg_array;
+signal nout             : reg32;
+signal delay            : ts_t;
+signal zero_suppression : std_logic;
 
 -- copy of diagnostics (timing)
 signal noutoftime2: reg_array;
@@ -840,11 +841,12 @@ e_mp_sorter_reg_mapping: entity work.mp_sorter_reg_mapping
         i_reg_we       => i_reg_we,
         i_reg_wdata    => i_reg_wdata,
 
-        i_nintime      => nintime2,
-        i_noutoftime   => noutoftime2,
-        i_noverflow    => noverflow2,
-        i_nout         => nout2,
-        i_credit       => conv_std_logic_vector(credits, 32),
-        o_sorter_delay => delay--,
+        i_nintime           => nintime2,
+        i_noutoftime        => noutoftime2,
+        i_noverflow         => noverflow2,
+        i_nout              => nout2,
+        i_credit            => conv_std_logic_vector(credits, 32),
+        o_zero_suppression  => zero_suppression,
+        o_sorter_delay      => delay--,
     );
 end architecture RTL;

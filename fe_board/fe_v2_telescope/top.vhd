@@ -33,7 +33,7 @@ entity top is
         fast_reset_A                : out   std_logic;
         SIN_A                       : out   std_logic;
         mosi_A                      : out   std_logic;
-        --csn_A                       : out   std_logic_vector(2 downto 0);
+        csn_A                       : out   std_logic_vector(2 downto 0);
 
         -- Block B: Connections for three chips -- layer 0
         clock_B                     : out   std_logic;
@@ -49,7 +49,7 @@ entity top is
         fast_reset_C                : out   std_logic;
         SIN_C                       : out   std_logic;
         mosi_C                      : out   std_logic;
-        --csn_C                       : out   std_logic_vector(2 downto 0);
+        csn_C                       : out   std_logic_vector(2 downto 0);
 
         -- Block D: Connections for three chips -- layer 1
         clock_D                     : out   std_logic;
@@ -200,9 +200,9 @@ begin
     mosi_C <= mp_ctrl_mosi(1);
     mosi_D <= mp_ctrl_mosi(0);
 
-    --csn_A <= mp_ctrl_csn(11 downto 9);
+    csn_A <= not mp_ctrl_csn(11 downto 9);
     csn_B <= not mp_ctrl_csn( 8 downto 6);
-    --csn_C <= mp_ctrl_csn( 5 downto 3);
+    csn_C <= mp_ctrl_csn( 5 downto 3);
     csn_D <= mp_ctrl_csn( 2 downto 0);
 
     enable_A <= '1';

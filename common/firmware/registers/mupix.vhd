@@ -90,7 +90,7 @@ package mupix is
     -- additional inverts found in the integration run cage before craning:(with this the list is hopefully complete)
         -- 0,7,8,18,19,22,9,30,33,1,4,6
       constant MP_LINK_INVERT : std_logic_vector(35 downto 0) := "011110111111111101111111111111111110";
-      constant MP_LINK_INVERT_TELESCOPE : std_logic_vector(35 downto 0) := "0111 10011111111111111111111111111110";
+      constant MP_LINK_INVERT_TELESCOPE : std_logic_vector(35 downto 0) := "011110011111111111111111111111111110";
 
 
     type ts_array_t                 is array (natural range <>) of std_logic_vector(10 downto 0);
