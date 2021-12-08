@@ -35,10 +35,10 @@ typedef struct {
 } MUPIX_GLOBAL;
 
 static odb MUPIX_GLOBAL_SETTINGS = {
-        {"Num asics", 0},
-        {"Num boards", 0},
-        {"Num rows", 200},
-        {"Num cols", 128},
+        {"Num asics", 6},   // This is for the EDM 122021 run
+        {"Num boards", 2},  // This is for the EDM 122021 run
+        {"Num rows", 250},
+        {"Num cols", 256},
 };
 
 #endif
@@ -283,6 +283,47 @@ static odb MUPIX_VDACS_SETTINGS = {
     {"Baseline", 70},
     {"VDAC1", 0},
     {"ref_Vss", 184}
+};
+
+#endif
+
+#ifndef MUPIX_TDACS_DEFINED
+#define MUPIX_TDACS_DEFINED
+
+typedef struct {
+    std::string TDACFILE;
+} MUPIX_TDACS;
+
+static odb MUPIX_TDACS_SETTINGS = {
+    {"TDACFILE", "default_tdacs_mupix.csv"}
+};
+
+#endif
+
+#ifndef MUPIX_FEBS_DEFINED
+#define MUPIX_FEBS_DEFINED
+
+typedef struct {
+    INT MP_LVDS_LINK_MASK;
+    INT MP_LVDS_LINK_MASK2;
+} MUPIX_FEBS;
+
+static odb MUPIX_FEB_SETTINGS = {
+    {"MP_LVDS_LINK_MASK", 0x0},
+    {"MP_LVDS_LINK_MASK2", 0x0},
+};
+
+#endif
+
+#ifndef MUPIX_GLOBAL_FEBS_DEFINED
+#define MUPIX_GLOBAL_FEBS_DEFINED
+
+typedef struct {
+    INT ASICsPerFEB;
+} MUPIX_GLOBAL_FEBS;
+
+static odb MUPIX_GLOBAL_FEBS_SETTINGS = {
+    {"ASICsPerFEB", 3}  // This is for the EDM 122021 run
 };
 
 #endif
