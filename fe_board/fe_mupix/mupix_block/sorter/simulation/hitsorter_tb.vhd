@@ -20,6 +20,7 @@ architecture rtl of hitsorter_tb is
 
 constant WRITECLK_PERIOD : time := 10 ns;
 constant READCLK_PERIOD  : time := 8 ns;
+constant REGCLK_PERIOD	 : time := 6.3 ns;
 
 signal		reset_n							: std_logic;										-- async reset
 signal		writeclk						: std_logic;										-- clock for write/input side
@@ -36,6 +37,15 @@ signal 		diagnostic_out					: sorter_reg_array;
 signal		counter							: std_logic_vector(7 downto 0);
 signal		localts							: ts_t;
 
+signal 		clk156							: std_logic;
+signal		reset_n_regs					: std_logic;
+signal		reg_add       					: std_logic_vector(15 downto 0);
+signal 		reg_re        					: std_logic;
+signal 		reg_rdata     					: std_logic_vector(31 downto 0);
+signal		reg_we        					: std_logic;
+signal 		reg_wdata     					: std_logic_vector(31 downto 0);
+
+
 begin
 
 
@@ -51,8 +61,13 @@ dut: entity work.hitsorter_wide
 		data_out						=> data_out,
 		out_ena							=> out_ena,
 		out_type						=> out_type,
-		diagnostic_out					=> diagnostic_out,
-		delay							=> "01100000000"
+        i_clk156       					=> clk156,
+        i_reset_n_regs  				=> reset_n_regs,
+        i_reg_add       				=> reg_add,
+        i_reg_re        				=> reg_re,
+        o_reg_rdata    					=> reg_rdata,
+        i_reg_we        				=> reg_we,
+        i_reg_wdata    					=> reg_wdata
 		);
 
 wclockgen: process
@@ -79,13 +94,33 @@ begin
 	wait for READCLK_PERIOD/2;
 end process;
 
+regclockgen: process
+begin
+	clk156	<= '0';
+	wait for REGCLK_PERIOD/2;
+	clk156	<= '1';
+	wait for REGCLK_PERIOD/2;
+end process;
+
+regresetgen: process
+begin
+	reset_n_regs <= '0';
+	wait for 10 ns;
+	reset_n_regs <= '1';
+	wait;
+end process;
+reg_re <= '0';
+reg_we <= '0';
+reg_add <= (others => '0');
+reg_wdata <= (others => '0');
+
 resetgen: process
 begin
 	reset_n <= '0';
 	running <= '0';
 	wait for 100 ns;
 	reset_n	<= '1';
-	wait for 100 ns;
+	wait for 150 ns;
 	running <= '1';
 	--wait for 60000 ns;
 	--running <= '0';
