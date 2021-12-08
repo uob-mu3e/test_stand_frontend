@@ -56,6 +56,7 @@ entity sequencer_ng is
 		read_fifo						: out std_logic;
 		outcommand						: out command_t;
 		command_enable					: out std_logic;
+		i_zero_suppression				: in  std_logic := '0';
 		outoverflow						: out std_logic_vector(15 downto 0)
 		);
 end sequencer_ng;
@@ -135,7 +136,11 @@ elsif (clk'event and clk = '1') then
 		no_copy_next	<= '0';
 	else
 		if(blockchange = '1') then
-			output			<= subheader;
+			if(i_zero_suppression = '1' and from_fifo(HASMEMBIT) = '0') then
+				output		<= none;
+			else
+				output		<= subheader;
+			end if;
 			copy_fifo		:= '0';
 			blockchange 	<= '0';
 			overflow_to_out		<= overflowts;

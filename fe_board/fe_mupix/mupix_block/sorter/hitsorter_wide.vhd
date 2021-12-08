@@ -732,6 +732,7 @@ seq:entity work.sequencer_ng
 		read_fifo						=> read_counterfifo,
 		outcommand						=> readcommand,
 		command_enable					=> readcommand_ena,
+		i_zero_suppression				=> zero_suppression,
 		outoverflow						=> outoverflow
 		);
 -- The ouput command has the TS in the LSBs, followed by four bits hit address
