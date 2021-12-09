@@ -52,6 +52,9 @@ int main()
         printf(" Run RESET_LINK_CTL_REGISTER_W: 0x%02X\n", mu.read_register_rw(RESET_LINK_CTL_REGISTER_W));
         printf(" Reset Link Status: 0x%02X\n", mu.read_register_ro(RESET_LINK_STATUS_REGISTER_R));
         printf(" Run Number: 0x%02X\n", mu.read_register_rw(RESET_LINK_RUN_NUMBER_REGISTER_W));
+        printf(" Top PLL Status bit32 is locked: 0x%02X\n", mu.read_register_ro(CNT_PLL_TOP_REGISTER_R));
+        printf(" 156 PLL Status bit32 is locked: 0x%02X\n", mu.read_register_ro(CNT_PLL_156_REGISTER_R));
+        printf(" 250 PLL Status bit32 is locked: 0x%02X\n", mu.read_register_ro(CNT_PLL_250_REGISTER_R));
         printf("  [1] => run_prep\n");
         printf("  [2] => sync\n");
         printf("  [3] => start run\n");

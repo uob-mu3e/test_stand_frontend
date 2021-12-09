@@ -155,6 +155,9 @@ package a10_pcie_registers is
         constant EVENT2COUNTER64_REGISTER_R                     : integer := 16#08#;
         constant inaddr32_r                                     : integer := 16#09#;
         constant inaddr32_w                                     : integer := 16#10#;
+		  constant CNT_PLL_TOP_REGISTER_R						 		 : integer := 16#0A#;
+		  constant CNT_PLL_156_REGISTER_R						 		 : integer := 16#0B#;
+		  constant CNT_PLL_250_REGISTER_R						 		 : integer := 16#0C#;
         constant DMA_STATUS_R                                   : integer := 16#11#;
             constant DMA_DATA_WEN                                   : integer:= 0;
             constant DMA_CONTROL_WEN                                : integer:= 1;

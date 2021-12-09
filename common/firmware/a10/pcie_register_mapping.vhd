@@ -98,11 +98,14 @@ begin
                             i_local_pcie0_rregs_A(DMA_NOTHALFFUL_REGISTER_R)    when i = DMA_NOTHALFFUL_REGISTER_R else
                             i_local_pcie0_rregs_A(DMA_ENDEVENT_REGISTER_R)      when i = DMA_ENDEVENT_REGISTER_R else
                             i_local_pcie0_rregs_A(DMA_NOTENDEVENT_REGISTER_R)   when i = DMA_NOTENDEVENT_REGISTER_R else
-                            i_pcie0_rregs_A(EVENT_BUILD_STATUS_REGISTER_R)      when i = EVENT_BUILD_STATUS_REGISTER_R else
+									 i_local_pcie0_rregs_A(CNT_PLL_TOP_REGISTER_R)    	  when i = CNT_PLL_TOP_REGISTER_R else
+									 i_local_pcie0_rregs_A(CNT_PLL_156_REGISTER_R)       when i = CNT_PLL_156_REGISTER_R else
+									 i_local_pcie0_rregs_A(CNT_PLL_250_REGISTER_R)       when i = CNT_PLL_250_REGISTER_R else
+									 i_pcie0_rregs_A(EVENT_BUILD_STATUS_REGISTER_R)      when i = EVENT_BUILD_STATUS_REGISTER_R else
                             i_pcie0_rregs_A(DMA_CNT_WORDS_REGISTER_R)           when i = DMA_CNT_WORDS_REGISTER_R else
                             i_pcie0_rregs_A(SWB_COUNTER_REGISTER_R)             when i = SWB_COUNTER_REGISTER_R else
                             i_pcie0_rregs_A(SWB_COUNTER_REGISTER_ADDR_R)        when i = SWB_COUNTER_REGISTER_ADDR_R else
-							q_rregs_C_reg(i * 32 + 31 downto i * 32)            when i = RESET_LINK_STATUS_REGISTER_R else -- for SWB reset link, does not work for the farm
+									 q_rregs_C_reg(i * 32 + 31 downto i * 32)            when i = RESET_LINK_STATUS_REGISTER_R else -- for SWB reset link, does not work for the farm
                             q_rregs_C_reg(i * 32 + 31 downto i * 32)            when i = DDR3_STATUS_R else
                             q_rregs_C_reg(i * 32 + 31 downto i * 32)            when i = DDR3_ERR_R else
                             q_rregs_C_reg(i * 32 + 31 downto i * 32)            when i = DATA_TSBLOCKS_R else
