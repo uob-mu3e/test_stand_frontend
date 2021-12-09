@@ -398,6 +398,7 @@ void setup_odb(){
             {"MupixConfig", false},
             {"MupixSetTDACConfig", false},
             {"MupixBoard", false},
+            {"Sorter Zero Suppression Mupix", false},
             {"SciFiConfig", false},
             {"SciFiAllOff", false},
             {"SciFiTDCTest", false},
@@ -493,8 +494,10 @@ void setup_odb(){
     custom["DAQcounters&"] = "daqcounters.html";
 
     // Inculde the line below to set up the FEBs and their mapping for the 2021 integration run
-//#include "odb_feb_mapping_integration_run_2021.h"
+    //#include "odb_feb_mapping_integration_run_2021.h"
 
+    // Inculde the line below to set up the FEBs and their mapping for 2021 EDM run
+    #include "odb_feb_mapping_edm_run_2021.h"
 
 
 }
@@ -1362,7 +1365,15 @@ void sc_settings_changed(odb o)
           command=command&(1<<8);
           o = command;
     }
-
+    if (name == "Sorter Zero Suppression Mupix") {
+        if (o) {
+            cm_msg(MINFO, "sc_settings_changed", "Sorter Zero Suppression Mupix on");
+            feb_sc->FEB_register_write(FEBSlowcontrolInterface::ADDRS::BROADCAST_ADDR, MP_SORTER_ZERO_SUPPRESSION_REGISTER_W, 0x1);
+        } else {
+            cm_msg(MINFO, "sc_settings_changed", "Sorter Zero Suppression Mupix off");
+            feb_sc->FEB_register_write(FEBSlowcontrolInterface::ADDRS::BROADCAST_ADDR, MP_SORTER_ZERO_SUPPRESSION_REGISTER_W, 0x0);
+        }
+    }
     if (name == "Load Firmware" && o) {
         cm_msg(MINFO, "sc_settings_changed", "Load firmware triggered");
         string fname = odb("/Equipment/Switching/Settings/Firmware File");
