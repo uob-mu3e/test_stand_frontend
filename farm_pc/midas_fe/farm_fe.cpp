@@ -658,8 +658,9 @@ uint32_t check_event(T* buffer, uint32_t idx, uint32_t* pdata) {
     //printf("Data: %8.8x\n", buffer[idx+4+eventDataSize/4-1]);
 
     if ( !(buffer[idx+4+eventDataSize/4-1] == 0xAFFEAFFE or buffer[idx+4+eventDataSize/4-1] == 0xFC00009C or buffer[idx+4+eventDataSize/4-1] == 0xFC00019C) ) {
-      printf("Data: %8.8x\n", buffer[idx+4+eventDataSize/4-2]);
-      return -1;
+        printf("Error: Wrong trailer");
+        printf("Data: %8.8x\n", buffer[idx+4+eventDataSize/4-2]);
+        return -1;
     }
 
     uint32_t dma_buf[4+eventDataSize/4];
@@ -795,7 +796,11 @@ INT read_stream_thread(void *param) {
         uint32_t offset = 0;
         uint32_t cnt = 0;
         while(true) {
+
             int rb_status = rb_get_wp(rbh, (void**)&pdata, 10);
+            uint32_t eventLength = 16 + dma_buf[(offset + 3) % dma_buf_nwords];
+
+            // check ODB status
             if ( rb_status != DB_SUCCESS ) {
                 printf("ERROR: rb_get_wp -> rb_status != DB_SUCCESS\n");
                 printf("Events written %d\n", cnt);
@@ -803,8 +808,12 @@ INT read_stream_thread(void *param) {
             }
 
             // check enough space for header
-            if(offset + 4 > lastWritten) break;
-            uint32_t eventLength = 16 + dma_buf[(offset + 3) % dma_buf_nwords];
+            if(offset + 4 > lastWritten) {
+                printf("ERROR: check enough space for header\n");
+                printf("Events written %d\n", cnt);
+                break;
+            }
+
             // check if length is to big (not needed at the moment but we still check it)
             if(eventLength > max_requested_words * 4) {
                 printf("ERROR: (eventLength = 0x%08X) > max_event_size\n", eventLength);
@@ -815,26 +824,32 @@ INT read_stream_thread(void *param) {
             // check enough space for data
             if(offset + eventLength / 4 > lastWritten) break;
             uint32_t size_dma_buf = check_event(dma_buf, offset, pdata);
-            //printf("data2: %8.8x offset: %8.8x lastwritten: %8.8x sizeEvent: %d\n", dma_buf[offset], offset, lastWritten, size_dma_buf);
+            
             if ( size_dma_buf == -1 ) {
-                printf("size_dma_buf == -1\n");
+                printf("ERROR: size_dma_buf == -1\n");
                 printf("Events written %d\n", cnt);
                 break;
             }
 
+            // check if new offset is to big
             offset += eventLength / 4;
-            
             if ( offset > lastWritten/2 ) {
-                printf("Offset to big\n");
+                printf("INFO: Offset to big\n");
                 printf("Events written %d\n", cnt);
                 break;
             }
+
+            // check if we got a wrong offset
             if ( dma_buf[offset] != 0x00000001 ) {
-                printf("dma_buf[offset] != 0x00000001\n");
+                printf("ERROR: dma_buf[offset] != 0x00000001\n");
                 printf("Events written %d\n", cnt);
                 break;
             }
             
+            // debug info
+            //printf("data2: %8.8x offset: %8.8x lastwritten: %8.8x sizeEvent: %d\n", dma_buf[offset], offset, lastWritten, size_dma_buf);
+            
+            // increase pointer etc.
             cnt++;
             pdata+=size_dma_buf;
             rb_increment_wp(rbh, size_dma_buf); // in byte length

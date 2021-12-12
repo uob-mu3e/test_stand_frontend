@@ -43,7 +43,7 @@ int MuFEB::WriteFEBID(){
              FEB.GetLinkName().c_str(),FEB.GetLinkID(),
              FEB.SB_Number(),FEB.SB_Port(),(val>>16)&0xffff,val&0xffff);
        cm_msg(MINFO,"MuFEB::WriteFEBID",reportStr);
-       feb_sc.FEB_register_write(FEB.SB_Port(),  FPGA_ID_REGISTER_RW, val);
+       feb_sc.FEB_register_write(FEB.SB_Port(), FPGA_ID_REGISTER_RW, val);
     }
     return 0;
 }
