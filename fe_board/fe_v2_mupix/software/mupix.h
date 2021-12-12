@@ -30,9 +30,9 @@ struct mupix_t {
         
         // write data for the  complete BIAS reg into FEB storage
         sc->ram->data[0x0401]=0x2A000A03;
-        sc->ram->data[0x0401]=0xFA3F002F;
+        sc->ram->data[0x0401]=0xFA3F0025;
         sc->ram->data[0x0401]=0x1E041041;
-        sc->ram->data[0x0401]=0x041E9A51;
+        sc->ram->data[0x0401]=0x041E5951;
         sc->ram->data[0x0401]=0x40280000;
         sc->ram->data[0x0401]=0x1400C20A;
         sc->ram->data[0x0401]=0x028A0000;
@@ -44,8 +44,8 @@ struct mupix_t {
 
         
         // write vdac defaults
-        sc->ram->data[0x0403]=0x00720000;
-        sc->ram->data[0x0403]=0x52000046;
+        sc->ram->data[0x0403]=0x007200DC;
+        sc->ram->data[0x0403]=0xC8000046;
         sc->ram->data[0x0403]=0x00B80000;
         
         // zero the rest
@@ -178,6 +178,7 @@ struct mupix_t {
             printf("  [5] => set lvds mask\n");
             printf("  [6] => test write all\n");
             printf("  [7] => write sorter delay\n");
+            printf("  [8] => toggle zero sup.\n");
             printf("  [q] => exit\n");
 
             printf("Select entry ...\n");
@@ -244,6 +245,15 @@ struct mupix_t {
             case '7':
                 sc->ram->data[0xFF91]=10;
                 break;
+			case '8':
+				if (sc->ram->data[0x1029]==0x1) {
+					printf("zero sup. is off now/n");
+					sc->ram->data[0x1029]=0x0;
+				} else {
+					printf("zero sup. is on now/n");
+					sc->ram->data[0x1029]=0x1;
+				}
+				break;
             case 'q':
                 return;
             default:

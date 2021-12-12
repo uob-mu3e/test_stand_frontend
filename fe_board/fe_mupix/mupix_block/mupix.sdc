@@ -28,3 +28,8 @@ set_false_path -from {mupix_block:e_mupix_block|mupix_datapath:e_mupix_datapath|
 
 set_false_path -from {mupix_block:e_mupix_block|mupix_datapath:e_mupix_datapath|hitsorter_wide:sorter|countermemory:\genmem:*:gencmem:*:cmem|altsyncram:altsyncram_component|altsyncram_teu3:auto_generated|ram_block1a0~PORT_B_WRITE_ENABLE_REG} -to {mupix_block:e_mupix_block|mupix_datapath:e_mupix_datapath|hitsorter_wide:sorter|dcountertemp*}
 set_false_path -from {mupix_block:e_mupix_block|mupix_datapath:e_mupix_datapath|hitsorter_wide:sorter|countermemory:\genmem:*:gencmem:*:cmem|altsyncram:altsyncram_component|altsyncram_teu3:auto_generated|ram_block1a0~PORT_B_WRITE_ENABLE_REG} -to {mupix_block:e_mupix_block|mupix_datapath:e_mupix_datapath|hitsorter_wide:sorter|tocmem_hitwriter[*][*][*]}
+
+set_false_path -from {mupix_block:e_mupix_block|mupix_datapath:e_mupix_datapath|receiver_block_mupix:lvds_block|disp_err_counter[*][*]} -to {mupix_block:e_mupix_block|mupix_datapath:e_mupix_datapath|receiver_block_mupix:lvds_block|o_rx_status[*][*]}
+set_false_path -from {mupix_block:e_mupix_block|mupix_datapath:e_mupix_datapath|receiver_block_mupix:lvds_block|rx_locked[*]} -to {mupix_block:e_mupix_block|mupix_datapath:e_mupix_datapath|receiver_block_mupix:lvds_block|o_rx_status[*][*]}
+set_false_path -from {mupix_block:e_mupix_block|mupix_datapath:e_mupix_datapath|receiver_block_mupix:lvds_block|rx_state[*]} -to {mupix_block:e_mupix_block|mupix_datapath:e_mupix_datapath|receiver_block_mupix:lvds_block|o_rx_status[*][*]}
+set_false_path -from {mupix_block:e_mupix_block|mupix_datapath:e_mupix_datapath|receiver_block_mupix:lvds_block|rx_ready[*]} -to {mupix_block:e_mupix_block|mupix_datapath:e_mupix_datapath|receiver_block_mupix:lvds_block|o_rx_status[*][*]}

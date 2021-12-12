@@ -70,6 +70,13 @@ entity top is
         enable_B                    : out   std_logic;
         enable_C                    : out   std_logic;
         enable_D                    : out   std_logic;
+
+        -- NIM inputs on scsi adapter
+        Trig0_TTL                   : in    std_logic;
+        Trig1_TTL                   : in    std_logic;
+        Trig2_TTL                   : in    std_logic;
+        Trig3_TTL                   : in    std_logic;
+
         -- Extra signals
         
         --clock_aux                   : out   std_logic; -- Pin in use for csn_A[2] M.Mueller
