@@ -16,8 +16,8 @@ char wait_key(useconds_t us = 100000);
 
 //write slow control pattern over SPI, returns 0 if readback value matches written, otherwise -1. Does not include CSn line switching.
 int SMB_t::spi_write_pattern(alt_u32 spi_slave, const alt_u8* bitpattern) {
-    //char tx_string[681];
-    //char rx_string[681];
+    char tx_string[681]; //cmp
+    char rx_string[681]; //cmp
     int result_i=0;
     int status=0;
     uint16_t rx_pre=0xff00;
@@ -31,17 +31,17 @@ int SMB_t::spi_write_pattern(alt_u32 spi_slave, const alt_u8* bitpattern) {
         alt_avalon_spi_command(SPI_BASE, spi_slave, 1, &tx, 0, &rx, nb==0?0:ALT_AVALON_SPI_COMMAND_MERGE);
         rx = IORD_8DIRECT(SPI_BASE, 0);
 
-        //printf("tx:%2.2X rx:%2.2x nb:%d\n",tx,rx,nb);
-        //char result_hex[3];
-        //char tx_hex[3];
-        //sprintf(result_hex,"%2.2X",rx);
-        //sprintf(tx_hex,"%2.2X",tx);
-        //rx_string[result_i] = result_hex[0];
-        //tx_string[result_i] = tx_hex[0];
-        //result_i++;
-        //rx_string[result_i] = result_hex[1];
-        //tx_string[result_i] = tx_hex[1];
-        //result_i++;
+        //printf("tx:%2.2X rx:%2.2x nb:%d\n",tx,rx,nb);//cmp
+        char result_hex[3]; //cmp
+        char tx_hex[3]; //cmp
+        sprintf(result_hex,"%2.2X",rx); //cmp
+        sprintf(tx_hex,"%2.2X",tx); //cmp
+        rx_string[result_i] = result_hex[0]; //cmp
+        tx_string[result_i] = tx_hex[0]; //cmp
+        result_i++; //cmp
+        rx_string[result_i] = result_hex[1]; //cmp
+        tx_string[result_i] = tx_hex[1]; //cmp
+        result_i++; //cmp
 
         //pattern is not in full units of bytes, so shift back while receiving to check the correct configuration state
         unsigned char rx_check= (rx_pre | rx ) >> (8-MUTRIG_CONFIG_LEN_BITS%8);
@@ -55,10 +55,11 @@ int SMB_t::spi_write_pattern(alt_u32 spi_slave, const alt_u8* bitpattern) {
         }
         rx_pre=rx<<8;
     }while(nb>0);
-    //rx_string[680]=0;
-    //tx_string[680]=0;
-    //printf("TX = %s\n", tx_string);
-    //printf("RX = %s\n", rx_string);
+    //rx_string[680]=0; //cmp
+    //tx_string[680]=0; //cmp
+    printf("TX = %s\n", tx_string); //cmp
+    printf("RX = %s\n", rx_string); //cmp
+    //printf("Status = %u\n", status); //cmp
     return status;
 }
 
@@ -76,7 +77,7 @@ void SMB_t::print_config(const alt_u8* bitpattern) {
 
 //configure ASIC
 alt_u16 SMB_t::configure_asic(alt_u32 asic, const alt_u8* bitpattern) {
-    //printf("[SMB] chip_configure(%u)\n", asic);
+    printf("[SMB] chip_configure(%u)\n", asic); //cmp
 
     int ret;
     ret = spi_write_pattern(asic, bitpattern);
