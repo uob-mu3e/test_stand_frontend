@@ -105,6 +105,11 @@ architecture arch of scifi_path is
     signal scl_in  : std_logic;
     signal scl_out : std_logic;
 
+    -- Transition counts
+    signal miso_transition_count : integer;
+    signal miso_156: std_logic;
+    signal miso_156_last : std_logic;
+
 begin
 --------------------------------------------------------------------
 --- TODO: REMOVE THIS 
@@ -166,6 +171,23 @@ begin
         end if;
     end process;
 
+    process (i_clk_core, i_reset)
+    begin
+        if i_reset = '1' then
+            miso_transition_count <= 0;
+            miso_156 <= '0';
+            miso_156_last <= '0';
+        elsif rising_edge(i_clk_core) then
+            miso_156 <= i_spi_miso;
+            miso_156_last <= miso_156;
+            if(miso_156 /= miso_156_last) then
+                miso_transition_count   <= miso_transition_count + 1;
+            end if;
+        end if;
+    end process;
+
+
+
 --------------------------------------------------------------------
 --------------------------------------------------------------------
 
@@ -203,6 +225,7 @@ begin
         i_frame_desync              => frame_desync,
         i_rx_dpa_lock_reg           => rx_dpa_lock, -- on receivers_usrclk domain
         i_rx_ready                  => rx_ready,
+        i_miso_transition_count     => std_logic_vector(to_unsigned(miso_transition_count,32)),
 
         -- outputs  156-------------------------------------------
         o_cntreg_ctrl               => s_cntreg_ctrl,

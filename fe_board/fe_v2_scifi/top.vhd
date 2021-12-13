@@ -230,7 +230,7 @@ begin
         io_i2c_sda                  => open,
         io_i2c_scl                  => open,
         i_cec                       => '0',
-        i_spi_miso                  => '0',
+        i_spi_miso                  => scifi_int_spi_miso,
         i_i2c_int                   => '0',
         o_pll_reset                 => open,
         o_spi_scl                   => open,

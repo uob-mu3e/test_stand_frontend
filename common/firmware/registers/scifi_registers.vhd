@@ -22,6 +22,7 @@ package scifi_registers is
     -- counters
     constant SCIFI_CNT_CTRL_REGISTER_W          :   integer := 16#40#;
     constant SCIFI_CNT_NOM_REGISTER_REGISTER_R  :   integer := 16#41#;
+    constant SCIFI_CNT_MISO_TRANSITION_REGISTER_R   :   integer := 16#4C#;
     -- TODO swap upper/lower?
 
     constant SCIFI_CNT_DENOM_LOWER_REGISTER_R   :   integer := 16#42#;
@@ -44,6 +45,8 @@ package scifi_registers is
     constant SCIFI_CTRL_DP_REGISTER_W            :   integer := 16#49#;
     constant SCIFI_CTRL_RESET_REGISTER_W         :   integer := 16#4A#;
     constant SCIFI_CTRL_RESETDELAY_REGISTER_W    :   integer := 16#4B#;
+
+
     
 
 end package scifi_registers;
