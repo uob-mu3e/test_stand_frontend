@@ -80,6 +80,7 @@ package mupix is
 
     type mp_link_order_t    is array (35 downto 0) of integer;
     constant MP_LINK_ORDER  : mp_link_order_t := (33,31,29,35,32,28,34,30,27,26,25,20,24,23,21,22,19,18,15,11,9,17,13,10,16,14,12,5,3,2,6,4,1,8,7,0);
+    constant MP_LINK_ORDER_TELESCOPE : mp_link_order_t := (0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,35,24,23,22,26,30,34,21,25,20,19,18,29,28,27,33,32,31);
 
     -- following mp links are inverted on DAB integration run version:
         --0,19,30,35

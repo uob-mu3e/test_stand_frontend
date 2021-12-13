@@ -9,6 +9,7 @@ use ieee.std_logic_unsigned.all;
 use ieee.numeric_std.all;
 
 use work.mudaq.all;
+use work.mupix.all;
 
 entity top is 
     port (
@@ -207,10 +208,10 @@ begin
     mosi_C <= mp_ctrl_mosi(1);
     mosi_D <= mp_ctrl_mosi(0);
 
-    csn_A <= not mp_ctrl_csn(11 downto 9);
-    csn_B <= not mp_ctrl_csn( 8 downto 6);
-    csn_C <= mp_ctrl_csn( 5 downto 3);
-    csn_D <= mp_ctrl_csn( 2 downto 0);
+    csn_A <= (others => (not mp_ctrl_csn(0)));
+    csn_B <= (others => (not mp_ctrl_csn(1)));
+    csn_C <= (others => mp_ctrl_csn(3));
+    csn_D <= (others => mp_ctrl_csn(2));
 
     enable_A <= '1';
     enable_B <= '1';
@@ -219,7 +220,8 @@ begin
 
     e_mupix_block : entity work.mupix_block
     generic map (
-        IS_TELESCOPE_g  => '1'--,
+        IS_TELESCOPE_g  => '1',
+        LINK_ORDER_g => MP_LINK_ORDER_TELESCOPE--,
     )
     port map (
         i_fpga_id               => ref_adr,

@@ -322,7 +322,7 @@ begin
         DATA_WIDTH  => 81,
         SHOWAHEAD   => "ON",
         OVERFLOW    => "ON",
-		  REGOUT      => 0,
+        REGOUT      => 0,
         DEVICE      => "Arria V"--,
     )
     port map(

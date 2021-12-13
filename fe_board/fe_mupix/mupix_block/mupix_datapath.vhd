@@ -13,7 +13,8 @@ use work.mudaq.all;
 
 entity mupix_datapath is
     generic(
-        IS_TELESCOPE_g : std_logic := '0'--;
+        IS_TELESCOPE_g : std_logic := '0';
+        LINK_ORDER_g : mp_link_order_t--;
     );
 port (
     i_reset_n           : in  std_logic;
@@ -218,7 +219,10 @@ begin
     );
 
     mp_lvds_rx_reg_mapping_inst: entity work.mp_lvds_rx_reg_mapping
-      port map (
+    generic map (
+        LINK_ORDER_g => LINK_ORDER_g--,
+    )
+    port map (
         i_clk156          => i_clk156,
         i_reset_n         => i_reset_n_regs,
 
@@ -232,6 +236,9 @@ begin
       );
 
     e_mupix_datapath_reg_mapping : work.mupix_datapath_reg_mapping
+    generic map (
+        LINK_ORDER_g => LINK_ORDER_g--,
+    )
     port map (
         i_clk156                    => i_clk156,
         i_clk125                    => i_clk125,
@@ -244,8 +251,8 @@ begin
         i_reg_wdata                 => mp_datapath_reg.wdata,
 
         -- inputs  125 (how to sync)------------------------------
-        --i_coarsecounter_ena         => coarsecounter_enas(MP_LINK_ORDER(to_integer(unsigned(delta_ts_link_select)))),
-        --i_coarsecounter             => coarsecounters(MP_LINK_ORDER(to_integer(unsigned(delta_ts_link_select)))),
+        --i_coarsecounter_ena         => coarsecounter_enas(LINK_ORDER_g(to_integer(unsigned(delta_ts_link_select)))),
+        --i_coarsecounter             => coarsecounters(LINK_ORDER_g(to_integer(unsigned(delta_ts_link_select)))),
         i_ts_global                 => counter125(23 downto 0),
         i_last_sorter_hit           => last_sorter_hit,
         i_mp_hit_ena_cnt            => hit_ena_cnt,
@@ -306,9 +313,9 @@ begin
     port map(
         reset_n             => reset_125_n,
         clk                 => i_clk125,
-        datain              => rx_data(MP_LINK_ORDER(i)), 
-        kin                 => rx_k(MP_LINK_ORDER(i)), 
-        readyin             => link_enable(MP_LINK_ORDER(i)),
+        datain              => rx_data(LINK_ORDER_g(i)), 
+        kin                 => rx_k(LINK_ORDER_g(i)), 
+        readyin             => link_enable(LINK_ORDER_g(i)),
         i_mp_readout_mode   => mp_readout_mode,
         o_ts                => ts_unpacker(i),
         o_chip_ID           => chip_ID_unpacker(i),
@@ -381,15 +388,27 @@ begin
                 end if;
             end if;
 
-            sorter_inject_prev <= sorter_inject(MP_SORTER_INJECT_ENABLE_BIT);
-            if(sorter_inject_prev = '0' and sorter_inject(MP_SORTER_INJECT_ENABLE_BIT) = '1' and (to_integer(unsigned(sorter_inject(MP_SORTER_INJECT_SELECT_RANGE))) < 12)) then
-                hits_sorter_in      <= (others => sorter_inject);
-                hits_sorter_in_ena  <= (others => '0');
-                hits_sorter_in_ena(to_integer(unsigned(sorter_inject(MP_SORTER_INJECT_SELECT_RANGE)))) <= '1';
-            else
-                hits_sorter_in      <= hits_sorter_in_buf;
-                hits_sorter_in_ena  <= hits_sorter_in_ena_buf;
-            end if;
+            --sorter_inject_prev <= sorter_inject(MP_SORTER_INJECT_ENABLE_BIT);
+            --if(sorter_inject_prev = '0' and sorter_inject(MP_SORTER_INJECT_ENABLE_BIT) = '1' and (to_integer(unsigned(sorter_inject(MP_SORTER_INJECT_SELECT_RANGE))) < 12)) then
+            --    hits_sorter_in      <= (others => sorter_inject);
+            --    hits_sorter_in_ena  <= (others => '0');
+            --    hits_sorter_in_ena(to_integer(unsigned(sorter_inject(MP_SORTER_INJECT_SELECT_RANGE)))) <= '1';
+            --else
+                for i in 0 to 2 loop
+                    hits_sorter_in(i)      <= hits_sorter_in_buf(i);
+                    hits_sorter_in_ena(i)  <= hits_sorter_in_ena_buf(i);
+                end loop;
+                
+                for i in 3 to 11 loop
+                    if(IS_TELESCOPE_g = '1') then
+                        hits_sorter_in(i)      <= hits_sorter_in_buf(i);
+                        hits_sorter_in_ena(i)  <= '0';
+                    else
+                        hits_sorter_in(i)      <= hits_sorter_in_buf(i);
+                        hits_sorter_in_ena(i)  <= hits_sorter_in_ena_buf(i);
+                    end if;
+                end loop;
+            --end if;
 
             for i in 0 to 11 loop
                 if(i_run_state_125 = RUN_STATE_RUNNING) then
