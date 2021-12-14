@@ -13,7 +13,7 @@ using namespace std;
 namespace mupix { namespace midasODB {
 
 
-int setup_db(const char* prefix, MupixFEB* FEB_interface, bool init_FEB){
+int setup_db(const char* prefix, MupixFEB* FEB_interface, bool init_FEB, bool write_defaults = true){
     /* Book Setting space */
     
     cm_msg(MINFO, "mupix_midasodb::setup_db", "Setting up odb");
@@ -25,13 +25,13 @@ int setup_db(const char* prefix, MupixFEB* FEB_interface, bool init_FEB){
     sprintf(set_str, "%s/Settings/ASICs/Global", prefix);
     auto settings_asics_global = MUPIX_GLOBAL_SETTINGS;
     // global mupix settings from mupix_MIDAS_config.h
-    settings_asics_global.connect(set_str, true);
+    settings_asics_global.connect(set_str, write_defaults=write_defaults);
 
     // set global FEB values
     auto global_settings_febs = MUPIX_GLOBAL_FEBS_SETTINGS;
 
     sprintf(set_str, "%s/Settings/FEBS", prefix);
-    global_settings_febs.connect(set_str, true);
+    global_settings_febs.connect(set_str, write_defaults=write_defaults);
 
     //Set number of ASICs, derived from mapping
     unsigned int nasics = FEB_interface->GetNumASICs();
@@ -48,7 +48,7 @@ int setup_db(const char* prefix, MupixFEB* FEB_interface, bool init_FEB){
     //TODO: if we have more than one FE-FPGA, there might be more than one DAQ class.
     sprintf(set_str, "%s/Settings/Daq", prefix);
     auto settings_daq = MUPIX_DAQ_SETTINGS;
-    settings_daq.connect(set_str, true);
+    settings_daq.connect(set_str, write_defaults=write_defaults);
     
     // use lambda funciton for passing FEB_interface
     auto on_settings_changed_partial = 
@@ -86,16 +86,16 @@ int setup_db(const char* prefix, MupixFEB* FEB_interface, bool init_FEB){
         
     for(unsigned int i = 0; i < nasics; ++i) {
         sprintf(set_str, "%s/Settings/BIASDACS/%u", prefix, i);
-        settings_biasdacs.connect(set_str, true);
+        settings_biasdacs.connect(set_str, write_defaults=write_defaults);
         
         sprintf(set_str, "%s/Settings/CONFDACS/%u", prefix, i);
-        settings_confdacs.connect(set_str, true);
+        settings_confdacs.connect(set_str, write_defaults=write_defaults);
         
         sprintf(set_str, "%s/Settings/VDACS/%u", prefix, i);
-        settings_vdacs.connect(set_str, true);
+        settings_vdacs.connect(set_str, write_defaults=write_defaults);
         
         sprintf(set_str, "%s/Settings/TDACS/%u", prefix, i);
-        settings_tdacs.connect(set_str, true);
+        settings_tdacs.connect(set_str, write_defaults=write_defaults);
     }
 
     // set all tdac values per FEB
@@ -105,7 +105,7 @@ int setup_db(const char* prefix, MupixFEB* FEB_interface, bool init_FEB){
 
     for(unsigned int i = 0; i < nFEBs; ++i) {
         sprintf(set_str, "%s/Settings/FEBS/%u", prefix, i);
-        settings_febs.connect(set_str, true);
+        settings_febs.connect(set_str, write_defaults=write_defaults);
     }
 
     // load tdac json from ODB into feb_interface
@@ -118,12 +118,12 @@ int setup_db(const char* prefix, MupixFEB* FEB_interface, bool init_FEB){
     };
 
     // TODO: why do I have to connect here? In switch_fe.cpp we do first the naming and than we connect
-    settings.connect(set_str, true);
+    settings.connect(set_str, write_defaults=write_defaults);
 
     create_psll_names_in_odb(settings, N_FEBS_MUPIX_INT_2021, lvds_links_per_feb);
 
     sprintf(set_str, "%s/Settings", prefix);
-    settings.connect(set_str, true);
+    settings.connect(set_str, write_defaults=write_defaults);
 
     /* Default values for /Equipment/Mupix/Variables */
     odb variables = {
@@ -131,7 +131,7 @@ int setup_db(const char* prefix, MupixFEB* FEB_interface, bool init_FEB){
     };
 
     sprintf(set_str, "%s/Variables", prefix);
-    variables.connect(set_str, true);
+    variables.connect(set_str, write_defaults=write_defaults);
 
     return DB_SUCCESS;
 }

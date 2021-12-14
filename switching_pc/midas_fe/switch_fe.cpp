@@ -732,7 +732,7 @@ INT init_mupix(mudaq::MudaqDevice & mu) {
                      "/Equipment/Mupix",
                      switch_id); //create FEB interface signleton for mupix
 
-    int status=mupix::midasODB::setup_db("/Equipment/Mupix", mupixfeb, true);
+    int status=mupix::midasODB::setup_db("/Equipment/Mupix", mupixfeb, true, true);
     if(status != SUCCESS){
         set_equipment_status(equipment[EQUIPMENT_ID::Mupix].name, "Start up failed", "var(--mred)");
         return status;

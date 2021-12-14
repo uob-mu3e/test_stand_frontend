@@ -8,7 +8,7 @@ for(uint32_t i=0; i < 2; i++){
     links["LinkMask"][i] = FEBLINKMASK::ON;
 }
 
-for(uint32_t i=3; i < 192; i++){
+for(uint32_t i=2; i < 192; i++){
     links["LinkMask"][i] = FEBLINKMASK::OFF;
 }
 
