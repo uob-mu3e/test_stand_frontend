@@ -12,7 +12,8 @@ use work.mupix.all;
 
 entity mupix_block is
     generic(
-        IS_TELESCOPE_g : std_logic := '0'--;
+        IS_TELESCOPE_g : std_logic := '0';
+        LINK_ORDER_g : mp_link_order_t := MP_LINK_ORDER--;
     );
 port (
     i_fpga_id               : in  std_logic_vector(7 downto 0);
@@ -92,7 +93,8 @@ begin
 
     e_mupix_datapath : work.mupix_datapath
     generic map (
-        IS_TELESCOPE_g  => IS_TELESCOPE_g--,
+        IS_TELESCOPE_g  => IS_TELESCOPE_g,
+        LINK_ORDER_g => LINK_ORDER_g--,
     )
     port map (
         i_reset_n           => datapath_reset_n,

@@ -138,6 +138,7 @@ signal mem_overflow_del1: std_logic;
 signal mem_overflow_del2: std_logic;
 
 signal credits: integer range -128 to 127;
+signal credits32: std_logic_vector(31 downto 0);
 signal credittemp : integer range -256 to 255;
 signal hitcounter_sum_m3_mem : hitcounter_sum3_type;
 signal hitcounter_sum_mem : integer;
@@ -860,6 +861,8 @@ elsif(writeclk'event and writeclk = '1') then
 end if;
 end process;
 
+credits32 <= conv_std_logic_vector(credits, 32);
+
 e_mp_sorter_reg_mapping: entity work.mp_sorter_reg_mapping
     port map (
         i_clk156       => i_clk156,
@@ -875,7 +878,7 @@ e_mp_sorter_reg_mapping: entity work.mp_sorter_reg_mapping
         i_noutoftime        => noutoftime2,
         i_noverflow         => noverflow2,
         i_nout              => nout2,
-        i_credit            => conv_std_logic_vector(credits, 32),
+        i_credit            => credits32,
         o_zero_suppression  => zero_suppression,
         o_sorter_delay      => delay--,
     );

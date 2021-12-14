@@ -83,3 +83,8 @@ set_instance_assignment -name IO_STANDARD "2.5 V" -to enable_A
 set_instance_assignment -name IO_STANDARD "2.5 V" -to enable_B
 set_instance_assignment -name IO_STANDARD "2.5 V" -to enable_C
 set_instance_assignment -name IO_STANDARD "2.5 V" -to enable_D
+
+set_location_assignment PIN_AH12 -to Trig0_TTL
+set_location_assignment PIN_AG12 -to Trig1_TTL
+set_location_assignment PIN_AF13 -to Trig2_TTL
+set_location_assignment PIN_AF12 -to Trig3_TTL

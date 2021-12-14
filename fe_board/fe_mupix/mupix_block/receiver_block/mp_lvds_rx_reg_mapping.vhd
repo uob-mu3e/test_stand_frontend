@@ -9,6 +9,9 @@ use work.mupix_registers.all;
 use work.mupix.all;
 use work.mudaq.all;
 entity mp_lvds_rx_reg_mapping is
+    generic(
+        LINK_ORDER_g : mp_link_order_t--;
+    );
 port (
     i_clk156                    : in  std_logic;
     i_reset_n                   : in  std_logic;
@@ -40,7 +43,7 @@ architecture rtl of mp_lvds_rx_reg_mapping is
             -----------------------------------------------------------------
             for I in 0 to MUPIX_LVDS_STATUS_BLOCK_LENGTH-1 loop 
                 if ( regaddr = I + MP_LVDS_STATUS_START_REGISTER_W and i_reg_re = '1' ) then
-                    o_reg_rdata <= lvds_status(MP_LINK_ORDER(I));
+                    o_reg_rdata <= lvds_status(LINK_ORDER_g(I));
                 end if;
             end loop;
 

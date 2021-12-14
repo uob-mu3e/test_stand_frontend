@@ -235,38 +235,42 @@ begin
             end if;
         end process;
 
-        sync_fifo_cnt : entity work.ip_dcfifo
-        generic map(
-            ADDR_WIDTH  => 4,
-            DATA_WIDTH  => 32,
-            SHOWAHEAD   => "ON",
-            OVERFLOW    => "ON",
-				REGOUT      => 0,
-            DEVICE      => "Arria V"--,
-        )
-        port map(
-            aclr                                => '0',
-            data(MP_LVDS_STATUS_DISP_ERR_RANGE) => disp_err_counter(i),
-            data(MP_LVDS_STATUS_PLL_LOCKED_BIT) => rx_locked(i/27),
-            data(MP_LVDS_STATUS_STATE_RANGE)    => rx_state(i*2+1 downto i*2),
-            data(MP_LVDS_STATUS_READY_BIT)      => rx_ready(i),
-            rdclk                               => i_nios_clk,
-            rdreq                               => lvds_status_rdreq(i),
-            rdempty                             => lvds_status_empty(i),
-            wrclk                               => rx_clk(i/27),
-            wrreq                               => '1',
-            q                                   => lvds_status_buffer(i)
-        );
+--        sync_fifo_cnt : entity work.ip_dcfifo
+--        generic map(
+--            ADDR_WIDTH  => 4,
+--            DATA_WIDTH  => 32,
+--            SHOWAHEAD   => "ON",
+--            OVERFLOW    => "ON",
+--            REGOUT      => 0,
+--            DEVICE      => "Arria V"--,
+--        )
+--        port map(
+--            aclr                                => '0',
+--            data(MP_LVDS_STATUS_DISP_ERR_RANGE) => disp_err_counter(i),
+--            data(MP_LVDS_STATUS_PLL_LOCKED_BIT) => rx_locked(i/27),
+--            data(MP_LVDS_STATUS_STATE_RANGE)    => rx_state(i*2+1 downto i*2),
+--            data(MP_LVDS_STATUS_READY_BIT)      => rx_ready(i),
+--            rdclk                               => i_nios_clk,
+--            rdreq                               => lvds_status_rdreq(i),
+--            rdempty                             => lvds_status_empty(i),
+--            wrclk                               => rx_clk(i/27),
+--            wrreq                               => '1',
+--            q                                   => lvds_status_buffer(i)
+--        );
 
         process(i_nios_clk)
         begin
             if(rising_edge(i_nios_clk)) then
-                if(lvds_status_empty(i)='0') then
-                    lvds_status_rdreq(i) <= '1';
-                    o_rx_status(i)       <= lvds_status_buffer(i);
-                else
-                    lvds_status_rdreq(i) <= '0';
-                end if;
+--                if(lvds_status_empty(i)='0') then
+--                    lvds_status_rdreq(i) <= '1';
+--                    o_rx_status(i)       <= lvds_status_buffer(i);
+--                else
+--                    lvds_status_rdreq(i) <= '0';
+--                end if;
+                o_rx_status(I)(MP_LVDS_STATUS_DISP_ERR_RANGE) <= disp_err_counter(I);
+                o_rx_status(I)(MP_LVDS_STATUS_PLL_LOCKED_BIT) <= rx_locked(I/27);
+                o_rx_status(I)(MP_LVDS_STATUS_STATE_RANGE) <= rx_state(I*2+1 downto I*2);
+                o_rx_status(I)(MP_LVDS_STATUS_READY_BIT) <= rx_ready(I);
             end if;
         end process;
 
@@ -318,7 +322,7 @@ begin
         DATA_WIDTH  => 81,
         SHOWAHEAD   => "ON",
         OVERFLOW    => "ON",
-		  REGOUT      => 0,
+        REGOUT      => 0,
         DEVICE      => "Arria V"--,
     )
     port map(

@@ -55,7 +55,7 @@ port (
     o_programming_addr          : out std_logic_vector(31 downto 0);
     o_programming_addr_ena      : out std_logic;
     
-    o_testout                   : out std_logic_vector(31 downto 0)--;
+    i_testout                   : in  std_logic_vector(31 downto 0)--;
 );
 end entity;
 
@@ -119,7 +119,8 @@ begin
         o_reg_reset_bypass          <= reg_reset_bypass;
         o_reg_reset_bypass_payload  <= reg_reset_bypass_payload;
         o_fpga_id_reg               <= fpga_id_reg;
-        o_testout                   <= testout;
+        --o_testout                   <= testout;
+        testout                     <=i_testout;
 
         run_state_156               <= i_run_state_156;
         merger_rate_count           <= i_merger_rate_count;
@@ -298,7 +299,7 @@ begin
             o_reg_rdata <= testout;
         end if;
         if ( regaddr = TEST_OUT_REGISTER and i_reg_we = '1' ) then
-            testout <= i_reg_wdata;
+            --testout <= i_reg_wdata;
         end if;
 
         -- NON-incrementing reads/writes TEST
