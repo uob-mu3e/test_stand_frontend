@@ -50,7 +50,12 @@ port (
     i_clk125                : in  std_logic;
     i_lvds_rx_inclock_A     : in  std_logic;
     i_lvds_rx_inclock_B     : in  std_logic;
-    i_sync_reset_cnt        : in  std_logic--;
+    i_sync_reset_cnt        : in  std_logic;
+
+    i_trigger_in0           : in  std_logic := '0';
+    i_trigger_in1           : in  std_logic := '0';
+    i_trigger_in0_timestamp : in  std_logic_vector(31 downto 0) := (others => '0');
+    i_trigger_in1_timestamp : in  std_logic_vector(31 downto 0) := (others => '0')--;
 );
 end entity;
 
@@ -123,7 +128,12 @@ begin
         i_sync_reset_cnt    => i_sync_reset_cnt,
         i_fpga_id           => i_fpga_id,
         i_run_state_125     => i_run_state_125,
-        i_run_state_156     => i_run_state_156--,
+        i_run_state_156     => i_run_state_156,
+        
+        i_trigger_in0       => i_trigger_in0,
+        i_trigger_in1       => i_trigger_in1,
+        i_trigger_in0_timestamp => i_trigger_in0_timestamp,
+        i_trigger_in1_timestamp => i_trigger_in1_timestamp--,
     );
 
     e_lvl1_sc_node: entity work.sc_node
