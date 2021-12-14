@@ -185,6 +185,7 @@ architecture rtl of top is
     signal mp_ctrl_mosi             : std_logic_vector(3  downto 0);
     signal mp_ctrl_csn              : std_logic_vector(11 downto 0);
 
+    signal testcounter              : std_logic_vector(31 downto 0);
 begin
 
 --------------------------------------------------------------------
@@ -265,7 +266,13 @@ begin
     begin
     if rising_edge(lvds_firefly_clk) then
         run_state_125_reg <= run_state_125;
+        
+        if(run_state_125_reg = RUN_STATE_IDLE) then
+            testcounter     <= (others => '0');
+        end if;
         if(run_state_125_reg = RUN_STATE_SYNC)then
+            testcounter <= testcounter + '1';
+
             fast_reset_A    <= '1';
             fast_reset_B    <= '1';
             fast_reset_C    <= '1';
@@ -383,7 +390,7 @@ begin
 
         i_areset_n          => pb_db(0),
 
-        o_testout(7 downto 2) => lcd_data(7 downto 2),
+        i_testout           => testcounter,
         i_testin            => pb_db(1)--,
     );
 
@@ -394,4 +401,12 @@ begin
     FPGA_Test(0) <= transceiver_pll_clock(0);
     FPGA_Test(1) <= lvds_firefly_clk;
     FPGA_Test(2) <= clk_125_top;
+
+    lcd_data(2) <= Trig0_TTL;
+    lcd_data(3) <= Trig1_TTL;
+    lcd_data(4) <= Trig2_TTL;
+    lcd_data(5) <= Trig3_TTL;
+
+    lcd_data(7 downto 6) <= "11";
+
 end rtl;
