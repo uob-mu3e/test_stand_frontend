@@ -99,11 +99,7 @@ package a10_pcie_registers is
             constant USE_BIT_SCIFI_ONLY                             : integer := 1;
 			
 		constant RESET_LINK_CTL_REGISTER_W						: integer := 16#28#;
-			constant RESET_LINK_RUN_PREPARE_BIT						: integer := 0;
-			constant RESET_LINK_SYNC_BIT							: integer := 1;
-			constant RESET_START_RUN_BIT							: integer := 2;
-			constant RESET_END_RUN_BIT								: integer := 3;
-			constant RESET_LINK_ABORT_RUN_BIT						: integer := 4;
+			subtype  RESET_LINK_COMMAND_RANGE						is integer range 7 downto 0;
 			subtype  RESET_LINK_FEB_RANGE	                        is integer range 31 downto 29;
 		constant RESET_LINK_RUN_NUMBER_REGISTER_W				: integer := 16#29#;
 		constant CLK_LINK_0_REGISTER_W							: integer := 16#30#;

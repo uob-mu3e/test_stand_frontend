@@ -58,8 +58,10 @@ using std::endl;
     int clockboard_a10::write_command(uint8_t command, uint32_t payload, bool has_payload){
         if(has_payload)
             mu.write_register(RESET_LINK_RUN_NUMBER_REGISTER_W, payload);
-
-        mu.write_register(RESET_LINK_CTL_REGISTER_W, 0xF0000000 | command);
+        // upper 3 bits (31:29) are FEB address:
+        // 0 -> 0, 1 -> 1, etc. 7 is all FEBs
+        // for the moment we only have 4 possible FEBs connected
+        mu.write_register(RESET_LINK_CTL_REGISTER_W, 0xE0000000 | command);
         mu.write_register(RESET_LINK_CTL_REGISTER_W, 0x0);
 
         return 0;

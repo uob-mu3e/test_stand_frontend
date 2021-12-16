@@ -44,7 +44,7 @@ int main()
     mu.write_register(RESET_REGISTER_W, reset_regs);
     mu.write_register(RESET_REGISTER_W, 0x0);
     
-    // get Reset Link Status
+    // set payload and create cmd variable
     mu.write_register(RESET_LINK_RUN_NUMBER_REGISTER_W, 0xAAAAAAAA);
     char cmd;
     
@@ -67,23 +67,26 @@ int main()
         cin >> cmd;
         switch(cmd) {
         case '1':
-            mu.write_register(RESET_LINK_CTL_REGISTER_W, 0xF0000001);
+            // upper 3 bits (31:29) are FEB address:
+            // 0 -> 0, 1 -> 1, etc. 7 is all FEBs
+            // for the moment we only have 4 possible FEBs connected
+            mu.write_register(RESET_LINK_CTL_REGISTER_W, 0xE0000001);
             mu.write_register(RESET_LINK_CTL_REGISTER_W, 0x0);
             break;
         case '2':
-            mu.write_register(RESET_LINK_CTL_REGISTER_W, 0xF0000002);
+            mu.write_register(RESET_LINK_CTL_REGISTER_W, 0xE0000002);
             mu.write_register(RESET_LINK_CTL_REGISTER_W, 0x0);
             break;
         case '3':
-            mu.write_register(RESET_LINK_CTL_REGISTER_W, 0xF0000004);
+            mu.write_register(RESET_LINK_CTL_REGISTER_W, 0xE0000004);
             mu.write_register(RESET_LINK_CTL_REGISTER_W, 0x0);
             break;
         case '4':
-            mu.write_register(RESET_LINK_CTL_REGISTER_W, 0xF0000008);
+            mu.write_register(RESET_LINK_CTL_REGISTER_W, 0xE0000008);
             mu.write_register(RESET_LINK_CTL_REGISTER_W, 0x0);
             break;
         case '5':
-            mu.write_register(RESET_LINK_CTL_REGISTER_W, 0xF0000010);
+            mu.write_register(RESET_LINK_CTL_REGISTER_W, 0xE0000010);
             mu.write_register(RESET_LINK_CTL_REGISTER_W, 0x0);
             break;
         case '6':
