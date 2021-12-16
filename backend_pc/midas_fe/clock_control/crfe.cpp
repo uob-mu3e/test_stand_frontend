@@ -52,6 +52,7 @@
 
 
 #include "clockboard_bypass.h"
+#include "clockboard_a10.h"
 #include "clockboard.h"
 #include "reset_protocol.h"
 #include "link_constants.h"
@@ -178,16 +179,22 @@ INT frontend_init()
 
     cout << "IP: " << ip << " port: " << port << endl;
 
+
+
     #ifdef NO_CLOCK_BOX
         cm_msg(MINFO, "frontend_init", "Using clock board bypass for reset commands to FEB");
         cb = new clockboard_bypass(ip, port);
     #else
-        if(ip=="0.0.0.0"){
-           cm_msg(MINFO, "frontend_init", "Using clock board bypass for reset commands to FEB");
-           cb = new clockboard_bypass(ip, port);
-        }else{
-           cb = new clockboard(ip, port);
-        }
+        #ifdef A10_EMULATED_CLOCK_BOX
+            cb = new clockboard_a10(ip, port);
+        #else
+            if(ip=="0.0.0.0"){
+                cm_msg(MINFO, "frontend_init", "Using clock board bypass for reset commands to FEB");
+                 cb = new clockboard_bypass(ip, port);
+            }else{
+                cb = new clockboard(ip, port);
+            }
+        #endif;
     #endif
 
    if(!cb->isConnected())
@@ -284,6 +291,14 @@ INT resume_run(INT run_number, char *error)
 
 INT read_cr_event(char *pevent, INT off [[maybe_unused]])
 {
+#ifdef NO_CLOCK_BOX
+        return 0;
+#endif;
+
+#ifdef A10_EMULATED_CLOCK_BOX
+    return 0;
+#endif;
+
     if(!cb->isConnected()){
         // terminate!
         cm_msg(MERROR, "read_cr_event", "Connection to clock board lost");

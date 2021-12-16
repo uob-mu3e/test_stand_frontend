@@ -4,10 +4,10 @@ target_include_directories(ipbus PUBLIC ${Boost_INCLUDE_DIRS})
 
 install(TARGETS ipbus DESTINATION lib)
 
-add_library(clockboard "src/clockboard.cpp")
+add_library(clockboard "src/clockboard.cpp" "src/clockboard_a10.cpp")
 target_include_directories(clockboard PUBLIC "include")
-target_include_directories(clockboard PRIVATE ${CMAKE_SOURCE_DIR}/common/include)
-target_link_libraries(clockboard ipbus)
+target_include_directories(clockboard PRIVATE ${CMAKE_SOURCE_DIR}/common/include ${CMAKE_SOURCE_DIR}/common/libmudaq)
+target_link_libraries(clockboard ipbus libmudaq)
 
 install(TARGETS clockboard DESTINATION lib)
 

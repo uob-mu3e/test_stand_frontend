@@ -6,9 +6,9 @@
 #include "reset_protocol.h"
 #include "clockboard.h"
 
-using midas::odb;
+#include "mudaq_device.h"
 
-class mudaq::DmaMudaqDevice;
+using midas::odb;
 
 class clockboard_a10:public clockboard
 {
