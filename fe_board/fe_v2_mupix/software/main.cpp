@@ -49,6 +49,7 @@ int main() {
         printf("  [6] => mscb\n");
         printf("  [7] => reset system\n");
         printf("  [8] => datapath\n");
+        printf("  [f] => toggleFEBID\n");
 
         printf("Select entry ...\n");
         char cmd = wait_key();
@@ -84,6 +85,9 @@ int main() {
             printf("testwrite:\n");
             ram->data[0xFC2C]=0xAAAAAAAA;
             break;
+	case 'f':
+    	    ram->data[0xFC03] ^= 1UL << 0;
+	    break;
         default:
             printf("invalid command: '%c'\n", cmd);
         }
