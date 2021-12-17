@@ -205,9 +205,12 @@ architecture rtl of top is
     signal Trig1_TTL_prev           : std_logic;
     signal Trig0_TTL_reg            : std_logic;
     signal Trig1_TTL_reg            : std_logic;
+	signal Trig2_TTL_reg            : std_logic;
+    signal Trig3_TTL_reg            : std_logic;
     signal dead0, dead1             : std_logic;
     signal dead_cnt0                : integer;
     signal dead_cnt1                : integer;
+	signal trig_edge_cnt			: integer := 0;
 
 begin
 
@@ -356,6 +359,8 @@ begin
     if rising_edge(systemclock_bottom) then
         Trig0_TTL_reg   <= Trig0_TTL;
         Trig1_TTL_reg   <= Trig1_TTL;
+		Trig2_TTL_reg   <= Trig2_TTL;
+        Trig3_TTL_reg   <= Trig3_TTL;
         Trig0_TTL_prev  <= Trig0_TTL_reg;
         Trig1_TTL_prev  <= Trig1_TTL_reg;
         run_state_625_reg <= run_state_125_reg;
@@ -368,12 +373,16 @@ begin
         end if;
 
         if(Trig0_TTL_reg = '0' and Trig0_TTL_prev = '1' and dead0='0') then -- falling edge on input and not in artificial dead time
-            dead0               <= '1';
-            dead_cnt0           <=  0;
-            trig0_buffer_125    <= '0';
-            trig0_timestamp_save<= fastcounter(31 downto 0);    -- save current timestamp here, grab it in the slow clock once it is save to do so (in the middle of the dead time)
-        end if;
+			trig_edge_cnt		<= trig_edge_cnt + 1;
+            if(trig_edge_cnt = 2) then
+				dead0               <= '1';
+				dead_cnt0           <=  0;
+				trig0_buffer_125    <= '0';
+				trig0_timestamp_save<= fastcounter(31 downto 0);    -- save current timestamp here, grab it in the slow clock once it is save to do so (in the middle of the dead time)
+			end if;
+		end if;
         if(Trig1_TTL_reg = '0' and Trig1_TTL_prev = '1' and dead1='0') then -- same for the other input
+			trig_edge_cnt		<= 0;
             dead1               <= '1';
             dead_cnt1           <=  0;
             trig1_buffer_125    <= '0';
@@ -513,6 +522,6 @@ begin
     FPGA_Test(1) <= lvds_firefly_clk;
     FPGA_Test(2) <= clk_125_top;
 
-    lcd_data(7 downto 2) <= "000000";
+    lcd_data(5 downto 2) <= Trig0_TTL_reg & Trig1_TTL_reg & Trig2_TTL_reg & Trig3_TTL_reg;
 
 end rtl;
