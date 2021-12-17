@@ -11,7 +11,7 @@ create_clock -period "125.003 MHz" [ get_ports lvds_firefly_clk ]
 create_clock -period "50.03 MHz" [ get_ports systemclock ]
 create_clock -period "50.02 MHz" [ get_ports systemclock_bottom ]
 create_clock -period "125.001 MHz" [ get_ports clk_125_top ]
-create_clock -period "125.002 MHz" [ get_ports clk_125_bottom ]
+create_clock -period "625.000 MHz" [ get_ports clk_125_bottom ]
 create_clock -period "50.01 MHz" [ get_ports spare_clk_osc ]
 
 
@@ -60,3 +60,10 @@ set_output_delay -clock { spare_clk_osc } -max 0 [get_ports {max10_spi_D1}]
 set_output_delay -clock { spare_clk_osc } -max 0 [get_ports {max10_spi_D2}]
 set_output_delay -clock { spare_clk_osc } -max 0 [get_ports {max10_spi_D3}]
 set_output_delay -clock { spare_clk_osc } -max 0 [get_ports {max10_spi_csn}]
+
+set_false_path -from {testcounter*} -to {fe_block_v2:e_fe_block|feb_reg_mapping:e_reg_mapping|testout*}
+set_false_path -from {run_state_125_reg*} -to {run_state_625_reg*}
+set_false_path -from {trig1_buffer_125} -to {trig1_buffer_125_reg}
+set_false_path -from {trig0_buffer_125} -to {trig0_buffer_125_reg}
+set_false_path -from {trig1_timestamp_save*} -to {trig1_ts_final*}
+set_false_path -from {trig0_timestamp_save*} -to {trig0_ts_final*}

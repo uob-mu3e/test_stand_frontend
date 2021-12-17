@@ -23,7 +23,7 @@ entity top is
         lvds_firefly_clk            : in    std_logic; -- 125 MHz base clock
 
         systemclock                 : in    std_logic; -- 50 MHz system clock // SI5345
-        systemclock_bottom          : in    std_logic; -- 50 MHz system clock // SI5345
+        systemclock_bottom          : in    std_logic; -- 625 MHz clock // SI5345
         clk_125_top                 : in    std_logic; -- 125 MHz clock spare // SI5345
         clk_125_bottom              : in    std_logic; -- 125 Mhz clock spare // SI5345
         spare_clk_osc               : in    std_logic; -- Spare clock // 50 MHz oscillator
@@ -174,6 +174,7 @@ architecture rtl of top is
 
     signal run_state_125            : run_state_t;
     signal run_state_125_reg        : run_state_t;
+    signal run_state_625_reg        : run_state_t;
     signal run_state_156            : run_state_t;
     signal ack_run_prep_permission  : std_logic;
 
@@ -186,6 +187,28 @@ architecture rtl of top is
     signal mp_ctrl_csn              : std_logic_vector(11 downto 0);
 
     signal testcounter              : std_logic_vector(31 downto 0);
+    signal fastcounter              : std_logic_vector(63 downto 0);
+
+    signal trig0_buffer_125_prev    : std_logic;
+    signal trig1_buffer_125_prev    : std_logic;
+    signal trig0_buffer_125         : std_logic;
+    signal trig1_buffer_125         : std_logic;
+    signal trig0_buffer_125_reg     : std_logic;
+    signal trig1_buffer_125_reg     : std_logic;
+    signal trig0_edge_detected      : std_logic;
+    signal trig1_edge_detected      : std_logic;
+    signal trig0_ts_final           : std_logic_vector(31 downto 0);
+    signal trig1_ts_final           : std_logic_vector(31 downto 0);
+    signal trig0_timestamp_save     : std_logic_vector(31 downto 0);
+    signal trig1_timestamp_save     : std_logic_vector(31 downto 0);
+    signal Trig0_TTL_prev           : std_logic;
+    signal Trig1_TTL_prev           : std_logic;
+    signal Trig0_TTL_reg            : std_logic;
+    signal Trig1_TTL_reg            : std_logic;
+    signal dead0, dead1             : std_logic;
+    signal dead_cnt0                : integer;
+    signal dead_cnt1                : integer;
+
 begin
 
 --------------------------------------------------------------------
@@ -259,7 +282,12 @@ begin
         i_clk125                => lvds_firefly_clk,
         i_lvds_rx_inclock_A     => LVDS_clk_si1_fpga_A,
         i_lvds_rx_inclock_B     => LVDS_clk_si1_fpga_B,
-        i_sync_reset_cnt        => sync_reset_cnt--,
+        i_sync_reset_cnt        => sync_reset_cnt,
+
+        i_trigger_in0           => trig0_edge_detected,
+        i_trigger_in1           => trig1_edge_detected,
+        i_trigger_in0_timestamp => trig0_ts_final,
+        i_trigger_in1_timestamp => trig1_ts_final--,
     );
 
     process(lvds_firefly_clk)
@@ -287,9 +315,92 @@ begin
             --fast_reset_E    <= '0';
             sync_reset_cnt  <= '0';
         end if;
+        
     end if;
     end process;
 
+--------------------------------------------------------------------
+--------------------------------------------------------------------
+---- fast trigger inputs -------------------------------------------
+--------------------------------------------------------------------
+--------------------------------------------------------------------
+
+    -- slow clock process (hitsorter clock)
+    process(lvds_firefly_clk)
+    begin
+    if rising_edge(lvds_firefly_clk) then
+        trig0_buffer_125_reg    <= trig0_buffer_125;
+        trig1_buffer_125_reg    <= trig1_buffer_125;
+
+        trig0_buffer_125_prev   <= trig0_buffer_125_reg;
+        trig1_buffer_125_prev   <= trig1_buffer_125_reg;
+
+        trig0_edge_detected     <= '0';
+        trig1_edge_detected     <= '0';
+
+        if(trig0_buffer_125_prev = '0' and trig0_buffer_125_reg = '1') then
+            trig0_edge_detected <= '1';
+            trig0_ts_final      <= trig0_timestamp_save;
+        end if;
+        -- register buffer once
+        if(trig1_buffer_125_prev = '0' and trig1_buffer_125_reg = '1') then
+            trig1_edge_detected <= '1';
+            trig1_ts_final      <= trig1_timestamp_save;
+        end if;
+    end if;
+    end process;
+
+    -- fast clk process
+    process(systemclock_bottom)
+    begin
+    if rising_edge(systemclock_bottom) then
+        Trig0_TTL_reg   <= Trig0_TTL;
+        Trig1_TTL_reg   <= Trig1_TTL;
+        Trig0_TTL_prev  <= Trig0_TTL_reg;
+        Trig1_TTL_prev  <= Trig1_TTL_reg;
+        run_state_625_reg <= run_state_125_reg;
+
+        if(run_state_625_reg = RUN_STATE_SYNC) then
+            fastcounter <= (others => '0');
+        end if;
+        if(run_state_625_reg = RUN_STATE_RUNNING)then
+            fastcounter <= fastcounter + 1;
+        end if;
+
+        if(Trig0_TTL_reg = '0' and Trig0_TTL_prev = '1' and dead0='0') then -- falling edge on input and not in artificial dead time
+            dead0               <= '1';
+            dead_cnt0           <=  0;
+            trig0_buffer_125    <= '0';
+            trig0_timestamp_save<= fastcounter(31 downto 0);    -- save current timestamp here, grab it in the slow clock once it is save to do so (in the middle of the dead time)
+        end if;
+        if(Trig1_TTL_reg = '0' and Trig1_TTL_prev = '1' and dead1='0') then -- same for the other input
+            dead1               <= '1';
+            dead_cnt1           <=  0;
+            trig1_buffer_125    <= '0';
+            trig1_timestamp_save<= fastcounter(31 downto 0);
+        end if;
+
+        if(dead0 = '1') then 
+            dead_cnt0 <= dead_cnt0 + 1;
+            if(dead_cnt0=32) then 
+                trig0_buffer_125 <= '1'; -- read trig0_timestamp_save on rising edge of trig0_buffer_125 in 125 MHz clock
+            end if;
+            if(dead_cnt0>=63) then -- end artificial dead time
+                dead0 <= '0';
+            end if;
+        end if;
+
+        if(dead1 = '1') then -- same for the other input
+            dead_cnt1 <= dead_cnt1 + 1;
+            if(dead_cnt1=32) then 
+                trig1_buffer_125 <= '1';
+            end if;
+            if(dead_cnt1>=63) then
+                dead1 <= '0';
+            end if;
+        end if;
+    end if;
+    end process;
 --------------------------------------------------------------------
 --------------------------------------------------------------------
 ---- COMMON FIRMWARE PART ------------------------------------------
@@ -402,11 +513,6 @@ begin
     FPGA_Test(1) <= lvds_firefly_clk;
     FPGA_Test(2) <= clk_125_top;
 
-    lcd_data(2) <= Trig0_TTL;
-    lcd_data(3) <= Trig1_TTL;
-    lcd_data(4) <= Trig2_TTL;
-    lcd_data(5) <= Trig3_TTL;
-
-    lcd_data(7 downto 6) <= "11";
+    lcd_data(7 downto 2) <= "000000";
 
 end rtl;

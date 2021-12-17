@@ -42,7 +42,12 @@ port (
     i_sync_reset_cnt    : in  std_logic;
     i_fpga_id           : in  std_logic_vector(7 downto 0);
     i_run_state_125     : in  run_state_t;
-    i_run_state_156     : in  run_state_t--;
+    i_run_state_156     : in  run_state_t;
+
+    i_trigger_in0           : in  std_logic;
+    i_trigger_in1           : in  std_logic;
+    i_trigger_in0_timestamp : in  std_logic_vector(31 downto 0);
+    i_trigger_in1_timestamp : in  std_logic_vector(31 downto 0)--;
 );
 end mupix_datapath;
 
@@ -399,7 +404,21 @@ begin
                     hits_sorter_in_ena(i)  <= hits_sorter_in_ena_buf(i);
                 end loop;
                 
-                for i in 3 to 11 loop
+
+                if(IS_TELESCOPE_g = '1') then
+                    hits_sorter_in(3)      <= i_trigger_in0_timestamp(20 downto 0) & counter125(10 downto 0);
+                    hits_sorter_in_ena(3)  <= i_trigger_in0;
+                    hits_sorter_in(4)      <= i_trigger_in1_timestamp(20 downto 0) & counter125(10 downto 0);
+                    hits_sorter_in_ena(4)  <= i_trigger_in1;
+                else
+                    hits_sorter_in(3)      <= hits_sorter_in_buf(3);
+                    hits_sorter_in_ena(3)  <= hits_sorter_in_ena_buf(3);
+                    hits_sorter_in(4)      <= hits_sorter_in_buf(4);
+                    hits_sorter_in_ena(4)  <= hits_sorter_in_ena_buf(4);
+                end if;
+
+
+                for i in 5 to 11 loop
                     if(IS_TELESCOPE_g = '1') then
                         hits_sorter_in(i)      <= hits_sorter_in_buf(i);
                         hits_sorter_in_ena(i)  <= '0';
