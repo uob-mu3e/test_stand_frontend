@@ -88,3 +88,9 @@ set_location_assignment PIN_AH12 -to Trig0_TTL
 set_location_assignment PIN_AG12 -to Trig1_TTL
 set_location_assignment PIN_AF13 -to Trig2_TTL
 set_location_assignment PIN_AF12 -to Trig3_TTL
+
+set_location_assignment PIN_AK19 -to gate_in
+set_instance_assignment -name IO_STANDARD "2.5 V" -to gate_in
+
+set_location_assignment PIN_AJ19 -to pulse_train_in
+set_instance_assignment -name IO_STANDARD "2.5 V" -to pulse_train_in

@@ -50,6 +50,7 @@ architecture rtl of mp_sorter_reg_mapping is
             zero_suppression            <= '0';
         elsif(rising_edge(i_clk156)) then
             o_sorter_delay              <= sorter_delay;
+			o_zero_suppression			<= zero_suppression;
 
             -- register sorter signals once in 156 Mhz domain and put a false path between i_nintime and nintime, ...
             nintime                     <= i_nintime;

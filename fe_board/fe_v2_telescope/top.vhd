@@ -143,11 +143,23 @@ entity top is
         max10_spi_D1                : inout std_logic;
         max10_spi_D2                : inout std_logic;
         max10_spi_D3                : inout std_logic;
-        max10_spi_csn               : out   std_logic
+        max10_spi_csn               : out   std_logic;
+		
+		gate_in  					: in    std_logic;
+		pulse_train_in				: in    std_logic--;
         );
 end top;
 
 architecture rtl of top is
+
+	component trigPLL is
+		port (
+			refclk   : in  std_logic ; -- clk
+			rst      : in  std_logic ; -- reset
+			outclk_0 : out std_logic;        -- clk
+			locked   : out std_logic         -- export
+		);
+	end component trigPLL;
 
     -- Debouncers
     signal pb_db                    : std_logic_vector(1 downto 0);
@@ -212,6 +224,7 @@ architecture rtl of top is
     signal dead_cnt1                : integer;
 	signal trig_edge_cnt			: integer := 0;
 
+	signal triggerclk				: std_logic;
 begin
 
 --------------------------------------------------------------------
@@ -244,7 +257,17 @@ begin
     enable_B <= '1';
     enable_C <= '1';
     enable_D <= '1';
+	
 
+	e_trigPLL: component trigPLL
+	port map (
+		refclk   => lvds_firefly_clk,
+		rst      => not pb_db(1),
+		outclk_0 => triggerclk,
+		locked   => open--,
+	);
+		
+	
     e_mupix_block : entity work.mupix_block
     generic map (
         IS_TELESCOPE_g  => '1',
@@ -354,11 +377,14 @@ begin
     end process;
 
     -- fast clk process
-    process(systemclock_bottom)
+    process(triggerclk, pb_db(1))
     begin
-    if rising_edge(systemclock_bottom) then
-        Trig0_TTL_reg   <= Trig0_TTL;
-        Trig1_TTL_reg   <= Trig1_TTL;
+	if(pb_db(1) = '0') then
+		trig_edge_cnt <= 0;
+		dead_cnt0	  <= 0;
+    elsif rising_edge(triggerclk) then
+        Trig0_TTL_reg   <= pulse_train_in;
+        Trig1_TTL_reg   <= gate_in;
 		Trig2_TTL_reg   <= Trig2_TTL;
         Trig3_TTL_reg   <= Trig3_TTL;
         Trig0_TTL_prev  <= Trig0_TTL_reg;
@@ -382,7 +408,7 @@ begin
 			end if;
 		end if;
         if(Trig1_TTL_reg = '0' and Trig1_TTL_prev = '1' and dead1='0') then -- same for the other input
-			trig_edge_cnt		<= 0;
+			trig_edge_cnt		<= 0; -- MK: why do we reset this here and not after we saw the 3. edge?
             dead1               <= '1';
             dead_cnt1           <=  0;
             trig1_buffer_125    <= '0';
@@ -521,6 +547,12 @@ begin
     FPGA_Test(0) <= transceiver_pll_clock(0);
     FPGA_Test(1) <= lvds_firefly_clk;
     FPGA_Test(2) <= clk_125_top;
+	FPGA_Test(3) <= Trig0_TTL;
+	FPGA_Test(4) <= Trig1_TTL;
+	FPGA_Test(5) <= gate_in;
+	FPGA_Test(6) <= pulse_train_in;
+	FPGA_Test(7) <= triggerclk;
+	
 
     lcd_data(5 downto 2) <= Trig0_TTL_reg & Trig1_TTL_reg & Trig2_TTL_reg & Trig3_TTL_reg;
 
