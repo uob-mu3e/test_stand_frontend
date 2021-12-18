@@ -220,9 +220,35 @@ architecture rtl of top is
 	signal Trig2_TTL_reg            : std_logic;
     signal Trig3_TTL_reg            : std_logic;
     signal dead0, dead1             : std_logic;
-    signal dead_cnt0                : integer range 0 to 63;
-    signal dead_cnt1                : integer range 0 to 63;
+    signal dead_cnt0                : integer range 0 to 123;
+    signal dead_cnt1                : integer range 0 to 123;
 	signal trig_edge_cnt			: integer range 0 to 3;
+
+    signal fastcounter_b              : std_logic_vector(63 downto 0);
+
+    signal trig0_buffer_125_prev_b    : std_logic;
+    signal trig1_buffer_125_prev_b    : std_logic;
+    signal trig0_buffer_125_b         : std_logic;
+    signal trig1_buffer_125_b         : std_logic;
+    signal trig0_buffer_125_reg_b     : std_logic;
+    signal trig1_buffer_125_reg_b     : std_logic;
+    signal trig0_edge_detected_b      : std_logic;
+    signal trig1_edge_detected_b      : std_logic;
+    signal trig0_ts_final_b           : std_logic_vector(31 downto 0);
+    signal trig1_ts_final_b           : std_logic_vector(31 downto 0);
+    signal trig0_timestamp_save_b     : std_logic_vector(31 downto 0);
+    signal trig1_timestamp_save_b     : std_logic_vector(31 downto 0);
+    signal Trig0_TTL_prev_b           : std_logic;
+    signal Trig1_TTL_prev_b           : std_logic;
+    signal Trig0_TTL_reg_b            : std_logic;
+    signal Trig1_TTL_reg_b            : std_logic;
+	signal Trig2_TTL_reg_b            : std_logic;
+    signal Trig3_TTL_reg_b            : std_logic;
+    signal dead0_b, dead1_b             : std_logic;
+    signal dead_cnt0_b                : integer range 0 to 63;
+    signal dead_cnt1_b                : integer range 0 to 63;
+	signal trig_edge_cnt_b			: integer range 0 to 3;
+	
 
 	signal triggerclk				: std_logic;
 begin
@@ -361,28 +387,39 @@ begin
         trig0_buffer_125_prev   <= trig0_buffer_125_reg;
         trig1_buffer_125_prev   <= trig1_buffer_125_reg;
 
+		trig0_buffer_125_reg_b  <= trig0_buffer_125_b;
+        trig1_buffer_125_reg_b  <= trig1_buffer_125_b;
+
+        trig0_buffer_125_prev_b <= trig0_buffer_125_reg_b;
+        trig1_buffer_125_prev_b <= trig1_buffer_125_reg_b;
+		
         trig0_edge_detected     <= '0';
         trig1_edge_detected     <= '0';
+		trig0_edge_detected_b     <= '0';
+        trig1_edge_detected_b     <= '0';
+		
 
-        if(trig0_buffer_125_prev = '0' and trig0_buffer_125_reg = '1') then
+        if(trig0_buffer_125_prev_b = '0' and trig0_buffer_125_reg_b = '1') then
             trig0_edge_detected <= '1';
-            trig0_ts_final      <= trig0_timestamp_save;
+            trig0_ts_final      <= trig0_timestamp_save + trig0_timestamp_save_b;
         end if;
+		
         -- register buffer once
-        if(trig1_buffer_125_prev = '0' and trig1_buffer_125_reg = '1') then
+        if(trig1_buffer_125_prev_b = '0' and trig1_buffer_125_reg_b = '1') then
             trig1_edge_detected <= '1';
-            trig1_ts_final      <= trig1_timestamp_save;
+            trig1_ts_final      <= trig1_timestamp_save + trig1_timestamp_save_b;
         end if;
+
     end if;
     end process;
 
     -- fast clk process
-    process(triggerclk, pb_db(1))
+    process(triggerclk)--pb_db(1))
     begin
-	if(pb_db(1) = '0') then
+	--if(pb_db(1) = '0') then
 		--trig_edge_cnt <= 0;
 		--dead_cnt0	  <= 0;
-    elsif rising_edge(triggerclk) then
+    if (rising_edge(triggerclk)) then
         Trig0_TTL_reg   <= pulse_train_in;
         Trig1_TTL_reg   <= gate_in;
 		Trig2_TTL_reg   <= Trig2_TTL;
@@ -436,6 +473,59 @@ begin
             end if;
         end if;
     end if;
+	
+	if (falling_edge(triggerclk)) then
+        Trig0_TTL_reg_b   <= pulse_train_in;
+        Trig1_TTL_reg_b   <= gate_in;
+        Trig0_TTL_prev_b  <= Trig0_TTL_reg_b;
+        Trig1_TTL_prev_b  <= Trig1_TTL_reg_b;
+
+        if(run_state_625_reg = RUN_STATE_SYNC) then
+            fastcounter_b <= (others => '0');
+        end if;
+        if(run_state_625_reg = RUN_STATE_RUNNING)then
+            fastcounter_b <= fastcounter_b + 1;
+        end if;
+
+        if(Trig0_TTL_reg_b = '0' and Trig0_TTL_prev_b = '1' and dead0_b='0') then -- falling edge on input and not in artificial dead time
+			trig_edge_cnt_b		<= trig_edge_cnt_b + 1;
+            if(trig_edge_cnt_b >= 2) then
+				dead0_b               <= '1';
+				dead_cnt0_b           <=  0;				
+				trig0_timestamp_save_b<= fastcounter_b(31 downto 0); 
+				trig_edge_cnt_b		<= 0;	-- save current timestamp here, grab it in the slow clock once it is save to do so (in the middle of the dead time)
+			end if;
+		end if;
+        if(Trig1_TTL_reg_b = '0' and Trig1_TTL_prev_b = '1' and dead1_b='0') then -- same for the other input
+            dead1_b               <= '1';
+            dead_cnt1_b           <=  0;          
+            trig1_timestamp_save_b<= fastcounter_b(31 downto 0);
+        end if;
+
+        if(dead0_b = '1') then 
+            dead_cnt0_b <= dead_cnt0_b + 1;
+            if(dead_cnt0_b=48) then 
+                trig0_buffer_125_b <= '1'; -- read trig0_timestamp_save on rising edge of trig0_buffer_125 in 125 MHz clock
+            end if;
+            if(dead_cnt0_b>=63) then -- end artificial dead time
+                dead0_b <= '0';
+				trig0_buffer_125_b    <= '0';
+				trig_edge_cnt_b		<= 0; -- MK: why do we reset this here and not after we saw the 3. edge?
+            end if;
+        end if;
+
+        if(dead1_b = '1') then -- same for the other input
+            dead_cnt1_b <= dead_cnt1_b + 1;
+            if(dead_cnt1_b=48) then 
+                trig1_buffer_125_b <= '1';
+            end if;
+            if(dead_cnt1_b>=63) then
+                dead1_b <= '0';
+				trig1_buffer_125_b    <= '0';
+            end if;
+        end if;
+    end if;
+
     end process;
 --------------------------------------------------------------------
 --------------------------------------------------------------------
