@@ -220,9 +220,9 @@ architecture rtl of top is
 	signal Trig2_TTL_reg            : std_logic;
     signal Trig3_TTL_reg            : std_logic;
     signal dead0, dead1             : std_logic;
-    signal dead_cnt0                : integer;
-    signal dead_cnt1                : integer;
-	signal trig_edge_cnt			: integer := 0;
+    signal dead_cnt0                : integer range 0 to 63;
+    signal dead_cnt1                : integer range 0 to 63;
+	signal trig_edge_cnt			: integer range 0 to 3;
 
 	signal triggerclk				: std_logic;
 begin
@@ -380,8 +380,8 @@ begin
     process(triggerclk, pb_db(1))
     begin
 	if(pb_db(1) = '0') then
-		trig_edge_cnt <= 0;
-		dead_cnt0	  <= 0;
+		--trig_edge_cnt <= 0;
+		--dead_cnt0	  <= 0;
     elsif rising_edge(triggerclk) then
         Trig0_TTL_reg   <= pulse_train_in;
         Trig1_TTL_reg   <= gate_in;
@@ -400,18 +400,16 @@ begin
 
         if(Trig0_TTL_reg = '0' and Trig0_TTL_prev = '1' and dead0='0') then -- falling edge on input and not in artificial dead time
 			trig_edge_cnt		<= trig_edge_cnt + 1;
-            if(trig_edge_cnt = 2) then
+            if(trig_edge_cnt >= 2) then
 				dead0               <= '1';
-				dead_cnt0           <=  0;
-				trig0_buffer_125    <= '0';
-				trig0_timestamp_save<= fastcounter(31 downto 0);    -- save current timestamp here, grab it in the slow clock once it is save to do so (in the middle of the dead time)
+				dead_cnt0           <=  0;				
+				trig0_timestamp_save<= fastcounter(31 downto 0); 
+				trig_edge_cnt		<= 0;	-- save current timestamp here, grab it in the slow clock once it is save to do so (in the middle of the dead time)
 			end if;
 		end if;
         if(Trig1_TTL_reg = '0' and Trig1_TTL_prev = '1' and dead1='0') then -- same for the other input
-			trig_edge_cnt		<= 0; -- MK: why do we reset this here and not after we saw the 3. edge?
             dead1               <= '1';
-            dead_cnt1           <=  0;
-            trig1_buffer_125    <= '0';
+            dead_cnt1           <=  0;          
             trig1_timestamp_save<= fastcounter(31 downto 0);
         end if;
 
@@ -422,6 +420,8 @@ begin
             end if;
             if(dead_cnt0>=63) then -- end artificial dead time
                 dead0 <= '0';
+				trig0_buffer_125    <= '0';
+				trig_edge_cnt		<= 0; -- MK: why do we reset this here and not after we saw the 3. edge?
             end if;
         end if;
 
@@ -432,6 +432,7 @@ begin
             end if;
             if(dead_cnt1>=63) then
                 dead1 <= '0';
+				trig1_buffer_125    <= '0';
             end if;
         end if;
     end if;

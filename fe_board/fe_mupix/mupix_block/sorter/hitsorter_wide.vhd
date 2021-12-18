@@ -758,6 +758,10 @@ begin
              and readcommand_reg(COMMANDBITS-1 downto COMMANDBITS-4) = COMMAND_SUBHEADER(COMMANDBITS-1 downto COMMANDBITS-4)
              and zero_suppression = '1') then
                 -- throw away subheader in readcommand_reg2 by doing nothing here
+			elsif(readcommand_reg2(COMMANDBITS-1 downto COMMANDBITS-4) = COMMAND_SUBHEADER(COMMANDBITS-1 downto COMMANDBITS-4) 
+             and readcommand_reg(COMMANDBITS-1 downto COMMANDBITS-4) = COMMAND_FOOTER(COMMANDBITS-1 downto COMMANDBITS-4)
+             and zero_suppression = '1') then
+				-- throw away footer in readcommand_reg2 by doing nothing here
             else
                 readcommand <= readcommand_reg2;
                 readcommand_ena <= readcommand_ena_reg2;

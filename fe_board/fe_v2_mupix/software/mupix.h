@@ -253,7 +253,10 @@ struct mupix_t {
 					sc->ram->data[0x1029]=0x1;
 				}
 				break;
-            case 'q':
+        case '9': 
+		sc->ram->data[0x1028]=0x5FC;
+		break;    
+	case 'q':
                 return;
             default:
                 printf("invalid command: '%c'\n", cmd);
