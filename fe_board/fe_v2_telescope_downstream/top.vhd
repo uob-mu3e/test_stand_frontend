@@ -275,11 +275,11 @@ begin
     mosi_C <= mp_ctrl_mosi(1);
     mosi_D <= mp_ctrl_mosi(0);
 
-	-- TODO: reverse this again (cabling mistake in muEDM run hotfix)
+	-- TODO: remove this again
     csn_A <= (others => (not mp_ctrl_csn(2)));
-    csn_B <= (others => (not mp_ctrl_csn(1)));
-    csn_C <= (others => mp_ctrl_csn(0));
-    csn_D <= (others => mp_ctrl_csn(3));
+    csn_B <= (others => (not mp_ctrl_csn(0)));
+    csn_C <= (others => mp_ctrl_csn(3));
+    csn_D <= (others => mp_ctrl_csn(1));
 	
 --    csn_A <= (others => (not mp_ctrl_csn(0)));
 --    csn_B <= (others => (not mp_ctrl_csn(1)));
@@ -304,7 +304,7 @@ begin
     e_mupix_block : entity work.mupix_block
     generic map (
         IS_TELESCOPE_g  => '1',
-        LINK_ORDER_g => MP_LINK_ORDER_TELESCOPE--,
+        LINK_ORDER_g => MP_LINK_ORDER_TELESCOPE_DOWNSTREAM--,
     )
     port map (
         i_fpga_id               => ref_adr,

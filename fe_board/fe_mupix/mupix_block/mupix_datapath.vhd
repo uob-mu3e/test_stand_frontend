@@ -411,16 +411,16 @@ begin
             --else
 				
 				-- todo: reverse this again (cabling mistake in muEDM run hotfix)
-                    hits_sorter_in(0)      <= hits_sorter_in_buf(2);
-                    hits_sorter_in_ena(0)  <= hits_sorter_in_ena_buf(2);
-					hits_sorter_in(1)      <= hits_sorter_in_buf(1);
-                    hits_sorter_in_ena(1)  <= hits_sorter_in_ena_buf(1);
-					hits_sorter_in(2)      <= hits_sorter_in_buf(0);
-                    hits_sorter_in_ena(2)  <= hits_sorter_in_ena_buf(0);
---                for i in 0 to 2 loop
---                    hits_sorter_in(i)      <= hits_sorter_in_buf(i);
---                    hits_sorter_in_ena(i)  <= hits_sorter_in_ena_buf(i);
---                end loop;
+                    --hits_sorter_in(0)      <= hits_sorter_in_buf(0);
+                    --hits_sorter_in_ena(0)  <= hits_sorter_in_ena_buf(2);
+					--hits_sorter_in(1)      <= hits_sorter_in_buf(1);
+                    --hits_sorter_in_ena(1)  <= hits_sorter_in_ena_buf(1);
+					--hits_sorter_in(2)      <= hits_sorter_in_buf(0);
+                    --hits_sorter_in_ena(2)  <= hits_sorter_in_ena_buf(0);
+                for i in 0 to 2 loop
+                    hits_sorter_in(i)      <= hits_sorter_in_buf(i);
+                    hits_sorter_in_ena(i)  <= hits_sorter_in_ena_buf(i);
+                end loop;
                 
 
                 if(IS_TELESCOPE_g = '1') then
