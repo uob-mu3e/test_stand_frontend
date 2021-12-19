@@ -187,6 +187,7 @@ architecture rtl of top is
     signal run_state_125            : run_state_t;
     signal run_state_125_reg        : run_state_t;
     signal run_state_625_reg        : run_state_t;
+    signal run_state_625_reg_b      : run_state_t;
     signal run_state_156            : run_state_t;
     signal ack_run_prep_permission  : std_logic;
 
@@ -199,7 +200,7 @@ architecture rtl of top is
     signal mp_ctrl_csn              : std_logic_vector(11 downto 0);
 
     signal testcounter              : std_logic_vector(31 downto 0);
-    signal fastcounter              : std_logic_vector(63 downto 0);
+    signal fastcounter              : std_logic_vector(31 downto 0);
 
     signal trig0_buffer_125_prev    : std_logic;
     signal trig1_buffer_125_prev    : std_logic;
@@ -224,7 +225,7 @@ architecture rtl of top is
     signal dead_cnt1                : integer range 0 to 123;
 	signal trig_edge_cnt			: integer range 0 to 3;
 
-    signal fastcounter_b              : std_logic_vector(63 downto 0);
+    signal fastcounter_b              : std_logic_vector(31 downto 0);
 
     signal trig0_buffer_125_prev_b    : std_logic;
     signal trig1_buffer_125_prev_b    : std_logic;
@@ -274,10 +275,16 @@ begin
     mosi_C <= mp_ctrl_mosi(1);
     mosi_D <= mp_ctrl_mosi(0);
 
-    csn_A <= (others => (not mp_ctrl_csn(0)));
-    csn_B <= (others => (not mp_ctrl_csn(1)));
-    csn_C <= (others => mp_ctrl_csn(3));
-    csn_D <= (others => mp_ctrl_csn(2));
+	-- TODO: reverse this again (cabling mistake in muEDM run hotfix)
+    csn_A <= (others => (not mp_ctrl_csn(3)));
+    csn_B <= (others => (not mp_ctrl_csn(2)));
+    csn_C <= (others => mp_ctrl_csn(1));
+    csn_D <= (others => mp_ctrl_csn(0));
+	
+--    csn_A <= (others => (not mp_ctrl_csn(0)));
+--    csn_B <= (others => (not mp_ctrl_csn(1)));
+--    csn_C <= (others => mp_ctrl_csn(3));
+--    csn_D <= (others => mp_ctrl_csn(2));
 
     enable_A <= '1';
     enable_B <= '1';
@@ -479,11 +486,12 @@ begin
         Trig1_TTL_reg_b   <= gate_in;
         Trig0_TTL_prev_b  <= Trig0_TTL_reg_b;
         Trig1_TTL_prev_b  <= Trig1_TTL_reg_b;
+		run_state_625_reg_b <= run_state_125_reg;
 
-        if(run_state_625_reg = RUN_STATE_SYNC) then
+        if(run_state_625_reg_b = RUN_STATE_SYNC) then
             fastcounter_b <= (others => '0');
         end if;
-        if(run_state_625_reg = RUN_STATE_RUNNING)then
+        if(run_state_625_reg_b = RUN_STATE_RUNNING)then
             fastcounter_b <= fastcounter_b + 1;
         end if;
 

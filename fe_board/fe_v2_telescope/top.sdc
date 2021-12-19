@@ -67,3 +67,5 @@ set_false_path -from {trig1_buffer_125} -to {trig1_buffer_125_reg}
 set_false_path -from {trig0_buffer_125} -to {trig0_buffer_125_reg}
 set_false_path -from {trig1_timestamp_save*} -to {trig1_ts_final*}
 set_false_path -from {trig0_timestamp_save*} -to {trig0_ts_final*}
+set_false_path -from {trig0_buffer_125_b} -to {trig0_buffer_125_reg_b}
+set_false_path -from {trig1_buffer_125_b} -to {trig1_buffer_125_reg_b}
