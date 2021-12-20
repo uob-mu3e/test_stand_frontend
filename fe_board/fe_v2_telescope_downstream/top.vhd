@@ -278,8 +278,8 @@ begin
 	-- TODO: remove this again
     csn_A <= (others => (not mp_ctrl_csn(2)));
     csn_B <= (others => (not mp_ctrl_csn(0)));
-    csn_C <= (others => mp_ctrl_csn(3));
-    csn_D <= (others => mp_ctrl_csn(1));
+    csn_C <= (others => mp_ctrl_csn(1));
+    csn_D <= (others => mp_ctrl_csn(3));
 	
 --    csn_A <= (others => (not mp_ctrl_csn(0)));
 --    csn_B <= (others => (not mp_ctrl_csn(1)));
