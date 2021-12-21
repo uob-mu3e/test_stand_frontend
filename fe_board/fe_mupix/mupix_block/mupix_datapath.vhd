@@ -505,7 +505,9 @@ begin
             o_tot(0)            => tot_hs(i),
             o_hit_ena           => hits_sorter_in_ena_buf(i)--,
         );
-        hits_sorter_in_buf(i)       <= row_hs(i) & col_hs(i) & tot_hs(i)(4 downto 0) & ts_hs(i);
+        --hits_sorter_in_buf(i)       <= row_hs(i) & col_hs(i) & tot_hs(i)(4 downto 0) & ts_hs(i);
+		hits_sorter_in_buf(i)       <= row_hs(i) & col_hs(i) & tot_hs(i)(4 downto 0) & counter125(10 downto 0); -- TODO: change me
+		
     END GENERATE;
 
     process(i_clk125)

@@ -283,10 +283,10 @@ begin
     mosi_D <= mp_ctrl_mosi(0);
 
 	-- TODO: reverse this again (cabling mistake in muEDM run hotfix)
-    csn_A <= (others => (not mp_ctrl_csn(0)));
-    csn_B <= (others => (not mp_ctrl_csn(2)));
-    csn_C <= (others => mp_ctrl_csn(4));
-    csn_D <= (others => mp_ctrl_csn(1));
+    csn_A <= (others => (not mp_ctrl_csn(2)));
+    csn_B <= (others => (not mp_ctrl_csn(1)));
+    csn_C <= (others => mp_ctrl_csn(3));
+    csn_D <= (others => mp_ctrl_csn(0));
 	
 --    csn_A <= (others => (not mp_ctrl_csn(0)));
 --    csn_B <= (others => (not mp_ctrl_csn(1)));
