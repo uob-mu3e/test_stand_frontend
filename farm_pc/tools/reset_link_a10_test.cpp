@@ -70,23 +70,23 @@ int main()
             // upper 3 bits (31:29) are FEB address:
             // 0 -> 0, 1 -> 1, etc. 7 is all FEBs
             // for the moment we only have 4 possible FEBs connected
-            mu.write_register(RESET_LINK_CTL_REGISTER_W, 0xE0000001);
+            mu.write_register(RESET_LINK_CTL_REGISTER_W, 0xE0000010);
             mu.write_register(RESET_LINK_CTL_REGISTER_W, 0x0);
             break;
         case '2':
-            mu.write_register(RESET_LINK_CTL_REGISTER_W, 0xE0000002);
+            mu.write_register(RESET_LINK_CTL_REGISTER_W, 0xE0000011);
             mu.write_register(RESET_LINK_CTL_REGISTER_W, 0x0);
             break;
         case '3':
-            mu.write_register(RESET_LINK_CTL_REGISTER_W, 0xE0000004);
+            mu.write_register(RESET_LINK_CTL_REGISTER_W, 0xE0000012);
             mu.write_register(RESET_LINK_CTL_REGISTER_W, 0x0);
             break;
         case '4':
-            mu.write_register(RESET_LINK_CTL_REGISTER_W, 0xE0000008);
+            mu.write_register(RESET_LINK_CTL_REGISTER_W, 0xE0000013);
             mu.write_register(RESET_LINK_CTL_REGISTER_W, 0x0);
             break;
         case '5':
-            mu.write_register(RESET_LINK_CTL_REGISTER_W, 0xE0000010);
+            mu.write_register(RESET_LINK_CTL_REGISTER_W, 0xE0000014);
             mu.write_register(RESET_LINK_CTL_REGISTER_W, 0x0);
             break;
         case '6':

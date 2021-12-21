@@ -669,7 +669,6 @@ uint32_t check_event(T* buffer, uint32_t idx, uint32_t* pdata) {
       //printf("%8.8x %8.8x\n", i, buffer[idx + i]);
     }
 
-
     copy_n(&dma_buf[0], sizeof(dma_buf)/4, pdata);
 
     return sizeof(dma_buf);

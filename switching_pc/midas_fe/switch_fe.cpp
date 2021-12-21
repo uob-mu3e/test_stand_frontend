@@ -233,7 +233,7 @@ EQUIPMENT equipment[] = {
      EQ_PERIODIC,                 /* equipment type */
      0,                         /* event source crate 0, all stations */
      "MIDAS",                   /* format */
-     FALSE,                      /* enabled */
+     TRUE,                      /* enabled */
      RO_ALWAYS | RO_ODB,   /* read during run transitions and update ODB */
      1000,                      /* read every 1 sec */
      0,                         /* stop run after this event limit */
@@ -396,6 +396,7 @@ void setup_odb(){
             {"Clear WM", false},
             {"Last RM ADD", false},
             {"MupixConfig", false},
+            {"MupixChipToConfigure", 999}, // 999 means all
             {"MupixSetTDACConfig", false},
             {"MupixBoard", false},
             {"Sorter Zero Suppression Mupix", false},
@@ -732,7 +733,7 @@ INT init_mupix(mudaq::MudaqDevice & mu) {
                      "/Equipment/Mupix",
                      switch_id); //create FEB interface signleton for mupix
 
-    int status=mupix::midasODB::setup_db("/Equipment/Mupix", mupixfeb, true, true);
+    int status=mupix::midasODB::setup_db("/Equipment/Mupix", mupixfeb, true, false);//true);
     if(status != SUCCESS){
         set_equipment_status(equipment[EQUIPMENT_ID::Mupix].name, "Start up failed", "var(--mred)");
         return status;

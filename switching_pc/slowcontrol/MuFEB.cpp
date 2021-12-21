@@ -35,7 +35,7 @@ int MuFEB::WriteFEBID(){
     for(auto FEB: febs){
        if(!FEB.IsScEnabled()) continue; //skip disabled fibers
        if(FEB.SB_Number()!=SB_number) continue; //skip commands not for this SB
-       uint32_t val=0xFEB1FEB0; // TODO: Where does this hard-coded value come from?
+       uint32_t val=0x00000000; // TODO: Where does this hard-coded value come from?
        val+=(FEB.GetLinkID()<<16)+FEB.GetLinkID();
 
        char reportStr[255];

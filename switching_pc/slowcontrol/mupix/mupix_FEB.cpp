@@ -120,6 +120,7 @@ int MupixFEB::ConfigureASICs(){
     
     // configure each asic
     int status = mupix::midasODB::MapForEachASIC(hDB, odb_prefix, [this](mupix::MupixConfig* config, int asic){
+//                 if ( asic != 3 ) return 0;
         uint32_t rpc_status;
         bool TDACsNotFound = false;
         char set_str[255];
@@ -127,6 +128,11 @@ int MupixFEB::ConfigureASICs(){
         // get settings from ODB for TDACs 
         odb swbSettings("/Equipment/Switching/Settings");
         bool useTDACs = swbSettings["MupixSetTDACConfig"];
+        uint32_t MupixChipToConfigure = swbSettings["MupixChipToConfigure"];
+        if ( MupixChipToConfigure != 999 && asic != MupixChipToConfigure ) {
+            printf(" [skipped]\n");
+            return FE_SUCCESS;
+        }
         
         //mapping
         uint16_t SB_ID=febs[FPGAid_from_ID(asic)].SB_Number();
@@ -180,8 +186,10 @@ int MupixFEB::ConfigureASICs(){
             uint32_t chip_select_mask = 0xfff; //all chips masked (12 times 1)
             int pos = ASICid_from_ID(asic);
             chip_select_mask &= ((~0x1) << pos);
+            printf("chip_select_mask %04x\n", chip_select_mask);
             for (int i = 0; i < pos; ++i)
                 chip_select_mask |= (0x1 << i);
+            printf("chip_select_mask %04x\n", chip_select_mask);
 
             // check if FEB is busy
             rpc_status=FEB_REPLY_SUCCESS;
@@ -198,7 +206,7 @@ int MupixFEB::ConfigureASICs(){
                 cm_msg(MERROR, "setup_mupix", "FEB Mupix SPI timeout");
             } else { // do the SPI writing 
                 // TODO: make this correct
-                feb_sc.FEB_write(SP_ID, MP_CTRL_CHIP_MASK_REGISTER_W, 0x0);//chip_select_mask);
+                feb_sc.FEB_write(SP_ID, MP_CTRL_CHIP_MASK_REGISTER_W, 0x0);//chip_select_mask); //
                 // TODO: include headers for addr.
                 feb_sc.FEB_write(SP_ID, MP_CTRL_SLOW_DOWN_REGISTER_W, 0x0000000F); // SPI slow down reg
                 feb_sc.FEB_write(SP_ID, MP_CTRL_ENABLE_REGISTER_W, 0x00000FC0); // reset Mupix config fifos
@@ -206,7 +214,7 @@ int MupixFEB::ConfigureASICs(){
                 feb_sc.FEB_write(SP_ID, MP_CTRL_INVERT_REGISTER_W, 0x00000003); // idk, have to look it up
                 // We now only write the default configuration for testing
                 rpc_status = feb_sc.FEB_write(SP_ID, MP_CTRL_ALL_REGISTER_W, payload,true);
-            } 
+            }
         } catch(std::exception& e) {
             cm_msg(MERROR, "setup_mupix", "Communication error while configuring MuPix %d: %s", asic, e.what());
             set_equipment_status(equipment_name, "SB-FEB Communication error", "red");
@@ -274,8 +282,6 @@ int MupixFEB::ConfigureASICs(){
                     feb_sc.FEB_register_write(SP_ID, MP_CTRL_ENABLE_REGISTER_W, reg_setBit(0x0,WR_COL_BIT,true));
                     feb_sc.FEB_register_write(SP_ID,MP_CTRL_ENABLE_REGISTER_W,0x0);
                 }
-                
-                
             }
         }
 
@@ -283,6 +289,8 @@ int MupixFEB::ConfigureASICs(){
         feb_sc.FEB_register_write(SP_ID, MP_RESET_LVDS_N_REGISTER_W, 0x0);
         feb_sc.FEB_register_write(SP_ID, MP_RESET_LVDS_N_REGISTER_W, 0x1);
 
+        sleep(2);
+        
         return FE_SUCCESS;//note: return of lambda function
     });//MapForEach
 
@@ -376,7 +384,7 @@ DWORD* MupixFEB::ReadLVDSCounters(DWORD* pdata, uint16_t FPGA_ID)
         // Link ID
         *(DWORD*)pdata++ = i;
         // read lvds status
-        *(DWORD*)pdata++ = ReadBackLVDSStatus(pdata, FPGA_ID, 0);
+        *(DWORD*)pdata++ = ReadBackLVDSStatus(pdata, FPGA_ID, i);
         // number of hits from link
         *(DWORD*)pdata++ = ReadBackLVDSNumHits(FPGA_ID, i);
         // number of hits from link in mupix format

@@ -18,7 +18,7 @@ using std::cout;
 using std::endl;
 
 
-    clockboard_a10::clockboard_a10(std::string addr, int port):clockboard(addr,port),connected(false), mu("/dev/mudaq0") {
+    clockboard_a10::clockboard_a10(std::string addr, int port):clockboard(),connected(false), mu("/dev/mudaq0") {
 
         if ( !mu.open() ) {
             cout << "Could not open mudaq device " << endl;
@@ -50,6 +50,11 @@ using std::endl;
         mu.write_register(CLK_LINK_REST_REGISTER_W, 0xFFFFFFFFF);
         mu.write_register(RESET_REGISTER_W, reset_regs);
         mu.write_register(RESET_REGISTER_W, 0x0);
+
+        mu.write_register(RESET_LINK_CTL_REGISTER_W, 0xE0000000 | reset_protocol.commands.find("Reset")->second.command);
+        mu.write_register(RESET_LINK_CTL_REGISTER_W, 0x0);
+        mu.write_register(RESET_LINK_CTL_REGISTER_W, 0xE0000000 | reset_protocol.commands.find("Stop Reset")->second.command);
+        mu.write_register(RESET_LINK_CTL_REGISTER_W, 0x0);
 
         return 1;
     }
