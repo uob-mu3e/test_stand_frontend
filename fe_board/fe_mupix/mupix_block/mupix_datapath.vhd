@@ -162,6 +162,8 @@ architecture rtl of mupix_datapath is
     signal mp_lvds_rx_reg           : work.util.rw_t;
     signal mp_datapath_reg          : work.util.rw_t;
 
+	signal ena3_counter				: std_logic_vector(31 downto 0);
+	signal ena4_counter				: std_logic_vector(31 downto 0);
 begin
 
     process(i_clk156)
@@ -179,9 +181,17 @@ begin
     begin
         if(rising_edge(i_clk125)) then
             if(i_run_state_125=RUN_STATE_SYNC) then
+				ena3_counter <= (others => '0');
+				ena4_counter <= (others => '0');
                 reset_125_n <= '0';
             else 
                 reset_125_n <=  '1';
+				if(i_trigger_in0 = '1') then
+					ena3_counter <= ena3_counter + '1';
+				end if;
+				if(i_trigger_in1 = '1') then
+					ena4_counter <= ena4_counter + '1';
+				end if;
             end if;
         end if;
     end process;
@@ -399,6 +409,14 @@ begin
             --    hits_sorter_in_ena  <= (others => '0');
             --    hits_sorter_in_ena(to_integer(unsigned(sorter_inject(MP_SORTER_INJECT_SELECT_RANGE)))) <= '1';
             --else
+				
+				-- todo: reverse this again (cabling mistake in muEDM run hotfix)
+                    --hits_sorter_in(0)      <= hits_sorter_in_buf(0);
+                    --hits_sorter_in_ena(0)  <= hits_sorter_in_ena_buf(2);
+					--hits_sorter_in(1)      <= hits_sorter_in_buf(1);
+                    --hits_sorter_in_ena(1)  <= hits_sorter_in_ena_buf(1);
+					--hits_sorter_in(2)      <= hits_sorter_in_buf(0);
+                    --hits_sorter_in_ena(2)  <= hits_sorter_in_ena_buf(0);
                 for i in 0 to 2 loop
                     hits_sorter_in(i)      <= hits_sorter_in_buf(i);
                     hits_sorter_in_ena(i)  <= hits_sorter_in_ena_buf(i);
@@ -406,9 +424,9 @@ begin
                 
 
                 if(IS_TELESCOPE_g = '1') then
-                    hits_sorter_in(3)      <= i_trigger_in0_timestamp(20 downto 0) & counter125(10 downto 0);
+                    hits_sorter_in(3)      <= i_trigger_in0_timestamp(20 downto 0) & counter125(10 downto 0);--counter125(10 downto 0) & ena3_counter(9 downto 0) & counter125(10 downto 0);
                     hits_sorter_in_ena(3)  <= i_trigger_in0;
-                    hits_sorter_in(4)      <= i_trigger_in1_timestamp(20 downto 0) & counter125(10 downto 0);
+                    hits_sorter_in(4)      <= i_trigger_in1_timestamp(20 downto 0) & counter125(10 downto 0);--counter125(10 downto 0) & ena4_counter(9 downto 0) & counter125(10 downto 0);
                     hits_sorter_in_ena(4)  <= i_trigger_in1;
                 else
                     hits_sorter_in(3)      <= hits_sorter_in_buf(3);
