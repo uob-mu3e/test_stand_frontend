@@ -252,22 +252,22 @@ int FEBSlowcontrolInterface::FEB_read(const uint32_t FPGA_ID, const uint32_t sta
 
 int FEBSlowcontrolInterface::FEB_register_write(const uint32_t FPGA_ID, const uint32_t startaddr, const vector<uint32_t> & data, const bool nonincrementing)
 {
-    return FEB_write(FPGA_ID,startaddr | 0xFF00, data, nonincrementing);
+    return FEB_write(FPGA_ID,startaddr, data, nonincrementing);
 }
 
 int FEBSlowcontrolInterface::FEB_register_write(const uint32_t FPGA_ID, const uint32_t startaddr, const uint32_t data)
 {
-    return FEB_write(FPGA_ID,startaddr | 0xFF00, data);
+    return FEB_write(FPGA_ID,startaddr, data);
 }
 
 int FEBSlowcontrolInterface::FEB_register_read(const uint32_t FPGA_ID, const uint32_t startaddr, vector<uint32_t> &data, const bool nonincrementing)
 {
-    return FEB_read(FPGA_ID, startaddr | 0xFF00, data, nonincrementing);
+    return FEB_read(FPGA_ID, startaddr, data, nonincrementing);
 }
 
 int FEBSlowcontrolInterface::FEB_register_read(const uint32_t FPGA_ID, const uint32_t startaddr, uint32_t &data)
 {
-    return FEB_read(FPGA_ID, startaddr | 0xFF00, data);
+    return FEB_read(FPGA_ID, startaddr, data);
 }
 
 void FEBSlowcontrolInterface::FEBsc_resetMain()
