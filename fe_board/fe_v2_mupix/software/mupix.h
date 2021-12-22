@@ -87,67 +87,27 @@ struct mupix_t {
         sc->ram->data[0x040A]=0x00000000;}
     }
     
-    void test_write_all(bool maskPixel) {
+    void test_write_all() {
         
         sc->ram->data[0x0400]=0x00000FC0;
         sc->ram->data[0x0400]=0x00000000;
         sc->ram->data[0x0409]=0x00000003;
         
-        sc->ram->data[0x040A]=0x16000000;
-        sc->ram->data[0x040A]=0x00050149;
-        sc->ram->data[0x040A]=0x1EF3CF3C;
-        sc->ram->data[0x040A]=0x514B0CA1;
-        sc->ram->data[0x040A]=0x00100005;
-        sc->ram->data[0x040A]=0x14010A14;
-        sc->ram->data[0x040A]=0x010A001F;
-	if (maskPixel) {
-	        sc->ram->data[0x040A]=0x00010038;
-	} else {
-	        sc->ram->data[0x040A]=0x00030038;
-	}
-        sc->ram->data[0x040A]=0x0000FC05;
-        sc->ram->data[0x040A]=0xF0002340;
-        sc->ram->data[0x040A]=0x2B698000;
-        sc->ram->data[0x040A]=0x29003030;
-   	
-	if (maskPixel) {
-
-		for ( int col = 0; col < 128; col++ ) {
-			for ( int row = 0; row < 16; row++ ) {
-				if ( col == 0 ) {
-					sc->ram->data[0x0406] = 0xFFFFFFFF;
-				} else {
-					sc->ram->data[0x0406] = 0x0;
-				}
-			}
-			// send TDAC
-			sc->ram->data[0x0400] = 0x20;
-			sc->ram->data[0x0400] = 0x0;
-			int curBit = 0;
-			int curWord = 0;
-			for ( int j = 0; j < 128; j++ ) {
-				for ( int b = 0; b < 7; b++ ) {
-					if ( b == 6 && col == 0 ) {
-						 curWord |= (1 << curBit);
-					}
-					if ( curBit == 31 ) {
-						sc->ram->data[0x0404] = curWord;
-						curBit = 0;
-						curWord = 0;
-					}
-					curBit++;
-				}
-			}
-			sc->ram->data[0x0400] = 0x8;
-			sc->ram->data[0x0400] = 0x0;
-			usleep(8*10);
-		}
-
-	} else { 
-        	for(int i = 0; i<85; i++) {
-        		sc->ram->data[0x040A]=0x00000000;
-		}
-	}
+        sc->ram->data[0x040A]=0x2A000A03;
+        sc->ram->data[0x040A]=0xFA3F002F;
+        sc->ram->data[0x040A]=0x1E041041;
+        sc->ram->data[0x040A]=0x041E9A51;
+        sc->ram->data[0x040A]=0x40280000;
+        sc->ram->data[0x040A]=0x1400C20A;
+        sc->ram->data[0x040A]=0x028A001F;
+        sc->ram->data[0x040A]=0x00020038;
+        sc->ram->data[0x040A]=0x0000FC09;
+        sc->ram->data[0x040A]=0xF0001C80;
+        sc->ram->data[0x040A]=0x00148000;
+        sc->ram->data[0x040A]=0x11802E00;
+    
+        for(int i = 0; i<85; i++){
+        sc->ram->data[0x040A]=0x00000000;}
 
     }
 
@@ -206,7 +166,6 @@ struct mupix_t {
         while(1) {
             printf("  [a] => write all OFF\n");
             printf("  [0] => write mupix default conf (All)\n");
-            printf("  [m] => mask pixels\n");
             printf("  [1] => set mupix config mask\n");
             printf("  [2] => set spi clk slow down reg\n");
             printf("  [3] => print lvds status\n");
@@ -224,16 +183,27 @@ struct mupix_t {
             printf("Select entry ...\n");
             char cmd = wait_key();
             switch(cmd) {
+	    case 's':
+                sc->ram->data[0x0408]=0xFFE;
+                sc->ram->data[0x0407]=0x2;
+                test_write_all();
+		break;
+	    case 'd':
+		sc->ram->data[0x0408]=0xFFD;
+	 	sc->ram->data[0x0407]=0x2;
+	 	test_write_all();           	
+         	break;
+	    case 'f':
+ 		sc->ram->data[0x0408]=0xFFB;
+ 		sc->ram->data[0x0407]=0x2;
+ 		test_write_all();
+ 		break;
             case 'a':
                 mupix_write_all_off();
                 break;
             case '0':
                 test_mupix_write();
                 break;
-	    case 'm':
-		//test_mupix_write(true);
-                test_write_all(true);
-		break;
             case '1':
                 value = 0x0;
                 printf("Enter Chip Mask in hex: ");
@@ -284,7 +254,7 @@ struct mupix_t {
                 sc->ram->data[0xFF62]=value2;
                 break;
             case '6':
-                test_write_all(false);
+                test_write_all();
                 break;
             case '7':
                 sc->ram->data[0xFF91]=10;
