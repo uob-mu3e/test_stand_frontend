@@ -183,6 +183,36 @@ struct mupix_t {
             printf("Select entry ...\n");
             char cmd = wait_key();
             switch(cmd) {
+	    case 's':
+                sc->ram->data[0x0408]=0xFFE;
+                sc->ram->data[0x0407]=0x2;
+                test_write_all();
+		break;
+	    case 'd':
+		sc->ram->data[0x0408]=0xFFD;
+	 	sc->ram->data[0x0407]=0x2;
+	 	test_write_all();           	
+         	break;
+	    case 'f':
+ 		sc->ram->data[0x0408]=0xFFB;
+ 		sc->ram->data[0x0407]=0x2;
+ 		test_write_all();
+ 		break;
+	    case 'g':                               
+                sc->ram->data[0x0408]=0xFF7;
+                sc->ram->data[0x0407]=0x2;
+                test_write_all();
+        	break;
+            case 'h':
+        	sc->ram->data[0x0408]=0xFEF;
+        	sc->ram->data[0x0407]=0x2;
+        	test_write_all();           	
+                break;
+            case 'j':
+         	sc->ram->data[0x0408]=0xFDF;
+         	sc->ram->data[0x0407]=0x2;
+         	test_write_all();
+         	break;
             case 'a':
                 mupix_write_all_off();
                 break;
