@@ -18,9 +18,11 @@ entity mp_sc_removal is
         i_sc_active         : in std_logic;
         i_new_block         : in std_logic;
         i_hit               : in std_logic_vector(31 DOWNTO 0);
+		i_err				: in std_logic_vector(3 DOWNTO 0);
         i_hit_ena           : in std_logic;
         i_coarsecounters_ena: in std_logic; -- has to be '0' for hits!
         o_hit               : out std_logic_vector(31 DOWNTO 0);
+		o_err               : out std_logic_vector(3 DOWNTO 0);
         o_hit_ena           : out std_logic--;
         );
 end mp_sc_removal;
@@ -38,6 +40,9 @@ architecture rtl of mp_sc_removal is
     signal hit_reg_1        : std_logic_vector(31 DOWNTO 0);
     signal hit_reg_2        : std_logic_vector(31 DOWNTO 0);
     signal hit_reg_out      : std_logic_vector(31 DOWNTO 0);
+	signal err_reg_1    : std_logic_vector(3 DOWNTO 0);
+	signal err_reg_2    : std_logic_vector(3 DOWNTO 0);
+	signal err_reg_out      : std_logic_vector(3 DOWNTO 0);
     signal hit_ena_reg_1    : std_logic;
     signal hit_ena_reg_2    : std_logic;
     signal hit_ena_reg_out  : std_logic;
@@ -54,6 +59,11 @@ begin
     o_hit_ena           <= '0' when i_coarsecounters_ena = '1' else
                             hit_ena_reg_out when (i_sc_active = '1') else
                             i_hit_ena;
+							
+	-- we do not forward coarsecounters_ena signal
+    o_err           	<= (others => '0') when i_coarsecounters_ena = '1' else
+                            err_reg_out when (i_sc_active = '1') else
+                            i_err;
 
     process(i_reset_n, i_clk)
     begin
@@ -61,6 +71,9 @@ begin
         hit_reg_1       <= (others => '0');
         hit_reg_2       <= (others => '0');
         hit_reg_out     <= (others => '0');
+		err_reg_1       <= (others => '0');
+        err_reg_2       <= (others => '0');
+        err_reg_out     <= (others => '0');
         hit_ena_reg_1   <= '0';
         hit_ena_reg_2   <= '0';
         hit_ena_reg_out <= '0';
@@ -74,6 +87,10 @@ begin
             hit_reg_2       <= hit_reg_1;
             hit_reg_out     <= hit_reg_2; -- SC data would actually pop out as hits, but the enable signals are deleted
 
+			err_reg_1		<= i_err;
+			err_reg_2		<= err_reg_1;
+			err_reg_out		<= err_reg_2;
+			
             hit_ena_reg_1   <= i_hit_ena;
             hit_ena_reg_2   <= hit_ena_reg_1;
             hit_ena_reg_out <= hit_ena_reg_2;

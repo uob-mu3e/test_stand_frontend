@@ -60,6 +60,7 @@ architecture rtl of mupix_datapath is
     -- signals after mux
     signal rx_data                  : work.util.slv8_array_t(35 downto 0);
     signal rx_k                     : std_logic_vector(35 downto 0);
+	signal rx_disp_err              : std_logic_vector(35 downto 0);
     signal lvds_status              : work.util.slv32_array_t(35 downto 0);
     signal lvds_invert              : std_logic;
     signal data_valid               : std_logic_vector(35 downto 0);
@@ -308,7 +309,8 @@ begin
         o_rx_ready          => data_valid,
         i_rx_invert         => lvds_invert,
         o_rx_data           => rx_data,
-        o_rx_k              => rx_k--,
+        o_rx_k              => rx_k,
+		o_rx_disp_err		=> rx_disp_err--,
     );
 
     -- use a link mask to disable channels from being used in the data processing
@@ -329,9 +331,11 @@ begin
         reset_n             => reset_125_n,
         clk                 => i_clk125,
         datain              => rx_data(LINK_ORDER_g(i)), 
-        kin                 => rx_k(LINK_ORDER_g(i)), 
+        kin                 => rx_k(LINK_ORDER_g(i)),
+		errin               => rx_disp_err(LINK_ORDER_g(i)),
         readyin             => link_enable(LINK_ORDER_g(i)),
         i_mp_readout_mode   => mp_readout_mode,
+		i_replace_ts2		=> '1',
         o_ts                => ts_unpacker(i),
         o_chip_ID           => chip_ID_unpacker(i),
         o_row               => row_unpacker(i),
@@ -505,7 +509,9 @@ begin
             o_tot(0)            => tot_hs(i),
             o_hit_ena           => hits_sorter_in_ena_buf(i)--,
         );
-        hits_sorter_in_buf(i)       <= row_hs(i) & col_hs(i) & tot_hs(i)(4 downto 0) & ts_hs(i);
+        --hits_sorter_in_buf(i)       <= row_hs(i) & col_hs(i) & tot_hs(i)(4 downto 0) & ts_hs(i);
+		hits_sorter_in_buf(i)       <= row_hs(i) & col_hs(i) & tot_hs(i)(4 downto 0) & counter125(10 downto 0); -- TODO: change me
+		
     END GENERATE;
 
     process(i_clk125)
