@@ -8,7 +8,7 @@ use ieee.std_logic_1164.all;
 use ieee.numeric_std.all;
 use ieee.std_logic_unsigned.all;
 
-entity ${NAME} is
+entity xcvr_enh is
 generic (
     NUMBER_OF_CHANNELS_g : positive := 4;
     CHANNEL_WIDTH_g : positive := 32;
@@ -48,7 +48,7 @@ port (
 );
 end entity;
 
-architecture arch of ${NAME} is
+architecture arch of xcvr_enh is
 
     signal ch : integer range 0 to NUMBER_OF_CHANNELS_g-1 := 0;
 
@@ -391,98 +391,57 @@ begin
         end process;
     end block;
 
-    e_phy : component work.cmp.ip_${NAME}_phy
+    e_xcvr_base : entity work.xcvr_base
+    generic map (
+        g_CHANNELS => NUMBER_OF_CHANNELS_g,
+        g_BITS => CHANNEL_WIDTH_g / 8 * 10,
+        g_REFCLK_MHZ => g_REFCLK_MHZ,
+        g_RATE_MBPS => g_RATE_MBPS,
+        g_CLK_MHZ => g_CLK_MHZ--,
+    )
     port map (
-        tx_serial_data  => o_tx_serial,
-        rx_serial_data  => i_rx_serial,
+        i_rx_serial         => i_rx_serial,
+        o_tx_serial         => o_tx_serial,
 
-        rx_cdr_refclk0  => i_refclk,
-        tx_serial_clk0  => (others => tx_serial_clk),
+        i_refclk            => i_refclk,
 
-        -- analog reset => reset PMA/CDR (phys medium attachment, clock data recovery)
-        -- digital reset => reset PCS (phys coding sublayer)
-        tx_analogreset  => tx_analogreset,
-        tx_digitalreset => tx_digitalreset,
-        rx_analogreset  => rx_analogreset,
-        rx_digitalreset => rx_digitalreset,
+        o_rx_data           => rx_parallel_data,
+        i_tx_data           => tx_parallel_data,
 
-        tx_cal_busy     => tx_cal_busy,
-        rx_cal_busy     => rx_cal_busy,
+        o_rx_clkout         => o_rx_clkout,
+        i_rx_clkin          => i_rx_clkin,
+        o_tx_clkout         => o_tx_clkout,
+        i_tx_clkin          => i_tx_clkin,
 
-        rx_is_lockedtoref => rx_is_lockedtoref,
-        -- When asserted, indicates that the RX CDR is locked to incoming data. This signal is optional.
-        rx_is_lockedtodata => rx_is_lockedtodata,
+        o_rx_analogreset    => rx_analogreset,
+        o_rx_digitalreset   => rx_digitalreset,
+        o_tx_analogreset    => tx_analogreset,
+        o_tx_digitalreset   => tx_digitalreset,
+        o_rx_lockedtoref    => rx_is_lockedtoref,
+        o_rx_lockedtodata   => rx_is_lockedtodata,
+        o_rx_ready          => rx_ready,
+        o_tx_ready          => tx_ready,
 
-        rx_bitslip              => rx_enapatternalign,
+        i_rx_bitslip        => rx_enapatternalign,
+        i_rx_seriallpbken   => rx_seriallpbken,
 
-        rx_parallel_data        => rx_parallel_data,
-        tx_parallel_data        => tx_parallel_data,
-        tx_enh_data_valid       => (others => '1'),
+        i_phy_channel       => ch,
+        i_phy_address       => av_phy.address(9 downto 0),
+        i_phy_read          => av_phy.read,
+        o_phy_readdata      => av_phy.readdata,
+        i_phy_write         => av_phy.write,
+        i_phy_writedata     => av_phy.writedata,
+        o_phy_waitrequest   => av_phy.waitrequest,
 
-        tx_clkout       => o_tx_clkout,
-        tx_coreclkin    => i_tx_clkin,
-        rx_clkout       => o_rx_clkout,
-        rx_coreclkin    => i_rx_clkin,
+        i_pll_address       => av_pll.address(9 downto 0),
+        i_pll_read          => av_pll.read,
+        o_pll_readdata      => av_pll.readdata,
+        i_pll_write         => av_pll.write,
+        i_pll_writedata     => av_pll.writedata,
+        o_pll_waitrequest   => av_pll.waitrequest,
 
-        rx_seriallpbken => rx_seriallpbken,
-
-        unused_tx_parallel_data => (others => '0'),
-        unused_rx_parallel_data => open,
-
-        reconfig_address        => std_logic_vector(to_unsigned(ch, work.util.vector_width(NUMBER_OF_CHANNELS_g))) & av_phy.address(9 downto 0),
-        reconfig_read(0)        => av_phy.read,
-        reconfig_readdata       => av_phy.readdata,
-        reconfig_write(0)       => av_phy.write,
-        reconfig_writedata      => av_phy.writedata,
-        reconfig_waitrequest(0) => av_phy.waitrequest,
-        reconfig_reset(0)       => not i_reset_n,
-        reconfig_clk(0)         => i_clk--,
-    );
-
-    e_fpll : component work.cmp.ip_${NAME}_fpll
-    port map (
-        pll_refclk0     => i_refclk,
-        pll_powerdown   => pll_powerdown(0),
-        pll_cal_busy    => pll_cal_busy(0),
-        pll_locked      => pll_locked(0),
-        tx_serial_clk   => tx_serial_clk,
-
-        reconfig_address0       => av_pll.address(9 downto 0),
-        reconfig_read0          => av_pll.read,
-        reconfig_readdata0      => av_pll.readdata,
-        reconfig_write0         => av_pll.write,
-        reconfig_writedata0     => av_pll.writedata,
-        reconfig_waitrequest0   => av_pll.waitrequest,
-        reconfig_reset0         => not i_reset_n,
-        reconfig_clk0           => i_clk--,
-    );
-
-    --
-    --
-    --
-    e_reset : component work.cmp.ip_${NAME}_reset
-    port map (
-        tx_analogreset => tx_analogreset,
-        tx_digitalreset => tx_digitalreset,
-        rx_analogreset => rx_analogreset,
-        rx_digitalreset => rx_digitalreset,
-
-        tx_cal_busy => tx_cal_busy,
-        rx_cal_busy => rx_cal_busy,
-
-        tx_ready => tx_ready,
-        rx_ready => rx_ready,
-
-        rx_is_lockedtodata => rx_is_lockedtodata,
-
-        pll_powerdown => pll_powerdown,
-        pll_cal_busy => pll_cal_busy,
-        pll_locked => pll_locked,
-
-        pll_select => (others => '0'),
-
-        reset => not i_reset_n,
-        clock => i_clk--,
+        i_reset_n           => i_reset_n,
+        i_clk               => i_clk--,
     );
 
 end architecture;

@@ -223,6 +223,56 @@ begin
     );
     end generate;
 
+    generate_xcvr_phy_125_10000_enh : if ( g_CHANNELS = 6 and g_BITS = 40 and g_REFCLK_MHZ = 125.0 and g_RATE_MBPS = 10000 and g_MODE = "enh") generate
+    e_phy : component work.cmp.ip_xcvr_phy_6_40_125_10000_enh
+    port map (
+        tx_serial_data  => o_tx_serial,
+        rx_serial_data  => i_rx_serial,
+
+        rx_cdr_refclk0  => i_refclk,
+        tx_serial_clk0  => (others => tx_serial_clk),
+
+        -- analog reset => reset PMA/CDR (phys medium attachment, clock data recovery)
+        -- digital reset => reset PCS (phys coding sublayer)
+        tx_analogreset  => tx_analogreset,
+        tx_digitalreset => tx_digitalreset,
+        rx_analogreset  => rx_analogreset,
+        rx_digitalreset => rx_digitalreset,
+
+        tx_cal_busy     => tx_cal_busy,
+        rx_cal_busy     => rx_cal_busy,
+
+        rx_is_lockedtoref   => rx_is_lockedtoref,
+        -- When asserted, indicates that the RX CDR is locked to incoming data. This signal is optional.
+        rx_is_lockedtodata  => rx_is_lockedtodata,
+
+        rx_bitslip          => i_rx_bitslip,
+
+        rx_parallel_data    => rx_parallel_data,
+        tx_parallel_data    => tx_parallel_data,
+        tx_enh_data_valid   => (others => '1'),
+
+        tx_clkout       => o_tx_clkout,
+        tx_coreclkin    => i_tx_clkin,
+        rx_clkout       => o_rx_clkout,
+        rx_coreclkin    => i_rx_clkin,
+
+        rx_seriallpbken => i_rx_seriallpbken,
+
+        unused_tx_parallel_data => (others => '0'),
+        unused_rx_parallel_data => open,
+
+        reconfig_address        => std_logic_vector(to_unsigned(ch, work.util.vector_width(g_CHANNELS))) & i_phy_address,
+        reconfig_read(0)        => i_phy_read,
+        reconfig_readdata       => o_phy_readdata,
+        reconfig_write(0)       => i_phy_write,
+        reconfig_writedata      => i_phy_writedata,
+        reconfig_waitrequest(0) => o_phy_waitrequest,
+        reconfig_reset(0)       => not i_reset_n,
+        reconfig_clk(0)         => i_clk--,
+    );
+    end generate;
+
 
 
     generate_xcvr_fpll_125_5000 : if ( g_REFCLK_MHZ = 125.0 and g_RATE_MBPS = 5000 ) generate
@@ -265,7 +315,54 @@ begin
     );
     end generate;
 
+    generate_xcvr_fpll_125_10000 : if ( g_REFCLK_MHZ = 125.0 and g_RATE_MBPS = 10000 ) generate
+    e_fpll : component work.cmp.ip_xcvr_fpll_125_10000
+    port map (
+        pll_refclk0     => i_refclk,
+        pll_powerdown   => pll_powerdown(0),
+        pll_cal_busy    => pll_cal_busy(0),
+        pll_locked      => pll_locked(0),
+        tx_serial_clk   => tx_serial_clk,
 
+        reconfig_address0       => i_pll_address,
+        reconfig_read0          => i_pll_read,
+        reconfig_readdata0      => o_pll_readdata,
+        reconfig_write0         => i_pll_write,
+        reconfig_writedata0     => i_pll_writedata,
+        reconfig_waitrequest0   => o_pll_waitrequest,
+        reconfig_reset0         => not i_reset_n,
+        reconfig_clk0           => i_clk--,
+    );
+    end generate;
+
+
+
+    generate_xcvr_reset_2_100 : if ( g_CHANNELS = 2 and g_CLK_MHZ = 100.0 ) generate
+    e_reset : component work.cmp.ip_xcvr_reset_2_100
+    port map (
+        tx_analogreset => tx_analogreset,
+        tx_digitalreset => tx_digitalreset,
+        rx_analogreset => rx_analogreset,
+        rx_digitalreset => rx_digitalreset,
+
+        tx_cal_busy => tx_cal_busy,
+        rx_cal_busy => rx_cal_busy,
+
+        tx_ready => tx_ready,
+        rx_ready => rx_ready,
+
+        rx_is_lockedtodata => rx_is_lockedtodata,
+
+        pll_powerdown => pll_powerdown,
+        pll_cal_busy => pll_cal_busy,
+        pll_locked => pll_locked,
+
+        pll_select => (others => '0'),
+
+        reset => not i_reset_n,
+        clock => i_clk--,
+    );
+    end generate;
 
     generate_xcvr_reset_4_50 : if ( g_CHANNELS = 4 and g_CLK_MHZ = 50.0 ) generate
     e_reset : component work.cmp.ip_xcvr_reset_4_50
@@ -294,8 +391,62 @@ begin
     );
     end generate;
 
+    generate_xcvr_reset_4_100 : if ( g_CHANNELS = 4 and g_CLK_MHZ = 100.0 ) generate
+    e_reset : component work.cmp.ip_xcvr_reset_4_100
+    port map (
+        tx_analogreset => tx_analogreset,
+        tx_digitalreset => tx_digitalreset,
+        rx_analogreset => rx_analogreset,
+        rx_digitalreset => rx_digitalreset,
+
+        tx_cal_busy => tx_cal_busy,
+        rx_cal_busy => rx_cal_busy,
+
+        tx_ready => tx_ready,
+        rx_ready => rx_ready,
+
+        rx_is_lockedtodata => rx_is_lockedtodata,
+
+        pll_powerdown => pll_powerdown,
+        pll_cal_busy => pll_cal_busy,
+        pll_locked => pll_locked,
+
+        pll_select => (others => '0'),
+
+        reset => not i_reset_n,
+        clock => i_clk--,
+    );
+    end generate;
+
     generate_xcvr_reset_6_50 : if ( g_CHANNELS = 6 and g_CLK_MHZ = 50.0 ) generate
     e_reset : component work.cmp.ip_xcvr_reset_6_50
+    port map (
+        tx_analogreset => tx_analogreset,
+        tx_digitalreset => tx_digitalreset,
+        rx_analogreset => rx_analogreset,
+        rx_digitalreset => rx_digitalreset,
+
+        tx_cal_busy => tx_cal_busy,
+        rx_cal_busy => rx_cal_busy,
+
+        tx_ready => tx_ready,
+        rx_ready => rx_ready,
+
+        rx_is_lockedtodata => rx_is_lockedtodata,
+
+        pll_powerdown => pll_powerdown,
+        pll_cal_busy => pll_cal_busy,
+        pll_locked => pll_locked,
+
+        pll_select => (others => '0'),
+
+        reset => not i_reset_n,
+        clock => i_clk--,
+    );
+    end generate;
+
+    generate_xcvr_reset_6_100 : if ( g_CHANNELS = 6 and g_CLK_MHZ = 100.0 ) generate
+    e_reset : component work.cmp.ip_xcvr_reset_6_100
     port map (
         tx_analogreset => tx_analogreset,
         tx_digitalreset => tx_digitalreset,
