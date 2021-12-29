@@ -3,4 +3,4 @@
 source "device.tcl"
 source "util/altera_ip.tcl"
 
-add_altera_xcvr_reset_control 4 50
+add_altera_xcvr_native_a10 6 10 125.0 1250
