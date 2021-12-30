@@ -51,7 +51,7 @@ port (
     -- avalon slave interfaces
     -- # address units words
     -- # read latency 0
-    i_phy_channel       : in    integer range 0 to g_CHANNELS-1 := 0;
+    i_phy_channel       : in    integer := 0;
     i_phy_address       : in    std_logic_vector(9 downto 0) := (others => '0');
     i_phy_read          : in    std_logic := '0';
     o_phy_readdata      : out   std_logic_vector(31 downto 0) := X"CCCCCCCC";
@@ -173,7 +173,7 @@ begin
     );
     end generate;
 
-    generate_xcvr_phy_125_5000_enh : if ( g_CHANNELS = 6 and g_BITS = 40 and g_REFCLK_MHZ = 125.0 and g_RATE_MBPS = 5000 and g_MODE = "enh") generate
+    generate_xcvr_phy_125_5000_enh : if ( g_CHANNELS = 6 and g_BITS = 40 and g_REFCLK_MHZ = 125.0 and g_RATE_MBPS = 5000 and g_MODE = "enh" ) generate
     e_phy : component work.cmp.ip_xcvr_phy_6_40_125_5000_enh
     port map (
         tx_serial_data  => o_tx_serial,
@@ -223,7 +223,7 @@ begin
     );
     end generate;
 
-    generate_xcvr_phy_125_10000_enh : if ( g_CHANNELS = 6 and g_BITS = 40 and g_REFCLK_MHZ = 125.0 and g_RATE_MBPS = 10000 and g_MODE = "enh") generate
+    generate_xcvr_phy_125_10000_enh : if ( g_CHANNELS = 6 and g_BITS = 40 and g_REFCLK_MHZ = 125.0 and g_RATE_MBPS = 10000 and g_MODE = "enh" ) generate
     e_phy : component work.cmp.ip_xcvr_phy_6_40_125_10000_enh
     port map (
         tx_serial_data  => o_tx_serial,
@@ -272,6 +272,12 @@ begin
         reconfig_clk(0)         => i_clk--,
     );
     end generate;
+
+    assert ( false
+        or ( g_CHANNELS = 2 and g_BITS = 10 and g_REFCLK_MHZ = 125.0 and g_RATE_MBPS = 1250 and g_MODE = "" )
+        or ( g_CHANNELS = 6 and g_BITS = 40 and g_REFCLK_MHZ = 125.0 and g_RATE_MBPS = 5000 and g_MODE = "enh" )
+        or ( g_CHANNELS = 6 and g_BITS = 40 and g_REFCLK_MHZ = 125.0 and g_RATE_MBPS = 10000 and g_MODE = "enh" )
+    ) report "undefined ip 'ip_xcvr_phy_*'" severity failure;
 
 
 
@@ -334,6 +340,12 @@ begin
         reconfig_clk0           => i_clk--,
     );
     end generate;
+
+    assert ( false
+        or ( g_REFCLK_MHZ = 125.0 and g_RATE_MBPS = 5000 )
+        or ( g_REFCLK_MHZ = 125.0 and g_RATE_MBPS = 6250 )
+        or ( g_REFCLK_MHZ = 125.0 and g_RATE_MBPS = 10000 )
+    ) report "undefined ip 'ip_xcvr_fpll_*'" severity failure;
 
 
 
@@ -471,5 +483,13 @@ begin
         clock => i_clk--,
     );
     end generate;
+
+    assert ( false
+        or ( g_CHANNELS = 2 and g_CLK_MHZ = 100.0 )
+        or ( g_CHANNELS = 4 and g_CLK_MHZ = 50.0 )
+        or ( g_CHANNELS = 4 and g_CLK_MHZ = 100.0 )
+        or ( g_CHANNELS = 6 and g_CLK_MHZ = 50.0 )
+        or ( g_CHANNELS = 6 and g_CLK_MHZ = 100.0 )
+    ) report "undefined ip 'ip_xcvr_reset_*'" severity failure;
 
 end architecture;
