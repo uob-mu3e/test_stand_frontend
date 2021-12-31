@@ -10,6 +10,7 @@ use ieee.std_logic_unsigned.all;
 
 entity xcvr_enh is
 generic (
+    g_MODE : string := "basic_std";
     NUMBER_OF_CHANNELS_g : positive := 4;
     CHANNEL_WIDTH_g : positive := 32;
     g_REFCLK_MHZ : real := 125.0;
@@ -393,6 +394,7 @@ begin
 
     e_xcvr_base : entity work.xcvr_base
     generic map (
+        g_MODE => g_MODE,
         g_CHANNELS => NUMBER_OF_CHANNELS_g,
         g_BITS => CHANNEL_WIDTH_g / 8 * 10,
         g_REFCLK_MHZ => g_REFCLK_MHZ,

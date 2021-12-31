@@ -530,10 +530,10 @@ begin
     generate_xcvr0_block : if ( g_XCVR0_CHANNELS > 0 ) generate
     e_xcvr0_block : entity work.xcvr_block
     generic map (
-        g_XCVR_NAME => "xcvr_a10",
         g_XCVR_N => g_XCVR0_N,
         g_CHANNELS => g_XCVR0_CHANNELS / g_XCVR0_N,
         g_REFCLK_MHZ => 125.0,
+        g_RATE_MBPS => 6250,
         g_CLK_MHZ => g_CLK_MHZ--,
     )
     port map (
@@ -587,10 +587,11 @@ begin
     generate_xcvr1_block : if ( g_XCVR1_CHANNELS > 0 ) generate
     e_xcvr1_block : entity work.xcvr_block
     generic map (
-        g_XCVR_NAME => "xcvr_enh",
+        g_MODE => "basic_enh",
         g_XCVR_N => g_XCVR1_N,
         g_CHANNELS => g_XCVR1_CHANNELS / g_XCVR1_N,
         g_REFCLK_MHZ => 125.0,
+        g_RATE_MBPS => 10000,
         g_CLK_MHZ => g_CLK_MHZ--,
     )
     port map (
@@ -640,7 +641,7 @@ begin
     end generate;
 
     generate_sfp_block : if ( g_SFP_CHANNELS > 0 ) generate
-    e_xcvr_sfp : entity work.xcvr_sfp
+    e_xcvr_sfp : entity work.xcvr_enh
     generic map (
         NUMBER_OF_CHANNELS_g => g_SFP_CHANNELS,
         CHANNEL_WIDTH_g => 8,

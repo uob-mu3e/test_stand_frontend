@@ -4,11 +4,11 @@ use ieee.numeric_std.all;
 
 entity xcvr_block is
 generic (
-    g_XCVR_NAME : string := "xcvr_a10";
-    g_CHANNELS : positive := 6;
+    g_MODE : string := "basic_std";
     g_XCVR_N : positive := 8; -- g_XCVR_N <= 16
-    g_RATE_MBPS : positive := 10000;
+    g_CHANNELS : positive := 6;
     g_REFCLK_MHZ : real := 125.0;
+    g_RATE_MBPS : positive := 10000;
     g_CLK_MHZ : real := 100.0--;
 );
 port (
@@ -51,7 +51,7 @@ architecture arch of xcvr_block is
     signal rx_datak, tx_datak : datak_array_t(g_XCVR_N-1 downto 0);
 
     signal avs_waitrequest : std_logic;
-    signal av : work.util.avmm_array_t(15 downto 0);
+    signal av : work.util.avmm_array_t(g_XCVR_N-1 downto 0);
     -- chip select
     signal cs : integer;
     signal timeout : unsigned(7 downto 0);
@@ -68,9 +68,9 @@ begin
             tx_datak(i)(4*j+3 downto 0 + 4*j) <= i_tx_datak(i*g_CHANNELS+j);
         end generate;
 
-        generate_xcvr_a10 : if ( g_XCVR_NAME = "xcvr_a10" ) generate
-        e_xcvr_a10 : entity work.xcvr_a10
+        e_xcvr_a10 : entity work.xcvr_enh
         generic map (
+            g_MODE => g_MODE,
             NUMBER_OF_CHANNELS_g => g_CHANNELS,
             g_REFCLK_MHZ => g_REFCLK_MHZ,
             g_RATE_MBPS => g_RATE_MBPS,
@@ -102,43 +102,6 @@ begin
             i_reset_n   => i_reset_n,
             i_clk       => i_clk--,
         );
-        end generate;
-
-        generate_xcvr_enh : if ( g_XCVR_NAME = "xcvr_enh" ) generate
-        e_xcvr_enh : entity work.xcvr_enh
-        generic map (
-            NUMBER_OF_CHANNELS_g => g_CHANNELS,
-            g_REFCLK_MHZ => g_REFCLK_MHZ,
-            g_RATE_MBPS => g_RATE_MBPS,
-            g_CLK_MHZ => g_CLK_MHZ--,
-        )
-        port map (
-            i_rx_serial => i_rx_serial(g_CHANNELS*i + g_CHANNELS-1 downto 0 + g_CHANNELS*i),
-            o_tx_serial => o_tx_serial(g_CHANNELS*i + g_CHANNELS-1 downto 0 + g_CHANNELS*i),
-
-            i_refclk    => i_refclk(i),
-
-            o_rx_data   => rx_data(i),
-            o_rx_datak  => rx_datak(i),
-            i_tx_data   => tx_data(i),
-            i_tx_datak  => tx_datak(i),
-
-            o_rx_clkout => o_rx_clk(g_CHANNELS*i + g_CHANNELS-1 downto 0 + g_CHANNELS*i),
-            i_rx_clkin  => i_rx_clk(g_CHANNELS*i + g_CHANNELS-1 downto 0 + g_CHANNELS*i),
-            o_tx_clkout => o_tx_clk(g_CHANNELS*i + g_CHANNELS-1 downto 0 + g_CHANNELS*i),
-            i_tx_clkin  => i_tx_clk(g_CHANNELS*i + g_CHANNELS-1 downto 0 + g_CHANNELS*i),
-
-            i_avs_address     => av(i).address(13 downto 0),
-            i_avs_read        => av(i).read,
-            o_avs_readdata    => av(i).readdata,
-            i_avs_write       => av(i).write,
-            i_avs_writedata   => av(i).writedata,
-            o_avs_waitrequest => av(i).waitrequest,
-
-            i_reset_n   => i_reset_n,
-            i_clk       => i_clk--,
-        );
-        end generate;
 
         --
     end generate;
