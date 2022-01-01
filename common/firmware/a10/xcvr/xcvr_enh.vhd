@@ -15,7 +15,7 @@ generic (
     CHANNEL_WIDTH_g : positive := 32;
     g_REFCLK_MHZ : real := 125.0;
     g_RATE_MBPS : positive := 5000;
-    K_g : std_logic_vector(7 downto 0) := work.util.D28_5;
+    g_K : std_logic_vector(7 downto 0) := work.util.D28_5;
     g_CLK_MHZ : real := 50.0--;
 );
 port (
@@ -64,19 +64,11 @@ architecture arch of xcvr_enh is
 
     signal tx_rst_n, rx_rst_n   :   std_logic_vector(NUMBER_OF_CHANNELS_g-1 downto 0);
 
-    signal pll_powerdown        :   std_logic_vector(0 downto 0);
-    signal pll_cal_busy         :   std_logic_vector(0 downto 0);
-    signal pll_locked           :   std_logic_vector(0 downto 0);
-
-    signal tx_serial_clk        :   std_logic;
 
     signal tx_analogreset       :   std_logic_vector(NUMBER_OF_CHANNELS_g-1 downto 0);
     signal tx_digitalreset      :   std_logic_vector(NUMBER_OF_CHANNELS_g-1 downto 0);
     signal rx_analogreset       :   std_logic_vector(NUMBER_OF_CHANNELS_g-1 downto 0);
     signal rx_digitalreset      :   std_logic_vector(NUMBER_OF_CHANNELS_g-1 downto 0);
-
-    signal tx_cal_busy          :   std_logic_vector(NUMBER_OF_CHANNELS_g-1 downto 0);
-    signal rx_cal_busy          :   std_logic_vector(NUMBER_OF_CHANNELS_g-1 downto 0);
 
     signal tx_ready             :   std_logic_vector(NUMBER_OF_CHANNELS_g-1 downto 0);
     signal rx_ready             :   std_logic_vector(NUMBER_OF_CHANNELS_g-1 downto 0);
@@ -88,11 +80,9 @@ architecture arch of xcvr_enh is
     signal rx_errdetect         :   std_logic_vector(NUMBER_OF_CHANNELS_g*CHANNEL_WIDTH_g/8-1 downto 0) := (others => '0');
     signal rx_disperr           :   std_logic_vector(NUMBER_OF_CHANNELS_g*CHANNEL_WIDTH_g/8-1 downto 0) := (others => '0');
 
-    signal rx_syncstatus        :   std_logic_vector(NUMBER_OF_CHANNELS_g*CHANNEL_WIDTH_g/8-1 downto 0) := (others => '0');
-    signal rx_patterndetect     :   std_logic_vector(NUMBER_OF_CHANNELS_g*CHANNEL_WIDTH_g/8-1 downto 0) := (others => '0');
-    signal rx_enapatternalign   :   std_logic_vector(NUMBER_OF_CHANNELS_g-1 downto 0);
+    signal rx_bitslip           :   std_logic_vector(NUMBER_OF_CHANNELS_g-1 downto 0);
 
-    signal rx_seriallpbken      :   std_logic_vector(NUMBER_OF_CHANNELS_g-1 downto 0);
+    signal rx_loopback          :   std_logic_vector(NUMBER_OF_CHANNELS_g-1 downto 0);
 
 
 
@@ -110,8 +100,6 @@ architecture arch of xcvr_enh is
         -- error counter
         err_cnt :   std_logic_vector(15 downto 0);
 
-        syncstatus      :   std_logic_vector(CHANNEL_WIDTH_g/8-1 downto 0);
-        patterndetect   :   std_logic_vector(CHANNEL_WIDTH_g/8-1 downto 0);
         errdetect       :   std_logic_vector(CHANNEL_WIDTH_g/8-1 downto 0);
         disperr         :   std_logic_vector(CHANNEL_WIDTH_g/8-1 downto 0);
     end record;
@@ -124,8 +112,6 @@ begin
     begin
         o_rx_data(CHANNEL_WIDTH_g-1 + CHANNEL_WIDTH_g*i downto CHANNEL_WIDTH_g*i) <= rx(i).data;
         o_rx_datak(CHANNEL_WIDTH_g/8-1 + CHANNEL_WIDTH_g/8*i downto CHANNEL_WIDTH_g/8*i) <= rx(i).datak;
-        rx(i).syncstatus <= rx_syncstatus(CHANNEL_WIDTH_g/8-1 + CHANNEL_WIDTH_g/8*i downto CHANNEL_WIDTH_g/8*i);
-        rx(i).patterndetect <= rx_patterndetect(CHANNEL_WIDTH_g/8-1 + CHANNEL_WIDTH_g/8*i downto CHANNEL_WIDTH_g/8*i);
         rx(i).errdetect <= rx_errdetect(CHANNEL_WIDTH_g/8-1 + CHANNEL_WIDTH_g/8*i downto CHANNEL_WIDTH_g/8*i);
         rx(i).disperr <= rx_disperr(CHANNEL_WIDTH_g/8-1 + CHANNEL_WIDTH_g/8*i downto CHANNEL_WIDTH_g/8*i);
     end generate;
@@ -151,10 +137,6 @@ begin
             i_reset_n => '1',
             i_clk => i_rx_clkin(i)--,
         );
-        rx_patterndetect(i*CHANNEL_WIDTH_g/8) <= '1' when (
-            rx_data(7 + CHANNEL_WIDTH_g*i downto CHANNEL_WIDTH_g*i) = X"BC" and
-            rx_datak(CHANNEL_WIDTH_g/8*i) = '1'
-        ) else '0';
 
         e_tx_8b10b_enc : entity work.enc_8b10b_n
         generic map (
@@ -175,7 +157,7 @@ begin
         e_rx_align : entity work.rx_align
         generic map (
             CHANNEL_WIDTH_g => CHANNEL_WIDTH_g,
-            K_g => K_g--,
+            g_K => g_K--,
         )
         port map (
             o_data      => rx(i).data,
@@ -186,12 +168,9 @@ begin
             i_data      => rx_data(CHANNEL_WIDTH_g-1 + CHANNEL_WIDTH_g*i downto CHANNEL_WIDTH_g*i),
             i_datak     => rx_datak(CHANNEL_WIDTH_g/8-1 + CHANNEL_WIDTH_g/8*i downto CHANNEL_WIDTH_g/8*i),
 
-            i_syncstatus        => rx(i).syncstatus,
-            i_patterndetect     => rx(i).patterndetect,
-            o_enapatternalign   => rx_enapatternalign(i),
+            o_bitslip   => rx_bitslip(i),
 
-            i_errdetect => rx(i).errdetect,
-            i_disperr   => rx(i).disperr,
+            i_error     => rx(i).errdetect or rx(i).disperr,
 
             i_reset_n   => rx(i).rst_n,
             i_clk       => i_rx_clkin(i)--,
@@ -229,7 +208,7 @@ begin
     if ( i_reset_n = '0' ) then
         av_ctrl.waitrequest <= '1';
         ch <= 0;
-        rx_seriallpbken <= (others => '0');
+        rx_loopback <= (others => '0');
         tx_rst_n <= (others => '0');
         rx_rst_n <= (others => '0');
         --
@@ -280,8 +259,6 @@ begin
                 av_ctrl.readdata(0) <= rx_ready(ch);
                 av_ctrl.readdata(1) <= rx_is_lockedtoref(ch);
                 av_ctrl.readdata(2) <= rx_is_lockedtodata(ch);
---                av_ctrl.readdata(11 downto 8) <= (others => '1');
-                av_ctrl.readdata(CHANNEL_WIDTH_g/8-1 + 8 downto 8) <= rx(ch).syncstatus;
                 av_ctrl.readdata(12) <= rx(ch).locked;
                 --
             when X"22" =>
@@ -303,8 +280,8 @@ begin
                 av_ctrl.readdata(rx(ch).Gbit'range) <= rx(ch).Gbit;
                 --
             when X"2F" =>
-                av_ctrl.readdata(0) <= rx_seriallpbken(ch);
-                if ( av_ctrl.write = '1' ) then rx_seriallpbken(ch) <= av_ctrl.writedata(0); end if;
+                av_ctrl.readdata(0) <= rx_loopback(ch);
+                if ( av_ctrl.write = '1' ) then rx_loopback(ch) <= av_ctrl.writedata(0); end if;
                 --
             when others =>
                 av_ctrl.readdata <= X"CCCCCCCC";
@@ -424,8 +401,8 @@ begin
         o_rx_ready          => rx_ready,
         o_tx_ready          => tx_ready,
 
-        i_rx_bitslip        => rx_enapatternalign,
-        i_rx_seriallpbken   => rx_seriallpbken,
+        i_rx_bitslip        => rx_bitslip,
+        i_rx_seriallpbken   => rx_loopback,
 
         i_phy_channel       => ch,
         i_phy_address       => av_phy.address(9 downto 0),
