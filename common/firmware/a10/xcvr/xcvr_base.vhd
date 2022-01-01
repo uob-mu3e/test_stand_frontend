@@ -13,9 +13,9 @@ generic (
     g_MODE : string := "basic_std";
     g_CHANNELS : positive := 4;
     g_BITS : positive := 40;
-    g_REFCLK_MHZ : real := 125.0;
-    g_RATE_MBPS : positive := 5000;
-    g_CLK_MHZ : real := 50.0--;
+    g_REFCLK_MHZ : real;
+    g_RATE_MBPS : positive;
+    g_CLK_MHZ : real--;
 );
 port (
     -- serial data
@@ -478,7 +478,7 @@ begin
         or ( g_MODE = "basic_std" and g_CHANNELS = 6 and g_BITS = 40 and g_REFCLK_MHZ = 125.0 and g_RATE_MBPS = 6250 )
         or ( g_MODE = "basic_enh" and g_CHANNELS = 6 and g_BITS = 40 and g_REFCLK_MHZ = 125.0 and g_RATE_MBPS = 6250 )
         or ( g_MODE = "basic_enh" and g_CHANNELS = 6 and g_BITS = 40 and g_REFCLK_MHZ = 125.0 and g_RATE_MBPS = 10000 )
-    ) report "undefined 'ip_xcvr_phy_'"
+    ) report "ERROR: undefined 'ip_xcvr_phy_'"
         & ", g_MODE = '" & g_MODE & "'"
         & ", g_CHANNELS = " & integer'image(g_CHANNELS)
         & ", g_BITS = " & integer'image(g_BITS)
@@ -573,7 +573,7 @@ begin
         or ( g_REFCLK_MHZ = 125.0 and g_RATE_MBPS = 5000 )
         or ( g_REFCLK_MHZ = 125.0 and g_RATE_MBPS = 6250 )
         or ( g_REFCLK_MHZ = 125.0 and g_RATE_MBPS = 10000 )
-    ) report "undefined ip 'ip_xcvr_fpll_'"
+    ) report "ERROR: undefined 'ip_xcvr_fpll_'"
         & ", g_REFCLK_MHZ = " & real'image(g_REFCLK_MHZ)
         & ", g_RATE_MBPS = " & integer'image(g_RATE_MBPS)
     severity failure;
@@ -749,7 +749,7 @@ begin
         or ( g_CHANNELS = 4 and g_CLK_MHZ = 100.0 )
         or ( g_CHANNELS = 6 and g_CLK_MHZ = 50.0 )
         or ( g_CHANNELS = 6 and g_CLK_MHZ = 100.0 )
-    ) report "undefined ip 'ip_xcvr_reset_'"
+    ) report "ERROR: undefined 'ip_xcvr_reset_'"
         & ", g_CHANNELS = " & integer'image(g_CHANNELS)
         & ", g_CLK_MHZ = " & real'image(g_CLK_MHZ)
     severity failure;

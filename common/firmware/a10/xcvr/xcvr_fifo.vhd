@@ -41,9 +41,15 @@ architecture arch of xcvr_fifo is
 
 begin
 
-    assert ( g_W mod 8 = 0 ) report "" severity failure;
-    assert ( g_IDLE_DATA'length = g_W ) report "" severity failure;
-    assert ( g_IDLE_DATAK'length = g_W/8 ) report "" severity failure;
+    assert ( true
+        and ( g_W mod 8 = 0 )
+        and ( g_IDLE_DATA'length = g_W )
+        and ( g_IDLE_DATAK'length = g_W/8 )
+    ) report "ERROR: xcvr_fifo"
+        & ", g_W = " & integer'image(g_W)
+        & ", g_IDLE_DATA'length = " & integer'image(g_IDLE_DATA'length)
+        & ", g_IDLE_DATAK'length = " & integer'image(g_IDLE_DATAK'length)
+    severity failure;
 
     e_rx_fifo : entity work.ip_dcfifo_v2
     generic map (

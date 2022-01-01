@@ -7,9 +7,9 @@ generic (
     g_MODE : string := "basic_std";
     g_XCVR_N : positive := 8; -- g_XCVR_N <= 16
     g_CHANNELS : positive := 6;
-    g_REFCLK_MHZ : real := 125.0;
-    g_RATE_MBPS : positive := 10000;
-    g_CLK_MHZ : real := 100.0--;
+    g_REFCLK_MHZ : real;
+    g_RATE_MBPS : positive;
+    g_CLK_MHZ : real--;
 );
 port (
     i_rx_serial         : in    std_logic_vector(g_XCVR_N*g_CHANNELS-1 downto 0);
@@ -71,7 +71,8 @@ begin
         e_xcvr_a10 : entity work.xcvr_enh
         generic map (
             g_MODE => g_MODE,
-            NUMBER_OF_CHANNELS_g => g_CHANNELS,
+            g_CHANNELS => g_CHANNELS,
+            g_BYTES => 4,
             g_REFCLK_MHZ => g_REFCLK_MHZ,
             g_RATE_MBPS => g_RATE_MBPS,
             g_CLK_MHZ => g_CLK_MHZ--,

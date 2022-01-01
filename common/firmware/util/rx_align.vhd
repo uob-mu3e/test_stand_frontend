@@ -9,22 +9,20 @@ use ieee.numeric_std.all;
 entity rx_align is
 generic (
     -- channel width in bytes
-    CHANNEL_WIDTH_g : positive := 32;
+    g_BYTES : positive := 4;
     -- control symbol
     g_K : std_logic_vector(7 downto 0) := X"BC"--;
 );
 port (
-    o_data      :   out std_logic_vector(CHANNEL_WIDTH_g-1 downto 0);
-    o_datak     :   out std_logic_vector(CHANNEL_WIDTH_g/8-1 downto 0);
-
+    o_data      :   out std_logic_vector(g_BYTES*8-1 downto 0);
+    o_datak     :   out std_logic_vector(g_BYTES-1 downto 0);
     o_locked    :   out std_logic;
-
-    i_data      :   in  std_logic_vector(CHANNEL_WIDTH_g-1 downto 0);
-    i_datak     :   in  std_logic_vector(CHANNEL_WIDTH_g/8-1 downto 0);
 
     o_bitslip   :   out std_logic;
 
-    i_error     :   in  std_logic_vector(CHANNEL_WIDTH_g/8-1 downto 0);
+    i_data      :   in  std_logic_vector(g_BYTES*8-1 downto 0);
+    i_datak     :   in  std_logic_vector(g_BYTES-1 downto 0);
+    i_error     :   in  std_logic;
 
     i_reset_n   :   in  std_logic;
     i_clk       :   in  std_logic--;
@@ -60,10 +58,8 @@ begin
         data <= (others => '0');
         datak <= (others => '0');
         -- assume link is LSBit first
-        data(31 downto 0) <= data(63 downto 32);
-        datak(3 downto 0) <= datak(7 downto 4);
-        data(CHANNEL_WIDTH_g-1 + 32 downto 32) <= i_data;
-        datak(CHANNEL_WIDTH_g/8-1 + 4 downto 4) <= i_datak;
+        data(g_BYTES*8-1 + 32 downto 32) <= i_data;
+        datak(g_BYTES-1 + 4 downto 4) <= i_datak;
         --
     end if;
     end process;
@@ -121,9 +117,7 @@ begin
             error_v := true;
         end if;
 
-        if ( error_v
-            or i_error /= (i_error'range => '0')
-        ) then
+        if ( error_v or i_error = '1' ) then
             if ( quality = (quality'range => '0') ) then
                 -- not locked
                 locked <= '0';
@@ -149,17 +143,17 @@ begin
         -- align such that LSByte is K (comma)
         case pattern_q is
         when "0001" =>
-            o_data <= data(CHANNEL_WIDTH_g-1 + 0 downto 0);
-            o_datak <= datak(CHANNEL_WIDTH_g/8-1 + 0 downto 0);
+            o_data <= data(g_BYTES*8-1 + 0 downto 0);
+            o_datak <= datak(g_BYTES-1 + 0 downto 0);
         when "0010" =>
-            o_data <= data(CHANNEL_WIDTH_g-1 + 8 downto 8);
-            o_datak <= datak(CHANNEL_WIDTH_g/8-1 + 1 downto 1);
+            o_data <= data(g_BYTES*8-1 + 8 downto 8);
+            o_datak <= datak(g_BYTES-1 + 1 downto 1);
         when "0100" =>
-            o_data <= data(CHANNEL_WIDTH_g-1 + 16 downto 16);
-            o_datak <= datak(CHANNEL_WIDTH_g/8-1 + 2 downto 2);
+            o_data <= data(g_BYTES*8-1 + 16 downto 16);
+            o_datak <= datak(g_BYTES-1 + 2 downto 2);
         when "1000" =>
-            o_data <= data(CHANNEL_WIDTH_g-1 + 24 downto 24);
-            o_datak <= datak(CHANNEL_WIDTH_g/8-1 + 3 downto 3);
+            o_data <= data(g_BYTES*8-1 + 24 downto 24);
+            o_datak <= datak(g_BYTES-1 + 3 downto 3);
         when others =>
             null;
         end case;

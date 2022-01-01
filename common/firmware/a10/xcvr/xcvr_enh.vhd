@@ -11,28 +11,28 @@ use ieee.std_logic_unsigned.all;
 entity xcvr_enh is
 generic (
     g_MODE : string := "basic_std";
-    NUMBER_OF_CHANNELS_g : positive := 4;
-    CHANNEL_WIDTH_g : positive := 32;
-    g_REFCLK_MHZ : real := 125.0;
-    g_RATE_MBPS : positive := 5000;
+    g_CHANNELS : positive := 4;
+    g_BYTES : positive := 4;
     g_K : std_logic_vector(7 downto 0) := work.util.D28_5;
-    g_CLK_MHZ : real := 50.0--;
+    g_REFCLK_MHZ : real;
+    g_RATE_MBPS : positive;
+    g_CLK_MHZ : real--;
 );
 port (
-    i_rx_serial         : in    std_logic_vector(NUMBER_OF_CHANNELS_g-1 downto 0);
-    o_tx_serial         : out   std_logic_vector(NUMBER_OF_CHANNELS_g-1 downto 0);
+    i_rx_serial         : in    std_logic_vector(g_CHANNELS-1 downto 0);
+    o_tx_serial         : out   std_logic_vector(g_CHANNELS-1 downto 0);
 
     i_refclk            : in    std_logic;
 
-    o_rx_data           : out   std_logic_vector(NUMBER_OF_CHANNELS_g*CHANNEL_WIDTH_g-1 downto 0);
-    o_rx_datak          : out   std_logic_vector(NUMBER_OF_CHANNELS_g*CHANNEL_WIDTH_g/8-1 downto 0);
-    i_tx_data           : in    std_logic_vector(NUMBER_OF_CHANNELS_g*CHANNEL_WIDTH_g-1 downto 0);
-    i_tx_datak          : in    std_logic_vector(NUMBER_OF_CHANNELS_g*CHANNEL_WIDTH_g/8-1 downto 0);
+    o_rx_data           : out   std_logic_vector(g_CHANNELS*g_BYTES*8-1 downto 0);
+    o_rx_datak          : out   std_logic_vector(g_CHANNELS*g_BYTES-1 downto 0);
+    i_tx_data           : in    std_logic_vector(g_CHANNELS*g_BYTES*8-1 downto 0);
+    i_tx_datak          : in    std_logic_vector(g_CHANNELS*g_BYTES-1 downto 0);
 
-    o_rx_clkout         : out   std_logic_vector(NUMBER_OF_CHANNELS_g-1 downto 0);
-    i_rx_clkin          : in    std_logic_vector(NUMBER_OF_CHANNELS_g-1 downto 0);
-    o_tx_clkout         : out   std_logic_vector(NUMBER_OF_CHANNELS_g-1 downto 0);
-    i_tx_clkin          : in    std_logic_vector(NUMBER_OF_CHANNELS_g-1 downto 0);
+    o_rx_clkout         : out   std_logic_vector(g_CHANNELS-1 downto 0);
+    i_rx_clkin          : in    std_logic_vector(g_CHANNELS-1 downto 0);
+    o_tx_clkout         : out   std_logic_vector(g_CHANNELS-1 downto 0);
+    i_tx_clkin          : in    std_logic_vector(g_CHANNELS-1 downto 0);
 
     -- avalon slave interface
     -- # address units words
@@ -51,47 +51,49 @@ end entity;
 
 architecture arch of xcvr_enh is
 
-    signal ch : integer range 0 to NUMBER_OF_CHANNELS_g-1 := 0;
+    signal ch : integer range 0 to g_CHANNELS-1 := 0;
 
     signal av_ctrl : work.util.avalon_t;
     signal av_phy, av_pll : work.util.avalon_t;
 
-    signal rx_parallel_data     :   std_logic_vector(NUMBER_OF_CHANNELS_g*CHANNEL_WIDTH_g/8*10-1 downto 0);
-    signal tx_parallel_data     :   std_logic_vector(NUMBER_OF_CHANNELS_g*CHANNEL_WIDTH_g/8*10-1 downto 0);
+    signal rx_parallel_data     :   std_logic_vector(g_CHANNELS*g_BYTES*10-1 downto 0);
+    signal tx_parallel_data     :   std_logic_vector(g_CHANNELS*g_BYTES*10-1 downto 0);
 
-    signal rx_data              :   std_logic_vector(NUMBER_OF_CHANNELS_g*CHANNEL_WIDTH_g-1 downto 0);
-    signal rx_datak             :   std_logic_vector(NUMBER_OF_CHANNELS_g*CHANNEL_WIDTH_g/8-1 downto 0);
+    signal tx_rst_n, rx_rst_n   :   std_logic_vector(g_CHANNELS-1 downto 0);
 
-    signal tx_rst_n, rx_rst_n   :   std_logic_vector(NUMBER_OF_CHANNELS_g-1 downto 0);
+    signal tx_analogreset       :   std_logic_vector(g_CHANNELS-1 downto 0);
+    signal tx_digitalreset      :   std_logic_vector(g_CHANNELS-1 downto 0);
+    signal rx_analogreset       :   std_logic_vector(g_CHANNELS-1 downto 0);
+    signal rx_digitalreset      :   std_logic_vector(g_CHANNELS-1 downto 0);
 
+    signal tx_fifo_error        :   std_logic_vector(g_CHANNELS-1 downto 0) := (others => '0');
+    signal rx_fifo_error        :   std_logic_vector(g_CHANNELS-1 downto 0) := (others => '0');
 
-    signal tx_analogreset       :   std_logic_vector(NUMBER_OF_CHANNELS_g-1 downto 0);
-    signal tx_digitalreset      :   std_logic_vector(NUMBER_OF_CHANNELS_g-1 downto 0);
-    signal rx_analogreset       :   std_logic_vector(NUMBER_OF_CHANNELS_g-1 downto 0);
-    signal rx_digitalreset      :   std_logic_vector(NUMBER_OF_CHANNELS_g-1 downto 0);
+    signal tx_ready             :   std_logic_vector(g_CHANNELS-1 downto 0);
+    signal rx_ready             :   std_logic_vector(g_CHANNELS-1 downto 0);
+    signal rx_is_lockedtoref    :   std_logic_vector(g_CHANNELS-1 downto 0);
+    signal rx_is_lockedtodata   :   std_logic_vector(g_CHANNELS-1 downto 0);
 
-    signal tx_ready             :   std_logic_vector(NUMBER_OF_CHANNELS_g-1 downto 0);
-    signal rx_ready             :   std_logic_vector(NUMBER_OF_CHANNELS_g-1 downto 0);
-    signal rx_is_lockedtoref    :   std_logic_vector(NUMBER_OF_CHANNELS_g-1 downto 0);
-    signal rx_is_lockedtodata   :   std_logic_vector(NUMBER_OF_CHANNELS_g-1 downto 0);
+    signal rx_bitslip           :   std_logic_vector(g_CHANNELS-1 downto 0);
 
-    signal tx_fifo_error        :   std_logic_vector(NUMBER_OF_CHANNELS_g-1 downto 0) := (others => '0');
-    signal rx_fifo_error        :   std_logic_vector(NUMBER_OF_CHANNELS_g-1 downto 0) := (others => '0');
-    signal rx_errdetect         :   std_logic_vector(NUMBER_OF_CHANNELS_g*CHANNEL_WIDTH_g/8-1 downto 0) := (others => '0');
-    signal rx_disperr           :   std_logic_vector(NUMBER_OF_CHANNELS_g*CHANNEL_WIDTH_g/8-1 downto 0) := (others => '0');
-
-    signal rx_bitslip           :   std_logic_vector(NUMBER_OF_CHANNELS_g-1 downto 0);
-
-    signal rx_loopback          :   std_logic_vector(NUMBER_OF_CHANNELS_g-1 downto 0);
+    signal rx_loopback          :   std_logic_vector(g_CHANNELS-1 downto 0);
 
 
 
     type rx_t is record
-        data10  :   std_logic_vector(CHANNEL_WIDTH_g/8*10-1 downto 0);
-        data    :   std_logic_vector(CHANNEL_WIDTH_g-1 downto 0);
-        datak   :   std_logic_vector(CHANNEL_WIDTH_g/8-1 downto 0);
+        -- parallel 10-bit data
+        data10  :   std_logic_vector(g_BYTES*10-1 downto 0);
+        -- 8b10b decoded data
+        idata   :   std_logic_vector(g_BYTES*8-1 downto 0);
+        idatak  :   std_logic_vector(g_BYTES-1 downto 0);
+        error   :   std_logic;
+
+        -- aligned data
+        data    :   std_logic_vector(g_BYTES*8-1 downto 0);
+        datak   :   std_logic_vector(g_BYTES-1 downto 0);
         locked  :   std_logic;
-        rst_n   :   std_logic;
+
+        reset_n :   std_logic;
 
         -- Gbit counter
         Gbit    :   std_logic_vector(23 downto 0);
@@ -99,80 +101,72 @@ architecture arch of xcvr_enh is
         LoL_cnt :   std_logic_vector(7 downto 0);
         -- error counter
         err_cnt :   std_logic_vector(15 downto 0);
-
-        errdetect       :   std_logic_vector(CHANNEL_WIDTH_g/8-1 downto 0);
-        disperr         :   std_logic_vector(CHANNEL_WIDTH_g/8-1 downto 0);
     end record;
     type rx_vector_t is array (natural range <>) of rx_t;
-    signal rx : rx_vector_t(NUMBER_OF_CHANNELS_g-1 downto 0);
+    signal rx : rx_vector_t(g_CHANNELS-1 downto 0) := (others => (
+        error => '0',
+        locked => '0',
+        reset_n => '0',
+        others => (others => '0')
+    ));
 
 begin
 
-    gen_rx_data : for i in NUMBER_OF_CHANNELS_g-1 downto 0 generate
+    g_rx : for i in g_CHANNELS-1 downto 0 generate
     begin
-        o_rx_data(CHANNEL_WIDTH_g-1 + CHANNEL_WIDTH_g*i downto CHANNEL_WIDTH_g*i) <= rx(i).data;
-        o_rx_datak(CHANNEL_WIDTH_g/8-1 + CHANNEL_WIDTH_g/8*i downto CHANNEL_WIDTH_g/8*i) <= rx(i).datak;
-        rx(i).errdetect <= rx_errdetect(CHANNEL_WIDTH_g/8-1 + CHANNEL_WIDTH_g/8*i downto CHANNEL_WIDTH_g/8*i);
-        rx(i).disperr <= rx_disperr(CHANNEL_WIDTH_g/8-1 + CHANNEL_WIDTH_g/8*i downto CHANNEL_WIDTH_g/8*i);
-    end generate;
-
-    g_rx_align : for i in NUMBER_OF_CHANNELS_g-1 downto 0 generate
-    begin
-        process(i_rx_clkin(i))
+        process(rx_parallel_data)
         begin
-        if rising_edge(i_rx_clkin(i)) then
-            rx(i).data10 <= rx_parallel_data(CHANNEL_WIDTH_g/8*10-1 + CHANNEL_WIDTH_g/8*10*i downto CHANNEL_WIDTH_g/8*10*i);
-        end if;
+            rx(i).data10 <= rx_parallel_data(g_BYTES*10-1 + g_BYTES*10*i downto g_BYTES*10*i);
+            o_rx_data(g_BYTES*8-1 + g_BYTES*8*i downto g_BYTES*8*i) <= rx(i).data;
+            o_rx_datak(g_BYTES-1 + g_BYTES*i downto g_BYTES*i) <= rx(i).datak;
         end process;
 
         e_rx_8b10b_dec : entity work.dec_8b10b_n
         generic map (
-            N_BYTES_g => CHANNEL_WIDTH_g/8--,
+            N_BYTES_g => g_BYTES--,
         )
         port map (
             i_data => rx(i).data10,
-            o_data => rx_data(CHANNEL_WIDTH_g-1 + CHANNEL_WIDTH_g*i downto CHANNEL_WIDTH_g*i),
-            o_datak => rx_datak(CHANNEL_WIDTH_g/8-1 + CHANNEL_WIDTH_g/8*i downto CHANNEL_WIDTH_g/8*i),
-            o_err => rx_errdetect(i*CHANNEL_WIDTH_g/8),
+            o_data => rx(i).idata,
+            o_datak => rx(i).idatak,
+            o_err => rx(i).error,
             i_reset_n => '1',
             i_clk => i_rx_clkin(i)--,
         );
 
         e_tx_8b10b_enc : entity work.enc_8b10b_n
         generic map (
-            N_BYTES_g => CHANNEL_WIDTH_g/8--,
+            N_BYTES_g => g_BYTES--,
         )
         port map (
-            i_data => i_tx_data(CHANNEL_WIDTH_g-1 + CHANNEL_WIDTH_g*i downto CHANNEL_WIDTH_g*i),
-            i_datak => i_tx_datak(CHANNEL_WIDTH_g/8-1 + CHANNEL_WIDTH_g/8*i downto CHANNEL_WIDTH_g/8*i),
-            o_data => tx_parallel_data(CHANNEL_WIDTH_g/8*10-1 + CHANNEL_WIDTH_g/8*10*i downto CHANNEL_WIDTH_g/8*10*i),
+            i_data => i_tx_data(g_BYTES*8-1 + g_BYTES*8*i downto g_BYTES*8*i),
+            i_datak => i_tx_datak(g_BYTES-1 + g_BYTES*i downto g_BYTES*i),
+            o_data => tx_parallel_data(g_BYTES*10-1 + g_BYTES*10*i downto g_BYTES*10*i),
             o_err => open,
             i_reset_n => '1',
             i_clk => i_tx_clkin(i)--,
         );
 
-        e_rx_rst_n : entity work.reset_sync
-        port map ( o_reset_n => rx(i).rst_n, i_reset_n => i_reset_n and rx_rst_n(i), i_clk => i_rx_clkin(i) );
+        e_rx_reset_n : entity work.reset_sync
+        port map ( o_reset_n => rx(i).reset_n, i_reset_n => i_reset_n and rx_rst_n(i), i_clk => i_rx_clkin(i) );
 
         e_rx_align : entity work.rx_align
         generic map (
-            CHANNEL_WIDTH_g => CHANNEL_WIDTH_g,
+            g_BYTES => g_BYTES,
             g_K => g_K--,
         )
         port map (
             o_data      => rx(i).data,
             o_datak     => rx(i).datak,
-
             o_locked    => rx(i).locked,
-
-            i_data      => rx_data(CHANNEL_WIDTH_g-1 + CHANNEL_WIDTH_g*i downto CHANNEL_WIDTH_g*i),
-            i_datak     => rx_datak(CHANNEL_WIDTH_g/8-1 + CHANNEL_WIDTH_g/8*i downto CHANNEL_WIDTH_g/8*i),
 
             o_bitslip   => rx_bitslip(i),
 
-            i_error     => rx(i).errdetect or rx(i).disperr,
+            i_data      => rx(i).idata,
+            i_datak     => rx(i).idatak,
+            i_error     => rx(i).error,
 
-            i_reset_n   => rx(i).rst_n,
+            i_reset_n   => rx(i).reset_n,
             i_clk       => i_rx_clkin(i)--,
         );
 
@@ -181,7 +175,7 @@ begin
         generic map ( DIV => 2**30/32, W => rx(i).Gbit'length )
         port map (
             o_cnt => rx(i).Gbit, i_ena => '1',
-            i_reset_n => rx(i).rst_n, i_clk => i_rx_clkin(i)
+            i_reset_n => rx(i).reset_n, i_clk => i_rx_clkin(i)
         );
 
         -- Loss-of-Lock (LoL) counter
@@ -189,7 +183,7 @@ begin
         generic map ( EDGE => -1, W => rx(i).LoL_cnt'length ) -- falling edge
         port map (
             o_cnt => rx(i).LoL_cnt, i_ena => rx(i).locked,
-            i_reset_n => rx(i).rst_n, i_clk => i_rx_clkin(i)
+            i_reset_n => rx(i).reset_n, i_clk => i_rx_clkin(i)
         );
 
         -- 8b10b error counter
@@ -197,8 +191,8 @@ begin
         generic map ( W => rx(i).err_cnt'length )
         port map (
             o_cnt => rx(i).err_cnt,
-            i_ena => rx(i).locked and work.util.to_std_logic( rx(i).errdetect /= 0 or rx(i).disperr /= 0 ),
-            i_reset_n => rx(i).rst_n, i_clk => i_rx_clkin(i)
+            i_ena => rx(i).locked and rx(i).error,
+            i_reset_n => rx(i).reset_n, i_clk => i_rx_clkin(i)
         );
     end generate;
 
@@ -226,14 +220,14 @@ begin
             when X"00" =>
                 -- channel select
                 av_ctrl.readdata(7 downto 0) <= std_logic_vector(to_unsigned(ch, 8));
-                if ( av_ctrl.write = '1' and av_ctrl.writedata(7 downto 0) < NUMBER_OF_CHANNELS_g ) then
+                if ( av_ctrl.write = '1' and av_ctrl.writedata(7 downto 0) < g_CHANNELS ) then
                     ch <= to_integer(unsigned(av_ctrl.writedata(7 downto 0)));
                 end if;
                 --
             when X"01" =>
-                av_ctrl.readdata(7 downto 0) <= std_logic_vector(to_unsigned(NUMBER_OF_CHANNELS_g, 8));
+                av_ctrl.readdata(7 downto 0) <= std_logic_vector(to_unsigned(g_CHANNELS, 8));
             when X"02" =>
-                av_ctrl.readdata(7 downto 0) <= std_logic_vector(to_unsigned(CHANNEL_WIDTH_g, 8));
+                av_ctrl.readdata(7 downto 0) <= std_logic_vector(to_unsigned(g_BYTES*8, 8));
             when X"10" =>
                 -- tx reset
                 av_ctrl.readdata(0) <= tx_analogreset(ch);
@@ -263,8 +257,7 @@ begin
                 --
             when X"22" =>
                 -- rx errors
-                av_ctrl.readdata(CHANNEL_WIDTH_g/8-1 + 0 downto 0) <= rx(ch).errdetect;
-                av_ctrl.readdata(CHANNEL_WIDTH_g/8-1 + 4 downto 4) <= rx(ch).disperr;
+                av_ctrl.readdata(0) <= rx(ch).error;
                 av_ctrl.readdata(8) <= rx_fifo_error(ch);
                 --
             when X"23" =>
@@ -372,8 +365,8 @@ begin
     e_xcvr_base : entity work.xcvr_base
     generic map (
         g_MODE => g_MODE,
-        g_CHANNELS => NUMBER_OF_CHANNELS_g,
-        g_BITS => CHANNEL_WIDTH_g / 8 * 10,
+        g_CHANNELS => g_CHANNELS,
+        g_BITS => g_BYTES * 10,
         g_REFCLK_MHZ => g_REFCLK_MHZ,
         g_RATE_MBPS => g_RATE_MBPS,
         g_CLK_MHZ => g_CLK_MHZ--,
