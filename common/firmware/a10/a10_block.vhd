@@ -643,8 +643,8 @@ begin
     generate_sfp_block : if ( g_SFP_CHANNELS > 0 ) generate
     e_xcvr_sfp : entity work.xcvr_enh
     generic map (
-        NUMBER_OF_CHANNELS_g => g_SFP_CHANNELS,
-        CHANNEL_WIDTH_g => 8,
+        g_CHANNELS => g_SFP_CHANNELS,
+        g_BYTES => 1,
         g_REFCLK_MHZ => 125.0,
         g_RATE_MBPS => 1250,
         g_CLK_MHZ => g_CLK_MHZ--,

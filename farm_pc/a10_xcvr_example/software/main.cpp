@@ -20,7 +20,7 @@ int main() {
 
     while (1) {
         printf("  [1] => xcvr\n");
-        printf("  [R] => reconfig");
+        printf("  [R] => reconfig\n");
         printf("  [9] => flash\n");
         printf("  [0] => fan\n");
 

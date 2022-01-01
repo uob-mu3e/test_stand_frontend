@@ -10,3 +10,5 @@ set_global_assignment -name VHDL_FILE [ file join $::quartus(qip_path) data_gene
 set_global_assignment -name VHDL_FILE [ file join $::quartus(qip_path) run_control.vhd ]
 set_global_assignment -name VHDL_FILE [ file join $::quartus(qip_path) run_control_link_listener.vhd ]
 set_global_assignment -name VHDL_FILE [ file join $::quartus(qip_path) link_to_fifo.vhd ]
+
+set_global_assignment -name VHDL_FILE [ file join $::quartus(qip_path) chip_lookup_int_2021.vhd ]
