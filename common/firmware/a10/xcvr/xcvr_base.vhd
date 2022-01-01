@@ -176,6 +176,55 @@ begin
     );
     end generate;
 
+    generate_xcvr_phy_4_40_125_5000 : if (
+        g_MODE = "basic_std" and g_CHANNELS = 4 and g_BITS = 40 and g_REFCLK_MHZ = 125.0 and g_RATE_MBPS = 5000
+    ) generate
+    e_phy : component work.cmp.ip_xcvr_phy_4_40_125_5000
+    port map (
+        tx_serial_data  => o_tx_serial,
+        rx_serial_data  => i_rx_serial,
+
+        rx_cdr_refclk0  => i_refclk,
+        tx_serial_clk0  => (others => tx_serial_clk),
+
+        tx_analogreset  => tx_analogreset,
+        tx_digitalreset => tx_digitalreset,
+        rx_analogreset  => rx_analogreset,
+        rx_digitalreset => rx_digitalreset,
+
+        tx_cal_busy     => tx_cal_busy,
+        rx_cal_busy     => rx_cal_busy,
+
+        rx_is_lockedtoref   => rx_is_lockedtoref,
+        rx_is_lockedtodata  => rx_is_lockedtodata,
+
+        rx_bitslip          => i_rx_bitslip,
+
+        rx_parallel_data    => rx_parallel_data,
+        tx_parallel_data    => tx_parallel_data,
+--        tx_enh_data_valid   => (others => '1'),
+
+        tx_clkout       => o_tx_clkout,
+        tx_coreclkin    => i_tx_clkin,
+        rx_clkout       => o_rx_clkout,
+        rx_coreclkin    => i_rx_clkin,
+
+        rx_seriallpbken => i_rx_seriallpbken,
+
+        unused_tx_parallel_data => (others => '0'),
+        unused_rx_parallel_data => open,
+
+        reconfig_address        => std_logic_vector(to_unsigned(ch, work.util.vector_width(g_CHANNELS))) & i_phy_address,
+        reconfig_read(0)        => i_phy_read,
+        reconfig_readdata       => o_phy_readdata,
+        reconfig_write(0)       => i_phy_write,
+        reconfig_writedata      => i_phy_writedata,
+        reconfig_waitrequest(0) => o_phy_waitrequest,
+        reconfig_reset(0)       => not i_reset_n,
+        reconfig_clk(0)         => i_clk--,
+    );
+    end generate;
+
     generate_xcvr_phy_4_40_125_5000_enh : if (
         g_MODE = "basic_enh" and g_CHANNELS = 4 and g_BITS = 40 and g_REFCLK_MHZ = 125.0 and g_RATE_MBPS = 5000
     ) generate
@@ -423,6 +472,7 @@ begin
 
     assert ( false
         or ( g_MODE = "basic_std" and g_CHANNELS = 2 and g_BITS = 10 and g_REFCLK_MHZ = 125.0 and g_RATE_MBPS = 1250 )
+        or ( g_MODE = "basic_std" and g_CHANNELS = 4 and g_BITS = 40 and g_REFCLK_MHZ = 125.0 and g_RATE_MBPS = 5000 )
         or ( g_MODE = "basic_enh" and g_CHANNELS = 4 and g_BITS = 40 and g_REFCLK_MHZ = 125.0 and g_RATE_MBPS = 5000 )
         or ( g_MODE = "basic_enh" and g_CHANNELS = 6 and g_BITS = 40 and g_REFCLK_MHZ = 125.0 and g_RATE_MBPS = 5000 )
         or ( g_MODE = "basic_std" and g_CHANNELS = 6 and g_BITS = 40 and g_REFCLK_MHZ = 125.0 and g_RATE_MBPS = 6250 )
