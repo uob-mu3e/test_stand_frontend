@@ -127,7 +127,10 @@ begin
         timeout <= (others => '0');
 
         if ( i_avs_read /= i_avs_write and avs_waitrequest = '1' ) then
-            if ( av(cs).read = av(cs).write ) then
+            if ( cs >= g_XCVR_N or timeout = (timeout'range => '1') ) then
+                o_avs_readdata <= X"CCCCCCCC";
+                avs_waitrequest <= '0';
+            elsif ( av(cs).read = av(cs).write ) then
                 -- start read/write request
                 av(cs).address(i_avs_address'range) <= i_avs_address;
                 av(cs).read <= i_avs_read;
@@ -138,11 +141,6 @@ begin
                 av(cs).read <= '0';
                 o_avs_readdata <= av(cs).readdata;
                 av(cs).write <= '0';
-                avs_waitrequest <= '0';
-            end if;
-
-            if ( cs >= g_XCVR_N or timeout = (timeout'range => '1') ) then
-                o_avs_readdata <= X"CCCCCCCC";
                 avs_waitrequest <= '0';
             end if;
 
