@@ -58,8 +58,10 @@ begin
         data <= (others => '0');
         datak <= (others => '0');
         -- assume link is LSBit first
-        data(g_BYTES*8-1 + 32 downto 32) <= i_data;
-        datak(g_BYTES-1 + 4 downto 4) <= i_datak;
+        data(g_BYTES*8-1 downto 0) <= data(g_BYTES*8-1 + g_BYTES*8 downto g_BYTES*8);
+        datak(g_BYTES-1 downto 0) <= datak(g_BYTES-1 + g_BYTES downto g_BYTES);
+        data(g_BYTES*8-1 + g_BYTES*8 downto g_BYTES*8) <= i_data;
+        datak(g_BYTES-1 + g_BYTES downto g_BYTES) <= i_datak;
         --
     end if;
     end process;
