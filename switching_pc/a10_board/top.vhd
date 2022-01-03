@@ -191,10 +191,11 @@ begin
     --! ------------------------------------------------------------------------
     a10_block : entity work.a10_block
     generic map (
-        g_XCVR0_CHANNELS => 16,
-        g_XCVR0_N => 4,
+        g_XCVR0_CHANNELS => 12,
+        g_XCVR0_N => 3,
         g_XCVR1_CHANNELS => 0,
         g_XCVR1_N => 0,
+		g_XCVR2_CHANNELS => 4,
         g_PCIE0_X => 8,
         g_PCIE1_X => 0,
         g_FARM    => 0,
@@ -232,18 +233,22 @@ begin
         i_xcvr0_rx( 3 downto  0)        => QSFPA_RX_p,
         i_xcvr0_rx( 7 downto  4)        => QSFPB_RX_p,
         i_xcvr0_rx(11 downto  8)        => QSFPC_RX_p,
-        i_xcvr0_rx(15 downto 12)        => QSFPD_RX_p,
         o_xcvr0_tx( 3 downto  0)        => QSFPA_TX_p,
         o_xcvr0_tx( 7 downto  4)        => QSFPB_TX_p,
         o_xcvr0_tx(11 downto  8)        => QSFPC_TX_p,
-        o_xcvr0_tx(15 downto 12)        => QSFPD_TX_p,
         i_xcvr0_refclk                  => (others => clk_125),
 
-        o_xcvr0_rx_data                 => rx_data_raw,
-        o_xcvr0_rx_datak                => rx_datak_raw,
-        i_xcvr0_tx_data                 => tx_data,
-        i_xcvr0_tx_datak                => tx_datak,
+        o_xcvr0_rx_data                 => rx_data_raw(11 downto 0),
+        o_xcvr0_rx_datak                => rx_datak_raw(11 downto 0),
+        i_xcvr0_tx_data                 => tx_data(11 downto 0),
+        i_xcvr0_tx_datak                => tx_datak(11 downto 0),
         i_xcvr0_clk                     => clk_156,
+		  
+		-- XCVR2 (1250 Mbps @ 125 MHz)
+        i_xcvr2_rx( 3 downto  0)        => QSFPD_RX_p,
+        o_xcvr2_tx( 3 downto  0)        => QSFPD_TX_p,
+        i_xcvr2_refclk                  => clk_125,
+        i_xcvr2_clk                     => clk_125,
 
         -- PCIe0
         i_pcie0_rx                      => PCIE_RX_p,
@@ -281,7 +286,7 @@ begin
         o_pcie0_wregs_B                 => pcie0_writeregs_B,
         i_pcie0_wregs_B_clk             => clk_156,
         o_pcie0_wregs_C                 => open,
-        i_pcie0_wregs_C_clk             => clk_156,
+        i_pcie0_wregs_C_clk             => clk_125,
         o_pcie0_resets_n_A              => pcie0_resets_n_A,
         o_pcie0_resets_n_B              => pcie0_resets_n_B,
 
