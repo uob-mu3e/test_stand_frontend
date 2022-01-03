@@ -16,6 +16,8 @@ generic (
     g_XCVR1_N           : integer := 0;
     g_XCVR1_RX_P        : work.util.integer_array_t := ( 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15 );
     g_XCVR1_TX_P        : work.util.integer_array_t := ( 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15 );
+    g_XCVR2_CHANNELS    : integer := 0;
+    g_XCVR3_CHANNELS    : integer := 0;
     g_SFP_CHANNELS      : integer := 0;
     g_PCIE0_X           : integer := 8;
     g_PCIE1_X           : integer := 0;
@@ -69,6 +71,18 @@ port (
     i_xcvr1_tx_data     : in    work.util.slv32_array_t(g_XCVR1_CHANNELS-1 downto 0) := (others => (others => '0'));
     i_xcvr1_tx_datak    : in    work.util.slv4_array_t(g_XCVR1_CHANNELS-1 downto 0) := (others => (others => '0'));
     i_xcvr1_clk         : in    std_logic := '0';
+
+    -- XCVR2 (1250 Mbps @ 125 MHz) -- reset link
+    i_xcvr2_rx          : in    std_logic_vector(g_XCVR2_CHANNELS-1 downto 0) := (others => '0');
+    o_xcvr2_tx          : out   std_logic_vector(g_XCVR2_CHANNELS-1 downto 0);
+    i_xcvr2_refclk      : in    std_logic := '0';
+    i_xcvr2_clk         : in    std_logic := '0';
+
+    -- XCVR2 (125 MHz Clk) -- clk link
+    i_xcvr3_rx          : in    std_logic_vector(g_XCVR2_CHANNELS-1 downto 0) := (others => '0');
+    o_xcvr3_tx          : out   std_logic_vector(g_XCVR2_CHANNELS-1 downto 0);
+    i_xcvr3_refclk      : in    std_logic := '0';
+    i_xcvr3_clk         : in    std_logic := '0';
 
     -- SFP
     i_sfp_rx            : in    std_logic_vector(g_SFP_CHANNELS-1 downto 0) := (others => '0');
@@ -204,7 +218,7 @@ architecture arch of a10_block is
     signal reset_250_n      : std_logic;
     signal clk_250          : std_logic;
     
-    signal reset_C_n      : std_logic;
+    signal reset_C_n        : std_logic;
 
     signal flash_address    : std_logic_vector(31 downto 0) := (others => '0');
 
@@ -233,6 +247,8 @@ architecture arch of a10_block is
     signal xcvr1_rx_datak   : work.util.slv4_array_t(o_xcvr1_rx_datak'range);
     signal xcvr1_tx_data    : work.util.slv32_array_t(i_xcvr1_tx_data'range);
     signal xcvr1_tx_datak   : work.util.slv4_array_t(i_xcvr1_tx_datak'range);
+    signal xcvr2_tx_data    : std_logic_vector(g_XCVR2_CHANNELS*8-1 downto 0) := (others => '0');
+    signal xcvr2_tx_datak   : std_logic_vector(g_XCVR2_CHANNELS-1 downto 0) := (others => '0');
 
     signal pcie0_clk        : std_logic;
     signal reset_pcie0_n    : std_logic;
@@ -249,7 +265,7 @@ architecture arch of a10_block is
     signal pcie1_wregs_C    : reg32array_pcie;
     signal local_pcie0_rregs_A : work.util.slv32_array_t(63 downto 0) := (others => (others => '0')); -- PCIe clk
     signal local_pcie0_rregs_B : work.util.slv32_array_t(63 downto 0) := (others => (others => '0')); -- data link clk
-    signal local_pcie0_rregs_C : work.util.slv32_array_t(63 downto 0) := (others => (others => '0')); -- ddr clk
+    signal local_pcie0_rregs_C : work.util.slv32_array_t(63 downto 0) := (others => (others => '0')); -- ddr or reset link clk
 
     signal pcie0_resets_n_A : std_logic_vector(31 downto 0);
     signal pcie0_resets_n_B : std_logic_vector(31 downto 0);
@@ -366,7 +382,7 @@ begin
         clk            => pcie0_clk--,
     );
     
-    gen_FARM : if g_FARM = 1 GENERATE
+    gen_FARM : if ( g_FARM = 1 ) GENERATE
         --! generate reset regs for 250 MHz link clk for pcie0
         e_reset_logic_farm : entity work.reset_logic
         port map (
@@ -530,11 +546,11 @@ begin
     generate_xcvr0_block : if ( g_XCVR0_CHANNELS > 0 ) generate
     e_xcvr0_block : entity work.xcvr_block
     generic map (
-        g_XCVR_N => g_XCVR0_N,
-        g_CHANNELS => g_XCVR0_CHANNELS / g_XCVR0_N,
-        g_REFCLK_MHZ => 125.0,
-        g_RATE_MBPS => 6250,
-        g_CLK_MHZ => g_CLK_MHZ--,
+        g_XCVR_N        => g_XCVR0_N,
+        g_CHANNELS      => g_XCVR0_CHANNELS / g_XCVR0_N,
+        g_REFCLK_MHZ    => 125.0,
+        g_RATE_MBPS     => 6250,
+        g_CLK_MHZ       => g_CLK_MHZ--,
     )
     port map (
         o_rx_data           => xcvr0_rx_data,
@@ -587,12 +603,12 @@ begin
     generate_xcvr1_block : if ( g_XCVR1_CHANNELS > 0 ) generate
     e_xcvr1_block : entity work.xcvr_block
     generic map (
-        g_MODE => "basic_enh",
-        g_XCVR_N => g_XCVR1_N,
-        g_CHANNELS => g_XCVR1_CHANNELS / g_XCVR1_N,
-        g_REFCLK_MHZ => 125.0,
-        g_RATE_MBPS => 10000,
-        g_CLK_MHZ => g_CLK_MHZ--,
+        g_MODE          => "basic_enh",
+        g_XCVR_N        => g_XCVR1_N,
+        g_CHANNELS      => g_XCVR1_CHANNELS / g_XCVR1_N,
+        g_REFCLK_MHZ    => 125.0,
+        g_RATE_MBPS     => 10000,
+        g_CLK_MHZ       => g_CLK_MHZ--,
     )
     port map (
         o_rx_data           => xcvr1_rx_data,
@@ -640,14 +656,88 @@ begin
     );
     end generate;
 
+    -- xcvr_block 1250 Mbps @ 125 MHz (reset link)
+    generate_reset_link : if ( g_XCVR2_CHANNELS > 0 ) generate
+    e_reset_link : entity work.xcvr_enh
+    generic map (
+        g_CHANNELS      => g_XCVR2_CHANNELS,
+        g_BYTES         => 1,
+        g_REFCLK_MHZ    => 125.0,
+        g_RATE_MBPS     => 1250,
+        g_CLK_MHZ       => g_CLK_MHZ--,
+    )
+    port map (
+        i_rx_serial => i_xcvr2_rx,
+        o_tx_serial => o_xcvr2_tx,
+
+        i_refclk    => i_xcvr2_refclk,
+
+        i_tx_data   => xcvr2_tx_data,
+        i_tx_datak  => xcvr2_tx_datak,
+
+        i_rx_clkin  => (others => i_clk_125),
+        i_tx_clkin  => (others => i_clk_125),
+
+        i_reset_n   => i_reset_n,
+        i_clk       => i_clk--,
+    );
+
+    e_a10_reset_link : entity work.a10_reset_link
+    generic map (
+        g_XCVR2_CHANNELS => 4--,
+    )
+    port map (
+        o_xcvr_tx_data      => xcvr2_tx_data,
+        o_xcvr_tx_datak     => xcvr2_tx_datak,
+
+        i_reset_run_number  => pcie0_wregs_C(RESET_LINK_RUN_NUMBER_REGISTER_W),
+        i_reset_ctl         => pcie0_wregs_C(RESET_LINK_CTL_REGISTER_W),
+        i_clk               => i_clk_125,
+
+        o_state_out         => local_pcie0_rregs_C(RESET_LINK_STATUS_REGISTER_R),
+
+        i_reset_n           => i_reset_125_n--,
+    );
+    end generate;
+
+    -- xcvr_block 5000 Mbps @ 125 MHz (clock link)
+    generate_clk_link : if ( g_XCVR3_CHANNELS > 0 ) generate
+    e_clk_link : entity work.xcvr_base
+    generic map (
+        g_CHANNELS      => g_XCVR3_CHANNELS,
+        g_BITS          => 40,
+        g_REFCLK_MHZ    => 125.0,
+        g_RATE_MBPS     => 5000,
+        g_CLK_MHZ       => g_CLK_MHZ--,
+    )
+    port map (
+        i_rx_serial => i_xcvr3_rx,
+        o_tx_serial => o_xcvr3_tx,
+
+        i_refclk    => i_xcvr3_refclk,
+
+--        i_tx_data   => X"FFFFF00000" & X"FFFFF00000" & X"FFFFF00000" & X"FFFFF00000",
+        i_tx_data   =>  pcie0_wregs_C(CLK_LINK_REST_REGISTER_W)(REST_3_RANGE) & pcie0_wregs_C(CLK_LINK_3_REGISTER_W) &
+                        pcie0_wregs_C(CLK_LINK_REST_REGISTER_W)(REST_2_RANGE) & pcie0_wregs_C(CLK_LINK_2_REGISTER_W) &
+                        pcie0_wregs_C(CLK_LINK_REST_REGISTER_W)(REST_1_RANGE) & pcie0_wregs_C(CLK_LINK_1_REGISTER_W) &
+                        pcie0_wregs_C(CLK_LINK_REST_REGISTER_W)(REST_0_RANGE) & pcie0_wregs_C(CLK_LINK_0_REGISTER_W),
+
+        i_rx_clkin  => (others => i_clk_125),
+        i_tx_clkin  => (others => i_clk_125),
+
+        i_reset_n   => i_reset_n,
+        i_clk       => i_clk--,
+    );
+    end generate;
+
     generate_sfp_block : if ( g_SFP_CHANNELS > 0 ) generate
     e_xcvr_sfp : entity work.xcvr_enh
     generic map (
-        g_CHANNELS => g_SFP_CHANNELS,
-        g_BYTES => 1,
-        g_REFCLK_MHZ => 125.0,
-        g_RATE_MBPS => 1250,
-        g_CLK_MHZ => g_CLK_MHZ--,
+        g_CHANNELS      => g_SFP_CHANNELS,
+        g_BYTES         => 1,
+        g_REFCLK_MHZ    => 125.0,
+        g_RATE_MBPS     => 1250,
+        g_CLK_MHZ       => g_CLK_MHZ--,
     )
     port map (
         i_rx_serial => i_sfp_rx,
@@ -675,14 +765,16 @@ begin
 
     --! PCIe register mapping
     e_register_mapping : entity work.pcie_register_mapping
+    generic map (
+        g_FARM => g_FARM--,
+    )
     port map(
         i_pcie0_rregs_A     => i_pcie0_rregs_A,
         i_pcie0_rregs_B     => i_pcie0_rregs_B,
         i_pcie0_rregs_C     => i_pcie0_rregs_C,
 
         i_local_pcie0_rregs_A   => local_pcie0_rregs_A,
-        i_local_pcie0_rregs_B   => local_pcie0_rregs_B,
-        i_local_pcie0_rregs_C   => local_pcie0_rregs_C,
+        i_local_pcie0_rregs_C	=> local_pcie0_rregs_C,
 
         o_pcie0_rregs       => pcie0_rregs,
 
