@@ -36,11 +36,13 @@ int main()
     if ( !mu.is_ok() ) return -1;
     cout << "MuDaq is ok" << endl;
     
-    // reset all
     cout << "Reset Link Status Reg " << RESET_LINK_STATUS_REGISTER_R << endl;
-    uint32_t reset_reg = 0;
-    reset_reg = SET_RESET_BIT_ALL(reset_reg);
-    mu.write_register_wait(RESET_REGISTER_W, reset_reg, 100);
+    
+    // reset all
+    uint32_t reset_regs = 0;
+    reset_regs = SET_RESET_BIT_ALL(reset_regs);
+    mu.write_register(RESET_REGISTER_W, reset_regs);
+    mu.write_register(RESET_REGISTER_W, 0x0);
     
     // get Reset Link Status
     mu.write_register(RESET_LINK_RUN_NUMBER_REGISTER_W, 0xAAAAAAAA);
@@ -55,6 +57,8 @@ int main()
         printf("  [3] => start run\n");
         printf("  [4] => end run\n");
         printf("  [5] => abort run\n");
+        printf("  [6] => enable clk phase test 0 \n");
+        printf("  [7] => enable clk phase test 1 \n");
 
         cout << "Select entry ...";
         cin >> cmd;
@@ -79,6 +83,24 @@ int main()
             mu.write_register(RESET_LINK_CTL_REGISTER_W, 0xF0000010);
             mu.write_register(RESET_LINK_CTL_REGISTER_W, 0x0);
             break;
+        case '6':
+            mu.write_register(CLK_LINK_0_REGISTER_W, 0xFFF00000);
+            mu.write_register(CLK_LINK_1_REGISTER_W, 0x000FFFFF);
+            mu.write_register(CLK_LINK_2_REGISTER_W, 0xFFF00000);
+            mu.write_register(CLK_LINK_3_REGISTER_W, 0xFFF00000);
+            mu.write_register(CLK_LINK_REST_REGISTER_W, 0xFFFFF00FF);
+            mu.write_register(RESET_REGISTER_W, reset_regs);
+            mu.write_register(RESET_REGISTER_W, 0x0);
+            break;
+        case '7':
+            mu.write_register(CLK_LINK_0_REGISTER_W, 0xFFF00000);
+            mu.write_register(CLK_LINK_1_REGISTER_W, 0xFFF00000);
+            mu.write_register(CLK_LINK_2_REGISTER_W, 0xFFF00000);
+            mu.write_register(CLK_LINK_3_REGISTER_W, 0xFFF00000);
+            mu.write_register(CLK_LINK_REST_REGISTER_W, 0xFFFFFFFFF);
+            mu.write_register(RESET_REGISTER_W, reset_regs);
+            mu.write_register(RESET_REGISTER_W, 0x0);
+            break;    
         default:
             printf("invalid command: '%c'\n", cmd);
         }

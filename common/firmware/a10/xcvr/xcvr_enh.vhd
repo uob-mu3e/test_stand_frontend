@@ -55,8 +55,8 @@ architecture arch of ${NAME} is
     signal av_ctrl : work.util.avalon_t;
     signal av_phy, av_pll : work.util.avalon_t;
 
-    signal rx_parallel_data     :   std_logic_vector(NUMBER_OF_CHANNELS_g*CHANNEL_WIDTH_g/8*10-1 downto 0);
-    signal tx_parallel_data     :   std_logic_vector(NUMBER_OF_CHANNELS_g*CHANNEL_WIDTH_g/8*10-1 downto 0);
+    signal rx_parallel_data     :   std_logic_vector(NUMBER_OF_CHANNELS_g*work.util.value_if(CHANNEL_WIDTH_g = 8 or CHANNEL_WIDTH_g = 16 or CHANNEL_WIDTH_g = 32, CHANNEL_WIDTH_g/8*10, CHANNEL_WIDTH_g)-1 downto 0);
+    signal tx_parallel_data     :   std_logic_vector(NUMBER_OF_CHANNELS_g*work.util.value_if(CHANNEL_WIDTH_g = 8 or CHANNEL_WIDTH_g = 16 or CHANNEL_WIDTH_g = 32, CHANNEL_WIDTH_g/8*10, CHANNEL_WIDTH_g)-1 downto 0);
 
     signal rx_data              :   std_logic_vector(NUMBER_OF_CHANNELS_g*CHANNEL_WIDTH_g-1 downto 0);
     signal rx_datak             :   std_logic_vector(NUMBER_OF_CHANNELS_g*CHANNEL_WIDTH_g/8-1 downto 0);
@@ -131,70 +131,79 @@ begin
 
     g_rx_align : for i in NUMBER_OF_CHANNELS_g-1 downto 0 generate
     begin
-        process(i_rx_clkin(i))
-        begin
-        if rising_edge(i_rx_clkin(i)) then
-            rx(i).data10 <= rx_parallel_data(CHANNEL_WIDTH_g/8*10-1 + CHANNEL_WIDTH_g/8*10*i downto CHANNEL_WIDTH_g/8*10*i);
-        end if;
-        end process;
-
-        e_rx_8b10b_dec : entity work.dec_8b10b_n
-        generic map (
-            N_BYTES_g => CHANNEL_WIDTH_g/8--,
-        )
-        port map (
-            i_data => rx(i).data10,
-            o_data => rx_data(CHANNEL_WIDTH_g-1 + CHANNEL_WIDTH_g*i downto CHANNEL_WIDTH_g*i),
-            o_datak => rx_datak(CHANNEL_WIDTH_g/8-1 + CHANNEL_WIDTH_g/8*i downto CHANNEL_WIDTH_g/8*i),
-            o_err => rx_errdetect(i*CHANNEL_WIDTH_g/8),
-            i_reset_n => '1',
-            i_clk => i_rx_clkin(i)--,
-        );
-        rx_patterndetect(i*CHANNEL_WIDTH_g/8) <= '1' when (
-            rx_data(7 + CHANNEL_WIDTH_g*i downto CHANNEL_WIDTH_g*i) = X"BC" and
-            rx_datak(CHANNEL_WIDTH_g/8*i) = '1'
-        ) else '0';
-
-        e_tx_8b10b_enc : entity work.enc_8b10b_n
-        generic map (
-            N_BYTES_g => CHANNEL_WIDTH_g/8--,
-        )
-        port map (
-            i_data => i_tx_data(CHANNEL_WIDTH_g-1 + CHANNEL_WIDTH_g*i downto CHANNEL_WIDTH_g*i),
-            i_datak => i_tx_datak(CHANNEL_WIDTH_g/8-1 + CHANNEL_WIDTH_g/8*i downto CHANNEL_WIDTH_g/8*i),
-            o_data => tx_parallel_data(CHANNEL_WIDTH_g/8*10-1 + CHANNEL_WIDTH_g/8*10*i downto CHANNEL_WIDTH_g/8*10*i),
-            o_err => open,
-            i_reset_n => '1',
-            i_clk => i_tx_clkin(i)--,
-        );
-
         e_rx_rst_n : entity work.reset_sync
         port map ( o_reset_n => rx(i).rst_n, i_reset_n => i_reset_n and rx_rst_n(i), i_clk => i_rx_clkin(i) );
 
-        e_rx_align : entity work.rx_align
-        generic map (
-            CHANNEL_WIDTH_g => CHANNEL_WIDTH_g,
-            K_g => K_g--,
-        )
-        port map (
-            o_data      => rx(i).data,
-            o_datak     => rx(i).datak,
+        generate_8b10b : if ( CHANNEL_WIDTH_g = 8 or CHANNEL_WIDTH_g = 16 or CHANNEL_WIDTH_g = 32 ) generate
+            process(i_rx_clkin(i))
+            begin
+            if rising_edge(i_rx_clkin(i)) then
+                rx(i).data10 <= rx_parallel_data(CHANNEL_WIDTH_g/8*10-1 + CHANNEL_WIDTH_g/8*10*i downto CHANNEL_WIDTH_g/8*10*i);
+            end if;
+            end process;
 
-            o_locked    => rx(i).locked,
+            e_rx_8b10b_dec : entity work.dec_8b10b_n
+            generic map (
+                N_BYTES_g => CHANNEL_WIDTH_g/8--,
+            )
+            port map (
+                i_data => rx(i).data10,
+                o_data => rx_data(CHANNEL_WIDTH_g-1 + CHANNEL_WIDTH_g*i downto CHANNEL_WIDTH_g*i),
+                o_datak => rx_datak(CHANNEL_WIDTH_g/8-1 + CHANNEL_WIDTH_g/8*i downto CHANNEL_WIDTH_g/8*i),
+                o_err => rx_errdetect(i*CHANNEL_WIDTH_g/8),
+                i_reset_n => '1',
+                i_clk => i_rx_clkin(i)--,
+            );
+            rx_patterndetect(i*CHANNEL_WIDTH_g/8) <= '1' when (
+                rx_data(7 + CHANNEL_WIDTH_g*i downto CHANNEL_WIDTH_g*i) = X"BC" and
+                rx_datak(CHANNEL_WIDTH_g/8*i) = '1'
+            ) else '0';
 
-            i_data      => rx_data(CHANNEL_WIDTH_g-1 + CHANNEL_WIDTH_g*i downto CHANNEL_WIDTH_g*i),
-            i_datak     => rx_datak(CHANNEL_WIDTH_g/8-1 + CHANNEL_WIDTH_g/8*i downto CHANNEL_WIDTH_g/8*i),
+            e_tx_8b10b_enc : entity work.enc_8b10b_n
+            generic map (
+                N_BYTES_g => CHANNEL_WIDTH_g/8--,
+            )
+            port map (
+                i_data => i_tx_data(CHANNEL_WIDTH_g-1 + CHANNEL_WIDTH_g*i downto CHANNEL_WIDTH_g*i),
+                i_datak => i_tx_datak(CHANNEL_WIDTH_g/8-1 + CHANNEL_WIDTH_g/8*i downto CHANNEL_WIDTH_g/8*i),
+                o_data => tx_parallel_data(CHANNEL_WIDTH_g/8*10-1 + CHANNEL_WIDTH_g/8*10*i downto CHANNEL_WIDTH_g/8*10*i),
+                o_err => open,
+                i_reset_n => '1',
+                i_clk => i_tx_clkin(i)--,
+            );
 
-            i_syncstatus        => rx(i).syncstatus,
-            i_patterndetect     => rx(i).patterndetect,
-            o_enapatternalign   => rx_enapatternalign(i),
+            e_rx_align : entity work.rx_align
+            generic map (
+                CHANNEL_WIDTH_g => CHANNEL_WIDTH_g,
+                K_g => K_g--,
+            )
+            port map (
+                o_data      => rx(i).data,
+                o_datak     => rx(i).datak,
 
-            i_errdetect => rx(i).errdetect,
-            i_disperr   => rx(i).disperr,
+                o_locked    => rx(i).locked,
 
-            i_reset_n   => rx(i).rst_n,
-            i_clk       => i_rx_clkin(i)--,
-        );
+                i_data      => rx_data(CHANNEL_WIDTH_g-1 + CHANNEL_WIDTH_g*i downto CHANNEL_WIDTH_g*i),
+                i_datak     => rx_datak(CHANNEL_WIDTH_g/8-1 + CHANNEL_WIDTH_g/8*i downto CHANNEL_WIDTH_g/8*i),
+
+                i_syncstatus        => rx(i).syncstatus,
+                i_patterndetect     => rx(i).patterndetect,
+                o_enapatternalign   => rx_enapatternalign(i),
+
+                i_errdetect => rx(i).errdetect,
+                i_disperr   => rx(i).disperr,
+
+                i_reset_n   => rx(i).rst_n,
+                i_clk       => i_rx_clkin(i)--,
+            );
+        end generate;
+
+        generate_no8b10b : if ( CHANNEL_WIDTH_g = 10 or CHANNEL_WIDTH_g = 20 or CHANNEL_WIDTH_g = 40 ) generate
+            tx_parallel_data(CHANNEL_WIDTH_g-1 + CHANNEL_WIDTH_g*i downto CHANNEL_WIDTH_g*i) <= i_tx_data(CHANNEL_WIDTH_g-1 + CHANNEL_WIDTH_g*i downto CHANNEL_WIDTH_g*i);
+
+            rx(i).locked <= '1';
+            rx_enapatternalign(i) <= '0';
+        end generate;
 
         -- data counter
         e_rx_Gbit : entity work.counter
@@ -295,7 +304,9 @@ begin
                 av_ctrl.readdata(rx(ch).err_cnt'range) <= rx(ch).err_cnt;
                 --
             when X"2A" =>
-                av_ctrl.readdata(rx(ch).data'range) <= rx(ch).data;
+			    if ( CHANNEL_WIDTH_g <= 32 ) then
+                    av_ctrl.readdata(rx(ch).data'range) <= rx(ch).data;
+				end if;
             when X"2B" =>
                 av_ctrl.readdata(rx(ch).datak'range) <= rx(ch).datak;
             when X"2C" =>

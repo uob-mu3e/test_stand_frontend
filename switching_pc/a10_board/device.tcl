@@ -20,6 +20,12 @@ set xcvr_reset_refclk_mhz 125.0
 set xcvr_reset_rate_mbps 1250
 set xcvr_reset_channels 4
 
+set xcvr_clk_clk_mhz ${nios_clk_mhz}
+set xcvr_clk_refclk_mhz 125.0
+set xcvr_clk_rate_mbps 5000
+set xcvr_clk_channels 4
+set xcvr_clk_width 40
+
 set xcvr_sfp_clk_mhz ${nios_clk_mhz}
 set xcvr_sfp_refclk_mhz 125.0
 set xcvr_sfp_rate_mbps 1250
