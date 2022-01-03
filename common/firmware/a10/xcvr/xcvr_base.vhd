@@ -10,7 +10,7 @@ use ieee.std_logic_unsigned.all;
 
 entity xcvr_base is
 generic (
-    g_MODE : string := "basic_std";
+    g_MODE : string := "std";
     g_CHANNELS : positive := 4;
     g_BITS : positive := 40;
     g_REFCLK_MHZ : real;
@@ -128,7 +128,7 @@ begin
     o_rx_lockedtodata <= rx_is_lockedtodata;
 
     generate_xcvr_phy_2_10_125_1250 : if (
-        g_MODE = "basic_std" and g_CHANNELS = 2 and g_BITS = 10 and g_REFCLK_MHZ = 125.0 and g_RATE_MBPS = 1250
+        g_MODE = "std" and g_CHANNELS = 2 and g_BITS = 10 and g_REFCLK_MHZ = 125.0 and g_RATE_MBPS = 1250
     ) generate
     e_phy : component work.cmp.ip_xcvr_phy_2_10_125_1250
     port map (
@@ -177,7 +177,7 @@ begin
     end generate;
 
     generate_xcvr_phy_4_10_125_1250 : if (
-        g_MODE = "basic_std" and g_CHANNELS = 4 and g_BITS = 10 and g_REFCLK_MHZ = 125.0 and g_RATE_MBPS = 1250
+        g_MODE = "std" and g_CHANNELS = 4 and g_BITS = 10 and g_REFCLK_MHZ = 125.0 and g_RATE_MBPS = 1250
     ) generate
     e_phy : component work.cmp.ip_xcvr_phy_4_10_125_1250
     port map (
@@ -226,7 +226,7 @@ begin
     end generate;
 
     generate_xcvr_phy_4_40_125_5000 : if (
-        g_MODE = "basic_std" and g_CHANNELS = 4 and g_BITS = 40 and g_REFCLK_MHZ = 125.0 and g_RATE_MBPS = 5000
+        g_MODE = "std" and g_CHANNELS = 4 and g_BITS = 40 and g_REFCLK_MHZ = 125.0 and g_RATE_MBPS = 5000
     ) generate
     e_phy : component work.cmp.ip_xcvr_phy_4_40_125_5000
     port map (
@@ -274,57 +274,8 @@ begin
     );
     end generate;
 
-    generate_xcvr_phy_4_40_125_5000_enh : if (
-        g_MODE = "basic_enh" and g_CHANNELS = 4 and g_BITS = 40 and g_REFCLK_MHZ = 125.0 and g_RATE_MBPS = 5000
-    ) generate
-    e_phy : component work.cmp.ip_xcvr_phy_4_40_125_5000_enh
-    port map (
-        tx_serial_data  => o_tx_serial,
-        rx_serial_data  => i_rx_serial,
-
-        rx_cdr_refclk0  => i_refclk,
-        tx_serial_clk0  => (others => tx_serial_clk),
-
-        tx_analogreset  => tx_analogreset,
-        tx_digitalreset => tx_digitalreset,
-        rx_analogreset  => rx_analogreset,
-        rx_digitalreset => rx_digitalreset,
-
-        tx_cal_busy     => tx_cal_busy,
-        rx_cal_busy     => rx_cal_busy,
-
-        rx_is_lockedtoref   => rx_is_lockedtoref,
-        rx_is_lockedtodata  => rx_is_lockedtodata,
-
-        rx_bitslip          => i_rx_bitslip,
-
-        rx_parallel_data    => rx_parallel_data,
-        tx_parallel_data    => tx_parallel_data,
-        tx_enh_data_valid   => (others => '1'),
-
-        tx_clkout       => o_tx_clkout,
-        tx_coreclkin    => i_tx_clkin,
-        rx_clkout       => o_rx_clkout,
-        rx_coreclkin    => i_rx_clkin,
-
-        rx_seriallpbken => i_rx_seriallpbken,
-
-        unused_tx_parallel_data => (others => '0'),
-        unused_rx_parallel_data => open,
-
-        reconfig_address        => std_logic_vector(to_unsigned(ch, work.util.vector_width(g_CHANNELS))) & i_phy_address,
-        reconfig_read(0)        => i_phy_read,
-        reconfig_readdata       => o_phy_readdata,
-        reconfig_write(0)       => i_phy_write,
-        reconfig_writedata      => i_phy_writedata,
-        reconfig_waitrequest(0) => o_phy_waitrequest,
-        reconfig_reset(0)       => not i_reset_n,
-        reconfig_clk(0)         => i_clk--,
-    );
-    end generate;
-
     generate_xcvr_phy_4_40_125_6250 : if (
-        g_MODE = "basic_std" and g_CHANNELS = 4 and g_BITS = 40 and g_REFCLK_MHZ = 125.0 and g_RATE_MBPS = 6250
+        g_MODE = "std" and g_CHANNELS = 4 and g_BITS = 40 and g_REFCLK_MHZ = 125.0 and g_RATE_MBPS = 6250
     ) generate
     e_phy : component work.cmp.ip_xcvr_phy_4_40_125_6250
     port map (
@@ -372,10 +323,10 @@ begin
     );
     end generate;
 
-    generate_xcvr_phy_6_40_125_5000_enh : if (
-        g_MODE = "basic_enh" and g_CHANNELS = 6 and g_BITS = 40 and g_REFCLK_MHZ = 125.0 and g_RATE_MBPS = 5000
+    generate_xcvr_phy_6_40_125_5000 : if (
+        g_MODE = "std" and g_CHANNELS = 6 and g_BITS = 40 and g_REFCLK_MHZ = 125.0 and g_RATE_MBPS = 5000
     ) generate
-    e_phy : component work.cmp.ip_xcvr_phy_6_40_125_5000_enh
+    e_phy : component work.cmp.ip_xcvr_phy_6_40_125_5000
     port map (
         tx_serial_data  => o_tx_serial,
         rx_serial_data  => i_rx_serial,
@@ -398,7 +349,7 @@ begin
 
         rx_parallel_data    => rx_parallel_data,
         tx_parallel_data    => tx_parallel_data,
-        tx_enh_data_valid   => (others => '1'),
+--        tx_enh_data_valid   => (others => '1'),
 
         tx_clkout       => o_tx_clkout,
         tx_coreclkin    => i_tx_clkin,
@@ -422,7 +373,7 @@ begin
     end generate;
 
     generate_xcvr_phy_6_40_125_6250 : if (
-        g_MODE = "basic_std" and g_CHANNELS = 6 and g_BITS = 40 and g_REFCLK_MHZ = 125.0 and g_RATE_MBPS = 6250
+        g_MODE = "std" and g_CHANNELS = 6 and g_BITS = 40 and g_REFCLK_MHZ = 125.0 and g_RATE_MBPS = 6250
     ) generate
     e_phy : component work.cmp.ip_xcvr_phy_6_40_125_6250
     port map (
@@ -470,8 +421,204 @@ begin
     );
     end generate;
 
+    generate_xcvr_phy_4_40_125_5000_enh : if (
+        g_MODE = "enh" and g_CHANNELS = 4 and g_BITS = 40 and g_REFCLK_MHZ = 125.0 and g_RATE_MBPS = 5000
+    ) generate
+    e_phy : component work.cmp.ip_xcvr_phy_4_40_125_5000_enh
+    port map (
+        tx_serial_data  => o_tx_serial,
+        rx_serial_data  => i_rx_serial,
+
+        rx_cdr_refclk0  => i_refclk,
+        tx_serial_clk0  => (others => tx_serial_clk),
+
+        tx_analogreset  => tx_analogreset,
+        tx_digitalreset => tx_digitalreset,
+        rx_analogreset  => rx_analogreset,
+        rx_digitalreset => rx_digitalreset,
+
+        tx_cal_busy     => tx_cal_busy,
+        rx_cal_busy     => rx_cal_busy,
+
+        rx_is_lockedtoref   => rx_is_lockedtoref,
+        rx_is_lockedtodata  => rx_is_lockedtodata,
+
+        rx_bitslip          => i_rx_bitslip,
+
+        rx_parallel_data    => rx_parallel_data,
+        tx_parallel_data    => tx_parallel_data,
+        tx_enh_data_valid   => (others => '1'),
+
+        tx_clkout       => o_tx_clkout,
+        tx_coreclkin    => i_tx_clkin,
+        rx_clkout       => o_rx_clkout,
+        rx_coreclkin    => i_rx_clkin,
+
+        rx_seriallpbken => i_rx_seriallpbken,
+
+        unused_tx_parallel_data => (others => '0'),
+        unused_rx_parallel_data => open,
+
+        reconfig_address        => std_logic_vector(to_unsigned(ch, work.util.vector_width(g_CHANNELS))) & i_phy_address,
+        reconfig_read(0)        => i_phy_read,
+        reconfig_readdata       => o_phy_readdata,
+        reconfig_write(0)       => i_phy_write,
+        reconfig_writedata      => i_phy_writedata,
+        reconfig_waitrequest(0) => o_phy_waitrequest,
+        reconfig_reset(0)       => not i_reset_n,
+        reconfig_clk(0)         => i_clk--,
+    );
+    end generate;
+
+    generate_xcvr_phy_4_40_125_6250_enh : if (
+        g_MODE = "enh" and g_CHANNELS = 4 and g_BITS = 40 and g_REFCLK_MHZ = 125.0 and g_RATE_MBPS = 6250
+    ) generate
+    e_phy : component work.cmp.ip_xcvr_phy_4_40_125_6250_enh
+    port map (
+        tx_serial_data  => o_tx_serial,
+        rx_serial_data  => i_rx_serial,
+
+        rx_cdr_refclk0  => i_refclk,
+        tx_serial_clk0  => (others => tx_serial_clk),
+
+        tx_analogreset  => tx_analogreset,
+        tx_digitalreset => tx_digitalreset,
+        rx_analogreset  => rx_analogreset,
+        rx_digitalreset => rx_digitalreset,
+
+        tx_cal_busy     => tx_cal_busy,
+        rx_cal_busy     => rx_cal_busy,
+
+        rx_is_lockedtoref   => rx_is_lockedtoref,
+        rx_is_lockedtodata  => rx_is_lockedtodata,
+
+        rx_bitslip          => i_rx_bitslip,
+
+        rx_parallel_data    => rx_parallel_data,
+        tx_parallel_data    => tx_parallel_data,
+        tx_enh_data_valid   => (others => '1'),
+
+        tx_clkout       => o_tx_clkout,
+        tx_coreclkin    => i_tx_clkin,
+        rx_clkout       => o_rx_clkout,
+        rx_coreclkin    => i_rx_clkin,
+
+        rx_seriallpbken => i_rx_seriallpbken,
+
+        unused_tx_parallel_data => (others => '0'),
+        unused_rx_parallel_data => open,
+
+        reconfig_address        => std_logic_vector(to_unsigned(ch, work.util.vector_width(g_CHANNELS))) & i_phy_address,
+        reconfig_read(0)        => i_phy_read,
+        reconfig_readdata       => o_phy_readdata,
+        reconfig_write(0)       => i_phy_write,
+        reconfig_writedata      => i_phy_writedata,
+        reconfig_waitrequest(0) => o_phy_waitrequest,
+        reconfig_reset(0)       => not i_reset_n,
+        reconfig_clk(0)         => i_clk--,
+    );
+    end generate;
+
+    generate_xcvr_phy_4_40_125_10000_enh : if (
+        g_MODE = "enh" and g_CHANNELS = 4 and g_BITS = 40 and g_REFCLK_MHZ = 125.0 and g_RATE_MBPS = 10000
+    ) generate
+    e_phy : component work.cmp.ip_xcvr_phy_4_40_125_10000_enh
+    port map (
+        tx_serial_data  => o_tx_serial,
+        rx_serial_data  => i_rx_serial,
+
+        rx_cdr_refclk0  => i_refclk,
+        tx_serial_clk0  => (others => tx_serial_clk),
+
+        tx_analogreset  => tx_analogreset,
+        tx_digitalreset => tx_digitalreset,
+        rx_analogreset  => rx_analogreset,
+        rx_digitalreset => rx_digitalreset,
+
+        tx_cal_busy     => tx_cal_busy,
+        rx_cal_busy     => rx_cal_busy,
+
+        rx_is_lockedtoref   => rx_is_lockedtoref,
+        rx_is_lockedtodata  => rx_is_lockedtodata,
+
+        rx_bitslip          => i_rx_bitslip,
+
+        rx_parallel_data    => rx_parallel_data,
+        tx_parallel_data    => tx_parallel_data,
+        tx_enh_data_valid   => (others => '1'),
+
+        tx_clkout       => o_tx_clkout,
+        tx_coreclkin    => i_tx_clkin,
+        rx_clkout       => o_rx_clkout,
+        rx_coreclkin    => i_rx_clkin,
+
+        rx_seriallpbken => i_rx_seriallpbken,
+
+        unused_tx_parallel_data => (others => '0'),
+        unused_rx_parallel_data => open,
+
+        reconfig_address        => std_logic_vector(to_unsigned(ch, work.util.vector_width(g_CHANNELS))) & i_phy_address,
+        reconfig_read(0)        => i_phy_read,
+        reconfig_readdata       => o_phy_readdata,
+        reconfig_write(0)       => i_phy_write,
+        reconfig_writedata      => i_phy_writedata,
+        reconfig_waitrequest(0) => o_phy_waitrequest,
+        reconfig_reset(0)       => not i_reset_n,
+        reconfig_clk(0)         => i_clk--,
+    );
+    end generate;
+
+    generate_xcvr_phy_6_40_125_5000_enh : if (
+        g_MODE = "enh" and g_CHANNELS = 6 and g_BITS = 40 and g_REFCLK_MHZ = 125.0 and g_RATE_MBPS = 5000
+    ) generate
+    e_phy : component work.cmp.ip_xcvr_phy_6_40_125_5000_enh
+    port map (
+        tx_serial_data  => o_tx_serial,
+        rx_serial_data  => i_rx_serial,
+
+        rx_cdr_refclk0  => i_refclk,
+        tx_serial_clk0  => (others => tx_serial_clk),
+
+        tx_analogreset  => tx_analogreset,
+        tx_digitalreset => tx_digitalreset,
+        rx_analogreset  => rx_analogreset,
+        rx_digitalreset => rx_digitalreset,
+
+        tx_cal_busy     => tx_cal_busy,
+        rx_cal_busy     => rx_cal_busy,
+
+        rx_is_lockedtoref   => rx_is_lockedtoref,
+        rx_is_lockedtodata  => rx_is_lockedtodata,
+
+        rx_bitslip          => i_rx_bitslip,
+
+        rx_parallel_data    => rx_parallel_data,
+        tx_parallel_data    => tx_parallel_data,
+        tx_enh_data_valid   => (others => '1'),
+
+        tx_clkout       => o_tx_clkout,
+        tx_coreclkin    => i_tx_clkin,
+        rx_clkout       => o_rx_clkout,
+        rx_coreclkin    => i_rx_clkin,
+
+        rx_seriallpbken => i_rx_seriallpbken,
+
+        unused_tx_parallel_data => (others => '0'),
+        unused_rx_parallel_data => open,
+
+        reconfig_address        => std_logic_vector(to_unsigned(ch, work.util.vector_width(g_CHANNELS))) & i_phy_address,
+        reconfig_read(0)        => i_phy_read,
+        reconfig_readdata       => o_phy_readdata,
+        reconfig_write(0)       => i_phy_write,
+        reconfig_writedata      => i_phy_writedata,
+        reconfig_waitrequest(0) => o_phy_waitrequest,
+        reconfig_reset(0)       => not i_reset_n,
+        reconfig_clk(0)         => i_clk--,
+    );
+    end generate;
+
     generate_xcvr_phy_6_40_125_6250_enh : if (
-        g_MODE = "basic_enh" and g_CHANNELS = 6 and g_BITS = 40 and g_REFCLK_MHZ = 125.0 and g_RATE_MBPS = 6250
+        g_MODE = "enh" and g_CHANNELS = 6 and g_BITS = 40 and g_REFCLK_MHZ = 125.0 and g_RATE_MBPS = 6250
     ) generate
     e_phy : component work.cmp.ip_xcvr_phy_6_40_125_6250_enh
     port map (
@@ -520,7 +667,7 @@ begin
     end generate;
 
     generate_xcvr_phy_6_40_125_10000_enh : if (
-        g_MODE = "basic_enh" and g_CHANNELS = 6 and g_BITS = 40 and g_REFCLK_MHZ = 125.0 and g_RATE_MBPS = 10000
+        g_MODE = "enh" and g_CHANNELS = 6 and g_BITS = 40 and g_REFCLK_MHZ = 125.0 and g_RATE_MBPS = 10000
     ) generate
     e_phy : component work.cmp.ip_xcvr_phy_6_40_125_10000_enh
     port map (
@@ -569,15 +716,20 @@ begin
     end generate;
 
     assert ( false
-        or ( g_MODE = "basic_std" and g_CHANNELS = 2 and g_BITS = 10 and g_REFCLK_MHZ = 125.0 and g_RATE_MBPS = 1250 )
-        or ( g_MODE = "basic_std" and g_CHANNELS = 4 and g_BITS = 10 and g_REFCLK_MHZ = 125.0 and g_RATE_MBPS = 1250 )
-        or ( g_MODE = "basic_std" and g_CHANNELS = 4 and g_BITS = 40 and g_REFCLK_MHZ = 125.0 and g_RATE_MBPS = 5000 )
-        or ( g_MODE = "basic_enh" and g_CHANNELS = 4 and g_BITS = 40 and g_REFCLK_MHZ = 125.0 and g_RATE_MBPS = 5000 )
-        or ( g_MODE = "basic_std" and g_CHANNELS = 4 and g_BITS = 40 and g_REFCLK_MHZ = 125.0 and g_RATE_MBPS = 6250 )
-        or ( g_MODE = "basic_enh" and g_CHANNELS = 6 and g_BITS = 40 and g_REFCLK_MHZ = 125.0 and g_RATE_MBPS = 5000 )
-        or ( g_MODE = "basic_std" and g_CHANNELS = 6 and g_BITS = 40 and g_REFCLK_MHZ = 125.0 and g_RATE_MBPS = 6250 )
-        or ( g_MODE = "basic_enh" and g_CHANNELS = 6 and g_BITS = 40 and g_REFCLK_MHZ = 125.0 and g_RATE_MBPS = 6250 )
-        or ( g_MODE = "basic_enh" and g_CHANNELS = 6 and g_BITS = 40 and g_REFCLK_MHZ = 125.0 and g_RATE_MBPS = 10000 )
+        -- mode std
+        or ( g_MODE = "std" and g_CHANNELS = 2 and g_BITS = 10 and g_REFCLK_MHZ = 125.0 and g_RATE_MBPS = 1250 )
+        or ( g_MODE = "std" and g_CHANNELS = 4 and g_BITS = 10 and g_REFCLK_MHZ = 125.0 and g_RATE_MBPS = 1250 )
+        or ( g_MODE = "std" and g_CHANNELS = 4 and g_BITS = 40 and g_REFCLK_MHZ = 125.0 and g_RATE_MBPS = 5000 )
+        or ( g_MODE = "std" and g_CHANNELS = 4 and g_BITS = 40 and g_REFCLK_MHZ = 125.0 and g_RATE_MBPS = 6250 )
+        or ( g_MODE = "std" and g_CHANNELS = 6 and g_BITS = 40 and g_REFCLK_MHZ = 125.0 and g_RATE_MBPS = 5000 )
+        or ( g_MODE = "std" and g_CHANNELS = 6 and g_BITS = 40 and g_REFCLK_MHZ = 125.0 and g_RATE_MBPS = 6250 )
+        -- mode enh
+        or ( g_MODE = "enh" and g_CHANNELS = 4 and g_BITS = 40 and g_REFCLK_MHZ = 125.0 and g_RATE_MBPS = 5000 )
+        or ( g_MODE = "enh" and g_CHANNELS = 4 and g_BITS = 40 and g_REFCLK_MHZ = 125.0 and g_RATE_MBPS = 6250 )
+        or ( g_MODE = "enh" and g_CHANNELS = 4 and g_BITS = 40 and g_REFCLK_MHZ = 125.0 and g_RATE_MBPS = 10000 )
+        or ( g_MODE = "enh" and g_CHANNELS = 6 and g_BITS = 40 and g_REFCLK_MHZ = 125.0 and g_RATE_MBPS = 5000 )
+        or ( g_MODE = "enh" and g_CHANNELS = 6 and g_BITS = 40 and g_REFCLK_MHZ = 125.0 and g_RATE_MBPS = 6250 )
+        or ( g_MODE = "enh" and g_CHANNELS = 6 and g_BITS = 40 and g_REFCLK_MHZ = 125.0 and g_RATE_MBPS = 10000 )
     ) report "ERROR: undefined 'ip_xcvr_phy_'"
         & ", g_MODE = '" & g_MODE & "'"
         & ", g_CHANNELS = " & integer'image(g_CHANNELS)

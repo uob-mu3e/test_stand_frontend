@@ -4,7 +4,7 @@ use ieee.numeric_std.all;
 
 entity xcvr_block is
 generic (
-    g_MODE : string := "basic_std";
+    g_MODE : string := "std";
     g_XCVR_N : positive := 8; -- g_XCVR_N <= 16
     g_CHANNELS : positive := 6;
     g_REFCLK_MHZ : real;

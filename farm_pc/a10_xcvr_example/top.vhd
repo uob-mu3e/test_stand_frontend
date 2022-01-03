@@ -196,7 +196,7 @@ begin
 
     e_xcvr0_block : entity work.xcvr_block
     generic map (
---        g_MODE => "basic_enh",
+--        g_MODE => "enh",
         g_XCVR_N => 2,
         g_CHANNELS => 4,
         g_REFCLK_MHZ => 125.0,

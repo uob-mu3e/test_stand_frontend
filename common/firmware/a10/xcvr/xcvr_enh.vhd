@@ -10,7 +10,7 @@ use ieee.std_logic_unsigned.all;
 
 entity xcvr_enh is
 generic (
-    g_MODE : string := "basic_std";
+    g_MODE : string := "std";
     g_CHANNELS : positive := 4;
     g_BYTES : positive := 4;
     g_K : std_logic_vector(7 downto 0) := work.util.D28_5;
@@ -123,7 +123,7 @@ begin
 
         e_rx_8b10b_dec : entity work.dec_8b10b_n
         generic map (
-            N_BYTES_g => g_BYTES--,
+            g_BYTES => g_BYTES--,
         )
         port map (
             i_data => rx(i).data10,
@@ -136,7 +136,7 @@ begin
 
         e_tx_8b10b_enc : entity work.enc_8b10b_n
         generic map (
-            N_BYTES_g => g_BYTES--,
+            g_BYTES => g_BYTES--,
         )
         port map (
             i_data => i_tx_data(g_BYTES*8-1 + g_BYTES*8*i downto g_BYTES*8*i),
