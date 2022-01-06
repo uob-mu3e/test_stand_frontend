@@ -11,6 +11,10 @@ ifndef QUARTUS_ROOTDIR
     $(error QUARTUS_ROOTDIR is undefined)
 endif
 
+ifeq ($(QUARTUS_OUTPUT_FILES),)
+    override QUARTUS_OUTPUT_FILES := output_files
+endif
+
 # directory for generated files (*.qsys, *.sopcinfo, etc.)
 # TODO: rename PREFIX -> QP_TMP_DIR
 ifeq ($(PREFIX),)
@@ -23,7 +27,7 @@ endif
 
 # location of compiled firmware (SOF file)
 ifeq ($(SOF),)
-    SOF := output_files/top.sof
+    SOF := $(QUARTUS_OUTPUT_FILES)/top.sof
 endif
 
 # location of generated nios.sopcinfo
@@ -83,7 +87,7 @@ top.qsf : $(MAKEFILE_LIST)
 	cat << EOF > "$@"
 	set_global_assignment -name QIP_FILE "top.qip"
 	set_global_assignment -name TOP_LEVEL_ENTITY top
-	set_global_assignment -name PROJECT_OUTPUT_DIRECTORY output_files
+	set_global_assignment -name PROJECT_OUTPUT_DIRECTORY "$(QUARTUS_OUTPUT_FILES)"
 	set_global_assignment -name SOURCE_TCL_SCRIPT_FILE "util/altera/settings.tcl"
 	set_global_assignment -name QIP_FILE "$(PREFIX)/include.qip"
 	EOF
@@ -171,8 +175,8 @@ $(APP_DIR)/main.elf : $(SRC_DIR)/* $(BSP_DIR)/settings.bsp
 	nios2-elf-objcopy "$(APP_DIR)/main.elf" -O srec "$(APP_DIR)/main.srec"
 	# generate mem_init/*.hex files (see AN730 / HEX File Generation)
 	$(MAKE) -C "$(APP_DIR)" mem_init_generate
-	mkdir -pv -- "output_files/"
-	cp -av -- "$(APP_DIR)/mem_init/nios_ram.hex" "output_files/"
+	mkdir -pv -- "$(QUARTUS_OUTPUT_FILES)"
+	cp -av -- "$(APP_DIR)/mem_init/nios_ram.hex" "$(QUARTUS_OUTPUT_FILES)/"
 
 app_gdb:
 	nios2-gdb-server --cable $(CABLE) --tcpport 2342 --tcptimeout 2 &
