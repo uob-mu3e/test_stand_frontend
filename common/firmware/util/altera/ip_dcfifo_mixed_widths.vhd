@@ -49,7 +49,7 @@ ENTITY ip_dcfifo_mixed_widths IS
         DATA_WIDTH_r    : positive := 8;
         SYNC_CLKS       : string := "TRUE";
         SHOWAHEAD       : string := "ON";
-        REGOUT          : integer  := 1;
+        REGOUT          : integer  := 2;
         DEVICE          : string := "Stratix IV"--;
     );
     PORT
@@ -167,16 +167,16 @@ BEGIN
         g_DATA_WIDTH => q'length--,
     )
     port map (
-        o_rdata     => q,
-        i_re        => rdreq,
-        o_rempty    => rdempty,
+        o_rdata => q,
+        i_re => rdreq,
+        o_rempty => rdempty,
 
-        i_rdata     => q0,
-        o_re        => rdreq0,
-        i_rempty    => rdempty0,
+        i_fifo_rdata => q0,
+        o_fifo_re => rdreq0,
+        i_fifo_rempty => rdempty0,
 
-        i_reset_n   => reset_n,
-        i_clk       => rdclk--,
+        i_reset_n => reset_n,
+        i_clk => rdclk--,
     );
 
 END SYN;

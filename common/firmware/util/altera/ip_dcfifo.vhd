@@ -45,7 +45,7 @@ ENTITY ip_dcfifo IS
         DATA_WIDTH  : positive := 8;
         SHOWAHEAD   : string := "ON";
         OVERFLOW    : string := "ON";
-        REGOUT      : integer  := 1;
+        REGOUT      : integer  := 2;
         DEVICE      : string := "Stratix IV"--;
     );
 	PORT
@@ -161,9 +161,9 @@ BEGIN
         i_re => rdreq,
         o_rempty => rdempty,
 
-        i_rdata => q0,
-        o_re => rdreq0,
-        i_rempty => rdempty0,
+        i_fifo_rdata => q0,
+        o_fifo_re => rdreq0,
+        i_fifo_rempty => rdempty0,
 
         i_reset_n => reset_n,
         i_clk => rdclk--,

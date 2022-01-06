@@ -14,61 +14,64 @@ use ieee.std_logic_1164.all;
 entity fifo_rreg is
 generic (
     g_DATA_WIDTH : positive := 32;
-    g_N : natural := 1--;
+    g_N : natural := 2--;
 );
 port (
-    -- to user
-    o_rdata     : out   std_logic_vector(g_DATA_WIDTH-1 downto 0);
-    i_re        : in    std_logic;
-    o_rempty    : out   std_logic;
+    o_rdata         : out   std_logic_vector(g_DATA_WIDTH-1 downto 0);
+    i_re            : in    std_logic;
+    o_rempty        : out   std_logic;
 
-    -- from fifo
-    i_rdata     : in    std_logic_vector(g_DATA_WIDTH-1 downto 0);
-    o_re        : out   std_logic;
-    i_rempty    : in    std_logic;
+    i_fifo_rdata    : in    std_logic_vector(g_DATA_WIDTH-1 downto 0);
+    o_fifo_re       : out   std_logic;
+    i_fifo_rempty   : in    std_logic;
 
-    -- read side reset and clock
-    i_reset_n   : in    std_logic;
-    i_clk       : in    std_logic--;
+    i_reset_n       : in    std_logic;
+    i_clk           : in    std_logic--;
 );
 end entity;
 
 architecture arch of fifo_rreg is
 
-    signal rdata : std_logic_vector(o_rdata'range);
-    signal re : std_logic;
-    signal rempty : std_logic;
+    type data_array_t is array (natural range <>) of std_logic_vector(i_fifo_rdata'range);
+    signal data : data_array_t(0 to g_N+1) := (others => (others => '-'));
+    signal empty : std_logic_vector(0 to g_N+1) := (0 => '0', others => '1');
 
 begin
 
-    assert ( g_N < 2 ) report "" severity failure;
-
-    o_rdata <= rdata;
-    o_re <= re;
-    o_rempty <= rempty;
-
     generate_N_0 : if ( g_N = 0 ) generate
-        rdata <= i_rdata;
-        re <= i_re;
-        rempty <= i_rempty;
+        o_rdata <= i_fifo_rdata;
+        o_fifo_re <= i_re;
+        o_rempty <= i_fifo_rempty;
     end generate;
 
-    generate_N_1 : if ( g_N = 1 ) generate
-        re <= ( i_re or rempty ) and not i_rempty;
+    generate_N_1 : if ( g_N > 0 ) generate
+        o_rdata <= data(1);
+        o_fifo_re <= work.util.or_reduce(empty(1 to g_N));
+        o_rempty <= empty(1);
 
         process(i_clk, i_reset_n)
         begin
         if ( i_reset_n = '0' ) then
-            rdata <= (others => '0');
-            rempty <= '1';
+            data <= (others => (others => '-'));
+            empty <= (0 => '0', others => '1');
         elsif rising_edge(i_clk) then
-            if ( i_re = '1' or rempty = '1' ) then
-                rdata <= i_rdata;
-                rempty <= i_rempty;
-                if ( i_rempty = '1' ) then
-                    rdata <= (others => '0');
+            for i in 1 to g_N loop
+                if ( i_re = '1' and empty(1) = '0' ) then
+                    -- shift
+                    data(i) <= data(i+1);
+                    empty(i) <= empty(i+1);
+                    if ( empty(i to i+1) = "01" and i < g_N ) then
+                        -- fill first empty slot
+                        data(i) <= i_fifo_rdata;
+                        empty(i) <= i_fifo_rempty;
+                    end if;
+                else
+                    if ( empty(i-1 to i) = "01" ) then
+                        data(i) <= i_fifo_rdata;
+                        empty(i) <= i_fifo_rempty;
+                    end if;
                 end if;
-            end if;
+            end loop;
         end if;
         end process;
     end generate;

@@ -45,7 +45,7 @@ ENTITY ip_scfifo IS
         DATA_WIDTH          : positive := 8;
         SHOWAHEAD           : string   := "ON";
         RAM_OUT_REG         : string   := "OFF";
-        REGOUT              : integer  := 1;
+        REGOUT              : integer  := 2;
         DEVICE              : string   := "Stratix IV";
         ALMOST_FULL_LIMIT   : positive := 1--;
     );
@@ -169,9 +169,9 @@ BEGIN
         i_re => rdreq,
         o_rempty => empty,
 
-        i_rdata => q0,
-        o_re => rdreq0,
-        i_rempty => empty0,
+        i_fifo_rdata => q0,
+        o_fifo_re => rdreq0,
+        i_fifo_rempty => empty0,
 
         i_reset_n => not sclr,
         i_clk => clock--,

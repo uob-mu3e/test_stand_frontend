@@ -115,9 +115,9 @@ begin
         i_re => i_re,
         o_rempty => o_rempty,
 
-        i_rdata => fifo_rdata,
-        o_re => fifo_re,
-        i_rempty => fifo_rempty,
+        i_fifo_rdata => fifo_rdata,
+        o_fifo_re => fifo_re,
+        i_fifo_rempty => fifo_rempty,
 
         i_reset_n => reset_n,
         i_clk => i_rclk--,
