@@ -111,6 +111,7 @@ begin
     );
 
     o_rdata <=
+        (others => '-') when ( rempty = '1' ) else
         rdata_rdw when ( rdw = '1' ) else
         rdata;
 

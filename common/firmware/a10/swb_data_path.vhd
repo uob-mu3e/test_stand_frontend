@@ -379,7 +379,6 @@ begin
 --        ADDR_WIDTH      => 10,
 --        DATA_WIDTH      => W,
 --        RAM_OUT_REG     => "ON",
---        REGOUT          => 1,
 --        DEVICE          => "Arria 10"--,
 --    )
 --    port map (

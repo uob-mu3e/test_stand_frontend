@@ -202,10 +202,10 @@ begin
 
     process(refclk)
     begin
-        if(rising_edge(refclk)) then
-            be3_prev    <= be3;
-            be4_prev    <= be4;
-        end if;
+    if(rising_edge(refclk)) then
+        be3_prev <= be3;
+        be4_prev <= be4;
+    end if;
     end process;
 
     writeregs_B_fifo_wdata <=

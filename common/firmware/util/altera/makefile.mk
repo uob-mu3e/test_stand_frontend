@@ -81,7 +81,7 @@ top.qpf :
 # default qsf file - load top.qip, and generated include.qip
 top.qsf : $(MAKEFILE_LIST)
 	cat << EOF > "$@"
-	set_global_assignment -name QIP_FILE top.qip
+	set_global_assignment -name QIP_FILE "top.qip"
 	set_global_assignment -name TOP_LEVEL_ENTITY top
 	set_global_assignment -name PROJECT_OUTPUT_DIRECTORY output_files
 	set_global_assignment -name SOURCE_TCL_SCRIPT_FILE "util/altera/settings.tcl"

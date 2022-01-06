@@ -1,5 +1,5 @@
 #!/bin/bash
-set -eux
+set -euf
 
 TB="$1"
 shift

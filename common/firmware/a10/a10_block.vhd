@@ -774,7 +774,7 @@ begin
         i_pcie0_rregs_C     => i_pcie0_rregs_C,
 
         i_local_pcie0_rregs_A   => local_pcie0_rregs_A,
-        i_local_pcie0_rregs_C	=> local_pcie0_rregs_C,
+        i_local_pcie0_rregs_C   => local_pcie0_rregs_C,
 
         o_pcie0_rregs       => pcie0_rregs,
 

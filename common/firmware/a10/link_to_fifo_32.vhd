@@ -30,7 +30,7 @@ port (
     --! 2: # of skip event
     --! 3: # of events
     --! 4: # of sub header
-    o_counter     : out work.util.slv32_array_t(4 downto 0);
+    o_counter       : out work.util.slv32_array_t(4 downto 0);
 
     i_reset_n_156   : in std_logic;
     i_clk_156       : in std_logic;
@@ -164,15 +164,15 @@ begin
 
     process(i_clk_156, i_reset_n_156)
     begin
-        if ( i_reset_n_156 = '0' ) then
-            almost_full       <= '0';
-        elsif ( rising_edge(i_clk_156) ) then
-            if(wrusedw(LINK_FIFO_ADDR_WIDTH - 1) = '1') then
-                almost_full <= '1';
-            else 
-                almost_full <= '0';
-            end if;
+    if ( i_reset_n_156 = '0' ) then
+        almost_full <= '0';
+    elsif rising_edge(i_clk_156) then
+        if(wrusedw(LINK_FIFO_ADDR_WIDTH - 1) = '1') then
+            almost_full <= '1';
+        else
+            almost_full <= '0';
         end if;
+    end if;
     end process;
 
 end architecture;
