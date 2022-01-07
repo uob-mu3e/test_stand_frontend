@@ -17,4 +17,3 @@ set_global_assignment -name QIP_FILE ../fe_scifi/resetalign/realign_block.qip
 #set_global_assignment -name QIP_FILE mupix_block/include.qip
 #set_global_assignment -name VHDL_FILE dac_fifo.vhd
 #set_global_assignment -name VHDL_FILE mupix_block.vhd
-#set_global_assignment -name VHDL_FILE two_clk_sync_fifo.vhd
