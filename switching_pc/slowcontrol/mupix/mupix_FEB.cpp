@@ -185,6 +185,7 @@ int MupixFEB::ConfigureASICs(){
             // TODO: make this correct
             uint32_t chip_select_mask = 0xfff; //all chips masked (12 times 1)
             int pos = ASICid_from_ID(asic);
+	    if ( asic == 3 ) pos = 3;
             chip_select_mask &= ((~0x1) << pos);
             printf("chip_select_mask %04x\n", chip_select_mask);
             for (int i = 0; i < pos; ++i)
@@ -230,7 +231,7 @@ int MupixFEB::ConfigureASICs(){
       
         // check if we also want to write the TDACs
         if (useTDACs) {
-
+            std::cout << "Write TDACs" << "\n";
             uint32_t curNBits = 0;
             uint32_t curWord = 0;
             // loop over keys of the tdacs dict for the current asic

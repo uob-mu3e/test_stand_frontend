@@ -678,8 +678,8 @@ void setup_watches(){
     odb crodb("/Equipment/Clock Reset/Settings");
     crodb.watch(cr_settings_changed);
 
-    odb linkodb("/Equipment/Links");
-    linkodb.watch(link_settings_changed);
+    // odb linkodb("/Equipment/Links/Settings");
+    // linkodb.watch(link_settings_changed);
 
     odb rrp("/Equipment/Clock Reset/Run Transitions/Request Run Prepare");
     rrp.watch(prepare_run_on_request);

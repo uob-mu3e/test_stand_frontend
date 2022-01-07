@@ -34,6 +34,7 @@ int main() {
     //mscb.init();
     sc.init();
     volatile sc_ram_t* ram = (sc_ram_t*) AVM_SC_BASE;
+    ram->data[0xFC03] = 0;
 
     while (1) {
         printf("\n");
