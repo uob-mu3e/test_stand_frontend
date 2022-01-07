@@ -1,8 +1,6 @@
 #
 
 set_global_assignment -name VHDL_FILE [file join $::quartus(qip_path) "datadecoder.vhd"]
-set_global_assignment -name VHDL_FILE [file join $::quartus(qip_path) "fifo_Nb.vhd"]
-set_global_assignment -name VHDL_FILE [file join $::quartus(qip_path) "fifo_Nb_sync.vhd"]
 set_global_assignment -name VHDL_FILE [file join $::quartus(qip_path) "lvdspll.vhd"]
 set_global_assignment -name VERILOG_FILE [file join $::quartus(qip_path) "lvdspll_0002.v"]
 set_global_assignment -name VHDL_FILE [file join $::quartus(qip_path) "lvds_receiver_small.vhd"]
