@@ -35,9 +35,9 @@ end entity;
 
 architecture arch of xcvr_fifo is
 
-    signal rx_data, tx_data : std_logic_vector(g_W-1 downto 0);
-    signal rx_datak, tx_datak : std_logic_vector(g_W/8+g_W-1 downto g_W);
-    signal rx_rempty, tx_rempty : std_logic;
+    signal rx_data, tx_data, xcvr_tx_data : std_logic_vector(g_W-1 downto 0);
+    signal rx_datak, tx_datak, xcvr_tx_datak : std_logic_vector(g_W/8+g_W-1 downto g_W);
+    signal rx_rempty, xcvr_tx_rempty : std_logic;
 
 begin
 
@@ -54,7 +54,7 @@ begin
     e_rx_fifo : entity work.ip_dcfifo_v2
     generic map (
         g_ADDR_WIDTH => g_FIFO_ADDR_WIDTH,
-        g_DATA_WIDTH => rx_data'length + rx_datak'length--,
+        g_DATA_WIDTH => i_xcvr_rx_data'length + i_xcvr_rx_datak'length--,
     )
     port map (
         i_wdata(rx_data'range) => i_xcvr_rx_data,
@@ -78,31 +78,39 @@ begin
     o_rx_data <= rx_data when ( rx_rempty = '0' ) else g_IDLE_DATA;
     o_rx_datak <= rx_datak when ( rx_rempty = '0' ) else g_IDLE_DATAk;
 
+    process(i_clk)
+    begin
+    if rising_edge(i_clk) then
+        tx_data <= i_tx_data;
+        tx_datak <= i_tx_datak;
+    end if;
+    end process;
+
     e_tx_fifo : entity work.ip_dcfifo_v2
     generic map (
         g_ADDR_WIDTH => g_FIFO_ADDR_WIDTH,
         g_DATA_WIDTH => tx_data'length + tx_datak'length--,
     )
     port map (
-        i_wdata(tx_data'range) => i_tx_data,
-        i_wdata(tx_datak'range) => i_tx_datak,
+        i_wdata(tx_data'range) => tx_data,
+        i_wdata(tx_datak'range) => tx_datak,
         -- write non IDLE data/k
-        i_we => not work.util.to_std_logic(i_tx_data = g_IDLE_DATA and i_tx_datak = g_IDLE_DATAK),
+        i_we => not work.util.to_std_logic(tx_data = g_IDLE_DATA and tx_datak = g_IDLE_DATAK),
         o_wfull => o_tx_wfull,
         i_wclk => i_clk,
 
-        o_rdata(tx_data'range) => tx_data,
-        o_rdata(tx_datak'range) => tx_datak,
+        o_rdata(xcvr_tx_data'range) => xcvr_tx_data,
+        o_rdata(xcvr_tx_datak'range) => xcvr_tx_datak,
         -- always read
-        i_re => not tx_rempty,
-        o_rempty => tx_rempty,
+        i_re => not xcvr_tx_rempty,
+        o_rempty => xcvr_tx_rempty,
         i_rclk => i_xcvr_clk,
 
         i_reset_n => i_reset_n--,
     );
 
     -- insert IDLE when rempty
-    o_xcvr_tx_data <= tx_data when ( tx_rempty = '0' ) else g_IDLE_DATA;
-    o_xcvr_tx_datak <= tx_datak when ( tx_rempty = '0' ) else g_IDLE_DATAk;
+    o_xcvr_tx_data <= xcvr_tx_data when ( xcvr_tx_rempty = '0' ) else g_IDLE_DATA;
+    o_xcvr_tx_datak <= xcvr_tx_datak when ( xcvr_tx_rempty = '0' ) else g_IDLE_DATAk;
 
 end architecture;
