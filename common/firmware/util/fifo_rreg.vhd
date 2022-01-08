@@ -9,7 +9,7 @@ library ieee;
 use ieee.std_logic_1164.all;
 
 --
---
+-- @deprecated use fifo_reg
 --
 entity fifo_rreg is
 generic (
@@ -32,48 +32,28 @@ end entity;
 
 architecture arch of fifo_rreg is
 
-    type data_array_t is array (natural range <>) of std_logic_vector(i_fifo_rdata'range);
-    signal data : data_array_t(0 to g_N+1) := (others => (others => '-'));
-    signal empty : std_logic_vector(0 to g_N+1) := (0 => '0', others => '1');
+    signal fifo_re_n : std_logic;
 
 begin
 
-    generate_N_0 : if ( g_N = 0 ) generate
-        o_rdata <= i_fifo_rdata;
-        o_fifo_re <= i_re;
-        o_rempty <= i_fifo_rempty;
-    end generate;
+    o_fifo_re <= not fifo_re_n;
 
-    generate_N_1 : if ( g_N > 0 ) generate
-        o_rdata <= data(1);
-        o_fifo_re <= work.util.or_reduce(empty(1 to g_N));
-        o_rempty <= empty(1);
+    e_fifo_reg : entity work.fifo_reg
+    generic map (
+        g_DATA_WIDTH => g_DATA_WIDTH,
+        g_N => g_N--,
+    )
+    port map (
+        o_rdata     => o_rdata,
+        o_rempty    => o_rempty,
+        i_rack      => i_re,
 
-        process(i_clk, i_reset_n)
-        begin
-        if ( i_reset_n = '0' ) then
-            data <= (others => (others => '-'));
-            empty <= (0 => '0', others => '1');
-        elsif rising_edge(i_clk) then
-            for i in 1 to g_N loop
-                if ( i_re = '1' and empty(1) = '0' ) then
-                    -- shift
-                    data(i) <= data(i+1);
-                    empty(i) <= empty(i+1);
-                    if ( empty(i to i+1) = "01" and i < g_N ) then
-                        -- fill first empty slot
-                        data(i) <= i_fifo_rdata;
-                        empty(i) <= i_fifo_rempty;
-                    end if;
-                else
-                    if ( empty(i-1 to i) = "01" ) then
-                        data(i) <= i_fifo_rdata;
-                        empty(i) <= i_fifo_rempty;
-                    end if;
-                end if;
-            end loop;
-        end if;
-        end process;
-    end generate;
+        i_wdata     => i_fifo_rdata,
+        i_we        => not i_fifo_rempty,
+        o_wfull     => fifo_re_n,
+
+        i_reset_n   => i_reset_n,
+        i_clk       => i_clk--,
+    );
 
 end architecture;
