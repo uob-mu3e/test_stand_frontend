@@ -236,13 +236,13 @@ architecture RTL of pcie_application is
 			refclk			=> refclk,
 
 			-- from IF
-			rx_st_data0 	=> rx_st_data0,
-			rx_st_eop0   	=> rx_st_eop0,
-			rx_st_sop0 		=> rx_st_sop0,
-			rx_st_ready0 	=> rx_st_ready_wreg,
-			rx_st_valid0 	=>	rx_st_valid0,
-			rx_bar 			=> rx_bar0(0),
-		
+        i_rx_st_data0   => rx_st_data0,
+        i_rx_st_eop0    => rx_st_eop0,
+        i_rx_st_sop0    => rx_st_sop0,
+        o_rx_st_ready0  => rx_st_ready_wreg,
+        i_rx_st_valid0  => rx_st_valid0,
+        i_rx_bar        => rx_bar0(0),
+
 			-- registers
 			writeregs 		=> writeregs_s,
 			regwritten		=> regwritten_s,
@@ -254,7 +254,7 @@ architecture RTL of pcie_application is
 			readen 			=> wreg_readen,
 			-- debugging
 			inaddr32_w		=> inaddr32_w
-		);
+    );
 		
 		-- map to test port
 		--process(refclk, local_rstn)
@@ -280,18 +280,18 @@ architecture RTL of pcie_application is
 		
 
     e_pcie_readable_registers : entity work.pcie_readable_registers
-		port map(
+    port map (
 			local_rstn		=> local_rstn,
 			refclk			=> refclk,
 	
 			-- from IF
-			rx_st_data0 	=> rx_st_data0,	
-			rx_st_eop0   	=> rx_st_eop0,
-			rx_st_sop0 		=> rx_st_sop0,
-			rx_st_ready0 	=> rx_st_ready_rreg,
-			rx_st_valid0 	=>	rx_st_valid0,
-			rx_bar 			=> rx_bar0(1),
-				
+        i_rx_st_data0   => rx_st_data0,
+        i_rx_st_eop0    => rx_st_eop0,
+        i_rx_st_sop0    => rx_st_sop0,
+        o_rx_st_ready0  => rx_st_ready_rreg,
+        i_rx_st_valid0  => rx_st_valid0,
+        i_rx_bar        => rx_bar0(1),
+
 			-- to response engine
 			readaddr 		=> rreg_readaddr,
 			readlength 		=> rreg_readlength,
@@ -299,22 +299,22 @@ architecture RTL of pcie_application is
 			readen 			=> rreg_readen,
 			-- debugging
 			inaddr32_r		=> inaddr32_r
-		);
+    );
 
 
     e_pcie_writeable_memory : entity work.pcie_writeable_memory
-		port map(
+    port map (
 			local_rstn		=> local_rstn,
 			refclk			=> refclk,
 	
 			-- from IF
-			rx_st_data0 	=> rx_st_data0,
-			rx_st_eop0   	=> rx_st_eop0,
-			rx_st_sop0 		=> rx_st_sop0,
-			rx_st_ready0 	=> rx_st_ready_wmem,
-			rx_st_valid0 	=>	rx_st_valid0,
-			rx_bar 			=> rx_bar0(2),
-		
+        i_rx_st_data0   => rx_st_data0,
+        i_rx_st_eop0    => rx_st_eop0,
+        i_rx_st_sop0    => rx_st_sop0,
+        o_rx_st_ready0  => rx_st_ready_wmem,
+        i_rx_st_valid0  => rx_st_valid0,
+        i_rx_bar        => rx_bar0(2),
+
 			-- to memory
 			tomemaddr 		=> writememaddr_w,
 			tomemdata 		=> writememdata,
@@ -325,28 +325,28 @@ architecture RTL of pcie_application is
 			readlength 		=> wmem_readlength,
 			header2 			=>	wmem_header2,
 			readen 			=> wmem_readen
-		);
+    );
 
 
     e_pcie_readable_memory : entity work.pcie_readable_memory
-		port map(
+    port map (
 			local_rstn		=> local_rstn,
 			refclk			=> refclk,
 	
 			-- from IF
-			rx_st_data0 	=> rx_st_data0,
-			rx_st_eop0   	=> rx_st_eop0,
-			rx_st_sop0 		=> rx_st_sop0,
-			rx_st_ready0 	=> rx_st_ready_rmem,
-			rx_st_valid0 	=>	rx_st_valid0,
-			rx_bar 			=> rx_bar0(3),
-		
+        i_rx_st_data0   => rx_st_data0,
+        i_rx_st_eop0    => rx_st_eop0,
+        i_rx_st_sop0    => rx_st_sop0,
+        o_rx_st_ready0  => rx_st_ready_rmem,
+        i_rx_st_valid0  => rx_st_valid0,
+        i_rx_bar        => rx_bar0(3),
+
 			-- to response engine
 			readaddr 		=> rmem_readaddr,
 			readlength 		=> rmem_readlength,
 			header2 			=>	rmem_header2,
 			readen 			=> rmem_readen
-		);
+    );
 
 		
 

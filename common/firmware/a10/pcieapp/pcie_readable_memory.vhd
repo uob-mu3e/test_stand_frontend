@@ -19,13 +19,13 @@ port (
 		refclk:					in		std_logic;
 	
 		-- from IF
-		rx_st_data0 :  		in 	STD_LOGIC_VECTOR (255 DOWNTO 0);
-		rx_st_eop0 :  			in		STD_LOGIC;
-		rx_st_sop0 :  			in 	STD_LOGIC;
-		rx_st_ready0 :			out 	STD_LOGIC;
-		rx_st_valid0 :			in 	STD_LOGIC;
-		rx_bar :					in 	STD_LOGIC;
-		
+    i_rx_st_data0   : in    std_logic_vector(255 downto 0);
+    i_rx_st_eop0    : in    std_logic;
+    i_rx_st_sop0    : in    std_logic;
+    o_rx_st_ready0  : out   std_logic;
+    i_rx_st_valid0  : in    std_logic;
+    i_rx_bar        : in    std_logic;
+
 		-- to response engine
 		readaddr :				out std_logic_vector(15 downto 0);
 		readlength :			out std_logic_vector(9 downto 0);
@@ -37,6 +37,10 @@ end entity;
 
 
 architecture RTL of pcie_readable_memory is
+
+    signal rx_st_data0 : std_logic_vector(i_rx_st_data0'range);
+    signal rx_st_sop0 : std_logic;
+    signal rx_bar : std_logic;
 
 	type receiver_state_type is (reset, waiting);
 	signal state : receiver_state_type;
@@ -56,6 +60,23 @@ architecture RTL of pcie_readable_memory is
 
 
 begin
+
+    rx_st_data0 <= i_rx_st_data0;
+    rx_st_sop0 <= i_rx_st_sop0;
+    rx_bar <= i_rx_bar;
+
+    process(refclk, local_rstn)
+    begin
+    if ( local_rstn = '0' ) then
+        o_rx_st_ready0 <= '0';
+    elsif rising_edge(refclk) then
+        if ( state = reset ) then
+            o_rx_st_ready0 <= '0';
+        else
+            o_rx_st_ready0 <= '1';
+        end if;
+    end if;
+    end process;
 
 	-- Endian chasing for addresses
 	inaddr32 <= rx_st_data0(95 downto 66) & "00";
@@ -78,7 +99,6 @@ begin
 	
 	if(local_rstn = '0') then
 		state 			<= reset;
-		rx_st_ready0    <= '0';
 
 	
 	elsif (refclk'event and refclk = '1') then
@@ -86,10 +106,8 @@ begin
 		case state is
 			when reset =>
 				state 			<= waiting;
-				rx_st_ready0   <= '0';
 	-------------------------------------------------------------------------------------			
 			when waiting =>
-				rx_st_ready0   <= '1';
 				if(rx_st_sop0 = '1' and rx_bar = '1') then
 					if(fmt = "00" and ptype = "00000") then -- 32 bit memory read request 	
 						readaddr		<= memaddr & inaddr32(3 downto 2);
