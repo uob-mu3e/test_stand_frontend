@@ -48,7 +48,7 @@ begin
     -- data(1) contains readable data
     o_rdata <= data(1);
     o_rempty <= empty(1);
-    o_wfull <= not work.util.or_reduce(empty(1 to g_N));
+    o_wfull <= not empty(g_N);
 
     process(i_clk, i_reset_n)
     begin
