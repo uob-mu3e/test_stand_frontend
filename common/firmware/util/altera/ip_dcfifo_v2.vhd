@@ -15,7 +15,9 @@ entity ip_dcfifo_v2 is
 generic (
     g_ADDR_WIDTH : positive := 8;
     g_DATA_WIDTH : positive := 8;
-    DEVICE_FAMILY : string := "Arria 10"--;
+    g_SHOWAHEAD : string := "ON";
+    g_FIFO_REG_N : positive := 2;
+    g_DEVICE_FAMILY : string := "Arria 10"--;
 );
 port (
     i_wdata     : in    std_logic_vector(g_DATA_WIDTH-1 downto 0);
@@ -25,7 +27,7 @@ port (
     i_wclk      : in    std_logic;
 
     o_rdata     : out   std_logic_vector(g_DATA_WIDTH-1 downto 0);
-    i_re        : in    std_logic; -- read enable (request, acknowledge)
+    i_rack      : in    std_logic; -- read enable (request, acknowledge)
     o_rempty    : out   std_logic;
     o_rusedw    : out   std_logic_vector(g_ADDR_WIDTH-1 downto 0);
     i_rclk      : in    std_logic;
@@ -40,11 +42,8 @@ use altera_mf.altera_mf_components.all;
 
 architecture arch of ip_dcfifo_v2 is
 
-    signal reset_n : std_logic;
-
-    signal fifo_rdata : std_logic_vector(o_rdata'range);
-    signal fifo_re : std_logic;
-    signal fifo_rempty : std_logic;
+    signal fifo_rdata : std_logic_vector(g_DATA_WIDTH-1 DOWNTO 0);
+    signal fifo_rack, fifo_rempty, rreset_n : std_logic;
 
 begin
 
@@ -63,7 +62,7 @@ begin
         -- Specifies the width of the data and q ports for the SCFIFO function and DCFIFO function. 
         lpm_width => g_DATA_WIDTH,
         -- Specifies whether the FIFO is in normal mode (OFF) or show-ahead mode (ON).
-        lpm_showahead => "ON",
+        lpm_showahead => g_SHOWAHEAD,
         -- Specifies whether to register the q output.
 --        add_ram_output_register => "OFF",
         -- Specifies whether or not the FIFO Intel FPGA IP core is constructed using the RAM blocks.
@@ -83,7 +82,7 @@ begin
         rdsync_delaypipe => 4,
         -- Specifies the intended device that matches the device set in your Intel Quartus Prime project.
         -- Use only this parameter for functional simulation.
-        intended_device_family => DEVICE_FAMILY--,
+        intended_device_family => g_DEVICE_FAMILY--,
     )
     port map (
         data => i_wdata,
@@ -93,7 +92,7 @@ begin
         wrclk => i_wclk,
 
         q => fifo_rdata,
-        rdreq => fifo_re,
+        rdreq => fifo_rack,
         rdempty => fifo_rempty,
         rdusedw => o_rusedw,
         rdclk => i_rclk,
@@ -103,24 +102,33 @@ begin
         aclr => not i_reset_n--,
     );
 
-    e_reset_n : entity work.reset_sync
-    port map ( o_reset_n => reset_n, i_reset_n => i_reset_n, i_clk => i_rclk );
+    generate_showahead_off : if ( g_SHOWAHEAD /= "ON" ) generate
+        o_rdata <= fifo_rdata;
+        fifo_rack <= i_rack;
+        o_rempty <= fifo_rempty;
+    end generate;
 
-    e_fifo_rreg : entity work.fifo_rreg
-    generic map (
-        g_DATA_WIDTH => o_rdata'length--,
-    )
-    port map (
-        o_rdata => o_rdata,
-        i_re => i_re,
-        o_rempty => o_rempty,
+    generate_showahead_on : if ( g_SHOWAHEAD = "ON" ) generate
+        e_rreset_n : entity work.reset_sync
+        port map ( o_reset_n => rreset_n, i_reset_n => i_reset_n, i_clk => i_rclk );
 
-        i_fifo_rdata => fifo_rdata,
-        o_fifo_re => fifo_re,
-        i_fifo_rempty => fifo_rempty,
+        e_fifo_rreg : entity work.fifo_rreg
+        generic map (
+            g_DATA_WIDTH => g_DATA_WIDTH,
+            g_N => g_FIFO_REG_N--,
+        )
+        port map (
+            o_rdata => o_rdata,
+            i_re => i_rack,
+            o_rempty => o_rempty,
 
-        i_reset_n => reset_n,
-        i_clk => i_rclk--,
-    );
+            i_fifo_rdata => fifo_rdata,
+            o_fifo_re => fifo_rack,
+            i_fifo_rempty => fifo_rempty,
+
+            i_reset_n => rreset_n,
+            i_clk => i_rclk--,
+        );
+    end generate;
 
 end architecture;

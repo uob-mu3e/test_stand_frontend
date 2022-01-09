@@ -67,7 +67,7 @@ begin
         o_rdata(rx_data'range) => rx_data,
         o_rdata(rx_datak'range) => rx_datak,
         -- always read
-        i_re => not rx_rempty,
+        i_rack => not rx_rempty,
         o_rempty => rx_rempty,
         i_rclk => i_clk,
 
@@ -102,7 +102,7 @@ begin
         o_rdata(xcvr_tx_data'range) => xcvr_tx_data,
         o_rdata(xcvr_tx_datak'range) => xcvr_tx_datak,
         -- always read
-        i_re => not xcvr_tx_rempty,
+        i_rack => not xcvr_tx_rempty,
         o_rempty => xcvr_tx_rempty,
         i_rclk => i_xcvr_clk,
 
