@@ -397,22 +397,22 @@ begin
         hits_sorter_in_buf(i)       <= row_hs(i) & col_hs(i) & tot_hs(i)(4 downto 0) & ts_hs(i);
     END GENERATE;
 
-	 process(i_clk125)
-	 begin
-	 if(rising_edge(i_clk125))then
-		if(i_run_state_125 = RUN_STATE_RUNNING) then
-			running         <= '1';
-		else
-			running         <= '0';
-		end if;
-		if(i_run_state_125 = RUN_STATE_IDLE) then
-			sorter_reset_n  <= '0';
-		else 
-			sorter_reset_n  <= '1';
-		end if;
-	 end if;
-	 end process;
-	 
+    process(i_clk125)
+    begin
+    if(rising_edge(i_clk125))then
+        if(i_run_state_125 = RUN_STATE_RUNNING) then
+            running         <= '1';
+        else
+            running         <= '0';
+        end if;
+        if(i_run_state_125 = RUN_STATE_IDLE) then
+            sorter_reset_n  <= '0';
+        else 
+            sorter_reset_n  <= '1';
+        end if;
+    end if;
+    end process;
+ 
     sorter: work.hitsorter_wide
     port map(
         reset_n         => sorter_reset_n,
@@ -476,7 +476,7 @@ begin
         DATA_WIDTH  => 1+36,
         SHOWAHEAD   => "OFF",
         OVERFLOW    => "ON",
-		  REGOUT      => 0,
+        REGOUT      => 0,
         DEVICE      => "Arria V"--,
     )
     port map(
@@ -523,7 +523,7 @@ begin
         DATA_WIDTH  => 32,
         SHOWAHEAD   => "OFF",
         OVERFLOW    => "ON",
-		  REGOUT      => 0,
+        REGOUT      => 0,
         DEVICE      => "Arria V"--,
     )
     port map(

@@ -90,10 +90,8 @@ architecture RTL of data_unpacker is
     signal tot_mode             : std_logic_vector(2 downto 0);
     signal invert_TS            : std_logic;
     signal invert_TS2           : std_logic;
-    signal gray_TS              : std_logic;
-    signal gray_TS2             : std_logic;
     signal hit_ena_counter      : std_logic_vector(31 downto 0);
-	 signal running				  : std_logic;
+    signal running              : std_logic;
 
     function convert_lvds_to_chip_id (
         lvds_ID       : integer;
@@ -186,8 +184,6 @@ begin
     tot_mode        <= i_mp_readout_mode(TOT_MODE_RANGE);
     invert_TS       <= i_mp_readout_mode(INVERT_TS_BIT);
     invert_TS2      <= i_mp_readout_mode(INVERT_TS2_BIT);
-    gray_TS         <= i_mp_readout_mode(GRAY_TS_BIT);
-    gray_TS2        <= i_mp_readout_mode(GRAY_TS2_BIT);
 
     errorcounter     <= errorcounter_reg;
 
@@ -221,12 +217,12 @@ begin
             link_flag_reg       <= '0';
             coarse_reg          <= '0';
             hit_reg             <= '0';
-				
-				if(i_run_state_125=RUN_STATE_RUNNING)then
-					running <= '1';
-				else
-					running <= '0';
-				end if;
+        
+            if(i_run_state_125=RUN_STATE_RUNNING)then
+                running <= '1';
+            else
+                running <= '0';
+            end if;
 
             o_hit_ena_counter   <= hit_ena_counter;
             if(hit_ena = '1' and running = '1') then 
@@ -368,8 +364,8 @@ begin
         clk         => clk,
         invert_TS   => invert_TS,
         invert_TS2  => invert_TS2,
-        gray_TS     => gray_TS,
-        gray_TS2    => gray_TS2,
+        gray_TS     => '1',
+        gray_TS2    => '1',
         
         o_ts        => ts_buf,
         o_row       => o_row,
