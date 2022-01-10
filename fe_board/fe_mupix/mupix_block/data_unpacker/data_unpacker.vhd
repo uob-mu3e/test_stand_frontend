@@ -32,9 +32,7 @@ entity data_unpacker is
         clk                 : in  std_logic;
         datain              : in  std_logic_vector(7 downto 0);
         kin                 : in  std_logic;
-		errin               : in  std_logic;
         readyin             : in  std_logic;
-		i_replace_ts2		: in  std_logic;
         i_mp_readout_mode   : in  std_logic_vector(31 downto 0);
         o_ts                : out std_logic_vector(10 downto 0);
         o_chip_ID           : out std_logic_vector(5 downto 0);
@@ -60,11 +58,8 @@ architecture RTL of data_unpacker is
     signal NS                   : state_type;
 
     signal data_i               : std_logic_vector(31 downto 0) := (others => '0');
-	signal err_i                : std_logic_vector(3 downto 0) := (others => '0');
 
     signal input_buffer         : std_logic_vector(31 downto 0);
-	signal err_buffer         	: std_logic_vector(3 downto 0);
-	signal errData         		: std_logic_vector(3 downto 0);
     signal input_hit_ena_buffer : std_logic;
     signal dataWithoutSC        : std_logic_vector(31 downto 0);
 
@@ -242,7 +237,6 @@ begin
 
             if(hit_reg = '1')then
                 input_buffer    <= data_i;
-				err_buffer		<= err_i;
             end if;
 
             if(readyin = '0')then
@@ -251,7 +245,6 @@ begin
                 NS              <= IDLE;
             else
                 data_i          <= data_i(23 downto 0) & datain;
-				err_i			<= err_i(2 downto 0) & errin;
 
                     case NS is
                     
@@ -348,11 +341,9 @@ begin
         i_sc_active             => '1',
         i_new_block             => link_flag,
         i_hit                   => input_buffer,
-		i_err					=> err_buffer,
         i_hit_ena               => input_hit_ena_buffer,
         i_coarsecounters_ena    => coarsecounter_ena,
         o_hit                   => dataWithoutSC,
-		o_err					=> errData,
         o_hit_ena               => hit_ena--,
     );
     -- The data arrives from MuPix10: TS2[4:0] TS1[10:0] Col[6:0] Row[8:0]
@@ -365,8 +356,7 @@ begin
     o_chip_ID       <= convert_lvds_to_chip_id(LVDS_ID,chip_ID_mode);
     row             <= convert_row(dataWithoutSC(8 downto 0));
     col             <= convert_col(dataWithoutSC(15 downto 9),dataWithoutSC(8 downto 0));
-	ts2 			<= 	errData & '0' when i_replace_ts2 = '1' else
-						dataWithoutSC(31 downto 27);
+    ts2             <= dataWithoutSC(31 downto 27);
 
     degray_single : work.hit_ts_conversion
     port map(
@@ -375,7 +365,7 @@ begin
         invert_TS   => invert_TS,
         invert_TS2  => invert_TS2,
         gray_TS     => '1',
-        gray_TS2    => not i_replace_ts2,
+        gray_TS2    => '1',
         
         o_ts        => ts_buf,
         o_row       => o_row,
