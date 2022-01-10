@@ -46,7 +46,7 @@ type sync_state_type is (reset, waitforplllock, waitfordpalock, check_k28_5, ali
 signal sync_state		: sync_state_type := reset;
 
 --signal kcounter 		: std_logic_vector(3 downto 0);
-signal acounter 		: std_logic_vector(3 downto 0);
+signal acounter 		: std_logic_vector(7 downto 0);
 
 signal rx_decoded		: std_logic_vector(7 downto 0);
 signal rx_k				: std_logic;
@@ -57,7 +57,10 @@ signal rx_reversed      : std_logic_vector(9 downto 0);
 
 signal ready_buf		: std_logic;
 
-
+signal current_disparity, new_disparity : std_logic;
+signal new_datak : std_logic;
+signal new_data : std_logic_vector(7 downto 0);
+signal disp_error, data_error : std_logic;
 
 begin
 
@@ -118,6 +121,7 @@ elsif(clk'event and clk = '1') then
 		end if;
 		
 	when check_k28_5 =>
+        rx_align 	<= '0';
 -- -- -- -- -- -- THIS IS NIK's ALIGNMENT --> doesn't work for Jens
 --		if(rx_k = '1' and rx_decoded = K28_5) then
 --			kcounter <= kcounter + '1';
@@ -144,7 +148,9 @@ elsif(clk'event and clk = '1') then
 		-- so within 512 cycles we should definitely see a few K28_5 words
 		-- in worst case we check for 36 us (9*512*8ns) until we find the right pattern
 			
-		elsif(rx_decoded = K28_5 and rx_k = '1') then -- correct k-word coming in
+--		elsif(rx_decoded = K28_5 and rx_k = '1') then -- correct k-word coming in
+		--elsif(disp_err = '1') then -- correct k-word coming in
+        elsif(rx_decoded /= K28_5 or rx_k /= '1') then -- correct k-word coming in
 			if(k_seen < "111111111")then
 				k_seen <= k_seen + 1;
 			end if;
@@ -155,8 +161,9 @@ elsif(clk'event and clk = '1') then
 			
 	when align =>  -- TODO: change stuff
 		align_ctr	 <= (others => '0');
-		if(k_seen = 0)then
-			if(acounter < x"A")then
+        k_seen 		<= (others => '0');
+		if(k_seen > "111111100")then
+			if(acounter < 40)then
 				ready_buf 		<= '0';
 				acounter 	<= acounter + 1;
 				rx_align 	<= '1';
@@ -166,7 +173,6 @@ elsif(clk'event and clk = '1') then
 			end if;
 		else
 			sync_state 	<= check_k28_5;		-- we continously monitor that we see the komma words!!
-			k_seen 		<= (others => '0');	-- so that we act directly during continous check
 			state_out	<= "10";
 			ready_buf			<= '1';
 		end if;
@@ -223,27 +229,50 @@ end process;
 -- TBD: change disparity checker to simple addition of all bits in a line
 -- and use information to reject bad data, so add a pipeline for the data
 
-d_checker : work.disparity_checker -- disparity checker in same entity ? (Alex entity)  -- do not only check disparity
-	port map(
-		reset_n				=> reset_n,
-		clk					=> clk,
-		rx_in					=> rx_reversed,
-		ready					=> ready_buf,
-		disp_err				=> disp_err
-		);
-
-
-dec8b10b : work.decode8b10b -- also Alex ?
-	port map(
-		reset_n				=> reset_n,
-		clk					=> clk,
-		input					=> rx_reversed,
-		output				=> rx_decoded,
-		k						=> rx_k
-		);
+--d_checker : work.disparity_checker -- disparity checker in same entity ? (Alex entity)  -- do not only check disparity
+--	port map(
+--		reset_n				=> reset_n,
+--		clk					=> clk,
+--		rx_in					=> rx_reversed,
+--		ready					=> ready_buf,
+--		disp_err				=> disp_err
+--		);
+--
+--
+--dec8b10b : work.decode8b10b -- also Alex ?
+--	port map(
+--		reset_n				=> reset_n,
+--		clk					=> clk,
+--		input					=> rx_reversed,
+--		output				=> rx_decoded,
+--		k						=> rx_k
+--		);
 
 		data 	<= rx_decoded;
 		k		<= rx_k;
 		
+        
+
+    e_8b10b_dec : entity work.dec_8b10b
+    port map (
+        i_data => rx_reversed,
+        i_disp => current_disparity,
+        o_data(7 downto 0) => new_data,
+        o_data(8) => new_datak,
+        o_disp => new_disparity,
+        o_disperr => disp_error,
+        o_err => data_error--,
+    );
+
+    process(clk)
+    begin
+    if rising_edge(clk) then
+        rx_decoded <= new_data;
+        rx_k <= new_datak;
+        current_disparity <= new_disparity;
+        disp_err <= disp_error or data_error;
+    end if;
+    end process;
+    
 end RTL;
-		
+

@@ -65,11 +65,19 @@ find_package(Midas REQUIRED
     HINTS
         $ENV{MIDASSYS}
         ~/midas
-        #${CMAKE_CURRENT_SOURCE_DIR}/../midas
+        ~/online/modules/midas
+        ${CMAKE_CURRENT_SOURCE_DIR}/../midas
         )
 # To be implemented in midas/MidasConfig.cmake at some point
+if(NOT EXISTS ${MIDAS_LIBRARY_DIRS})
+    message(FATAL_ERROR "MIDAS not found.
+    Please add your instance of midas to \"cmake -DCMAKE_PREFIX_PATH=PATHTOMIDAS ..\".
+    Also make sure that you did make install after installing midas.
+    If you have, consider deleting your build directory")
+endif()
 get_filename_component(MIDASSYS ${MIDAS_LIBRARY_DIRS} DIRECTORY)
 message(STATUS "MIDASSYS = ${MIDASSYS}")
+
 list (APPEND MIDAS_INCLUDE_DIRS
     ${MIDASSYS}/midas/manalyzer
     ${MIDASSYS}/midas/midasio
@@ -77,6 +85,7 @@ list (APPEND MIDAS_INCLUDE_DIRS
     )
 link_directories(${MIDAS_LIBRARY_DIRS})
 include_directories(${MIDAS_INCLUDE_DIRS})
+
 add_subdirectory(common)
 add_subdirectory(backend_pc)
 #add_subdirectory(common/kerneldriver)

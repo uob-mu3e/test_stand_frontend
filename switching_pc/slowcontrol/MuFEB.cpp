@@ -14,6 +14,7 @@ Contents:       Definition of common functions to talk to a FEB. In particular c
 
 #include "mudaq_device.h"
 #include "asic_config_base.h"
+#include "mupix_registers.h"
 
 #include <algorithm>
 #include <iterator>
@@ -34,7 +35,7 @@ int MuFEB::WriteFEBID(){
     for(auto FEB: febs){
        if(!FEB.IsScEnabled()) continue; //skip disabled fibers
        if(FEB.SB_Number()!=SB_number) continue; //skip commands not for this SB
-       uint32_t val=0xFEB1FEB0; // TODO: Where does this hard-coded value come from?
+       uint32_t val=0x00000000; // TODO: Where does this hard-coded value come from?
        val+=(FEB.GetLinkID()<<16)+FEB.GetLinkID();
 
        char reportStr[255];
@@ -42,7 +43,7 @@ int MuFEB::WriteFEBID(){
              FEB.GetLinkName().c_str(),FEB.GetLinkID(),
              FEB.SB_Number(),FEB.SB_Port(),(val>>16)&0xffff,val&0xffff);
        cm_msg(MINFO,"MuFEB::WriteFEBID",reportStr);
-       feb_sc.FEB_register_write(FEB.SB_Port(),  FPGA_ID_REGISTER_RW, val);
+       feb_sc.FEB_register_write(FEB.SB_Port(), FPGA_ID_REGISTER_RW, val);
     }
     return 0;
 }
@@ -50,7 +51,7 @@ int MuFEB::WriteFEBID(){
 int MuFEB::WriteSorterDelay(uint16_t FPGA_ID, uint32_t delay)
 {
     std::vector<uint32_t> data(1,delay);
-    feb_sc.FEB_register_write(FPGA_ID, SORTER_DELAY_RW, data);
+    feb_sc.FEB_register_write(FPGA_ID, MP_SORTER_DELAY_REGISTER_W, data);
 }
 
 void MuFEB::ReadFirmwareVersionsToODB()
@@ -373,13 +374,11 @@ DWORD *MuFEB::read_SSSO_OneFEB(DWORD *pdata, uint32_t index)
     *pdata++ = index;
     vector<uint32_t> sorterdata(38);
     // Read the sorter counters (different meaning for scifi, but maybe put in the same spot??)
-    feb_sc.FEB_register_read(index, SORTER_COUNTER_R, sorterdata);
+    feb_sc.FEB_register_read(index, MP_SORTER_COUNTER_REGISTER_R, sorterdata);
     for(uint32_t i=0; i < 38; i++)
         *pdata++ = sorterdata[i];
     return pdata;
 }
-
-
 
 
 //Helper functions
@@ -401,8 +400,6 @@ uint32_t MuFEB::reg_getRange(uint32_t reg_in, uint8_t length, uint8_t offset){
 uint32_t MuFEB::reg_setRange(uint32_t reg_in, uint8_t length, uint8_t offset, uint32_t value){
     return (reg_in & ~(((1<<length)-1)<<offset)) | ((value & ((1<<length)-1))<<offset);
 }
-
-
 
 float MuFEB::ArriaVTempConversion(uint32_t reg)
 {

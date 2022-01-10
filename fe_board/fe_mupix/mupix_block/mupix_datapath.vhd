@@ -12,6 +12,10 @@ use work.mudaq.all;
 
 
 entity mupix_datapath is
+    generic(
+        IS_TELESCOPE_g : std_logic := '0';
+        LINK_ORDER_g : mp_link_order_t--;
+    );
 port (
     i_reset_n           : in  std_logic;
     i_reset_n_regs      : in  std_logic;
@@ -23,7 +27,7 @@ port (
     i_lvds_rx_inclock_B : in  std_logic;
     lvds_data_in        : in  std_logic_vector(35 downto 0);
 
-    i_reg_add           : in  std_logic_vector(7 downto 0);
+    i_reg_add           : in  std_logic_vector(15 downto 0);
     i_reg_re            : in  std_logic;
     o_reg_rdata         : out std_logic_vector(31 downto 0);
     i_reg_we            : in  std_logic;
@@ -38,7 +42,12 @@ port (
     i_sync_reset_cnt    : in  std_logic;
     i_fpga_id           : in  std_logic_vector(7 downto 0);
     i_run_state_125     : in  run_state_t;
-    i_run_state_156     : in  run_state_t--;
+    i_run_state_156     : in  run_state_t;
+
+    i_trigger_in0           : in  std_logic;
+    i_trigger_in1           : in  std_logic;
+    i_trigger_in0_timestamp : in  std_logic_vector(31 downto 0);
+    i_trigger_in1_timestamp : in  std_logic_vector(31 downto 0)--;
 );
 end mupix_datapath;
 
@@ -51,6 +60,7 @@ architecture rtl of mupix_datapath is
     -- signals after mux
     signal rx_data                  : work.util.slv8_array_t(35 downto 0);
     signal rx_k                     : std_logic_vector(35 downto 0);
+	signal rx_disp_err              : std_logic_vector(35 downto 0);
     signal lvds_status              : work.util.slv32_array_t(35 downto 0);
     signal lvds_invert              : std_logic;
     signal data_valid               : std_logic_vector(35 downto 0);
@@ -131,10 +141,6 @@ architecture rtl of mupix_datapath is
     signal fifo_wdata_gen           : std_logic_vector(35 downto 0);
     signal fifo_write_gen           : std_logic;
 
-    -- Sorter config and diagnositc
-    signal sorter_counters          : sorter_reg_array;
-    signal sorter_delay             : ts_t;
-
     signal last_sorter_hit          : std_logic_vector(31 downto 0);
     signal sorter_out_is_hit        : std_logic;
     signal sorter_inject            : std_logic_vector(31 downto 0);
@@ -152,52 +158,117 @@ architecture rtl of mupix_datapath is
     signal hitsorter_out_ena_cnt_reg: std_logic_vector(31 downto 0);
     signal reset_n_lvds             : std_logic;
 
+    -- sc
+    signal mp_sorter_reg            : work.util.rw_t;
+    signal mp_lvds_rx_reg           : work.util.rw_t;
+    signal mp_datapath_reg          : work.util.rw_t;
+
+	signal ena3_counter				: std_logic_vector(31 downto 0);
+	signal ena4_counter				: std_logic_vector(31 downto 0);
 begin
 
-	process(i_clk156)
-   begin
-		if(rising_edge(i_clk156)) then
-			if(i_run_state_156=RUN_STATE_SYNC) then
-				reset_156_n <= '0';
-			else 
-				reset_156_n <=  '1';
-			end if;
-		end if;
-	end process;
-	
-	process(i_clk125)
-   begin
-		if(rising_edge(i_clk125)) then
-			if(i_run_state_125=RUN_STATE_SYNC) then
-				reset_125_n <= '0';
-			else 
-				reset_125_n <=  '1';
-			end if;
-		end if;
-	end process;
+    process(i_clk156)
+    begin
+        if(rising_edge(i_clk156)) then
+            if(i_run_state_156=RUN_STATE_SYNC) then
+                reset_156_n <= '0';
+            else 
+                reset_156_n <=  '1';
+            end if;
+        end if;
+    end process;
+
+    process(i_clk125)
+    begin
+        if(rising_edge(i_clk125)) then
+            if(i_run_state_125=RUN_STATE_SYNC) then
+				ena3_counter <= (others => '0');
+				ena4_counter <= (others => '0');
+                reset_125_n <= '0';
+            else 
+                reset_125_n <=  '1';
+				if(i_trigger_in0 = '1') then
+					ena3_counter <= ena3_counter + '1';
+				end if;
+				if(i_trigger_in1 = '1') then
+					ena4_counter <= ena4_counter + '1';
+				end if;
+            end if;
+        end if;
+    end process;
     
 ------------------------------------------------------------------------------------
----------------------- registers ---------------------------------------------------
+---------------------- sc ----------------------------------------------------------
+
+    e_lvl2_sc_node: entity work.sc_node
+    generic map (
+        SLAVE1_ADDR_MATCH_g => "00010000--------",
+        SLAVE2_ADDR_MATCH_g => "00010001--------"--,
+    )
+    port map (
+        i_clk          => i_clk156,
+        i_reset_n      => i_reset_n_regs,
+
+        i_master_addr  => i_reg_add,
+        i_master_re    => i_reg_re,
+        o_master_rdata => o_reg_rdata,
+        i_master_we    => i_reg_we,
+        i_master_wdata => i_reg_wdata,
+
+        o_slave0_addr  => mp_datapath_reg.addr(15 downto 0),
+        o_slave0_re    => mp_datapath_reg.re,
+        i_slave0_rdata => mp_datapath_reg.rdata,
+        o_slave0_we    => mp_datapath_reg.we,
+        o_slave0_wdata => mp_datapath_reg.wdata,
+
+        o_slave1_addr  => mp_sorter_reg.addr(15 downto 0),
+        o_slave1_re    => mp_sorter_reg.re,
+        i_slave1_rdata => mp_sorter_reg.rdata,
+        o_slave1_we    => mp_sorter_reg.we,
+        o_slave1_wdata => mp_sorter_reg.wdata,
+
+        o_slave2_addr  => mp_lvds_rx_reg.addr(15 downto 0),
+        o_slave2_re    => mp_lvds_rx_reg.re,
+        i_slave2_rdata => mp_lvds_rx_reg.rdata,
+        o_slave2_we    => mp_lvds_rx_reg.we,
+        o_slave2_wdata => mp_lvds_rx_reg.wdata--,
+    );
+
+    mp_lvds_rx_reg_mapping_inst: entity work.mp_lvds_rx_reg_mapping
+    generic map (
+        LINK_ORDER_g => LINK_ORDER_g--,
+    )
+    port map (
+        i_clk156          => i_clk156,
+        i_reset_n         => i_reset_n_regs,
+
+        i_reg_add         => mp_lvds_rx_reg.addr(15 downto 0),
+        i_reg_re          => mp_lvds_rx_reg.re,
+        o_reg_rdata       => mp_lvds_rx_reg.rdata,
+        i_reg_we          => mp_lvds_rx_reg.we,
+        i_reg_wdata       => mp_lvds_rx_reg.wdata,
+
+        i_lvds_status     => lvds_status--,
+      );
+
     e_mupix_datapath_reg_mapping : work.mupix_datapath_reg_mapping
+    generic map (
+        LINK_ORDER_g => LINK_ORDER_g--,
+    )
     port map (
         i_clk156                    => i_clk156,
         i_clk125                    => i_clk125,
         i_reset_n                   => i_reset_n_regs,
 
-        i_reg_add                   => i_reg_add,
-        i_reg_re                    => i_reg_re,
-        o_reg_rdata                 => o_reg_rdata,
-        i_reg_we                    => i_reg_we,
-        i_reg_wdata                 => i_reg_wdata,
-
-        -- inputs  156--------------------------------------------
-        i_lvds_data_valid           => (others => '0'), -- not in use, is contained in lvds_status, April 2021
-        i_lvds_status               => lvds_status,
+        i_reg_add                   => mp_datapath_reg.addr(15 downto 0),
+        i_reg_re                    => mp_datapath_reg.re,
+        o_reg_rdata                 => mp_datapath_reg.rdata,
+        i_reg_we                    => mp_datapath_reg.we,
+        i_reg_wdata                 => mp_datapath_reg.wdata,
 
         -- inputs  125 (how to sync)------------------------------
-        i_sorter_counters           => sorter_counters,
-        --i_coarsecounter_ena         => coarsecounter_enas(MP_LINK_ORDER(to_integer(unsigned(delta_ts_link_select)))),
-        --i_coarsecounter             => coarsecounters(MP_LINK_ORDER(to_integer(unsigned(delta_ts_link_select)))),
+        --i_coarsecounter_ena         => coarsecounter_enas(LINK_ORDER_g(to_integer(unsigned(delta_ts_link_select)))),
+        --i_coarsecounter             => coarsecounters(LINK_ORDER_g(to_integer(unsigned(delta_ts_link_select)))),
         i_ts_global                 => counter125(23 downto 0),
         i_last_sorter_hit           => last_sorter_hit,
         i_mp_hit_ena_cnt            => hit_ena_cnt,
@@ -213,7 +284,6 @@ begin
         o_mp_delta_ts_link_select   => delta_ts_link_select,
 
         -- outputs 125-------------------------------------------------
-        o_sorter_delay              => sorter_delay,
         o_sorter_inject             => sorter_inject,
         o_mp_reset_n_lvds           => reset_n_lvds,
         o_mp_hit_ena_cnt_select     => hit_ena_cnt_select,
@@ -223,6 +293,9 @@ begin
 ------------------------------------------------------------------------------------
 ---------------------- LVDS Receiver part ------------------------------------------
     lvds_block : work.receiver_block_mupix
+    generic map (
+        IS_TELESCOPE_g  => IS_TELESCOPE_g--,
+    )
     port map(
         i_reset_n           => reset_n_lvds,
         i_nios_clk          => i_clk156,
@@ -236,7 +309,8 @@ begin
         o_rx_ready          => data_valid,
         i_rx_invert         => lvds_invert,
         o_rx_data           => rx_data,
-        o_rx_k              => rx_k--,
+        o_rx_k              => rx_k,
+		o_rx_disp_err		=> rx_disp_err--,
     );
 
     -- use a link mask to disable channels from being used in the data processing
@@ -256,10 +330,12 @@ begin
     port map(
         reset_n             => reset_125_n,
         clk                 => i_clk125,
-        datain              => rx_data(MP_LINK_ORDER(i)), 
-        kin                 => rx_k(MP_LINK_ORDER(i)), 
-        readyin             => link_enable(MP_LINK_ORDER(i)),
+        datain              => rx_data(LINK_ORDER_g(i)), 
+        kin                 => rx_k(LINK_ORDER_g(i)),
+		errin               => rx_disp_err(LINK_ORDER_g(i)),
+        readyin             => link_enable(LINK_ORDER_g(i)),
         i_mp_readout_mode   => mp_readout_mode,
+		i_replace_ts2		=> '1',
         o_ts                => ts_unpacker(i),
         o_chip_ID           => chip_ID_unpacker(i),
         o_row               => row_unpacker(i),
@@ -274,6 +350,11 @@ begin
     );
 
     END GENERATE genunpack;
+
+    --------------------------------------------
+    -- 2 not so interesting processes (one in 156, one in 125 Mhz)
+    -- counting stuff, delaying stuff, etc. nothing really happening here
+    --------------------------------------------
 
     process(i_clk156)
     begin
@@ -326,15 +407,49 @@ begin
                 end if;
             end if;
 
-            sorter_inject_prev <= sorter_inject(MP_SORTER_INJECT_ENABLE_BIT);
-            if(sorter_inject_prev = '0' and sorter_inject(MP_SORTER_INJECT_ENABLE_BIT) = '1' and (to_integer(unsigned(sorter_inject(MP_SORTER_INJECT_SELECT_RANGE))) < 12)) then
-                hits_sorter_in      <= (others => sorter_inject);
-                hits_sorter_in_ena  <= (others => '0');
-                hits_sorter_in_ena(to_integer(unsigned(sorter_inject(MP_SORTER_INJECT_SELECT_RANGE)))) <= '1';
-            else
-                hits_sorter_in      <= hits_sorter_in_buf;
-                hits_sorter_in_ena  <= hits_sorter_in_ena_buf;
-            end if;
+            --sorter_inject_prev <= sorter_inject(MP_SORTER_INJECT_ENABLE_BIT);
+            --if(sorter_inject_prev = '0' and sorter_inject(MP_SORTER_INJECT_ENABLE_BIT) = '1' and (to_integer(unsigned(sorter_inject(MP_SORTER_INJECT_SELECT_RANGE))) < 12)) then
+            --    hits_sorter_in      <= (others => sorter_inject);
+            --    hits_sorter_in_ena  <= (others => '0');
+            --    hits_sorter_in_ena(to_integer(unsigned(sorter_inject(MP_SORTER_INJECT_SELECT_RANGE)))) <= '1';
+            --else
+				
+				-- todo: reverse this again (cabling mistake in muEDM run hotfix)
+                    --hits_sorter_in(0)      <= hits_sorter_in_buf(0);
+                    --hits_sorter_in_ena(0)  <= hits_sorter_in_ena_buf(2);
+					--hits_sorter_in(1)      <= hits_sorter_in_buf(1);
+                    --hits_sorter_in_ena(1)  <= hits_sorter_in_ena_buf(1);
+					--hits_sorter_in(2)      <= hits_sorter_in_buf(0);
+                    --hits_sorter_in_ena(2)  <= hits_sorter_in_ena_buf(0);
+                for i in 0 to 2 loop
+                    hits_sorter_in(i)      <= hits_sorter_in_buf(i);
+                    hits_sorter_in_ena(i)  <= hits_sorter_in_ena_buf(i);
+                end loop;
+                
+
+                if(IS_TELESCOPE_g = '1') then
+                    hits_sorter_in(3)      <= i_trigger_in0_timestamp(20 downto 0) & counter125(10 downto 0);--counter125(10 downto 0) & ena3_counter(9 downto 0) & counter125(10 downto 0);
+                    hits_sorter_in_ena(3)  <= i_trigger_in0;
+                    hits_sorter_in(4)      <= i_trigger_in1_timestamp(20 downto 0) & counter125(10 downto 0);--counter125(10 downto 0) & ena4_counter(9 downto 0) & counter125(10 downto 0);
+                    hits_sorter_in_ena(4)  <= i_trigger_in1;
+                else
+                    hits_sorter_in(3)      <= hits_sorter_in_buf(3);
+                    hits_sorter_in_ena(3)  <= hits_sorter_in_ena_buf(3);
+                    hits_sorter_in(4)      <= hits_sorter_in_buf(4);
+                    hits_sorter_in_ena(4)  <= hits_sorter_in_ena_buf(4);
+                end if;
+
+
+                for i in 5 to 11 loop
+                    if(IS_TELESCOPE_g = '1') then
+                        hits_sorter_in(i)      <= hits_sorter_in_buf(i);
+                        hits_sorter_in_ena(i)  <= '0';
+                    else
+                        hits_sorter_in(i)      <= hits_sorter_in_buf(i);
+                        hits_sorter_in_ena(i)  <= hits_sorter_in_ena_buf(i);
+                    end if;
+                end loop;
+            --end if;
 
             for i in 0 to 11 loop
                 if(i_run_state_125 = RUN_STATE_RUNNING) then
@@ -394,23 +509,25 @@ begin
             o_tot(0)            => tot_hs(i),
             o_hit_ena           => hits_sorter_in_ena_buf(i)--,
         );
-        hits_sorter_in_buf(i)       <= row_hs(i) & col_hs(i) & tot_hs(i)(4 downto 0) & ts_hs(i);
+        --hits_sorter_in_buf(i)       <= row_hs(i) & col_hs(i) & tot_hs(i)(4 downto 0) & ts_hs(i);
+		hits_sorter_in_buf(i)       <= row_hs(i) & col_hs(i) & tot_hs(i)(4 downto 0) & counter125(10 downto 0); -- TODO: change me
+		
     END GENERATE;
 
     process(i_clk125)
-    begin
-    if(rising_edge(i_clk125))then
-        if(i_run_state_125 = RUN_STATE_RUNNING) then
-            running         <= '1';
-        else
-            running         <= '0';
+        begin
+        if(rising_edge(i_clk125))then
+            if(i_run_state_125 = RUN_STATE_RUNNING) then
+                running         <= '1';
+            else
+                running         <= '0';
+            end if;
+            if(i_run_state_125 = RUN_STATE_IDLE) then
+                sorter_reset_n  <= '0';
+            else 
+                sorter_reset_n  <= '1';
+            end if;
         end if;
-        if(i_run_state_125 = RUN_STATE_IDLE) then
-            sorter_reset_n  <= '0';
-        else 
-            sorter_reset_n  <= '1';
-        end if;
-    end if;
     end process;
  
     sorter: work.hitsorter_wide
@@ -426,11 +543,16 @@ begin
         out_ena         => fifo_write_hs,
         out_type        => fifo_wdata_hs(35 downto 32),
         out_is_hit      => sorter_out_is_hit,
-        diagnostic_out  => sorter_counters,
-        delay           => sorter_delay--,
+
+        i_clk156        => i_clk156,
+        i_reset_n_regs  => i_reset_n_regs,
+        i_reg_add       => mp_sorter_reg.addr(15 downto 0),
+        i_reg_re        => mp_sorter_reg.re,
+        o_reg_rdata     => mp_sorter_reg.rdata,
+        i_reg_we        => mp_sorter_reg.we,
+        i_reg_wdata     => mp_sorter_reg.wdata--,
     );
 
-    
     output_select : process(i_clk125) -- hitsorter, generator, unsorted ...
     begin
         if(rising_edge(i_clk125))then

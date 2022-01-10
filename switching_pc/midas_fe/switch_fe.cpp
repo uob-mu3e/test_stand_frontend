@@ -233,7 +233,7 @@ EQUIPMENT equipment[] = {
      EQ_PERIODIC,                 /* equipment type */
      0,                         /* event source crate 0, all stations */
      "MIDAS",                   /* format */
-     FALSE,                      /* enabled */
+     TRUE,                      /* enabled */
      RO_ALWAYS | RO_ODB,   /* read during run transitions and update ODB */
      1000,                      /* read every 1 sec */
      0,                         /* stop run after this event limit */
@@ -248,7 +248,7 @@ EQUIPMENT equipment[] = {
      EQ_PERIODIC,                 /* equipment type */
      0,                         /* event source crate 0, all stations */
      "MIDAS",                   /* format */
-     TRUE,                      /* enabled */
+     FALSE,                      /* enabled */
      RO_ALWAYS | RO_ODB,   /* read during run transitions and update ODB */
      10000,                      /* read every 10 sec */
      0,                         /* stop run after this event limit */
@@ -396,7 +396,10 @@ void setup_odb(){
             {"Clear WM", false},
             {"Last RM ADD", false},
             {"MupixConfig", false},
+            {"MupixChipToConfigure", 999}, // 999 means all
+            {"MupixSetTDACConfig", false},
             {"MupixBoard", false},
+            {"Sorter Zero Suppression Mupix", false},
             {"SciFiConfig", false},
             {"SciFiAllOff", false},
             {"SciFiTDCTest", false},
@@ -492,8 +495,10 @@ void setup_odb(){
     custom["DAQcounters&"] = "daqcounters.html";
 
     // Inculde the line below to set up the FEBs and their mapping for the 2021 integration run
-//#include "odb_feb_mapping_integration_run_2021.h"
+    //#include "odb_feb_mapping_integration_run_2021.h"
 
+    // Inculde the line below to set up the FEBs and their mapping for 2021 EDM run
+    #include "odb_feb_mapping_edm_run_2021.h"
 
 
 }
@@ -728,7 +733,7 @@ INT init_mupix(mudaq::MudaqDevice & mu) {
                      "/Equipment/Mupix",
                      switch_id); //create FEB interface signleton for mupix
 
-    int status=mupix::midasODB::setup_db("/Equipment/Mupix", mupixfeb, true);
+    int status=mupix::midasODB::setup_db("/Equipment/Mupix", mupixfeb, true, false);//true);
     if(status != SUCCESS){
         set_equipment_status(equipment[EQUIPMENT_ID::Mupix].name, "Start up failed", "var(--mred)");
         return status;
@@ -848,12 +853,14 @@ try{ // TODO: What can throw here?? Why?? Is there another way to handle this??
    uint16_t timeout_cnt=300;
    uint64_t link_active_from_register;
    printf("Waiting for run prepare acknowledge from all FEBs\n");
-   do{
-      timeout_cnt--;
-      link_active_from_register = get_runstart_ack();
-      printf("%u  %lx  %lx\n",timeout_cnt,link_active_from_odb, link_active_from_register);
-      usleep(10000);
-   }while( (link_active_from_register & link_active_from_odb) != link_active_from_odb && (timeout_cnt > 0));
+   // TODO we skip this now
+   usleep(10000);
+//    do{
+//       timeout_cnt--;
+//       link_active_from_register = get_runstart_ack();
+//       printf("%u  %lx  %lx\n",timeout_cnt, link_active_from_odb, link_active_from_register);
+//       usleep(10000);
+//    }while( (link_active_from_register & link_active_from_odb) != link_active_from_odb && (timeout_cnt > 0));
 
    if(timeout_cnt==0) {
       cm_msg(MERROR,"switch_fe","Run number mismatch on run %d", run_number);
@@ -996,9 +1003,9 @@ INT read_sc_event(char *pevent, INT off)
     pdata = mufeb->fill_SSFE(pdata);
     bk_close(pevent,pdata);
 
-    bk_create(pevent, counterbankname.c_str(), TID_INT, (void **)&pdata);
-    pdata = fill_SSCN(pdata);
-    bk_close(pevent, pdata);
+    // bk_create(pevent, counterbankname.c_str(), TID_INT, (void **)&pdata);
+    // pdata = fill_SSCN(pdata);
+    // bk_close(pevent, pdata);
 
     bk_create(pevent, sorterbankname.c_str(), TID_INT, (void **)&pdata);
     pdata = mufeb->fill_SSSO(pdata);
@@ -1361,7 +1368,15 @@ void sc_settings_changed(odb o)
           command=command&(1<<8);
           o = command;
     }
-
+    if (name == "Sorter Zero Suppression Mupix") {
+        if (o) {
+            cm_msg(MINFO, "sc_settings_changed", "Sorter Zero Suppression Mupix on");
+            feb_sc->FEB_register_write(FEBSlowcontrolInterface::ADDRS::BROADCAST_ADDR, MP_SORTER_ZERO_SUPPRESSION_REGISTER_W, 0x1);
+        } else {
+            cm_msg(MINFO, "sc_settings_changed", "Sorter Zero Suppression Mupix off");
+            feb_sc->FEB_register_write(FEBSlowcontrolInterface::ADDRS::BROADCAST_ADDR, MP_SORTER_ZERO_SUPPRESSION_REGISTER_W, 0x0);
+        }
+    }
     if (name == "Load Firmware" && o) {
         cm_msg(MINFO, "sc_settings_changed", "Load firmware triggered");
         string fname = odb("/Equipment/Switching/Settings/Firmware File");

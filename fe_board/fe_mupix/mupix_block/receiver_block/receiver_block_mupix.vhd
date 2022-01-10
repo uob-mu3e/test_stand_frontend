@@ -19,7 +19,8 @@ use work.mupix.all;
 entity receiver_block_mupix is 
     generic(
         NINPUT : integer := 36;
-        NCHIPS : integer := 15
+        NCHIPS : integer := 15;
+        IS_TELESCOPE_g : std_logic := '0'--;
     );
     port (
         i_reset_n       : in  std_logic;
@@ -34,6 +35,7 @@ entity receiver_block_mupix is
         i_rx_invert     : in  std_logic;
         o_rx_data       : out work.util.slv8_array_t(NINPUT-1 downto 0);
         o_rx_k          : out std_logic_vector(NINPUT-1 downto 0);
+		o_rx_disp_err   : out std_logic_vector(NINPUT-1 downto 0);
         rx_clkout       : out std_logic_vector(1 downto 0);
         rx_doubleclk    : out std_logic_vector(1 downto 0)--;
     );
@@ -55,6 +57,7 @@ architecture rtl of receiver_block_mupix is
     signal rx_k                 : std_logic_vector(NINPUT-1 downto 0);
     signal rx_data_out_buffer   : std_logic_vector(NINPUT*8-1 downto 0);
     signal rx_k_out_buffer      : std_logic_vector(NINPUT-1 downto 0);
+	signal rx_disp_err_out_buffer : std_logic_vector(NINPUT-1 downto 0);
 
     signal rx_dpa_locked        : std_logic_vector (NINPUT-1 DOWNTO 0);
     signal rx_align             : std_logic_vector (NINPUT-1 DOWNTO 0);
@@ -126,21 +129,41 @@ begin
         locked   => rx_locked(0)
     );
 
-    lvds_rec_small: entity work.lvds_receiver
-    PORT MAP
-    (
-        pll_areset              => not rx_locked(0),
-        rx_channel_data_align   => rx_align(26 downto 0),
-        rx_dpaclock             => rx_dpaclock_A,
-        rx_enable               => rx_enable_A,
-        rx_fifo_reset           => rx_fifo_reset(26 downto 0),
-        rx_in                   => rx_in(26 downto 0),
-        rx_inclock              => rx_inclock_A_pll,
-        rx_reset                => rx_reset(26 downto 0),
-        rx_syncclock            => rx_synclock_A,
-        rx_dpa_locked           => rx_dpa_locked(26 downto 0),
-        rx_out                  => rx_out_temp(269 downto 0)
-    );
+    gen2ndrec: if (IS_TELESCOPE_g='0') GENERATE
+        lvds_rec_small: entity work.lvds_receiver
+        PORT MAP
+        (
+            pll_areset              => not rx_locked(0),
+            rx_channel_data_align   => rx_align(26 downto 0),
+            rx_dpaclock             => rx_dpaclock_A,
+            rx_enable               => rx_enable_A,
+            rx_fifo_reset           => rx_fifo_reset(26 downto 0),
+            rx_in                   => rx_in(26 downto 0),
+            rx_inclock              => rx_inclock_A_pll,
+            rx_reset                => rx_reset(26 downto 0),
+            rx_syncclock            => rx_synclock_A,
+            rx_dpa_locked           => rx_dpa_locked(26 downto 0),
+            rx_out                  => rx_out_temp(269 downto 0)
+        );
+    end generate gen2ndrec;
+
+    gen2ndrec2: if (IS_TELESCOPE_g='1') GENERATE
+        lvds_rec: entity work.lvds_receiver_small
+        PORT MAP
+        (
+            pll_areset              => not rx_locked(1),
+            rx_channel_data_align   => rx_align(26 downto 18),
+            rx_dpaclock             => rx_dpaclock_A,
+            rx_enable               => rx_enable_A,
+            rx_fifo_reset           => rx_fifo_reset(26 downto 18),
+            rx_in                   => rx_in(26 downto 18),
+            rx_inclock              => rx_inclock_A_pll,
+            rx_reset                => rx_reset(26 downto 18),
+            rx_syncclock            => rx_synclock_A,
+            rx_dpa_locked           => rx_dpa_locked(26 downto 18),
+            rx_out                  => rx_out_temp(269 downto 180)--,
+        );
+    end generate gen2ndrec2;
 
     lpll_B: entity work.lvdspll
     PORT MAP
@@ -171,9 +194,17 @@ begin
         rx_out                  => rx_out_temp(359 downto 270)
     );
 
-    geninvert: FOR i in 0 to 35 GENERATE
-        rx_out(9+10*i downto 10*i) <= not rx_out_temp(9+10*i downto 10*i) when (MP_LINK_INVERT(i) xor i_rx_invert)='0' else rx_out_temp(9+10*i downto 10*i);
-    end generate geninvert;
+
+    geninvert_normal: if (IS_TELESCOPE_g='0') GENERATE
+        geninvert_n: FOR i in 0 to 35 GENERATE
+            rx_out(9+10*i downto 10*i) <= not rx_out_temp(9+10*i downto 10*i) when (MP_LINK_INVERT(i) xor i_rx_invert)='0' else rx_out_temp(9+10*i downto 10*i);
+        end generate geninvert_n;
+    end generate geninvert_normal;
+    geninvert_telescope: if (IS_TELESCOPE_g='1') GENERATE
+        geninvert_t: FOR i in 0 to 35 GENERATE
+            rx_out(9+10*i downto 10*i) <= not rx_out_temp(9+10*i downto 10*i) when (MP_LINK_INVERT_TELESCOPE(i) xor i_rx_invert)='0' else rx_out_temp(9+10*i downto 10*i);
+        end generate geninvert_t;
+    end generate geninvert_telescope;
 
     gendec:
     FOR i in NINPUT-1 downto 0 generate	
@@ -206,38 +237,42 @@ begin
             end if;
         end process;
 
-        sync_fifo_cnt : entity work.ip_dcfifo
-        generic map(
-            ADDR_WIDTH  => 4,
-            DATA_WIDTH  => 32,
-            SHOWAHEAD   => "ON",
-            OVERFLOW    => "ON",
-				REGOUT      => 0,
-            DEVICE      => "Arria V"--,
-        )
-        port map(
-            aclr                                => '0',
-            data(MP_LVDS_STATUS_DISP_ERR_RANGE) => disp_err_counter(i),
-            data(MP_LVDS_STATUS_PLL_LOCKED_BIT) => rx_locked(i/27),
-            data(MP_LVDS_STATUS_STATE_RANGE)    => rx_state(i*2+1 downto i*2),
-            data(MP_LVDS_STATUS_READY_BIT)      => rx_ready(i),
-            rdclk                               => i_nios_clk,
-            rdreq                               => lvds_status_rdreq(i),
-            rdempty                             => lvds_status_empty(i),
-            wrclk                               => rx_clk(i/27),
-            wrreq                               => '1',
-            q                                   => lvds_status_buffer(i)
-        );
+--        sync_fifo_cnt : entity work.ip_dcfifo
+--        generic map(
+--            ADDR_WIDTH  => 4,
+--            DATA_WIDTH  => 32,
+--            SHOWAHEAD   => "ON",
+--            OVERFLOW    => "ON",
+--            REGOUT      => 0,
+--            DEVICE      => "Arria V"--,
+--        )
+--        port map(
+--            aclr                                => '0',
+--            data(MP_LVDS_STATUS_DISP_ERR_RANGE) => disp_err_counter(i),
+--            data(MP_LVDS_STATUS_PLL_LOCKED_BIT) => rx_locked(i/27),
+--            data(MP_LVDS_STATUS_STATE_RANGE)    => rx_state(i*2+1 downto i*2),
+--            data(MP_LVDS_STATUS_READY_BIT)      => rx_ready(i),
+--            rdclk                               => i_nios_clk,
+--            rdreq                               => lvds_status_rdreq(i),
+--            rdempty                             => lvds_status_empty(i),
+--            wrclk                               => rx_clk(i/27),
+--            wrreq                               => '1',
+--            q                                   => lvds_status_buffer(i)
+--        );
 
         process(i_nios_clk)
         begin
             if(rising_edge(i_nios_clk)) then
-                if(lvds_status_empty(i)='0') then
-                    lvds_status_rdreq(i) <= '1';
-                    o_rx_status(i)       <= lvds_status_buffer(i);
-                else
-                    lvds_status_rdreq(i) <= '0';
-                end if;
+--                if(lvds_status_empty(i)='0') then
+--                    lvds_status_rdreq(i) <= '1';
+--                    o_rx_status(i)       <= lvds_status_buffer(i);
+--                else
+--                    lvds_status_rdreq(i) <= '0';
+--                end if;
+                o_rx_status(I)(MP_LVDS_STATUS_DISP_ERR_RANGE) <= disp_err_counter(I);
+                o_rx_status(I)(MP_LVDS_STATUS_PLL_LOCKED_BIT) <= rx_locked(I/27);
+                o_rx_status(I)(MP_LVDS_STATUS_STATE_RANGE) <= rx_state(I*2+1 downto I*2);
+                o_rx_status(I)(MP_LVDS_STATUS_READY_BIT) <= rx_ready(I);
             end if;
         end process;
 
@@ -265,43 +300,45 @@ begin
     sync_fifo_rx_data1 : entity work.ip_dcfifo
     generic map(
         ADDR_WIDTH  => 4,
-        DATA_WIDTH  => 243,
+        DATA_WIDTH  => 270,
         SHOWAHEAD   => "ON",
         OVERFLOW    => "ON",
-		  REGOUT      => 0,
+		  REGOUT    => 0,
         DEVICE      => "Arria V"--,
     )
     port map(
         aclr                => not i_reset_n,
-        data                => rx_k(26 downto 0) & rx_data(27*8-1 downto 0),
+        data                => disp_err(26 downto 0) & rx_k(26 downto 0) & rx_data(27*8-1 downto 0),
         rdclk               => i_clk_global,
         rdreq               => rx_sync_fifo_rd(0),
         wrclk               => rx_clk(0),
         wrreq               => '1',
         rdempty             => rx_sync_fifo_empty(0),
         q(8*27-1 downto 0)  => rx_data_out_buffer(27*8-1 downto 0),
-        q(242 downto 8*27)  => rx_k_out_buffer(26 downto 0)--,
+        q(242 downto 8*27)  => rx_k_out_buffer(26 downto 0),
+		q(269 downto 243)   => rx_disp_err_out_buffer(26 downto 0)--,
     );
 
     sync_fifo_rx_data2 : entity work.ip_dcfifo
     generic map(
         ADDR_WIDTH  => 4,
-        DATA_WIDTH  => 81,
+        DATA_WIDTH  => 90,
         SHOWAHEAD   => "ON",
         OVERFLOW    => "ON",
-		  REGOUT      => 0,
+        REGOUT      => 0,
         DEVICE      => "Arria V"--,
     )
     port map(
         aclr                => not i_reset_n,
-        data                => rx_k(35 downto 27) & rx_data(36*8-1 downto 27*8),
+        data                => disp_err(35 downto 27) & rx_k(35 downto 27) & rx_data(36*8-1 downto 27*8),
         rdclk               => i_clk_global,
         rdreq               => rx_sync_fifo_rd(1),
         wrclk               => rx_clk(1),
         wrreq               => '1',
         rdempty             => rx_sync_fifo_empty(1),
         q(71 downto 0)      => rx_data_out_buffer(36*8-1 downto 27*8),
-        q(80 downto 72)     => rx_k_out_buffer(35 downto 27)--,
+        q(80 downto 72)     => rx_k_out_buffer(35 downto 27),
+		q(89 downto 81)   	=> rx_disp_err_out_buffer(35 downto 27)--,
     );
 
     process(i_clk_global)
@@ -309,6 +346,7 @@ begin
         if(rising_edge(i_clk_global)) then
             rx_sync_fifo_rd     <= not rx_sync_fifo_empty;
             o_rx_ready          <= rx_ready;
+			o_rx_disp_err 	<= rx_disp_err_out_buffer;
             for i in 0 to 35 loop
                 o_rx_data(i)    <= rx_data_out_buffer(i*8+7 downto i*8);
                 o_rx_k(i)       <= rx_k_out_buffer(i);

@@ -20,7 +20,7 @@ void menu_print_rate() {
 }
 
 void menu_reset() {
-    auto& reset_bypass = sc.ram->regs.fe.reset_bypass;
+    auto& reset_bypass = sc.ram->data[0xFC06];
     auto  reset_bypass_buffer = 0;
     auto& reset_bypass_payload = sc.ram->regs.fe.reset_bypass_payload;
     auto& reset_phase = sc.ram->data[0xFFF7];

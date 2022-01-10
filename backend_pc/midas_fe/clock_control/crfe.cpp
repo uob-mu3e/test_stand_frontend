@@ -52,6 +52,7 @@
 
 
 #include "clockboard_bypass.h"
+#include "clockboard_a10.h"
 #include "clockboard.h"
 #include "reset_protocol.h"
 #include "link_constants.h"
@@ -102,9 +103,9 @@ clockboard * cb;
 
 INT read_cr_event(char *pevent, INT off);
 INT read_link_event(char *pevent, INT off);
-void cr_settings_changed(odb);
-void link_settings_changed(odb);
-void prepare_run_on_request(odb);
+void cr_settings_changed(odb &);
+void link_settings_changed(odb &);
+void prepare_run_on_request(odb &);
 
 void setup_odb();
 void setup_watches();
@@ -178,16 +179,23 @@ INT frontend_init()
 
     cout << "IP: " << ip << " port: " << port << endl;
 
+
+
     #ifdef NO_CLOCK_BOX
         cm_msg(MINFO, "frontend_init", "Using clock board bypass for reset commands to FEB");
         cb = new clockboard_bypass(ip, port);
     #else
-        if(ip=="0.0.0.0"){
-           cm_msg(MINFO, "frontend_init", "Using clock board bypass for reset commands to FEB");
-           cb = new clockboard_bypass(ip, port);
-        }else{
-           cb = new clockboard(ip, port);
-        }
+        #ifdef A10_EMULATED_CLOCK_BOX
+            cm_msg(MINFO, "frontend_init", "Using A10 clockboard replacement");
+            cb = new clockboard_a10(ip, port);
+        #else
+            if(ip=="0.0.0.0"){
+                cm_msg(MINFO, "frontend_init", "Using clock board bypass for reset commands to FEB");
+                 cb = new clockboard_bypass(ip, port);
+            }else{
+                cb = new clockboard(ip, port);
+            }
+        #endif;
     #endif
 
    if(!cb->isConnected())
@@ -284,6 +292,14 @@ INT resume_run(INT run_number, char *error)
 
 INT read_cr_event(char *pevent, INT off [[maybe_unused]])
 {
+#ifdef NO_CLOCK_BOX
+        return 0;
+#endif;
+
+#ifdef A10_EMULATED_CLOCK_BOX
+    return 0;
+#endif;
+
     if(!cb->isConnected()){
         // terminate!
         cm_msg(MERROR, "read_cr_event", "Connection to clock board lost");
@@ -360,7 +376,7 @@ INT read_link_event(char *pevent, INT off [[maybe_unused]])
 
 /*--- Called whenever settings have changed ------------------------*/
 
-void cr_settings_changed(odb o)
+void cr_settings_changed(odb & o)
 {
    std::string name = o.get_name();
 
@@ -471,7 +487,7 @@ void cr_settings_changed(odb o)
    }
 }
 
-void link_settings_changed(odb o)
+void link_settings_changed(odb & o)
 {
 
    std::string name = o.get_name();
@@ -484,7 +500,7 @@ void link_settings_changed(odb o)
 
     if (name == "LinkMask") {
       vector<INT> value = o;
-      cm_msg(MINFO, "link_settings_changed", "Seting Link Board Mask");
+      cm_msg(MINFO, "link_settings_changed", "Setting Link Board Mask");
 
       //A FEB is only disabled if both SC and datataking are disabled. Typically these settings are linked,
       //here we do not enforce any kind of consistency.
@@ -498,7 +514,7 @@ void link_settings_changed(odb o)
    }
 }
 
-void prepare_run_on_request(odb o){
+void prepare_run_on_request(odb & o){
 
     cm_msg(MINFO, "prepare_run_on_request", "Execute Run Prepare on request called");
 
@@ -662,8 +678,8 @@ void setup_watches(){
     odb crodb("/Equipment/Clock Reset/Settings");
     crodb.watch(cr_settings_changed);
 
-    odb linkodb("/Equipment/Links");
-    linkodb.watch(link_settings_changed);
+    // odb linkodb("/Equipment/Links/Settings");
+    // linkodb.watch(link_settings_changed);
 
     odb rrp("/Equipment/Clock Reset/Run Transitions/Request Run Prepare");
     rrp.watch(prepare_run_on_request);
