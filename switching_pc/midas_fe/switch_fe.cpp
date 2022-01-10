@@ -248,7 +248,7 @@ EQUIPMENT equipment[] = {
      EQ_PERIODIC,                 /* equipment type */
      0,                         /* event source crate 0, all stations */
      "MIDAS",                   /* format */
-     FALSE,                      /* enabled */
+     TRUE,                      /* enabled */
      RO_ALWAYS | RO_ODB,   /* read during run transitions and update ODB */
      10000,                      /* read every 10 sec */
      0,                         /* stop run after this event limit */
@@ -853,14 +853,13 @@ try{ // TODO: What can throw here?? Why?? Is there another way to handle this??
    uint16_t timeout_cnt=300;
    uint64_t link_active_from_register;
    printf("Waiting for run prepare acknowledge from all FEBs\n");
-   // TODO we skip this now
-   usleep(10000);
-//    do{
-//       timeout_cnt--;
-//       link_active_from_register = get_runstart_ack();
-//       printf("%u  %lx  %lx\n",timeout_cnt, link_active_from_odb, link_active_from_register);
-//       usleep(10000);
-//    }while( (link_active_from_register & link_active_from_odb) != link_active_from_odb && (timeout_cnt > 0));
+   // TODO: test this part of checking the run number
+   do{
+    timeout_cnt--;
+    link_active_from_register = get_runstart_ack();
+    printf("%u  %lx  %lx\n",timeout_cnt, link_active_from_odb, link_active_from_register);
+    usleep(10000);
+   }while( (link_active_from_register & link_active_from_odb) != link_active_from_odb && (timeout_cnt > 0));
 
    if(timeout_cnt==0) {
       cm_msg(MERROR,"switch_fe","Run number mismatch on run %d", run_number);
@@ -1003,9 +1002,9 @@ INT read_sc_event(char *pevent, INT off)
     pdata = mufeb->fill_SSFE(pdata);
     bk_close(pevent,pdata);
 
-    // bk_create(pevent, counterbankname.c_str(), TID_INT, (void **)&pdata);
-    // pdata = fill_SSCN(pdata);
-    // bk_close(pevent, pdata);
+    bk_create(pevent, counterbankname.c_str(), TID_INT, (void **)&pdata);
+    pdata = fill_SSCN(pdata);
+    bk_close(pevent, pdata);
 
     bk_create(pevent, sorterbankname.c_str(), TID_INT, (void **)&pdata);
     pdata = mufeb->fill_SSSO(pdata);
