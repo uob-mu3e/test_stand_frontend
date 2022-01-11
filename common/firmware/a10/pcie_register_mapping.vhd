@@ -7,6 +7,9 @@ use work.a10_pcie_registers.all;
 
 
 entity pcie_register_mapping is
+generic (
+	g_FARM : integer := 0--;
+);
 port (
     --! register inputs for pcie0
     i_pcie0_rregs_A   : in    work.util.slv32_array_t(63 downto 0) := (others => (others => '0'));
@@ -14,9 +17,9 @@ port (
     i_pcie0_rregs_C   : in    work.util.slv32_array_t(63 downto 0) := (others => (others => '0'));
     
     --! register inputs for pcie0 from a10_block
-    i_local_pcie0_rregs_A : in    work.util.slv32_array_t(63 downto 0) := (others => (others => '0'));
-    i_local_pcie0_rregs_B : in    work.util.slv32_array_t(63 downto 0) := (others => (others => '0'));
-    i_local_pcie0_rregs_C : in    work.util.slv32_array_t(63 downto 0) := (others => (others => '0'));
+    i_local_pcie0_rregs_A : in    work.util.slv32_array_t(63 downto 0) := (others => (others => '0')); -- for 156.25 MHz
+    i_local_pcie0_rregs_B : in    work.util.slv32_array_t(63 downto 0) := (others => (others => '0')); -- for 250 MHz
+    i_local_pcie0_rregs_C : in    work.util.slv32_array_t(63 downto 0) := (others => (others => '0')); -- for 125 MHz or DDR3 
 
     --! register outputs for pcie0
     o_pcie0_rregs       : out   reg32array_pcie;
@@ -46,7 +49,12 @@ begin
     --! sync read regs from B, C clk to fast PCIe clock
     gen_sync : FOR i in 0 to 63 GENERATE
         data_rregs_B(i * 32 + 31 downto i * 32) <= i_pcie0_rregs_B(i);
-        data_rregs_C(i * 32 + 31 downto i * 32) <= i_pcie0_rregs_C(i);
+		generate_farm : if ( g_FARM = 1 ) generate
+			data_rregs_C(i * 32 + 31 downto i * 32) <= i_pcie0_rregs_C(i);
+		end generate;
+		generate_swb : if ( g_FARM = 0 ) generate
+			data_rregs_C(i * 32 + 31 downto i * 32) <= i_local_pcie0_rregs_C(i);
+		end generate;
     END GENERATE gen_sync;
 
     --! sync FIFOs
@@ -66,15 +74,15 @@ begin
              q => q_rregs_C, rdempty => rdempty_C, aclr => not i_reset_n--,
     );
 
-    -- reg sync B/c
+    -- reg sync B/C
     process(i_clk_A, i_reset_n)
     begin
     if ( i_reset_n = '0' ) then
         q_rregs_B_reg <= (others => '0');
         q_rregs_C_reg <= (others => '0');
     elsif rising_edge(i_clk_A) then
-    if ( rdempty_B = '0' ) then
-        q_rregs_B_reg <= q_rregs_B;
+		if ( rdempty_B = '0' ) then
+			q_rregs_B_reg <= q_rregs_B;
         end if;
         if ( rdempty_C = '0' ) then
             q_rregs_C_reg <= q_rregs_C;
@@ -94,6 +102,7 @@ begin
                             i_pcie0_rregs_A(DMA_CNT_WORDS_REGISTER_R)           when i = DMA_CNT_WORDS_REGISTER_R else
                             i_pcie0_rregs_A(SWB_COUNTER_REGISTER_R)             when i = SWB_COUNTER_REGISTER_R else
                             i_pcie0_rregs_A(SWB_COUNTER_REGISTER_ADDR_R)        when i = SWB_COUNTER_REGISTER_ADDR_R else
+							q_rregs_C_reg(i * 32 + 31 downto i * 32)            when i = RESET_LINK_STATUS_REGISTER_R else -- for SWB reset link, does not work for the farm
                             q_rregs_C_reg(i * 32 + 31 downto i * 32)            when i = DDR3_STATUS_R else
                             q_rregs_C_reg(i * 32 + 31 downto i * 32)            when i = DDR3_ERR_R else
                             q_rregs_C_reg(i * 32 + 31 downto i * 32)            when i = DATA_TSBLOCKS_R else

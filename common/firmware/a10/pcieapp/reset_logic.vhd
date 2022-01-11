@@ -39,7 +39,7 @@ begin
     process(clk, rst_n)
     begin
     if ( rst_n = '0' ) then
-        resets_reg <= (others => '1');
+        resets_reg  <= (others => '1');
         resets_del0 <= (others => '0');
         resets_del1 <= (others => '0');
         resets_del2 <= (others => '0');
