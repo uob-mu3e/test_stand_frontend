@@ -67,7 +67,15 @@ package feb_sc_registers is
     constant MAX10_STATUS_BIT_PLL_LOCKED        :   integer := 0;
     constant MAX10_STATUS_BIT_SPI_ARRIA_CLK     :   integer := 1;
     constant PROGRAMMING_CTRL_W                 :   integer := 16#27#;
-    constant PROGRAMmING_STATUS_R               :   integer := 16#28#;
+    constant PROGRAMMING_STATUS_R               :   integer := 16#28#;
+    constant PROGRAMMING_STATUS_BIT_ARRIAWRITING:   integer := 0;
+    constant PROGRAMMING_STATUS_BIT_SPI_BUSY    :   integer := 1;
+    constant PROGRAMMING_STATUS_BIT_FIFO_EMPTY  :   integer := 14;
+    constant PROGRAMMING_STATUS_BIT_FIFO_FULL   :   integer := 15;
+    constant PROGRAMMING_STATUS_BIT_CONF_DONE   :   integer := 16;
+    constant PROGRAMMING_STATUS_BIT_NSTATUS     :   integer := 17;
+    constant PROGRAMMING_STATUS_BIT_TIMEOUT     :   integer := 18;
+    constant PROGRAMMING_STATUS_BIT_CRCERROR    :   integer := 19;
     constant PROGRAMMING_ADDR_W                 :   integer := 16#29#;  
     constant PROGRAMMING_DATA_W                 :   integer := 16#2A#;
     
