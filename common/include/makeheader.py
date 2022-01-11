@@ -99,7 +99,10 @@ def main(fname, outname):
         # match stuff like "constant DDR3_CONTROL_W :  integer := 16#20#;"
         if len(line.split()) > 1:
             if line.split()[1].endswith("_W") or line.split()[1].endswith("_R") or line.split()[1].endswith("_RW"):
-                file.write('#define ' + line.split()[1] + '\t\t' + '0x' + line.split()[-1].split("#")[1].lower() + '\n')
+                if "-- DOC:" in line:
+                    file.write('#define ' + line.split()[1] + '\t\t' + '0x' + line.split(";")[0].split()[-1].split("#")[1].lower() + '\n')
+                else:
+                    file.write('#define ' + line.split()[1] + '\t\t' + '0x' + line.split()[-1].split("#")[1].lower() + '\n')
                 continue
 
         # match stuff like "constant SWB_STREAM_FIFO_FULL_PIXEL_CNT :  integer := 16#20#;"
