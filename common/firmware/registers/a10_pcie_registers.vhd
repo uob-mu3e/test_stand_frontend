@@ -97,6 +97,21 @@ package a10_pcie_registers is
         constant FARM_CTL_REGISTER_W                            : integer := 16#27#;
             constant USE_BIT_PIXEL_ONLY                             : integer := 0;
             constant USE_BIT_SCIFI_ONLY                             : integer := 1;
+			
+		constant RESET_LINK_CTL_REGISTER_W						: integer := 16#28#;
+			subtype  RESET_LINK_COMMAND_RANGE						is integer range 7 downto 0;
+			subtype  RESET_LINK_FEB_RANGE	                        is integer range 31 downto 29;
+		constant RESET_LINK_RUN_NUMBER_REGISTER_W				: integer := 16#29#;
+		constant CLK_LINK_0_REGISTER_W							: integer := 16#30#;
+		constant CLK_LINK_1_REGISTER_W							: integer := 16#31#;
+		constant CLK_LINK_2_REGISTER_W							: integer := 16#32#;
+		constant CLK_LINK_3_REGISTER_W							: integer := 16#33#;
+		constant CLK_LINK_REST_REGISTER_W						: integer := 16#34#;
+			subtype  REST_0_RANGE			                    is integer range  7 downto  0;
+			subtype  REST_1_RANGE			                    is integer range 15 downto  8;
+			subtype  REST_2_RANGE			                    is integer range 23 downto 16;
+			subtype  REST_3_RANGE			                    is integer range 31 downto 24;
+			
 
         -- Registers above 0x36 are in use for the PCIe controller/DMA
         constant DMA2_CTRL_ADDR_LOW_REGISTER_W                  : integer := 16#36#;
@@ -136,6 +151,9 @@ package a10_pcie_registers is
         constant EVENT2COUNTER64_REGISTER_R                     : integer := 16#08#;
         constant inaddr32_r                                     : integer := 16#09#;
         constant inaddr32_w                                     : integer := 16#10#;
+		  constant CNT_PLL_TOP_REGISTER_R						 		 : integer := 16#0A#;
+		  constant CNT_PLL_156_REGISTER_R						 		 : integer := 16#0B#;
+		  constant CNT_PLL_250_REGISTER_R						 		 : integer := 16#0C#;
         constant DMA_STATUS_R                                   : integer := 16#11#;
             constant DMA_DATA_WEN                                   : integer:= 0;
             constant DMA_CONTROL_WEN                                : integer:= 1;
@@ -177,6 +195,7 @@ package a10_pcie_registers is
         constant DMA_CNT_WORDS_REGISTER_R                       : integer := 16#32#;
         constant SWB_COUNTER_REGISTER_R                         : integer := 16#33#;
         constant SWB_COUNTER_REGISTER_ADDR_R                    : integer := 16#34#;
+		constant RESET_LINK_STATUS_REGISTER_R					: integer := 16#35#;
         
         -- Registers above 0x38 are in use for the PCIe controller/DMA
         constant DMA_STATUS_REGISTER_R                          : integer := 16#38#;

@@ -20,6 +20,7 @@ architecture rtl of hitsorter_tb is
 
 constant WRITECLK_PERIOD : time := 10 ns;
 constant READCLK_PERIOD  : time := 8 ns;
+constant REGCLK_PERIOD	 : time := 6.3 ns;
 
 signal		reset_n							: std_logic;										-- async reset
 signal		writeclk						: std_logic;										-- clock for write/input side
@@ -33,6 +34,17 @@ signal		data_out						: reg32;										-- packaged data out
 signal		out_ena							: STD_LOGIC;									-- valid output data
 signal		out_type						: std_logic_vector(3 downto 0);						
 signal 		diagnostic_out					: sorter_reg_array;
+signal		counter							: std_logic_vector(7 downto 0);
+signal		localts							: ts_t;
+
+signal 		clk156							: std_logic;
+signal		reset_n_regs					: std_logic;
+signal		reg_add       					: std_logic_vector(15 downto 0);
+signal 		reg_re        					: std_logic;
+signal 		reg_rdata     					: std_logic_vector(31 downto 0);
+signal		reg_we        					: std_logic;
+signal 		reg_wdata     					: std_logic_vector(31 downto 0);
+
 
 begin
 
@@ -49,8 +61,13 @@ dut: entity work.hitsorter_wide
 		data_out						=> data_out,
 		out_ena							=> out_ena,
 		out_type						=> out_type,
-		diagnostic_out					=> diagnostic_out,
-		delay							=> "01100000000"
+        i_clk156       					=> clk156,
+        i_reset_n_regs  				=> reset_n_regs,
+        i_reg_add       				=> reg_add,
+        i_reg_re        				=> reg_re,
+        o_reg_rdata    					=> reg_rdata,
+        i_reg_we        				=> reg_we,
+        i_reg_wdata    					=> reg_wdata
 		);
 
 wclockgen: process
@@ -77,15 +94,35 @@ begin
 	wait for READCLK_PERIOD/2;
 end process;
 
+regclockgen: process
+begin
+	clk156	<= '0';
+	wait for REGCLK_PERIOD/2;
+	clk156	<= '1';
+	wait for REGCLK_PERIOD/2;
+end process;
+
+regresetgen: process
+begin
+	reset_n_regs <= '0';
+	wait for 10 ns;
+	reset_n_regs <= '1';
+	wait;
+end process;
+reg_re <= '0';
+reg_we <= '0';
+reg_add <= (others => '0');
+reg_wdata <= (others => '0');
+
 resetgen: process
 begin
 	reset_n <= '0';
 	running <= '0';
 	wait for 100 ns;
 	reset_n	<= '1';
-	wait for 100 ns;
+	wait for 150 ns;
 	running <= '1';
-	--wait for 20000 ns;
+	--wait for 60000 ns;
 	--running <= '0';
 	wait;
 end process;
@@ -220,23 +257,11 @@ begin
 	hit_in(11)		<= X"00000000";
 	hit_ena_in(11)		<= '0';
 	wait for WRITECLK_PERIOD;
---	hit_in(12)		<= X"DDDDD07C";
---	hit_ena_in(12)		<= '1';
 	wait for WRITECLK_PERIOD;
---	hit_in(12)		<= X"00000000";
---	hit_ena_in(12)	<= '0';
 	wait for WRITECLK_PERIOD;
---	hit_in(13)		<= X"EEEEE07D";
---	hit_ena_in(13)		<= '1';
 	wait for WRITECLK_PERIOD;
---	hit_in(13)		<= X"00000000";
---	hit_ena_in(13)	<= '0';
 	wait for WRITECLK_PERIOD;
---	hit_in(14)		<= X"AAAAA07E";
---	hit_ena_in(14)		<= '1';
 	wait for WRITECLK_PERIOD;
---	hit_in(14)		<= X"00000000";
---	hit_ena_in(14)	<= '0';
 	wait for WRITECLK_PERIOD*5;
 	hit_in(0)		<= X"00CCC080";
 	hit_ena_in(0)	<= '1';
@@ -262,12 +287,6 @@ begin
 	hit_ena_in(10)	<= '1';
 	hit_in(11)		<= X"bbCCC080";
 	hit_ena_in(11)	<= '1';
---	hit_in(12)		<= X"ccCCC080";
---	hit_ena_in(12)	<= '1';
---	hit_in(13)		<= X"ddCCC080";
---	hit_ena_in(13)	<= '1';
---	hit_in(14)		<= X"eeCCC080";
---	hit_ena_in(14)	<= '1';
 	wait for WRITECLK_PERIOD;
 	for i in 11 downto 0 loop
 		hit_in(i)		<= X"00000000";
@@ -282,8 +301,6 @@ begin
 	hit_ena_in(7)	<= '1';
 	hit_in(10)		<= X"aaCCC085";
 	hit_ena_in(10)	<= '1';
---	hit_in(13)		<= X"ddCCC085";
---	hit_ena_in(13)	<= '1';
 	wait for WRITECLK_PERIOD;
 	for i in 11 downto 0 loop
 		hit_in(i)		<= X"00000000";
@@ -380,12 +397,6 @@ begin
 	hit_ena_in(10)	<= '1';
 	hit_in(11)		<= X"bbCCC180";
 	hit_ena_in(11)	<= '1';
---	hit_in(12)		<= X"ccCCC180";
---	hit_ena_in(12)	<= '1';
---	hit_in(13)		<= X"ddCCC180";
---	hit_ena_in(13)	<= '1';
---	hit_in(14)		<= X"eeCCC180";
---	hit_ena_in(14)	<= '1';
 	wait for WRITECLK_PERIOD;
 	hit_in(0)		<= X"10CCC180";
 	hit_ena_in(0)	<= '1';
@@ -411,12 +422,6 @@ begin
 	hit_ena_in(10)	<= '1';
 	hit_in(11)		<= X"1bCCC180";
 	hit_ena_in(11)	<= '1';
---	hit_in(12)		<= X"1cCCC180";
---	hit_ena_in(12)	<= '1';
---	hit_in(13)		<= X"1dCCC180";
---	hit_ena_in(13)	<= '1';
---	hit_in(14)		<= X"1eCCC180";
---	hit_ena_in(14)	<= '1';
 	wait for WRITECLK_PERIOD;
 	hit_in(0)		<= X"20CCC180";
 	hit_ena_in(0)	<= '1';
@@ -442,12 +447,6 @@ begin
 	hit_ena_in(10)	<= '1';
 	hit_in(11)		<= X"2bCCC180";
 	hit_ena_in(11)	<= '1';
---	hit_in(12)		<= X"2cCCC180";
---	hit_ena_in(12)	<= '1';
---	hit_in(13)		<= X"2dCCC180";
---	hit_ena_in(13)	<= '1';
---	hit_in(14)		<= X"2eCCC180";
---	hit_ena_in(14)	<= '1';
 	wait for WRITECLK_PERIOD;
 	hit_in(0)		<= X"30CCC180";
 	hit_ena_in(0)	<= '1';
@@ -473,12 +472,6 @@ begin
 	hit_ena_in(10)	<= '1';
 	hit_in(11)		<= X"3bCCC180";
 	hit_ena_in(11)	<= '1';
---	hit_in(12)		<= X"3cCCC180";
---	hit_ena_in(12)	<= '1';
---	hit_in(13)		<= X"3dCCC180";
---	hit_ena_in(13)	<= '1';
---	hit_in(14)		<= X"3eCCC180";
---	hit_ena_in(14)	<= '1';
 	wait for WRITECLK_PERIOD;
 	hit_in(0)		<= X"40CCC180";
 	hit_ena_in(0)	<= '1';
@@ -504,12 +497,6 @@ begin
 	hit_ena_in(10)	<= '1';
 	hit_in(11)		<= X"4bCCC180";
 	hit_ena_in(11)	<= '1';
---	hit_in(12)		<= X"4cCCC180";
---	hit_ena_in(12)	<= '1';
---	hit_in(13)		<= X"4dCCC180";
---	hit_ena_in(13)	<= '1';
---	hit_in(14)		<= X"4eCCC180";
---	hit_ena_in(14)	<= '1';
 	wait for WRITECLK_PERIOD;
 	hit_in(0)		<= X"50CCC180";
 	hit_ena_in(0)	<= '1';
@@ -535,12 +522,6 @@ begin
 	hit_ena_in(10)	<= '1';
 	hit_in(11)		<= X"5bCCC180";
 	hit_ena_in(11)	<= '1';
---	hit_in(12)		<= X"5cCCC180";
---	hit_ena_in(12)	<= '1';
---	hit_in(13)		<= X"5dCCC180";
---	hit_ena_in(13)	<= '1';
---	hit_in(14)		<= X"5eCCC180";
---	hit_ena_in(14)	<= '1';
 	wait for WRITECLK_PERIOD;
 	hit_in(0)		<= X"60CCC180";
 	hit_ena_in(0)	<= '1';
@@ -566,12 +547,6 @@ begin
 	hit_ena_in(10)	<= '1';
 	hit_in(11)		<= X"6bCCC180";
 	hit_ena_in(11)	<= '1';
---	hit_in(12)		<= X"6cCCC180";
---	hit_ena_in(12)	<= '1';
---	hit_in(13)		<= X"6dCCC180";
---	hit_ena_in(13)	<= '1';
---	hit_in(14)		<= X"6eCCC180";
---	hit_ena_in(14)	<= '1';
 	wait for WRITECLK_PERIOD;
 	hit_in(0)		<= X"70CCC180";
 	hit_ena_in(0)	<= '1';
@@ -597,12 +572,6 @@ begin
 	hit_ena_in(10)	<= '1';
 	hit_in(11)		<= X"7bCCC180";
 	hit_ena_in(11)	<= '1';
---	hit_in(12)		<= X"7cCCC180";
---	hit_ena_in(12)	<= '1';
---	hit_in(13)		<= X"7dCCC180";
---	hit_ena_in(13)	<= '1';
---	hit_in(14)		<= X"7eCCC180";
---	hit_ena_in(14)	<= '1';
 	wait for WRITECLK_PERIOD;
 	hit_in(0)		<= X"00CCC181";
 	hit_ena_in(0)	<= '1';
@@ -628,12 +597,6 @@ begin
 	hit_ena_in(10)	<= '1';
 	hit_in(11)		<= X"bbCCC181";
 	hit_ena_in(11)	<= '1';
---	hit_in(12)		<= X"ccCCC181";
---	hit_ena_in(12)	<= '1';
---	hit_in(13)		<= X"ddCCC181";
---	hit_ena_in(13)	<= '1';
---	hit_in(14)		<= X"eeCCC181";
---	hit_ena_in(14)	<= '1';
 	wait for WRITECLK_PERIOD;
 	hit_in(0)		<= X"10CCC181";
 	hit_ena_in(0)	<= '1';
@@ -659,12 +622,6 @@ begin
 	hit_ena_in(10)	<= '1';
 	hit_in(11)		<= X"1bCCC181";
 	hit_ena_in(11)	<= '1';
---	hit_in(12)		<= X"1cCCC181";
---	hit_ena_in(12)	<= '1';
---	hit_in(13)		<= X"1dCCC181";
---	hit_ena_in(13)	<= '1';
---	hit_in(14)		<= X"1eCCC181";
---	hit_ena_in(14)	<= '1';
 	wait for WRITECLK_PERIOD;
 	hit_in(0)		<= X"20CCC181";
 	hit_ena_in(0)	<= '1';
@@ -690,12 +647,6 @@ begin
 	hit_ena_in(10)	<= '1';
 	hit_in(11)		<= X"2bCCC181";
 	hit_ena_in(11)	<= '1';
---	hit_in(12)		<= X"2cCCC181";
---	hit_ena_in(12)	<= '1';
---	hit_in(13)		<= X"2dCCC181";
---	hit_ena_in(13)	<= '1';
---	hit_in(14)		<= X"2eCCC181";
---	hit_ena_in(14)	<= '1';
 	wait for WRITECLK_PERIOD;
 	hit_in(0)		<= X"30CCC181";
 	hit_ena_in(0)	<= '1';
@@ -721,12 +672,6 @@ begin
 	hit_ena_in(10)	<= '1';
 	hit_in(11)		<= X"3bCCC181";
 	hit_ena_in(11)	<= '1';
---	hit_in(12)		<= X"3cCCC181";
---	hit_ena_in(12)	<= '1';
---	hit_in(13)		<= X"3dCCC181";
---	hit_ena_in(13)	<= '1';
---	hit_in(14)		<= X"3eCCC181";
---	hit_ena_in(14)	<= '1';
 	wait for WRITECLK_PERIOD;
 	hit_in(0)		<= X"40CCC181";
 	hit_ena_in(0)	<= '1';
@@ -752,12 +697,6 @@ begin
 	hit_ena_in(10)	<= '1';
 	hit_in(11)		<= X"4bCCC181";
 	hit_ena_in(11)	<= '1';
---	hit_in(12)		<= X"4cCCC181";
---	hit_ena_in(12)	<= '1';
---	hit_in(13)		<= X"4dCCC181";
---	hit_ena_in(13)	<= '1';
---	hit_in(14)		<= X"4eCCC181";
---	hit_ena_in(14)	<= '1';
 	wait for WRITECLK_PERIOD;
 	hit_in(0)		<= X"50CCC181";
 	hit_ena_in(0)	<= '1';
@@ -783,12 +722,6 @@ begin
 	hit_ena_in(10)	<= '1';
 	hit_in(11)		<= X"5bCCC181";
 	hit_ena_in(11)	<= '1';
---	hit_in(12)		<= X"5cCCC181";
---	hit_ena_in(12)	<= '1';
---	hit_in(13)		<= X"5dCCC181";
---	hit_ena_in(13)	<= '1';
---	hit_in(14)		<= X"5eCCC181";
---	hit_ena_in(14)	<= '1';
 	wait for WRITECLK_PERIOD;
 	hit_in(0)		<= X"60CCC181";
 	hit_ena_in(0)	<= '1';
@@ -814,12 +747,6 @@ begin
 	hit_ena_in(10)	<= '1';
 	hit_in(11)		<= X"6bCCC181";
 	hit_ena_in(11)	<= '1';
---	hit_in(12)		<= X"6cCCC181";
---	hit_ena_in(12)	<= '1';
---	hit_in(13)		<= X"6dCCC181";
---	hit_ena_in(13)	<= '1';
---	hit_in(14)		<= X"6eCCC181";
---	hit_ena_in(14)	<= '1';
 	wait for WRITECLK_PERIOD;
 	hit_in(0)		<= X"70CCC181";
 	hit_ena_in(0)	<= '1';
@@ -845,12 +772,6 @@ begin
 	hit_ena_in(10)	<= '1';
 	hit_in(11)		<= X"7bCCC181";
 	hit_ena_in(11)	<= '1';
---	hit_in(12)		<= X"7cCCC181";
---	hit_ena_in(12)	<= '1';
---	hit_in(13)		<= X"7dCCC181";
---	hit_ena_in(13)	<= '1';
---	hit_in(14)		<= X"7eCCC181";
---	hit_ena_in(14)	<= '1';	
 	wait for WRITECLK_PERIOD;
 	hit_in(0)		<= X"00CCC182";
 	hit_ena_in(0)	<= '1';
@@ -876,12 +797,6 @@ begin
 	hit_ena_in(10)	<= '1';
 	hit_in(11)		<= X"bbCCC182";
 	hit_ena_in(11)	<= '1';
---	hit_in(12)		<= X"ccCCC182";
---	hit_ena_in(12)	<= '1';
---	hit_in(13)		<= X"ddCCC182";
---	hit_ena_in(13)	<= '1';
---	hit_in(14)		<= X"eeCCC182";
---	hit_ena_in(14)	<= '1';
 	wait for WRITECLK_PERIOD;
 	hit_in(0)		<= X"10CCC182";
 	hit_ena_in(0)	<= '1';
@@ -907,12 +822,6 @@ begin
 	hit_ena_in(10)	<= '1';
 	hit_in(11)		<= X"1bCCC182";
 	hit_ena_in(11)	<= '1';
---	hit_in(12)		<= X"1cCCC182";
---	hit_ena_in(12)	<= '1';
---	hit_in(13)		<= X"1dCCC182";
---	hit_ena_in(13)	<= '1';
---	hit_in(14)		<= X"1eCCC182";
---	hit_ena_in(14)	<= '1';
 	wait for WRITECLK_PERIOD;
 	hit_in(0)		<= X"20CCC182";
 	hit_ena_in(0)	<= '1';
@@ -938,12 +847,6 @@ begin
 	hit_ena_in(10)	<= '1';
 	hit_in(11)		<= X"2bCCC182";
 	hit_ena_in(11)	<= '1';
---	hit_in(12)		<= X"2cCCC182";
---	hit_ena_in(12)	<= '1';
---	hit_in(13)		<= X"2dCCC182";
---	hit_ena_in(13)	<= '1';
---	hit_in(14)		<= X"2eCCC182";
---	hit_ena_in(14)	<= '1';
 	wait for WRITECLK_PERIOD;
 	hit_in(0)		<= X"30CCC182";
 	hit_ena_in(0)	<= '1';
@@ -969,12 +872,6 @@ begin
 	hit_ena_in(10)	<= '1';
 	hit_in(11)		<= X"3bCCC182";
 	hit_ena_in(11)	<= '1';
---	hit_in(12)		<= X"3cCCC182";
---	hit_ena_in(12)	<= '1';
---	hit_in(13)		<= X"3dCCC182";
---	hit_ena_in(13)	<= '1';
---	hit_in(14)		<= X"3eCCC182";
---	hit_ena_in(14)	<= '1';
 	wait for WRITECLK_PERIOD;
 	hit_in(0)		<= X"40CCC182";
 	hit_ena_in(0)	<= '1';
@@ -1000,12 +897,6 @@ begin
 	hit_ena_in(10)	<= '1';
 	hit_in(11)		<= X"4bCCC182";
 	hit_ena_in(11)	<= '1';
---	hit_in(12)		<= X"4cCCC182";
---	hit_ena_in(12)	<= '1';
---	hit_in(13)		<= X"4dCCC182";
---	hit_ena_in(13)	<= '1';
---	hit_in(14)		<= X"4eCCC182";
---	hit_ena_in(14)	<= '1';
 	wait for WRITECLK_PERIOD;
 	hit_in(0)		<= X"50CCC182";
 	hit_ena_in(0)	<= '1';
@@ -1031,12 +922,6 @@ begin
 	hit_ena_in(10)	<= '1';
 	hit_in(11)		<= X"5bCCC182";
 	hit_ena_in(11)	<= '1';
---	hit_in(12)		<= X"5cCCC182";
---	hit_ena_in(12)	<= '1';
---	hit_in(13)		<= X"5dCCC182";
---	hit_ena_in(13)	<= '1';
---	hit_in(14)		<= X"5eCCC182";
---	hit_ena_in(14)	<= '1';
 	wait for WRITECLK_PERIOD;
 	hit_in(0)		<= X"60CCC182";
 	hit_ena_in(0)	<= '1';
@@ -1062,12 +947,6 @@ begin
 	hit_ena_in(10)	<= '1';
 	hit_in(11)		<= X"6bCCC182";
 	hit_ena_in(11)	<= '1';
---	hit_in(12)		<= X"6cCCC182";
---	hit_ena_in(12)	<= '1';
---	hit_in(13)		<= X"6dCCC182";
---	hit_ena_in(13)	<= '1';
---	hit_in(14)		<= X"6eCCC182";
---	hit_ena_in(14)	<= '1';
 	wait for WRITECLK_PERIOD;
 	hit_in(0)		<= X"70CCC182";
 	hit_ena_in(0)	<= '1';
@@ -1093,12 +972,6 @@ begin
 	hit_ena_in(10)	<= '1';
 	hit_in(11)		<= X"7bCCC182";
 	hit_ena_in(11)	<= '1';
---	hit_in(12)		<= X"7cCCC182";
---	hit_ena_in(12)	<= '1';
---	hit_in(13)		<= X"7dCCC182";
---	hit_ena_in(13)	<= '1';
---	hit_in(14)		<= X"7eCCC182";
---	hit_ena_in(14)	<= '1';	
 		wait for WRITECLK_PERIOD;
 	hit_in(0)		<= X"00CCC183";
 	hit_ena_in(0)	<= '1';
@@ -1124,12 +997,6 @@ begin
 	hit_ena_in(10)	<= '1';
 	hit_in(11)		<= X"bbCCC183";
 	hit_ena_in(11)	<= '1';
---	hit_in(12)		<= X"ccCCC183";
---	hit_ena_in(12)	<= '1';
---	hit_in(13)		<= X"ddCCC183";
---	hit_ena_in(13)	<= '1';
---	hit_in(14)		<= X"eeCCC183";
---	hit_ena_in(14)	<= '1';
 	wait for WRITECLK_PERIOD;
 	hit_in(0)		<= X"10CCC183";
 	hit_ena_in(0)	<= '1';
@@ -1155,12 +1022,6 @@ begin
 	hit_ena_in(10)	<= '1';
 	hit_in(11)		<= X"1bCCC183";
 	hit_ena_in(11)	<= '1';
---	hit_in(12)		<= X"1cCCC183";
---	hit_ena_in(12)	<= '1';
---	hit_in(13)		<= X"1dCCC183";
---	hit_ena_in(13)	<= '1';
---	hit_in(14)		<= X"1eCCC183";
---	hit_ena_in(14)	<= '1';
 	wait for WRITECLK_PERIOD;
 	hit_in(0)		<= X"20CCC183";
 	hit_ena_in(0)	<= '1';
@@ -1186,12 +1047,6 @@ begin
 	hit_ena_in(10)	<= '1';
 	hit_in(11)		<= X"2bCCC183";
 	hit_ena_in(11)	<= '1';
---	hit_in(12)		<= X"2cCCC183";
---	hit_ena_in(12)	<= '1';
---	hit_in(13)		<= X"2dCCC183";
---	hit_ena_in(13)	<= '1';
---	hit_in(14)		<= X"2eCCC183";
---	hit_ena_in(14)	<= '1';
 	wait for WRITECLK_PERIOD;
 	hit_in(0)		<= X"30CCC183";
 	hit_ena_in(0)	<= '1';
@@ -1217,12 +1072,6 @@ begin
 	hit_ena_in(10)	<= '1';
 	hit_in(11)		<= X"3bCCC183";
 	hit_ena_in(11)	<= '1';
---	hit_in(12)		<= X"3cCCC183";
---	hit_ena_in(12)	<= '1';
---	hit_in(13)		<= X"3dCCC183";
---	hit_ena_in(13)	<= '1';
---	hit_in(14)		<= X"3eCCC183";
---	hit_ena_in(14)	<= '1';
 	wait for WRITECLK_PERIOD;
 	hit_in(0)		<= X"40CCC183";
 	hit_ena_in(0)	<= '1';
@@ -1248,12 +1097,6 @@ begin
 	hit_ena_in(10)	<= '1';
 	hit_in(11)		<= X"4bCCC183";
 	hit_ena_in(11)	<= '1';
---	hit_in(12)		<= X"4cCCC183";
---	hit_ena_in(12)	<= '1';
---	hit_in(13)		<= X"4dCCC183";
---	hit_ena_in(13)	<= '1';
---	hit_in(14)		<= X"4eCCC183";
---	hit_ena_in(14)	<= '1';
 	wait for WRITECLK_PERIOD;
 	hit_in(0)		<= X"50CCC183";
 	hit_ena_in(0)	<= '1';
@@ -1279,12 +1122,6 @@ begin
 	hit_ena_in(10)	<= '1';
 	hit_in(11)		<= X"5bCCC183";
 	hit_ena_in(11)	<= '1';
---	hit_in(12)		<= X"5cCCC183";
---	hit_ena_in(12)	<= '1';
---	hit_in(13)		<= X"5dCCC183";
---	hit_ena_in(13)	<= '1';
---	hit_in(14)		<= X"5eCCC183";
---	hit_ena_in(14)	<= '1';
 	wait for WRITECLK_PERIOD;
 	hit_in(0)		<= X"60CCC183";
 	hit_ena_in(0)	<= '1';
@@ -1310,12 +1147,6 @@ begin
 	hit_ena_in(10)	<= '1';
 	hit_in(11)		<= X"6bCCC183";
 	hit_ena_in(11)	<= '1';
---	hit_in(12)		<= X"6cCCC183";
---	hit_ena_in(12)	<= '1';
---	hit_in(13)		<= X"6dCCC183";
---	hit_ena_in(13)	<= '1';
---	hit_in(14)		<= X"6eCCC183";
---	hit_ena_in(14)	<= '1';
 	wait for WRITECLK_PERIOD;
 	hit_in(0)		<= X"70CCC183";
 	hit_ena_in(0)	<= '1';
@@ -1341,13 +1172,7 @@ begin
 	hit_ena_in(10)	<= '1';
 	hit_in(11)		<= X"7bCCC183";
 	hit_ena_in(11)	<= '1';
---	hit_in(12)		<= X"7cCCC183";
---	hit_ena_in(12)	<= '1';
---	hit_in(13)		<= X"7dCCC183";
---	hit_ena_in(13)	<= '1';
---	hit_in(14)		<= X"7eCCC183";
---	hit_ena_in(14)	<= '1';	
-		wait for WRITECLK_PERIOD;
+	wait for WRITECLK_PERIOD;
 	hit_in(0)		<= X"00CCC184";
 	hit_ena_in(0)	<= '1';
 	hit_in(1)		<= X"11CCC184";
@@ -1372,12 +1197,6 @@ begin
 	hit_ena_in(10)	<= '1';
 	hit_in(11)		<= X"bbCCC184";
 	hit_ena_in(11)	<= '1';
---	hit_in(12)		<= X"ccCCC184";
---	hit_ena_in(12)	<= '1';
---	hit_in(13)		<= X"ddCCC184";
---	hit_ena_in(13)	<= '1';
---	hit_in(14)		<= X"eeCCC184";
---	hit_ena_in(14)	<= '1';
 	wait for WRITECLK_PERIOD;
 	hit_in(0)		<= X"10CCC184";
 	hit_ena_in(0)	<= '1';
@@ -1403,12 +1222,6 @@ begin
 	hit_ena_in(10)	<= '1';
 	hit_in(11)		<= X"1bCCC184";
 	hit_ena_in(11)	<= '1';
---	hit_in(12)		<= X"1cCCC184";
---	hit_ena_in(12)	<= '1';
---	hit_in(13)		<= X"1dCCC184";
---	hit_ena_in(13)	<= '1';
---	hit_in(14)		<= X"1eCCC184";
---	hit_ena_in(14)	<= '1';
 	wait for WRITECLK_PERIOD;
 	hit_in(0)		<= X"20CCC184";
 	hit_ena_in(0)	<= '1';
@@ -1434,12 +1247,6 @@ begin
 	hit_ena_in(10)	<= '1';
 	hit_in(11)		<= X"2bCCC184";
 	hit_ena_in(11)	<= '1';
---	hit_in(12)		<= X"2cCCC184";
---	hit_ena_in(12)	<= '1';
---	hit_in(13)		<= X"2dCCC184";
---	hit_ena_in(13)	<= '1';
---	hit_in(14)		<= X"2eCCC184";
---	hit_ena_in(14)	<= '1';
 	wait for WRITECLK_PERIOD;
 	hit_in(0)		<= X"30CCC184";
 	hit_ena_in(0)	<= '1';
@@ -1465,12 +1272,6 @@ begin
 	hit_ena_in(10)	<= '1';
 	hit_in(11)		<= X"3bCCC184";
 	hit_ena_in(11)	<= '1';
---	hit_in(12)		<= X"3cCCC184";
---	hit_ena_in(12)	<= '1';
---	hit_in(13)		<= X"3dCCC184";
---	hit_ena_in(13)	<= '1';
---	hit_in(14)		<= X"3eCCC184";
---	hit_ena_in(14)	<= '1';
 	wait for WRITECLK_PERIOD;
 	hit_in(0)		<= X"40CCC184";
 	hit_ena_in(0)	<= '1';
@@ -1496,12 +1297,6 @@ begin
 	hit_ena_in(10)	<= '1';
 	hit_in(11)		<= X"4bCCC184";
 	hit_ena_in(11)	<= '1';
---	hit_in(12)		<= X"4cCCC184";
---	hit_ena_in(12)	<= '1';
---	hit_in(13)		<= X"4dCCC184";
---	hit_ena_in(13)	<= '1';
---	hit_in(14)		<= X"4eCCC184";
---	hit_ena_in(14)	<= '1';
 	wait for WRITECLK_PERIOD;
 	hit_in(0)		<= X"50CCC184";
 	hit_ena_in(0)	<= '1';
@@ -1527,12 +1322,6 @@ begin
 	hit_ena_in(10)	<= '1';
 	hit_in(11)		<= X"5bCCC184";
 	hit_ena_in(11)	<= '1';
---	hit_in(12)		<= X"5cCCC184";
---	hit_ena_in(12)	<= '1';
---	hit_in(13)		<= X"5dCCC184";
---	hit_ena_in(13)	<= '1';
---	hit_in(14)		<= X"5eCCC184";
---	hit_ena_in(14)	<= '1';
 	wait for WRITECLK_PERIOD;
 	hit_in(0)		<= X"60CCC184";
 	hit_ena_in(0)	<= '1';
@@ -1558,12 +1347,6 @@ begin
 	hit_ena_in(10)	<= '1';
 	hit_in(11)		<= X"6bCCC184";
 	hit_ena_in(11)	<= '1';
---	hit_in(12)		<= X"6cCCC184";
---	hit_ena_in(12)	<= '1';
---	hit_in(13)		<= X"6dCCC184";
---	hit_ena_in(13)	<= '1';
---	hit_in(14)		<= X"6eCCC184";
---	hit_ena_in(14)	<= '1';
 	wait for WRITECLK_PERIOD;
 	hit_in(0)		<= X"70CCC184";
 	hit_ena_in(0)	<= '1';
@@ -1589,12 +1372,6 @@ begin
 	hit_ena_in(10)	<= '1';
 	hit_in(11)		<= X"7bCCC184";
 	hit_ena_in(11)	<= '1';
---	hit_in(12)		<= X"7cCCC184";
---	hit_ena_in(12)	<= '1';
---	hit_in(13)		<= X"7dCCC184";
---	hit_ena_in(13)	<= '1';
---	hit_in(14)		<= X"7eCCC184";
---	hit_ena_in(14)	<= '1';	
 	wait for WRITECLK_PERIOD;
 	hit_in(0)		<= X"70CCC1A0";
 	hit_ena_in(0)	<= '1';	
@@ -1627,7 +1404,22 @@ begin
     wait for WRITECLK_PERIOD;
 	hit_in(0)		<= X"00000000";
 	hit_ena_in(0)	<= '0';
-	wait;
+	counter			<= X"00";
+	localts			<= currentts;
+	wait for WRITECLK_PERIOD;
+	for i in 0 to 2048 loop
+		hit_in(0)		<= counter & counter & "00000" & localts(TSBLOCKRANGE) & X"0";
+		hit_ena_in(0)	<= '1';
+		wait for WRITECLK_PERIOD;
+		hit_in(0)		<= X"00000000";
+		hit_ena_in(0)	<= '0';
+		wait for 14*WRITECLK_PERIOD;
+		hit_in(0)		<= counter & counter & "00000" & localts(TSBLOCKRANGE) & X"F";
+		hit_ena_in(0)	<= '1';
+		counter			<= counter + '1';
+		localts			<= localts +  X"10";
+		wait for WRITECLK_PERIOD;
+	end loop;
 end process;
 
 end architecture rtl;

@@ -5,6 +5,7 @@
 
 #include <thread>
 #include <chrono>
+#include <math.h>
 
 #include "link_constants.h"
 #include "feb_constants.h"
@@ -15,10 +16,10 @@ using std::cout;
 
 DummyFEBSlowcontrolInterface::DummyFEBSlowcontrolInterface(mudaq::MudaqDevice &mdev):
     FEBSlowcontrolInterface(mdev),
-    scregs(MAX_LINKS_PER_SWITCHINGBOARD,vector<uint32_t>(FEB_SC_ADDR_RANGE_HI+1,0))
+    scregs(MAX_LINKS_PER_SWITCHINGBOARD,vector<uint32_t>(pow(2,16),0))
 {
     for(uint i = 0; i < MAX_LINKS_PER_SWITCHINGBOARD; i++){
-        for(uint j = 0; j < FEB_SC_ADDR_RANGE_HI+1; j++){
+        for(uint j = 0; j < pow(2,16); j++){
             scregs[i][j] = scregs[i][j] + std::rand()/((RAND_MAX +1u)/4096);
         }
     }
@@ -36,7 +37,7 @@ void DummyFEBSlowcontrolInterface::operator()()
 {
     while(1){
         for(uint i = 0; i < MAX_LINKS_PER_SWITCHINGBOARD; i++){
-            for(uint j = 0; j < FEB_SC_ADDR_RANGE_HI+1; j++){
+            for(uint j = 0; j < pow(2,16); j++){
                 scregs[i][j] = scregs[i][j] + std::rand()/((RAND_MAX +1u)/257)-128;
             }
         }
@@ -46,15 +47,10 @@ void DummyFEBSlowcontrolInterface::operator()()
 
 int DummyFEBSlowcontrolInterface::FEB_write(const uint32_t FPGA_ID, const uint32_t startaddr, const vector<uint32_t> & data, const bool nonincrementing)
 {
-    if(startaddr > FEB_SC_ADDR_RANGE_HI){
+    if(startaddr >= pow(2,16)){
         cout << "Address out of range: " << std::hex << startaddr << endl;
         return ERRCODES::ADDR_INVALID;
-     }
-
-    if(data.size() > FEB_SC_DATA_SIZE_RANGE_HI){
-        cout << "Length too big: " << data.size() << endl;
-        return ERRCODES::SIZE_INVALID;
-     }
+    }
 
     if(!data.size()){
         cout << "Length zero" << endl;
@@ -72,15 +68,11 @@ int DummyFEBSlowcontrolInterface::FEB_write(const uint32_t FPGA_ID, const uint32
 
 int DummyFEBSlowcontrolInterface::FEB_read(const uint32_t FPGA_ID, const uint32_t startaddr, vector<uint32_t> &data, const bool nonincrementing)
 {
-    if(startaddr > FEB_SC_ADDR_RANGE_HI){
+
+    if(startaddr >= pow(2,16)){
         cout << "Address out of range: " << std::hex << startaddr << endl;
         return ERRCODES::ADDR_INVALID;
-     }
-
-    if(data.size() > FEB_SC_DATA_SIZE_RANGE_HI){
-        cout << "Length too big: " << data.size() << endl;
-        return ERRCODES::SIZE_INVALID;
-     }
+    }
 
     if(!data.size()){
         cout << "Length zero" << endl;

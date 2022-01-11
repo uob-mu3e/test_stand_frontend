@@ -192,6 +192,9 @@ architecture rtl of top is
 
     signal rx_data_raw, rx_data, tx_data    : work.util.slv32_array_t(15 downto 0);
     signal rx_datak_raw, rx_datak, tx_datak : work.util.slv4_array_t(15 downto 0);
+	 
+	 -- pll locked signal top
+	 signal locked_50to125 : std_logic;
 
 begin
 
@@ -210,6 +213,7 @@ begin
     --! (can be connected to SMA input as global clock)
     e_pll_50to125 : component work.cmp.ip_pll_50to125
     port map (
+		  locked => locked_50to125,
         outclk_0 => SMA_CLKOUT,
         refclk => clk_50,
         rst => not reset_50_n
@@ -327,6 +331,8 @@ begin
         o_pcie0_resets_n_C              => pcie0_resets_n_C,
 
         -- resets clk
+		  top_pll_locked						 => locked_50to125,
+		  
         o_reset_pcie0_n                 => reset_pcie0_n,
         
         o_reset_250_n                   => reset_250_n,

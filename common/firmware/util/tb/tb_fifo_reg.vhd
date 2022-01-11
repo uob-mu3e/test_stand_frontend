@@ -21,7 +21,7 @@ begin
     clk     <= not clk after (0.5 us / CLK_MHZ);
     clk_fast<= not clk_fast after (0.1 us / CLK_MHZ);
     reset_n <= '0', '1' after (1.0 us / CLK_MHZ);
-    
+
     write : process(clk, reset_n)
     begin
         if ( reset_n = '0' ) then

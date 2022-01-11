@@ -148,6 +148,9 @@ architecture arch of top is
 
     signal farm_rx_data, farm_tx_data : work.util.slv32_array_t(23 downto 0) := (others => X"000000BC");
     signal farm_rx_datak, farm_tx_datak : work.util.slv4_array_t(23 downto 0) := (others => "0001");
+	 
+	 -- pll locked signal top
+	 signal locked_100to125 : std_logic;
 
 begin
 
@@ -167,6 +170,7 @@ begin
     --! (can be connected to SMA input as global clock)
     e_pll_100to125 : component work.cmp.ip_pll_100to125
     port map (
+		  locked => locked_100to125,
         outclk_0 => pll_125,
         refclk => clk_100,
         rst => not reset_100_n--,
@@ -326,6 +330,8 @@ begin
         o_pcie0_resets_n_B              => pcie0_resets_n_B,
 
         -- resets clk
+		  top_pll_locked						 => locked_100to125,
+		  
         o_reset_pcie0_n                 => reset_pcie0_n,
         
         o_reset_156_n                   => reset_156_n,

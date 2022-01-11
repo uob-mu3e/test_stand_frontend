@@ -153,8 +153,8 @@ begin
         avm_xcvr0_writedata     => av_xcvr0.writedata,
         avm_xcvr0_waitrequest   => av_xcvr0.waitrequest,
 
-        avm_xcvr0_reset_reset_n => reset_125_n,
-        avm_xcvr0_clock_clk     => clk_125,
+        avm_xcvr0_reset_reset_n => reset_50_n,
+        avm_xcvr0_clock_clk     => clk_50,
 
         rst_reset_n             => nios_reset_n,
         clk_clk                 => clk_50--,
@@ -196,11 +196,12 @@ begin
 
     e_xcvr0_block : entity work.xcvr_block
     generic map (
-        g_XCVR_NAME => "xcvr_enh",
+--        g_MODE => "enh",
         g_XCVR_N => 2,
         g_CHANNELS => 4,
         g_REFCLK_MHZ => 125.0,
-        g_CLK_MHZ => 125.0--,
+        g_RATE_MBPS => 5000,
+        g_CLK_MHZ => 50.0--,
     )
     port map (
         o_rx_data               => open,
@@ -240,8 +241,8 @@ begin
         i_avs_writedata         => av_xcvr0.writedata,
         o_avs_waitrequest       => av_xcvr0.waitrequest,
 
-        i_reset_n               => reset_125_n,
-        i_clk                   => clk_125--,
+        i_reset_n               => reset_50_n,
+        i_clk                   => clk_50--,
     );
 
 end architecture;
