@@ -14,7 +14,7 @@ entity top is
     port (
         reset_max_bp_n          : in std_logic; -- Active low reset
         max10_si_clk            : in std_logic; -- 50 MHZ clock from SI chip			//	SI5345
-        max10_osc_clk           : in std_logic; -- 50 MHZ clock from oscillator		//	SI5345
+        max10_osc_clk           : in std_logic; -- 50 MHZ clock from oscillator		
 
         -- Flash SPI IF
         flash_csn               : out std_logic;

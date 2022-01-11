@@ -138,7 +138,7 @@ elsif ( clk100'event and clk100 = '1' ) then
     arria_write_req_last            <= control(0);
     spiflash_to_fifo_we 	     	<= '0';
       
-
+    -- TODO: Put in register file!
     status(0) <= arriawriting;
     status(1) <= spi_busy;
     status(15) <= spiflashfifo_full;
