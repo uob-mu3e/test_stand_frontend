@@ -13,7 +13,8 @@ use work.mudaq.all;
 
 entity mupix_datapath is
     generic(
-        IS_TELESCOPE_g : std_logic := '0'--;
+        IS_TELESCOPE_g : std_logic := '0';
+        LINK_ORDER_g : mp_link_order_t--;
     );
 port (
     i_reset_n           : in  std_logic;
@@ -41,7 +42,12 @@ port (
     i_sync_reset_cnt    : in  std_logic;
     i_fpga_id           : in  std_logic_vector(7 downto 0);
     i_run_state_125     : in  run_state_t;
-    i_run_state_156     : in  run_state_t--;
+    i_run_state_156     : in  run_state_t;
+
+    i_trigger_in0           : in  std_logic;
+    i_trigger_in1           : in  std_logic;
+    i_trigger_in0_timestamp : in  std_logic_vector(31 downto 0);
+    i_trigger_in1_timestamp : in  std_logic_vector(31 downto 0)--;
 );
 end mupix_datapath;
 
@@ -156,6 +162,8 @@ architecture rtl of mupix_datapath is
     signal mp_lvds_rx_reg           : work.util.rw_t;
     signal mp_datapath_reg          : work.util.rw_t;
 
+	signal ena3_counter				: std_logic_vector(31 downto 0);
+	signal ena4_counter				: std_logic_vector(31 downto 0);
 begin
 
     process(i_clk156)
@@ -173,9 +181,17 @@ begin
     begin
         if(rising_edge(i_clk125)) then
             if(i_run_state_125=RUN_STATE_SYNC) then
+				ena3_counter <= (others => '0');
+				ena4_counter <= (others => '0');
                 reset_125_n <= '0';
             else 
                 reset_125_n <=  '1';
+				if(i_trigger_in0 = '1') then
+					ena3_counter <= ena3_counter + '1';
+				end if;
+				if(i_trigger_in1 = '1') then
+					ena4_counter <= ena4_counter + '1';
+				end if;
             end if;
         end if;
     end process;
@@ -218,7 +234,10 @@ begin
     );
 
     mp_lvds_rx_reg_mapping_inst: entity work.mp_lvds_rx_reg_mapping
-      port map (
+    generic map (
+        LINK_ORDER_g => LINK_ORDER_g--,
+    )
+    port map (
         i_clk156          => i_clk156,
         i_reset_n         => i_reset_n_regs,
 
@@ -232,6 +251,9 @@ begin
       );
 
     e_mupix_datapath_reg_mapping : work.mupix_datapath_reg_mapping
+    generic map (
+        LINK_ORDER_g => LINK_ORDER_g--,
+    )
     port map (
         i_clk156                    => i_clk156,
         i_clk125                    => i_clk125,
@@ -244,8 +266,8 @@ begin
         i_reg_wdata                 => mp_datapath_reg.wdata,
 
         -- inputs  125 (how to sync)------------------------------
-        --i_coarsecounter_ena         => coarsecounter_enas(MP_LINK_ORDER(to_integer(unsigned(delta_ts_link_select)))),
-        --i_coarsecounter             => coarsecounters(MP_LINK_ORDER(to_integer(unsigned(delta_ts_link_select)))),
+        --i_coarsecounter_ena         => coarsecounter_enas(LINK_ORDER_g(to_integer(unsigned(delta_ts_link_select)))),
+        --i_coarsecounter             => coarsecounters(LINK_ORDER_g(to_integer(unsigned(delta_ts_link_select)))),
         i_ts_global                 => counter125(23 downto 0),
         i_last_sorter_hit           => last_sorter_hit,
         i_mp_hit_ena_cnt            => hit_ena_cnt,
@@ -306,9 +328,9 @@ begin
     port map(
         reset_n             => reset_125_n,
         clk                 => i_clk125,
-        datain              => rx_data(MP_LINK_ORDER(i)), 
-        kin                 => rx_k(MP_LINK_ORDER(i)), 
-        readyin             => link_enable(MP_LINK_ORDER(i)),
+        datain              => rx_data(LINK_ORDER_g(i)), 
+        kin                 => rx_k(LINK_ORDER_g(i)), 
+        readyin             => link_enable(LINK_ORDER_g(i)),
         i_mp_readout_mode   => mp_readout_mode,
         o_ts                => ts_unpacker(i),
         o_chip_ID           => chip_ID_unpacker(i),
@@ -381,15 +403,49 @@ begin
                 end if;
             end if;
 
-            sorter_inject_prev <= sorter_inject(MP_SORTER_INJECT_ENABLE_BIT);
-            if(sorter_inject_prev = '0' and sorter_inject(MP_SORTER_INJECT_ENABLE_BIT) = '1' and (to_integer(unsigned(sorter_inject(MP_SORTER_INJECT_SELECT_RANGE))) < 12)) then
-                hits_sorter_in      <= (others => sorter_inject);
-                hits_sorter_in_ena  <= (others => '0');
-                hits_sorter_in_ena(to_integer(unsigned(sorter_inject(MP_SORTER_INJECT_SELECT_RANGE)))) <= '1';
-            else
-                hits_sorter_in      <= hits_sorter_in_buf;
-                hits_sorter_in_ena  <= hits_sorter_in_ena_buf;
-            end if;
+            --sorter_inject_prev <= sorter_inject(MP_SORTER_INJECT_ENABLE_BIT);
+            --if(sorter_inject_prev = '0' and sorter_inject(MP_SORTER_INJECT_ENABLE_BIT) = '1' and (to_integer(unsigned(sorter_inject(MP_SORTER_INJECT_SELECT_RANGE))) < 12)) then
+            --    hits_sorter_in      <= (others => sorter_inject);
+            --    hits_sorter_in_ena  <= (others => '0');
+            --    hits_sorter_in_ena(to_integer(unsigned(sorter_inject(MP_SORTER_INJECT_SELECT_RANGE)))) <= '1';
+            --else
+				
+				-- todo: reverse this again (cabling mistake in muEDM run hotfix)
+                    --hits_sorter_in(0)      <= hits_sorter_in_buf(0);
+                    --hits_sorter_in_ena(0)  <= hits_sorter_in_ena_buf(2);
+					--hits_sorter_in(1)      <= hits_sorter_in_buf(1);
+                    --hits_sorter_in_ena(1)  <= hits_sorter_in_ena_buf(1);
+					--hits_sorter_in(2)      <= hits_sorter_in_buf(0);
+                    --hits_sorter_in_ena(2)  <= hits_sorter_in_ena_buf(0);
+                for i in 0 to 2 loop
+                    hits_sorter_in(i)      <= hits_sorter_in_buf(i);
+                    hits_sorter_in_ena(i)  <= hits_sorter_in_ena_buf(i);
+                end loop;
+                
+
+                if(IS_TELESCOPE_g = '1') then
+                    hits_sorter_in(3)      <= i_trigger_in0_timestamp(20 downto 0) & counter125(10 downto 0);--counter125(10 downto 0) & ena3_counter(9 downto 0) & counter125(10 downto 0);
+                    hits_sorter_in_ena(3)  <= i_trigger_in0;
+                    hits_sorter_in(4)      <= i_trigger_in1_timestamp(20 downto 0) & counter125(10 downto 0);--counter125(10 downto 0) & ena4_counter(9 downto 0) & counter125(10 downto 0);
+                    hits_sorter_in_ena(4)  <= i_trigger_in1;
+                else
+                    hits_sorter_in(3)      <= hits_sorter_in_buf(3);
+                    hits_sorter_in_ena(3)  <= hits_sorter_in_ena_buf(3);
+                    hits_sorter_in(4)      <= hits_sorter_in_buf(4);
+                    hits_sorter_in_ena(4)  <= hits_sorter_in_ena_buf(4);
+                end if;
+
+
+                for i in 5 to 11 loop
+                    if(IS_TELESCOPE_g = '1') then
+                        hits_sorter_in(i)      <= hits_sorter_in_buf(i);
+                        hits_sorter_in_ena(i)  <= '0';
+                    else
+                        hits_sorter_in(i)      <= hits_sorter_in_buf(i);
+                        hits_sorter_in_ena(i)  <= hits_sorter_in_ena_buf(i);
+                    end if;
+                end loop;
+            --end if;
 
             for i in 0 to 11 loop
                 if(i_run_state_125 = RUN_STATE_RUNNING) then
@@ -449,7 +505,9 @@ begin
             o_tot(0)            => tot_hs(i),
             o_hit_ena           => hits_sorter_in_ena_buf(i)--,
         );
-        hits_sorter_in_buf(i)       <= row_hs(i) & col_hs(i) & tot_hs(i)(4 downto 0) & ts_hs(i);
+        --hits_sorter_in_buf(i)       <= row_hs(i) & col_hs(i) & tot_hs(i)(4 downto 0) & ts_hs(i);
+		hits_sorter_in_buf(i)       <= row_hs(i) & col_hs(i) & tot_hs(i)(4 downto 0) & counter125(10 downto 0); -- TODO: change me
+		
     END GENERATE;
 
     process(i_clk125)

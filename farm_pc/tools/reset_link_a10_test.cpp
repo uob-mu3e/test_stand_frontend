@@ -44,7 +44,7 @@ int main()
     mu.write_register(RESET_REGISTER_W, reset_regs);
     mu.write_register(RESET_REGISTER_W, 0x0);
     
-    // get Reset Link Status
+    // set payload and create cmd variable
     mu.write_register(RESET_LINK_RUN_NUMBER_REGISTER_W, 0xAAAAAAAA);
     char cmd;
     
@@ -52,6 +52,9 @@ int main()
         printf(" Run RESET_LINK_CTL_REGISTER_W: 0x%02X\n", mu.read_register_rw(RESET_LINK_CTL_REGISTER_W));
         printf(" Reset Link Status: 0x%02X\n", mu.read_register_ro(RESET_LINK_STATUS_REGISTER_R));
         printf(" Run Number: 0x%02X\n", mu.read_register_rw(RESET_LINK_RUN_NUMBER_REGISTER_W));
+        printf(" Top PLL Status bit32 is locked: 0x%02X\n", mu.read_register_ro(CNT_PLL_TOP_REGISTER_R));
+        printf(" 156 PLL Status bit32 is locked: 0x%02X\n", mu.read_register_ro(CNT_PLL_156_REGISTER_R));
+        printf(" 250 PLL Status bit32 is locked: 0x%02X\n", mu.read_register_ro(CNT_PLL_250_REGISTER_R));
         printf("  [1] => run_prep\n");
         printf("  [2] => sync\n");
         printf("  [3] => start run\n");
@@ -64,23 +67,26 @@ int main()
         cin >> cmd;
         switch(cmd) {
         case '1':
-            mu.write_register(RESET_LINK_CTL_REGISTER_W, 0xF0000001);
+            // upper 3 bits (31:29) are FEB address:
+            // 0 -> 0, 1 -> 1, etc. 7 is all FEBs
+            // for the moment we only have 4 possible FEBs connected
+            mu.write_register(RESET_LINK_CTL_REGISTER_W, 0xE0000010);
             mu.write_register(RESET_LINK_CTL_REGISTER_W, 0x0);
             break;
         case '2':
-            mu.write_register(RESET_LINK_CTL_REGISTER_W, 0xF0000002);
+            mu.write_register(RESET_LINK_CTL_REGISTER_W, 0xE0000011);
             mu.write_register(RESET_LINK_CTL_REGISTER_W, 0x0);
             break;
         case '3':
-            mu.write_register(RESET_LINK_CTL_REGISTER_W, 0xF0000004);
+            mu.write_register(RESET_LINK_CTL_REGISTER_W, 0xE0000012);
             mu.write_register(RESET_LINK_CTL_REGISTER_W, 0x0);
             break;
         case '4':
-            mu.write_register(RESET_LINK_CTL_REGISTER_W, 0xF0000008);
+            mu.write_register(RESET_LINK_CTL_REGISTER_W, 0xE0000013);
             mu.write_register(RESET_LINK_CTL_REGISTER_W, 0x0);
             break;
         case '5':
-            mu.write_register(RESET_LINK_CTL_REGISTER_W, 0xF0000010);
+            mu.write_register(RESET_LINK_CTL_REGISTER_W, 0xE0000014);
             mu.write_register(RESET_LINK_CTL_REGISTER_W, 0x0);
             break;
         case '6':

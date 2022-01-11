@@ -35,7 +35,7 @@ int MuFEB::WriteFEBID(){
     for(auto FEB: febs){
        if(!FEB.IsScEnabled()) continue; //skip disabled fibers
        if(FEB.SB_Number()!=SB_number) continue; //skip commands not for this SB
-       uint32_t val=0xFEB1FEB0; // TODO: Where does this hard-coded value come from?
+       uint32_t val=0x00000000; // TODO: Where does this hard-coded value come from?
        val+=(FEB.GetLinkID()<<16)+FEB.GetLinkID();
 
        char reportStr[255];
@@ -43,7 +43,7 @@ int MuFEB::WriteFEBID(){
              FEB.GetLinkName().c_str(),FEB.GetLinkID(),
              FEB.SB_Number(),FEB.SB_Port(),(val>>16)&0xffff,val&0xffff);
        cm_msg(MINFO,"MuFEB::WriteFEBID",reportStr);
-       feb_sc.FEB_register_write(FEB.SB_Port(),  FPGA_ID_REGISTER_RW, val);
+       feb_sc.FEB_register_write(FEB.SB_Port(), FPGA_ID_REGISTER_RW, val);
     }
     return 0;
 }
@@ -381,8 +381,6 @@ DWORD *MuFEB::read_SSSO_OneFEB(DWORD *pdata, uint32_t index)
 }
 
 
-
-
 //Helper functions
 uint32_t MuFEB::reg_setBit  (uint32_t reg_in, uint8_t bit, bool value){
     if(value)
@@ -402,8 +400,6 @@ uint32_t MuFEB::reg_getRange(uint32_t reg_in, uint8_t length, uint8_t offset){
 uint32_t MuFEB::reg_setRange(uint32_t reg_in, uint8_t length, uint8_t offset, uint32_t value){
     return (reg_in & ~(((1<<length)-1)<<offset)) | ((value & ((1<<length)-1))<<offset);
 }
-
-
 
 float MuFEB::ArriaVTempConversion(uint32_t reg)
 {

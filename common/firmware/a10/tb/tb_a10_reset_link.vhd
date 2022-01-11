@@ -56,13 +56,14 @@ begin
 	elsif(rising_edge(clk))then
         
         delay <= delay + '1';
+        wregs(RESET_LINK_CTL_REGISTER_W)(RESET_LINK_COMMAND_RANGE) <= x"00";
 
         if ( delay = "00" ) then
 
         case reset_state is
             
             when "0000" =>
-                wregs(RESET_LINK_CTL_REGISTER_W)(RESET_LINK_RUN_PREPARE_BIT) <= '1';
+                wregs(RESET_LINK_CTL_REGISTER_W)(RESET_LINK_COMMAND_RANGE) <= RESET_LINK_RUN_PREPARE;
                 wregs(RESET_LINK_RUN_NUMBER_REGISTER_W) <= x"AAAAAAAA";
                 reset_state <= "0001";
                 
@@ -70,18 +71,15 @@ begin
                 reset_state <= "0010";
             
             when "0010" =>
-                wregs(RESET_LINK_CTL_REGISTER_W)(RESET_LINK_RUN_PREPARE_BIT) <= '0';
-                wregs(RESET_LINK_CTL_REGISTER_W)(RESET_LINK_ABORT_RUN_BIT) <= '1';
+                wregs(RESET_LINK_CTL_REGISTER_W)(RESET_LINK_COMMAND_RANGE) <= RESET_LINK_ABORT_RUN;
                 reset_state <= "0011";
 
             when "0011" =>
-                wregs(RESET_LINK_CTL_REGISTER_W)(RESET_LINK_ABORT_RUN_BIT) <= '0';
-                wregs(RESET_LINK_CTL_REGISTER_W)(RESET_LINK_RUN_PREPARE_BIT) <= '1';
+                wregs(RESET_LINK_CTL_REGISTER_W)(RESET_LINK_COMMAND_RANGE) <= RESET_LINK_RUN_PREPARE;
                 wregs(RESET_LINK_RUN_NUMBER_REGISTER_W) <= x"BBBBBBBB";
                 reset_state <= "0100";
             
             when "0100" =>
-                wregs(RESET_LINK_CTL_REGISTER_W)(RESET_LINK_RUN_PREPARE_BIT) <= '0';
                 reset_state <= "0101";
             
             when "0101" =>
@@ -94,22 +92,19 @@ begin
                 reset_state <= "1000";
                 
             when "1000" =>
-                wregs(RESET_LINK_CTL_REGISTER_W)(RESET_LINK_SYNC_BIT) <= '1';
+                wregs(RESET_LINK_CTL_REGISTER_W)(RESET_LINK_COMMAND_RANGE) <= RESET_LINK_SYNC;
                 reset_state <= "1001";
                 
             when "1001" =>
-                wregs(RESET_LINK_CTL_REGISTER_W)(RESET_LINK_SYNC_BIT) <= '0';
-                wregs(RESET_LINK_CTL_REGISTER_W)(RESET_START_RUN_BIT) <= '1';
+                wregs(RESET_LINK_CTL_REGISTER_W)(RESET_LINK_COMMAND_RANGE) <= RESET_LINK_START_RUN;
                 reset_state <= "1010";
                 
             when "1010" =>
-                wregs(RESET_LINK_CTL_REGISTER_W)(RESET_START_RUN_BIT) <= '0';
-                wregs(RESET_LINK_CTL_REGISTER_W)(RESET_END_RUN_BIT) <= '1';
+                wregs(RESET_LINK_CTL_REGISTER_W)(RESET_LINK_COMMAND_RANGE) <= RESET_LINK_END_RUN;
                 reset_state <= "1011";
                 
             when "1011" =>
-                wregs(RESET_LINK_CTL_REGISTER_W)(RESET_END_RUN_BIT) <= '0';
-                wregs(RESET_LINK_CTL_REGISTER_W)(RESET_LINK_SYNC_BIT) <= '1';
+                wregs(RESET_LINK_CTL_REGISTER_W)(RESET_LINK_COMMAND_RANGE) <= RESET_LINK_STOP_RESET;
                 reset_state <= "1100";
                 
             when "1100" =>

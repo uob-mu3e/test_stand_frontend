@@ -397,9 +397,14 @@ proc ::add_altera_xcvr_native_a10 { channels channel_width cdr_refclk_freq data_
     set_instance_parameter_value ${name} {enable_port_rx_seriallpbken} {1}
 
     # standard PCS
-    set_instance_parameter_value ${name} {std_tx_8b10b_enable} [ expr CHANNEL_WIDTH_g = 8 || CHANNEL_WIDTH_g = 16 || CHANNEL_WIDTH_g = 32 ]
-    set_instance_parameter_value ${name} {std_rx_8b10b_enable} [ expr CHANNEL_WIDTH_g = 8 || CHANNEL_WIDTH_g = 16 || CHANNEL_WIDTH_g = 32 ]
-
+    if { ${channel_width} == 8 || ${channel_width} == 16 || ${channel_width} == 32 } {
+        set_instance_parameter_value ${name} {std_tx_8b10b_enable} {1}
+        set_instance_parameter_value ${name} {std_rx_8b10b_enable} {1}
+    } else {
+        set_instance_parameter_value ${name} {std_tx_8b10b_enable} {0}
+        set_instance_parameter_value ${name} {std_rx_8b10b_enable} {0}
+    }
+    
     set_instance_parameter_value ${name} {std_rx_word_aligner_mode} {synchronous state machine}
     set_instance_parameter_value ${name} {std_rx_word_aligner_pattern_len} {10}
     # word aligner pattern K28.5

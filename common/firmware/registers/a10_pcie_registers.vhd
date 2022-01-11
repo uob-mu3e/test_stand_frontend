@@ -32,17 +32,18 @@ package a10_pcie_registers is
             constant RESET_BIT_FARM_DATA_PATH                       :  integer := 23; -- DOC: Reset bit for the data path | SWB
             constant RESET_BIT_PCIE                                 :  integer := 31; -- DOC: Not used at the moment | ALL
 
-        constant DATAGENERATOR_REGISTER_W                       : integer := 16#02#;
-            constant DATAGENERATOR_BIT_ENABLE                       : integer := 0;
-            constant DATAGENERATOR_BIT_ENABLE_PIXEL                 : integer := 1;
-            constant DATAGENERATOR_BIT_ENABLE_FIBRE                 : integer := 2;
-            constant DATAGENERATOR_BIT_ENABLE_TILE                  : integer := 3;
-            constant DATAGENERATOR_BIT_ENABLE_TEST                  : integer := 4;
-            constant DATAGENERATOR_BIT_DMA_HALFFUL_MODE             : integer := 5;
-            subtype DATAGENERATOR_FRACCOUNT_RANGE                   is integer range 15 downto  8;
-            subtype DATAGENERATOR_NPIXEL_RANGE                      is integer range 15 downto  8;
-            subtype DATAGENERATOR_NFIBRE_RANGE                      is integer range 23 downto 16;
-            subtype DATAGENERATOR_NTILE_RANGE                       is integer range 31 downto 24;
+        constant DATAGENERATOR_REGISTER_W                       : integer := 16#02#; -- DOC: Register to control the datagenerator which is generating the link data from FEBs | SWB
+            constant DATAGENERATOR_BIT_ENABLE                       : integer := 0;  -- DOC: Not used at the moment | SWB
+            constant DATAGENERATOR_BIT_ENABLE_PIXEL                 : integer := 1;  -- DOC: Bit to enable pixel data | SWB
+            constant DATAGENERATOR_BIT_ENABLE_FIBRE                 : integer := 2;  -- DOC: Bit to enable fibre data | SWB
+            constant DATAGENERATOR_BIT_ENABLE_TILE                  : integer := 3;  -- DOC: Bit to enable tile data | SWB
+            constant DATAGENERATOR_BIT_ENABLE_TEST                  : integer := 4;  -- DOC: Not used at the moment | SWB
+            constant DATAGENERATOR_BIT_DMA_HALFFUL_MODE             : integer := 5;  -- DOC: Not used at the moment | SWB
+            subtype DATAGENERATOR_FRACCOUNT_RANGE                   is integer range 15 downto 8; -- DOC: Not used at the moment | SWB
+            subtype DATAGENERATOR_NPIXEL_RANGE                      is integer range 15 downto 8; -- DOC: Not used at the moment | SWB
+            subtype DATAGENERATOR_NFIBRE_RANGE                      is integer range 23 downto 16; -- DOC: Not used at the moment | SWB
+            subtype DATAGENERATOR_NTILE_RANGE                       is integer range 31 downto 24; -- DOC: Not used at the moment | SWB
+
 
         constant DATAGENERATOR_DIVIDER_REGISTER_W               : integer := 16#03#;
         constant KWORD_W                                        : integer := 16#04#;
@@ -99,11 +100,7 @@ package a10_pcie_registers is
             constant USE_BIT_SCIFI_ONLY                             : integer := 1;
 			
 		constant RESET_LINK_CTL_REGISTER_W						: integer := 16#28#;
-			constant RESET_LINK_RUN_PREPARE_BIT						: integer := 0;
-			constant RESET_LINK_SYNC_BIT							: integer := 1;
-			constant RESET_START_RUN_BIT							: integer := 2;
-			constant RESET_END_RUN_BIT								: integer := 3;
-			constant RESET_LINK_ABORT_RUN_BIT						: integer := 4;
+			subtype  RESET_LINK_COMMAND_RANGE						is integer range 7 downto 0;
 			subtype  RESET_LINK_FEB_RANGE	                        is integer range 31 downto 29;
 		constant RESET_LINK_RUN_NUMBER_REGISTER_W				: integer := 16#29#;
 		constant CLK_LINK_0_REGISTER_W							: integer := 16#30#;
@@ -155,6 +152,9 @@ package a10_pcie_registers is
         constant EVENT2COUNTER64_REGISTER_R                     : integer := 16#08#;
         constant inaddr32_r                                     : integer := 16#09#;
         constant inaddr32_w                                     : integer := 16#10#;
+		  constant CNT_PLL_TOP_REGISTER_R						 		 : integer := 16#0A#;
+		  constant CNT_PLL_156_REGISTER_R						 		 : integer := 16#0B#;
+		  constant CNT_PLL_250_REGISTER_R						 		 : integer := 16#0C#;
         constant DMA_STATUS_R                                   : integer := 16#11#;
             constant DMA_DATA_WEN                                   : integer:= 0;
             constant DMA_CONTROL_WEN                                : integer:= 1;

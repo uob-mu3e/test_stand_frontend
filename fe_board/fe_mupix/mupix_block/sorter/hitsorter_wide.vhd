@@ -138,6 +138,7 @@ signal mem_overflow_del1: std_logic;
 signal mem_overflow_del2: std_logic;
 
 signal credits: integer range -128 to 127;
+signal credits32: std_logic_vector(31 downto 0);
 signal credittemp : integer range -256 to 255;
 signal hitcounter_sum_m3_mem : hitcounter_sum3_type;
 signal hitcounter_sum_mem : integer;
@@ -148,17 +149,24 @@ signal readcommand_last1: command_t;
 signal readcommand_last2: command_t;
 signal readcommand_last3: command_t;
 signal readcommand_last4: command_t;
+signal readcommand_reg  : command_t;
+signal readcommand_reg2 : command_t;
+
 signal readcommand_ena:	std_logic;
 signal readcommand_ena_last1:	std_logic;
 signal readcommand_ena_last2:	std_logic;
 signal readcommand_ena_last3:	std_logic;
 signal readcommand_ena_last4:	std_logic;
+signal readcommand_ena_reg  :	std_logic;
+signal readcommand_ena_reg2 :	std_logic;
 
 signal outoverflow:	std_logic_vector(15 downto 0);
 signal overflow_last1:	std_logic_vector(15 downto 0);
 signal overflow_last2:	std_logic_vector(15 downto 0);
 signal overflow_last3:	std_logic_vector(15 downto 0);
 signal overflow_last4:	std_logic_vector(15 downto 0);
+signal outoverflow_reg:	std_logic_vector(15 downto 0);
+signal outoverflow_reg2:std_logic_vector(15 downto 0);
 
 signal memmultiplex: nots_t;
 signal tscounter: std_logic_vector(47 downto 0); --47 bit, LSB would run at double frequency, but not needed
@@ -168,11 +176,12 @@ signal terminate_output : std_logic;
 signal terminated_output : std_logic;
 
 -- diagnostics
-signal noutoftime : reg_array;
-signal noverflow  : reg_array;
-signal nintime    : reg_array;
-signal nout       : reg32;
-signal delay      : ts_t;
+signal noutoftime       : reg_array;
+signal noverflow        : reg_array;
+signal nintime          : reg_array;
+signal nout             : reg32;
+signal delay            : ts_t;
+signal zero_suppression : std_logic;
 
 -- copy of diagnostics (timing)
 signal noutoftime2: reg_array;
@@ -729,10 +738,39 @@ seq:entity work.sequencer_ng
 		from_fifo						=> fromfifo_counters,
 		fifo_empty						=> counterfifo_empty,
 		read_fifo						=> read_counterfifo,
-		outcommand						=> readcommand,
-		command_enable					=> readcommand_ena,
-		outoverflow						=> outoverflow
+		outcommand						=> readcommand_reg,
+		command_enable					=> readcommand_ena_reg,
+		outoverflow						=> outoverflow_reg
 		);
+process(writeclk, reset_n)
+begin
+    if(reset_n = '0') then
+    
+    elsif rising_edge(writeclk) then
+        readcommand_ena <= '0';
+        if(readcommand_ena_reg = '1' 
+         or readcommand_reg2(COMMANDBITS-1 downto COMMANDBITS-4) = COMMAND_FOOTER(COMMANDBITS-1 downto COMMANDBITS-4) -- do not wait for more if trailer
+         or  readcommand_reg(COMMANDBITS-1 downto COMMANDBITS-4) = COMMAND_FOOTER(COMMANDBITS-1 downto COMMANDBITS-4)) then
+            readcommand_reg2 <= readcommand_reg;
+            readcommand_ena_reg2 <= readcommand_ena_reg;
+            outoverflow_reg2 <= outoverflow_reg;
+            if(readcommand_reg2(COMMANDBITS-1 downto COMMANDBITS-4) = COMMAND_SUBHEADER(COMMANDBITS-1 downto COMMANDBITS-4) 
+             and readcommand_reg(COMMANDBITS-1 downto COMMANDBITS-4) = COMMAND_SUBHEADER(COMMANDBITS-1 downto COMMANDBITS-4)
+             and zero_suppression = '1') then
+                -- throw away subheader in readcommand_reg2 by doing nothing here
+			elsif(readcommand_reg2(COMMANDBITS-1 downto COMMANDBITS-4) = COMMAND_SUBHEADER(COMMANDBITS-1 downto COMMANDBITS-4) 
+             and readcommand_reg(COMMANDBITS-1 downto COMMANDBITS-4) = COMMAND_FOOTER(COMMANDBITS-1 downto COMMANDBITS-4)
+             and zero_suppression = '1') then
+				-- throw away footer in readcommand_reg2 by doing nothing here
+            else
+                readcommand <= readcommand_reg2;
+                readcommand_ena <= readcommand_ena_reg2;
+                outoverflow <= outoverflow_reg2;
+            end if;
+        end if;
+    end if;
+end process;
+
 -- The ouput command has the TS in the LSBs, followed by four bits hit address
 -- four bits channel/chip ID and the MSB inciating command (1) or hit (0)	
 				
@@ -827,6 +865,8 @@ elsif(writeclk'event and writeclk = '1') then
 end if;
 end process;
 
+credits32 <= conv_std_logic_vector(credits, 32);
+
 e_mp_sorter_reg_mapping: entity work.mp_sorter_reg_mapping
     port map (
         i_clk156       => i_clk156,
@@ -838,11 +878,12 @@ e_mp_sorter_reg_mapping: entity work.mp_sorter_reg_mapping
         i_reg_we       => i_reg_we,
         i_reg_wdata    => i_reg_wdata,
 
-        i_nintime      => nintime2,
-        i_noutoftime   => noutoftime2,
-        i_noverflow    => noverflow2,
-        i_nout         => nout2,
-        i_credit       => conv_std_logic_vector(credits, 32),
-        o_sorter_delay => delay--,
+        i_nintime           => nintime2,
+        i_noutoftime        => noutoftime2,
+        i_noverflow         => noverflow2,
+        i_nout              => nout2,
+        i_credit            => credits32,
+        o_zero_suppression  => zero_suppression,
+        o_sorter_delay      => delay--,
     );
 end architecture RTL;

@@ -9,6 +9,7 @@ use ieee.std_logic_unsigned.all;
 use ieee.numeric_std.all;
 
 use work.mudaq.all;
+use work.mupix.all;
 
 entity top is 
     port (
@@ -22,7 +23,7 @@ entity top is
         lvds_firefly_clk            : in    std_logic; -- 125 MHz base clock
 
         systemclock                 : in    std_logic; -- 50 MHz system clock // SI5345
-        systemclock_bottom          : in    std_logic; -- 50 MHz system clock // SI5345
+        systemclock_bottom          : in    std_logic; -- 625 MHz clock // SI5345
         clk_125_top                 : in    std_logic; -- 125 MHz clock spare // SI5345
         clk_125_bottom              : in    std_logic; -- 125 Mhz clock spare // SI5345
         spare_clk_osc               : in    std_logic; -- Spare clock // 50 MHz oscillator
@@ -64,6 +65,18 @@ entity top is
         -- data_in_E                   : in    std_logic_vector(9 downto 1);
         -- fast_reset_E                : out   std_logic;
         -- SIN_E                       : out   std_logic;
+
+        -- enable signals for lvds repeaters on scsi adapter card
+        enable_A                    : out   std_logic;
+        enable_B                    : out   std_logic;
+        enable_C                    : out   std_logic;
+        enable_D                    : out   std_logic;
+
+        -- NIM inputs on scsi adapter
+        Trig0_TTL                   : in    std_logic;
+        Trig1_TTL                   : in    std_logic;
+        Trig2_TTL                   : in    std_logic;
+        Trig3_TTL                   : in    std_logic;
 
         -- Extra signals
         
@@ -130,11 +143,23 @@ entity top is
         max10_spi_D1                : inout std_logic;
         max10_spi_D2                : inout std_logic;
         max10_spi_D3                : inout std_logic;
-        max10_spi_csn               : out   std_logic
+        max10_spi_csn               : out   std_logic;
+		
+		gate_in  					: in    std_logic;
+		pulse_train_in				: in    std_logic--;
         );
 end top;
 
 architecture rtl of top is
+
+	component trigPLL is
+		port (
+			refclk   : in  std_logic ; -- clk
+			rst      : in  std_logic ; -- reset
+			outclk_0 : out std_logic;        -- clk
+			locked   : out std_logic         -- export
+		);
+	end component trigPLL;
 
     -- Debouncers
     signal pb_db                    : std_logic_vector(1 downto 0);
@@ -161,6 +186,8 @@ architecture rtl of top is
 
     signal run_state_125            : run_state_t;
     signal run_state_125_reg        : run_state_t;
+    signal run_state_625_reg        : run_state_t;
+    signal run_state_625_reg_b      : run_state_t;
     signal run_state_156            : run_state_t;
     signal ack_run_prep_permission  : std_logic;
 
@@ -172,6 +199,64 @@ architecture rtl of top is
     signal mp_ctrl_mosi             : std_logic_vector(3  downto 0);
     signal mp_ctrl_csn              : std_logic_vector(11 downto 0);
 
+    signal testcounter              : std_logic_vector(31 downto 0);
+    signal fastcounter              : std_logic_vector(31 downto 0);
+    signal time_over_th_cnt         : std_logic_vector(22 downto 0);
+
+    signal trig0_buffer_125_prev    : std_logic;
+    signal trig1_buffer_125_prev    : std_logic;
+    signal trig0_buffer_125         : std_logic;
+    signal trig1_buffer_125         : std_logic;
+    signal trig0_buffer_125_reg     : std_logic;
+    signal trig1_buffer_125_reg     : std_logic;
+    signal trig0_edge_detected      : std_logic;
+    signal trig1_edge_detected      : std_logic;
+    signal trig0_ts_final           : std_logic_vector(31 downto 0);
+    signal trig1_ts_final           : std_logic_vector(31 downto 0);
+    signal trig0_timestamp_save     : std_logic_vector(31 downto 0);
+    signal trig1_timestamp_save     : std_logic_vector(31 downto 0);
+    signal Trig0_TTL_prev           : std_logic;
+    signal Trig1_TTL_prev           : std_logic;
+    signal Trig0_TTL_reg            : std_logic;
+    signal Trig1_TTL_reg            : std_logic;
+	signal Trig2_TTL_reg            : std_logic;
+    signal Trig3_TTL_reg            : std_logic;
+    signal dead0, dead1             : std_logic;
+    signal dead_cnt0                : integer range 0 to 123;
+    signal dead_cnt1                : integer range 0 to 123;
+	signal trig_edge_cnt			: integer range 0 to 3;
+
+    signal fastcounter_b              : std_logic_vector(31 downto 0);
+
+    signal trig0_buffer_125_prev_b    : std_logic;
+    signal trig1_buffer_125_prev_b    : std_logic;
+    signal trig0_buffer_125_b         : std_logic;
+    signal trig1_buffer_125_b         : std_logic;
+    signal trig0_buffer_125_reg_b     : std_logic;
+    signal trig1_buffer_125_reg_b     : std_logic;
+    signal trig0_edge_detected_b      : std_logic;
+    signal trig1_edge_detected_b      : std_logic;
+    signal trig0_ts_final_b           : std_logic_vector(31 downto 0);
+    signal trig1_ts_final_b           : std_logic_vector(31 downto 0);
+    signal trig0_timestamp_save_b     : std_logic_vector(31 downto 0);
+    signal trig1_timestamp_save_b     : std_logic_vector(31 downto 0);
+    signal Trig0_TTL_prev_b           : std_logic;
+    signal Trig1_TTL_prev_b           : std_logic;
+    signal Trig0_TTL_reg_b            : std_logic;
+    signal Trig1_TTL_reg_b            : std_logic;
+	signal Trig2_TTL_reg_b            : std_logic;
+    signal Trig3_TTL_reg_b            : std_logic;
+    signal dead0_b, dead1_b             : std_logic;
+    signal dead_cnt0_b                : integer range 0 to 63;
+    signal dead_cnt1_b                : integer range 0 to 63;
+	signal trig_edge_cnt_b			: integer range 0 to 3;
+	
+
+	signal triggerclk				: std_logic;
+
+    signal threshold_trigger         : std_logic;
+    signal time_over_th              : std_logic;
+
 begin
 
 --------------------------------------------------------------------
@@ -179,6 +264,8 @@ begin
 ----MUPIX SUB-DETECTOR FIRMWARE ------------------------------------
 --------------------------------------------------------------------
 --------------------------------------------------------------------
+    threshold_trigger <= gate_in ;
+    time_over_th      <= pulse_train_in;
 
     clock_A <= mp_ctrl_clock(3);
     clock_B <= mp_ctrl_clock(2);
@@ -195,14 +282,36 @@ begin
     mosi_C <= mp_ctrl_mosi(1);
     mosi_D <= mp_ctrl_mosi(0);
 
-    csn_A <= mp_ctrl_csn(11 downto 9);
-    csn_B <= mp_ctrl_csn( 8 downto 6);
-    csn_C <= mp_ctrl_csn( 5 downto 3);
-    csn_D <= mp_ctrl_csn( 2 downto 0);
+	-- TODO: reverse this again (cabling mistake in muEDM run hotfix)
+    csn_A <= (others => (not mp_ctrl_csn(2)));
+    csn_B <= (others => (not mp_ctrl_csn(1)));
+    csn_C <= (others => mp_ctrl_csn(3));
+    csn_D <= (others => mp_ctrl_csn(0));
+	
+--    csn_A <= (others => (not mp_ctrl_csn(0)));
+--    csn_B <= (others => (not mp_ctrl_csn(1)));
+--    csn_C <= (others => mp_ctrl_csn(3));
+--    csn_D <= (others => mp_ctrl_csn(2));
 
+    enable_A <= '1';
+    enable_B <= '1';
+    enable_C <= '1';
+    enable_D <= '1';
+	
+
+	e_trigPLL: component trigPLL
+	port map (
+		refclk   => lvds_firefly_clk,
+		rst      => not pb_db(1),
+		outclk_0 => triggerclk,
+		locked   => open--,
+	);
+		
+	
     e_mupix_block : entity work.mupix_block
     generic map (
-        IS_TELESCOPE_g  => '1'--,
+        IS_TELESCOPE_g  => '1',
+        LINK_ORDER_g => MP_LINK_ORDER_TELESCOPE--,
     )
     port map (
         i_fpga_id               => ref_adr,
@@ -239,14 +348,25 @@ begin
         i_clk125                => lvds_firefly_clk,
         i_lvds_rx_inclock_A     => LVDS_clk_si1_fpga_A,
         i_lvds_rx_inclock_B     => LVDS_clk_si1_fpga_B,
-        i_sync_reset_cnt        => sync_reset_cnt--,
+        i_sync_reset_cnt        => sync_reset_cnt,
+
+        i_trigger_in0           => trig0_edge_detected,
+        i_trigger_in1           => trig1_edge_detected,
+        i_trigger_in0_timestamp => trig0_ts_final,
+        i_trigger_in1_timestamp => trig1_ts_final--,
     );
 
     process(lvds_firefly_clk)
     begin
     if rising_edge(lvds_firefly_clk) then
         run_state_125_reg <= run_state_125;
+        
+        if(run_state_125_reg = RUN_STATE_IDLE) then
+            testcounter     <= (others => '0');
+        end if;
         if(run_state_125_reg = RUN_STATE_SYNC)then
+            testcounter <= testcounter + '1';
+
             fast_reset_A    <= '1';
             fast_reset_B    <= '1';
             fast_reset_C    <= '1';
@@ -261,9 +381,105 @@ begin
             --fast_reset_E    <= '0';
             sync_reset_cnt  <= '0';
         end if;
+        
     end if;
     end process;
 
+--------------------------------------------------------------------
+--------------------------------------------------------------------
+---- fast trigger inputs -------------------------------------------
+--------------------------------------------------------------------
+--------------------------------------------------------------------
+
+    -- slow clock process (hitsorter clock)
+    process(lvds_firefly_clk)
+    begin
+    if rising_edge(lvds_firefly_clk) then
+        trig0_buffer_125_reg    <= trig0_buffer_125;
+        trig1_buffer_125_reg    <= trig1_buffer_125;
+
+        trig0_buffer_125_prev   <= trig0_buffer_125_reg;
+        trig1_buffer_125_prev   <= trig1_buffer_125_reg;
+
+        trig0_edge_detected     <= '0';
+        trig1_edge_detected     <= '0';		
+
+        if(trig0_buffer_125_prev = '0' and trig0_buffer_125_reg = '1') then
+            trig0_edge_detected <= '1';
+            trig0_ts_final      <= trig0_timestamp_save;
+        end if;
+		
+        -- register buffer once
+        if(trig1_buffer_125_prev = '0' and trig1_buffer_125_reg = '1') then
+            trig1_edge_detected <= '1';
+            trig1_ts_final      <= trig1_timestamp_save;
+        end if;
+
+    end if;
+    end process;
+
+    -- fast clk process
+    process(triggerclk)--pb_db(1))
+    begin
+	--if(pb_db(1) = '0') then
+		--trig_edge_cnt <= 0;
+		--dead_cnt0	  <= 0;
+    if (rising_edge(triggerclk)) then
+        Trig0_TTL_reg   <= threshold_trigger;
+        Trig1_TTL_reg   <= time_over_th;
+        Trig0_TTL_prev  <= Trig0_TTL_reg;
+        Trig1_TTL_prev  <= Trig1_TTL_reg;
+        run_state_625_reg <= run_state_125_reg;
+
+        if(run_state_625_reg = RUN_STATE_SYNC) then
+            fastcounter <= (others => '0');
+        end if;
+        if(run_state_625_reg = RUN_STATE_RUNNING)then
+            fastcounter <= fastcounter + 1;
+        end if;
+
+        if(Trig0_TTL_reg = '0' and Trig0_TTL_prev = '1' and dead0='0') then -- falling edge on input and not in artificial dead time
+            dead0               <= '1';
+            dead_cnt0           <=  0;				
+            trig0_timestamp_save<= fastcounter(31 downto 0); 
+		end if;
+
+        if(Trig1_TTL_reg = '1' and Trig1_TTL_prev = '0' and dead1='0') then -- same for the other input
+            dead1               <= '1';
+            dead_cnt1           <=  0;
+            time_over_th_cnt    <= (others => '0');
+            trig1_timestamp_save<= fastcounter(15 downto 0) & time_over_th_cnt(15 downto 0);
+        end if;
+
+        if(Trig1_TTL_reg = '0' and dead1='0') then 
+            time_over_th_cnt    <= time_over_th_cnt + 1;
+        end if;
+
+
+        if(dead0 = '1') then 
+            dead_cnt0 <= dead_cnt0 + 1;
+            if(dead_cnt0=32) then 
+                trig0_buffer_125 <= '1'; -- read trig0_timestamp_save on rising edge of trig0_buffer_125 in 125 MHz clock
+            end if;
+            if(dead_cnt0>=63) then -- end artificial dead time
+                dead0 <= '0';
+				trig0_buffer_125    <= '0';
+            end if;
+        end if;
+
+        if(dead1 = '1') then -- same for the other input
+            dead_cnt1 <= dead_cnt1 + 1;
+            if(dead_cnt1=32) then 
+                trig1_buffer_125 <= '1';
+            end if;
+            if(dead_cnt1>=63) then
+                dead1 <= '0';
+				trig1_buffer_125    <= '0';
+            end if;
+        end if;
+    end if;
+
+    end process;
 --------------------------------------------------------------------
 --------------------------------------------------------------------
 ---- COMMON FIRMWARE PART ------------------------------------------
@@ -364,7 +580,7 @@ begin
 
         i_areset_n          => pb_db(0),
 
-        o_testout(7 downto 2) => lcd_data(7 downto 2),
+        i_testout           => testcounter,
         i_testin            => pb_db(1)--,
     );
 
@@ -375,4 +591,13 @@ begin
     FPGA_Test(0) <= transceiver_pll_clock(0);
     FPGA_Test(1) <= lvds_firefly_clk;
     FPGA_Test(2) <= clk_125_top;
+	FPGA_Test(3) <= Trig0_TTL;
+	FPGA_Test(4) <= Trig1_TTL;
+	FPGA_Test(5) <= gate_in;
+	FPGA_Test(6) <= pulse_train_in;
+	FPGA_Test(7) <= triggerclk;
+	
+
+    lcd_data(5 downto 2) <= Trig0_TTL_reg & Trig1_TTL_reg & Trig2_TTL_reg & Trig3_TTL_reg;
+
 end rtl;

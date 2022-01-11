@@ -13,6 +13,9 @@ use work.mupix.all;
 
 
 entity mupix_datapath_reg_mapping is
+    generic(
+        LINK_ORDER_g : mp_link_order_t--;
+    );
 port (
     i_clk156                    : in  std_logic;
     i_clk125                    : in  std_logic := '0';
@@ -77,7 +80,7 @@ begin
     end process;
 
     gen_mask_order: for i in 0 to 35 generate
-        mp_lvds_link_mask_ordered(MP_LINK_ORDER(i))         <= mp_lvds_link_mask(i);
+        mp_lvds_link_mask_ordered(LINK_ORDER_g(i))         <= mp_lvds_link_mask(i);
     end generate;
 
     process (i_clk156, i_reset_n)

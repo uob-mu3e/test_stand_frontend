@@ -23,6 +23,9 @@ using namespace mu3e::daq;
 #include <thread>
 #include <chrono>
 
+#include <iostream>
+#include <fstream>
+
 using midas::odb;
 
 #include "default_config_mupix.h" //TODO avoid this, reproduce configure routine from chip dacs
@@ -39,180 +42,259 @@ using midas::odb;
 #define FEB_REPLY_ERROR   1
 
 //Mapping to physical ports of switching board.
-uint16_t MupixFEB::FPGAid_from_ID(int asic) const {return asic/12;}
-uint16_t MupixFEB::ASICid_from_ID(int asic) const {return asic%12;}
+uint16_t MupixFEB::ASICsPerFEB() const {
+    char set_str[255];
+    sprintf(set_str, "/Equipment/Mupix/Settings/FEBS");
+    //TODO: Can we avoid this silly back and forth casting?
+    odb FEBsSettings(std::string(set_str).c_str());
+    return (uint16_t) FEBsSettings["ASICsPerFEB"];
+}
 
-uint16_t MupixFEB::GetNumASICs() const {return febs.size()*12;} //TODO: add parameter for number of asics per FEB, later more flexibility to have different number of sensors per FEB
+uint16_t MupixFEB::FPGAid_from_ID(int asic) const {
+    return asic/ASICsPerFEB();
+}
+
+uint16_t MupixFEB::ASICid_from_ID(int asic) const {
+    return asic%ASICsPerFEB();
+}
+
+uint16_t MupixFEB::GetNumASICs() const {
+    return febs.size()*ASICsPerFEB();
+}
 
 void invert_datastream(uint32_t * datastream) {
 
 }
 
+void MupixFEB::SetTDACs() {
+    char set_str[255];
+    for (int asic = 0; asic < GetNumASICs(); asic++) {
+        sprintf(set_str, "/Equipment/Mupix/Settings/TDACs/%u", asic);
+        //TODO: Can we avoid this silly back and forth casting?
+        odb TDACsSettings(std::string(set_str).c_str());
+        std::string TDACFILE = TDACsSettings["TDACFILE"];
+        std::ifstream data(TDACFILE);
+        std::string line;
+        std::map<std::string, std::vector<uint32_t>> parsedCsv;
+        bool firstLine = true;
+        while ( std::getline(data, line) )
+        {
+            if (firstLine) {
+                firstLine = false;
+            } else {
+                std::stringstream lineStream(line);
+                std::string cell;
+                std::vector<uint32_t> parsedRow;
+                std::string firstValue = "-999";
+                while(std::getline(lineStream, cell, ','))
+                {
+                    if ( firstValue == "-999" ) {
+                        firstValue = cell;
+                    } else {
+                        parsedRow.push_back(std::stoi(cell));
+                    }
+                }
+                parsedCsv.insert(std::pair<std::string, std::vector<uint32_t>>(firstValue, parsedRow));
+            }
+        }
+        TDACsJSON.push_back(parsedCsv);
+    }   
+}
+
 //ASIC configuration:
 //Configure all asics under prefix (e.g. prefix="/Equipment/Mupix")
 int MupixFEB::ConfigureASICs(){
-   printf("MupixFEB::ConfigureASICs()\n");
-   cm_msg(MINFO, "MupixFEB" , "Configuring sensors under prefix %s/Settings/ASICs/", odb_prefix);
-
-for ( int asic=0; asic<10; asic++ ) {
     
-    if ( asic == 0 ) {
-        feb_sc.FEB_register_write(0, MP_LVDS_LINK_MASK_REGISTER_W, 0x7);
-        feb_sc.FEB_register_write(0, MP_LVDS_LINK_MASK2_REGISTER_W, 0x0);
+    printf("MupixFEB::ConfigureASICs()\n");
+    cm_msg(MINFO, "MupixFEB" , "Configuring sensors under prefix %s/Settings/ASICs/", odb_prefix);
+
+    // write lvds mask from ODB to each feb
+    char set_str[255];
+    for ( int feb=0; feb<GetNumFPGAs(); feb++ ) {
+        sprintf(set_str, "/Equipment/Mupix/Settings/FEBS/%u", feb);
+        //TODO: Can we avoid this silly back and forth casting?
+        odb FEBsSettings(std::string(set_str).c_str());
+        feb_sc.FEB_register_write(feb, MP_LVDS_LINK_MASK_REGISTER_W, (uint32_t) FEBsSettings["MP_LVDS_LINK_MASK"]);
+        feb_sc.FEB_register_write(feb, MP_LVDS_LINK_MASK2_REGISTER_W, (uint32_t) FEBsSettings["MP_LVDS_LINK_MASK2"]);
     }
-                                                                                
-    if ( asic == 1 ) {
-        feb_sc.FEB_register_write(1, MP_LVDS_LINK_MASK_REGISTER_W, 0x0);
-        feb_sc.FEB_register_write(1, MP_LVDS_LINK_MASK2_REGISTER_W, 0x0);
-    }
-                                                                                
-    if ( asic == 2 ) {
-        feb_sc.FEB_register_write(2, MP_LVDS_LINK_MASK_REGISTER_W, 0x38000);
-        feb_sc.FEB_register_write(2, MP_LVDS_LINK_MASK2_REGISTER_W, 0xE);
-    }
-                                                                                
-    if ( asic == 3 ) {
-        feb_sc.FEB_register_write(3, MP_LVDS_LINK_MASK_REGISTER_W, 0x0);
-        feb_sc.FEB_register_write(3, MP_LVDS_LINK_MASK2_REGISTER_W, 0x0);
-    }
-                                                                                
-    if ( asic == 4 ) {
-        feb_sc.FEB_register_write(4, MP_LVDS_LINK_MASK_REGISTER_W, 0x0);
-        feb_sc.FEB_register_write(4, MP_LVDS_LINK_MASK2_REGISTER_W, 0x0);
-    }
-                                                                                
-    if ( asic == 5 ) {
-        feb_sc.FEB_register_write(5, MP_LVDS_LINK_MASK_REGISTER_W, 0x7);
-        feb_sc.FEB_register_write(5, MP_LVDS_LINK_MASK2_REGISTER_W, 0x0);
-    }
-                                                                              
-    if ( asic == 6 ) {
-        feb_sc.FEB_register_write(6, MP_LVDS_LINK_MASK_REGISTER_W, 0x0);
-        feb_sc.FEB_register_write(6, MP_LVDS_LINK_MASK2_REGISTER_W, 0x0);
-    }
-                                                                               
-    if ( asic == 7 ) {
-        feb_sc.FEB_register_write(7, MP_LVDS_LINK_MASK_REGISTER_W, 0x0);
-        feb_sc.FEB_register_write(7, MP_LVDS_LINK_MASK2_REGISTER_W, 0x0);
-    }
-                                                                               
-    if ( asic == 8 ) {
-        feb_sc.FEB_register_write(8, MP_LVDS_LINK_MASK_REGISTER_W, 0x0);
-        feb_sc.FEB_register_write(8, MP_LVDS_LINK_MASK2_REGISTER_W, 0x0);
-    }
+    
+    // configure each asic
+    int status = mupix::midasODB::MapForEachASIC(hDB, odb_prefix, [this](mupix::MupixConfig* config, int asic){
+//                 if ( asic != 3 ) return 0;
+        uint32_t rpc_status;
+        bool TDACsNotFound = false;
+        char set_str[255];
 
-    if ( asic == 9 ) {
-        feb_sc.FEB_register_write(9, MP_LVDS_LINK_MASK_REGISTER_W, 0x0);
-        feb_sc.FEB_register_write(9, MP_LVDS_LINK_MASK2_REGISTER_W, 0x0);
-    }
-}
+        // get settings from ODB for TDACs 
+        odb swbSettings("/Equipment/Switching/Settings");
+        bool useTDACs = swbSettings["MupixSetTDACConfig"];
+        uint32_t MupixChipToConfigure = swbSettings["MupixChipToConfigure"];
+        if ( MupixChipToConfigure != 999 && asic != MupixChipToConfigure ) {
+            printf(" [skipped]\n");
+            return FE_SUCCESS;
+        }
+        
+        //mapping
+        uint16_t SB_ID=febs[FPGAid_from_ID(asic)].SB_Number();
+        uint16_t SP_ID=febs[FPGAid_from_ID(asic)].SB_Port();
+        uint16_t FA_ID=ASICid_from_ID(asic);
 
-   int status = mupix::midasODB::MapForEachASIC(hDB,odb_prefix,[this](mupix::MupixConfig* config, int asic){
-      uint32_t rpc_status;
-      bool TDACsNotFound = false;
-      int useTDACs = 0;
-      short tDAC=0;
-      u_int32_t rowRAM_addr=0;
+        if(!febs[FPGAid_from_ID(asic)].IsScEnabled()){
+            printf(" [skipped]\n");
+            return FE_SUCCESS;
+        }
+        if(SB_ID!= SB_number){
+            printf(" [skipped]\n");
+            return FE_SUCCESS;
+        } //TODO
 
-      //mapping
-      uint16_t SB_ID=febs[FPGAid_from_ID(asic)].SB_Number();
-      uint16_t SP_ID=febs[FPGAid_from_ID(asic)].SB_Port();
-      uint16_t FA_ID=ASICid_from_ID(asic);
+        cm_msg(MINFO, "MupixFEB",
+                "Configuring sensor %s/Settings/ASICs/%i/: Mapped to FEB%u -> SB%u.%u  ASIC #%d",
+                odb_prefix,asic,FPGAid_from_ID(asic),SB_ID,SP_ID,FA_ID);
 
-      if(!febs[FPGAid_from_ID(asic)].IsScEnabled()){
-          printf(" [skipped]\n");
-          return FE_SUCCESS;
-      }
-      if(SB_ID!= SB_number){
-          printf(" [skipped]\n");
-          return FE_SUCCESS;
-      } //TODO
+        // TODO: There is a lot of copy/paste in the following - I guess we can condense this
+        // down a lot with a well chosen function call
+        uint32_t bitpattern_m;
+        vector<vector<uint32_t> > payload_m;
+        vector<uint32_t> payload;
+        uint32_t spi_busy;
+        uint32_t count = 0;
+        uint32_t limit = 5;
+        try {
 
-      cm_msg(MINFO, "MupixFEB" ,
-             "Configuring sensor %s/Settings/ASICs/%i/: Mapped to FEB%u -> SB%u.%u  ASIC #%d",
-             odb_prefix,asic,FPGAid_from_ID(asic),SB_ID,SP_ID,FA_ID);
+            payload_m.push_back(vector<uint32_t>(reinterpret_cast<uint32_t*>(config->bitpattern_w),reinterpret_cast<uint32_t*>(config->bitpattern_w)+config->length_32bits));
 
-    // TODO: There is a lot of copy/paste in the following - I guess we can condense this
-      // down a lot with a well chosen function call
+            for(uint32_t j = 0; j<payload_m.at(0).size();j++){
+                bitpattern_m=0;
+                for(short i=0; i<32; i++){
+                    bitpattern_m|= ((payload_m.at(0).at(j)>>i) & 0b1)<<(31-i);
+                }
+                payload.push_back(bitpattern_m);
+            }
 
-      try {
-          uint32_t bitpattern_m;
-          vector<vector<uint32_t> > payload_m;
-          vector<uint32_t> payload;
-          payload_m.push_back(vector<uint32_t>(reinterpret_cast<uint32_t*>(config->bitpattern_w),reinterpret_cast<uint32_t*>(config->bitpattern_w)+config->length_32bits));
+            for(uint32_t j = 0; j<payload.size();j++){
+                std::cout<<std::hex<<payload.at(j)<<std::endl;
+            }
 
-          for(uint32_t j = 0; j<payload_m.at(0).size();j++){
-              bitpattern_m=0;
-              for(short i=0; i<32; i++){
-                  bitpattern_m|= ((payload_m.at(0).at(j)>>i) & 0b1)<<(31-i);
-              }
-              payload.push_back(bitpattern_m);
-          }
+            // ToDo: Col Test Tdac bits from file
+            for(int i=0; i<85; i++){
+                payload.push_back(0x00000000);
+            }
 
-          for(uint32_t j = 0; j<payload.size();j++){
-              std::cout<<std::hex<<payload.at(j)<<std::endl;
-          }
+            // mask all chips but not this one
+            // TODO: make this correct
+            uint32_t chip_select_mask = 0xfff; //all chips masked (12 times 1)
+            int pos = ASICid_from_ID(asic);
+            bool isTelescope = false; // TODO: make this somehow dynamic for the telescope setup
+	        if ( asic == 3 && isTelescope ) pos = 3;
+            chip_select_mask &= ((~0x1) << pos);
+            printf("chip_select_mask %04x\n", chip_select_mask);
+            for (int i = 0; i < pos; ++i)
+                chip_select_mask |= (0x1 << i);
+            printf("chip_select_mask %04x\n", chip_select_mask);
 
-         // ToDo: Col Test Tdac bits from file
-         for(int i=0; i<85;i++){
-             payload.push_back(0x00000000);
-         }
+            // check if FEB is busy
+            rpc_status=FEB_REPLY_SUCCESS;
+            feb_sc.FEB_register_read(SP_ID, MP_CTRL_SPI_BUSY_REGISTER_R, spi_busy);
+            while(spi_busy==1 && count < limit){
+                sleep(1);
+                feb_sc.FEB_register_read(SP_ID,MP_CTRL_SPI_BUSY_REGISTER_R,spi_busy);
+                count++;
+                cm_msg(MINFO, "MupixFEB", "Mupix config spi busy .. waiting");
+            }
 
-         //Mask all chips but this one
-         uint32_t chip_select_mask = 0xfff; //all chips masked (12 times 1)
-         int pos = ASICid_from_ID(asic);
-         chip_select_mask &= ((~0x1) << pos);
-         for (int i = 0; i < pos; ++i)
-             chip_select_mask |= (0x1 << i);
+            if (count == limit) {
+                std::cout<<"Timeout"<<std::endl;
+                cm_msg(MERROR, "setup_mupix", "FEB Mupix SPI timeout");
+            } else { // do the SPI writing 
+                // TODO: make this correct
+                feb_sc.FEB_write(SP_ID, MP_CTRL_CHIP_MASK_REGISTER_W, 0x0);//chip_select_mask); //
+                // TODO: include headers for addr.
+                feb_sc.FEB_write(SP_ID, MP_CTRL_SLOW_DOWN_REGISTER_W, 0x0000000F); // SPI slow down reg
+                feb_sc.FEB_write(SP_ID, MP_CTRL_ENABLE_REGISTER_W, 0x00000FC0); // reset Mupix config fifos
+                feb_sc.FEB_write(SP_ID, MP_CTRL_ENABLE_REGISTER_W, 0x00000000);
+                feb_sc.FEB_write(SP_ID, MP_CTRL_INVERT_REGISTER_W, 0x00000003); // idk, have to look it up
+                // We now only write the default configuration for testing
+                rpc_status = feb_sc.FEB_write(SP_ID, MP_CTRL_ALL_REGISTER_W, payload,true);
+            }
+        } catch(std::exception& e) {
+            cm_msg(MERROR, "setup_mupix", "Communication error while configuring MuPix %d: %s", asic, e.what());
+            set_equipment_status(equipment_name, "SB-FEB Communication error", "red");
+            return FE_ERR_HW; //note: return of lambda function
+        }
 
-         uint32_t spi_busy = 1;
-         uint32_t count = 0;
-         uint32_t limit = 5;
-         rpc_status=FEB_REPLY_SUCCESS;
-
-         feb_sc.FEB_register_read(SP_ID,0x4B,spi_busy);
-
-         while(spi_busy==1 && count < limit){
-             sleep(1);
-             feb_sc.FEB_register_read(SP_ID,0x4B,spi_busy);
-             count++;
-             cm_msg(MINFO, "MupixFEB", "Mupix config spi busy .. waiting");
-         }
-         if(count == limit){
-             std::cout<<"Timeout"<<std::endl;
-             cm_msg(MERROR, "setup_mupix", "FEB Mupix SPI timeout");
-         }else{
+        if(rpc_status!=FEB_REPLY_SUCCESS){
+            //configuration mismatch, report and break foreach-loop
+            set_equipment_status(equipment_name,  "MuPix config failed", "red");
+            cm_msg(MERROR, "setup_mupix", "MuPix configuration error for ASIC %i", asic);
+            return FE_ERR_HW;//note: return of lambda function
+        }
+      
+        // check if we also want to write the TDACs
+        if (useTDACs) {
+            std::cout << "Write TDACs" << "\n";
+            uint32_t curNBits = 0;
+            uint32_t curWord = 0;
+            // loop over keys of the tdacs dict for the current asic
+            // {"0": ["0x0", "0x0", "0x0", "0x0", ...],
+            // {"1": ["0x0", "0x0", "0x0", "0x0", ...],
+            // {"5": ["0x0", "0x0", "0x0", "0x0", ...],
+            // from the key we get the col value for the masking by 6*key+6
+            // the row values for the masking (512 bits) are stored in 32b words in the json file
             
-            feb_sc.FEB_write(SP_ID, 0xFF48, chip_select_mask);
+            for (auto it = GetTDACsJSON().at(asic).begin(); it != GetTDACsJSON().at(asic).end(); it++) {
+                std::cout << "KEY: " << it->first << "\n";
+                // check if FEB is busy
+                feb_sc.FEB_register_read(SP_ID, MP_CTRL_SPI_BUSY_REGISTER_R, spi_busy);
+                count = 0;
+                while ( spi_busy==1 && count < limit ) {
+                    sleep(1);
+                    feb_sc.FEB_register_read(SP_ID, MP_CTRL_SPI_BUSY_REGISTER_R, spi_busy);
+                    count++;
+                    cm_msg(MINFO, "MupixFEB", "Mupix config spi busy .. waiting");
+                }
+                if (count == limit) {
+                    std::cout << "Timeout" << std::endl;
+                    cm_msg(MERROR, "setup_mupix", "FEB Mupix SPI timeout for TDAC writing");
+                } else {
+                    // first we write the row values from the value
+                    for ( uint32_t v : it->second ) {
+                        std::cout << "VALUE: " << v << "\n";
+                        feb_sc.FEB_register_write(SP_ID, MP_CTRL_TDAC_REGISTER_W, v);
+                    }
+                    feb_sc.FEB_register_write(SP_ID, MP_CTRL_ENABLE_REGISTER_W, reg_setBit(0x0,WR_TDAC_BIT,true));
+                    feb_sc.FEB_register_write(SP_ID,MP_CTRL_ENABLE_REGISTER_W,0x0);
+                    
+                    // now we write the 128*7b col values where we write on col (key) at the time
+                    curWord = 0;
+                    curNBits = 0;
+                    for ( int i = 0; i <= 127; i++ ) {
+                        for ( int b = 0; b < 7; b++ ) {
+                            curNBits++;
+                            if (b == 6 && it->first == std::to_string(i)) {
+                                curWord = curWord | (1 << curNBits);
+                            }
+                            if (curNBits == 32) {
+                                feb_sc.FEB_register_write(SP_ID, MP_CTRL_COL_REGISTER_W, curWord);
+                                curWord = 0;
+                                curNBits = 0;
+                            }
+                        }
+                    }
+                    feb_sc.FEB_register_write(SP_ID, MP_CTRL_ENABLE_REGISTER_W, reg_setBit(0x0,WR_COL_BIT,true));
+                    feb_sc.FEB_register_write(SP_ID,MP_CTRL_ENABLE_REGISTER_W,0x0);
+                }
+            }
+        }
 
-            // TODO: include headers for addr.
-            feb_sc.FEB_write(SP_ID, MP_CTRL_SLOW_DOWN_REGISTER_W, 0x0000000F); // SPI slow down reg
-            feb_sc.FEB_write(SP_ID, MP_CTRL_ENABLE_REGISTER_W, 0x00000FC0); // reset Mupix config fifos
-            feb_sc.FEB_write(SP_ID, MP_CTRL_ENABLE_REGISTER_W, 0x00000000);
-            feb_sc.FEB_write(SP_ID, MP_CTRL_INVERT_REGISTER_W, 0x00000003);
-	    
-            // We now only write the default configuration for testing
-            rpc_status = feb_sc.FEB_write(SP_ID, MP_CTRL_ALL_REGISTER_W, payload,true);
-           
-         }
-      } catch(std::exception& e) {
-          cm_msg(MERROR, "setup_mupix", "Communication error while configuring MuPix %d: %s", asic, e.what());
-          set_equipment_status(equipment_name, "SB-FEB Communication error", "red");
-          return FE_ERR_HW; //note: return of lambda function
-      }
-      if(rpc_status!=FEB_REPLY_SUCCESS){
-         //configuration mismatch, report and break foreach-loop
-         set_equipment_status(equipment_name,  "MuPix config failed", "red");
-         cm_msg(MERROR, "setup_mupix", "MuPix configuration error for ASIC %i", asic);
-         return FE_ERR_HW;//note: return of lambda function
-      }
+        // reset lvds links
+        feb_sc.FEB_register_write(SP_ID, MP_RESET_LVDS_N_REGISTER_W, 0x0);
+        feb_sc.FEB_register_write(SP_ID, MP_RESET_LVDS_N_REGISTER_W, 0x1);
 
-      // reset lvds links
-      feb_sc.FEB_register_write(SP_ID, MP_RESET_LVDS_N_REGISTER_W, 0x0);
-      feb_sc.FEB_register_write(SP_ID, MP_RESET_LVDS_N_REGISTER_W, 0x1);
-
-      return FE_SUCCESS;//note: return of lambda function
-   });//MapForEach
+        sleep(2);
+        
+        return FE_SUCCESS;//note: return of lambda function
+    });//MapForEach
 
     return status; //status of foreach function, SUCCESS when no error.
 }
@@ -304,7 +386,7 @@ DWORD* MupixFEB::ReadLVDSCounters(DWORD* pdata, uint16_t FPGA_ID)
         // Link ID
         *(DWORD*)pdata++ = i;
         // read lvds status
-        *(DWORD*)pdata++ = ReadBackLVDSStatus(pdata, FPGA_ID, 0);
+        *(DWORD*)pdata++ = ReadBackLVDSStatus(pdata, FPGA_ID, i);
         // number of hits from link
         *(DWORD*)pdata++ = ReadBackLVDSNumHits(FPGA_ID, i);
         // number of hits from link in mupix format
