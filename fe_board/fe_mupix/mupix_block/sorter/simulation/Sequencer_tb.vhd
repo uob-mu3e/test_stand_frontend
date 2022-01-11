@@ -50,6 +50,7 @@ constant WRITECLK_PERIOD : time := 10 ns;
 signal		reset_n							: std_logic;										-- async reset
 signal      reset                           : std_logic;
 signal		writeclk						: std_logic;										-- clock for write/input side
+signal      runend                          : std_logic;
 signal      tofifo_counters                 : sorterfifodata_t;
 signal      fromfifo_counters               : sorterfifodata_t;
 signal      read_counterfifo                : std_logic;
@@ -98,6 +99,7 @@ dut: entity work.sequencer_ng
 	port map(
 		reset_n		=> reset_n,
 		clk			=> writeclk,									-- clock
+        runend      => runend,
 		from_fifo	=> fromfifo_counters,
 		fifo_empty	=> counterfifo_empty,
 		read_fifo	=> read_counterfifo,
@@ -119,6 +121,14 @@ begin
 	reset_n <= '0';
 	wait for 10 ns;
 	reset_n	<= '1';
+	wait;
+end process;
+
+runendp: process
+begin
+	runend <= '0';
+	wait for 16000 ns;
+	runend	<= '1';
 	wait;
 end process;
 
@@ -404,7 +414,7 @@ begin
     wait for WRITECLK_PERIOD;
     tofifo_counters     <= (others => '0');
     write_counterfifo   <= '0';
-    for i in 0 to 2000 loop
+    for i in 0 to 4000 loop
         wait for 9*WRITECLK_PERIOD;
         tofifo_counters(TSBLOCKINFIFORANGE)     <= tofifo_counters(TSBLOCKINFIFORANGE) + '1';
         write_counterfifo   <= '1';

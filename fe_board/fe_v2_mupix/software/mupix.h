@@ -15,99 +15,139 @@ struct mupix_t {
 
     void test_mupix_write() {
         printf("running mupix test write function ..\n");
-        printf("Chip mask     was set to : 0x%08x\n", sc->ram->data[0xFF48]);
-        printf("SPI slow down was set to : 0x%08x  (do not use 0 !)\n", sc->ram->data[0xFF47]);
+        printf("Chip mask     was set to : 0x%08x\n", sc->ram->data[0x0408]);
+        printf("SPI slow down was set to : 0x%08x  (do not use 0 !)\n", sc->ram->data[0x0407]);
         
         // example: writing to BIAS shift reg
         
         // clear config fifos
-        sc->ram->data[0xFF40]=0x00000FC0;
-        sc->ram->data[0xFF40]=0x00000000;
+        sc->ram->data[0x0400]=0x00000FC0;
+        sc->ram->data[0x0400]=0x00000000;
         
         // invert 29 bit shift reg order ? (no sure if i took the correct one in firmware) --> set bit 0 to 1
         // invert csn ? --> set bit 1 to 1
-        sc->ram->data[0xFF49]=0x00000003;
+        sc->ram->data[0x0409]=0x00000003;
         
         // write data for the  complete BIAS reg into FEB storage
-        sc->ram->data[0xFF41]=0x2A000A03;
-        sc->ram->data[0xFF41]=0xFA3F002F;
-        sc->ram->data[0xFF41]=0x1E041041;
-        sc->ram->data[0xFF41]=0x041E9A51;
-        sc->ram->data[0xFF41]=0x40280000;
-        sc->ram->data[0xFF41]=0x1400C20A;
-        sc->ram->data[0xFF41]=0x028A0000;
+        sc->ram->data[0x0401]=0x2A000A03;
+        sc->ram->data[0x0401]=0xFA3F0025;
+        sc->ram->data[0x0401]=0x1E041041;
+        sc->ram->data[0x0401]=0x041E5951;
+        sc->ram->data[0x0401]=0x40280000;
+        sc->ram->data[0x0401]=0x1400C20A;
+        sc->ram->data[0x0401]=0x028A0000;
         
         //write conf defaults
-        sc->ram->data[0xFF42]=0x001F0002;
-        sc->ram->data[0xFF42]=0x00380000;
-        sc->ram->data[0xFF42]=0xFC09F000;
+        sc->ram->data[0x0402]=0x001F0002;
+        sc->ram->data[0x0402]=0x00380000;
+        sc->ram->data[0x0402]=0xFC09F000;
 
         
         // write vdac defaults
-        sc->ram->data[0xFF43]=0x00720000;
-        sc->ram->data[0xFF43]=0x52000046;
-        sc->ram->data[0xFF43]=0x00B80000;
+        sc->ram->data[0x0403]=0x007200DC;
+        sc->ram->data[0x0403]=0xC8000046;
+        sc->ram->data[0x0403]=0x00B80000;
         
         // zero the rest
         for(int i = 0; i<30; i++){
-        sc->ram->data[0xFF44]=0x00000000;}
+        sc->ram->data[0x0404]=0x00000000;}
         
         for(int i = 0; i<30; i++){
-        sc->ram->data[0xFF45]=0x00000000;}
+        sc->ram->data[0x0405]=0x00000000;}
         
         for(int i = 0; i<30; i++){
-        sc->ram->data[0xFF46]=0x00000000;}
+        sc->ram->data[0x0406]=0x00000000;}
 
-        sc->ram->data[0xFF40]=63;
-        sc->ram->data[0xFF40]=0;
+        sc->ram->data[0x0400]=63;
+        sc->ram->data[0x0400]=0;
         return;
     }
 
     void mupix_write_all_off(){
         
-        sc->ram->data[0xFF47]=0x0000000F; // set spi slow down
-        sc->ram->data[0xFF40]=0x00000FC0;// clear fifos
-        sc->ram->data[0xFF40]=0x00000000;
-        sc->ram->data[0xFF49]=0x00000003;
-        sc->ram->data[0xFF48]=0x00000000; // config mask write to all
+        sc->ram->data[0x0400]=0x0000000F; // set spi slow down
+        sc->ram->data[0x0400]=0x00000FC0;// clear fifos
+        sc->ram->data[0x0400]=0x00000000;
+        sc->ram->data[0x0409]=0x00000003;
+        sc->ram->data[0x0408]=0x00000000; // config mask write to all
         
-        sc->ram->data[0xFF4A]=0x2A000A03;
-        sc->ram->data[0xFF4A]=0xFA3F002F;
-        sc->ram->data[0xFF4A]=0x1E041041;
-        sc->ram->data[0xFF4A]=0x041E9A51;
-        sc->ram->data[0xFF4A]=0x40280000;
-        sc->ram->data[0xFF4A]=0x1400C20A;
-        sc->ram->data[0xFF4A]=0x0280001F;
-        sc->ram->data[0xFF4A]=0x00020038;
-        sc->ram->data[0xFF4A]=0x0000FC09;
-        sc->ram->data[0xFF4A]=0xF0001C80;
-        sc->ram->data[0xFF4A]=0x00148000;
-        sc->ram->data[0xFF4A]=0x11802E00;
+        sc->ram->data[0x040A]=0x2A000A03;
+        sc->ram->data[0x040A]=0xFA3F002F;
+        sc->ram->data[0x040A]=0x1E041041;
+        sc->ram->data[0x040A]=0x041E9A51;
+        sc->ram->data[0x040A]=0x40280000;
+        sc->ram->data[0x040A]=0x1400C20A;
+        sc->ram->data[0x040A]=0x0280001F;
+        sc->ram->data[0x040A]=0x00020038;
+        sc->ram->data[0x040A]=0x0000FC09;
+        sc->ram->data[0x040A]=0xF0001C80;
+        sc->ram->data[0x040A]=0x00148000;
+        sc->ram->data[0x040A]=0x11802E00;
         for(int i = 0; i<85; i++){
-        sc->ram->data[0xFF4A]=0x00000000;}
+        sc->ram->data[0x040A]=0x00000000;}
     }
     
-    void test_write_all() {
+    void test_write_all(bool maskPixel) {
         
-        sc->ram->data[0xFF40]=0x00000FC0;
-        sc->ram->data[0xFF40]=0x00000000;
-        sc->ram->data[0xFF49]=0x00000003;
+        sc->ram->data[0x0400]=0x00000FC0;
+        sc->ram->data[0x0400]=0x00000000;
+        sc->ram->data[0x0409]=0x00000003;
         
-        sc->ram->data[0xFF4A]=0x2A000A03;
-        sc->ram->data[0xFF4A]=0xFA3F002F;
-        sc->ram->data[0xFF4A]=0x1E041041;
-        sc->ram->data[0xFF4A]=0x041E9A51;
-        sc->ram->data[0xFF4A]=0x40280000;
-        sc->ram->data[0xFF4A]=0x1400C20A;
-        sc->ram->data[0xFF4A]=0x028A001F;
-        sc->ram->data[0xFF4A]=0x00020038;
-        sc->ram->data[0xFF4A]=0x0000FC09;
-        sc->ram->data[0xFF4A]=0xF0001C80;
-        sc->ram->data[0xFF4A]=0x00148000;
-        sc->ram->data[0xFF4A]=0x11802E00;
-    
-        for(int i = 0; i<85; i++){
-        sc->ram->data[0xFF4A]=0x00000000;}
+        sc->ram->data[0x040A]=0x16000000;
+        sc->ram->data[0x040A]=0x00050149;
+        sc->ram->data[0x040A]=0x1EF3CF3C;
+        sc->ram->data[0x040A]=0x514B0CA1;
+        sc->ram->data[0x040A]=0x00100005;
+        sc->ram->data[0x040A]=0x14010A14;
+        sc->ram->data[0x040A]=0x010A001F;
+	if (maskPixel) {
+	        sc->ram->data[0x040A]=0x00010038;
+	} else {
+	        sc->ram->data[0x040A]=0x00030038;
+	}
+        sc->ram->data[0x040A]=0x0000FC05;
+        sc->ram->data[0x040A]=0xF0002340;
+        sc->ram->data[0x040A]=0x2B698000;
+        sc->ram->data[0x040A]=0x29003030;
+   	
+	if (maskPixel) {
+
+		for ( int col = 0; col < 128; col++ ) {
+			for ( int row = 0; row < 16; row++ ) {
+				if ( col == 0 ) {
+					sc->ram->data[0x0406] = 0xFFFFFFFF;
+				} else {
+					sc->ram->data[0x0406] = 0x0;
+				}
+			}
+			// send TDAC
+			sc->ram->data[0x0400] = 0x20;
+			sc->ram->data[0x0400] = 0x0;
+			int curBit = 0;
+			int curWord = 0;
+			for ( int j = 0; j < 128; j++ ) {
+				for ( int b = 0; b < 7; b++ ) {
+					if ( b == 6 && col == 0 ) {
+						 curWord |= (1 << curBit);
+					}
+					if ( curBit == 31 ) {
+						sc->ram->data[0x0404] = curWord;
+						curBit = 0;
+						curWord = 0;
+					}
+					curBit++;
+				}
+			}
+			sc->ram->data[0x0400] = 0x8;
+			sc->ram->data[0x0400] = 0x0;
+			usleep(8*10);
+		}
+
+	} else { 
+        	for(int i = 0; i<85; i++) {
+        		sc->ram->data[0x040A]=0x00000000;
+		}
+	}
 
     }
 
@@ -127,9 +167,8 @@ struct mupix_t {
             
             printf("pll_lock should always be '1', rx_state 0: wait for dpa_lock 1: alignment 2:ok, disp_err is only counting in rx_state 2\n");
             printf("order is CON2 ModuleA chip1 ABC, chip2 ABC, .. ModuleB chip1 ABC .. CON3..\n");
-            for(int i=0; i<64; i++){
-                value = sc->ram->data[0xFF66];
-                if (i>36) continue;
+            for(int i=0; i<37; i++){
+                value = sc->ram->data[0x1100+i];
                 printf("%i ready: %01x  rx_state: %01x  pll_lock: %01x  disp_err: %01x\n ",i,value>>31,(value>>29) & 0x3,(value>>28) & 0x1,value & 0x0FFFFFFF);
             }
             printf("----------------------------\n");
@@ -167,10 +206,11 @@ struct mupix_t {
         while(1) {
             printf("  [a] => write all OFF\n");
             printf("  [0] => write mupix default conf (All)\n");
+            printf("  [m] => mask pixels\n");
             printf("  [1] => set mupix config mask\n");
             printf("  [2] => set spi clk slow down reg\n");
             printf("  [3] => print lvds status\n");
-            if((sc->ram->data[0xFF90]) & 1U){
+            if((sc->ram->data[0x1204]) & 1U){
                 printf("  [4] => do not invert lvds in\n");
             }else{
                 printf("  [4] => invert lvds in\n");
@@ -178,6 +218,7 @@ struct mupix_t {
             printf("  [5] => set lvds mask\n");
             printf("  [6] => test write all\n");
             printf("  [7] => write sorter delay\n");
+            printf("  [8] => toggle zero sup.\n");
             printf("  [q] => exit\n");
 
             printf("Select entry ...\n");
@@ -189,6 +230,10 @@ struct mupix_t {
             case '0':
                 test_mupix_write();
                 break;
+	    case 'm':
+		//test_mupix_write(true);
+                test_write_all(true);
+		break;
             case '1':
                 value = 0x0;
                 printf("Enter Chip Mask in hex: ");
@@ -200,7 +245,7 @@ struct mupix_t {
                 }
 
                 printf("setting mask to 0x%08x\n",value);
-                sc->ram->data[0xFF48]=value;
+                sc->ram->data[0x0408]=value;
                 break;
             case '2':
                 value = 0x0;
@@ -213,13 +258,13 @@ struct mupix_t {
                 }
 
                 printf("setting spi slow down to 0x%08x\n",value);
-                sc->ram->data[0xFF47]=value;
+                sc->ram->data[0x0407]=value;
                 break;
             case '3':
                 menu_lvds();
                 break;
             case '4':
-                sc->ram->data[0xFF90] ^= 1UL;
+                sc->ram->data[0x1204] ^= 1UL;
                 break;
             case '5':
                 value = 0x0;
@@ -239,12 +284,24 @@ struct mupix_t {
                 sc->ram->data[0xFF62]=value2;
                 break;
             case '6':
-                test_write_all();
+                test_write_all(false);
                 break;
             case '7':
                 sc->ram->data[0xFF91]=10;
                 break;
-            case 'q':
+			case '8':
+				if (sc->ram->data[0x1029]==0x1) {
+					printf("zero sup. is off now/n");
+					sc->ram->data[0x1029]=0x0;
+				} else {
+					printf("zero sup. is on now/n");
+					sc->ram->data[0x1029]=0x1;
+				}
+				break;
+        case '9': 
+		sc->ram->data[0x1028]=0x5FC;
+		break;    
+	case 'q':
                 return;
             default:
                 printf("invalid command: '%c'\n", cmd);

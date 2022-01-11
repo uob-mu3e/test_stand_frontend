@@ -13,12 +13,15 @@ use work.mupix.all;
 
 
 entity mupix_datapath_reg_mapping is
+    generic(
+        LINK_ORDER_g : mp_link_order_t--;
+    );
 port (
     i_clk156                    : in  std_logic;
     i_clk125                    : in  std_logic := '0';
     i_reset_n                   : in  std_logic;
 
-    i_reg_add                   : in  std_logic_vector(7 downto 0);
+    i_reg_add                   : in  std_logic_vector(15 downto 0);
     i_reg_re                    : in  std_logic;
     o_reg_rdata                 : out std_logic_vector(31 downto 0);
     i_reg_we                    : in  std_logic;
@@ -26,11 +29,8 @@ port (
 
     -- inputs  156--------------------------------------------
     -- ALL INPUTS DEFAULT TO (n*4-1 downto 0 => x"CCC..", others => '1')
-    i_lvds_data_valid           : in  std_logic_vector(35 downto 0) := x"CCCCCCCCC"; -- lvds alignment to mupix chips ok
-    i_lvds_status               : in  work.util.slv32_array_t    (35 downto 0) := (others => x"CCCCCCCC");
 
     -- inputs  125 (how to sync)------------------------------
-    i_sorter_counters           : in sorter_reg_array   := (others => x"CCCCCCCC");
     i_coarsecounter_ena         : in std_logic := '0';
     i_coarsecounter             : in std_logic_vector(23 downto 0) := (others => '0');
     i_ts_global                 : in std_logic_vector(23 downto 0) := (others => '0');
@@ -48,7 +48,6 @@ port (
     o_mp_delta_ts_link_select   : out std_logic_vector(5 downto 0);
 
     -- outputs 125-------------------------------------------------
-    o_sorter_delay              : out ts_t;
     o_sorter_inject             : out std_logic_vector(31 downto 0) := (others => '0');
     o_mp_reset_n_lvds           : out std_logic;
     o_mp_hit_ena_cnt_select     : out std_logic_vector( 7 downto 0) := (others => '0');
@@ -61,17 +60,12 @@ architecture rtl of mupix_datapath_reg_mapping is
     signal mp_readout_mode          : std_logic_vector(31 downto 0);
     signal mp_lvds_link_mask        : std_logic_vector(35 downto 0);
     signal mp_lvds_link_mask_ordered: std_logic_vector(35 downto 0);
-    signal mp_lvds_data_valid       : std_logic_vector(35 downto 0);
     signal mp_lvds_invert           : std_logic;
     signal mp_data_bypass_select    : std_logic_vector(31 downto 0);
     signal mp_sorter_inject         : std_logic_vector(31 downto 0);
     signal mp_hit_ena_cnt_select    : std_logic_vector( 7 downto 0);
     signal mp_hit_ena_cnt_sorter_sel: std_logic_vector( 3 downto 0);
-    signal mp_hit_lvds_status_sel   : std_logic_vector( 5 downto 0);
-    signal mp_sorter_delay          : ts_t;
     signal mp_reset_n_lvds          : std_logic := '1';
-    signal lvds_status              : work.util.slv32_array_t(35 downto 0);
-    signal lvds_status2             : std_logic_vector(31 downto 0);
     signal reg_delay                : std_logic;
 
 begin
@@ -81,13 +75,12 @@ begin
         if(rising_edge(i_clk125)) then
             if(reg_delay = '1') then
                 o_sorter_inject <= mp_sorter_inject;
-                o_sorter_delay  <= mp_sorter_delay;
             end if;
         end if;
     end process;
 
     gen_mask_order: for i in 0 to 35 generate
-        mp_lvds_link_mask_ordered(MP_LINK_ORDER(i))         <= mp_lvds_link_mask(i);
+        mp_lvds_link_mask_ordered(LINK_ORDER_g(i))         <= mp_lvds_link_mask(i);
     end generate;
 
     process (i_clk156, i_reset_n)
@@ -105,15 +98,12 @@ begin
             o_mp_lvds_invert            <= mp_lvds_invert;
             o_mp_datagen_control        <= mp_datagen_control;
             o_mp_readout_mode           <= mp_readout_mode;
-            mp_lvds_data_valid          <= i_lvds_data_valid;
             o_mp_data_bypass_select     <= mp_data_bypass_select;
             o_mp_hit_ena_cnt_select     <= mp_hit_ena_cnt_select;
             o_mp_hit_ena_cnt_sorter_sel <= mp_hit_ena_cnt_sorter_sel;
             o_mp_reset_n_lvds           <= mp_reset_n_lvds;
-            lvds_status                 <= i_lvds_status;
-            lvds_status2                <= lvds_status(MP_LINK_ORDER(to_integer(unsigned(mp_hit_lvds_status_sel))));
 
-            regaddr             := to_integer(unsigned(i_reg_add(7 downto 0)));
+            regaddr             := to_integer(unsigned(i_reg_add));
             o_reg_rdata         <= x"CCCCCCCC";
 
             if(i_reg_we = '1') then
@@ -147,14 +137,6 @@ begin
                 o_reg_rdata(31 downto 4)<= (others => '0');
             end if;
 
-            if ( regaddr = MP_LVDS_DATA_VALID_REGISTER_R and i_reg_re = '1' ) then
-                o_reg_rdata <= mp_lvds_data_valid(31 downto 0);
-            end if;
-            if ( regaddr = MP_LVDS_DATA_VALID2_REGISTER_R and i_reg_re = '1' ) then
-                o_reg_rdata(3 downto 0) <= mp_lvds_data_valid(35 downto 32);
-                o_reg_rdata(31 downto 4)<= (others => '0');
-            end if;
-
             if ( regaddr = MP_DATA_GEN_CONTROL_REGISTER_W and i_reg_we = '1' ) then
                 mp_datagen_control <= i_reg_wdata;
             end if;
@@ -162,35 +144,12 @@ begin
                 o_reg_rdata <= mp_datagen_control;
             end if;
 
-------------------------prev. Version, problem with timing ----------------------------------------
---            for I in 0 to MUPIX_LVDS_STATUS_BLOCK_LENGTH-1 loop 
---                if ( regaddr = I + MP_LVDS_STATUS_START_REGISTER_W and i_reg_re = '1' ) then
---                    o_reg_rdata <= lvds_status(MP_LINK_ORDER(I));
---                end if;
---            end loop;
----------------------------------------------------------------------------------------------------
-            if ( regaddr = MP_LVDS_STATUS_START_REGISTER_W and i_reg_re = '1' ) then
-                    o_reg_rdata <= lvds_status2;
-                    mp_hit_lvds_status_sel   <= std_logic_vector(to_unsigned(to_integer(unsigned(mp_hit_lvds_status_sel)) + 1,6));
-            end if;
-
             if ( regaddr = MP_LVDS_INVERT_REGISTER_W and i_reg_we = '1' ) then
                 mp_lvds_invert <= i_reg_wdata(0);
             end if;
             if ( regaddr = MP_LVDS_INVERT_REGISTER_W and i_reg_re = '1' ) then
                 o_reg_rdata <= (0 => mp_lvds_invert, others => '0');
-                mp_hit_lvds_status_sel <= (others => '0'); -- TODO: move this somewhere 
             end if;
-
-            if ( regaddr = MP_SORTER_DELAY_REGISTER_W and i_reg_we = '1' ) then
-                mp_sorter_delay <= i_reg_wdata(TSRANGE);
-            end if;
-
-            for I in 0 to NSORTERCOUNTERS-1 loop 
-                if ( regaddr = I + MP_SORTER_COUNTER_REGISTER_R and i_reg_re = '1' ) then
-                    o_reg_rdata <= i_sorter_counters(I);
-                end if;
-            end loop;
 
             if ( regaddr = MP_DATA_BYPASS_SELECT_REGISTER_W and i_reg_we = '1' ) then
                 mp_data_bypass_select <= i_reg_wdata;

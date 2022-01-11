@@ -112,10 +112,14 @@ struct xcvr_block_t {
                 xcvr = xcvr_ch(j);
                 if(xcvr == nullptr) break;
 
+                // loopback
                 alt_u32 l = xcvr[0x2F];
+                // error counters
                 alt_u32 e = xcvr[0x23] > 0 || xcvr[0x24] > 0;
                 alt_u32 E = xcvr[0x23] == 0xFF && xcvr[0x24] == 0xFFFF;
+                // ready or LtoR or LtoD or locked
                 alt_u32 _ = xcvr[0x21] != 0;
+                // locked (sync)
                 alt_u32 S = xcvr[0x20] == 0 && (xcvr[0x21] & 0x1005) == 0x1005 && xcvr[0x22] == 0;
                 printf(" | %s0x%02X%s %s%s..%s",
                     j == ch ? "[" : " ", j, j == ch ? "]" : " ",

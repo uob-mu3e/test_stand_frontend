@@ -3,14 +3,15 @@
 
 #include "include/si534x.h"
 
-#include "si5345_revb_registers.h"
-
 struct si5345_t : si534x_t {
 
     const char* DESIGN_ID = "si45.v1";
 
-    si5345_t(alt_u32 spi_base, alt_u32 spi_slave)
+    const register_t* regs; int regs_n;
+
+    si5345_t(alt_u32 spi_base, alt_u32 spi_slave, const register_t* regs, int regs_n)
         : si534x_t(spi_base, spi_slave)
+        , regs(regs), regs_n(regs_n)
     {
     }
 
@@ -20,7 +21,7 @@ struct si5345_t : si534x_t {
         for(int i = 0; i < 8; i++) id[i] = (char)read(0x026B + i);
         if(force == 0 && strcmp(id, DESIGN_ID) == 0) return;
 
-        si_t::init(si5345_revb_registers, sizeof(si5345_revb_registers) / sizeof(si5345_revb_registers[0]));
+        si_t::init(regs, regs_n);
 //        for(int i = 0; i < 8; i++) write(0x026B + i, DESIGN_ID[i]);
 
         wait_sysincal();

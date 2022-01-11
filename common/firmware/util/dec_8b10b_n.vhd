@@ -3,13 +3,13 @@ use ieee.std_logic_1164.all;
 
 entity dec_8b10b_n is
 generic (
-    N_BYTES_g : positive := 4--;
+    g_BYTES : positive := 4--;
 );
 port (
-    i_data      : in    std_logic_vector(N_BYTES_g*10-1 downto 0);
+    i_data      : in    std_logic_vector(g_BYTES*10-1 downto 0);
 
-    o_data      : out   std_logic_vector(N_BYTES_g*8-1 downto 0);
-    o_datak     : out   std_logic_vector(N_BYTES_g-1 downto 0);
+    o_data      : out   std_logic_vector(g_BYTES*8-1 downto 0);
+    o_datak     : out   std_logic_vector(g_BYTES-1 downto 0);
 
     o_err       : out   std_logic;
 
@@ -22,12 +22,12 @@ architecture arch of dec_8b10b_n is
 
     signal data : std_logic_vector(o_data'range);
     signal datak : std_logic_vector(o_datak'range);
-    signal disp : std_logic_vector(N_BYTES_g downto 0);
-    signal disperr, err : std_logic_vector(N_BYTES_g-1 downto 0);
+    signal disp : std_logic_vector(g_BYTES downto 0);
+    signal disperr, err : std_logic_vector(g_BYTES-1 downto 0);
 
 begin
 
-    generate_dec_8b10b : for i in 0 to N_BYTES_g-1 generate
+    generate_dec_8b10b : for i in 0 to g_BYTES-1 generate
     begin
         e_enc_8b10b : entity work.dec_8b10b
         port map (
@@ -52,7 +52,7 @@ begin
     elsif rising_edge(i_clk) then
         o_data <= data;
         o_datak <= datak;
-        disp(0) <= disp(N_BYTES_g);
+        disp(0) <= disp(g_BYTES);
         o_err <= '0';
         if ( disperr /= (disperr'range => '0') or err /= (err'range => '0') ) then
             o_err <= '1';

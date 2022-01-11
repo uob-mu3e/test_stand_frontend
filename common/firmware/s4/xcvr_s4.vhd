@@ -138,24 +138,19 @@ begin
 
         e_rx_align : entity work.rx_align
         generic map (
-            CHANNEL_WIDTH_g => CHANNEL_WIDTH_g,
-            K_g => K_g--,
+            g_BYTES => CHANNEL_WIDTH_g/8,
+            g_K => K_g--,
         )
         port map (
             o_data      => rx(i).data,
             o_datak     => rx(i).datak,
-
             o_locked    => rx(i).locked,
+
+            o_bitslip   => rx_enapatternalign(i),
 
             i_data      => rx_data(CHANNEL_WIDTH_g-1 + CHANNEL_WIDTH_g*i downto CHANNEL_WIDTH_g*i),
             i_datak     => rx_datak(CHANNEL_WIDTH_g/8-1 + CHANNEL_WIDTH_g/8*i downto CHANNEL_WIDTH_g/8*i),
-
-            i_syncstatus        => rx(i).syncstatus,
-            i_patterndetect     => rx(i).patterndetect,
-            o_enapatternalign   => rx_enapatternalign(i),
-
-            i_errdetect => rx(i).errdetect,
-            i_disperr   => rx(i).disperr,
+            i_error     => work.util.or_reduce(rx(i).errdetect or rx(i).disperr),
 
             i_reset_n   => rx(i).rst_n,
             i_clk       => i_rx_clkin(i)--,

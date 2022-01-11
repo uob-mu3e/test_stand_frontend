@@ -745,16 +745,16 @@ begin
     generic map(
 			DMAMEMWRITEADDRSIZE => DMAMEMWRITEADDRSIZE,
 			DMAMEMREADADDRSIZE  => DMAMEMREADADDRSIZE,
-			DMAMEMWRITEWIDTH	  => DMAMEMWRITEWIDTH
+			DMAMEMWRITEWIDTH	=> DMAMEMWRITEWIDTH
     )
     port map (
-        o_writeregs_B           => o_writeregs_B,
-		  o_regwritten_B			  => o_regwritten_B,
-        i_clk_B                 => i_clk_B,
+        o_writeregs_B       => o_writeregs_B,
+		o_regwritten_B		=> o_regwritten_B,
+        i_clk_B             => i_clk_B,
 		  
-		  o_writeregs_C           => o_writeregs_C,
-		  o_regwritten_C			  => o_regwritten_C,
-        i_clk_C                 => i_clk_C,
+		o_writeregs_C       => o_writeregs_C,
+		o_regwritten_C		=> o_regwritten_C,
+        i_clk_C             => i_clk_C,
 
 		local_rstn			=> application_reset_n,
 		refclk				=> pld_clk,
@@ -776,7 +776,7 @@ begin
 		rx_st_sop0 			=>	rx_st_sop0(0),
 		rx_st_ready0 		=> rx_st_ready0,
 		rx_st_valid0 		=> rx_st_valid0(0),
-		rx_bar0 				=> rx_st_bardec0,
+		rx_bar0 			=> rx_st_bardec0,
 		
 		-- Interrupt stuff
 		app_msi_req			=> app_msi_req,
@@ -799,7 +799,7 @@ begin
 		readmem_addr 		=> readmem_addr,
 		readmemclk			=> readmemclk,
 		readmem_wren		=> readmem_wren,
-		readmem_endofevent => readmem_endofevent,
+		readmem_endofevent  => readmem_endofevent,
 		
 						-- dma memory
 		dma_data 			=> dma_data,
@@ -811,7 +811,7 @@ begin
 					-- 2nd dma memory
 		dma2_data 			=> dma2_data,
 		dma2memclk			=> dma2memclk,
-		dma2mem_wren			=> dma2mem_wren,
+		dma2mem_wren		=> dma2mem_wren,
 		dma2mem_endofevent	=> dma2mem_endofevent,
 		dma2memhalffull		=> dma2memhalffull,
 		

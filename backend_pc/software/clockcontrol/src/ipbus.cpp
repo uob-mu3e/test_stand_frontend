@@ -13,7 +13,10 @@ using std::hex;
 ipbus::ipbus(std::string _addr, unsigned short _port):
     addr(_addr),port(_port), connected(false), ios(), socket(ios), packetnumber(0),ntimeouts(0)
 {
-    connect();
+    if(_addr != "0.0.0.0")
+        connect();
+    else
+        cout << "IPBus: Address zero - not connecting" << endl;
 }
 
 int ipbus::disconnect()
