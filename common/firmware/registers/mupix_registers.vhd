@@ -58,7 +58,6 @@ constant MUPIX_LVDS_STATUS_BLOCK_LENGTH     : integer := 36;
 -----------------------------------------------------------------
 ---- mupix datapath (0x1200-0xFBFF)------------------------------
 -----------------------------------------------------------------
-
     constant MP_READOUT_MODE_REGISTER_W         :  integer := 16#1200#; -- DOC: to be removed | MP_FEB
         constant INVERT_TS_BIT                  :  integer := 0;        -- DOC: if set: TS is inverted | MP_FEB
         constant INVERT_TS2_BIT                 :  integer := 1;        -- DOC: if set: TS2 is inverted | MP_FEB

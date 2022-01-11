@@ -44,57 +44,56 @@ package a10_pcie_registers is
             subtype DATAGENERATOR_NFIBRE_RANGE                      is integer range 23 downto 16; -- DOC: Not used at the moment | SWB
             subtype DATAGENERATOR_NTILE_RANGE                       is integer range 31 downto 24; -- DOC: Not used at the moment | SWB
 
+        constant DATAGENERATOR_DIVIDER_REGISTER_W               : integer := 16#03#; -- DOC: Register to slow down the datagenerator which is generating the link data from FEBs | SWB
+        constant KWORD_W                                        : integer := 16#04#; -- DOC: Not used at the moment | ALL
+        constant DMA_CONTROL_W                                  : integer := 16#05#; -- DOC: Not used at the moment | ALL
+            subtype DMA_CONTROL_COUNTER_RANGE                       is integer range 15 downto 0; -- DOC: Not used at the moment | ALL
+        constant DMA_SLOW_DOWN_REGISTER_W                       : integer := 16#06#; -- DOC: Not used at the moment | ALL
+        
+        constant LINK_TEST_REGISTER_W                           : integer := 16#07#; -- DOC: Not used at the moment | ALL
+        constant LINK_TEST_BIT_ENABLE                               : integer := 0;  -- DOC: Not used at the moment | ALL
+        
+        constant RUN_NR_REGISTER_W                              : integer := 16#08#; -- DOC: Register to write the current run number | SWB
+        constant RUN_NR_ADDR_REGISTER_W                         : integer := 16#09#; -- DOC: Ask for run number of FEB with this addr | SWB
+        constant FEB_ENABLE_REGISTER_W                          : integer := 16#0A#; -- DOC: Enable register for FEBs for run control and slowcontrol | SWB
+        constant DATA_LINK_MASK_REGISTER_W                      : integer := 16#0B#; -- DOC: Not used at the moment | SWB
+        constant GET_N_DMA_WORDS_REGISTER_W                     : integer := 16#0C#; -- DOC: Number of requested words which will be send via DMA | SWB
+        constant SC_MAIN_ENABLE_REGISTER_W                      : integer := 16#0D#; -- DOC: Reg that the slowcontrol main only starts on a 0->1 transition | SWB
+        constant SC_MAIN_LENGTH_REGISTER_W                      : integer := 16#0E#; -- DOC: Lenght (15 downto 0) for slowcontrol package | SWB
+        constant DATA_LINK_MASK_REGISTER_2_W                    : integer := 16#0F#; -- DOC: Not used at the moment | SWB
+        constant SWB_LINK_MASK_PIXEL_REGISTER_W                 : integer := 16#10#; -- DOC: Mask Pixel links | SWB
+        constant SWB_LINK_MASK_SCIFI_REGISTER_W                 : integer := 16#11#; -- DOC: Mask Scifi links | SWB
+        constant SWB_LINK_MASK_TILES_REGISTER_W                 : integer := 16#12#; -- DOC: Mask Tile links | SWB
+        constant SWB_READOUT_STATE_REGISTER_W                   : integer := 16#13#; -- DOC: Readout state | SWB
+            constant USE_BIT_GEN_LINK                               : integer := 0;  -- DOC: Readout state where link data is generated (for debugging) | SWB
+            constant USE_BIT_STREAM                                 : integer := 1;  -- DOC: Readout state where link data is read out in round-robin | SWB
+            constant USE_BIT_MERGER                                 : integer := 2;  -- DOC: Readout state where link data is time aligned (tree) | SWB
+            constant USE_BIT_GEN_MERGER                             : integer := 4;  -- DOC: Readout state where the time aligned data is generated (for debugging) | SWB
+            constant USE_BIT_FARM                                   : integer := 5;  -- DOC: Readout state where the data is send to the farm (1) else (0) it is readout via DMA on the SWB | SWB
+            constant USE_BIT_TEST                                   : integer := 6;  -- DOC: Not used at the moment | SWB
+            constant USE_BIT_PIXEL                                  : integer := 7;  -- DOC: Readout state to only readout pixel data via DMA (for debugging) | SWB
+            constant USE_BIT_SCIFI                                  : integer := 8;  -- DOC: Readout state to only readout scifi data via DMA (for debugging) | SWB
+        constant SWB_READOUT_LINK_REGISTER_W                    : integer := 16#14#; -- DOC: Not used at the moment | SWB
+        
+        constant SWB_COUNTER_REGISTER_W                         : integer := 16#15#; -- DOC: Register to readout counter values from the SWB, to have more information about the counter look at a10_counter.md | SWB
+            subtype SWB_COUNTER_ADDR_RANGE                          is integer range 7 downto 0;    -- DOC: Addr of the counter which should be read out | SWB
+            subtype SWB_LINK_RANGE                                  is integer range 15 downto 8;   -- DOC: Link addrs for link specific counters (#events, #subheaders, etc.) | SWB
 
-        constant DATAGENERATOR_DIVIDER_REGISTER_W               : integer := 16#03#;
-        constant KWORD_W                                        : integer := 16#04#;
-        constant DMA_CONTROL_W                                  : integer := 16#05#;
-            subtype DMA_CONTROL_COUNTER_RANGE                       is integer range 15 downto 0;
-        constant DMA_SLOW_DOWN_REGISTER_W                       : integer := 16#06#;
+        constant DDR3_CONTROL_W                                 : integer := 16#20#; -- DOC: Control register for the ddr3_memory_controller | FARM
+            constant DDR3_BIT_ENABLE_A                              : integer := 0;  -- DOC: Enable statemachine of DDR-A | FARM
+            constant DDR3_BIT_COUNTERTEST_A                         : integer := 1;  -- DOC: Enable counter test (1) or dataflow (0) of DDR-A | FARM
+            subtype  DDR3_COUNTERSEL_RANGE_A                        is integer range 15 downto 14; -- DOC: "01" -> get poserr_reg, "10" -> get counterr_reg else cur time counter written to DDR3 | FARM
+            constant DDR3_BIT_ENABLE_B                              : integer := 16;  -- DOC: Enable statemachine of DDR-B | FARM
+            constant DDR3_BIT_COUNTERTEST_B                         : integer := 17;  -- DOC: Enable counter test (1) or dataflow (0) of DDR-B | FARM
+            subtype  DDR3_COUNTERSEL_RANGE_B                        is integer range 31 downto 30; -- DOC: "01" -> get poserr_reg, "10" -> get counterr_reg else cur time counter written to DDR3 | FARM
         
-        constant LINK_TEST_REGISTER_W                           : integer := 16#07#;
-        constant LINK_TEST_BIT_ENABLE                               : integer := 0;
-        
-        constant RUN_NR_REGISTER_W                              : integer := 16#08#;
-        constant RUN_NR_ADDR_REGISTER_W                         : integer := 16#09#;
-        constant FEB_ENABLE_REGISTER_W                          : integer := 16#0A#;
-        constant DATA_LINK_MASK_REGISTER_W                      : integer := 16#0B#;
-        constant GET_N_DMA_WORDS_REGISTER_W                     : integer := 16#0C#;
-        constant SC_MAIN_ENABLE_REGISTER_W                      : integer := 16#0D#;
-        constant SC_MAIN_LENGTH_REGISTER_W                      : integer := 16#0E#;
-        constant DATA_LINK_MASK_REGISTER_2_W                    : integer := 16#0F#;
-        constant SWB_LINK_MASK_PIXEL_REGISTER_W                 : integer := 16#10#;
-        constant SWB_LINK_MASK_SCIFI_REGISTER_W                 : integer := 16#11#;
-        constant SWB_LINK_MASK_TILES_REGISTER_W                 : integer := 16#12#;
-        constant SWB_READOUT_STATE_REGISTER_W                   : integer := 16#13#;
-            constant USE_BIT_GEN_LINK                               : integer := 0;
-            constant USE_BIT_STREAM                                 : integer := 1;
-            constant USE_BIT_MERGER                                 : integer := 2;
-            constant USE_BIT_GEN_MERGER                             : integer := 4;
-            constant USE_BIT_FARM                                   : integer := 5;
-            constant USE_BIT_TEST                                   : integer := 6;
-            constant USE_BIT_PIXEL                                  : integer := 7;
-            constant USE_BIT_SCIFI                                  : integer := 8;
-        constant SWB_READOUT_LINK_REGISTER_W                    : integer := 16#14#;
-        
-        constant SWB_COUNTER_REGISTER_W                         : integer := 16#15#;
-            subtype SWB_COUNTER_ADDR_RANGE                          is integer range  7 downto 0;
-            subtype SWB_LINK_RANGE                                  is integer range 15 downto 8;
-
-        constant DDR3_CONTROL_W                                 : integer := 16#20#;
-            constant DDR3_BIT_ENABLE_A                              : integer := 0;
-            constant DDR3_BIT_COUNTERTEST_A                         : integer := 1;
-            subtype  DDR3_COUNTERSEL_RANGE_A                        is integer range 15 downto 14;
-            constant DDR3_BIT_ENABLE_B                              : integer := 16;
-            constant DDR3_BIT_COUNTERTEST_B                         : integer := 17;
-            subtype  DDR3_COUNTERSEL_RANGE_B                        is integer range 31 downto 30;
-        
-        constant DATA_REQ_A_W                                   : integer := 16#21#;
-        constant DATA_REQ_B_W                                   : integer := 16#22#;
-        constant DATA_TSBLOCK_DONE_W                            : integer := 16#23#;
-        constant FARM_READOUT_STATE_REGISTER_W                  : integer := 16#24#;
-            constant USE_BIT_GEN_MERGE                              : integer := 0;
-        constant FARM_ID_REGISTER_W                             : integer := 16#25#;
-        constant FARM_REQ_EVENTS_W                              : integer := 16#26#;
+        constant DATA_REQ_A_W                                   : integer := 16#21#; -- DOC: Register for requesting subheaders from DDR3, for SUBTS in GPU_SUBTS_SEL DO writereg(SUBTS) | FARM
+        constant DATA_REQ_B_W                                   : integer := 16#22#; -- DOC: Register for requesting subheaders from DDR3, for SUBTS in GPU_SUBTS_SEL DO writereg(SUBTS) | FARM
+        constant DATA_TSBLOCK_DONE_W                            : integer := 16#23#; -- DOC: dynamic limit when we change from writing to reading (15 downto 8 from 35 downto 4 of the 48b TS) | FARM
+        constant FARM_READOUT_STATE_REGISTER_W                  : integer := 16#24#; -- DOC: Readout state | FARM
+            constant USE_BIT_GEN_MERGE                              : integer := 0;  -- DOC: Generate SWB data (for dubugging) | FARM
+        constant FARM_ID_REGISTER_W                             : integer := 16#25#; -- DOC: Farm ID written to the reserved filed of the MIDAS bank | FARM
+        constant FARM_REQ_EVENTS_W                              : integer := 16#26#; -- DOC: total number of requested events (should match to len(DATA_REQ_A/B_W) from GPU selection | FARM
         constant FARM_CTL_REGISTER_W                            : integer := 16#27#;
             constant USE_BIT_PIXEL_ONLY                             : integer := 0;
             constant USE_BIT_SCIFI_ONLY                             : integer := 1;

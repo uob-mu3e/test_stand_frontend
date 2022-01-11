@@ -25,7 +25,6 @@ package feb_sc_registers is
     constant CMD_LEN_REGISTER_RW                :   integer := 16#FC04#;        -- DOC: length of data to read in a nios rpc call | FEB_ALL
     constant CMD_OFFSET_REGISTER_RW             :   integer := 16#FC05#;        -- DOC: positon of the data to read in a nios rpc call | FEB_ALL
     constant RUN_STATE_RESET_BYPASS_REGISTER_RW :   integer := 16#FC06#;        -- DOC: used to bypass the reset system and run without a clock box | FEB_ALL
-
     subtype  RUN_STATE_RANGE                    is  integer range 31 downto 16; -- DOC: not in use | FEB_ALL
     subtype  RESET_BYPASS_RANGE                 is  integer range 7 downto 0;   -- DOC: not in use | FEB_ALL
     constant RESET_BYPASS_BIT_REQUEST           :   integer := 8;               -- DOC: sends a bypass reset command | FEB_ALL
@@ -64,6 +63,7 @@ package feb_sc_registers is
     constant MAX10_STATUS_REGISTER_R            :   integer := 16#FC26#;
     constant MAX10_STATUS_BIT_PLL_LOCKED        :   integer := 0;
     constant MAX10_STATUS_BIT_SPI_ARRIA_CLK     :   integer := 1;
+
     constant PROGRAMMING_CTRL_W                 :   integer := 16#FC27#;
     constant PROGRAMmING_STATUS_R               :   integer := 16#FC28#;
     constant PROGRAMMING_ADDR_W                 :   integer := 16#FC29#;  
