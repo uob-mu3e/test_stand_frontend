@@ -9,27 +9,18 @@
  * Part:		                                       Si5345 Rev D
  * Design ID:                                          
  * Includes Pre/Post Download Control Register Writes: Yes
- * Created By:                                         ClockBuilder Pro v2.45 [2020-07-16]
- * Timestamp:                                          2020-09-14 10:55:51 GMT+02:00
+ * Created By:                                         ClockBuilder Pro v3.3 [2021-04-08]
+ * Timestamp:                                          2021-05-07 03:39:07 GMT-07:00
  *
  * A complete design report corresponding to this export is included at the end 
  * of this header file.
  *
  */
 
-#ifndef SI5345_REVD_REG_CONFIG_HEADER_1_MUPIX
-#define SI5345_REVD_REG_CONFIG_HEADER_1_MUPIX
+#ifndef __SI5345_REGS2_MUTRIG_H__
+#define __SI5345_REGS2_MUTRIG_H__
 
-#define SI5345_REVD_REG_CONFIG_NUM_REGS_1_MUPIX 526
-
-//typedef struct
-//{
-//	unsigned int address; /* 16-bit register address */
-//	unsigned char value; /* 8-bit register data */
-//
-//} si5345_revd_register_t;
-
-si_t::register_t const si5345_revd_registers1_mupix[] =
+si_t::register_t const si5345_regs1_mutrig[] =
 {
 
 	/* Start configuration preamble */
@@ -42,7 +33,7 @@ si_t::register_t const si5345_revd_registers1_mupix[] =
 	/*    Delay is worst case time for device to complete any calibration */
 	/*    that is running due to device state change previous to this script */
 	/*    being processed. */
-	{ 0xFFFF, 300 },
+    { 0xFFFF, 300 },
 
 	/* Start configuration registers */
 	{ 0x0006, 0x00 },
@@ -127,7 +118,7 @@ si_t::register_t const si5345_revd_registers1_mupix[] =
 	{ 0x009E, 0x40 },
 	{ 0x00A0, 0x20 },
 	{ 0x00A2, 0x00 },
-	{ 0x00A9, 0x71 },
+	{ 0x00A9, 0x85 },
 	{ 0x00AA, 0x61 },
 	{ 0x00AB, 0x00 },
 	{ 0x00AC, 0x00 },
@@ -153,7 +144,7 @@ si_t::register_t const si5345_revd_registers1_mupix[] =
 	{ 0x0118, 0x09 },
 	{ 0x0119, 0x3B },
 	{ 0x011A, 0x28 },
-	{ 0x011C, 0x06 },
+	{ 0x011C, 0x02 },
 	{ 0x011D, 0x09 },
 	{ 0x011E, 0x3B },
 	{ 0x011F, 0x28 },
@@ -161,15 +152,15 @@ si_t::register_t const si5345_revd_registers1_mupix[] =
 	{ 0x0122, 0x09 },
 	{ 0x0123, 0x3B },
 	{ 0x0124, 0x28 },
-	{ 0x0126, 0x06 },
+	{ 0x0126, 0x02 },
 	{ 0x0127, 0x09 },
 	{ 0x0128, 0x3B },
 	{ 0x0129, 0x28 },
-	{ 0x012B, 0x06 },
+	{ 0x012B, 0x02 },
 	{ 0x012C, 0x09 },
 	{ 0x012D, 0x3B },
 	{ 0x012E, 0x28 },
-	{ 0x0130, 0x06 },
+	{ 0x0130, 0x02 },
 	{ 0x0131, 0x09 },
 	{ 0x0132, 0x3B },
 	{ 0x0133, 0x28 },
@@ -182,7 +173,7 @@ si_t::register_t const si5345_revd_registers1_mupix[] =
 	{ 0x0141, 0x40 },
 	{ 0x0142, 0xFF },
 	{ 0x0206, 0x00 },
-	{ 0x0208, 0x41 },
+	{ 0x0208, 0x3F },
 	{ 0x0209, 0x00 },
 	{ 0x020A, 0x00 },
 	{ 0x020B, 0x00 },
@@ -230,7 +221,7 @@ si_t::register_t const si5345_revd_registers1_mupix[] =
 	{ 0x0236, 0x00 },
 	{ 0x0237, 0x00 },
 	{ 0x0238, 0x80 },
-	{ 0x0239, 0x84 },
+	{ 0x0239, 0x89 },
 	{ 0x023A, 0x00 },
 	{ 0x023B, 0x00 },
 	{ 0x023C, 0x00 },
@@ -248,19 +239,19 @@ si_t::register_t const si5345_revd_registers1_mupix[] =
 	{ 0x0253, 0x00 },
 	{ 0x0254, 0x00 },
 	{ 0x0255, 0x00 },
-	{ 0x0256, 0x00 },
+	{ 0x0256, 0x04 },
 	{ 0x0257, 0x00 },
 	{ 0x0258, 0x00 },
 	{ 0x0259, 0x00 },
 	{ 0x025A, 0x00 },
 	{ 0x025B, 0x00 },
-	{ 0x025C, 0x00 },
+	{ 0x025C, 0x04 },
 	{ 0x025D, 0x00 },
 	{ 0x025E, 0x00 },
-	{ 0x025F, 0x00 },
+	{ 0x025F, 0x04 },
 	{ 0x0260, 0x00 },
 	{ 0x0261, 0x00 },
-	{ 0x0262, 0x00 },
+	{ 0x0262, 0x04 },
 	{ 0x0263, 0x00 },
 	{ 0x0264, 0x00 },
 	{ 0x0268, 0x00 },
@@ -297,7 +288,7 @@ si_t::register_t const si5345_revd_registers1_mupix[] =
 	{ 0x0303, 0x00 },
 	{ 0x0304, 0x00 },
 	{ 0x0305, 0x80 },
-	{ 0x0306, 0x1A },
+	{ 0x0306, 0x05 },
 	{ 0x0307, 0x00 },
 	{ 0x0308, 0x00 },
 	{ 0x0309, 0x00 },
@@ -406,7 +397,7 @@ si_t::register_t const si5345_revd_registers1_mupix[] =
 	{ 0x0516, 0x00 },
 	{ 0x0517, 0x00 },
 	{ 0x0518, 0x00 },
-	{ 0x0519, 0xB1 },
+	{ 0x0519, 0xB5 },
 	{ 0x051A, 0x02 },
 	{ 0x051B, 0x00 },
 	{ 0x051C, 0x00 },
@@ -421,7 +412,7 @@ si_t::register_t const si5345_revd_registers1_mupix[] =
 	{ 0x052E, 0x19 },
 	{ 0x052F, 0x19 },
 	{ 0x0531, 0x00 },
-	{ 0x0532, 0x63 },
+	{ 0x0532, 0x48 },
 	{ 0x0533, 0x03 },
 	{ 0x0534, 0x00 },
 	{ 0x0535, 0x00 },
@@ -580,11 +571,11 @@ si_t::register_t const si5345_revd_registers1_mupix[] =
  *
  * Overview
  * ========
- * Part:               Si5345ABCD Rev D
- * Project File:       C:\Users\agberger\Desktop\New FEB SI File\Si5345-v5.slabtimeproj
+ * Part:               Si5345AC Rev D
+ * Project File:       C:\Users\Mu3e\Desktop\Si5345-RevD-625.slabtimeproj
  * Design ID:          <none>
- * Created By:         ClockBuilder Pro v2.45 [2020-07-16]
- * Timestamp:          2020-09-14 10:55:51 GMT+02:00
+ * Created By:         ClockBuilder Pro v3.3 [2021-04-08]
+ * Timestamp:          2021-05-07 03:39:06 GMT-07:00
  * 
  * Design Rule Check
  * =================
@@ -596,20 +587,20 @@ si_t::register_t const si5345_revd_registers1_mupix[] =
  * 
  * Device Grade
  * ============
- * Maximum Output Frequency: 125 MHz
+ * Maximum Output Frequency: 625 MHz
  * Frequency Synthesis Mode: Integer
- * Frequency Plan Grade:     D
- * Minimum Base OPN:         Si5345D*
+ * Frequency Plan Grade:     C
+ * Minimum Base OPN:         Si5345C*
  * 
  * Base       Output Clock         Supported Frequency Synthesis Modes
  * OPN Grade  Frequency Range      (Typical Jitter)
  * ---------  -------------------  --------------------------------------------
  * Si5345A    100 Hz to 1.028 GHz  Integer (< 100 fs) and fractional (< 150 fs)
  * Si5345B    100 Hz to 350 MHz    "
- * Si5345C    100 Hz to 1.028 GHz  Integer only (< 100 fs)
- * Si5345D*   100 Hz to 350 MHz    "
+ * Si5345C*   100 Hz to 1.028 GHz  Integer only (< 100 fs)
+ * Si5345D    100 Hz to 350 MHz    "
  * 
- * * Based on your calculated frequency plan, a Si5345D grade device is
+ * * Based on your calculated frequency plan, a Si5345C grade device is
  * sufficient for your design. For more in-system configuration flexibility
  * (higher frequencies and/or to enable fractional synthesis), consider
  * selecting device grade Si5345A when specifying an ordering part number (OPN)
@@ -633,17 +624,17 @@ si_t::register_t const si5345_revd_registers1_mupix[] =
  *     IN3: Unused
  * 
  * Outputs:
- *    OUT0: 125 MHz
+ *    OUT0: 625 MHz
  *          Enabled, LVDS 2.5 V
- *    OUT1: 125 MHz
+ *    OUT1: 625 MHz
  *          Enabled, LVDS 2.5 V
- *    OUT2: 125 MHz
+ *    OUT2: 625 MHz
  *          Enabled, LVDS 2.5 V
- *    OUT3: 125 MHz
+ *    OUT3: 625 MHz
  *          Enabled, LVDS 2.5 V
  *    OUT4: 125 MHz
  *          Enabled, LVDS 2.5 V
- *    OUT5: 125 MHz
+ *    OUT5: 625 MHz
  *          Enabled, LVDS 2.5 V
  *    OUT6: 125 MHz
  *          Enabled, LVDS 2.5 V
@@ -657,28 +648,28 @@ si_t::register_t const si5345_revd_registers1_mupix[] =
  * ==============
  * Priority: maximize the number of low jitter outputs
  * 
- * Fvco = 13.25 GHz
- * Fpfd = 1.9230769230769230... MHz [ 1 + 12/13 MHz ]
- * Fms0 = 250 MHz
+ * Fvco = 13.75 GHz
+ * Fpfd = 1.9841269841269841... MHz [ 1 + 62/63 MHz ]
+ * Fms0 = 1.25 GHz
  * 
  * P dividers:
- *    P0  = 65
+ *    P0  = 63
  *    P1  = Unused
  *    P2  = Unused
  *    P3  = Unused
  *    Pxaxb = 1
  * 
- * MXAXB = 265
- * M = 1378
+ * MXAXB = 275
+ * M = 1386
  * N dividers:
  *    N0:
- *       Value: 53
- *       OUT0: 125 MHz
- *       OUT1: 125 MHz
- *       OUT2: 125 MHz
- *       OUT3: 125 MHz
+ *       Value: 11
+ *       OUT0: 625 MHz
+ *       OUT1: 625 MHz
+ *       OUT2: 625 MHz
+ *       OUT3: 625 MHz
  *       OUT4: 125 MHz
- *       OUT5: 125 MHz
+ *       OUT5: 625 MHz
  *       OUT6: 125 MHz
  *       OUT7: 125 MHz
  *       OUT8: 125 MHz
@@ -696,16 +687,16 @@ si_t::register_t const si5345_revd_registers1_mupix[] =
  *    R1 = 2
  *    R2 = 2
  *    R3 = 2
- *    R4 = 2
+ *    R4 = 10
  *    R5 = 2
- *    R6 = 2
- *    R7 = 2
- *    R8 = 2
+ *    R6 = 10
+ *    R7 = 10
+ *    R8 = 10
  *    R9 = Unused
  * 
  * Nominal Bandwidth:
  *   Desired: 100.000 Hz
- *   Actual:  91.844 Hz
+ *   Actual:  90.268 Hz
  *   Coefficients:
  *      BW0:  19
  *      BW1:  34
@@ -715,7 +706,7 @@ si_t::register_t const si5345_revd_registers1_mupix[] =
  *      BW5:  63
  * Fastlock Bandwidth:
  *   Desired: 1.000 kHz
- *   Actual:  735.535 Hz
+ *   Actual:  722.887 Hz
  *   Coefficients:
  *      BW0:  22
  *      BW1:  42
@@ -752,24 +743,24 @@ si_t::register_t const si5345_revd_registers1_mupix[] =
  * Theta-JA: 18.3 C/W
  * Airflow:  2 m/s
  * 
- * Total Power: 941 mW, On Chip Power: 887 mW, Tj: 41 C
+ * Total Power: 1.008 W, On Chip Power: 954 mW, Tj: 42 C
  * 
  *         Frequency  Format   Voltage   Current     Power
  *         ---------  ------  --------  --------  --------
- * VDD                           1.8 V  117.9 mA    212 mW
+ * VDD                           1.8 V  139.3 mA    251 mW
  * VDDA                          3.3 V  114.8 mA    379 mW
- * VDDO0     125 MHz  LVDS       2.5 V   15.6 mA     39 mW
- * VDDO1     125 MHz  LVDS       2.5 V   15.6 mA     39 mW
- * VDDO2     125 MHz  LVDS       2.5 V   15.6 mA     39 mW
- * VDDO3     125 MHz  LVDS       2.5 V   15.6 mA     39 mW
+ * VDDO0     625 MHz  LVDS       2.5 V   17.8 mA     44 mW
+ * VDDO1     625 MHz  LVDS       2.5 V   17.8 mA     44 mW
+ * VDDO2     625 MHz  LVDS       2.5 V   17.8 mA     44 mW
+ * VDDO3     625 MHz  LVDS       2.5 V   17.8 mA     44 mW
  * VDDO4     125 MHz  LVDS       2.5 V   15.6 mA     39 mW
- * VDDO5     125 MHz  LVDS       2.5 V   15.6 mA     39 mW
+ * VDDO5     625 MHz  LVDS       2.5 V   17.8 mA     44 mW
  * VDDO6     125 MHz  LVDS       2.5 V   15.6 mA     39 mW
  * VDDO7     125 MHz  LVDS       2.5 V   15.6 mA     39 mW
  * VDDO8     125 MHz  LVDS       2.5 V   15.6 mA     39 mW
  * VDDO9      Unused                                      
  *                                      --------  --------
- *                               Total  372.9 mA    941 mW
+ *                               Total  405.4 mA   1.008 W
  * 
  * Note:
  * 
@@ -858,7 +849,7 @@ si_t::register_t const si5345_revd_registers1_mupix[] =
  * 0x009E[7:4]   LOL_SLW_SET_THR             4                  0x4              
  * 0x00A0[7:4]   LOL_SLW_CLR_THR             2                  0x2              
  * 0x00A2[1]     LOL_TIMER_EN                0                  0x0              
- * 0x00A9[28:0]  LOL_CLR_DELAY_DIV256        24945              0x00006171       
+ * 0x00A9[28:0]  LOL_CLR_DELAY_DIV256        24965              0x00006185       
  * 0x00E5[0]     FASTLOCK_EXTEND_MASTER_DIS  0                  0x0              
  * 0x00E5[5]     FASTLOCK_EXTEND_EN          0                  0x0              
  * 0x00EA[28:0]  FASTLOCK_EXTEND             24586              0x0000600A       
@@ -917,7 +908,7 @@ si_t::register_t const si5345_revd_registers1_mupix[] =
  * 0x011A[7:6]   OUT3_INV                    0                  0x0              
  * 0x011C[0]     OUT4_PDN                    0                  0x0              
  * 0x011C[1]     OUT4_OE                     1                  0x1              
- * 0x011C[2]     OUT4_RDIV_FORCE2            1                  0x1              
+ * 0x011C[2]     OUT4_RDIV_FORCE2            0                  0x0              
  * 0x011D[2:0]   OUT4_FORMAT                 1                  0x1              
  * 0x011D[3]     OUT4_SYNC_EN                1                  0x1              
  * 0x011D[5:4]   OUT4_DIS_STATE              0                  0x0              
@@ -943,7 +934,7 @@ si_t::register_t const si5345_revd_registers1_mupix[] =
  * 0x0124[7:6]   OUT5_INV                    0                  0x0              
  * 0x0126[0]     OUT6_PDN                    0                  0x0              
  * 0x0126[1]     OUT6_OE                     1                  0x1              
- * 0x0126[2]     OUT6_RDIV_FORCE2            1                  0x1              
+ * 0x0126[2]     OUT6_RDIV_FORCE2            0                  0x0              
  * 0x0127[2:0]   OUT6_FORMAT                 1                  0x1              
  * 0x0127[3]     OUT6_SYNC_EN                1                  0x1              
  * 0x0127[5:4]   OUT6_DIS_STATE              0                  0x0              
@@ -956,7 +947,7 @@ si_t::register_t const si5345_revd_registers1_mupix[] =
  * 0x0129[7:6]   OUT6_INV                    0                  0x0              
  * 0x012B[0]     OUT7_PDN                    0                  0x0              
  * 0x012B[1]     OUT7_OE                     1                  0x1              
- * 0x012B[2]     OUT7_RDIV_FORCE2            1                  0x1              
+ * 0x012B[2]     OUT7_RDIV_FORCE2            0                  0x0              
  * 0x012C[2:0]   OUT7_FORMAT                 1                  0x1              
  * 0x012C[3]     OUT7_SYNC_EN                1                  0x1              
  * 0x012C[5:4]   OUT7_DIS_STATE              0                  0x0              
@@ -969,7 +960,7 @@ si_t::register_t const si5345_revd_registers1_mupix[] =
  * 0x012E[7:6]   OUT7_INV                    0                  0x0              
  * 0x0130[0]     OUT8_PDN                    0                  0x0              
  * 0x0130[1]     OUT8_OE                     1                  0x1              
- * 0x0130[2]     OUT8_RDIV_FORCE2            1                  0x1              
+ * 0x0130[2]     OUT8_RDIV_FORCE2            0                  0x0              
  * 0x0131[2:0]   OUT8_FORMAT                 1                  0x1              
  * 0x0131[3]     OUT8_SYNC_EN                1                  0x1              
  * 0x0131[5:4]   OUT8_DIS_STATE              0                  0x0              
@@ -1001,7 +992,7 @@ si_t::register_t const si5345_revd_registers1_mupix[] =
  * 0x0142[1]     OUT_DIS_MSK_LOL             1                  0x1              
  * 0x0142[5]     OUT_DIS_MSK_HOLD            1                  0x1              
  * 0x0206[1:0]   PXAXB                       0                  0x0              
- * 0x0208[47:0]  P0_NUM                      65                 0x000000000041   
+ * 0x0208[47:0]  P0_NUM                      63                 0x00000000003F   
  * 0x020E[31:0]  P0_DEN                      1                  0x00000001       
  * 0x0212[47:0]  P1_NUM                      0                  0x000000000000   
  * 0x0218[31:0]  P1_DEN                      0                  0x00000000       
@@ -1017,17 +1008,17 @@ si_t::register_t const si5345_revd_registers1_mupix[] =
  * 0x0233[4]     P2_FRACN_EN                 0                  0x0              
  * 0x0234[3:0]   P3_FRACN_MODE               11                 0xB              
  * 0x0234[4]     P3_FRACN_EN                 0                  0x0              
- * 0x0235[43:0]  MXAXB_NUM                   569083166720       0x08480000000    
+ * 0x0235[43:0]  MXAXB_NUM                   590558003200       0x08980000000    
  * 0x023B[31:0]  MXAXB_DEN                   2147483648         0x80000000       
  * 0x024A[23:0]  R0_REG                      0                  0x000000         
  * 0x024D[23:0]  R1_REG                      0                  0x000000         
  * 0x0250[23:0]  R2_REG                      0                  0x000000         
  * 0x0253[23:0]  R3_REG                      0                  0x000000         
- * 0x0256[23:0]  R4_REG                      0                  0x000000         
+ * 0x0256[23:0]  R4_REG                      4                  0x000004         
  * 0x0259[23:0]  R5_REG                      0                  0x000000         
- * 0x025C[23:0]  R6_REG                      0                  0x000000         
- * 0x025F[23:0]  R7_REG                      0                  0x000000         
- * 0x0262[23:0]  R8_REG                      0                  0x000000         
+ * 0x025C[23:0]  R6_REG                      4                  0x000004         
+ * 0x025F[23:0]  R7_REG                      4                  0x000004         
+ * 0x0262[23:0]  R8_REG                      4                  0x000004         
  * 0x0268[23:0]  R9_REG                      0                  0x000000         
  * 0x026B[7:0]   DESIGN_ID0                  0                  0x00             
  * 0x026C[7:0]   DESIGN_ID1                  0                  0x00             
@@ -1052,7 +1043,7 @@ si_t::register_t const si5345_revd_registers1_mupix[] =
  * 0x029D[19:0]  FASTLOCK_DLY_ONLOL          506                0x001FA          
  * 0x02A9[19:0]  FASTLOCK_DLY_ONSW           1228               0x004CC          
  * 0x02B7[3:2]   LOL_NOSIG_TIME              3                  0x3              
- * 0x0302[43:0]  N0_NUM                      113816633344       0x01A80000000    
+ * 0x0302[43:0]  N0_NUM                      23622320128        0x00580000000    
  * 0x0308[31:0]  N0_DEN                      2147483648         0x80000000       
  * 0x030C[0]     N0_UPDATE                   0                  0x0              
  * 0x030D[43:0]  N1_NUM                      0                  0x00000000000    
@@ -1094,7 +1085,7 @@ si_t::register_t const si5345_revd_registers1_mupix[] =
  * 0x0511[5:0]   FASTLOCK_BW3_PLL            8                  0x08             
  * 0x0512[5:0]   FASTLOCK_BW4_PLL            7                  0x07             
  * 0x0513[5:0]   FASTLOCK_BW5_PLL            63                 0x3F             
- * 0x0515[55:0]  M_NUM                       2959232466944      0x0002B100000000 
+ * 0x0515[55:0]  M_NUM                       2976412336128      0x0002B500000000 
  * 0x051C[31:0]  M_DEN                       2147483648         0x80000000       
  * 0x0521[3:0]   M_FRAC_MODE                 11                 0xB              
  * 0x0521[4]     M_FRAC_EN                   0                  0x0              
@@ -1111,7 +1102,7 @@ si_t::register_t const si5345_revd_registers1_mupix[] =
  * 0x052E[4:0]   HOLD_HIST_LEN               25                 0x19             
  * 0x052F[4:0]   HOLD_HIST_DELAY             25                 0x19             
  * 0x0531[4:0]   HOLD_REF_COUNT_FRC          0                  0x00             
- * 0x0532[23:0]  HOLD_15M_CYC_COUNT          867                0x000363         
+ * 0x0532[23:0]  HOLD_15M_CYC_COUNT          840                0x000348         
  * 0x0535[0]     FORCE_HOLD                  0                  0x0              
  * 0x0536[1:0]   CLK_SWITCH_MODE             0                  0x0              
  * 0x0536[2]     HSW_EN                      1                  0x1              
@@ -1231,4 +1222,4 @@ si_t::register_t const si5345_revd_registers1_mupix[] =
  *
  */
 
-#endif
+#endif // __SI5345_REGS2_MUTRIG_H__

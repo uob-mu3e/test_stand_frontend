@@ -27,7 +27,7 @@ namespace midasODB {
 // /Equipment/Mupix/Settings/ASICs/%d/Channels/%d/Conf
 //Relies on {prefix}/Settings/ASICs/Global/Num asics to build the tree of the right size
 //If init_FEB is set, the registers on the FEB-FPGA are initialized
-int setup_db(const char* prefix,MupixFEB* FEB_inteface,bool init_FEB);
+int setup_db(const char* prefix, MupixFEB* FEB_inteface, bool init_FEB, bool write_defaults);
 void create_psll_names_in_odb(odb & settings, uint32_t N_FEBS_MUPIX, uint32_t N_LINKS);
 
 //Foreach loop over all boards/asics under this prefix. Call with a lambda function,

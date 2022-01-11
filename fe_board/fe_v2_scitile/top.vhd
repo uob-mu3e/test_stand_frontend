@@ -175,7 +175,7 @@ begin
         LVDS_DATA_RATE  => 1250.0--,
     )
     port map (
-        i_reg_addr                  => malibu_reg.addr(3 downto 0),
+        i_reg_addr                  => malibu_reg.addr(15 downto 0),
         i_reg_re                    => malibu_reg.re,
         o_reg_rdata                 => malibu_reg.rdata,
         i_reg_we                    => malibu_reg.we,
@@ -293,7 +293,7 @@ begin
         io_max10_spi_D3     => max10_spi_D3,
         o_max10_spi_csn     => max10_spi_csn,
 
-        o_subdet_reg_addr   => malibu_reg.addr(7 downto 0),
+        o_subdet_reg_addr   => malibu_reg.addr(15 downto 0),
         o_subdet_reg_re     => malibu_reg.re,
         i_subdet_reg_rdata  => malibu_reg.rdata,
         o_subdet_reg_we     => malibu_reg.we,

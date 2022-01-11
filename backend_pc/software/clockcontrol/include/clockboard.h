@@ -107,6 +107,8 @@ public:
     virtual void stop_recording();
 
 protected:
+    clockboard(); // for derived classed not using ipbus
+ 
     ipbus bus;
 
     std::ofstream ofile;

@@ -24,21 +24,27 @@ USE altera_mf.all;
 
 
 entity hitsorter_wide is 
-	port (
-		reset_n							: in std_logic;										-- async reset
-		writeclk						: in std_logic;										-- clock for write/input side
-		running							: in std_logic;
-		currentts						: in ts_t;											-- 11 bit ts
-		hit_in							: in hit_array;
-		hit_ena_in						: in std_logic_vector(NCHIPS-1 downto 0);			-- valid hit
-		readclk							: in std_logic;										-- clock for read/output side
-		data_out						: out reg32;										-- packaged data out
-		out_ena							: out STD_LOGIC;									-- valid output data
-		out_type						: out std_logic_vector(3 downto 0);					-- start/end of an output package, hits, end of run		
-		out_is_hit						: out std_logic;									-- same as out_ena, but only hits, no trailer header etc.
-		diagnostic_out					: out sorter_reg_array;
-		delay							: in ts_t											-- diganostic out (counters for hits at various stages)
-		);
+    port (
+        reset_n         : in  std_logic;                            -- async reset
+        writeclk        : in  std_logic;                            -- clock for write/input side
+        running         : in  std_logic;
+        currentts       : in  ts_t;                                 -- 11 bit ts
+        hit_in          : in  hit_array;
+        hit_ena_in      : in  std_logic_vector(NCHIPS-1 downto 0);  -- valid hit
+        readclk         : in  std_logic;                            -- clock for read/output side
+        data_out        : out reg32;                                -- packaged data out
+        out_ena         : out STD_LOGIC;                            -- valid output data
+        out_type        : out std_logic_vector(3 downto 0);         -- start/end of an output package, hits, end of run		
+        out_is_hit      : out std_logic;                            -- same as out_ena, but only hits, no trailer header etc.
+
+        i_clk156        : in  std_logic;
+        i_reset_n_regs  : in  std_logic;
+        i_reg_add       : in  std_logic_vector(15 downto 0);
+        i_reg_re        : in  std_logic;
+        o_reg_rdata     : out std_logic_vector(31 downto 0);
+        i_reg_we        : in  std_logic;
+        i_reg_wdata     : in  std_logic_vector(31 downto 0)--;
+    );
 end hitsorter_wide;
 
 architecture rtl of hitsorter_wide is
@@ -132,6 +138,7 @@ signal mem_overflow_del1: std_logic;
 signal mem_overflow_del2: std_logic;
 
 signal credits: integer range -128 to 127;
+signal credits32: std_logic_vector(31 downto 0);
 signal credittemp : integer range -256 to 255;
 signal hitcounter_sum_m3_mem : hitcounter_sum3_type;
 signal hitcounter_sum_mem : integer;
@@ -142,17 +149,24 @@ signal readcommand_last1: command_t;
 signal readcommand_last2: command_t;
 signal readcommand_last3: command_t;
 signal readcommand_last4: command_t;
+signal readcommand_reg  : command_t;
+signal readcommand_reg2 : command_t;
+
 signal readcommand_ena:	std_logic;
 signal readcommand_ena_last1:	std_logic;
 signal readcommand_ena_last2:	std_logic;
 signal readcommand_ena_last3:	std_logic;
 signal readcommand_ena_last4:	std_logic;
+signal readcommand_ena_reg  :	std_logic;
+signal readcommand_ena_reg2 :	std_logic;
 
 signal outoverflow:	std_logic_vector(15 downto 0);
 signal overflow_last1:	std_logic_vector(15 downto 0);
 signal overflow_last2:	std_logic_vector(15 downto 0);
 signal overflow_last3:	std_logic_vector(15 downto 0);
 signal overflow_last4:	std_logic_vector(15 downto 0);
+signal outoverflow_reg:	std_logic_vector(15 downto 0);
+signal outoverflow_reg2:std_logic_vector(15 downto 0);
 
 signal memmultiplex: nots_t;
 signal tscounter: std_logic_vector(47 downto 0); --47 bit, LSB would run at double frequency, but not needed
@@ -162,10 +176,18 @@ signal terminate_output : std_logic;
 signal terminated_output : std_logic;
 
 -- diagnostics
-signal noutoftime : reg_array;
-signal noverflow  : reg_array;
-signal nintime	  : reg_array;
-signal nout		  : reg32;
+signal noutoftime       : reg_array;
+signal noverflow        : reg_array;
+signal nintime          : reg_array;
+signal nout             : reg32;
+signal delay            : ts_t;
+signal zero_suppression : std_logic;
+
+-- copy of diagnostics (timing)
+signal noutoftime2: reg_array;
+signal noverflow2 : reg_array;
+signal nintime2   : reg_array;
+signal nout2      : reg32;
 
 constant TSONE : ts_t := "00000000001";
 constant TSZERO : ts_t := "00000000000";
@@ -248,7 +270,7 @@ elsif (writeclk'event and writeclk = '1') then
 	if(running = '1' and runstartup = '1') then
 		tslow <= TSONE;
 		tshi  <= WINDOWSIZE;
-		if(currentts = DELAY) then
+		if(currentts = delay) then
 			runstartup <= '0';
 		end if;
 	elsif(running = '1' and running_last = '1' and runshutdown = '0') then
@@ -363,6 +385,7 @@ genmem: for i in NCHIPS-1 downto 0 generate
 
 		
 	elsif (writeclk'event and writeclk = '1') then
+
 		memwren(i) <= '0';
 		
 		tshit(i) 		<= hit_last1(i)(TSRANGE);
@@ -715,10 +738,39 @@ seq:entity work.sequencer_ng
 		from_fifo						=> fromfifo_counters,
 		fifo_empty						=> counterfifo_empty,
 		read_fifo						=> read_counterfifo,
-		outcommand						=> readcommand,
-		command_enable					=> readcommand_ena,
-		outoverflow						=> outoverflow
+		outcommand						=> readcommand_reg,
+		command_enable					=> readcommand_ena_reg,
+		outoverflow						=> outoverflow_reg
 		);
+process(writeclk, reset_n)
+begin
+    if(reset_n = '0') then
+    
+    elsif rising_edge(writeclk) then
+        readcommand_ena <= '0';
+        if(readcommand_ena_reg = '1' 
+         or readcommand_reg2(COMMANDBITS-1 downto COMMANDBITS-4) = COMMAND_FOOTER(COMMANDBITS-1 downto COMMANDBITS-4) -- do not wait for more if trailer
+         or  readcommand_reg(COMMANDBITS-1 downto COMMANDBITS-4) = COMMAND_FOOTER(COMMANDBITS-1 downto COMMANDBITS-4)) then
+            readcommand_reg2 <= readcommand_reg;
+            readcommand_ena_reg2 <= readcommand_ena_reg;
+            outoverflow_reg2 <= outoverflow_reg;
+            if(readcommand_reg2(COMMANDBITS-1 downto COMMANDBITS-4) = COMMAND_SUBHEADER(COMMANDBITS-1 downto COMMANDBITS-4) 
+             and readcommand_reg(COMMANDBITS-1 downto COMMANDBITS-4) = COMMAND_SUBHEADER(COMMANDBITS-1 downto COMMANDBITS-4)
+             and zero_suppression = '1') then
+                -- throw away subheader in readcommand_reg2 by doing nothing here
+			elsif(readcommand_reg2(COMMANDBITS-1 downto COMMANDBITS-4) = COMMAND_SUBHEADER(COMMANDBITS-1 downto COMMANDBITS-4) 
+             and readcommand_reg(COMMANDBITS-1 downto COMMANDBITS-4) = COMMAND_FOOTER(COMMANDBITS-1 downto COMMANDBITS-4)
+             and zero_suppression = '1') then
+				-- throw away footer in readcommand_reg2 by doing nothing here
+            else
+                readcommand <= readcommand_reg2;
+                readcommand_ena <= readcommand_ena_reg2;
+                outoverflow <= outoverflow_reg2;
+            end if;
+        end if;
+    end if;
+end process;
+
 -- The ouput command has the TS in the LSBs, followed by four bits hit address
 -- four bits channel/chip ID and the MSB inciating command (1) or hit (0)	
 				
@@ -738,7 +790,12 @@ if(reset_n = '0') then
 	terminate_output				<= '0';
 	terminated_output				<= '0';
 elsif(writeclk'event and writeclk = '1') then
-	out_ena							<= '0';
+    noutoftime2 <= noutoftime;
+    noverflow2  <= noverflow;
+    nintime2    <= nintime;
+    nout2       <= nout;
+
+    out_ena							<= '0';
 	out_is_hit						<= '0';
 	for i in NCHIPS-1 downto 0 loop
 		raddr(i)							<= 	readcommand(TSRANGE) & --MSBs: Timestamp 
@@ -808,47 +865,25 @@ elsif(writeclk'event and writeclk = '1') then
 end if;
 end process;
 
+credits32 <= conv_std_logic_vector(credits, 32);
 
-diagnostic_out(0) <= nintime(0);
-diagnostic_out(1) <= nintime(1);
-diagnostic_out(2) <= nintime(2);
-diagnostic_out(3) <= nintime(3);
-diagnostic_out(4) <= nintime(4);
-diagnostic_out(5) <= nintime(5);
-diagnostic_out(6) <= nintime(6);
-diagnostic_out(7) <= nintime(7);
-diagnostic_out(8) <= nintime(8);
-diagnostic_out(9) <= nintime(9);
-diagnostic_out(10) <= nintime(10);
-diagnostic_out(11) <= nintime(11);
+e_mp_sorter_reg_mapping: entity work.mp_sorter_reg_mapping
+    port map (
+        i_clk156       => i_clk156,
+        i_reset_n      => i_reset_n_regs,
 
-diagnostic_out(12) <= noutoftime(0);
-diagnostic_out(13) <= noutoftime(1);
-diagnostic_out(14) <= noutoftime(2);
-diagnostic_out(15) <= noutoftime(3);
-diagnostic_out(16) <= noutoftime(4);
-diagnostic_out(17) <= noutoftime(5);
-diagnostic_out(18) <= noutoftime(6);
-diagnostic_out(19) <= noutoftime(7);
-diagnostic_out(20) <= noutoftime(8);
-diagnostic_out(21) <= noutoftime(9);
-diagnostic_out(22) <= noutoftime(10);
-diagnostic_out(23) <= noutoftime(11);
+        i_reg_add      => i_reg_add,
+        i_reg_re       => i_reg_re,
+        o_reg_rdata    => o_reg_rdata,
+        i_reg_we       => i_reg_we,
+        i_reg_wdata    => i_reg_wdata,
 
-diagnostic_out(24) <= noverflow(0);
-diagnostic_out(25) <= noverflow(1);
-diagnostic_out(26) <= noverflow(2);
-diagnostic_out(27) <= noverflow(3);
-diagnostic_out(28) <= noverflow(4);
-diagnostic_out(29) <= noverflow(5);
-diagnostic_out(30) <= noverflow(6);
-diagnostic_out(31) <= noverflow(7);
-diagnostic_out(32) <= noverflow(8);
-diagnostic_out(33) <= noverflow(9);
-diagnostic_out(34) <= noverflow(10);
-diagnostic_out(35) <= noverflow(11);
-
-diagnostic_out(36) <= nout;
-diagnostic_out(37) <= conv_std_logic_vector(credits, 32);	
-
+        i_nintime           => nintime2,
+        i_noutoftime        => noutoftime2,
+        i_noverflow         => noverflow2,
+        i_nout              => nout2,
+        i_credit            => credits32,
+        o_zero_suppression  => zero_suppression,
+        o_sorter_delay      => delay--,
+    );
 end architecture RTL;

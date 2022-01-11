@@ -36,6 +36,7 @@ set_global_assignment -name VHDL_FILE a10/data_generator_merged_data.vhd
 set_global_assignment -name VHDL_FILE a10/swb_data_merger.vhd
 set_global_assignment -name VHDL_FILE a10/swb_readout_counters.vhd
 set_global_assignment -name VHDL_FILE a10/chip_lookup_int_2021.vhd
+set_global_assignment -name VHDL_FILE a10/chip_lookup_edm_2021.vhd
 
 set_global_assignment -name QIP_FILE ../../common/firmware/registers/include.qip
 set_global_assignment -name QIP_FILE a10/include.qip

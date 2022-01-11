@@ -135,7 +135,7 @@ elsif (clk'event and clk = '1') then
 		no_copy_next	<= '0';
 	else
 		if(blockchange = '1') then
-			output			<= subheader;
+			output		<= subheader;
 			copy_fifo		:= '0';
 			blockchange 	<= '0';
 			overflow_to_out		<= overflowts;

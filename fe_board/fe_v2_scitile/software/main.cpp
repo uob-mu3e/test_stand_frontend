@@ -3,9 +3,11 @@
 
 #include "include/xcvr.h"
 
-#include "../../fe/software/si5345_fe_v2.h"
-si5345_t si5345_1 { SPI_SI_BASE, 0 };
-si5345_t si5345_2 { SPI_SI_BASE, 1 };
+#include "../../fe/software/si5345.h"
+#include "../../fe/software/si5345_regs1_mutrig.h"
+#include "../../fe/software/si5345_regs2.h"
+si5345_t si5345_1 { SPI_SI_BASE, 0, si5345_regs1_mutrig, sizeof(si5345_regs1_mutrig) / sizeof(si5345_regs1_mutrig[0]) };
+si5345_t si5345_2 { SPI_SI_BASE, 1, si5345_regs2, sizeof(si5345_regs2) / sizeof(si5345_regs2[0]) };
 
 #include "../../fe/software/sc.h"
 #include "../../fe/software/sc_ram.h"
@@ -33,7 +35,7 @@ int main() {
     base_init();
 
     si5345_2.init();
-    usleep(500000);
+    usleep(5000000);
     si5345_1.init();
     //mscb.init();
     sc.init();

@@ -17,6 +17,11 @@ clockboard::clockboard(std::string addr, int port):bus(addr, port),recording(fal
 
 }
 
+clockboard::clockboard():bus("0.0.0.0",0),recording(false),currentdaughter(-1),currentbus(-1)
+{
+}
+
+
 int clockboard::init_clockboard(uint16_t clkinvert, uint16_t rstinvert, uint16_t clkdisable, uint16_t rstdisable)
 {
     if(!bus.isConnected())
