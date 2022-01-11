@@ -44,6 +44,7 @@ package a10_pcie_registers is
             subtype DATAGENERATOR_NFIBRE_RANGE                      is integer range 23 downto 16; -- DOC: Not used at the moment | SWB
             subtype DATAGENERATOR_NTILE_RANGE                       is integer range 31 downto 24; -- DOC: Not used at the moment | SWB
 
+
         constant DATAGENERATOR_DIVIDER_REGISTER_W               : integer := 16#03#;
         constant KWORD_W                                        : integer := 16#04#;
         constant DMA_CONTROL_W                                  : integer := 16#05#;
