@@ -1,11 +1,11 @@
 ----------------------------------------
--- SciTile version of the Frontend Board
+-- Mupix telescope version of the Frontend Board
+-- Martin Mueller, Nov 2021
 ----------------------------------------
 
 library ieee;
 use ieee.std_logic_1164.all;
 use ieee.std_logic_unsigned.all;
-use ieee.std_logic_misc.all;
 use ieee.numeric_std.all;
 
 use work.mudaq.all;
@@ -27,18 +27,48 @@ entity top is
         clk_125_bottom              : in    std_logic; -- 125 Mhz clock spare // SI5345
         spare_clk_osc               : in    std_logic; -- Spare clock // 50 MHz oscillator
 
-        -- tile DAB signals
-        tile_din                    : in    std_logic_vector(13 downto 1);
-        tile_pll_test               : out   std_logic;
-        tile_chip_reset             : out   std_logic;
-        tile_i2c_sda                : inout std_logic;
-        tile_i2c_scl                : inout std_logic;
-        tile_cec                    : in    std_logic;
-        tile_spi_miso               : in    std_logic;
-        tile_i2c_int                : in    std_logic;
-        tile_pll_reset              : out   std_logic;
-        tile_spi_scl                : out   std_logic;
-        tile_spi_mosi               : out   std_logic;
+        -- Block A: Connections for three chips -- layer 0
+        clock_A                     : out   std_logic;
+        data_in_A                   : in    std_logic_vector(9 downto 1);
+        fast_reset_A                : out   std_logic;
+        SIN_A                       : out   std_logic;
+        mosi_A                      : out   std_logic;
+        csn_A                       : out   std_logic_vector(2 downto 0);
+
+        -- Block B: Connections for three chips -- layer 0
+        clock_B                     : out   std_logic;
+        data_in_B                   : in    std_logic_vector(9 downto 1);
+        fast_reset_B                : out   std_logic;
+        SIN_B                       : out   std_logic;
+        mosi_B                      : out   std_logic;
+        csn_B                       : out   std_logic_vector(2 downto 0);
+
+        -- Block C: Connections for three chips -- layer 1
+        clock_C                     : out   std_logic;
+        data_in_C                   : in    std_logic_vector(9 downto 1);
+        fast_reset_C                : out   std_logic;
+        SIN_C                       : out   std_logic;
+        mosi_C                      : out   std_logic;
+        csn_C                       : out   std_logic_vector(2 downto 0);
+
+        -- Block D: Connections for three chips -- layer 1
+        clock_D                     : out   std_logic;
+        data_in_D                   : in    std_logic_vector(9 downto 1);
+        fast_reset_D                : out   std_logic;
+        SIN_D                       : out   std_logic;
+        mosi_D                      : out   std_logic;
+        csn_D                       : out   std_logic_vector(2 downto 0);
+
+        -- Block E: Connections for three chips -- layer 1
+        -- clock_E                     : out   std_logic;
+        -- data_in_E                   : in    std_logic_vector(9 downto 1);
+        -- fast_reset_E                : out   std_logic;
+        -- SIN_E                       : out   std_logic;
+
+        -- Extra signals
+        
+        --clock_aux                   : out   std_logic; -- Pin in use for csn_A[2] M.Mueller
+        --spare_out                   : out   std_logic_vector(3 downto 2); -- Pins in use for csn_* M.Mueller
 
         -- Fireflies
         firefly1_tx_data            : out   std_logic_vector(3 downto 0); -- transceiver
@@ -105,107 +135,134 @@ entity top is
 end top;
 
 architecture rtl of top is
- 
+
     -- Debouncers
     signal pb_db                    : std_logic_vector(1 downto 0);
 
+    constant NPORTS                 : integer := 4;
     constant N_LINKS                : integer := 1;
-    constant N_ASICS                : integer := 13;
-    constant N_MODULES              : integer := 1;
 
     signal fifo_write               : std_logic_vector(N_LINKS-1 downto 0);
     signal fifo_wdata               : std_logic_vector(36*(N_LINKS-1)+35 downto 0); 
 
-    signal malibu_reg               : work.util.rw_t;
+    signal data_bypass              : std_logic_vector(31 downto 0);
+    signal data_bypass_we           : std_logic;
+
+    signal mupix_reg                : work.util.rw_t;
+
+    -- https://www.altera.com/support/support-resources/knowledge-base/solutions/rd01262015_264.html
+    signal ZERO                     : std_logic := '0';
+    attribute keep                  : boolean;
+    attribute keep of ZERO          : signal is true;
+
+    signal i2c_scl, i2c_scl_oe, i2c_sda, i2c_sda_oe : std_logic;
+    signal spi_miso, spi_mosi, spi_sclk : std_logic;
+    signal spi_ss_n                 : std_logic_vector(15 downto 0);
 
     signal run_state_125            : run_state_t;
+    signal run_state_125_reg        : run_state_t;
+    signal run_state_156            : run_state_t;
     signal ack_run_prep_permission  : std_logic;
-    signal common_fifos_almost_full : std_logic_vector(N_LINKS-1 downto 0);
-    signal s_run_state_all_done     : std_logic;
-    signal s_MON_rxrdy              : std_logic_vector(N_MODULES*N_ASICS-1 downto 0);
 
-    -- i2c interface (fe_block to io buffers)
-    signal i2c_scl, i2c_scl_oe, i2c_sda, i2c_sda_oe : std_logic;
+    signal sync_reset_cnt           : std_logic;
+    signal nios_clock               : std_logic;
 
-    -- spi multiplexing
-    signal tmb_miso : std_logic;
-    signal tmb_ss_n : std_logic_vector(15 downto 0);
+    signal mp_ctrl_clock            : std_logic_vector(3  downto 0);
+    signal mp_ctrl_SIN              : std_logic_vector(3  downto 0);
+    signal mp_ctrl_mosi             : std_logic_vector(3  downto 0);
+    signal mp_ctrl_csn              : std_logic_vector(11 downto 0);
+
 begin
 
 --------------------------------------------------------------------
 --------------------------------------------------------------------
-----TILE SUB-DETECTOR FIRMWARE -------------------------------------
+----MUPIX SUB-DETECTOR FIRMWARE ------------------------------------
 --------------------------------------------------------------------
 --------------------------------------------------------------------
 
--- IO buffers for I2C
-    iobuf_sda: entity work.ip_iobuf
-    port map(
-        datain(0)   => '0',
-        oe(0)       => i2c_sda_oe,
-        dataout(0)  => i2c_sda,
-        dataio(0)   => tile_i2c_sda--,
-    );
+    clock_A <= mp_ctrl_clock(3);
+    clock_B <= mp_ctrl_clock(2);
+    clock_C <= mp_ctrl_clock(1);
+    clock_D <= mp_ctrl_clock(0);
 
-    iobuf_scl: entity work.ip_iobuf
-    port map(
-        datain(0)   => '0',
-        oe(0)       => i2c_scl_oe,
-        dataout(0)  => i2c_scl,
-        dataio(0)   => tile_i2c_scl--,
-    );
+    SIN_A <= mp_ctrl_SIN(3);
+    SIN_B <= mp_ctrl_SIN(2);
+    SIN_C <= mp_ctrl_SIN(1);
+    SIN_D <= mp_ctrl_SIN(0);
 
+    mosi_A <= mp_ctrl_mosi(3);
+    mosi_B <= mp_ctrl_mosi(2);
+    mosi_C <= mp_ctrl_mosi(1);
+    mosi_D <= mp_ctrl_mosi(0);
 
+    csn_A <= mp_ctrl_csn(11 downto 9);
+    csn_B <= mp_ctrl_csn( 8 downto 6);
+    csn_C <= mp_ctrl_csn( 5 downto 3);
+    csn_D <= mp_ctrl_csn( 2 downto 0);
 
-    -- SPI input multiplexing (CEC / configuration)
-    -- only input multiplexing is done here, the rest is done on the TMB
-    -- "not" for polarity flip on DAB PCB
-    tmb_miso <=
-        not tile_cec      when tmb_ss_n(1)='0' else
-        not tile_spi_miso; --when tmb_ss_n(0)='0' else
-
--- main datapath
-    e_tile_path : entity work.tile_path
+    e_mupix_block : entity work.mupix_block
     generic map (
-        N_MODULES       => N_MODULES,
-        N_ASICS         => N_ASICS,
-        N_LINKS         => N_LINKS,
-        INPUT_SIGNFLIP  => x"0000"&"0001111110000001",
-        LVDS_PLL_FREQ   => 125.0,
-        LVDS_DATA_RATE  => 1250.0--,
+        IS_TELESCOPE_g  => '1'--,
     )
     port map (
-        i_reg_addr                  => malibu_reg.addr(15 downto 0),
-        i_reg_re                    => malibu_reg.re,
-        o_reg_rdata                 => malibu_reg.rdata,
-        i_reg_we                    => malibu_reg.we,
-        i_reg_wdata                 => malibu_reg.wdata,
+        i_fpga_id               => ref_adr,
 
-        o_chip_reset                => tile_chip_reset,
-        o_pll_test                  => tile_pll_test,
-        i_data                      => tile_din,
+        -- config signals to mupix
+        o_clock                 => mp_ctrl_clock,
+        o_SIN                   => mp_ctrl_SIN,
+        o_mosi                  => mp_ctrl_mosi,
+        o_csn                   => mp_ctrl_csn,
 
-        i_i2c_int                   => tile_i2c_int,
-        o_pll_reset                 => tile_pll_reset,
+        -- mupix dac regs
+        i_reg_add               => mupix_reg.addr(15 downto 0),
+        i_reg_re                => mupix_reg.re,
+        o_reg_rdata             => mupix_reg.rdata,
+        i_reg_we                => mupix_reg.we,
+        i_reg_wdata             => mupix_reg.wdata,
 
-        o_fifo_write                => fifo_write,
-        o_fifo_wdata                => fifo_wdata,
+        -- data
+        o_fifo_wdata            => fifo_wdata,
+        o_fifo_write            => fifo_write(0),
 
-        i_common_fifos_almost_full  => common_fifos_almost_full,
+        o_data_bypass           => data_bypass,
+        o_data_bypass_we        => data_bypass_we,
 
-        i_run_state                 => run_state_125,
-        o_run_state_all_done        => s_run_state_all_done,
+        i_run_state_125           => run_state_125_reg,
+        i_run_state_156           => run_state_156,
+        o_ack_run_prep_permission => ack_run_prep_permission,
 
-        o_MON_rxrdy                 => s_MON_rxrdy,
+        i_lvds_data_in          => data_in_A(5 downto 1) & data_in_B(4 downto 1) & data_in_C(5 downto 1) & data_in_D(4 downto 1) & "000000000" & "000000000",
 
-        i_clk_core                  => transceiver_pll_clock(0),
-        i_clk_g125                  => lvds_firefly_clk,
-        i_clk_ref_A                 => LVDS_clk_si1_fpga_A,
-        i_clk_ref_B                 => LVDS_clk_si1_fpga_B,
-
-        o_test_led                  => lcd_data(4),
-        i_reset                     => not pb_db(0)--,
+        i_reset                 => not pb_db(1),
+        -- 156.25 MHz
+        i_clk156                => transceiver_pll_clock(0),
+        i_clk125                => lvds_firefly_clk,
+        i_lvds_rx_inclock_A     => LVDS_clk_si1_fpga_A,
+        i_lvds_rx_inclock_B     => LVDS_clk_si1_fpga_B,
+        i_sync_reset_cnt        => sync_reset_cnt--,
     );
+
+    process(lvds_firefly_clk)
+    begin
+    if rising_edge(lvds_firefly_clk) then
+        run_state_125_reg <= run_state_125;
+        if(run_state_125_reg = RUN_STATE_SYNC)then
+            fast_reset_A    <= '1';
+            fast_reset_B    <= '1';
+            fast_reset_C    <= '1';
+            fast_reset_D    <= '1';
+            --fast_reset_E    <= '1';
+            sync_reset_cnt  <= '1';
+        else
+            fast_reset_A    <= '0';
+            fast_reset_B    <= '0';
+            fast_reset_C    <= '0';
+            fast_reset_D    <= '0';
+            --fast_reset_E    <= '0';
+            sync_reset_cnt  <= '0';
+        end if;
+    end if;
+    end process;
 
 --------------------------------------------------------------------
 --------------------------------------------------------------------
@@ -244,15 +301,10 @@ begin
         i_ffly_Int_n        => Firefly_Int_n,
         i_ffly_ModPrs_n     => Firefly_ModPrs_n,
 
-        i_spi_miso          => tmb_miso,
-        o_spi_mosi          => tile_spi_mosi,
-        o_spi_sclk          => tile_spi_scl,
-        o_spi_ss_n          => tmb_ss_n,
-
-        i_i2c_scl           => i2c_scl,
-        o_i2c_scl_oe        => i2c_scl_oe,
-        i_i2c_sda           => i2c_sda,
-        o_i2c_sda_oe        => i2c_sda_oe,
+        i_spi_miso          => '1',
+        o_spi_mosi          => open,
+        o_spi_sclk          => open,
+        o_spi_ss_n          => open,
 
         i_spi_si_miso       => si45_spi_out,
         o_spi_si_mosi       => si45_spi_in,
@@ -274,12 +326,11 @@ begin
         i_ffly1_lvds_rx     => firefly1_lvds_rx_in,
         i_ffly2_lvds_rx     => firefly2_lvds_rx_in,
 
-        i_can_terminate     => s_run_state_all_done,
-
         i_fifo_write        => fifo_write,
         i_fifo_wdata        => fifo_wdata,
 
-        o_fifos_almost_full => common_fifos_almost_full,
+        i_data_bypass       => open,
+        i_data_bypass_we    => open,
 
         i_mscb_data         => mscb_fpga_in,
         o_mscb_data         => mscb_fpga_out,
@@ -293,15 +344,16 @@ begin
         io_max10_spi_D3     => max10_spi_D3,
         o_max10_spi_csn     => max10_spi_csn,
 
-        o_subdet_reg_addr   => malibu_reg.addr(15 downto 0),
-        o_subdet_reg_re     => malibu_reg.re,
-        i_subdet_reg_rdata  => malibu_reg.rdata,
-        o_subdet_reg_we     => malibu_reg.we,
-        o_subdet_reg_wdata  => malibu_reg.wdata,
+        o_subdet_reg_addr   => mupix_reg.addr(15 downto 0),
+        o_subdet_reg_re     => mupix_reg.re,
+        i_subdet_reg_rdata  => mupix_reg.rdata,
+        o_subdet_reg_we     => mupix_reg.we,
+        o_subdet_reg_wdata  => mupix_reg.wdata,
 
         -- reset system
-        o_run_state_125             => run_state_125,
-        i_ack_run_prep_permission   => and_reduce(s_MON_rxrdy),
+        o_run_state_125     => run_state_125,
+        o_run_state_156     => run_state_156,
+        i_ack_run_prep_permission => ack_run_prep_permission,
 
         -- clocks
         i_nios_clk          => spare_clk_osc,
@@ -310,8 +362,9 @@ begin
         o_clk_156_mon       => lcd_data(1),
         i_clk_125           => lvds_firefly_clk,
 
-        i_areset_n          => '1',--pb_db(0),
-        
+        i_areset_n          => pb_db(0),
+
+        o_testout(7 downto 2) => lcd_data(7 downto 2),
         i_testin            => pb_db(1)--,
     );
 

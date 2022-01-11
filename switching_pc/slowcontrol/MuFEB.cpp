@@ -14,6 +14,7 @@ Contents:       Definition of common functions to talk to a FEB. In particular c
 
 #include "mudaq_device.h"
 #include "asic_config_base.h"
+#include "mupix_registers.h"
 
 #include <algorithm>
 #include <iterator>
@@ -50,7 +51,7 @@ int MuFEB::WriteFEBID(){
 int MuFEB::WriteSorterDelay(uint16_t FPGA_ID, uint32_t delay)
 {
     std::vector<uint32_t> data(1,delay);
-    feb_sc.FEB_register_write(FPGA_ID, SORTER_DELAY_RW, data);
+    feb_sc.FEB_register_write(FPGA_ID, MP_SORTER_DELAY_REGISTER_W, data);
 }
 
 void MuFEB::ReadFirmwareVersionsToODB()
@@ -373,7 +374,7 @@ DWORD *MuFEB::read_SSSO_OneFEB(DWORD *pdata, uint32_t index)
     *pdata++ = index;
     vector<uint32_t> sorterdata(38);
     // Read the sorter counters (different meaning for scifi, but maybe put in the same spot??)
-    feb_sc.FEB_register_read(index, SORTER_COUNTER_R, sorterdata);
+    feb_sc.FEB_register_read(index, MP_SORTER_COUNTER_REGISTER_R, sorterdata);
     for(uint32_t i=0; i < 38; i++)
         *pdata++ = sorterdata[i];
     return pdata;

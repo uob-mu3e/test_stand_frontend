@@ -22,7 +22,7 @@ port (
     i_link_datak    : in    std_logic_vector(3 downto 0);
 
     o_fifo_we       : out   std_logic;
-    o_fifo_wdata    : out   std_logic_vector(35 downto 0);
+    o_fifo_wdata    : out   std_logic_vector(35 downto 0) := (others => '0');
 
     o_ram_addr      : out   std_logic_vector(31 downto 0);
     o_ram_re        : out   std_logic;
@@ -66,6 +66,7 @@ begin
 
         ram_read_nreq <= (others => '0');
         idle_counter <= (others => '0');
+        o_fifo_wdata <= (others => '0');
         --
     elsif rising_edge(i_clk) then
         o_fifo_we <= '0';

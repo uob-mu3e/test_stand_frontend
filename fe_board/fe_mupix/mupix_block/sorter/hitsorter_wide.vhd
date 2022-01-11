@@ -24,21 +24,27 @@ USE altera_mf.all;
 
 
 entity hitsorter_wide is 
-	port (
-		reset_n							: in std_logic;										-- async reset
-		writeclk						: in std_logic;										-- clock for write/input side
-		running							: in std_logic;
-		currentts						: in ts_t;											-- 11 bit ts
-		hit_in							: in hit_array;
-		hit_ena_in						: in std_logic_vector(NCHIPS-1 downto 0);			-- valid hit
-		readclk							: in std_logic;										-- clock for read/output side
-		data_out						: out reg32;										-- packaged data out
-		out_ena							: out STD_LOGIC;									-- valid output data
-		out_type						: out std_logic_vector(3 downto 0);					-- start/end of an output package, hits, end of run		
-		out_is_hit						: out std_logic;									-- same as out_ena, but only hits, no trailer header etc.
-		diagnostic_out					: out sorter_reg_array;
-		delay							: in ts_t											-- diganostic out (counters for hits at various stages)
-		);
+    port (
+        reset_n         : in  std_logic;                            -- async reset
+        writeclk        : in  std_logic;                            -- clock for write/input side
+        running         : in  std_logic;
+        currentts       : in  ts_t;                                 -- 11 bit ts
+        hit_in          : in  hit_array;
+        hit_ena_in      : in  std_logic_vector(NCHIPS-1 downto 0);  -- valid hit
+        readclk         : in  std_logic;                            -- clock for read/output side
+        data_out        : out reg32;                                -- packaged data out
+        out_ena         : out STD_LOGIC;                            -- valid output data
+        out_type        : out std_logic_vector(3 downto 0);         -- start/end of an output package, hits, end of run		
+        out_is_hit      : out std_logic;                            -- same as out_ena, but only hits, no trailer header etc.
+
+        i_clk156        : in  std_logic;
+        i_reset_n_regs  : in  std_logic;
+        i_reg_add       : in  std_logic_vector(15 downto 0);
+        i_reg_re        : in  std_logic;
+        o_reg_rdata     : out std_logic_vector(31 downto 0);
+        i_reg_we        : in  std_logic;
+        i_reg_wdata     : in  std_logic_vector(31 downto 0)--;
+    );
 end hitsorter_wide;
 
 architecture rtl of hitsorter_wide is
@@ -164,8 +170,15 @@ signal terminated_output : std_logic;
 -- diagnostics
 signal noutoftime : reg_array;
 signal noverflow  : reg_array;
-signal nintime	  : reg_array;
-signal nout		  : reg32;
+signal nintime    : reg_array;
+signal nout       : reg32;
+signal delay      : ts_t;
+
+-- copy of diagnostics (timing)
+signal noutoftime2: reg_array;
+signal noverflow2 : reg_array;
+signal nintime2   : reg_array;
+signal nout2      : reg32;
 
 constant TSONE : ts_t := "00000000001";
 constant TSZERO : ts_t := "00000000000";
@@ -248,7 +261,7 @@ elsif (writeclk'event and writeclk = '1') then
 	if(running = '1' and runstartup = '1') then
 		tslow <= TSONE;
 		tshi  <= WINDOWSIZE;
-		if(currentts = DELAY) then
+		if(currentts = delay) then
 			runstartup <= '0';
 		end if;
 	elsif(running = '1' and running_last = '1' and runshutdown = '0') then
@@ -363,6 +376,7 @@ genmem: for i in NCHIPS-1 downto 0 generate
 
 		
 	elsif (writeclk'event and writeclk = '1') then
+
 		memwren(i) <= '0';
 		
 		tshit(i) 		<= hit_last1(i)(TSRANGE);
@@ -738,7 +752,12 @@ if(reset_n = '0') then
 	terminate_output				<= '0';
 	terminated_output				<= '0';
 elsif(writeclk'event and writeclk = '1') then
-	out_ena							<= '0';
+    noutoftime2 <= noutoftime;
+    noverflow2  <= noverflow;
+    nintime2    <= nintime;
+    nout2       <= nout;
+
+    out_ena							<= '0';
 	out_is_hit						<= '0';
 	for i in NCHIPS-1 downto 0 loop
 		raddr(i)							<= 	readcommand(TSRANGE) & --MSBs: Timestamp 
@@ -808,47 +827,22 @@ elsif(writeclk'event and writeclk = '1') then
 end if;
 end process;
 
+e_mp_sorter_reg_mapping: entity work.mp_sorter_reg_mapping
+    port map (
+        i_clk156       => i_clk156,
+        i_reset_n      => i_reset_n_regs,
 
-diagnostic_out(0) <= nintime(0);
-diagnostic_out(1) <= nintime(1);
-diagnostic_out(2) <= nintime(2);
-diagnostic_out(3) <= nintime(3);
-diagnostic_out(4) <= nintime(4);
-diagnostic_out(5) <= nintime(5);
-diagnostic_out(6) <= nintime(6);
-diagnostic_out(7) <= nintime(7);
-diagnostic_out(8) <= nintime(8);
-diagnostic_out(9) <= nintime(9);
-diagnostic_out(10) <= nintime(10);
-diagnostic_out(11) <= nintime(11);
+        i_reg_add      => i_reg_add,
+        i_reg_re       => i_reg_re,
+        o_reg_rdata    => o_reg_rdata,
+        i_reg_we       => i_reg_we,
+        i_reg_wdata    => i_reg_wdata,
 
-diagnostic_out(12) <= noutoftime(0);
-diagnostic_out(13) <= noutoftime(1);
-diagnostic_out(14) <= noutoftime(2);
-diagnostic_out(15) <= noutoftime(3);
-diagnostic_out(16) <= noutoftime(4);
-diagnostic_out(17) <= noutoftime(5);
-diagnostic_out(18) <= noutoftime(6);
-diagnostic_out(19) <= noutoftime(7);
-diagnostic_out(20) <= noutoftime(8);
-diagnostic_out(21) <= noutoftime(9);
-diagnostic_out(22) <= noutoftime(10);
-diagnostic_out(23) <= noutoftime(11);
-
-diagnostic_out(24) <= noverflow(0);
-diagnostic_out(25) <= noverflow(1);
-diagnostic_out(26) <= noverflow(2);
-diagnostic_out(27) <= noverflow(3);
-diagnostic_out(28) <= noverflow(4);
-diagnostic_out(29) <= noverflow(5);
-diagnostic_out(30) <= noverflow(6);
-diagnostic_out(31) <= noverflow(7);
-diagnostic_out(32) <= noverflow(8);
-diagnostic_out(33) <= noverflow(9);
-diagnostic_out(34) <= noverflow(10);
-diagnostic_out(35) <= noverflow(11);
-
-diagnostic_out(36) <= nout;
-diagnostic_out(37) <= conv_std_logic_vector(credits, 32);	
-
+        i_nintime      => nintime2,
+        i_noutoftime   => noutoftime2,
+        i_noverflow    => noverflow2,
+        i_nout         => nout2,
+        i_credit       => conv_std_logic_vector(credits, 32),
+        o_sorter_delay => delay--,
+    );
 end architecture RTL;

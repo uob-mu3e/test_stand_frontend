@@ -13,7 +13,8 @@ generic (
     feb_mapping : work.util.natural_array_t(3 downto 0) := (3,2,1,0);
     PHASE_WIDTH_g : positive := 16;
     NIOS_CLK_MHZ_g : real;
-    N_LINKS : positive := 1--;
+    N_LINKS : positive := 1;
+    SC_READ_DELAY_g : positive := 7--;
 );
 port (
     i_fpga_id       : in    std_logic_vector(7 downto 0);
@@ -96,8 +97,7 @@ port (
     o_max10_spi_csn     : out   std_logic := '1';
 
     -- slow control registers
-    -- subdetector regs : 0x40-0xFF
-    o_subdet_reg_addr   : out   std_logic_vector(7 downto 0);
+    o_subdet_reg_addr   : out   std_logic_vector(15 downto 0);
     o_subdet_reg_re     : out   std_logic;
     i_subdet_reg_rdata  : in    std_logic_vector(31 downto 0) := X"CCCCCCCC";
     o_subdet_reg_we     : out   std_logic;
@@ -118,7 +118,8 @@ port (
     o_clk_125_mon   : out   std_logic;
 
     i_areset_n      : in    std_logic;
-    
+
+    o_testout       : out   std_logic_vector(31 downto 0);
     i_testin        : in    std_logic--;
 );
 end entity;
@@ -145,7 +146,6 @@ architecture arch of fe_block_v2 is
 
     signal sc_ram, sc_reg           : work.util.rw_t;
     signal fe_reg                   : work.util.rw_t;
-    signal subdet_reg               : work.util.rw_t;
 
     signal reg_cmdlen               : std_logic_vector(31 downto 0);
     signal reg_offset               : std_logic_vector(31 downto 0);
@@ -219,11 +219,6 @@ architecture arch of fe_block_v2 is
 
 begin
 
-    --v_reg: version_reg 
-    --    PORT MAP(
-    --        data_out    => version_out(27 downto 0)
-    --    );
-
     process(i_clk_156)
     begin
     if rising_edge(i_clk_156) then
@@ -272,43 +267,43 @@ begin
     o_spi_si_ss_n <= spi_si_ss_n;
 
 
-
     -- map slow control address space
 
-    -- subdetector regs : 0x40-0xFF
-    o_subdet_reg_addr <= sc_reg.addr(7 downto 0);
-    o_subdet_reg_re <= subdet_reg.re;
-      subdet_reg.re <= sc_reg.re when ( sc_reg.addr(REG_AREA_RANGE) /= REG_AREA_GENERIC ) else '0';
-    o_subdet_reg_we <= sc_reg.we when ( sc_reg.addr(REG_AREA_RANGE) /= REG_AREA_GENERIC ) else '0';
-    o_subdet_reg_wdata <= sc_reg.wdata;
+    e_lvl0_sc_node: entity work.sc_node
+    generic map(
+        ADD_SLAVE1_DELAY_g  => SC_READ_DELAY_g-2,
+        N_REPLY_CYCLES_g    => SC_READ_DELAY_g-1,
+        SLAVE1_ADDR_MATCH_g => "111111----------"--,
+    )
+    port map(
+        i_clk           => i_clk_156,
+        i_reset_n       => reset_156_n,
 
-    -- local regs 
-    fe_reg.addr <= sc_reg.addr;
-    fe_reg.re <= sc_reg.re when ( sc_reg.addr(REG_AREA_RANGE) = REG_AREA_GENERIC ) else '0';
-    fe_reg.we <= sc_reg.we when ( sc_reg.addr(REG_AREA_RANGE) = REG_AREA_GENERIC ) else '0';
-    fe_reg.wdata <= sc_reg.wdata;
+        i_master_addr   => sc_reg.addr(15 downto 0),
+        i_master_re     => sc_reg.re,
+        o_master_rdata  => sc_reg.rdata,
+        i_master_we     => sc_reg.we,
+        i_master_wdata  => sc_reg.wdata,
 
-    -- select valid rdata
-    sc_reg.rdata <=
-        i_subdet_reg_rdata when ( subdet_reg.rvalid = '1' ) else
-        fe_reg.rdata when ( fe_reg.rvalid = '1' ) else
-        X"CCCCCCCC";
+        o_slave0_addr   => o_subdet_reg_addr(15 downto 0),
+        o_slave0_re     => o_subdet_reg_re,
+        i_slave0_rdata  => i_subdet_reg_rdata,
+        o_slave0_we     => o_subdet_reg_we,
+        o_slave0_wdata  => o_subdet_reg_wdata,
 
-    process(i_clk_156)
-    begin
-    if rising_edge(i_clk_156) then
-        subdet_reg.rvalid   <= subdet_reg.re;
-        fe_reg.rvalid       <= fe_reg.re;
-    end if;
-    end process;
-
+        o_slave1_addr   => fe_reg.addr(15 downto 0),
+        o_slave1_re     => fe_reg.re,
+        i_slave1_rdata  => fe_reg.rdata,
+        o_slave1_we     => fe_reg.we,
+        o_slave1_wdata  => fe_reg.wdata--,
+    );
 
     e_reg_mapping : entity work.feb_reg_mapping
     port map (
         i_clk_156                   => i_clk_156,
         i_reset_n                   => reset_156_n,
 
-        i_reg_add                   => fe_reg.addr(7 downto 0),
+        i_reg_add                   => fe_reg.addr(15 downto 0),
         i_reg_re                    => fe_reg.re,
         o_reg_rdata                 => fe_reg.rdata,
         i_reg_we                    => fe_reg.we,
@@ -346,7 +341,8 @@ begin
         o_programming_data          => programming_data,
         o_programming_data_ena      => programming_data_ena,
         o_programming_addr          => programming_addr,
-        o_programming_addr_ena      => programming_addr_ena--,
+        o_programming_addr_ena      => programming_addr_ena,
+        o_testout                   => o_testout--,
     );
 
 
@@ -448,7 +444,7 @@ begin
 
     e_sc_ram : entity work.sc_ram
     generic map (
-        RAM_ADDR_WIDTH_g => to_integer(unsigned(FEB_SC_RAM_SIZE))--,--14--,
+        READ_DELAY_g => SC_READ_DELAY_g--,
     )
     port map (
         i_ram_addr              => sc_ram.addr(15 downto 0),
@@ -465,7 +461,7 @@ begin
         i_avs_writedata         => av_sc.writedata,
         o_avs_waitrequest       => av_sc.waitrequest,
 
-        o_reg_addr              => sc_reg.addr(7 downto 0),
+        o_reg_addr              => sc_reg.addr(15 downto 0),
         o_reg_re                => sc_reg.re,
         i_reg_rdata             => sc_reg.rdata,
         o_reg_we                => sc_reg.we,
@@ -546,7 +542,6 @@ begin
         end if;
     end process;
 
-		 
     --TODO: do we need two independent link test modules for both fibers?
     e_link_test : entity work.linear_shift_link
     generic map (
