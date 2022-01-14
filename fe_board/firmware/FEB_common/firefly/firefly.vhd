@@ -68,14 +68,18 @@ entity firefly is
         i_int_n                 : in    std_logic_vector(1 downto 0);
         i_modPrs_n              : in    std_logic_vector(1 downto 0);
         
-        -- avalon slave interface
-        -- * 16 bit address space
-        i_avs_address           : in    std_logic_vector(13 downto 0);
-        i_avs_read              : in    std_logic;
-        o_avs_readdata          : out   std_logic_vector(31 downto 0);
-        i_avs_write             : in    std_logic;
-        i_avs_writedata         : in    std_logic_vector(31 downto 0);
-        o_avs_waitrequest       : out   std_logic;
+        i_reg_add               : in  std_logic_vector(15 downto 0);
+        i_reg_re                : in  std_logic;
+        o_reg_rdata             : out std_logic_vector(31 downto 0);
+        i_reg_we                : in  std_logic;
+        i_reg_wdata             : in  std_logic_vector(31 downto 0);
+
+--        i_avs_address           : in    std_logic_vector(13 downto 0);
+--        i_avs_read              : in    std_logic;
+--        o_avs_readdata          : out   std_logic_vector(31 downto 0);
+--        i_avs_write             : in    std_logic;
+--        i_avs_writedata         : in    std_logic_vector(31 downto 0);
+--        o_avs_waitrequest       : out   std_logic;
         
         o_testclkout            : out   std_logic;
         o_testout               : out   std_logic;
@@ -493,168 +497,168 @@ begin
 -- Avalon
 --------------------------------------------------
 
-    -- av_ctrl process, avalon iface
-    process(i_clk, i_reset_156_n)
-    begin
-    if ( i_reset_156_n = '0' ) then
-        av_ctrl.waitrequest <= '1';
-        ch <= 0;
-        rx_seriallpbken <= (others => '0');
-        tx_rst_n <= (others => '1');
-        rx_rst_n <= (others => '1');
-
-    elsif rising_edge(i_clk) then
-        av_ctrl.waitrequest <= '1';
-
-        tx_rst_n <= (others => '1');
-        rx_rst_n <= (others => '1');
-
-        if ( av_ctrl.read /= av_ctrl.write and av_ctrl.waitrequest = '1' ) then
-            av_ctrl.waitrequest <= '0';
-
-            av_ctrl.readdata <= (others => '0');
-            case av_ctrl.address(7 downto 0) is
-            when X"00" =>
-                -- channel select
-                av_ctrl.readdata(7 downto 0) <= std_logic_vector(to_unsigned(ch, 8));
-                if ( av_ctrl.write = '1' and av_ctrl.writedata(7 downto 0) < 8 ) then
-                    ch <= to_integer(unsigned(av_ctrl.writedata(7 downto 0)));
-                end if;
-                --
-            when X"01" =>
-                av_ctrl.readdata(7 downto 0) <= std_logic_vector(to_unsigned(8, 8));
-            when X"02" =>
-                av_ctrl.readdata(7 downto 0) <= std_logic_vector(to_unsigned(32, 8));
-            when X"10" =>
-                -- tx reset
-                av_ctrl.readdata(0) <= tx_analogreset(ch);
-                av_ctrl.readdata(4) <= tx_digitalreset(ch);
-                if ( av_ctrl.write = '1' ) then tx_rst_n(ch) <= not av_ctrl.writedata(0); end if;
-                --
-            when X"11" =>
-                -- tx status
-                av_ctrl.readdata(0) <= av_tx_ready(ch);
-                --
-            when X"12" =>
-                -- tx errors
-                av_ctrl.readdata(8) <= '0';--tx_fifo_error(ch);
-                --
-            when X"20" =>
-                -- rx reset
-                if(ch < 4) then
-                    av_ctrl.readdata(0) <= av_rx_analogreset(ch);
-                    av_ctrl.readdata(4) <= av_rx_digitalreset(ch);
-                else
-                    av_ctrl.readdata(0) <= '0';
-                    av_ctrl.readdata(4) <= '0';
-                end if;
-                if ( av_ctrl.write = '1' ) then rx_rst_n(ch) <= not av_ctrl.writedata(0); end if;
-                --
-            when X"21" =>
-                -- rx status
-                av_ctrl.readdata(0) <= av_rx_ready(ch);
-                av_ctrl.readdata(1) <= av_rx_is_lockedtoref(ch);
-                av_ctrl.readdata(2) <= av_rx_is_lockedtodata(ch);
-                -- av_ctrl.readdata(11 downto 8) <= (others => '1');
-                av_ctrl.readdata(32/8-1 + 8 downto 8) <= av_syncstatus(ch*4+3 downto ch*4);
-                av_ctrl.readdata(12) <= av_locked(ch);
-                --
-            when X"22" =>
-                -- rx errors
-                if(ch < 4) then 
-                    av_ctrl.readdata(3 downto 0) <= av_errdetect(4*ch+3 downto 4*ch);
-                    av_ctrl.readdata(7 downto 4) <= av_disperr(4*ch+3 downto 4*ch);
-                else
-                    av_ctrl.readdata(3 downto 0) <= (others => '0');
-                    av_ctrl.readdata(7 downto 4) <= (others => '0');
-                end if;
-                av_ctrl.readdata(8) <= '0';--rx_fifo_error(ch);
-                --
-            when X"23" =>
-                av_ctrl.readdata(31 downto 0) <= (others => '0');--rx(ch).LoL_cnt;
-            when X"24" =>
-                av_ctrl.readdata(31 downto 0) <= (others => '0');--rx(ch).err_cnt;
-                --
-            when X"25" =>
-                av_ctrl.readdata(31 downto 0) <= x"0000" & av_opt_rx_power(16*ch+15 downto 16*ch);-- RX optical power
-            when X"26" =>
-                if(ch = 0 or ch = 4 or ch = 5 or ch = 6 ) then
-                    av_ctrl.readdata(31 downto 0) <= x"000000" & av_temperature(7 downto 0);-- Firefly temperature
-                else
-                    av_ctrl.readdata(31 downto 0) <= x"000000" & av_temperature(15 downto 8);
-                end if;
-                --
-            when X"2A" =>
-                if(ch < 4) then
-                    av_ctrl.readdata(31 downto 0) <= av_rx_data_parallel(32*ch+31 downto 32*ch);
-                elsif(ch = 6) then
-                    av_ctrl.readdata(31 downto 0) <= x"000000" & av_lvds_data;
-                else
-                    av_ctrl.readdata(31 downto 0) <= (others => '0');
-                end if;
-            when X"2B" =>
-                if(ch<4) then
-                    av_ctrl.readdata(31 downto 0) <= x"0000000" & av_rx_datak(4*ch+3 downto ch*4);
-                else
-                    av_ctrl.readdata(31 downto 0) <= (others => '0');
-                end if;
-            when X"2C" =>
-                av_ctrl.readdata(31 downto 0) <= (others => '0'); --rx(ch).Gbit;
-                --
-            when X"2F" =>
-                av_ctrl.readdata(0) <= rx_seriallpbken(ch);
-                if ( av_ctrl.write = '1' ) then rx_seriallpbken(ch) <= av_ctrl.writedata(0); end if;
-                --
-            when others =>
-                av_ctrl.readdata <= X"CCCCCCCC";
-                --
-            end case;
-        end if;
-
-    end if; -- rising_edge
-    end process;
-
-    -- avalon control block
-    b_avs : block
-        signal av_ctrl_cs : std_logic;
-        signal avs_waitrequest_i : std_logic;
-    begin
-        av_ctrl_cs <= '1' when ( i_avs_address(i_avs_address'left downto 8) = "000000" ) else '0';
-        av_ctrl.address(i_avs_address'range) <= i_avs_address;
-        av_ctrl.writedata <= i_avs_writedata;
-
-        o_avs_waitrequest <= avs_waitrequest_i;
-
-        process(i_clk, i_reset_156_n)
-        begin
-        if ( i_reset_156_n = '0' ) then
-            avs_waitrequest_i <= '1';
-            av_ctrl.read <= '0';
-            av_ctrl.write <= '0';
-            --
-        elsif rising_edge(i_clk) then
-            avs_waitrequest_i <= '1';
-
-            if ( i_avs_read /= i_avs_write and avs_waitrequest_i = '1' ) then
-                if ( av_ctrl_cs = '1' ) then
-                    if ( av_ctrl.read = av_ctrl.write ) then
-                        av_ctrl.read <= i_avs_read;
-                        av_ctrl.write <= i_avs_write;
-                    elsif ( av_ctrl.waitrequest = '0' ) then
-                        o_avs_readdata <= av_ctrl.readdata;
-                        avs_waitrequest_i <= '0';
-                        av_ctrl.read <= '0';
-                        av_ctrl.write <= '0';
-                    end if;
-                else
-                    o_avs_readdata <= X"CCCCCCCC";
-                    avs_waitrequest_i <= '0';
-                end if;
-            end if;
-            --
-        end if;
-        end process;
-    end block;
+--    -- av_ctrl process, avalon iface
+--    process(i_clk, i_reset_156_n)
+--    begin
+--    if ( i_reset_156_n = '0' ) then
+--        av_ctrl.waitrequest <= '1';
+--        ch <= 0;
+--        rx_seriallpbken <= (others => '0');
+--        tx_rst_n <= (others => '1');
+--        rx_rst_n <= (others => '1');
+--
+--    elsif rising_edge(i_clk) then
+--        av_ctrl.waitrequest <= '1';
+--
+--        tx_rst_n <= (others => '1');
+--        rx_rst_n <= (others => '1');
+--
+--        if ( av_ctrl.read /= av_ctrl.write and av_ctrl.waitrequest = '1' ) then
+--            av_ctrl.waitrequest <= '0';
+--
+--            av_ctrl.readdata <= (others => '0');
+--            case av_ctrl.address(7 downto 0) is
+--            when X"00" =>
+--                -- channel select
+--                av_ctrl.readdata(7 downto 0) <= std_logic_vector(to_unsigned(ch, 8));
+--                if ( av_ctrl.write = '1' and av_ctrl.writedata(7 downto 0) < 8 ) then
+--                    ch <= to_integer(unsigned(av_ctrl.writedata(7 downto 0)));
+--                end if;
+--                --
+--            when X"01" =>
+--                av_ctrl.readdata(7 downto 0) <= std_logic_vector(to_unsigned(8, 8));
+--            when X"02" =>
+--                av_ctrl.readdata(7 downto 0) <= std_logic_vector(to_unsigned(32, 8));
+--            when X"10" =>
+--                -- tx reset
+--                av_ctrl.readdata(0) <= tx_analogreset(ch);
+--                av_ctrl.readdata(4) <= tx_digitalreset(ch);
+--                if ( av_ctrl.write = '1' ) then tx_rst_n(ch) <= not av_ctrl.writedata(0); end if;
+--                --
+--            when X"11" =>
+--                -- tx status
+--                av_ctrl.readdata(0) <= av_tx_ready(ch);
+--                --
+--            when X"12" =>
+--                -- tx errors
+--                av_ctrl.readdata(8) <= '0';--tx_fifo_error(ch);
+--                --
+--            when X"20" =>
+--                -- rx reset
+--                if(ch < 4) then
+--                    av_ctrl.readdata(0) <= av_rx_analogreset(ch);
+--                    av_ctrl.readdata(4) <= av_rx_digitalreset(ch);
+--                else
+--                    av_ctrl.readdata(0) <= '0';
+--                    av_ctrl.readdata(4) <= '0';
+--                end if;
+--                if ( av_ctrl.write = '1' ) then rx_rst_n(ch) <= not av_ctrl.writedata(0); end if;
+--                --
+--            when X"21" =>
+--                -- rx status
+--                av_ctrl.readdata(0) <= av_rx_ready(ch);
+--                av_ctrl.readdata(1) <= av_rx_is_lockedtoref(ch);
+--                av_ctrl.readdata(2) <= av_rx_is_lockedtodata(ch);
+--                -- av_ctrl.readdata(11 downto 8) <= (others => '1');
+--                av_ctrl.readdata(32/8-1 + 8 downto 8) <= av_syncstatus(ch*4+3 downto ch*4);
+--                av_ctrl.readdata(12) <= av_locked(ch);
+--                --
+--            when X"22" =>
+--                -- rx errors
+--                if(ch < 4) then 
+--                    av_ctrl.readdata(3 downto 0) <= av_errdetect(4*ch+3 downto 4*ch);
+--                    av_ctrl.readdata(7 downto 4) <= av_disperr(4*ch+3 downto 4*ch);
+--                else
+--                    av_ctrl.readdata(3 downto 0) <= (others => '0');
+--                    av_ctrl.readdata(7 downto 4) <= (others => '0');
+--                end if;
+--                av_ctrl.readdata(8) <= '0';--rx_fifo_error(ch);
+--                --
+--            when X"23" =>
+--                av_ctrl.readdata(31 downto 0) <= (others => '0');--rx(ch).LoL_cnt;
+--            when X"24" =>
+--                av_ctrl.readdata(31 downto 0) <= (others => '0');--rx(ch).err_cnt;
+--                --
+--            when X"25" =>
+--                av_ctrl.readdata(31 downto 0) <= x"0000" & av_opt_rx_power(16*ch+15 downto 16*ch);-- RX optical power
+--            when X"26" =>
+--                if(ch = 0 or ch = 4 or ch = 5 or ch = 6 ) then
+--                    av_ctrl.readdata(31 downto 0) <= x"000000" & av_temperature(7 downto 0);-- Firefly temperature
+--                else
+--                    av_ctrl.readdata(31 downto 0) <= x"000000" & av_temperature(15 downto 8);
+--                end if;
+--                --
+--            when X"2A" =>
+--                if(ch < 4) then
+--                    av_ctrl.readdata(31 downto 0) <= av_rx_data_parallel(32*ch+31 downto 32*ch);
+--                elsif(ch = 6) then
+--                    av_ctrl.readdata(31 downto 0) <= x"000000" & av_lvds_data;
+--                else
+--                    av_ctrl.readdata(31 downto 0) <= (others => '0');
+--                end if;
+--            when X"2B" =>
+--                if(ch<4) then
+--                    av_ctrl.readdata(31 downto 0) <= x"0000000" & av_rx_datak(4*ch+3 downto ch*4);
+--                else
+--                    av_ctrl.readdata(31 downto 0) <= (others => '0');
+--                end if;
+--            when X"2C" =>
+--                av_ctrl.readdata(31 downto 0) <= (others => '0'); --rx(ch).Gbit;
+--                --
+--            when X"2F" =>
+--                av_ctrl.readdata(0) <= rx_seriallpbken(ch);
+--                if ( av_ctrl.write = '1' ) then rx_seriallpbken(ch) <= av_ctrl.writedata(0); end if;
+--                --
+--            when others =>
+--                av_ctrl.readdata <= X"CCCCCCCC";
+--                --
+--            end case;
+--        end if;
+--
+--    end if; -- rising_edge
+--    end process;
+--
+--    -- avalon control block
+--    b_avs : block
+--        signal av_ctrl_cs : std_logic;
+--        signal avs_waitrequest_i : std_logic;
+--    begin
+--        av_ctrl_cs <= '1' when ( i_avs_address(i_avs_address'left downto 8) = "000000" ) else '0';
+--        av_ctrl.address(i_avs_address'range) <= i_avs_address;
+--        av_ctrl.writedata <= i_avs_writedata;
+--
+--        o_avs_waitrequest <= avs_waitrequest_i;
+--
+--        process(i_clk, i_reset_156_n)
+--        begin
+--        if ( i_reset_156_n = '0' ) then
+--            avs_waitrequest_i <= '1';
+--            av_ctrl.read <= '0';
+--            av_ctrl.write <= '0';
+--            --
+--        elsif rising_edge(i_clk) then
+--            avs_waitrequest_i <= '1';
+--
+--            if ( i_avs_read /= i_avs_write and avs_waitrequest_i = '1' ) then
+--                if ( av_ctrl_cs = '1' ) then
+--                    if ( av_ctrl.read = av_ctrl.write ) then
+--                        av_ctrl.read <= i_avs_read;
+--                        av_ctrl.write <= i_avs_write;
+--                    elsif ( av_ctrl.waitrequest = '0' ) then
+--                        o_avs_readdata <= av_ctrl.readdata;
+--                        avs_waitrequest_i <= '0';
+--                        av_ctrl.read <= '0';
+--                        av_ctrl.write <= '0';
+--                    end if;
+--                else
+--                    o_avs_readdata <= X"CCCCCCCC";
+--                    avs_waitrequest_i <= '0';
+--                end if;
+--            end if;
+--            --
+--        end if;
+--        end process;
+--    end block;
 
 --------------------------------------------------
 -- Sync FIFO's

@@ -379,13 +379,6 @@ begin
         avm_sc_writedata        => av_sc.writedata,
         avm_sc_waitrequest      => av_sc.waitrequest,
 
-        avm_qsfp_address        => av_ffly.address(13 downto 0),
-        avm_qsfp_read           => av_ffly.read,
-        avm_qsfp_readdata       => av_ffly.readdata,
-        avm_qsfp_write          => av_ffly.write,
-        avm_qsfp_writedata      => av_ffly.writedata,
-        avm_qsfp_waitrequest    => av_ffly.waitrequest,
-
         --
         -- nios base
         --
