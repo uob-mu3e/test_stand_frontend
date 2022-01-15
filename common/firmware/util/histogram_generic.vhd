@@ -15,11 +15,11 @@ use ieee.std_logic_unsigned.all;
 use ieee.numeric_std.all;
 
 entity histogram_generic is 
-generic(
+generic (
       DATA_WIDTH : natural := 8;
       ADDR_WIDTH : natural := 6
 );
-   port (
+port (
       rclk:         in std_logic;   -- clock for read part
       wclk:         in std_logic;   -- clock for write part
       rst_n:        in std_logic;   -- reset statemachine
@@ -32,8 +32,8 @@ generic(
       
       raddr_in:     in std_logic_vector(ADDR_WIDTH-1 downto 0); -- address for readout
       q_out:        out std_logic_vector(DATA_WIDTH-1 downto 0) -- data to be readout, appears 1 cycle after raddr_in is set
-   );
-end histogram_generic;
+);
+end entity;
 
 
 architecture RTL of histogram_generic is
@@ -70,13 +70,13 @@ for I in 0 to 1 generate
           raddr_in      => raddr_in,
           q_out         => q(I)
        );
-end generate gen_half_rate_histos;
+end generate;
 
 -- q_out is simply the sum of both outputs, we only do it combinatorial, so no more delay is added
 q_out   <= ('0'& q(1)) + ('0'& q(0));
 busy_n  <= busy_n_int(1) or busy_n_int(0); -- if either one of them is not busy we are fine
     -- write state machine
-    write_sm: process(wclk)
+    process(wclk)
     begin
         if(rst_n = '0')then
             valid   <= "00";    -- disable all writes
@@ -95,6 +95,6 @@ busy_n  <= busy_n_int(1) or busy_n_int(0); -- if either one of them is not busy 
                 end if;
             end if;
         end if;
-    end process write_sm;
+    end process;
 
-end RTL;
+end architecture;

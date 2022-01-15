@@ -6,7 +6,7 @@ use work.mudaq.all;
 use work.a10_pcie_registers.all;
 
 entity tb_a10_reset_link is 
-end entity tb_a10_reset_link;
+end entity;
 
 
 architecture TB of tb_a10_reset_link is
@@ -27,7 +27,7 @@ begin
 
     clk <= not clk  after (0.5 us / CLK_MHZ);
     reset_n <= '0', '1'     after (1.0 us / CLK_MHZ);
-	
+
     e_mapping : entity work.a10_reset_link
     generic map (
         g_XCVR2_CHANNELS    => 4--,
@@ -35,7 +35,7 @@ begin
     port map (
 	    o_xcvr_tx_data      => open,
 		o_xcvr_tx_datak     => open,
-		
+
 		i_reset_run_number  => wregs(RESET_LINK_RUN_NUMBER_REGISTER_W),
 		i_reset_ctl         => wregs(RESET_LINK_CTL_REGISTER_W),
 		i_clk               => clk,
@@ -44,16 +44,16 @@ begin
 
 		i_reset_n           => reset_n--,
     );
-    
-    memory : process(reset_n, clk)
-	begin
-	if(reset_n = '0')then
+
+    process(reset_n, clk)
+    begin
+    if ( reset_n = '0' ) then
 		wregs(RESET_LINK_RUN_NUMBER_REGISTER_W) <= (others => '0');
 		wregs(RESET_LINK_CTL_REGISTER_W) <= (others => '0');
 		reset_state <= (others => '0');
         delay <= (others => '0');
-		-- 
-	elsif(rising_edge(clk))then
+        --
+    elsif rising_edge(clk) then
         
         delay <= delay + '1';
         wregs(RESET_LINK_CTL_REGISTER_W)(RESET_LINK_COMMAND_RANGE) <= x"00";
@@ -116,9 +116,7 @@ begin
                 
         end case;
         end if;
-	end if;
-	end process memory;
-    
-end TB;
+    end if;
+    end process;
 
-
+end architecture;

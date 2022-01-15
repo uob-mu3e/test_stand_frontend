@@ -14,7 +14,7 @@ use work.mudaq.all;
 use work.a10_pcie_registers.all;
 
 entity ddr3_memory_controller is 
-	port (
+port (
 		reset_n	: in std_logic;
 		
 		-- Control and status registers
@@ -48,9 +48,9 @@ entity ddr3_memory_controller is
 		M_writedata		:	out std_logic_vector(511 downto 0);
 		M_burstcount	:	out std_logic_vector(6 downto 0);
 		M_readdatavalid:  in std_logic
-	);
-end entity ddr3_memory_controller;
-	
+);
+end entity;
+
 architecture RTL of ddr3_memory_controller is
 
 	type controller_mode_type is (disabled, waiting, ready, countertest, dataflow);
@@ -393,6 +393,6 @@ elsif(M_clk'event and M_clk='1') then
 			end if;
 	end case;
 end if;
-end process;	
+end process;
 
-end architecture RTL;
+end architecture;

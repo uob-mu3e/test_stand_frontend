@@ -185,7 +185,7 @@ port (
     o_pcie1_regwritten_C: out   std_logic_vector(63 downto 0);
     o_pcie1_resets_n_C  : out   std_logic_vector(31 downto 0);
 
-	 top_pll_locked      : in    std_logic;
+    top_pll_locked      : in    std_logic;
 
     o_reset_156_n       : out   std_logic;
     o_clk_156           : out   std_logic;
@@ -271,13 +271,13 @@ architecture arch of a10_block is
     signal pcie0_resets_n_B : std_logic_vector(31 downto 0);
     signal pcie0_resets_n_C : std_logic_vector(31 downto 0);
     signal pcie0_dma0_hfull : std_logic;
-	 
-	 --! pll lock counters
-	 signal cnt_lock_top, q_cnt_lock_top  				: std_logic_vector(31 downto 0);
-	 signal cnt_lock_125to156, q_cnt_lock_125to156 	: std_logic_vector(31 downto 0);
-	 signal cnt_lock_125to250, q_cnt_lock_125to250 	: std_logic_vector(31 downto 0);
-	 signal locked_125to156, locked_125to250 			: std_logic;
-	 signal wrfull_top, rdempty_top, wrfull_156, rdempty_156, wrfull_250, rdempty_250 : std_logic;
+
+    --! pll lock counters
+    signal cnt_lock_top, q_cnt_lock_top : std_logic_vector(31 downto 0);
+    signal cnt_lock_125to156, q_cnt_lock_125to156 : std_logic_vector(31 downto 0);
+    signal cnt_lock_125to250, q_cnt_lock_125to250 : std_logic_vector(31 downto 0);
+    signal locked_125to156, locked_125to250 : std_logic;
+    signal wrfull_top, rdempty_top, wrfull_156, rdempty_156, wrfull_250, rdempty_250 : std_logic;
 
     --! debouncer signals
     signal button : std_logic_vector(i_button'range);
@@ -306,14 +306,14 @@ architecture arch of a10_block is
 begin
 
     --! output signals
-    gen_pcie0_wregs_mapping : FOR i in 0 to 63 GENERATE
+    gen_pcie0_wregs_mapping : for i in 0 to 63 generate
         o_pcie0_wregs_A(i) <= pcie0_wregs_A(i);
         o_pcie0_wregs_B(i) <= pcie0_wregs_B(i);
         o_pcie0_wregs_C(i) <= pcie0_wregs_C(i);
         o_pcie1_wregs_A(i) <= pcie1_wregs_A(i);
         o_pcie1_wregs_B(i) <= pcie1_wregs_B(i);
         o_pcie1_wregs_C(i) <= pcie1_wregs_C(i);
-    END GENERATE;
+    end generate;
     o_pcie0_clk <= pcie0_clk;
     o_pcie0_resets_n_A <= pcie0_resets_n_A;
     o_pcie0_resets_n_B <= pcie0_resets_n_B;
@@ -321,60 +321,108 @@ begin
     o_pcie0_dma0_hfull <= pcie0_dma0_hfull;
     o_flash_reset_n <= flash_reset_n;
     o_flash_address <= flash_address;
-	 
+
     o_pcie1_clk <= pcie1_clk;
-	 
-	 --! pll counters
-	 e_cnt_top_locked : entity work.counter
-    generic map ( WRAP => true, W => 32 )
-    port map ( o_cnt => cnt_lock_top, i_ena => top_pll_locked, i_reset_n => i_reset_125_n, i_clk => i_clk_125 );
-	 e_sync_top : entity work.ip_dcfifo
-    generic map( ADDR_WIDTH  => 4, DATA_WIDTH  => 32--,
-	 ) port map ( 
-		data => top_pll_locked & cnt_lock_top(30 downto 0), 
-		wrreq => not wrfull_top, wrfull => wrfull_top, rdreq => not rdempty_top, 
-		wrclk => i_clk_125, rdclk => pcie0_clk, q => q_cnt_lock_top, rdempty => rdempty_top, aclr => not i_reset_125_n--,
+
+    --! pll counters
+    e_cnt_top_locked : entity work.counter
+    generic map (
+        WRAP => true,
+        W => 32
+    )
+    port map (
+        o_cnt => cnt_lock_top,
+        i_ena => top_pll_locked,
+        i_reset_n => i_reset_125_n,
+        i_clk => i_clk_125
     );
-	 local_pcie0_rregs_A(CNT_PLL_TOP_REGISTER_R) <= q_cnt_lock_top;
-	 
-	 e_cnt_125to156 : entity work.counter
-    generic map ( WRAP => true, W => 32 )
-    port map ( o_cnt => cnt_lock_125to156, i_ena => locked_125to156, i_reset_n => reset_156_n, i_clk => clk_156 );
-	 e_sync_125to156 : entity work.ip_dcfifo
-    generic map( ADDR_WIDTH  => 4, DATA_WIDTH  => 32--,
-	 ) port map ( 
-		data => locked_125to156 & cnt_lock_125to156(30 downto 0), 
-		wrreq => not wrfull_156, wrfull => wrfull_156, rdreq => not rdempty_156, 
-		wrclk => clk_156, rdclk => pcie0_clk, q => q_cnt_lock_125to156, rdempty => rdempty_156, aclr => not reset_156_n--,
+    e_sync_top : entity work.ip_dcfifo
+    generic map (
+        ADDR_WIDTH  => 4,
+        DATA_WIDTH  => 32--,
+    )
+    port map (
+        data => top_pll_locked & cnt_lock_top(30 downto 0),
+        wrreq => not wrfull_top,
+        wrfull => wrfull_top,
+        rdreq => not rdempty_top,
+        wrclk => i_clk_125,
+        rdclk => pcie0_clk,
+        q => q_cnt_lock_top,
+        rdempty => rdempty_top,
+        aclr => not i_reset_125_n--,
     );
-	 local_pcie0_rregs_A(CNT_PLL_156_REGISTER_R) <= q_cnt_lock_125to156;
-	 
-	 e_cnt_125to250 : entity work.counter
+    local_pcie0_rregs_A(CNT_PLL_TOP_REGISTER_R) <= q_cnt_lock_top;
+
+    e_cnt_125to156 : entity work.counter
     generic map ( WRAP => true, W => 32 )
-    port map ( o_cnt => cnt_lock_125to250, i_ena => locked_125to250, i_reset_n => reset_250_n, i_clk => clk_250 );
- 	 e_sync_125to250 : entity work.ip_dcfifo
-    generic map( ADDR_WIDTH  => 4, DATA_WIDTH  => 32--,
-	 ) port map ( 
-		data => locked_125to250& cnt_lock_125to250(30 downto 0), 
-		wrreq => not wrfull_250, wrfull => wrfull_250, rdreq => not rdempty_250, 
-		wrclk => clk_250, rdclk => pcie0_clk, q => q_cnt_lock_125to250, rdempty => rdempty_250, aclr => not reset_250_n--,
+    port map (
+        o_cnt => cnt_lock_125to156,
+        i_ena => locked_125to156,
+        i_reset_n => reset_156_n,
+        i_clk => clk_156
     );
-	 local_pcie0_rregs_A(CNT_PLL_250_REGISTER_R) <= q_cnt_lock_125to250;
-	 
+    e_sync_125to156 : entity work.ip_dcfifo
+    generic map (
+        ADDR_WIDTH  => 4,
+        DATA_WIDTH  => 32--,
+    )
+    port map (
+        data => locked_125to156 & cnt_lock_125to156(30 downto 0),
+        wrreq => not wrfull_156,
+        wrfull => wrfull_156,
+        rdreq => not rdempty_156,
+        wrclk => clk_156,
+        rdclk => pcie0_clk,
+        q => q_cnt_lock_125to156,
+        rdempty => rdempty_156,
+        aclr => not reset_156_n--,
+    );
+    local_pcie0_rregs_A(CNT_PLL_156_REGISTER_R) <= q_cnt_lock_125to156;
+
+    e_cnt_125to250 : entity work.counter
+    generic map (
+        WRAP => true,
+        W => 32--,
+    )
+    port map (
+        o_cnt => cnt_lock_125to250,
+        i_ena => locked_125to250,
+        i_reset_n => reset_250_n,
+        i_clk => clk_250
+    );
+    e_sync_125to250 : entity work.ip_dcfifo
+    generic map (
+        ADDR_WIDTH  => 4,
+        DATA_WIDTH  => 32--,
+    )
+    port map (
+        data => locked_125to250 & cnt_lock_125to250(30 downto 0),
+        wrreq => not wrfull_250,
+        wrfull => wrfull_250,
+        rdreq => not rdempty_250,
+        wrclk => clk_250,
+        rdclk => pcie0_clk,
+        q => q_cnt_lock_125to250,
+        rdempty => rdempty_250,
+        aclr => not reset_250_n--,
+    );
+    local_pcie0_rregs_A(CNT_PLL_250_REGISTER_R) <= q_cnt_lock_125to250;
+
     -- 156.25 MHz data clock (reference is 125 MHz global clock)
     e_clk_156 : component work.cmp.ip_pll_125to156
     port map (
-		  locked => locked_125to156,
+        locked => locked_125to156,
         outclk_0 => clk_156,
         refclk => i_clk_125,
         rst => not i_reset_125_n--,
     );
     o_clk_156 <= clk_156;
-    
+
     -- 250 MHz data clock (reference is 125 MHz global clock)
     e_clk_250 : component work.cmp.ip_pll_125to250
     port map (
-		  locked => locked_125to250,
+        locked => locked_125to250,
         outclk_0 => clk_250,
         refclk => i_clk_125,
         rst => not i_reset_125_n--,
@@ -415,9 +463,9 @@ begin
     --! save git version to version register
     e_version_reg : entity work.version_reg
     port map (
-        data_out  => local_pcie0_rregs_A(VERSION_REGISTER_R)(27 downto 0)--,
+        data_out => local_pcie0_rregs_A(VERSION_REGISTER_R)(27 downto 0)--,
     );
-    
+
     --! generate reset regs for 250 MHz clk for pcie0
     e_reset_logic_pcie : entity work.reset_logic
     port map (
@@ -439,7 +487,7 @@ begin
             clk            => clk_250--,
         );
     END GENERATE gen_FARM;
-    
+
     gen_SWB : if g_FARM = 0 GENERATE
         --! generate reset regs for 156 MHz link clk for pcie0
         e_reset_logic_swb : entity work.reset_logic

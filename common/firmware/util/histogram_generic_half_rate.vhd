@@ -14,11 +14,11 @@ use ieee.std_logic_unsigned.all;
 use ieee.numeric_std.all;
 
 entity histogram_generic_half_rate is 
-generic(
+generic (
       DATA_WIDTH : natural := 8;
       ADDR_WIDTH : natural := 6
 );
-   port (
+port (
       rclk:         in std_logic;   -- clock for read part
       wclk:         in std_logic;   -- clock for write part
       rst_n:        in std_logic;   -- async reset statemachine
@@ -31,8 +31,8 @@ generic(
       
       raddr_in:     in std_logic_vector(ADDR_WIDTH-1 downto 0); -- address for readout
       q_out:        out std_logic_vector(DATA_WIDTH-1 downto 0) -- data to be readout, appears 1 cycle after readaddr_in is changed
-   );
-end histogram_generic_half_rate;
+);
+end entity;
 
 
 architecture RTL of histogram_generic_half_rate is
@@ -75,10 +75,9 @@ i_ram: entity work.ip_ram
         q_a         => q_out,
         q_b         => q
     );
-   
-   
+
     -- write state machine
-    write_sm: process(rst_n, wclk)
+    process(rst_n, wclk)
     begin
         if(rst_n = '0')then
             busy_n  <= '0';     -- we are busy after a reset
@@ -173,6 +172,6 @@ i_ram: entity work.ip_ram
                     state   <= waiting; -- go back to a defined state
             end case;
         end if;
-    end process write_sm;
-    
-end RTL;
+    end process;
+
+end architecture;

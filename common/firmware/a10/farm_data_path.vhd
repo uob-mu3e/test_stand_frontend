@@ -965,4 +965,4 @@ begin
         wrfull  => open--,
     );
 
-end architecture RTL;
+end architecture;

@@ -120,7 +120,7 @@ begin
         wrfull_s               <= wrfull_last2; --(wrfull_last0 and wrfull_last1) or 
         o_rdempty              <= rdempty_last2;--(rdempty_last0 and rdempty_last1) or 
         o_rdempty_debug        <= rdempty_last2;
-    end generate gen_last_layer;
+    end generate;
     
     gen_not_last_layer : if last_layer = '0' generate
         o_wrfull    <= wrfull;

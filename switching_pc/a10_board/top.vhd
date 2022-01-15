@@ -124,7 +124,7 @@ architecture rtl of top is
     signal clk_156 : std_logic;
     signal reset_156_n : std_logic;
 
-    -- 250 MHz pcie clock 
+    -- 250 MHz pcie clock
     signal reset_pcie0_n : std_logic;
 
     -- flash
@@ -137,7 +137,6 @@ architecture rtl of top is
     signal pcie0_writeregs_B  : work.util.slv32_array_t(63 downto 0);
     signal pcie0_readregs_A   : work.util.slv32_array_t(63 downto 0);
     signal pcie0_readregs_B   : work.util.slv32_array_t(63 downto 0);
-    
 
     signal pcie_fastclk_out     : std_logic;
 
@@ -199,8 +198,8 @@ begin
         g_XCVR0_N => 2,
         g_XCVR1_CHANNELS => 0,
         g_XCVR1_N => 0,
-		g_XCVR2_CHANNELS => 4,
-		g_XCVR3_CHANNELS => 4,
+        g_XCVR2_CHANNELS => 4,
+        g_XCVR3_CHANNELS => 4,
         g_PCIE0_X => 8,
         g_PCIE1_X => 0,
         g_FARM    => 0,
@@ -246,16 +245,16 @@ begin
         i_xcvr0_tx_data                 => tx_data(7 downto 0),
         i_xcvr0_tx_datak                => tx_datak(7 downto 0),
         i_xcvr0_clk                     => clk_156,
-		  
-		-- XCVR2 (1250 Mbps @ 125 MHz)
+
+        -- XCVR2 (1250 Mbps @ 125 MHz)
         i_xcvr2_rx( 3 downto  0)        => QSFPD_RX_p,
         o_xcvr2_tx( 3 downto  0)        => QSFPD_TX_p,
         i_xcvr2_refclk                  => clk_125,
         i_xcvr2_clk                     => clk_125,
-		
-		-- XCVR3 (125 MHz clk)
-		i_xcvr3_rx( 3 downto  0)        => QSFPC_RX_p,
-		o_xcvr3_tx( 3 downto  0)        => QSFPC_TX_p,
+
+        -- XCVR3 (125 MHz clk)
+        i_xcvr3_rx( 3 downto  0)        => QSFPC_RX_p,
+        o_xcvr3_tx( 3 downto  0)        => QSFPC_TX_p,
         i_xcvr3_refclk                  => clk_125,
         i_xcvr3_clk                     => clk_125,
 
@@ -303,7 +302,7 @@ begin
 		  top_pll_locked						 => locked_50to125,
 		  
         o_reset_pcie0_n                 => reset_pcie0_n,
-        
+
         o_reset_156_n                   => reset_156_n,
         o_clk_156                       => clk_156,
         o_clk_156_hz                    => LED(2),
@@ -363,7 +362,7 @@ begin
 
         i_writeregs_250 => pcie0_writeregs_A,
         i_writeregs_156 => pcie0_writeregs_B,
-    
+
         o_readregs_250  => pcie0_readregs_A,
         o_readregs_156  => pcie0_readregs_B,
 
