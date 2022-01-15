@@ -11,6 +11,17 @@ ifndef QUARTUS_ROOTDIR
     $(error QUARTUS_ROOTDIR is undefined)
 endif
 
+<<<<<<< HEAD
+=======
+ifndef QUARTUS_VERSION
+    QUARTUS_VERSION := $(shell basename $(shell dirname $(QUARTUS_ROOTDIR)))
+endif
+
+ifeq ($(QUARTUS_OUTPUT_FILES),)
+    override QUARTUS_OUTPUT_FILES := output_files
+endif
+
+>>>>>>> aac3fe22 ([util] makefile - get QUARTUS_VERSION from _ROOTDIR)
 # directory for generated files (*.qsys, *.sopcinfo, etc.)
 # TODO: rename PREFIX -> QP_TMP_DIR
 ifeq ($(PREFIX),)
@@ -164,7 +175,7 @@ bsp : $(BSP_DIR)/settings.bsp
 .PRECIOUS : $(APP_DIR)/main.elf
 .PHONY : $(APP_DIR)/main.elf
 $(APP_DIR)/main.elf : $(SRC_DIR)/* $(BSP_DIR)/settings.bsp
-	[[ "$$QUARTUS_VERSION" < 20.0 ]] && GCC_STD="-std=c++14"
+	[[ "$(QUARTUS_VERSION)" < 20.0 ]] && GCC_STD="-std=c++14"
 	nios2-app-generate-makefile \
 	    --set ALT_CFLAGS "-Wall -Wextra -Wformat=0 -pedantic $$GCC_STD" \
 	    --bsp-dir "$(BSP_DIR)" --app-dir "$(APP_DIR)" --src-dir "$(SRC_DIR)"
