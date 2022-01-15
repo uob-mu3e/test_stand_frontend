@@ -116,8 +116,13 @@ $(PREFIX)/include.qip : $(PREFIX)/components_pkg.vhd $(QSYS_FILES)
 	# components package
 	echo "set_global_assignment -name VHDL_FILE [ file join $$::quartus(qip_path) \"components_pkg.vhd\" ]" > "$@"
 	# add qsys *.qsys files
-	for file in $(QSYS_FILES) ; do
-	    echo "set_global_assignment -name QSYS_FILE [ file join $$::quartus(qip_path) \"$$(realpath -m --relative-to=$(PREFIX) -- $$file)\" ]" >> "$@"
+	for file in $(patsubst %.qsys,%,$(QSYS_FILES)) ; do
+	    QIP="$$file/synthesis/$$(basename -- $$file).qip"
+	    if [ -e "$$QIP" ] ; then
+	        echo "set_global_assignment -name QIP_FILE [ file join $$::quartus(qip_path) \"$$(realpath -m --relative-to=$(PREFIX) -- $$QIP)\" ]" >> "$@"
+	    else
+	        echo "set_global_assignment -name QSYS_FILE [ file join $$::quartus(qip_path) \"$$(realpath -m --relative-to=$(PREFIX) -- $$file.qsys)\" ]" >> "$@"
+	    fi
 	done
 	# add *.vhd (*.qip) files
 	for file in $(patsubst %.vhd,%,$(VHD_FILES)) ; do
