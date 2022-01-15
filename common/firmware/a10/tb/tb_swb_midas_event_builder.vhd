@@ -6,7 +6,7 @@ use std.textio.all;
 use ieee.std_logic_textio.all;
 
 entity tb_swb_midas_event_builder is 
-end entity tb_swb_midas_event_builder;
+end entity;
 
 
 architecture TB of tb_swb_midas_event_builder is
@@ -35,15 +35,15 @@ architecture TB of tb_swb_midas_event_builder is
 begin
 
     -- generate the clock
-    ckProc: process
+    process
     begin
         clk <= '0';
         wait for ckTime/2;
         clk <= '1';
         wait for ckTime/2;
     end process;
-    
-    ckProcfast: process
+
+    process
     begin
         clk_fast <= '0';
         wait for ckTime_fast/2;
@@ -51,7 +51,7 @@ begin
         wait for ckTime_fast/2;
     end process;
 
-    inita : process
+    process
     begin
         reset_n	 <= '0';
         file_open(file_RESULTS, "memory_content.txt", write_mode);
@@ -59,7 +59,7 @@ begin
         wait for 8 ns;
         reset_n	 <= '1';
         wait;
-    end process inita;
+    end process;
 
     -- data generation and ts counter_ddr3
     slow_down_0 <= x"00000002";
@@ -178,7 +178,5 @@ begin
                 file_close(file_RESULTS);
             end if;
     end process;
-    
-end TB;
 
-
+end architecture;

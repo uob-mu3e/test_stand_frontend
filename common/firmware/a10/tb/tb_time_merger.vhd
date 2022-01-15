@@ -6,7 +6,7 @@ use ieee.std_logic_misc.all;
 
 
 entity tb_time_merger is 
-end entity tb_time_merger;
+end entity;
 
 
 architecture TB of tb_time_merger is
@@ -309,7 +309,5 @@ begin
         i_reset_n_250       => reset_n,
         i_clk_250           => clk_fast--,
     );
-    
-end TB;
 
-
+end architecture;

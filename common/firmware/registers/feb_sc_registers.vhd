@@ -71,4 +71,5 @@ package feb_sc_registers is
 
     constant SI_STATUS_REGISTER                 :   integer := 16#FC2B#;
     constant TEST_OUT_REGISTER                  :   integer := 16#FC2C#;
+
 end package;

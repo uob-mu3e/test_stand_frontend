@@ -48,4 +48,4 @@ package scitile_registers is
 
     constant SCITILE_CTRL_LAPSE_COUNTER_REGISTER_W    :   integer := 16#404C#;
 
-end package scitile_registers;
+end package;

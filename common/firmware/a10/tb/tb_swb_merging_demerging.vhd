@@ -4,7 +4,7 @@ use ieee.std_logic_unsigned.all;
 
 
 entity merging_demerging_tb is 
-end entity merging_demerging_tb;
+end entity;
 
 
 architecture TB of merging_demerging_tb is
@@ -170,6 +170,4 @@ begin
     FEB_num_in(6) <= r_fifo_data(265 downto 260);
     FEB_num_in(7) <= r_fifo_data(303 downto 298);
 
-end TB;
-
-
+end architecture;

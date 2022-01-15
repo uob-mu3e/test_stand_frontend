@@ -11,7 +11,7 @@ port (
 		pld_clk			: in std_logic;
 		tl_cfg_add		: in std_logic_vector(3 downto 0);
 		tl_cfg_ctl		: in std_logic_vector(31 downto 0);
-		
+
 		cfg_busdev		: out	std_logic_vector(12 downto 0);
 		cfg_dev_ctrl	: out std_logic_vector(31 downto 0);
 		cfg_slot_ctrl	: out std_logic_vector(15 downto 0);
@@ -63,7 +63,7 @@ elsif(pld_clk'event and pld_clk = '1') then
 	when "0110" =>
 		cfg_msi_addr(43 downto 32)	<=  tl_cfg_ctl(31 downto 20);
 	when "1001" =>
-		cfg_msi_addr(31 downto 12)	<=  tl_cfg_ctl(31 downto 12);	
+		cfg_msi_addr(31 downto 12)	<=  tl_cfg_ctl(31 downto 12);
 	when "1011" =>
 		cfg_msi_addr(63 downto 44)	<=  tl_cfg_ctl(31 downto 12);
 	when "1100" =>

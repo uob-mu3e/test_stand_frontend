@@ -18,9 +18,9 @@ use work.mudaq.all;
 
 entity pcie_application is
 generic (
-			DMAMEMWRITEADDRSIZE : integer := 14;
-			DMAMEMREADADDRSIZE  : integer := 12;
-			DMAMEMWRITEWIDTH	  : integer := 32
+    DMAMEMWRITEADDRSIZE : integer := 14;
+    DMAMEMREADADDRSIZE  : integer := 12;
+    DMAMEMWRITEWIDTH    : integer := 32--;
 );
 port (
     o_writeregs_B               : out   reg32array_pcie;

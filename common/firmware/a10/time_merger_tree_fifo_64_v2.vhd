@@ -133,7 +133,7 @@ begin
         t_q_last(11 downto  8) <= last_reg_reg(107 downto 104);
         t_q_last( 7 downto  4) <= last_reg_reg(69 downto 66);
         t_q_last( 3 downto  0) <= last_reg_reg(31 downto 28);
-    end generate gen_last_layer;
+    end generate;
     
     o_layer_state <= layer_state;
     o_wrfull <= wrfull;

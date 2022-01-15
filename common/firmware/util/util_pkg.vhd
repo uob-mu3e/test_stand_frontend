@@ -512,7 +512,6 @@ package body util is
     function hex_to_ascii (
         h : in  std_logic_vector--;
     ) return std_logic_vector is
-    
     begin
         case h is
         when x"0" => return X"30";
@@ -556,7 +555,6 @@ package body util is
     function link_36_to_std (
         i : in  integer--;
     ) return std_logic_vector is
-    
     begin
         case i is
         when  0 => return "000000";
