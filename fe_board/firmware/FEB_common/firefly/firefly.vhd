@@ -484,7 +484,7 @@ firefly_reg_mapping_inst: entity work.firefly_reg_mapping
   )
   port map (
     i_clk156          => i_clk,
-    i_reset_n         => i_reset_n,
+    i_reset_n         => i_reset_156_n,
 
     i_reg_add         => i_reg_add,
     i_reg_re          => i_reg_re,
