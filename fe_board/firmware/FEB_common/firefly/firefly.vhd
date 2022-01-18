@@ -43,22 +43,22 @@ entity firefly is
         i_reset_156_n           : in    std_logic;
         i_reset_125_rx_n        : in    std_logic;
         i_lvds_align_reset_n    : in    std_logic;
-        
+
         --rx
         i_data_fast_serial      : in    std_logic_vector(      3 downto 0);
         o_data_fast_parallel    : out   std_logic_vector(32*3+31 downto 0);
         o_datak                 : out   std_logic_vector( 4*3+ 3 downto 0);
-        
+
         --tx
         o_data_fast_serial      : out   std_logic_vector(      7 downto 0);
         i_data_fast_parallel    : in    std_logic_vector(32*7+31 downto 0);
         i_datak                 : in    std_logic_vector( 4*7+ 3 downto 0);
-        
+
         --lvds rx
         i_data_lvds_serial      : in    std_logic_vector(1 downto 0);
         o_data_lvds_parallel    : out   std_logic_vector(15 downto 0);
         o_lvds_ready            : out   std_logic;
-        
+
         --I2C
         i_i2c_enable            : in    std_logic;
         o_Mod_Sel_n             : out   std_logic_vector(1 downto 0);
@@ -67,29 +67,22 @@ entity firefly is
         io_sda                  : inout std_logic;
         i_int_n                 : in    std_logic_vector(1 downto 0);
         i_modPrs_n              : in    std_logic_vector(1 downto 0);
-        
+
         i_reg_add               : in  std_logic_vector(15 downto 0);
         i_reg_re                : in  std_logic;
         o_reg_rdata             : out std_logic_vector(31 downto 0);
         i_reg_we                : in  std_logic;
         i_reg_wdata             : in  std_logic_vector(31 downto 0);
 
---        i_avs_address           : in    std_logic_vector(13 downto 0);
---        i_avs_read              : in    std_logic;
---        o_avs_readdata          : out   std_logic_vector(31 downto 0);
---        i_avs_write             : in    std_logic;
---        i_avs_writedata         : in    std_logic_vector(31 downto 0);
---        o_avs_waitrequest       : out   std_logic;
-        
         o_testclkout            : out   std_logic;
         o_testout               : out   std_logic;
-		  
-		  -- outputs to slow control
-		  o_pwr                   : out   std_logic_vector(127 downto 0); -- RX optical power in mW
+
+        -- outputs to slow control
+        o_pwr                   : out   std_logic_vector(127 downto 0); -- RX optical power in mW
         o_temp                  : out   std_logic_vector(15 downto 0);  -- temperature in °C
-		  o_alarm					  : out   std_logic_vector(63 downto 0);  -- latched alarm bits
-		  o_vcc						  : out   std_logic_vector(31 downto 0)--;  -- operating voltagein units of 100 uV
-		  
+        o_alarm                 : out   std_logic_vector(63 downto 0);  -- latched alarm bits
+        o_vcc                   : out   std_logic_vector(31 downto 0)--;  -- operating voltagein units of 100 uV
+
     );
 end entity firefly;
 
@@ -178,8 +171,8 @@ signal av_rx_digitalreset   : std_logic_vector(3 downto 0);
 signal av_tx_ready          : std_logic_vector(7 downto 0);
 signal av_opt_rx_power      : std_logic_vector(127 downto 0);
 signal av_temperature       : std_logic_vector(15 downto 0);
-signal av_alarms				 : std_logic_vector(63 downto 0);
-signal av_vcc					 : std_logic_vector(31 downto 0);
+signal av_alarms            : std_logic_vector(63 downto 0);
+signal av_vcc               : std_logic_vector(31 downto 0);
 signal av_rx_ready          : std_logic_vector(7 downto 0);
 signal av_lvds_data         : std_logic_vector(7 downto 0);
 signal av_locked            : std_logic_vector(7 downto 0);
@@ -192,8 +185,8 @@ signal av_disperr           : std_logic_vector(15 downto 0);
 -- Firefly status
 signal temperature          : std_logic_vector(15 downto 0);
 signal opt_rx_power         : std_logic_vector(127 downto 0);
-signal alarms					 : std_logic_vector(63 downto 0);
-signal vcc						 : std_logic_vector(31 downto 0);
+signal alarms               : std_logic_vector(63 downto 0);
+signal vcc                  : std_logic_vector(31 downto 0);
 
 begin
 
@@ -475,190 +468,61 @@ begin
 
         o_pwr           => opt_rx_power,
         o_temp          => temperature,
-		  o_alarm			=> alarms,
-		  o_vcc				=> vcc--,
+        o_alarm         => alarms,
+        o_vcc           => vcc--,
     );
 
-	 --o_pwr 	<= opt_rx_power;
-	 --o_temp 	<= temperature;
-	 
---    dnca: entity work.doNotCompileAwayMux
---    generic map(
---        WIDTH_g   => 31--,
---    )
---    port map(
---        i_clk               => i_clk_i2c,
---        i_reset_n           => i_reset_n,
---        i_doNotCompileAway  => i2c_data & lvds_8b10b_out_in_clk125_global,
---        o_led               => o_testout--,
---    );
 
 --------------------------------------------------
--- Avalon
+-- SC connection
 --------------------------------------------------
 
---    -- av_ctrl process, avalon iface
---    process(i_clk, i_reset_156_n)
---    begin
---    if ( i_reset_156_n = '0' ) then
---        av_ctrl.waitrequest <= '1';
---        ch <= 0;
---        rx_seriallpbken <= (others => '0');
---        tx_rst_n <= (others => '1');
---        rx_rst_n <= (others => '1');
---
---    elsif rising_edge(i_clk) then
---        av_ctrl.waitrequest <= '1';
---
---        tx_rst_n <= (others => '1');
---        rx_rst_n <= (others => '1');
---
---        if ( av_ctrl.read /= av_ctrl.write and av_ctrl.waitrequest = '1' ) then
---            av_ctrl.waitrequest <= '0';
---
---            av_ctrl.readdata <= (others => '0');
---            case av_ctrl.address(7 downto 0) is
---            when X"00" =>
---                -- channel select
---                av_ctrl.readdata(7 downto 0) <= std_logic_vector(to_unsigned(ch, 8));
---                if ( av_ctrl.write = '1' and av_ctrl.writedata(7 downto 0) < 8 ) then
---                    ch <= to_integer(unsigned(av_ctrl.writedata(7 downto 0)));
---                end if;
---                --
---            when X"01" =>
---                av_ctrl.readdata(7 downto 0) <= std_logic_vector(to_unsigned(8, 8));
---            when X"02" =>
---                av_ctrl.readdata(7 downto 0) <= std_logic_vector(to_unsigned(32, 8));
---            when X"10" =>
---                -- tx reset
---                av_ctrl.readdata(0) <= tx_analogreset(ch);
---                av_ctrl.readdata(4) <= tx_digitalreset(ch);
---                if ( av_ctrl.write = '1' ) then tx_rst_n(ch) <= not av_ctrl.writedata(0); end if;
---                --
---            when X"11" =>
---                -- tx status
---                av_ctrl.readdata(0) <= av_tx_ready(ch);
---                --
---            when X"12" =>
---                -- tx errors
---                av_ctrl.readdata(8) <= '0';--tx_fifo_error(ch);
---                --
---            when X"20" =>
---                -- rx reset
---                if(ch < 4) then
---                    av_ctrl.readdata(0) <= av_rx_analogreset(ch);
---                    av_ctrl.readdata(4) <= av_rx_digitalreset(ch);
---                else
---                    av_ctrl.readdata(0) <= '0';
---                    av_ctrl.readdata(4) <= '0';
---                end if;
---                if ( av_ctrl.write = '1' ) then rx_rst_n(ch) <= not av_ctrl.writedata(0); end if;
---                --
---            when X"21" =>
---                -- rx status
---                av_ctrl.readdata(0) <= av_rx_ready(ch);
---                av_ctrl.readdata(1) <= av_rx_is_lockedtoref(ch);
---                av_ctrl.readdata(2) <= av_rx_is_lockedtodata(ch);
---                -- av_ctrl.readdata(11 downto 8) <= (others => '1');
---                av_ctrl.readdata(32/8-1 + 8 downto 8) <= av_syncstatus(ch*4+3 downto ch*4);
---                av_ctrl.readdata(12) <= av_locked(ch);
---                --
---            when X"22" =>
---                -- rx errors
---                if(ch < 4) then 
---                    av_ctrl.readdata(3 downto 0) <= av_errdetect(4*ch+3 downto 4*ch);
---                    av_ctrl.readdata(7 downto 4) <= av_disperr(4*ch+3 downto 4*ch);
---                else
---                    av_ctrl.readdata(3 downto 0) <= (others => '0');
---                    av_ctrl.readdata(7 downto 4) <= (others => '0');
---                end if;
---                av_ctrl.readdata(8) <= '0';--rx_fifo_error(ch);
---                --
---            when X"23" =>
---                av_ctrl.readdata(31 downto 0) <= (others => '0');--rx(ch).LoL_cnt;
---            when X"24" =>
---                av_ctrl.readdata(31 downto 0) <= (others => '0');--rx(ch).err_cnt;
---                --
---            when X"25" =>
---                av_ctrl.readdata(31 downto 0) <= x"0000" & av_opt_rx_power(16*ch+15 downto 16*ch);-- RX optical power
---            when X"26" =>
---                if(ch = 0 or ch = 4 or ch = 5 or ch = 6 ) then
---                    av_ctrl.readdata(31 downto 0) <= x"000000" & av_temperature(7 downto 0);-- Firefly temperature
---                else
---                    av_ctrl.readdata(31 downto 0) <= x"000000" & av_temperature(15 downto 8);
---                end if;
---                --
---            when X"2A" =>
---                if(ch < 4) then
---                    av_ctrl.readdata(31 downto 0) <= av_rx_data_parallel(32*ch+31 downto 32*ch);
---                elsif(ch = 6) then
---                    av_ctrl.readdata(31 downto 0) <= x"000000" & av_lvds_data;
---                else
---                    av_ctrl.readdata(31 downto 0) <= (others => '0');
---                end if;
---            when X"2B" =>
---                if(ch<4) then
---                    av_ctrl.readdata(31 downto 0) <= x"0000000" & av_rx_datak(4*ch+3 downto ch*4);
---                else
---                    av_ctrl.readdata(31 downto 0) <= (others => '0');
---                end if;
---            when X"2C" =>
---                av_ctrl.readdata(31 downto 0) <= (others => '0'); --rx(ch).Gbit;
---                --
---            when X"2F" =>
---                av_ctrl.readdata(0) <= rx_seriallpbken(ch);
---                if ( av_ctrl.write = '1' ) then rx_seriallpbken(ch) <= av_ctrl.writedata(0); end if;
---                --
---            when others =>
---                av_ctrl.readdata <= X"CCCCCCCC";
---                --
---            end case;
---        end if;
---
---    end if; -- rising_edge
---    end process;
---
---    -- avalon control block
---    b_avs : block
---        signal av_ctrl_cs : std_logic;
---        signal avs_waitrequest_i : std_logic;
---    begin
---        av_ctrl_cs <= '1' when ( i_avs_address(i_avs_address'left downto 8) = "000000" ) else '0';
---        av_ctrl.address(i_avs_address'range) <= i_avs_address;
---        av_ctrl.writedata <= i_avs_writedata;
---
---        o_avs_waitrequest <= avs_waitrequest_i;
---
---        process(i_clk, i_reset_156_n)
---        begin
---        if ( i_reset_156_n = '0' ) then
---            avs_waitrequest_i <= '1';
---            av_ctrl.read <= '0';
---            av_ctrl.write <= '0';
---            --
---        elsif rising_edge(i_clk) then
---            avs_waitrequest_i <= '1';
---
---            if ( i_avs_read /= i_avs_write and avs_waitrequest_i = '1' ) then
---                if ( av_ctrl_cs = '1' ) then
---                    if ( av_ctrl.read = av_ctrl.write ) then
---                        av_ctrl.read <= i_avs_read;
---                        av_ctrl.write <= i_avs_write;
---                    elsif ( av_ctrl.waitrequest = '0' ) then
---                        o_avs_readdata <= av_ctrl.readdata;
---                        avs_waitrequest_i <= '0';
---                        av_ctrl.read <= '0';
---                        av_ctrl.write <= '0';
---                    end if;
---                else
---                    o_avs_readdata <= X"CCCCCCCC";
---                    avs_waitrequest_i <= '0';
---                end if;
---            end if;
---            --
---        end if;
---        end process;
---    end block;
+firefly_reg_mapping_inst: entity work.firefly_reg_mapping
+  generic map (
+    N_CHANNELS_g    => 8,
+    CHANNEL_WIDTH_g => 32--,
+  )
+  port map (
+    i_clk156          => i_clk,
+    i_reset_n         => i_reset_n,
+
+    i_reg_add         => i_reg_add,
+    i_reg_re          => i_reg_re,
+    o_reg_rdata       => o_reg_rdata,
+    i_reg_we          => i_reg_we,
+    i_reg_wdata       => i_reg_wdata,
+
+    o_loopback        => open,
+    o_tx_reset        => open,
+    o_rx_reset        => open,
+
+    i_tx_status       => av_tx_ready,
+    i_rx_ready        => av_rx_ready,
+    i_rx_lockedtoref  => av_rx_is_lockedtoref,
+    i_rx_lockedtodata => av_rx_is_lockedtodata,
+    i_rx_locked       => av_locked,
+    i_rx_syncstatus(0)=> av_syncstatus( 3 downto  0),
+    i_rx_syncstatus(1)=> av_syncstatus( 7 downto  4),
+    i_rx_syncstatus(2)=> av_syncstatus(11 downto  8),
+    i_rx_syncstatus(3)=> av_syncstatus(15 downto 12),
+    i_rx_errDetect(0) => av_errdetect( 3 downto  0),
+    i_rx_errDetect(1) => av_errdetect( 7 downto  4),
+    i_rx_errDetect(2) => av_errdetect(11 downto  8),
+    i_rx_errDetect(3) => av_errdetect(15 downto 12),
+    i_rx_disperr(0)   => av_disperr( 3 downto  0),
+    i_rx_disperr(1)   => av_disperr( 7 downto  4),
+    i_rx_disperr(2)   => av_disperr(11 downto  8),
+    i_rx_disperr(3)   => av_disperr(15 downto 12),
+    i_rx_data(0)      => av_rx_data_parallel(31 downto 0),
+    i_rx_data(1)      => av_rx_data_parallel(63 downto 32),
+    i_rx_data(2)      => av_rx_data_parallel(95 downto 64),
+    i_rx_data(3)      => av_rx_data_parallel(127 downto 96),
+    i_rx_data(6)      => x"000000" & av_lvds_data,
+    i_rx_datak(0)     => av_rx_datak(3 downto 0),
+    i_rx_datak(1)     => av_rx_datak(7 downto 4),
+    i_rx_datak(2)     => av_rx_datak(11 downto 8),
+    i_rx_datak(3)     => av_rx_datak(15 downto 12)--,
+  );
 
 --------------------------------------------------
 -- Sync FIFO's
@@ -669,7 +533,7 @@ begin
         DATA_WIDTH  => 8,
         SHOWAHEAD   => "OFF",
         OVERFLOW    => "ON",
-		  REGOUT      => 0,
+        REGOUT      => 0,
         DEVICE      => "Arria V"--,
     )
     port map(
@@ -688,7 +552,7 @@ begin
         DATA_WIDTH  => 220,
         SHOWAHEAD   => "OFF",
         OVERFLOW    => "ON",
-		  REGOUT      => 0,
+        REGOUT      => 0,
         DEVICE      => "Arria V"--,
     )
     port map(
@@ -719,13 +583,13 @@ begin
         DATA_WIDTH  => 280,
         SHOWAHEAD   => "OFF",
         OVERFLOW    => "ON",
-		  REGOUT      => 0,
+        REGOUT      => 0,
         DEVICE      => "Arria V"--,
     )
     port map(
         aclr            => '0',
         data            =>  alarms & vcc
-									 & tx_ready & rx_ready
+                            & tx_ready & rx_ready
                             & opt_rx_power & temperature
                             & rx_analogreset & rx_digitalreset 
                             & tx_analogreset2 & tx_analogreset1 
@@ -742,14 +606,14 @@ begin
         q(167 downto 40)    => av_opt_rx_power,
         q(175 downto 168)   => av_rx_ready,
         q(183 downto 176)   => av_tx_ready,
-		  q(215 downto 184)	 => av_vcc,
-		  q(279 downto 216)	 => av_alarms
+        q(215 downto 184)   => av_vcc,
+        q(279 downto 216)   => av_alarms
     );
-	 
-	 o_pwr 	<= av_opt_rx_power;
-	 o_temp 	<= av_temperature;
-	 o_vcc	<= av_vcc;
-	 o_alarm <= av_alarms;
+
+    o_pwr   <= av_opt_rx_power;
+    o_temp  <= av_temperature;
+    o_vcc   <= av_vcc;
+    o_alarm <= av_alarms;
 
     sync_fifo4 : entity work.ip_dcfifo
     generic map(
@@ -757,7 +621,7 @@ begin
         DATA_WIDTH  => 9,
         SHOWAHEAD   => "OFF",
         OVERFLOW    => "ON",
-		  REGOUT      => 0,
+        REGOUT      => 0,
         DEVICE      => "Arria V"--,
     )
     port map(

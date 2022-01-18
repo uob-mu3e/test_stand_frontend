@@ -7,6 +7,7 @@ use ieee.std_logic_1164.all;
 use ieee.numeric_std.all;
 
 use work.feb_sc_registers.all;
+use work.mudaq.all;
 
 
 entity firefly_reg_mapping is
@@ -16,7 +17,7 @@ entity firefly_reg_mapping is
     );
 port (
     i_clk156                    : in  std_logic;
-    i_reset_n                   : in  std_logic;
+    i_reset_n                   : in  std_logic := '1';
 
     i_reg_add                   : in  std_logic_vector(15 downto 0);
     i_reg_re                    : in  std_logic;
@@ -26,9 +27,23 @@ port (
 
     o_loopback                  : out std_logic_vector(N_CHANNELS_g-1 downto 0);
     o_tx_reset                  : out std_logic_vector(N_CHANNELS_g-1 downto 0);
-    o_rx_reset                  : out std_logic_vector(N_CHANNELS_g-1 downto 0)--;
+    o_rx_reset                  : out std_logic_vector(N_CHANNELS_g-1 downto 0);
+    i_tx_status                 : in  std_logic_vector(N_CHANNELS_g-1 downto 0) := (others => '0');
+    i_tx_errors                 : in  std_logic_vector(N_CHANNELS_g-1 downto 0) := (others => '0');
 
-
+    i_rx_ready                  : in  std_logic_vector(N_CHANNELS_g-1 downto 0) := (others => '0');
+    i_rx_lockedtoref            : in  std_logic_vector(N_CHANNELS_g-1 downto 0) := (others => '0');
+    i_rx_lockedtodata           : in  std_logic_vector(N_CHANNELS_g-1 downto 0) := (others => '0');
+    i_rx_locked                 : in  std_logic_vector(N_CHANNELS_g-1 downto 0) := (others => '0');
+    i_rx_syncstatus             : in  reg4array(N_CHANNELS_g-1 downto 0) := (others => (others => '0'));
+    i_rx_errDetect              : in  reg4array(N_CHANNELS_g-1 downto 0) := (others => (others => '0'));
+    i_rx_disperr                : in  reg4array(N_CHANNELS_g-1 downto 0) := (others => (others => '0'));
+    i_rx_fifo_error             : in  std_logic_vector(N_CHANNELS_g-1 downto 0) := (others => '0');
+    i_lol_cnt                   : in  reg8array(N_CHANNELS_g-1 downto 0) := (others => (others => '0'));
+    i_err_cnt                   : in  reg16array(N_CHANNELS_g-1 downto 0) := (others => (others => '0'));
+    i_rx_data                   : in  reg32array(N_CHANNELS_g-1 downto 0) := (others => (others => '0'));
+    i_rx_datak                  : in  reg4array(N_CHANNELS_g-1 downto 0) := (others => (others => '0'));
+    i_gbit                      : in  reg24array(N_CHANNELS_g-1 downto 0) := (others => (others => '0'))--;
 );
 end entity;
 
@@ -55,8 +70,11 @@ begin
             regaddr             := to_integer(unsigned(i_reg_add));
             o_reg_rdata         <= x"CCCCCCCC";
 
+            rx_reset            <= (others => '0');
+            tx_reset            <= (others => '0');
             o_tx_reset          <= tx_reset;
             o_rx_reset          <= rx_reset;
+            o_loopback          <= loopback;
 
             -- channel select
             if ( regaddr = FIREFLY_XCVR_CH_SEL_REGISTER_RW and i_reg_re = '1' ) then
@@ -80,48 +98,58 @@ begin
 
             -- tx reset
             if ( regaddr = FIREFLY_XCVR_TX_RESET_REGISTER_RW and i_reg_re = '1' ) then
-                o_reg_rdata <= tx_reset(channel_sel_int);
+                o_reg_rdata <= (0 => tx_reset(channel_sel_int), others => '0');
             end if;
             if ( regaddr = FIREFLY_XCVR_TX_RESET_REGISTER_RW and i_reg_we = '1' ) then
-                tx_reset(channel_sel_int) <= i_reg_wdata;
+                tx_reset(channel_sel_int) <= i_reg_wdata(0);
             end if;
 
             -- tx_status
             if ( regaddr = FIREFLY_XCVR_TX_STATUS_REGISTER_R and i_reg_re = '1' ) then
-                o_reg_rdata <= i_tx_status(channel_sel_int);
+                o_reg_rdata <= (0 => i_tx_status(channel_sel_int), others => '0');
             end if;
 
             -- tx_errors
             if ( regaddr = FIREFLY_XCVR_TX_ERROR_REGISTER_R and i_reg_re = '1' ) then
-                o_reg_rdata <= i_tx_errors(channel_sel_int);
+                o_reg_rdata <=(8 => i_tx_errors(channel_sel_int), others => '0');
             end if;
 
             -- rx reset
             if ( regaddr = FIREFLY_XCVR_RX_RESET_REGISTER_RW and i_reg_re = '1' ) then
-                o_reg_rdata <= rx_reset(channel_sel_int);
+                o_reg_rdata <= (0 => rx_reset(channel_sel_int), others => '0');
             end if;
             if ( regaddr = FIREFLY_XCVR_RX_RESET_REGISTER_RW and i_reg_we = '1' ) then
-                rx_reset(channel_sel_int) <= i_reg_wdata;
+                rx_reset(channel_sel_int) <= i_reg_wdata(0);
             end if;
 
             -- rx_status
             if ( regaddr = FIREFLY_XCVR_RX_STATUS_REGISTER_R and i_reg_re = '1' ) then
-                o_reg_rdata <= i_rx_status(channel_sel_int);
+                o_reg_rdata(0)                                  <= i_rx_ready(channel_sel_int);
+                o_reg_rdata(1)                                  <= i_rx_lockedtoref(channel_sel_int);
+                o_reg_rdata(2)                                  <= i_rx_lockedtodata(channel_sel_int);
+                o_reg_rdata(12)                                 <= i_rx_locked(channel_sel_int);
+                o_reg_rdata(CHANNEL_WIDTH_g/8-1 + 8 downto 8)   <= i_rx_syncstatus(channel_sel_int);
+                o_reg_rdata(31 downto 13)                       <= (others => '0');
             end if;
 
             -- rx_errors
             if ( regaddr = FIREFLY_XCVR_RX_ERROR_REGISTER_R and i_reg_re = '1' ) then
-                o_reg_rdata <= i_rx_errors(channel_sel_int);
+                o_reg_rdata(CHANNEL_WIDTH_g/8-1 + 0 downto 0)   <= i_rx_errDetect(channel_sel_int);
+                o_reg_rdata(CHANNEL_WIDTH_g/8-1 + 4 downto 4)   <= i_rx_disperr(channel_sel_int);
+                o_reg_rdata(8)                                  <= i_rx_fifo_error(channel_sel_int);
+                o_reg_rdata(31 downto 9)                        <= (others => '0');
             end if;
 
             -- loss of lock
             if ( regaddr = FIREFLY_XCVR_LOL_REGISTER_R and i_reg_re = '1' ) then
-                o_reg_rdata <= i_lol(channel_sel_int);
+                o_reg_rdata( 7 downto 0) <= i_lol_cnt(channel_sel_int);
+                o_reg_rdata(31 downto 0) <= (others => '0');
             end if;
 
             -- err cnt register
             if ( regaddr = FIREFLY_XCVR_ERR_CNT_REGISTER_R and i_reg_re = '1' ) then
-                o_reg_rdata <= i_err_cnt(channel_sel_int);
+                o_reg_rdata(15 downto  0) <= i_err_cnt(channel_sel_int);
+                o_reg_rdata(31 downto 16) <= (others => '0');
             end if;
 
             -- rx data register
@@ -141,10 +169,10 @@ begin
 
             -- loopback reg
             if ( regaddr = FIREFLY_XCVR_LOOPBACK_REGISTER_RW and i_reg_re = '1' ) then
-                o_reg_rdata <= loopback(channel_sel_int);
+                o_reg_rdata <= (0 => loopback(channel_sel_int), others => '0');
             end if;
             if ( regaddr = FIREFLY_XCVR_LOOPBACK_REGISTER_RW and i_reg_we = '1' ) then
-                loopback(channel_sel_int) <= i_reg_wdata;
+                loopback(channel_sel_int) <= i_reg_wdata(0);
             end if;
 
         end if;
