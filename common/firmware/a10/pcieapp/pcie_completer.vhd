@@ -375,8 +375,7 @@ architecture RTL of pcie_completer is
 	variable regaddr_var : std_logic_vector(5 downto 0);
 	variable length_var  : std_logic_vector(9 downto 0);
 
-	begin	
-	
+    begin
 	if(local_rstn = '0') then
 		state 			<= reset;
 		tx_st_valid0_r    <= '0';

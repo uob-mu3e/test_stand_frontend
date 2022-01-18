@@ -95,8 +95,6 @@ port (
 );
 end entity;
 
-
-
 architecture RTL of pcie_block is
 
     -- reset and clock stuff
@@ -153,8 +151,7 @@ architecture RTL of pcie_block is
     signal tx_cred_hdrfccp    : std_logic_vector(7 downto 0);
     signal tx_cred_hdrfcnp    : std_logic_vector(7 downto 0); 
     signal tx_cred_hdrfcp     : std_logic_vector(7 downto 0);
-    
-    
+
     -- LEDs
     signal lane_active_led : 	STD_LOGIC_VECTOR (3 DOWNTO 0);
 
@@ -182,21 +179,21 @@ architecture RTL of pcie_block is
     signal lmi_dout :  			STD_LOGIC_VECTOR (31 DOWNTO 0);
     signal lmi_rden :  			STD_LOGIC;
     signal lmi_wren :  			STD_LOGIC;
-    
+
     -- Power mamangement
     signal pme_to_sr : 			STD_LOGIC;
-    
+
     -- Configuration space
     signal tl_cfg_add :  		STD_LOGIC_VECTOR (3 DOWNTO 0);
     signal tl_cfg_ctl :  		STD_LOGIC_VECTOR (31 DOWNTO 0);
     signal tl_cfg_ctl_wr :  	STD_LOGIC;
     signal tl_cfg_sts :  		STD_LOGIC_VECTOR (52 DOWNTO 0);
     signal tl_cfg_sts_wr :  	STD_LOGIC;
-    
+
     -- Link training
     signal dl_ltssm :  			STD_LOGIC_VECTOR (4 DOWNTO 0);
     signal dl_ltssm_r :  		STD_LOGIC_VECTOR (4 DOWNTO 0);
-   
+
     -- Config registers decoded
     signal cfg_busdev_icm :  	STD_LOGIC_VECTOR (12 DOWNTO 0);
     signal cfg_devcsr_icm :  	STD_LOGIC_VECTOR (31 DOWNTO 0);
@@ -213,7 +210,7 @@ architecture RTL of pcie_block is
 	
 	-- Reconfig stuff after handling
 	signal data_valid : 		STD_LOGIC;
-	
+
 	-- Reset and link status
 	signal dlup : 			std_logic;
 	signal dlup_exit: 	std_logic;
@@ -222,15 +219,15 @@ architecture RTL of pcie_block is
 	signal currentspeed: std_logic_vector(1 downto 0);
 	signal lane_act:		std_logic_vector(3 downto 0);
 	signal serdes_pll_locked : std_logic;
-	
+
 	-- Application
 	signal busy:				STD_LOGIC; 
 	signal regloopback : reg32array_pcie;
 
     signal application_reset_n: std_logic;
-    
+
     signal testbus :  			STD_LOGIC_VECTOR (127 DOWNTO 0);
-    
+
 begin
 
   any_rstn <= pcie_perstn and local_rstn;
@@ -238,10 +235,9 @@ begin
   test_in(31 DOWNTO 9)  <= "00000000000000000000000";
   test_in(8 DOWNTO 5) 	<= "0101";
   test_in(4 DOWNTO 0) 	<= "01000";
-  
+
   pcie_fastclk_out <= pld_clk;
-  
-  
+
   --reset Synchronizer
   process (pld_clk, any_rstn)
   begin
@@ -253,7 +249,7 @@ begin
       any_rstn_rr <= any_rstn_r;
     end if;
   end process;
-  
+
   --reset counter
   process (pld_clk, any_rstn_rr)
   begin
@@ -269,7 +265,7 @@ begin
   end process;
 
   srst <= srst0;
-  
+
   --sync and config reset
   process (pld_clk, any_rstn_rr)
   begin
@@ -299,9 +295,7 @@ begin
       app_rstn <= app_rstn0;
     end if;
   end process;
-  
 
-  
   --LTSSM pipeline
   process (pld_clk, any_rstn_rr)
   begin
@@ -707,17 +701,15 @@ begin
         tx_st_data          => tx_st_data0,
         tx_st_empty         => tx_st_empty0,
 
-        -- Simulation only signals
-        test_in             => X"00000188", --see age 102 in manual
+        -- simulation only signals
+        test_in             => X"00000188", -- see page 102 in manual
         simu_mode_pipe      => '0'--,
     );
     end generate;
 
-
-
 -- Configuration bus decode
-    cfgbus: work.pcie_cfgbus
-    port map(
+    e_cfgbus : entity work.pcie_cfgbus
+    port map (
 		reset_n			=> pcie_perstn,
 		pld_clk			=> pld_clk,
 		tl_cfg_add		=> tl_cfg_add,
@@ -740,9 +732,9 @@ begin
 
 
 	 application_reset_n <= '0' when local_rstn = '0' or appl_rstn = '0' else '1';
-	 
+
     e_pcie_application : entity work.pcie_application
-    generic map(
+    generic map (
 			DMAMEMWRITEADDRSIZE => DMAMEMWRITEADDRSIZE,
 			DMAMEMREADADDRSIZE  => DMAMEMREADADDRSIZE,
 			DMAMEMWRITEWIDTH	=> DMAMEMWRITEWIDTH
@@ -758,7 +750,7 @@ begin
 
 		local_rstn			=> application_reset_n,
 		refclk				=> pld_clk,
-	
+
 		-- to IF
 		tx_st_data0 		=> tx_st_data0,
 		tx_st_eop0 			=> tx_st_eop0(0),
@@ -823,8 +815,5 @@ begin
 		inaddr32_r			=> inaddr32_r,
 		inaddr32_w			=> inaddr32_w
 	);
-	
-
-
 
 end architecture;

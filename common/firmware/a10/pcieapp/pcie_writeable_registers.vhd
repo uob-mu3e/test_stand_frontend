@@ -169,11 +169,12 @@ begin
 
 		case state is
 			when reset =>
-				state 			<= waiting;
 				be3				<= '0';
 				be4				<= '0';
-	-------------------------------------------------------------------------------------
-			when waiting =>
+
+                state <= waiting;
+                --
+            when waiting =>
 				be3				<= '0';
 				be4				<= '0';
 
@@ -207,6 +208,7 @@ begin
 				end if; -- if Start of Packet
 
 				state <= waiting;
+                --
 		end case;
 	end if; -- if clk event
 	end process;

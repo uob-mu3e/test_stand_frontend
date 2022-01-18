@@ -72,7 +72,7 @@ BEGIN
     zeromem         <= '1';
 
 WAIT;
-END PROCESS init;
+end process;
 
 process
 begin

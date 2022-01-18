@@ -276,16 +276,16 @@ package util is
         v : unsigned--;
     ) return string;
 
-    -- Select Graphic Rendition
-    function sgr (
-        n : natural--;
-    ) return string;
-
     -- get next Round-Robin index
     function round_robin_next (
         i : std_logic_vector;
         req : std_logic_vector--;
     ) return std_logic_vector;
+
+    -- Select Graphic Rendition
+    function sgr (
+        n : natural--;
+    ) return string;
 
 end package;
 
@@ -840,13 +840,6 @@ package body util is
         return to_hstring(std_logic_vector(v));
     end function;
 
-    function sgr (
-        n : natural--;
-    ) return string is
-    begin
-        return ESC & "[" & natural'image(n) & "m";
-    end function;
-
     function round_robin_next (
         -- one hot encoded active link
         i : std_logic_vector;
@@ -867,6 +860,13 @@ package body util is
         end if;
         -- return least significant set bit
         return nxt and std_logic_vector(unsigned(not nxt) + 1);
+    end function;
+
+    function sgr (
+        n : natural--;
+    ) return string is
+    begin
+        return ESC & "[" & natural'image(n) & "m";
     end function;
 
 end package body;

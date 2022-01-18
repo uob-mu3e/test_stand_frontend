@@ -22,63 +22,63 @@ use work.a10_pcie_registers.all;
 
 entity dma_engine is
 generic (
-    MEMWRITEADDRSIZE : integer := 13;
-    MEMREADADDRSIZE  : integer := 11;
-    MEMWRITEWIDTH	  : integer := 64;
-	 IRQNUM			 : std_logic_vector(4 downto 0) := "00000";
-	 ENABLE_BIT		 : integer := 0;
-	 NOW_BIT			 : integer := 0;
-	 ENABLE_INTERRUPT_BIT : integer := 0
+    MEMWRITEADDRSIZE            : integer := 13;
+    MEMREADADDRSIZE             : integer := 11;
+    MEMWRITEWIDTH               : integer := 64;
+    IRQNUM                      : std_logic_vector(4 downto 0) := "00000";
+    ENABLE_BIT                  : integer := 0;
+    NOW_BIT                     : integer := 0;
+    ENABLE_INTERRUPT_BIT        : integer := 0
 );
 port (
-    local_rstn:				in		std_logic;
-    refclk:					in		std_logic;
-    
+    local_rstn                  : in    std_logic;
+    refclk                      : in    std_logic;
+
     -- Stuff for DMA writing
-    dataclk:					in		std_logic;
-    datain:					in 	std_logic_vector(MEMWRITEWIDTH-1 downto 0);
-    datawren:				in		std_logic;
-    endofevent:				in 	std_logic;
-    memhalffull:			out	std_logic;
-    
+    dataclk                     : in    std_logic;
+    datain                      : in    std_logic_vector(MEMWRITEWIDTH-1 downto 0);
+    datawren                    : in    std_logic;
+    endofevent                  : in    std_logic;
+    memhalffull                 : out   std_logic;
+
     -- Bus and device number
-    cfg_busdev:				in		std_logic_vector(12 downto 0);
-    
+    cfg_busdev                  : in    std_logic_vector(12 downto 0);
+
     -- Comunication with completer
-    dma_request:			out	std_logic;
-    dma_granted:			in		std_logic;
-    dma_done:				out	std_logic;
-    tx_ready:				in		std_logic;
-    tx_data:					out	std_logic_vector(255 downto 0);
-    tx_valid:				out	std_logic;
-    tx_sop:					out	std_logic;
-    tx_eop:					out	std_logic;
-    tx_empty:				out	std_logic_vector(1 downto 0);
-    
+    dma_request                 : out   std_logic;
+    dma_granted                 : in    std_logic;
+    dma_done                    : out   std_logic;
+
+    tx_ready                    : in    std_logic;
+    tx_data                     : out   std_logic_vector(255 downto 0);
+    tx_valid                    : out   std_logic;
+    tx_sop                      : out   std_logic;
+    tx_eop                      : out   std_logic;
+    tx_empty                    : out   std_logic_vector(1 downto 0);
+
     -- Interrupt stuff
-    app_msi_req:			out	std_logic;
-    app_msi_tc:				out 	std_logic_vector(2 downto 0);
-    app_msi_num:			out	std_logic_vector(4 downto 0);
-    app_msi_ack:			in		std_logic;
-    
+    app_msi_req                 : out   std_logic;
+    app_msi_tc                  : out   std_logic_vector(2 downto 0);
+    app_msi_num                 : out   std_logic_vector(4 downto 0);
+    app_msi_ack                 : in    std_logic;
+
     -- Configuration register
-    dma_control_address:			in 	std_logic_vector(63 downto 0);
-    dma_data_address: 			in 	std_logic_vector(63 downto 0);
-    dma_data_address_out: 		out  	std_logic_vector(63 downto 0);
-    dma_data_mem_addr:			in 	std_logic_vector(11 downto 0);
-    dma_addrmem_data_written: 	in 	std_logic;
-    dma_register:					in    std_logic_vector(31 downto 0);
-    dma_register_written:		in		std_logic;
-    dma_data_pages:				in 	std_logic_vector(19 downto 0);
-    dma_data_pages_out:			out	std_logic_vector(19 downto 0);
-    dma_data_n_addrs:				in 	std_logic_vector(11 downto 0);
-    
-    dma_status_register: 		out	std_logic_vector(31 downto 0);
-    
-    test_out:						out std_logic_vector(71 downto 0)
+    dma_control_address         : in    std_logic_vector(63 downto 0);
+    dma_data_address            : in    std_logic_vector(63 downto 0);
+    dma_data_address_out        : out   std_logic_vector(63 downto 0);
+    dma_data_mem_addr           : in    std_logic_vector(11 downto 0);
+    dma_addrmem_data_written    : in    std_logic;
+    dma_register                : in    std_logic_vector(31 downto 0);
+    dma_register_written        : in    std_logic;
+    dma_data_pages              : in    std_logic_vector(19 downto 0);
+    dma_data_pages_out          : out   std_logic_vector(19 downto 0);
+    dma_data_n_addrs            : in    std_logic_vector(11 downto 0);
+
+    dma_status_register         : out   std_logic_vector(31 downto 0);
+
+    test_out                    : out   std_logic_vector(71 downto 0)
 );
 end entity;
-
 
 architecture RTL of dma_engine is
 
@@ -166,7 +166,7 @@ architecture RTL of dma_engine is
 begin
 
 
-  dma_status_register 	<= dma_status_register_reg;
+    dma_status_register <= dma_status_register_reg;
 
   aclr <= not local_rstn;
 
@@ -175,22 +175,22 @@ begin
   tx_valid            <= tx_valid_r;
 
 -- handle register signals
-  process(refclk, local_rstn)
-  begin
+    process(refclk, local_rstn)
+    begin
     if(local_rstn = '0') then
       dma_enabled <= '0';
       dma_now		<= '0';
-		interrupt_enabled <= '0';
+        interrupt_enabled <= '0';
       dma_addrmem_data_written_reg <= '0';
     elsif(refclk'event and refclk = '1') then
       dma_enabled <= dma_register(ENABLE_BIT);
-		interrupt_enabled <= dma_register(ENABLE_INTERRUPT_BIT);
+        interrupt_enabled <= dma_register(ENABLE_INTERRUPT_BIT);
       if(dma_register(NOW_BIT) = '1' and dma_register_written = '1') then
         dma_now		<= '1';
       else
         dma_now 		<= '0';
       end if;
-      
+
       dma_data_mem_addr_reg				<= dma_data_mem_addr;
       dma_data_address_out					<= dma_data_address_out_reg;
       dma_addrmem_data_written_reg 		<= dma_addrmem_data_written;
@@ -198,25 +198,25 @@ begin
       dma_data_pages_reg					<= dma_data_pages;
       dma_data_pages_out 					<= dma_data_pages_out_reg;
       dma_data_n_addrs_reg					<= dma_data_n_addrs;
-      
+
     end if;
-  end process;
+    end process;
 
-  process(refclk, local_rstn)
+    process(refclk, local_rstn)
 
-    variable header0:	std_logic_vector(31 downto 0);
-    variable header1:	std_logic_vector(31 downto 0);
-    variable header2:	std_logic_vector(31 downto 0);
-    variable header3:	std_logic_vector(31 downto 0);
-    
-    variable d0:	std_logic_vector(31 downto 0);
-    variable d1:	std_logic_vector(31 downto 0);
-    variable d2:	std_logic_vector(31 downto 0);
-    variable d3:	std_logic_vector(31 downto 0);
-    
+        variable header0 : std_logic_vector(31 downto 0);
+        variable header1 : std_logic_vector(31 downto 0);
+        variable header2 : std_logic_vector(31 downto 0);
+        variable header3 : std_logic_vector(31 downto 0);
+
+        variable d0 : std_logic_vector(31 downto 0);
+        variable d1 : std_logic_vector(31 downto 0);
+        variable d2 : std_logic_vector(31 downto 0);
+        variable d3 : std_logic_vector(31 downto 0);
+
     variable addrtemp : std_logic_vector(MEMREADADDRSIZE-1 downto 0);
-    
-  begin
+
+    begin
     if(local_rstn = '0') then
       dma_request		<= '0';
       dma_done			<= '0';
@@ -256,9 +256,9 @@ begin
       
       
     elsif(refclk'event and refclk = '1') then
-      
+
       test_out	<= test_out_r;
-      
+
       test_out_r(27 downto 12) <= datain(22 downto 7);
       test_out_r(35 downto 28) <= data_fifo(11 downto 4);
       test_out_r(10 downto 0) <= memwriteaddr(10 downto 0);
@@ -283,9 +283,8 @@ begin
       dma_status_register_reg(15 downto 0) 	<= (others => '0');
       dma_status_register_reg(31 downto 28) 	<= overflow & "000";
       dma_status_register_reg(27 downto 16)	<= "00000000" & dma_block_counter;
-      
-      
-      case state is
+
+        case state is
         when disabled =>
           dma_status_register_reg(0)		<= '1';
           
@@ -329,15 +328,15 @@ begin
           end if;
           
         when waiting =>
-          
+
           if(dma_enabled = '0') then
             state <= disabled;
           end if;	
           dma_block_counter	<= (others => '0');
           pause_counter 		<= (others => '0');
-          
+
           dma_status_register_reg(1)		<= '1';
-          
+
           dma_request		<= '0';
           dma_done			<= '0';
           
@@ -426,8 +425,7 @@ begin
               dma_block_counter <= dma_block_counter + '1'; -- counts consecutive DMA blocks w/o other stuff happening
             end if;
           end if;
-          
-          
+
         when header =>
           dma_status_register_reg(5)		<= '1';
           dma_request		<= '0';
@@ -501,7 +499,7 @@ begin
             tx_empty			<= "00";
             words_sent		<= words_sent;
           end if;
-          
+
           if(words_sent >= "0000111000" and tx_ready_last = '1')then -- check for PCIe-block boundary
             tx_valid_r			<= '1';
             tx_sop			<= '0';
@@ -598,12 +596,12 @@ begin
             if ( to_integer( unsigned(count_pages) ) >= to_integer( unsigned(dma_data_pages_out_fpga) ) ) then
               dma_data_mem_addr_fpga 	<= dma_data_mem_addr_fpga + '1';
               count_pages 				<= (others => '0');
-              
+
               if ( dma_data_mem_addr_fpga + '1' >= dma_data_n_addrs_reg) then	-- reached end of DMA buffer, start at beginning again
                 dma_data_mem_addr_fpga 	<= (others => '0');
                 remoteaddress_var 		<= (others => '0');
               end if;
-              
+
             end if;
             
             
