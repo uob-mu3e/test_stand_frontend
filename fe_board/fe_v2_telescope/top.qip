@@ -15,5 +15,3 @@ set_global_assignment -name QIP_FILE ../fe_mupix/mupix_block/include.qip
 set_global_assignment -name VHDL_FILE ../fe_mupix/dac_fifo.vhd
 set_global_assignment -name VHDL_FILE ../fe_mupix/mupix_block.vhd
 set_global_assignment -name VHDL_FILE ../fe_mupix/two_clk_sync_fifo.vhd
-
-set_global_assignment -name QIP_FILE trigPLL.qip
