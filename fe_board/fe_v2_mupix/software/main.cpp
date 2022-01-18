@@ -58,7 +58,7 @@ int main() {
         char cmd = wait_key();
         switch(cmd) {
         case '1':
-            menu_xcvr((alt_u32*)(AVM_QSFP_BASE | ALT_CPU_DCACHE_BYPASS_MASK));
+            menu_xcvr((alt_u32*)((AVM_SC_BASE + 4*0xFF00) | ALT_CPU_DCACHE_BYPASS_MASK));
             break;
         case '2':
             mupix.menu();
