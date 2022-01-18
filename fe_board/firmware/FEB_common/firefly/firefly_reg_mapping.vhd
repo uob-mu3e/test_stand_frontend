@@ -159,12 +159,14 @@ begin
 
             -- rx datak register
             if ( regaddr = FIREFLY_XCVR_DATAK_REGISTER_R and i_reg_re = '1' ) then
-                o_reg_rdata <= i_rx_datak(channel_sel_int);
+                o_reg_rdata( 3 downto 0) <= i_rx_datak(channel_sel_int);
+                o_reg_rdata(31 downto 4) <= (others => '0');
             end if;
 
             -- gbit register
             if ( regaddr = FIREFLY_XCVR_GBIT_REGISTER_R and i_reg_re = '1' ) then
-                o_reg_rdata <= i_gbit(channel_sel_int);
+                o_reg_rdata(23 downto  0) <= i_gbit(channel_sel_int);
+                o_reg_rdata(31 downto 24) <= (others => '0');
             end if;
 
             -- loopback reg
