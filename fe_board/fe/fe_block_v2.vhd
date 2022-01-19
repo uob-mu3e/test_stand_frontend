@@ -271,6 +271,7 @@ begin
     e_lvl0_sc_node: entity work.sc_node
     generic map(
         ADD_SLAVE1_DELAY_g  => SC_READ_DELAY_g-2,
+        ADD_SLAVE2_DELAY_g  => SC_READ_DELAY_g-2,
         N_REPLY_CYCLES_g    => SC_READ_DELAY_g-1,
         SLAVE1_ADDR_MATCH_g => "11111111--------",
         SLAVE2_ADDR_MATCH_g => "111111----------"--,
