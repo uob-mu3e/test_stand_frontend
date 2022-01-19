@@ -156,8 +156,6 @@ signal lvds_8b10b_out_in_clk125_global  : std_logic_vector(7 downto 0);
 signal av_ctrl              : work.util.avalon_t;
 signal ch                   : integer range 0 to 7 := 0;
 signal rx_seriallpbken      : std_logic_vector(7 downto 0);
-signal tx_rst_n             : std_logic_vector(7 downto 0);
-signal rx_rst_n             : std_logic_vector(7 downto 0);
 signal tx_analogreset       : std_logic_vector(7 downto 0);
 signal tx_digitalreset      : std_logic_vector(7 downto 0);
 signal tx_ready             : std_logic_vector(7 downto 0);
@@ -492,7 +490,7 @@ firefly_reg_mapping_inst: entity work.firefly_reg_mapping
     i_reg_we          => i_reg_we,
     i_reg_wdata       => i_reg_wdata,
 
-    o_loopback        => open,
+    o_loopback        => rx_seriallpbken,
     o_tx_reset        => open,
     o_rx_reset        => open,
 
