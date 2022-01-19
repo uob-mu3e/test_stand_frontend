@@ -557,11 +557,8 @@ begin
         N => integer(g_CLK_MHZ * 1000000.0 * 0.200) -- 200ms
     )
     port map (
-        i_d(0) => '1',
-        o_q(0) => flash_reset_n,
-
-        i_d(1) => flash_reset_n,
-        o_q(1) => nios_reset_n,
+        i_d(0) => '1',           i_d(1) => flash_reset_n,
+        o_q(0) => flash_reset_n, o_q(1) => nios_reset_n,
 
         i_reset_n => i_reset_n,
         i_clk => i_clk--,
@@ -898,9 +895,6 @@ begin
         pcie_tx_p               => o_pcie0_tx,
         pcie_refclk_p           => i_pcie0_refclk,
         pcie_perstn             => i_pcie0_perst_n,
-        pcie_smbclk             => '0',
-        pcie_smbdat             => '0',
-        pcie_waken              => open,
 
         readregs                => pcie0_rregs,
         writeregs               => pcie0_wregs_A,
@@ -967,9 +961,6 @@ begin
         pcie_tx_p               => o_pcie1_tx,
         pcie_refclk_p           => i_pcie1_refclk,
         pcie_perstn             => i_pcie1_perst_n,
-        pcie_smbclk             => '0',
-        pcie_smbdat             => '0',
-        pcie_waken              => open,
 
         readregs                => pcie1_rregs,
         writeregs               => pcie1_wregs_A,

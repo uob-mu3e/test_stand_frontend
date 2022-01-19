@@ -111,7 +111,6 @@ architecture RTL of dma_engine is
   signal dma_now:					std_logic;
   signal interrupt_enabled:	std_logic;
   signal timeoutcounter:			std_logic_vector(27 downto 0);
-  constant counterzero:			std_logic_vector(27 downto 0) := "0000000000000000000000000000";
 
   signal tx_data_last:				std_logic_vector(255 downto 0);
   signal tx_data_r:					std_logic_vector(255 downto 0);
@@ -339,18 +338,18 @@ begin
 
           dma_request		<= '0';
           dma_done			<= '0';
-          
-          --tx_data_r			<= (others => '0');
-          tx_valid_r			<= '0';
-          tx_sop			<= '0';
-          tx_eop			<= '0';
-          tx_empty			<= "00";
+
+           --tx_data_r			<= (others => '0');
+           tx_valid_r			<= '0';
+           tx_sop			<= '0';
+           tx_eop			<= '0';
+           tx_empty			<= "00";
 
           timeoutcounter <= timeoutcounter - '1';
           
           -- start the dma procedure either on command, after about a second or after 4 KB data have been written
-          --if(((dma_now = '1' or timeoutcounter = counterzero) and memwraddr /= memwraddr_last_dma) or memwraddr(9) /= memwraddr_last(9)) then
-          
+          --if(((dma_now = '1' or timeoutcounter = (timeoutcounter'range => '0')) and memwraddr /= memwraddr_last_dma) or memwraddr(9) /= memwraddr_last(9)) then
+
           -- start the dma procedure after 4 KB of data have been written
           if( to_integer( unsigned( enoughdata ) ) /= 0 ) then
             enoughdata( to_integer( unsigned( memoryblock_dma )))	<= '0';
