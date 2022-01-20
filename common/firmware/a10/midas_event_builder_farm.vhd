@@ -481,10 +481,10 @@ END GENERATE buffer_link_fifos;
                 w_ram_en    <= '1';
                 w_ram_add   <= w_ram_add_reg + 1;
                 -- MIDAS expects bank names in ascii:
-                --w_ram_data <=   work.util.hex_to_ascii(link_data(11 downto 8)) &
-                --                work.util.hex_to_ascii(link_data(15 downto 12)) &
-                --                work.util.hex_to_ascii(link_data(19 downto 16)) &
-                --                work.util.hex_to_ascii(link_data(23 downto 20));
+                --w_ram_data <=   work.util.to_slv(work.util.to_hstring(link_data(11 downto 8))) &
+                --                work.util.to_slv(work.util.to_hstring(link_data(15 downto 12))) &
+                --                work.util.to_slv(work.util.to_hstring(link_data(19 downto 16))) &
+                --                work.util.to_slv(work.util.to_hstring(link_data(23 downto 20)));
                 if(link_data(23 downto 8) = x"FEB0") then
                     w_ram_data <= x"30424546";
                 elsif(link_data(23 downto 8) = x"FEB1") then

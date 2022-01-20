@@ -130,7 +130,7 @@ elsif rising_edge(clk) then
                 --
             else
                 if ( fifo_full_0(i) = '0' and i_rdata(i)(37 downto 36) = "00" ) then
-                    fifo_data_0(i) <= link_36_to_std(i) & i_rdata(i)(35 downto 4);
+                    fifo_data_0(i) <= work.mudaq.link_36_to_std(i) & i_rdata(i)(35 downto 4);
                     fifo_wen_0(i) <= '1';
                     saw_header_0(i) <= '0';
                     saw_trailer_0(i) <= '0';

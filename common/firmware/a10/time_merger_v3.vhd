@@ -189,7 +189,7 @@ begin
             end process;
 
             data_0(i)  <=   tree_padding                                            when merger_finish(i) = '0' and merge_state = merge_hits and eop_wait(i) = '1' else
-                            work.util.link_36_to_std(i) & i_rdata(i)(31 downto 0)   when merger_finish(i) = '0' and merge_state = merge_hits else
+                            work.mudaq.link_36_to_std(i) & i_rdata(i)(31 downto 0)   when merger_finish(i) = '0' and merge_state = merge_hits else
                             tree_padding                                            when merger_finish(i) = '1' and merge_state = merge_hits else
                             (others => '0');
             wrreq_0(i) <= '1' when merge_state = merge_hits and i_rempty(i) = '0' and wrfull_0(i) = '0' else '0';

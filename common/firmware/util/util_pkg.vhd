@@ -16,8 +16,6 @@ package util is
     --! basic array types
     subtype slv2_t is std_logic_vector(1 downto 0);
     type slv2_array_t is array ( natural range <> ) of slv2_t;
-    subtype slv3_t is std_logic_vector(2 downto 0);
-    type slv3_array_t is array ( natural range <> ) of slv3_t;
     subtype slv4_t is std_logic_vector(3 downto 0);
     type slv4_array_t is array ( natural range <> ) of slv4_t;
     subtype slv6_t is std_logic_vector(5 downto 0);
@@ -30,20 +28,12 @@ package util is
     type slv32_array_t is array ( natural range <> ) of slv32_t;
     subtype slv34_t is std_logic_vector(33 downto 0);
     type slv34_array_t is array ( natural range <> ) of slv34_t;
-    subtype slv37_t is std_logic_vector(36 downto 0);
-    type slv37_array_t is array ( natural range <> ) of slv37_t;
     subtype slv38_t is std_logic_vector(37 downto 0);
     type slv38_array_t is array ( natural range <> ) of slv38_t;
     subtype slv64_t is std_logic_vector(63 downto 0);
     type slv64_array_t is array ( natural range <> ) of slv64_t;
-    subtype slv66_t is std_logic_vector(65 downto 0);
-    type slv66_array_t is array ( natural range <> ) of slv66_t;
     subtype slv76_t is std_logic_vector(75 downto 0);
     type slv76_array_t is array ( natural range <> ) of slv76_t;
-    subtype slv78_t is std_logic_vector(77 downto 0);
-    type slv78_array_t is array ( natural range <> ) of slv78_t;
-    subtype slv152_t is std_logic_vector(151 downto 0);
-    type slv152_array_t is array ( natural range <> ) of slv152_t;
     subtype slv256_t is std_logic_vector(255 downto 0);
     type slv256_array_t is array ( natural range <> ) of slv256_t;
 
@@ -208,21 +198,16 @@ package util is
         good : out boolean--;
     );
 
-    function hex_to_ascii (
-        h : in std_logic_vector--;
+    impure
+    function read_hex (
+        fname : in string;
+        N : in positive;
+        W : in positive--;
     ) return std_logic_vector;
 
-    function link_36_to_std (
-        i : in integer--;
-    ) return std_logic_vector;
-
-
-    -- LFSR 32
-    -- src: http://www.xilinx.com/support/documentation/application_notes/xapp052.pdf
-    --
-    -- taps: 31, 21, 1, 0
-    function lfsr_32 (
-        data : std_logic_vector(31 downto 0)--;
+    function lfsr (
+        data : std_logic_vector;
+        taps : natural_array_t--;
     ) return std_logic_vector;
 
     -- CRC-32C (Castagnoli) 0x1.1EDC6F41
@@ -249,11 +234,12 @@ package util is
         data : std_logic_vector--;
     ) return natural;
 
-    impure
-    function read_hex (
-        fname : in string;
-        N : in positive;
-        W : in positive--;
+    function to_slv (
+        c : in character--;
+    ) return std_logic_vector;
+
+    function to_slv (
+        s : in string--;
     ) return std_logic_vector;
 
     function to_string (
@@ -264,16 +250,8 @@ package util is
         v : in std_logic_vector--;
     ) return string;
 
-    function to_string (
-        v : in unsigned--;
-    ) return string;
-
     function to_hstring (
         v : std_logic_vector--;
-    ) return string;
-
-    function to_hstring (
-        v : unsigned--;
     ) return string;
 
     -- get next Round-Robin index
@@ -509,33 +487,6 @@ package body util is
         end case;
     end procedure;
 
-    function hex_to_ascii (
-        h : in  std_logic_vector--;
-    ) return std_logic_vector is
-    begin
-        case h is
-        when x"0" => return X"30";
-        when x"1" => return X"31";
-        when x"2" => return X"32";
-        when x"3" => return X"33";
-        when x"4" => return X"34";
-        when x"5" => return X"35";
-        when x"6" => return X"36";
-        when x"7" => return X"37";
-        when x"8" => return X"38";
-        when x"9" => return X"39";
-        when x"A" => return X"41";
-        when x"B" => return X"42";
-        when x"C" => return X"43";
-        when x"D" => return X"44";
-        when x"E" => return X"45";
-        when x"F" => return X"46";
-
-        when others =>
-            return x"3F";
-        end case;
-    end function;
-
     procedure string_to_hex (
         s : in string;
         v : out std_logic_vector;
@@ -551,52 +502,6 @@ package body util is
         end loop;
         good := good_i;
     end procedure;
-
-    function link_36_to_std (
-        i : in  integer--;
-    ) return std_logic_vector is
-    begin
-        case i is
-        when  0 => return "000000";
-        when  1 => return "000001";
-        when  2 => return "000010";
-        when  3 => return "000011";
-        when  4 => return "000100";
-        when  5 => return "000101";
-        when  6 => return "000110";
-        when  7 => return "000111";
-        when  8 => return "001000";
-        when  9 => return "001001";
-        when 10 => return "001010";
-        when 11 => return "001011";
-        when 12 => return "001100";
-        when 13 => return "001101";
-        when 14 => return "001110";
-        when 15 => return "001111";
-        when 16 => return "010000";
-        when 17 => return "010001";
-        when 18 => return "010010";
-        when 19 => return "010011";
-        when 20 => return "010100";
-        when 21 => return "010101";
-        when 22 => return "010110";
-        when 23 => return "010111";
-        when 24 => return "011000";
-        when 25 => return "011001";
-        when 26 => return "011010";
-        when 27 => return "011011";
-        when 28 => return "011100";
-        when 29 => return "011101";
-        when 30 => return "011110";
-        when 31 => return "011111";
-        when 32 => return "100000";
-        when 33 => return "100001";
-        when 34 => return "100010";
-        when 35 => return "100011";
-        when others =>
-            return "111111";
-        end case;
-    end function;
 
     procedure read_hex (
         l : inout line;
@@ -681,14 +586,17 @@ package body util is
         return data;
     end function;
 
-
-
-    function lfsr_32(
-        data : std_logic_vector(31 downto 0)--;
+    function lfsr (
+        data : std_logic_vector;
+        taps : natural_array_t--;
     ) return std_logic_vector is
+        variable data_v : std_logic_vector(data'range);
     begin
-        return data(30 downto 0) &
-              (data(31) xor data(21) xor data(1) xor data(0));
+        data_v := shift_left(data, 1);
+        for i in taps'range loop
+            data_v(0) := data_v(0) xor data(taps(i));
+        end loop;
+        return data_v;
     end function;
 
     function crc32 (
@@ -740,7 +648,7 @@ package body util is
 
 
 
-    function count_bits_4(
+    function count_bits_4 (
         data : std_logic_vector(3 downto 0)--;
     ) return natural is
     begin
@@ -753,7 +661,7 @@ package body util is
         end case;
     end function;
 
-    function count_bits_32(
+    function count_bits_32 (
         data : std_logic_vector(31 downto 0)--;
     ) return natural is
     begin
@@ -789,6 +697,24 @@ package body util is
         end if;
     end function;
 
+    function to_slv (
+        c : in character--;
+    ) return std_logic_vector is
+    begin
+        return std_logic_vector(to_unsigned(character'pos(c), 8));
+    end function;
+
+    function to_slv (
+        s : in string--;
+    ) return std_logic_vector is
+        variable v : std_logic_vector(s'length*8-1 downto 0);
+    begin
+        for i in s'length-1 downto 0 loop
+            v((i+1)*8-1 downto i*8) := to_slv(s(i+1));
+        end loop;
+        return v;
+    end function;
+
     function to_string (
         v : in std_logic--;
     ) return string is
@@ -811,13 +737,6 @@ package body util is
         return s;
     end function;
 
-    function to_string (
-        v : in unsigned--;
-    ) return string is
-    begin
-        return to_string(std_logic_vector(v));
-    end function;
-
     function to_hstring (
         v : std_logic_vector--;
     ) return string is
@@ -831,13 +750,6 @@ package body util is
             r(r'length-i+1) := lut(1 + to_integer(u(4*i-1 downto 4*i-4)));
         end loop;
         return r;
-    end function;
-
-    function to_hstring (
-        v : unsigned--;
-    ) return string is
-    begin
-        return to_hstring(std_logic_vector(v));
     end function;
 
     function round_robin_next (
