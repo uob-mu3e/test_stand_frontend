@@ -207,7 +207,7 @@ package util is
 
     function lfsr (
         data : std_logic_vector;
-        taps : natural_array_t--;
+        taps : integer_vector--;
     ) return std_logic_vector;
 
     -- CRC-32C (Castagnoli) 0x1.1EDC6F41
@@ -264,6 +264,10 @@ package util is
     function sgr (
         n : natural--;
     ) return string;
+
+    constant SGR_RESET : string := sgr(0);
+    constant SGR_FG_RED : string := sgr(31);
+    constant SGR_FG_GREEN : string := sgr(32);
 
 end package;
 
@@ -588,7 +592,7 @@ package body util is
 
     function lfsr (
         data : std_logic_vector;
-        taps : natural_array_t--;
+        taps : integer_vector--;
     ) return std_logic_vector is
         variable data_v : std_logic_vector(data'range);
     begin
