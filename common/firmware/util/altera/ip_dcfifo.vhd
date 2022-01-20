@@ -9,7 +9,6 @@ generic (
     DATA_WIDTH  : positive := 8;
     SHOWAHEAD   : string := "ON";
     OVERFLOW    : string := "ON";
-    REGOUT      : integer := 0;
     DEVICE      : string := "Arria 10"--;
 );
 port (
@@ -35,8 +34,8 @@ begin
         g_ADDR_WIDTH => ADDR_WIDTH,
         g_DATA_WIDTH => DATA_WIDTH,
         g_SHOWAHEAD => SHOWAHEAD,
-        g_RREG_N => REGOUT,
-        g_WREG_N => REGOUT,
+        g_RREG_N => 0,
+        g_WREG_N => 0,
         g_DEVICE_FAMILY => DEVICE--,
     )
     port map (
@@ -44,14 +43,14 @@ begin
         o_rdata     => q,
         i_rack      => rdreq,
         o_rempty    => rdempty,
+        i_rclk      => rdclk,
 
         o_wusedw    => wrusedw,
         i_wdata     => data,
         i_we        => wrreq,
         o_wfull     => wrfull,
-
-        i_rclk      => rdclk,
         i_wclk      => wrclk,
+
         i_reset_n   => not aclr--,
     );
 

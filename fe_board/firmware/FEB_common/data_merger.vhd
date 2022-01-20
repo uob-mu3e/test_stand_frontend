@@ -168,7 +168,6 @@ begin
         ADDR_WIDTH      => FIFO_ADDR_WIDTH,
         DATA_WIDTH      => 36,
         SHOWAHEAD       => "ON",
-        REGOUT          => 0,
         DEVICE          => "Stratix IV"--,
     )
     port map (
@@ -190,7 +189,6 @@ begin
         ADDR_WIDTH      => FIFO_ADDR_WIDTH,
         DATA_WIDTH      => 36,
         SHOWAHEAD       => "ON",
-        REGOUT          => 0,
         DEVICE          => "Stratix IV"--,
     )
     port map (

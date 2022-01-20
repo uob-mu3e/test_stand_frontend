@@ -665,7 +665,6 @@ begin
         DATA_WIDTH  => 8,
         SHOWAHEAD   => "OFF",
         OVERFLOW    => "ON",
-		  REGOUT      => 0,
         DEVICE      => "Arria V"--,
     )
     port map(
@@ -684,7 +683,6 @@ begin
         DATA_WIDTH  => 220,
         SHOWAHEAD   => "OFF",
         OVERFLOW    => "ON",
-		  REGOUT      => 0,
         DEVICE      => "Arria V"--,
     )
     port map(
@@ -715,7 +713,6 @@ begin
         DATA_WIDTH  => 280,
         SHOWAHEAD   => "OFF",
         OVERFLOW    => "ON",
-		  REGOUT      => 0,
         DEVICE      => "Arria V"--,
     )
     port map(
@@ -753,7 +750,6 @@ begin
         DATA_WIDTH  => 9,
         SHOWAHEAD   => "OFF",
         OVERFLOW    => "ON",
-		  REGOUT      => 0,
         DEVICE      => "Arria V"--,
     )
     port map(
