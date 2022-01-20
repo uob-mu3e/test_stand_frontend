@@ -378,10 +378,12 @@ architecture RTL of pcie_completer is
     begin
 	if(local_rstn = '0') then
 		state 			<= reset;
+
 		tx_st_valid0_r    <= '0';
 		tx_st_sop0_r    	 <= '0';
 		tx_st_eop0_r    	 <= '0';	
 		tx_st_empty0_r	 <= "00";
+
 		regtoggle		 <= '0';
 		memtoggle		 <= '0';
 		read_rreg_fifo	 <= '0';

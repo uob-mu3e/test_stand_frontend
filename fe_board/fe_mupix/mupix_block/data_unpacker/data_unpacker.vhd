@@ -210,7 +210,7 @@ begin
             cnt4                <= "00";
             data_mode           <= '0'; -- indicates if all counter mode or actual hit data
             counter_seen        <= '0';
-				running 				  <= '0';
+            running             <= '0';
             hit_ena_counter     <= (others => '0');
         elsif rising_edge(clk) then
 

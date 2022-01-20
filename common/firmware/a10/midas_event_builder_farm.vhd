@@ -15,10 +15,10 @@ generic (
 port(
         i_clk_data:         in  std_logic;
         i_clk_dma:          in  std_logic;
-        
+
         i_reset_data_n:     in  std_logic;
         i_reset_dma_n:      in  std_logic;
-        
+
         -- link 0 to 3
         i_rx_data:          in  std_logic_vector(NLINKS * 64 - 1 downto 0);
         i_rx_datak:         in  std_logic_vector(NLINKS * 4 - 1 downto 0);
@@ -26,7 +26,7 @@ port(
         o_event_data:       out std_logic_vector(NLINKS * 64 - 1 downto 0);
         o_event_wren:       out std_logic;
         o_endofevent:       out std_logic;
-        
+
         -- error cnt signals
         o_error:  out std_logic_vector(31 downto 0)--;
 );

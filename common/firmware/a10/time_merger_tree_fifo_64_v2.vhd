@@ -279,8 +279,7 @@ begin
             end process;
             
         END GENERATE;
-        
-        
+
         -- Tree setup
         -- x => empty, F => padding
         -- [b,a]
@@ -307,7 +306,7 @@ begin
         c_d_no_padding(i)   <= '1' when c_padding(i) = '0' and d_padding(i) = '0' else '0';
         c_no_d_padding(i)   <= '1' when c_padding(i) = '0' and d_padding(i) = '1' else '0';
         a_c_padding(i)      <= '1' when a_padding(i) = '1' and c_padding(i) = '1' else '0';
-        
+
         -- TODO: name the different states, combine stuff
         -- TODO: include sub-header, check backpres., counters etc.
         layer_state(i) <= last_layer_state when i_merge_state = '0' and last_layer = '1' else
@@ -369,11 +368,11 @@ begin
                           c_smaller_a_a_smaller_d when wrfull_and_merge_state_and_both_inputs_not_rdempty(i) = '1' and c(i) <= a(i) and d(i) >  a(i) else
                           
                           IDEL;
-                         
+
         wrreq(i) <= '1' when layer_state(i) = last_layer_state and i_wen_h_t = '1' else
                     '1' when layer_state(i) = second_input_not_mask_n or layer_state(i) = first_input_not_mask_n or layer_state(i) = a_b_smaller_c_d or layer_state(i) = c_d_smaller_a_b or layer_state(i) = a_smaller_c_c_smaller_b or layer_state(i) = c_smaller_a_a_smaller_d or layer_state(i) = end_state or layer_state(i) = read_out_first_second_padding or layer_state(i) = read_out_second_first_padding or layer_state(i) = read_out_a_rest_padding or layer_state(i) = read_out_c_rest_padding or layer_state(i) = a_smaller_c_rest_padding or layer_state(i) = c_smaller_a_rest_padding or layer_state(i) = c_smaller_a_b_padding or layer_state(i) = a_smaller_c_d_padding or layer_state(i) = c_d_smaller_a_b_padding or layer_state(i) = a_b_smaller_c_d_padding or layer_state(i) = a_smaller_c_b_padding or layer_state(i) = write_d_set_padding or layer_state(i) = write_b_set_padding or layer_state(i) = write_d_c or layer_state(i) = c_smaller_a_d_padding or layer_state(i) = write_b_a or layer_state(i) = read_out_b_and_d or layer_state(i) = read_out_d_and_b or layer_state(i) = d_smaller_a or layer_state(i) = b_smaller_c else
                     '0';
-                    
+
         o_rdreq(i) <= '1' when layer_state(i) = second_input_not_mask_n or layer_state(i) = a_b_smaller_c_d or (layer_state(i) = b_smaller_d and layer_state_reg(i) /= b_smaller_d) or layer_state(i) = read_out_first_second_padding or layer_state(i) = read_out_a_rest_padding or layer_state(i) = a_smaller_c_rest_padding or layer_state(i) = c_smaller_a_rest_padding or layer_state(i) = c_smaller_a_b_padding or layer_state(i) = a_b_smaller_c_d_padding or layer_state(i) = a_smaller_c_b_padding or layer_state(i) = read_b_rest_padding or layer_state(i) = read_out_d_and_b or layer_state(i) = b_smaller_c else
                       '1' when layer_state(i) = b_smaller_d and layer_state_reg(i) = a_smaller_c_c_smaller_b else
                       '1' when layer_state(i) = b_smaller_d and layer_state_reg(i) = c_smaller_a_a_smaller_d else
@@ -383,7 +382,7 @@ begin
                             '1' when layer_state(i) = d_smaller_b and layer_state_reg(i) = a_smaller_c_c_smaller_b else
                             '1' when layer_state(i) = d_smaller_b and layer_state_reg(i) = c_smaller_a_a_smaller_d else
                             '0';
-        
+
         -- TODO: combine logic of data_reg(i)(37 downto 0)
         data(i)(37 downto 0) <= i_data_h_t when layer_state(i) = last_layer_state else
                                 tree_padding when layer_state(i) = end_state else

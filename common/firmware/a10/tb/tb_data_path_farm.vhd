@@ -419,7 +419,7 @@ begin
         B_mem_read		=> B_mem_read,
         B_mem_q			=> B_mem_q,
         B_mem_q_valid	=> B_mem_q_valid
-	);
+    );
 
     e_ddr3_a : entity work.ip_ram
     generic map (
