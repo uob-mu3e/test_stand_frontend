@@ -258,9 +258,6 @@ begin
         q               => r_pixel,
         full            => full_pixel,
         empty           => empty_pixel,
-        almost_empty    => open,
-        almost_full     => open,
-        usedw           => open,
         sclr            => not i_reset_n_250_link--,
     );
     
@@ -312,9 +309,6 @@ begin
         q               => r_scifi,
         full            => full_scifi,
         empty           => empty_scifi,
-        almost_empty    => open,
-        almost_full     => open,
-        usedw           => open,
         sclr            => not i_reset_n_250_link--,
     );
     

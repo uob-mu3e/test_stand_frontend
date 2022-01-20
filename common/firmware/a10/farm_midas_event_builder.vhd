@@ -228,9 +228,6 @@ begin
         q               => r_fifo_data,
         full            => tag_fifo_full,
         empty           => tag_fifo_empty,
-        almost_empty    => open,
-        almost_full     => open,
-        usedw           => open,
         sclr            => not i_reset_n_250--,
     );
 
@@ -248,10 +245,7 @@ begin
         wrreq           => wen_convert_fifo,
         q               => q_convert_fifo,
         empty           => empty_convert_fifo,
-        full            => open,
-        almost_empty    => open,
-        almost_full     => open,
-        usedw           => open--,
+        full            => open--,
     );
 
     pixel_header <= '1' when i_pixel(N_PIXEL * 32 + 1 downto N_PIXEL * 32) = "01" else '0';

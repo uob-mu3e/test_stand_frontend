@@ -126,9 +126,6 @@ begin
         q               => r_fifo_data,
         full            => fifo_full,
         empty           => fifo_empty,
-        almost_empty    => open,
-        almost_full     => open,
-        usedw           => open,
         sclr            => reset--,
     );
 

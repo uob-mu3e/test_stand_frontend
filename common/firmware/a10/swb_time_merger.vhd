@@ -312,7 +312,7 @@ begin
         sclr            => not i_reset_n,
         clock           => i_clk--,
     );
-    
+
     -- data path
     o_header    <= '1' when fifo_q(37 downto 32) = pre_marker else '0';
     o_trailer   <= '1' when fifo_q(37 downto 32) = tr_marker else '0';

@@ -175,12 +175,10 @@ begin
         sclr            => data_fifo_reset,
         data            => i_data_in_checked,
         wrreq           => data_write_req_checked,
-        full            => open,
         almost_full     => o_fifos_almost_full(i),
         empty           => data_fifo_empty,
         q               => data_in,
         rdreq           => data_read_req,
-        almost_empty    => open,
         usedw           => usedw_data_fifo--,
     );
     
@@ -197,11 +195,9 @@ begin
         data            => i_data_in_slowcontrol_checked,
         wrreq           => slowcontrol_write_req_checked,
         full            => open,
-        almost_full     => open,
         empty           => slowcontrol_fifo_empty,
         q               => data_in_slowcontrol,
         rdreq           => slowcontrol_read_req,
-        almost_empty    => open,
         usedw           => usedw_slowcontrol_fifo--,
     );
 

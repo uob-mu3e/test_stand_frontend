@@ -310,9 +310,6 @@ END GENERATE buffer_link_fifos;
         q               => r_fifo_data,
         full            => tag_fifo_full,
         empty           => tag_fifo_empty,
-        almost_empty    => open,
-        almost_full     => open,
-        usedw           => open,
         sclr            => reset_dma--,
     );
 
