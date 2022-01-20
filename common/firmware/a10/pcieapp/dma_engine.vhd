@@ -707,18 +707,23 @@ begin
     end if;
   end process;
 
-    e_dma_ram : component work.cmp.dma_ram
-    PORT MAP
-    (
-      data        	=> datain,
-      rdaddress      => memaddr,
-      rdclock        => refclk,
-      wraddress      => memwriteaddr,
-      wrclock        => dataclk, 
-      wren           => datawren,
-      q              => memout
-      );
+    e_dma_ram : entity work.ip_ram_2rw
+    generic map (
+        g_ADDR0_WIDTH => memaddr'length,
+        g_DATA0_WIDTH => memout'length,
+        g_ADDR1_WIDTH => memwriteaddr'length,
+        g_DATA1_WIDTH => datain'length--,
+    )
+    port map (
+        i_addr0     => memaddr,
+        o_rdata0    => memout,
+        i_clk0      => refclk,
 
+        i_addr1     => memwriteaddr,
+        i_wdata1    => datain,
+        i_we1       => datawren,
+        i_clk1      => dataclk--,
+    );
 
 --    e_dma_fifo : component work.cmp.dma_fifo
 --	PORT MAP
