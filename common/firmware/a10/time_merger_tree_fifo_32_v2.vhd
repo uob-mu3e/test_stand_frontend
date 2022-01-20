@@ -157,8 +157,7 @@ begin
 --                ADDR_WIDTH_w    => 11,
 --                DATA_WIDTH_w    => 32,
 --                ADDR_WIDTH_r    => 8,
---                DATA_WIDTH_r    => 32*8,
---                DEVICE          => "Arria 10"--,
+--                DATA_WIDTH_r    => 32*8--,
 --            )
 --            port map (
 --                aclr    => reset_fifo(i),
@@ -177,8 +176,7 @@ begin
 --                ADDR_WIDTH_w    => 11,
 --                DATA_WIDTH_w    => 6,
 --                ADDR_WIDTH_r    => 8,
---                DATA_WIDTH_r    => 6*8,
---                DEVICE          => "Arria 10"--,
+--                DATA_WIDTH_r    => 6*8--,
 --            )
 --            port map (
 --                aclr    => reset_fifo(i),
@@ -195,9 +193,7 @@ begin
             e_last_fifo_link_debug : entity work.ip_scfifo
             generic map(
                 ADDR_WIDTH    => 11,
-                DATA_WIDTH    => 38,
-                RAM_OUT_REG   => "ON",
-                DEVICE        => "Arria 10"--,
+                DATA_WIDTH    => 38--,
             )
             port map (
                 
@@ -217,9 +213,7 @@ begin
             e_link_fifo : entity work.ip_scfifo
             generic map(
                 ADDR_WIDTH      => TREE_w,
-                DATA_WIDTH      => w_width,
-                RAM_OUT_REG     => "ON",
-                DEVICE          => "Arria 10"--,
+                DATA_WIDTH      => w_width--,
             )
             port map (
                 sclr    => reset_fifo(i),

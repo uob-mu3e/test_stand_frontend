@@ -197,9 +197,7 @@ begin
 --            e_link_fifo : entity work.ip_scfifo
 --            generic map(
 --                ADDR_WIDTH      => TREE_DEPTH_w,
---                DATA_WIDTH      => write_width(0),
---                RAM_OUT_REG     => "ON",
---                DEVICE          => "Arria 10"--,
+--                DATA_WIDTH      => write_width(0)--,
 --            )
 --            port map (
 --                sclr    => reset_0(i),

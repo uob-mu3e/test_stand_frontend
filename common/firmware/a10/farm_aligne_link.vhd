@@ -158,8 +158,7 @@ begin
     e_fifo : entity work.ip_dcfifo
     generic map(
         ADDR_WIDTH  => LINK_FIFO_ADDR_WIDTH,
-        DATA_WIDTH  => N * 32 + 2,
-        DEVICE      => "Arria 10"--,
+        DATA_WIDTH  => N * 32 + 2--,
     )
     port map (
         data        => f_data,

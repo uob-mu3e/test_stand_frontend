@@ -88,8 +88,7 @@ generic map(
     ADDR_WIDTH_w => 7,
     DATA_WIDTH_w => 32+6,
     ADDR_WIDTH_r => 7,
-    DATA_WIDTH_r => 64+12,
-    DEVICE     => "Arria 10"--,
+    DATA_WIDTH_r => 64+12--,
 )
 port map (
     aclr    => not reset_n or reset_fifo_0(i),

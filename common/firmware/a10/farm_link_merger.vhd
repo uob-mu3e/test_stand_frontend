@@ -80,8 +80,7 @@ entity farm_link_merger is
     e_sync_fifo : entity work.ip_dcfifo
     generic map(
         ADDR_WIDTH  => 6,
-        DATA_WIDTH  => 36,
-        DEVICE      => "Arria 10"--,
+        DATA_WIDTH  => 36--,
     )
     port map (
         data        => sync_fifo_data(i),
@@ -119,8 +118,7 @@ entity farm_link_merger is
     generic map(
         ADDR_WIDTH  => LINK_FIFO_ADDR_WIDTH,
         DATA_WIDTH  => 38,
-        SHOWAHEAD   => "ON",
-        DEVICE      => "Arria 10"--,
+        SHOWAHEAD   => "ON"--,
     )
     port map (
         data        => link_data(i),

@@ -83,9 +83,7 @@ begin
     e_stream_fifo : entity work.ip_scfifo
     generic map (
         ADDR_WIDTH  => 8,
-        DATA_WIDTH  => 34,
-        RAM_OUT_REG => "ON",
-        DEVICE      => "Arria 10"--,
+        DATA_WIDTH  => 34--,
     )
     port map (
         q               => q_stream,

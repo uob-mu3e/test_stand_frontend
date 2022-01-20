@@ -115,9 +115,8 @@ begin
     e_merger_fifo : entity work.ip_scfifo
     generic map (
         ADDR_WIDTH      => 10,
-        DATA_WIDTH      => NLINKS * 38,
+        DATA_WIDTH      => NLINKS * 38--,
         --SHOWAHEAD       => "OFF",
-        DEVICE          => "Arria 10"--,
     )
     port map (
         data            => w_fifo_data,

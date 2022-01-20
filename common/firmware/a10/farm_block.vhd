@@ -248,8 +248,7 @@ begin
     e_merger_fifo_pixel : entity work.ip_scfifo
     generic map (
         ADDR_WIDTH      => 10,
-        DATA_WIDTH      => g_NLINKS_PIXEL * 38,
-        DEVICE          => "Arria 10"--,
+        DATA_WIDTH      => g_NLINKS_PIXEL * 38--,
     )
     port map (
         data            => w_pixel,
@@ -303,8 +302,7 @@ begin
     e_merger_fifo_scifi : entity work.ip_scfifo
     generic map (
         ADDR_WIDTH      => 10,
-        DATA_WIDTH      => g_NLINKS_SCIFI * 38,
-        DEVICE          => "Arria 10"--,
+        DATA_WIDTH      => g_NLINKS_SCIFI * 38--,
     )
     port map (
         data            => w_scifi,
@@ -500,8 +498,7 @@ begin
     e_sync_fifo_tx_pixel : entity work.ip_dcfifo
     generic map(
         ADDR_WIDTH  => 4,
-        DATA_WIDTH  => 258,
-        DEVICE      => "Arria 10"--,
+        DATA_WIDTH  => 258--,
     )
     port map (
         data        => tx_data_pixel,
@@ -517,8 +514,7 @@ begin
     e_sync_fifo_tx_scifi : entity work.ip_dcfifo
     generic map(
         ADDR_WIDTH  => 4,
-        DATA_WIDTH  => 258,
-        DEVICE      => "Arria 10"--,
+        DATA_WIDTH  => 258--,
     )
     port map (
         data        => tx_data_scifi,

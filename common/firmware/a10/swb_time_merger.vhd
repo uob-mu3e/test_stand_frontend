@@ -300,8 +300,7 @@ begin
     e_swb_time_fifo : entity work.ip_scfifo
     generic map (
         ADDR_WIDTH => 8,
-        DATA_WIDTH => W,
-        DEVICE => "Arria 10"--,
+        DATA_WIDTH => W--,
     )
     port map (
         q               => fifo_q,

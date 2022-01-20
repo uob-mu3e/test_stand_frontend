@@ -235,8 +235,7 @@ begin
     e_writeregs_B_fifo : entity work.ip_dcfifo
     generic map (
         ADDR_WIDTH => 4,
-        DATA_WIDTH => writeregs_B_fifo_wdata'length,
-        DEVICE => "Arria 10"--,
+        DATA_WIDTH => writeregs_B_fifo_wdata'length--,
     )
     port map (
         data        => writeregs_B_fifo_wdata,
@@ -285,8 +284,7 @@ begin
     e_writeregs_C_fifo : entity work.ip_dcfifo
     generic map (
         ADDR_WIDTH => 4,
-        DATA_WIDTH => writeregs_C_fifo_wdata'length,
-        DEVICE => "Arria 10"--,
+        DATA_WIDTH => writeregs_C_fifo_wdata'length--,
     )
     port map (
         data        => writeregs_C_fifo_wdata,

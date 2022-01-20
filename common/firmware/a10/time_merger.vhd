@@ -134,8 +134,7 @@ begin
             ADDR_WIDTH_w => TREE_DEPTH_w,
             DATA_WIDTH_w => write_width(0),
             ADDR_WIDTH_r => TREE_DEPTH_r,
-            DATA_WIDTH_r => read_width(0),
-            DEVICE 		 => "Arria 10"--,
+            DATA_WIDTH_r => read_width(0)--,
         )
         port map (
             aclr 	=> not i_reset_n or reset_fifo_0(j),
@@ -159,8 +158,7 @@ begin
             ADDR_WIDTH_w => TREE_DEPTH_w,
             DATA_WIDTH_w => write_width(6),
             ADDR_WIDTH_r => TREE_DEPTH_r,
-            DATA_WIDTH_r => read_width(6),
-            DEVICE 		 => "Arria 10"--,
+            DATA_WIDTH_r => read_width(6)--,
         )
         port map (
             aclr    => not i_reset_n,

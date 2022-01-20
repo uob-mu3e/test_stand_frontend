@@ -146,8 +146,7 @@ begin
     e_fifo : entity work.ip_dcfifo
     generic map(
         ADDR_WIDTH  => LINK_FIFO_ADDR_WIDTH,
-        DATA_WIDTH  => 34,
-        DEVICE      => "Arria 10"--,
+        DATA_WIDTH => 34--,
     )
     port map (
         data        => rx_156_data,

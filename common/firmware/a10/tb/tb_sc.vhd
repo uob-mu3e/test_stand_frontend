@@ -141,8 +141,7 @@ begin
         ADDR_WIDTH_A => 8,
         ADDR_WIDTH_B => 8,
         DATA_WIDTH_A => 32,
-        DATA_WIDTH_B => 32,
-        OUTDATA_REG_A => "UNREGISTERED"--,
+        DATA_WIDTH_B => 32--,
     )
   	port map (
         address_a => writememaddr(7 downto 0),
@@ -162,8 +161,7 @@ begin
            ADDR_WIDTH_A => 8,
            ADDR_WIDTH_B => 8,
            DATA_WIDTH_A => 32,
-           DATA_WIDTH_B => 32,
-           OUTDATA_REG_A => "UNREGISTERED"--,
+           DATA_WIDTH_B => 32--,
      )
      port map (
            address_a => mem_addr_out_slave(7 downto 0),

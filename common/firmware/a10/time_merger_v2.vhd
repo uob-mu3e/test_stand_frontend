@@ -167,8 +167,7 @@ begin
                 ADDR_WIDTH_w => TREE_DEPTH_w,
                 DATA_WIDTH_w => write_width(0),
                 ADDR_WIDTH_r => TREE_DEPTH_r,
-                DATA_WIDTH_r => read_width(0),
-                DEVICE       => "Arria 10"--,
+                DATA_WIDTH_r => read_width(0)--,
             )
             port map (
                 aclr    => reset_0(i),

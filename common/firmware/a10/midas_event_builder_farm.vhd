@@ -243,8 +243,7 @@ FOR i in 0 to NLINKS - 1 GENERATE
     e_fifo : entity work.ip_dcfifo
     generic map(
         ADDR_WIDTH  => LINK_FIFO_ADDR_WIDTH,
-        DATA_WIDTH  => 38,
-        DEVICE      => "Arria 10"--,
+        DATA_WIDTH  => 38--,
     )
     port map (
         data        => link_fifo_data(37 + i * 38 downto 0 + i * 38),
@@ -283,8 +282,7 @@ END GENERATE buffer_link_fifos;
         ADDR_WIDTH_A    => 12,
         ADDR_WIDTH_B    => 9,
         DATA_WIDTH_A    => 32,
-        DATA_WIDTH_B    => 256,
-        DEVICE          => "Arria 10"--,
+        DATA_WIDTH_B    => 256--,
     )
     port map (
         address_a       => w_ram_add,
@@ -302,8 +300,7 @@ END GENERATE buffer_link_fifos;
     e_tagging_fifo_event : entity work.ip_scfifo
     generic map (
         ADDR_WIDTH      => 12,
-        DATA_WIDTH      => 12,
-        DEVICE          => "Arria 10"--,
+        DATA_WIDTH      => 12--,
     )
     port map (
         data            => w_fifo_data,
@@ -344,8 +341,7 @@ END GENERATE buffer_link_fifos;
     e_stream_fifo : entity work.ip_scfifo
     generic map (
         ADDR_WIDTH => 8,
-        DATA_WIDTH => 36,
-        DEVICE => "Arria 10"--,
+        DATA_WIDTH => 36--,
     )
     port map (
         q               => stream_rdata,

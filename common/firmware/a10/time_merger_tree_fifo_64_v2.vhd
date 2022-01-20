@@ -166,8 +166,7 @@ begin
                 ADDR_WIDTH_w    => TREE_w,
                 DATA_WIDTH_w    => w_width,
                 ADDR_WIDTH_r    => TREE_r,
-                DATA_WIDTH_r    => r_width,
-                DEVICE          => "Arria 10"--,
+                DATA_WIDTH_r    => r_width--,
             )
             port map (
                 aclr    => reset_fifo(i),

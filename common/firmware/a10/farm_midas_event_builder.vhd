@@ -200,8 +200,7 @@ begin
         ADDR_WIDTH_A    => RAM_ADDR,
         ADDR_WIDTH_B    => RAM_ADDR,
         DATA_WIDTH_A    => 384,
-        DATA_WIDTH_B    => 384,
-        DEVICE          => "Arria 10"--,
+        DATA_WIDTH_B    => 384--,
     )
     port map (
         address_a       => w_ram_add,
@@ -219,8 +218,7 @@ begin
     e_tagging_fifo_event : entity work.ip_scfifo
     generic map (
         ADDR_WIDTH      => RAM_ADDR,
-        DATA_WIDTH      => RAM_ADDR + 48,
-        DEVICE          => "Arria 10"--,
+        DATA_WIDTH      => RAM_ADDR + 48--,
     )
     port map (
         data            => w_fifo_data,
@@ -240,8 +238,7 @@ begin
     e_convert_hits : entity work.ip_scfifo
     generic map(
         ADDR_WIDTH => 6,
-        DATA_WIDTH => 384,
-        DEVICE       => "Arria 10"--,
+        DATA_WIDTH => 384--,
     )
     port map (
         sclr            => not i_reset_n_250,

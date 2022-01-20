@@ -61,7 +61,8 @@ begin
     --! sync FIFOs
     e_sync_fifo_pixel_B : entity work.ip_dcfifo
     generic map(
-        ADDR_WIDTH  => 4, DATA_WIDTH  => data_rregs_B'length--,
+        g_ADDR_WIDTH => 4,
+        g_DATA_WIDTH => data_rregs_B'length--,
     )
     port map (
         data => data_rregs_B, wrreq => '1',

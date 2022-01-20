@@ -173,8 +173,7 @@ begin
     sync_ddr_ready_A : entity work.ip_dcfifo
     generic map(
         ADDR_WIDTH  => 4,
-        DATA_WIDTH  => 1,
-        DEVICE      => "Arria 10"--,
+        DATA_WIDTH  => 1--,
     )
     port map (
         data(0)     => ddr_ready_A,
@@ -190,8 +189,7 @@ begin
     sync_ddr_ready_B : entity work.ip_dcfifo
     generic map(
         ADDR_WIDTH  => 4,
-        DATA_WIDTH  => 1,
-        DEVICE      => "Arria 10"--,
+        DATA_WIDTH  => 1--,
     )
     port map (
         data(0)     => ddr_ready_B,
@@ -220,8 +218,7 @@ begin
     sync_A : entity work.ip_dcfifo
     generic map(
         ADDR_WIDTH  => 4,
-        DATA_WIDTH  => 528,
-        DEVICE      => "Arria 10"--,
+        DATA_WIDTH  => 528--,
     )
     port map (
         -- keep time and data
@@ -244,8 +241,7 @@ begin
     sync_B : entity work.ip_dcfifo
     generic map(
         ADDR_WIDTH  => 4,
-        DATA_WIDTH  => 528,
-        DEVICE      => "Arria 10"--,
+        DATA_WIDTH  => 528--,
     )
     port map (
         -- keep time and data
@@ -400,8 +396,7 @@ begin
     tomemfifo_A : entity work.ip_scfifo
     generic map(
         ADDR_WIDTH  => 8,
-        DATA_WIDTH  => 520,
-        DEVICE      => "Arria 10"--,
+        DATA_WIDTH  => 520--,
     )
     port map (
         data        => tofifo_A,
@@ -418,8 +413,7 @@ begin
     tomemfifo_B : entity work.ip_scfifo
     generic map(
         ADDR_WIDTH  => 8,
-        DATA_WIDTH  => 520,
-        DEVICE      => "Arria 10"--,
+        DATA_WIDTH  => 520--,
     )
     port map (
         data        => tofifo_B,
@@ -816,8 +810,7 @@ begin
     tagram_A : entity work.ip_ram_1_port
     generic map (
         ADDR_WIDTH    => 8,
-        DATA_WIDTH    => 32,
-        DEVICE        => "Arria 10"--,
+        DATA_WIDTH    => 32--,
     )
     port map (
         data    => A_tagram_data,
@@ -830,8 +823,7 @@ begin
     tagram_B : entity work.ip_ram_1_port
     generic map (
         ADDR_WIDTH    => 8,
-        DATA_WIDTH    => 32,
-        DEVICE        => "Arria 10"--,
+        DATA_WIDTH    => 32--,
     )
     port map (
         data    => B_tagram_data,
@@ -846,8 +838,7 @@ begin
         ADDR_WIDTH_w    => 8,
         DATA_WIDTH_w    => 32,
         ADDR_WIDTH_r    => 10,
-        DATA_WIDTH_r    => 8,
-        DEVICE          => "Arria 10"--,
+        DATA_WIDTH_r    => 8--,
     )
     port map (
         data        => ts_req_A,
@@ -868,8 +859,7 @@ begin
         ADDR_WIDTH_w    => 8,
         DATA_WIDTH_w    => 32,
         ADDR_WIDTH_r    => 10,
-        DATA_WIDTH_r    => 8,
-        DEVICE          => "Arria 10"--,
+        DATA_WIDTH_r    => 8--,
     )
     port map (
         data        => ts_req_B,
@@ -888,8 +878,7 @@ begin
     A_mreadfifo : entity work.ip_dcfifo
     generic map(
         ADDR_WIDTH  => 4,
-        DATA_WIDTH  => 22,
-        DEVICE      => "Arria 10"--,
+        DATA_WIDTH  => 22--,
     )
     port map (
         data        => A_memreadfifo_data,
@@ -908,8 +897,7 @@ begin
     B_mreadfifo : entity work.ip_dcfifo
     generic map(
         ADDR_WIDTH  => 4,
-        DATA_WIDTH  => 22,
-        DEVICE      => "Arria 10"--,
+        DATA_WIDTH  => 22--,
     )
     port map (
         data        => B_memreadfifo_data,
@@ -930,8 +918,7 @@ begin
         ADDR_WIDTH_w => 4,
         DATA_WIDTH_w => 512,
         ADDR_WIDTH_r => 8,
-        DATA_WIDTH_r => 256,
-        DEVICE       => "Arria 10"--,
+        DATA_WIDTH_r => 256--,
     )
     port map (
         aclr    => not reset_A_n,
@@ -950,8 +937,7 @@ begin
         ADDR_WIDTH_w => 4,
         DATA_WIDTH_w => 512,
         ADDR_WIDTH_r => 8,
-        DATA_WIDTH_r => 256,
-        DEVICE       => "Arria 10"--,
+        DATA_WIDTH_r => 256--,
     )
     port map (
         aclr    => not reset_B_n,
