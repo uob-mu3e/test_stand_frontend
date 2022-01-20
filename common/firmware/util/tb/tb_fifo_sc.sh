@@ -9,4 +9,5 @@ entity=$(basename "$0" .sh)
 STOP_TIME_US=10 \
 ../sim.sh "$entity" \
     ../*.vhd \
+    ../quartus/*.vhd \
     "$entity.vhd"
