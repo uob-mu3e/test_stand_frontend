@@ -739,33 +739,50 @@ begin
 --		wrfull	=> full_fifo 
 --	);
 
-    e_dma_data_mem_addrs : component work.cmp.data_addrs_ram
-    PORT MAP
-    (
-      address_a	=> dma_data_mem_addr_reg,				-- address when reading / writing remotely
-      address_b	=> dma_data_mem_addr_fpga,         	-- address when reading / writing from FPGA
-      clock	 		=> refclk,			
-      data_a		=> dma_data_address_reg,	   		-- data to be written remotely
-      data_b		=> init_zero,                   
-      wren_a		=> dma_addrmem_data_written_reg,		-- write only when register with data address changes
-      wren_b		=> '0',
-      q_a			=> dma_data_address_out_reg, 			-- read back remotely
-      q_b			=> dma_data_address_out_fpga			-- read address from FPGA
-      );	
+    e_dma_data_mem_addrs : entity work.ip_ram_2rw
+    generic map (
+        g_ADDR0_WIDTH => dma_data_mem_addr_reg'length,
+        g_DATA0_WIDTH => dma_data_address_reg'length,
+        g_ADDR1_WIDTH => dma_data_mem_addr_fpga'length,
+        g_DATA1_WIDTH => dma_data_address_out_fpga'length,
+        g_RDATA0_REG => 1,
+        g_RDATA1_REG => 1--,
+    )
+    port map (
+        -- remote interface
+        i_addr0     => dma_data_mem_addr_reg,
+        i_wdata0    => dma_data_address_reg,
+        i_we0       => dma_addrmem_data_written_reg, -- write only when register with data address changes
+        o_rdata0    => dma_data_address_out_reg,
+        i_clk0      => refclk,
 
-    e_dma_data_mem_pages : component work.cmp.data_pages_ram
-    PORT MAP
-    (
-      address_a  	=> dma_data_mem_addr_reg,		     -- number of pages pointed to by address stored in data_addrs_ram
-      address_b	=> dma_data_mem_addr_fpga,
-      clock			=> refclk,
-      data_a		=>	dma_data_pages_reg,
-      data_b		=> (others => '0'),
-      wren_a		=> dma_addrmem_data_written_reg,
-      wren_b		=> '0',
-      q_a			=> dma_data_pages_out_reg,
-      q_b			=> dma_data_pages_out_fpga
-      );
+        -- FPGA interface
+        i_addr1     => dma_data_mem_addr_fpga,
+        o_rdata1    => dma_data_address_out_fpga,
+        i_clk1      => refclk--,
+    );
 
+    e_dma_data_mem_pages : entity work.ip_ram_2rw
+    generic map (
+        g_ADDR0_WIDTH => dma_data_mem_addr_reg'length,
+        g_DATA0_WIDTH => dma_data_pages_reg'length,
+        g_ADDR1_WIDTH => dma_data_mem_addr_fpga'length,
+        g_DATA1_WIDTH => dma_data_pages_out_fpga'length,
+        g_RDATA0_REG => 1,
+        g_RDATA1_REG => 1--,
+    )
+    port map (
+        -- remote interface
+        i_addr0     => dma_data_mem_addr_reg, -- number of pages pointed to by address stored in data_addrs_ram
+        i_wdata0    => dma_data_pages_reg,
+        i_we0       => dma_addrmem_data_written_reg,
+        o_rdata0    => dma_data_pages_out_reg,
+        i_clk0      => refclk,
+
+        -- FPGA interface
+        i_addr1     => dma_data_mem_addr_fpga,
+        o_rdata1    => dma_data_pages_out_fpga,
+        i_clk1      => refclk--,
+    );
 
 end architecture;
