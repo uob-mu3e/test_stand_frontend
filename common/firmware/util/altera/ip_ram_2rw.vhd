@@ -54,8 +54,8 @@ begin
         -- The values are CLOCK0, CLOCK1 and UNREGISTERED.
         outdata_reg_a => "UNREGISTERED",
         outdata_reg_b => "UNREGISTERED",
-        read_during_write_mode_port_a => "DONT_CARE",
-        read_during_write_mode_port_b => "DONT_CARE",
+        read_during_write_mode_port_a => "NEW_DATA_NO_NBE_READ",
+        read_during_write_mode_port_b => "NEW_DATA_NO_NBE_READ",
         clock_enable_input_a => "BYPASS",
         clock_enable_input_b => "BYPASS",
         clock_enable_output_a => "BYPASS",
