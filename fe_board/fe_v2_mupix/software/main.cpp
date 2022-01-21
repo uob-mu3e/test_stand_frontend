@@ -20,6 +20,7 @@ mscb_t mscb;
 #include "mupix.h"
 #include "mp_datapath.h"
 #include "include/feb_sc_registers.h"
+#include "../../fe/software/tmpDisplay.h"
 
 mupix_t mupix(&sc);
 mupix_datapath_t mupix_datapath(&sc);
@@ -54,6 +55,7 @@ int main() {
         printf("  [6] => mscb\n");
         printf("  [7] => reset system\n");
         printf("  [8] => datapath\n");
+        printf("  [9] => temperature Display\n");
         printf("  [f] => toggleFEBID\n");
 
         printf("Select entry ...\n");
@@ -84,15 +86,11 @@ int main() {
             mupix_datapath.menu();
             break;
         case '9':
-            printf("test: 0x%08x\n", ram->data[TEST_OUT_REGISTER]);
+            menu_tmpDisplay((alt_u32*)(AVM_QSFP_BASE | ALT_CPU_DCACHE_BYPASS_MASK));
             break;
-        case 'a':
-            printf("testwrite:\n");
-            ram->data[TEST_OUT_REGISTER]=0xAAAAAAAA;
-            break;
-	case 'f':
-    	    ram->data[FPGA_ID_REGISTER_RW] ^= 1UL << 0;
-	    break;
+        case 'f':
+            ram->data[FPGA_ID_REGISTER_RW] ^= 1UL << 0;
+        break;
         default:
             printf("invalid command: '%c'\n", cmd);
         }

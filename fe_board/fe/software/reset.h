@@ -1,8 +1,8 @@
 #include "stdlib.h"
 
 void menu_print_rate() {
-    auto& rate = sc.ram->regs.fe.merger_rate_count;
-    auto& hits_ena = sc.ram->data[0xFF9A];
+    auto& rate = sc.ram->data[MERGER_RATE_REGISTER_R];
+    auto& hits_ena = sc.ram->data[MP_HIT_ENA_CNT_REGISTER_R];
     while (1) {
             char cmd;
             if(read(uart, &cmd, 1) > 0) switch(cmd) {
@@ -20,10 +20,10 @@ void menu_print_rate() {
 }
 
 void menu_reset() {
-    auto& reset_bypass = sc.ram->data[0xFC06];
+    auto& reset_bypass = sc.ram->data[RUN_STATE_RESET_BYPASS_REGISTER_RW];
     auto  reset_bypass_buffer = 0;
-    auto& reset_bypass_payload = sc.ram->regs.fe.reset_bypass_payload;
-    auto& reset_phase = sc.ram->data[0xFFF7];
+    auto& reset_bypass_payload = sc.ram->data[RESET_PAYLOAD_REGISTER_RW];
+    auto& reset_phase = sc.ram->data[RESET_PHASE_REGISTER_R];
 
     alt_u32 payload = 0x0;
     char str[2] = {0};
@@ -35,8 +35,8 @@ void menu_reset() {
         printf("\n");
         printf("fe.reset_bypass = 0x%04X\n", reset_bypass);
 
-        auto& rate = sc.ram->regs.fe.merger_rate_count;
-        auto& hits_ena = sc.ram->data[0xFF9A];
+        auto& rate = sc.ram->data[MERGER_RATE_REGISTER_R];
+        auto& hits_ena = sc.ram->data[MP_HIT_ENA_CNT_REGISTER_R];
 
         printf("merger rate: 0x%08x\n", rate);
         printf("hits ena: 0x%08x\n", hits_ena);
@@ -136,15 +136,15 @@ void menu_reset() {
             break;
         case 'a':
             printf("Reset phase: 0x%08x\n", reset_phase);
-            printf("Reset TX/Pod: 0x%08x\n", sc.ram->data[0xFFF8]);
+            printf("TODO: Reset TX/Pod: 0x%08x\n",0);
             break;
         case 'b':
-            printf("Reset reset pod\n");
-            sc.ram->data[0xFFF8] = 0x00000001;
+            printf("TODO: Reset reset pod\n");
+            //sc.ram->data[0xFFF8] = 0x00000001; -- connect to something
             break;
         case 'c':
-            printf("Reset TX data\n");
-            sc.ram->data[0xFFF8] = 0x00000002;
+            printf("TODO: Reset TX data\n");
+            //sc.ram->data[0xFFF8] = 0x00000002;
             break;
         case 'r':
             menu_print_rate();

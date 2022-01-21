@@ -10,6 +10,7 @@
 #define FEB_REPLY_ERROR   1
 
 #include "stdlib.h"
+#include "include/feb_sc_registers.h"
 
 struct sc_t {
     volatile sc_ram_t* ram = (sc_ram_t*)AVM_SC_BASE;
@@ -23,7 +24,7 @@ struct sc_t {
             printf("[sc] ERROR: alt_ic_isr_register => %d\n", err);
         }
         // move FEB into idle state on Nios boot, disable optical reset rx, run prep with IP != 0.0.0.0 will broadcast enable of optical reset rx via SW board)
-        auto& reset_bypass = ram->regs.fe.reset_bypass;
+        auto& reset_bypass = ram->data[RUN_STATE_RESET_BYPASS_REGISTER_RW]
         reset_bypass = 0x0200;
         reset_bypass = 0x0332;
         reset_bypass = 0x0200;
@@ -39,7 +40,7 @@ struct sc_t {
     alt_u16 callback(alt_u16 cmd, volatile alt_u32* data, alt_u16 n);
 
     void callback() {
-        alt_u32 cmdlen = ram->regs.fe.cmdlen;
+        alt_u32 cmdlen = ram->data[CMD_LEN_REGISTER_RW];
         if(cmdlen == 0) return;
 
         // command (upper 16 bits) and data length (lower 16 bits)
@@ -49,7 +50,7 @@ struct sc_t {
         //printf("[sc::callback] cmd = 0x%04X, n = 0x%04X\n", cmd, n);
 
         // data offset
-        alt_u32 offset = ram->regs.fe.offset & 0xFFFF;
+        alt_u32 offset = ram->data[CMD_OFFSET_REGISTER_RW] & 0xFFFF;
 
         alt_u16 status = FEB_REPLY_ERROR;
         if(!(offset >= 0 && offset + n <= sizeof(sc_ram_t::data) / sizeof(sc_ram_t::data[0]))) {
@@ -63,7 +64,7 @@ struct sc_t {
 
         // zero upper 16 bits of command register
         // lower 16 bits are used as status
-        ram->regs.fe.cmdlen = 0xFFFF & status;
+        ram->data[CMD_LEN_REGISTER_RW] = 0xFFFF & status;
     }
 
     static
@@ -91,7 +92,7 @@ struct sc_t {
         while(1) {
             printf("\n");
             printf("[sc] -------- menu --------\n");
-            printf("ID: 0x%08x\n", ram->data[0xFF03]);
+            printf("ID: 0x%08x\n", ram->data[FPGA_ID_REGISTER_RW]);
             printf("\n");
             printf("  [r] => read data and regs\n");
             printf("  [w] => write [i] = i for i < 16\n");
@@ -117,7 +118,7 @@ struct sc_t {
                 }
                 break;
             case 't':
-                printf("FPGA ID: 0x%08X\n", ram->data[0xFF03]);
+                printf("FPGA ID: 0x%08X\n", ram->data[FPGA_ID_REGISTER_RW]);
                 break;
             case 'f':
                 feb_id = 0x0;
@@ -130,10 +131,10 @@ struct sc_t {
                 }
 
                 printf("setting feb_id to 0x%08x\n", feb_id);
-                ram->data[0xFF03] = feb_id;
+                ram->data[FPGA_ID_REGISTER_RW] = feb_id;
                 break;
             case 'i':
-                ram->regs.fe.cmdlen = 0xffff0000;
+                ram->data[CMD_LEN_REGISTER_RW] = 0xffff0000;
                 break;
             case 'q':
                 return;

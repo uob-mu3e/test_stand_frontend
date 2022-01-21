@@ -135,7 +135,7 @@ alt_u16 SMB_t::sc_callback(alt_u16 cmd, volatile alt_u32* data, alt_u16 n) {
 extern int uart;
 void SMB_t::menu_SMB_main() {
     volatile sc_ram_t* ram = (sc_ram_t*) AVM_SC_BASE;
-    ram->data[0xFF4D] = 0x00;
+    //ram->data[0xFF4D] = 0x00; -- TODO: find this again
 
     while(1) {
         //        TODO: Define menu
