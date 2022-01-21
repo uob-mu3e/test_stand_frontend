@@ -7,23 +7,23 @@ entity ip_scfifo_v2 is
 generic (
     g_ADDR_WIDTH : positive := 8;
     g_DATA_WIDTH : positive := 8;
-    g_RREG_N : natural := 0;
     g_WREG_N : natural := 0;
+    g_RREG_N : natural := 0;
     g_SHOWAHEAD : string := "ON";
     g_DEVICE_FAMILY : string := "Arria 10"--;
 );
 port (
-    o_usedw         : out   std_logic_vector(g_ADDR_WIDTH-1 downto 0);
+    i_wdata         : in    std_logic_vector(g_DATA_WIDTH-1 downto 0);
+    i_we            : in    std_logic; -- write enable (request)
+    o_wfull         : out   std_logic;
+    o_almost_full   : out   std_logic;
 
     o_rdata         : out   std_logic_vector(g_DATA_WIDTH-1 downto 0);
     i_rack          : in    std_logic; -- read enable (request, acknowledge)
     o_rempty        : out   std_logic;
     o_almost_empty  : out   std_logic;
 
-    i_wdata         : in    std_logic_vector(g_DATA_WIDTH-1 downto 0);
-    i_we            : in    std_logic; -- write enable (request)
-    o_wfull         : out   std_logic;
-    o_almost_full   : out   std_logic;
+    o_usedw         : out   std_logic_vector(g_ADDR_WIDTH-1 downto 0);
 
     i_clk           : in    std_logic;
     i_reset_n       : in    std_logic--;
@@ -77,62 +77,66 @@ begin
         intended_device_family => g_DEVICE_FAMILY--,
     )
     PORT MAP (
-        usedw => o_usedw,
+        data => fifo_wdata(g_WREG_N),
+        wrreq => fifo_we(g_WREG_N),
+        full => fifo_wfull(g_WREG_N),
+        almost_full => o_almost_full,
 
         q => fifo_rdata(g_RREG_N),
         rdreq => fifo_rack(g_RREG_N),
         empty => fifo_rempty(g_RREG_N),
         almost_empty => o_almost_empty,
 
-        data => fifo_wdata(g_WREG_N),
-        wrreq => fifo_we(g_WREG_N),
-        full => fifo_wfull(g_WREG_N),
-        almost_full => o_almost_full,
+        usedw => o_usedw,
 
         clock => i_clk,
         sclr => not i_reset_n--,
     );
 
-    -- read through reg fifos
-    generate_rreg : for i in g_RREG_N-1 downto 0 generate
-        e_fifo_rreg : entity work.fifo_reg
-        generic map (
-            g_DATA_WIDTH => o_rdata'length,
-            g_N => 2--,
-        )
-        port map (
-            o_rdata => fifo_rdata(i),
-            i_rack => fifo_rack(i),
-            o_rempty => fifo_rempty(i),
-
-            i_wdata => fifo_rdata(i+1),
-            i_we => not fifo_rempty(i+1),
-            o_wfull_n => fifo_rack(i+1),
-
-            i_reset_n => rreset_n,
-            i_clk => i_clk--,
-        );
-    end generate;
-
+    generate_wreg : if ( g_WREG_N > 0 ) generate
     -- write through reg fifos
-    generate_wreg : for i in g_WREG_N-1 downto 0 generate
+    generate_fifo_wreg : for i in g_WREG_N-1 downto 0 generate
         e_fifo_wreg : entity work.fifo_reg
         generic map (
             g_DATA_WIDTH => i_wdata'length,
             g_N => 2--,
         )
         port map (
-            o_rdata => fifo_wdata(i+1),
-            i_rack => not fifo_wfull(i+1),
-            o_rempty_n => fifo_we(i+1),
-
             i_wdata => fifo_wdata(i),
             i_we => fifo_we(i),
             o_wfull => fifo_wfull(i),
 
+            o_rdata => fifo_wdata(i+1),
+            i_rack => not fifo_wfull(i+1),
+            o_rempty_n => fifo_we(i+1),
+
             i_reset_n => wreset_n,
             i_clk => i_clk--,
         );
+    end generate;
+    end generate;
+
+    generate_rreg : if ( g_RREG_N > 0 ) generate
+    -- read through reg fifos
+    generate_fifo_rreg : for i in g_RREG_N-1 downto 0 generate
+        e_fifo_rreg : entity work.fifo_reg
+        generic map (
+            g_DATA_WIDTH => o_rdata'length,
+            g_N => 2--,
+        )
+        port map (
+            i_wdata => fifo_rdata(i+1),
+            i_we => not fifo_rempty(i+1),
+            o_wfull_n => fifo_rack(i+1),
+
+            o_rdata => fifo_rdata(i),
+            i_rack => fifo_rack(i),
+            o_rempty => fifo_rempty(i),
+
+            i_reset_n => rreset_n,
+            i_clk => i_clk--,
+        );
+    end generate;
     end generate;
 
 end architecture;

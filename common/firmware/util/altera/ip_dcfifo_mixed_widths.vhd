@@ -32,27 +32,27 @@ begin
 
     e_ip_dcfifo_v2 : entity work.ip_dcfifo_v2
     generic map (
-        g_RADDR_WIDTH => ADDR_WIDTH_r,
-        g_RDATA_WIDTH => DATA_WIDTH_r,
         g_WADDR_WIDTH => ADDR_WIDTH_w,
         g_WDATA_WIDTH => DATA_WIDTH_w,
+        g_RADDR_WIDTH => ADDR_WIDTH_r,
+        g_RDATA_WIDTH => DATA_WIDTH_r,
         g_SHOWAHEAD => SHOWAHEAD,
-        g_RREG_N => 0,
         g_WREG_N => 0,
+        g_RREG_N => 0,
         g_DEVICE_FAMILY => DEVICE--,
     )
     port map (
-        o_rusedw    => rdusedw,
-        o_rdata     => q,
-        i_rack      => rdreq,
-        o_rempty    => rdempty,
-        i_rclk      => rdclk,
-
-        o_wusedw    => wrusedw,
         i_wdata     => data,
         i_we        => wrreq,
         o_wfull     => wrfull,
+        o_wusedw    => wrusedw,
         i_wclk      => wrclk,
+
+        o_rdata     => q,
+        i_rack      => rdreq,
+        o_rempty    => rdempty,
+        o_rusedw    => rdusedw,
+        i_rclk      => rdclk,
 
         i_reset_n   => not aclr--,
     );

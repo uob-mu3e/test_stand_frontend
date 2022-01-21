@@ -19,13 +19,13 @@ generic (
     g_ADDR_WIDTH : positive := 8--;
 );
 port (
-    o_rdata     : out   std_logic_vector(g_DATA_WIDTH-1 downto 0);
-    i_rack      : in    std_logic;
-    o_rempty    : out   std_logic;
-
     i_wdata     : in    std_logic_vector(g_DATA_WIDTH-1 downto 0);
     i_we        : in    std_logic;
     o_wfull     : out   std_logic;
+
+    o_rdata     : out   std_logic_vector(g_DATA_WIDTH-1 downto 0);
+    i_rack      : in    std_logic;
+    o_rempty    : out   std_logic;
 
     i_reset_n   : in    std_logic;
     i_clk       : in    std_logic--;

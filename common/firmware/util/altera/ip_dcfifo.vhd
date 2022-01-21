@@ -34,22 +34,22 @@ begin
         g_ADDR_WIDTH => ADDR_WIDTH,
         g_DATA_WIDTH => DATA_WIDTH,
         g_SHOWAHEAD => SHOWAHEAD,
-        g_RREG_N => 0,
         g_WREG_N => 0,
+        g_RREG_N => 0,
         g_DEVICE_FAMILY => DEVICE--,
     )
     port map (
-        o_rusedw    => rdusedw,
-        o_rdata     => q,
-        i_rack      => rdreq,
-        o_rempty    => rdempty,
-        i_rclk      => rdclk,
-
-        o_wusedw    => wrusedw,
         i_wdata     => data,
         i_we        => wrreq,
         o_wfull     => wrfull,
+        o_wusedw    => wrusedw,
         i_wclk      => wrclk,
+
+        o_rdata     => q,
+        i_rack      => rdreq,
+        o_rempty    => rdempty,
+        o_rusedw    => rdusedw,
+        i_rclk      => rdclk,
 
         i_reset_n   => not aclr--,
     );

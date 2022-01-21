@@ -709,20 +709,20 @@ begin
 
     e_dma_ram : entity work.ip_ram_2rw
     generic map (
-        g_ADDR0_WIDTH => memaddr'length,
-        g_DATA0_WIDTH => memout'length,
-        g_ADDR1_WIDTH => memwriteaddr'length,
-        g_DATA1_WIDTH => datain'length--,
+        g_ADDR0_WIDTH => memwriteaddr'length,
+        g_DATA0_WIDTH => datain'length,
+        g_ADDR1_WIDTH => memaddr'length,
+        g_DATA1_WIDTH => memout'length--,
     )
     port map (
-        i_addr0     => memaddr,
-        o_rdata0    => memout,
-        i_clk0      => refclk,
+        i_addr0     => memwriteaddr,
+        i_wdata0    => datain,
+        i_we0       => datawren,
+        i_clk0      => dataclk,
 
-        i_addr1     => memwriteaddr,
-        i_wdata1    => datain,
-        i_we1       => datawren,
-        i_clk1      => dataclk--,
+        i_addr1     => memaddr,
+        o_rdata1    => memout,
+        i_clk1      => refclk--,
     );
 
 --    e_dma_fifo : component work.cmp.dma_fifo

@@ -37,22 +37,22 @@ begin
         g_ADDR_WIDTH => ADDR_WIDTH,
         g_DATA_WIDTH => DATA_WIDTH,
         g_SHOWAHEAD => SHOWAHEAD,
-        g_RREG_N => 0,
         g_WREG_N => 0,
+        g_RREG_N => 0,
         g_DEVICE_FAMILY => DEVICE--,
     )
     port map (
         o_usedw         => usedw,
 
-        o_rdata         => q,
-        i_rack          => rdreq,
-        o_rempty        => empty,
-        o_almost_empty  => almost_empty,
-
         i_wdata         => data,
         i_we            => wrreq,
         o_wfull         => full,
         o_almost_full   => almost_full,
+
+        o_rdata         => q,
+        i_rack          => rdreq,
+        o_rempty        => empty,
+        o_almost_empty  => almost_empty,
 
         i_clk           => clock,
         i_reset_n       => not sclr--,
