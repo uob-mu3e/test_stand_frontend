@@ -18,14 +18,13 @@ architecture arch of tb_fifo_sc is
     signal reset_n : std_logic := '0';
     signal cycle : integer := 0;
 
-    signal prbs : work.util.slv32_array_t(0 to 1023);
+    signal random : std_logic_vector(1 downto 0);
     signal DONE : std_logic_vector(1 downto 0) := (others => '0');
 
-    signal wdata, rdata : std_logic_vector(9 downto 0) := (others => '0');
-    signal we, wfull, rack, rempty : std_logic := '0';
-
-    signal fifo_rdata : std_logic_vector(9 downto 0) := (others => '0');
-    signal fifo_rempty, fifo_rack : std_logic := '0';
+    signal wdata : std_logic_vector(15 downto 0) := (others => '0');
+    signal we, wfull : std_logic := '0';
+    signal rdata, fifo_rdata : std_logic_vector(15 downto 0) := (others => '0');
+    signal rack, rempty, fifo_rempty, fifo_rack : std_logic := '0';
 
 begin
 
@@ -34,30 +33,25 @@ begin
     cycle <= cycle + 1 after (1 us / g_CLK_MHZ);
 
     process
-        variable lfsr : std_logic_vector(31 downto 0);
-        variable taps : std_logic_vector(31 downto 0) := (31 => '1', 21 => '1', 1 => '1', 0 => '1', others => '0');
+        variable lfsr : std_logic_vector(31 downto 0) := std_logic_vector(to_signed(g_SEED, 32));
     begin
-        lfsr := std_logic_vector(to_signed(g_SEED, lfsr'length));
-        for i in prbs'range loop
-            for j in prbs(0)'range loop
-                lfsr := lfsr sll 1;
-                lfsr(0) := work.util.xor_reduce(lfsr and taps);
-                prbs(i)(j) <= lfsr(0);
-            end loop;
+        wait until rising_edge(clk);
+        for i in random'range loop
+            lfsr := work.util.lfsr(lfsr, 31 & 21 & 1 & 0);
+            random(i) <= lfsr(0);
         end loop;
-        wait;
     end process;
 
-    e_fifo : entity work.ip_dcfifo_v2
+    e_fifo : entity work.ip_scfifo_v2
     generic map (
         g_ADDR_WIDTH => 3,
         g_DATA_WIDTH => wdata'length,
---        g_RADDR_WIDTH => 3,
+--        g_RADDR_WIDTH => 4,
 --        g_RDATA_WIDTH => rdata'length,
---        g_WADDR_WIDTH => 3,
+--        g_WADDR_WIDTH => 4,
 --        g_WDATA_WIDTH => wdata'length,
-        g_RREG_N => 2,
-        g_WREG_N => 2,
+        g_RREG_N => 1,
+        g_WREG_N => 1,
         g_DEVICE_FAMILY => "Arria 10"--
     )
     port map (
@@ -69,9 +63,9 @@ begin
         i_we        => we,
         o_wfull     => wfull,
 
---        i_clk       => clk,
-        i_rclk      => clk,
-        i_wclk      => clk,
+        i_clk       => clk,
+--        i_rclk      => clk,
+--        i_wclk      => clk,
         i_reset_n   => reset_n--,
     );
 
@@ -95,13 +89,13 @@ begin
 
     -- write
     we <= '0' when ( reset_n = '0' or wfull = '1' ) else
-        prbs(cycle / 32)(cycle mod 32);
+        random(0);
 
     process
     begin
         for i in 0 to 2**wdata'length-1 loop
+            exit when ( cycle > g_STOP_TIME_US*integer(g_CLK_MHZ)-10 );
             wait until rising_edge(clk) and we = '1';
---            report "write: wdata = " & work.util.to_hstring(wdata);
             wdata <= std_logic_vector(unsigned(wdata) + 1);
         end loop;
 
@@ -111,15 +105,19 @@ begin
 
     -- read
     rack <= '0' when ( reset_n = '0' or rempty = '1' ) else
-        prbs(cycle / 32 + prbs'length/2)(cycle mod 32);
+        random(1);
 
     process
     begin
         for i in 0 to 2**rdata'length-1 loop
+            exit when ( cycle > g_STOP_TIME_US*integer(g_CLK_MHZ)-10 );
             wait until rising_edge(clk) and rack = '1';
---            report "read: rdata = " & work.util.to_hstring(rdata);
             assert ( rdata = std_logic_vector(to_unsigned(i, rdata'length)) )
-                report "cycle = " & integer'image(cycle)
+                report work.util.SGR_FG_RED
+                    & "[cycle = " & integer'image(cycle) & "]"
+                    & " rdata = " & to_hstring(rdata)
+                    & " != " & to_hstring(to_unsigned(i, rdata'length))
+                    & work.util.SGR_RESET
                 severity error;
         end loop;
 
@@ -131,9 +129,9 @@ begin
     begin
         wait for g_STOP_TIME_US * 1 us;
         if ( DONE = (DONE'range => '1') ) then
-            report work.util.sgr(32) & "DONE" & work.util.sgr(0);
+            report work.util.SGR_FG_GREEN & "DONE" & work.util.SGR_RESET;
         else
-            report work.util.sgr(31) & "NOT DONE" & work.util.sgr(0);
+            report work.util.SGR_FG_RED & "NOT DONE" & work.util.SGR_RESET;
         end if;
         assert ( DONE = (DONE'range => '1') ) severity error;
         wait;
