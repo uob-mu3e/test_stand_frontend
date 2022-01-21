@@ -2,7 +2,6 @@
 
 void menu_print_rate() {
     auto& rate = sc.ram->data[MERGER_RATE_REGISTER_R];
-    auto& hits_ena = sc.ram->data[MP_HIT_ENA_CNT_REGISTER_R];
     while (1) {
             char cmd;
             if(read(uart, &cmd, 1) > 0) switch(cmd) {
@@ -13,7 +12,6 @@ void menu_print_rate() {
             }
 
             printf("merger rate:  0x%08x\n", rate);
-            printf("hits ena: 0x%08x\n", hits_ena);
 
             usleep(200000);
         }
@@ -38,7 +36,6 @@ void menu_reset() {
         auto& rate = sc.ram->data[MERGER_RATE_REGISTER_R];
 
         printf("merger rate: 0x%08x\n", rate);
-        printf("hits ena: 0x%08x\n", hits_ena);
 
         printf("fe.reset_bypass: run state=");
         switch((reset_bypass >> 16) & 0x3ff) {
