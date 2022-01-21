@@ -61,20 +61,22 @@ architecture RTL of pcie_readable_memory is
 
 begin
 
-    rx_st_data0 <= i_rx_st_data0;
-    rx_st_sop0 <= i_rx_st_sop0;
-    rx_bar <= i_rx_bar;
-
     process(refclk, local_rstn)
     begin
     if ( local_rstn = '0' ) then
         o_rx_st_ready0 <= '0';
+        rx_st_data0 <= (others => '0');
+        rx_st_sop0 <= '0';
+        rx_bar <= '0';
     elsif rising_edge(refclk) then
         if ( state = reset ) then
             o_rx_st_ready0 <= '0';
         else
             o_rx_st_ready0 <= '1';
         end if;
+        rx_st_data0 <= i_rx_st_data0;
+        rx_st_sop0 <= i_rx_st_sop0;
+        rx_bar <= i_rx_bar;
     end if;
     end process;
 
