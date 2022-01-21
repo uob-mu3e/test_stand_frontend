@@ -221,24 +221,25 @@ begin
         END GENERATE;
         
         gen_layer : IF last_layer = '0' and i < g_NLINKS_DATA GENERATE
-            e_link_fifo : entity work.ip_dcfifo_mixed_widths
+            e_link_fifo : entity work.ip_dcfifo_v2
             generic map(
-                ADDR_WIDTH_w    => TREE_w,
-                DATA_WIDTH_w    => w_width,
-                ADDR_WIDTH_r    => TREE_r,
-                DATA_WIDTH_r    => r_width,
-                DEVICE          => "Arria 10"--,
+                g_WADDR_WIDTH => TREE_w,
+                g_WDATA_WIDTH => w_width,
+                g_RADDR_WIDTH => TREE_r,
+                g_RDATA_WIDTH => r_width--,
             )
             port map (
-                aclr    => reset_fifo(i),
-                data    => data(i),
-                rdclk   => i_clk,
-                rdreq   => rdreq(i),
-                wrclk   => i_clk,
-                wrreq   => wrreq(i),
-                q       => q(i),
-                rdempty => rdempty(i),
-                wrfull  => wrfull(i)--,
+                i_wdata     => data(i),
+                i_we        => wrreq(i),
+                o_wfull     => wrfull(i),
+                i_wclk      => i_clk,
+
+                o_rdata     => q(i),
+                i_rack      => rdreq(i),
+                o_rempty    => rdempty(i),
+                i_rclk      => i_clk,
+
+                i_reset_n   => not reset_fifo(i)--;
             );
             
             -- reg for FIFO output (timing)

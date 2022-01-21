@@ -143,22 +143,24 @@ begin
     end if;
     end process;
 
-    e_fifo : entity work.ip_dcfifo
+    e_fifo : entity work.ip_dcfifo_v2
     generic map(
-        ADDR_WIDTH  => LINK_FIFO_ADDR_WIDTH,
-        DATA_WIDTH => 34--,
+        g_ADDR_WIDTH => LINK_FIFO_ADDR_WIDTH,
+        g_DATA_WIDTH => 34--,
     )
     port map (
-        data        => rx_156_data,
-        wrreq       => rx_156_wen,
-        rdreq       => i_ren,
-        wrclk       => i_clk_156,
-        rdclk       => i_clk_250,
-        q           => o_q,
-        rdempty     => o_rdempty,
-        wrfull      => wrfull,
-        wrusedw     => wrusedw,
-        aclr        => not i_reset_n_250--,
+        i_wdata     => rx_156_data,
+        i_we        => rx_156_wen,
+        o_wfull     => wrfull,
+        o_wusedw    => wrusedw,
+        i_wclk      => i_clk_156,
+
+        o_rdata     => o_q,
+        i_rack      => i_ren,
+        o_rempty    => o_rdempty,
+        i_rclk      => i_clk_250,
+
+        i_reset_n   => i_reset_n_250--;
     );
 
     process(i_clk_156, i_reset_n_156)

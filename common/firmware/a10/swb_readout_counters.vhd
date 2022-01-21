@@ -59,15 +59,23 @@ begin
     END GENERATE gen_sync_scifi;
 
     --! sync FIFOs
-    e_sync_fifo_pixel_B : entity work.ip_dcfifo
+    e_sync_fifo_pixel_B : entity work.ip_dcfifo_v2
     generic map(
         g_ADDR_WIDTH => 4,
         g_DATA_WIDTH => data_rregs_B'length--,
     )
     port map (
-        data => data_rregs_B, wrreq => '1',
-        rdreq => not rdempty_B, wrclk => i_clk_B, rdclk => i_clk_A,
-        q => q_rregs_B, rdempty => rdempty_B, aclr => '0'--,
+        i_wdata     => data_rregs_B,
+        i_we        => '1',
+        o_wfull     => open,
+        i_wclk      => i_clk_B,
+
+        o_rdata     => q_rregs_B,
+        i_rack      => not rdempty_B,
+        o_rempty    => rdempty_B,
+        i_rclk      => i_clk_A,
+
+        i_reset_n   => '1'--;
     );
 
     gen_sync_cnt : FOR i in s_counter_B'range GENERATE

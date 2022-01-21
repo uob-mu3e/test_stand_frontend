@@ -210,22 +210,23 @@ begin
 --                full    => wrfull_0(i)--,
 --            );
             
-            e_link_fifo : entity work.ip_dcfifo
+            e_link_fifo : entity work.ip_dcfifo_v2
             generic map(
-                ADDR_WIDTH  => TREE_DEPTH_w,
-                DATA_WIDTH  => write_width(0),
-                DEVICE      => "Arria 10"--,
+                g_ADDR_WIDTH => TREE_DEPTH_w,
+                g_DATA_WIDTH => write_width(0)--,
             )
             port map (
-                data        => data_0(i),
-                wrreq       => wrreq_0(i),
-                rdreq       => rdreq_0(i),
-                wrclk       => i_clk,
-                rdclk       => i_clk,
-                q           => q_0(i),
-                rdempty     => rdempty_0(i),
-                wrfull      => wrfull_0(i),
-                aclr        => reset_0(i)--,
+                i_wdata     => data_0(i),
+                i_we        => wrreq_0(i),
+                o_wfull     => wrfull_0(i),
+                i_wclk      => i_clk,
+
+                o_rdata     => q_0(i),
+                i_rack      => rdreq_0(i),
+                o_rempty    => rdempty_0(i),
+                i_rclk      => i_clk,
+
+                i_reset_n   => not reset_0(i)--;
             );
 
         END GENERATE;

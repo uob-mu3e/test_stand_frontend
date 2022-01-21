@@ -190,40 +190,43 @@ begin
 --                wrfull  => wrfull_last1(i)--,
 --            );
 
-            e_last_fifo_link_debug : entity work.ip_scfifo
-            generic map(
-                ADDR_WIDTH    => 11,
-                DATA_WIDTH    => 38--,
+            e_last_fifo_link_debug : entity work.ip_scfifo_v2
+            generic map (
+                g_ADDR_WIDTH => 11,
+                g_DATA_WIDTH => 38--,
             )
             port map (
-                
-                data    => data(i),
-                wrreq   => wrreq(i),
-                rdreq   => i_rdreq(i),
-                clock   => i_clk,
-                q       => o_last_link_debug,
-                full    => wrfull_last2(i),
-                empty   => rdempty_last2(i),
-                sclr    => reset_fifo(i)--,
+                i_wdata         => data(i),
+                i_we            => wrreq(i),
+                o_wfull         => wrfull_last2(i),
+
+                o_rdata         => o_last_link_debug,
+                o_rempty        => rdempty_last2(i),
+                i_rack          => i_rdreq(i),
+
+                i_clk           => i_clk,
+                i_reset_n       => not reset_fifo(i)--,
             );
 
         END GENERATE;
 
         gen_layer : IF last_layer = '0' and i < g_NLINKS_DATA GENERATE
-            e_link_fifo : entity work.ip_scfifo
-            generic map(
-                ADDR_WIDTH      => TREE_w,
-                DATA_WIDTH      => w_width--,
+            e_link_fifo : entity work.ip_scfifo_v2
+            generic map (
+                g_ADDR_WIDTH => TREE_w,
+                g_DATA_WIDTH => w_width--,
             )
             port map (
-                sclr    => reset_fifo(i),
-                data    => data(i),
-                clock   => i_clk,
-                rdreq   => i_rdreq(i),
-                wrreq   => wrreq(i),
-                q       => q(i),
-                empty   => rdempty(i),
-                full    => wrfull(i)--,
+                i_wdata         => data(i),
+                i_we            => wrreq(i),
+                o_wfull         => wrfull(i),
+
+                o_rdata         => q(i),
+                o_rempty        => rdempty(i),
+                i_rack          => i_rdreq(i),
+
+                i_clk           => i_clk,
+                i_reset_n       => not reset_fifo(i)--,
             );
 
         END GENERATE;
