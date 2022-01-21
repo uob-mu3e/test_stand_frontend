@@ -24,7 +24,7 @@ struct sc_t {
             printf("[sc] ERROR: alt_ic_isr_register => %d\n", err);
         }
         // move FEB into idle state on Nios boot, disable optical reset rx, run prep with IP != 0.0.0.0 will broadcast enable of optical reset rx via SW board)
-        auto& reset_bypass = ram->data[RUN_STATE_RESET_BYPASS_REGISTER_RW]
+        auto& reset_bypass = ram->data[RUN_STATE_RESET_BYPASS_REGISTER_RW];
         reset_bypass = 0x0200;
         reset_bypass = 0x0332;
         reset_bypass = 0x0200;

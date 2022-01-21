@@ -36,11 +36,10 @@ void menu_reset() {
         printf("fe.reset_bypass = 0x%04X\n", reset_bypass);
 
         auto& rate = sc.ram->data[MERGER_RATE_REGISTER_R];
-        auto& hits_ena = sc.ram->data[MP_HIT_ENA_CNT_REGISTER_R];
 
         printf("merger rate: 0x%08x\n", rate);
         printf("hits ena: 0x%08x\n", hits_ena);
-    	
+
         printf("fe.reset_bypass: run state=");
         switch((reset_bypass >> 16) & 0x3ff) {
 		case 1<<0: printf("RUN_STATE_IDLE\n"); break;
