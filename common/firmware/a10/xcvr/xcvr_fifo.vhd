@@ -79,7 +79,9 @@ begin
     e_tx_fifo : entity work.ip_dcfifo_v2
     generic map (
         g_ADDR_WIDTH => g_FIFO_ADDR_WIDTH,
-        g_DATA_WIDTH => g_BYTES*9--,
+        g_DATA_WIDTH => g_BYTES*9,
+        g_WREG_N => 1,
+        g_RREG_N => 1--
     )
     port map (
         i_wdata         => i_tx_datak & i_tx_data,

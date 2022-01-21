@@ -265,7 +265,8 @@ architecture RTL of pcie_completer is
     e_rreg_fifo : entity work.ip_scfifo_v2
     generic map (
         g_ADDR_WIDTH => 5,
-        g_DATA_WIDTH => datain_rreg_fifo'length--,
+        g_DATA_WIDTH => datain_rreg_fifo'length,
+        g_RREG_N => 1--,
     )
     port map (
         i_wdata         => datain_rreg_fifo,
@@ -294,7 +295,8 @@ architecture RTL of pcie_completer is
     e_wreg_fifo : entity work.ip_scfifo_v2
     generic map (
         g_ADDR_WIDTH => 5,
-        g_DATA_WIDTH => datain_wreg_fifo'length--,
+        g_DATA_WIDTH => datain_wreg_fifo'length,
+        g_RREG_N => 1--,
     )
     port map (
         i_wdata         => datain_wreg_fifo,

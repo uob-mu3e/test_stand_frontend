@@ -83,7 +83,8 @@ begin
     e_stream_fifo : entity work.ip_scfifo_v2
     generic map (
         g_ADDR_WIDTH => 8,
-        g_DATA_WIDTH => 34--,
+        g_DATA_WIDTH => 34,
+        g_RREG_N => 1--,
     )
     port map (
         i_wdata         => wdata,

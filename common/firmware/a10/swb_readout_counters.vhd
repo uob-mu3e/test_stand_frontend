@@ -62,7 +62,8 @@ begin
     e_sync_fifo_pixel_B : entity work.ip_dcfifo_v2
     generic map(
         g_ADDR_WIDTH => 4,
-        g_DATA_WIDTH => data_rregs_B'length--,
+        g_DATA_WIDTH => data_rregs_B'length,
+        g_RREG_N => 1--
     )
     port map (
         i_wdata     => data_rregs_B,
