@@ -10,12 +10,12 @@ entity a10_block is
 generic (
     g_XCVR0_CHANNELS    : integer := 16;
     g_XCVR0_N           : integer := 4;
-    g_XCVR0_RX_P        : work.util.integer_array_t := ( 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15 );
-    g_XCVR0_TX_P        : work.util.integer_array_t := ( 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15 );
+    g_XCVR0_RX_P        : integer_vector := ( 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15 );
+    g_XCVR0_TX_P        : integer_vector := ( 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15 );
     g_XCVR1_CHANNELS    : integer := 0;
     g_XCVR1_N           : integer := 0;
-    g_XCVR1_RX_P        : work.util.integer_array_t := ( 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15 );
-    g_XCVR1_TX_P        : work.util.integer_array_t := ( 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15 );
+    g_XCVR1_RX_P        : integer_vector := ( 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15 );
+    g_XCVR1_TX_P        : integer_vector := ( 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15 );
     g_XCVR2_CHANNELS    : integer := 0;
     g_XCVR3_CHANNELS    : integer := 0;
     g_SFP_CHANNELS      : integer := 0;

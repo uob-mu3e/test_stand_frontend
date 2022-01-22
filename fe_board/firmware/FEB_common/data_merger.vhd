@@ -28,7 +28,7 @@ ENTITY data_merger is
 GENERIC (
     FIFO_ADDR_WIDTH             : positive := 10;
     N_LINKS                     : positive := 1;
-    feb_mapping                 : work.util.natural_array_t(3 downto 0)--;
+    feb_mapping                 : integer_vector(3 downto 0)--;
 );
 PORT (
     clk                         : in    std_logic; -- 156.25 clk input
