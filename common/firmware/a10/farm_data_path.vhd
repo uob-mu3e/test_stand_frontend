@@ -807,30 +807,32 @@ begin
     end if;
     end process;
 
-    tagram_A : entity work.ip_ram_1_port
+    tagram_A : entity work.ip_ram_1rw
     generic map (
-        ADDR_WIDTH    => 8,
-        DATA_WIDTH    => 32--,
+        g_ADDR_WIDTH => 8,
+        g_DATA_WIDTH => 32--,
+        g_RDATA_REG => 1--,
     )
     port map (
-        data    => A_tagram_data,
-        address => A_tagram_address,
-        wren    => A_tagram_write,
-        clock   => A_mem_clk,
-        q       => A_tagram_q--,
+        i_addr  => A_tagram_address,
+        i_wdata => A_tagram_data,
+        i_we    => A_tagram_write,
+        o_rdata => A_tagram_q,
+        i_clk   => A_mem_clk--,
     );
 
-    tagram_B : entity work.ip_ram_1_port
+    tagram_B : entity work.ip_ram_1rw
     generic map (
-        ADDR_WIDTH    => 8,
-        DATA_WIDTH    => 32--,
+        g_ADDR_WIDTH => 8,
+        g_DATA_WIDTH => 32--,
+        g_RDATA_REG => 1--,
     )
     port map (
-        data    => B_tagram_data,
-        address => B_tagram_address,
-        wren    => B_tagram_write,
-        clock   => B_mem_clk,
-        q       => B_tagram_q--,
+        i_addr  => B_tagram_address,
+        i_wdata => B_tagram_data,
+        i_we    => B_tagram_write,
+        o_rdata => B_tagram_q--,
+        i_clk   => B_mem_clk--,
     );
 
     A_reqfifo : entity work.ip_dcfifo_mixed_widths
