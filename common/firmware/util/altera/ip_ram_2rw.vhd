@@ -32,11 +32,18 @@ library altera_mf;
 use altera_mf.altera_mf_components.all;
 
 architecture arch of ip_ram_2rw is
-
-    signal rdata0 : std_logic_vector(o_rdata0'range);
-    signal rdata1 : std_logic_vector(o_rdata1'range);
-
 begin
+
+    assert ( true
+        and 2**i_addr0'length * i_wdata0'length = 2**i_addr1'length * i_wdata1'length
+        and ( g_RDATA0_REG = 0 or g_RDATA0_REG = 1 )
+        and ( g_RDATA1_REG = 0 or g_RDATA1_REG = 1 )
+    ) report "ip_dcfifo_v2"
+        & ", g_ADDR0_WIDTH = " & integer'image(i_addr0'length)
+        & ", g_DATA0_WIDTH = " & integer'image(i_wdata0'length)
+        & ", g_ADDR1_WIDTH = " & integer'image(i_addr1'length)
+        & ", g_DATA1_WIDTH = " & integer'image(i_wdata1'length)
+    severity failure;
 
     -- <https://www.intel.co.jp/content/dam/altera-www/global/ja_JP/pdfs/literature/ug/ug_ram_rom.pdf>
     -- <https://www.intel.com/content/www/us/en/programmable/quartushelp/17.0/hdl/mega/mega_file_altsynch_ram.htm>
@@ -44,25 +51,28 @@ begin
     generic map (
         lpm_type => "altsyncram",
         operation_mode => "BIDIR_DUAL_PORT",
-        numwords_a => 2**g_ADDR0_WIDTH,
-        numwords_b => 2**g_ADDR1_WIDTH,
-        widthad_a => g_ADDR0_WIDTH,
-        widthad_b => g_ADDR1_WIDTH,
-        width_a => g_DATA0_WIDTH,
-        width_b => g_DATA1_WIDTH,
+
+        numwords_a => 2**i_addr0'length,
+        widthad_a => i_addr0'length,
+        width_a => i_wdata0'length,
         -- Optional parameters to specify the clock used for the output ports.
         -- The values are CLOCK0, CLOCK1 and UNREGISTERED.
-        outdata_reg_a => "UNREGISTERED",
-        outdata_reg_b => "UNREGISTERED",
+        outdata_reg_a => work.util.value_if(g_RDATA0_REG = 0, "UNREGISTERED", "CLOCK0"),
         read_during_write_mode_port_a => "NEW_DATA_NO_NBE_READ",
-        read_during_write_mode_port_b => "NEW_DATA_NO_NBE_READ",
         clock_enable_input_a => "BYPASS",
-        clock_enable_input_b => "BYPASS",
         clock_enable_output_a => "BYPASS",
-        clock_enable_output_b => "BYPASS",
         -- Default value of 1 is only allowed when byte-enable is not used.
         width_byteena_a => 1,
+
+        numwords_b => 2**i_addr1'length,
+        widthad_b => i_addr1'length,
+        width_b => i_wdata1'length,
+        outdata_reg_b => work.util.value_if(g_RDATA1_REG = 0, "UNREGISTERED", "CLOCK1"),
+        read_during_write_mode_port_b => "NEW_DATA_NO_NBE_READ",
+        clock_enable_input_b => "BYPASS",
+        clock_enable_output_b => "BYPASS",
         width_byteena_b => 1,
+
         -- Optional parameter to specify whether to initialize memory content data to X on power-up simulation.
         power_up_uninitialized => "FALSE",
         -- Optional parameter to specify the target device family.
@@ -73,40 +83,14 @@ begin
         address_a => i_addr0,
         data_a => i_wdata0,
         wren_a => i_we0,
-        q_a => rdata0,
+        q_a => o_rdata0,
         clock0 => i_clk0,
 
         address_b => i_addr1,
         data_b => i_wdata1,
         wren_b => i_we1,
-        q_b => rdata1,
+        q_b => o_rdata1,
         clock1 => i_clk1--,
     );
-
-    generate_rdata0_reg_0 : if ( g_RDATA0_REG = 0 ) generate
-        o_rdata0 <= rdata0;
-    end generate;
-
-    generate_rdata0_reg_1 : if ( g_RDATA0_REG /= 0 ) generate
-        process(i_clk0)
-        begin
-        if rising_edge(i_clk0) then
-            o_rdata0 <= rdata0;
-        end if;
-        end process;
-    end generate;
-
-    generate_rdata1_reg_0 : if ( g_RDATA1_REG = 0 ) generate
-        o_rdata1 <= rdata1;
-    end generate;
-
-    generate_rdata1_reg_1 : if ( g_RDATA1_REG /= 0 ) generate
-        process(i_clk1)
-        begin
-        if rising_edge(i_clk1) then
-            o_rdata1 <= rdata1;
-        end if;
-        end process;
-    end generate;
 
 end architecture;
