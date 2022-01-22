@@ -23,7 +23,7 @@ architecture arch of tb_fifo_sc is
 
     signal wdata : std_logic_vector(15 downto 0) := (others => '0');
     signal we, wfull : std_logic := '0';
-    signal rdata, fifo_rdata : std_logic_vector(15 downto 0) := (others => '0');
+    signal rdata, fifo_rdata : std_logic_vector(15 downto 0);
     signal rack, rempty, fifo_rempty, fifo_rack : std_logic := '0';
 
 begin
@@ -35,11 +35,11 @@ begin
     process
         variable lfsr : std_logic_vector(31 downto 0) := std_logic_vector(to_signed(g_SEED, 32));
     begin
-        wait until rising_edge(clk);
         for i in random'range loop
             lfsr := work.util.lfsr(lfsr, 31 & 21 & 1 & 0);
             random(i) <= lfsr(0);
         end loop;
+        wait until rising_edge(clk);
     end process;
 
     e_fifo : entity work.ip_scfifo_v2
@@ -50,8 +50,8 @@ begin
 --        g_RDATA_WIDTH => rdata'length,
 --        g_WADDR_WIDTH => 4,
 --        g_WDATA_WIDTH => wdata'length,
-        g_RREG_N => 1,
-        g_WREG_N => 1,
+        g_RREG_N => 0,
+        g_WREG_N => 0,
         g_DEVICE_FAMILY => "Arria 10"--
     )
     port map (
@@ -93,14 +93,14 @@ begin
 
     process
     begin
-        for i in 0 to 2**wdata'length-1 loop
-            exit when ( cycle > g_STOP_TIME_US*integer(g_CLK_MHZ)-10 );
-            wait until rising_edge(clk) and we = '1';
-            wdata <= std_logic_vector(unsigned(wdata) + 1);
-        end loop;
+        wait until rising_edge(clk);
 
-        DONE(0) <= '1';
-        wait;
+        wdata <= std_logic_vector(unsigned(wdata) + we);
+
+        if ( cycle > g_STOP_TIME_US*integer(g_CLK_MHZ)-2 ) then
+            DONE(0) <= '1';
+            wait;
+        end if;
     end process;
 
     -- read
@@ -108,21 +108,25 @@ begin
         random(1);
 
     process
+        variable rdata_v : std_logic_vector(rdata'range) := (others => '0');
     begin
-        for i in 0 to 2**rdata'length-1 loop
-            exit when ( cycle > g_STOP_TIME_US*integer(g_CLK_MHZ)-10 );
-            wait until rising_edge(clk) and rack = '1';
-            assert ( rdata = std_logic_vector(to_unsigned(i, rdata'length)) )
-                report work.util.SGR_FG_RED
-                    & "[cycle = " & integer'image(cycle) & "]"
-                    & " rdata = " & to_hstring(rdata)
-                    & " != " & to_hstring(to_unsigned(i, rdata'length))
-                    & work.util.SGR_RESET
-                severity error;
-        end loop;
+        wait until rising_edge(clk);
 
-        DONE(1) <= '1';
-        wait;
+        if ( rack = '1' and rdata /= rdata_v ) then
+            report work.util.SGR_FG_RED
+                & "[cycle = " & integer'image(cycle) & "]"
+                & " rdata = " & to_hstring(rdata)
+                & " != " & to_hstring(rdata_v)
+                & work.util.SGR_RESET
+            severity error;
+        end if;
+
+        rdata_v := std_logic_vector(unsigned(rdata_v) + rack);
+
+        if ( cycle > g_STOP_TIME_US*integer(g_CLK_MHZ)-2 ) then
+            DONE(1) <= '1';
+            wait;
+        end if;
     end process;
 
     process
