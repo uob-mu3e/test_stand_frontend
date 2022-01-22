@@ -266,7 +266,7 @@ architecture RTL of pcie_completer is
     generic map (
         g_ADDR_WIDTH => 5,
         g_DATA_WIDTH => datain_rreg_fifo'length,
-        g_RREG_N => 1--,
+        g_RREG_N => 1--, -- TNS=-4000
     )
     port map (
         i_wdata         => datain_rreg_fifo,
@@ -296,7 +296,7 @@ architecture RTL of pcie_completer is
     generic map (
         g_ADDR_WIDTH => 5,
         g_DATA_WIDTH => datain_wreg_fifo'length,
-        g_RREG_N => 1--,
+        g_RREG_N => 1--, -- TNS=-17
     )
     port map (
         i_wdata         => datain_wreg_fifo,

@@ -63,7 +63,7 @@ begin
     generic map(
         g_ADDR_WIDTH => 4,
         g_DATA_WIDTH => data_rregs_B'length,
-        g_RREG_N => 1--
+        g_RREG_N => 1--, -- TNS=-2700
     )
     port map (
         i_wdata     => data_rregs_B,

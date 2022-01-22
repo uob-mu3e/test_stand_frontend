@@ -146,8 +146,7 @@ begin
     e_fifo : entity work.ip_dcfifo_v2
     generic map(
         g_ADDR_WIDTH => LINK_FIFO_ADDR_WIDTH,
-        g_DATA_WIDTH => 34,
-        g_RREG_N => 1--,
+        g_DATA_WIDTH => 34--,
     )
     port map (
         i_wdata     => rx_156_data,

@@ -213,8 +213,7 @@ begin
             e_link_fifo : entity work.ip_dcfifo_v2
             generic map(
                 g_ADDR_WIDTH => TREE_DEPTH_w,
-                g_DATA_WIDTH => write_width(0),
-                g_RREG_N => 1--,
+                g_DATA_WIDTH => write_width(0)--,
             )
             port map (
                 i_wdata     => data_0(i),

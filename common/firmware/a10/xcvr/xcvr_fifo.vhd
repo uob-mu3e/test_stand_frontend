@@ -12,6 +12,8 @@ generic (
     g_BYTES : positive := 4;
     g_IDLE_DATA : std_logic_vector := X"000000BC";
     g_IDLE_DATAK : std_logic_vector := "0001";
+    g_FIFO_TX_RREG_N : natural := 0;
+    g_FIFO_RX_RREG_N : natural := 0;
     g_FIFO_ADDR_WIDTH : positive := 4--;
 );
 port (
@@ -54,7 +56,8 @@ begin
     e_rx_fifo : entity work.ip_dcfifo_v2
     generic map (
         g_ADDR_WIDTH => g_FIFO_ADDR_WIDTH,
-        g_DATA_WIDTH => g_BYTES*9--,
+        g_DATA_WIDTH => g_BYTES*9,
+        g_RREG_N => g_FIFO_RX_RREG_N--
     )
     port map (
         i_wdata         => i_xcvr_rx_datak & i_xcvr_rx_data,
@@ -80,8 +83,7 @@ begin
     generic map (
         g_ADDR_WIDTH => g_FIFO_ADDR_WIDTH,
         g_DATA_WIDTH => g_BYTES*9,
-        g_WREG_N => 1,
-        g_RREG_N => 1--
+        g_RREG_N => g_FIFO_TX_RREG_N--
     )
     port map (
         i_wdata         => i_tx_datak & i_tx_data,

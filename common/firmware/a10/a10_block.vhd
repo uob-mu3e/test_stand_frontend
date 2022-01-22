@@ -730,6 +730,9 @@ begin
 
     generate_xcvr1_fifo : for i in g_XCVR1_CHANNELS-1 downto 0 generate
     e_xcvr1_fifo : entity work.xcvr_fifo
+    generic map (
+        g_FIFO_TX_RREG_N => 1--, -- TNS=-160 (i_xcvr1_clk)
+    )
     port map (
         i_xcvr_rx_data      => xcvr1_rx_data(f_xcvr1_rx_p(i)),
         i_xcvr_rx_datak     => xcvr1_rx_datak(f_xcvr1_rx_p(i)),

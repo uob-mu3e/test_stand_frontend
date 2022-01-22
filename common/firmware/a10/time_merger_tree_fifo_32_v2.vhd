@@ -194,7 +194,7 @@ begin
             generic map (
                 g_ADDR_WIDTH => 11,
                 g_DATA_WIDTH => 38,
-                g_RREG_N => 1--
+                g_RREG_N => 1--, -- TNS=-2300
             )
             port map (
                 i_wdata         => data(i),
@@ -216,7 +216,7 @@ begin
             generic map (
                 g_ADDR_WIDTH => TREE_w,
                 g_DATA_WIDTH => w_width,
-                g_WREG_N => 1--,
+                g_WREG_N => 1--, -- TNS=-8800
             )
             port map (
                 i_wdata         => data(i),
