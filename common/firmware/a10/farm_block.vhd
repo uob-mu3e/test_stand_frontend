@@ -274,7 +274,6 @@ begin
         i_empty     => empty_pixel,
         
         o_ren       => r_pixel_en,
-        o_wen       => open,
         o_data      => link_data_pixel,
         o_datak     => link_datak_pixel--,
     );

@@ -810,7 +810,7 @@ begin
     tagram_A : entity work.ip_ram_1rw
     generic map (
         g_ADDR_WIDTH => 8,
-        g_DATA_WIDTH => 32--,
+        g_DATA_WIDTH => 32,
         g_RDATA_REG => 1--,
     )
     port map (
@@ -824,14 +824,14 @@ begin
     tagram_B : entity work.ip_ram_1rw
     generic map (
         g_ADDR_WIDTH => 8,
-        g_DATA_WIDTH => 32--,
+        g_DATA_WIDTH => 32,
         g_RDATA_REG => 1--,
     )
     port map (
         i_addr  => B_tagram_address,
         i_wdata => B_tagram_data,
         i_we    => B_tagram_write,
-        o_rdata => B_tagram_q--,
+        o_rdata => B_tagram_q,
         i_clk   => B_mem_clk--,
     );
 
