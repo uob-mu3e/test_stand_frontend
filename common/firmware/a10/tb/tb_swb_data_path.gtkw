@@ -20,7 +20,6 @@
 [treeopen] top.tb_swb_data_path.e_swb_data_path.e_time_merger.e_time_merger.gen_write_0[1].
 [treeopen] top.tb_swb_data_path.e_swb_data_path.e_time_merger.e_time_merger.gen_write_0[1].gen_zero_layer.
 [treeopen] top.tb_swb_data_path.e_swb_data_path.e_time_merger.e_time_merger.gen_write_0[1].gen_zero_layer.e_link_fifo.
-[treeopen] top.tb_swb_data_path.e_swb_data_path.e_time_merger.e_time_merger.gen_write_0[1].gen_zero_layer.e_link_fifo.e_fifo_rreg.
 [treeopen] top.tb_swb_data_path.e_swb_data_path.e_time_merger.e_time_merger.gen_write_0[2].gen_zero_layer.
 [treeopen] top.tb_swb_data_path.e_swb_data_path.e_time_merger.e_time_merger.gen_write_0[2].gen_zero_layer.e_link_fifo.
 [treeopen] top.tb_swb_data_path.e_swb_data_path.e_time_merger.e_time_merger.gen_write_0[9].gen_zero_layer.

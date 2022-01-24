@@ -233,27 +233,27 @@ begin
       app_msi_num    <= (others => '0');
 
       timeoutcounter		<= (others => '1');
-      
+
       memwraddr_last_dma	<= (others => '0');
       state						<= disabled;
-      
+
       memaddr				<= (others => '1');
-      
+
       dma_status_register_reg <= (others => '0');
-      
+
       interruptcounter	<= (others => '0');
       count_pages 		<= (others => '0');
-      
+
       overflow 			<= '0';
       enoughdata 			<= (others => '0');
       memoryblock_dma	<= (others => '0');
       start_dma_last 	<= '0';
-      
+
       dma_data_mem_addr_fpga 		<= (others => '0');
-      
+
       test_out_r						<= (others => '0');
-      
-      
+
+
     elsif(refclk'event and refclk = '1') then
 
       test_out	<= test_out_r;
@@ -278,7 +278,7 @@ begin
         end if;
       end if;
       start_dma_last <= start_dma_next;
-      
+
       dma_status_register_reg(15 downto 0) 	<= (others => '0');
       dma_status_register_reg(31 downto 28) 	<= overflow & "000";
       dma_status_register_reg(27 downto 16)	<= "00000000" & dma_block_counter;
@@ -286,7 +286,7 @@ begin
         case state is
         when disabled =>
           dma_status_register_reg(0)		<= '1';
-          
+
           dma_request		<= '0';
           dma_done			<= '0';
           
@@ -299,38 +299,38 @@ begin
           app_msi_req		<= '0';
           app_msi_tc		<= (others => '0');
           app_msi_num    <= (others => '0');
-          
+
           timeoutcounter		<= (others => '1');
-          
+
           memwraddr_last_dma	<= (others => '0');
           memaddr_last_packet	<= (others => '0');
           memaddr					<= (others => '1');
           memwriteaddreoedma	<= (others => '0');
 			 memwriteaddreoedma_long	<= (others => '0');
           words_sent 				<= (others => '0');
-          
+
           remoteaddress_var    	<= (others => '0');
           remoteaddress_interrupt <= (others => '0');
           dma_data_mem_addr_fpga 	<= (others => '0');
-          
+
           interruptcounter	<= (others => '0');
           count_pages			<= (others => '0');
           enoughdata			<= (others => '0');
           memoryblock_dma	<= (others => '0');
           overflow				<= '0';
           start_dma_last		<= '0';
-          
+
           --test_out_r 			<= (others => '0');
-          
+
           if(dma_enabled = '1') then
             state <= waiting;
           end if;
-          
+
         when waiting =>
 
           if(dma_enabled = '0') then
             state <= disabled;
-          end if;	
+          end if;
           dma_block_counter	<= (others => '0');
           pause_counter 		<= (others => '0');
 
@@ -346,7 +346,7 @@ begin
            tx_empty			<= "00";
 
           timeoutcounter <= timeoutcounter - '1';
-          
+
           -- start the dma procedure either on command, after about a second or after 4 KB data have been written
           --if(((dma_now = '1' or timeoutcounter = (timeoutcounter'range => '0')) and memwraddr /= memwraddr_last_dma) or memwraddr(9) /= memwraddr_last(9)) then
 
@@ -365,10 +365,10 @@ begin
 				memwriteaddreoedma_long <= memwriteaddreoe_long;
             words_sent				<= (others => '0');
           end if;
-          
+
         when requested =>
           dma_status_register_reg(2)		<= '1';
-          
+
           dma_done			<= '0';
           dma_block_counter	<= (others => '0');
           
@@ -379,9 +379,9 @@ begin
           tx_empty			<= "00";
           
           packet_length	<= packet_length_l(9 downto 0);
-          
+
           last_dw_be <= '1';
-          
+
           if(dma_granted = '1') then
             state 			<= header;
             memaddr			<= memaddr+'1';
@@ -412,9 +412,9 @@ begin
           tx_eop				<= '0';
           tx_empty				<= "00";
           last_dw_be 			<= '1';
-          
+
           pause_counter 		<= pause_counter + '1';
-          
+
           if(dma_granted = '1') then
             state      <= header;
             memaddr    <= memaddr+'1';
@@ -429,27 +429,27 @@ begin
           dma_status_register_reg(5)		<= '1';
           dma_request		<= '0';
           dma_done			<= '0';
-          
+
           -- build header out of 4 32 bit words, different for addresses above and below 4GB!
           -- second word is the same for 32 bit addressing and 64 bit addressing						
           header1			:= cfg_busdev & "000" & -- bytes 0 and 1: Requester ID
                                            "00000000"         & -- byte 2: tag
                                            last_dw_be & last_dw_be & last_dw_be & last_dw_be & "1111"; -- byte 3 last and first data word byte enables
-          
+
           -- 32 bit addressing
-          if ( remoteaddress_next(63 downto 32) = x"00000000" ) then 
+          if ( remoteaddress_next(63 downto 32) = x"00000000" ) then
             header0			:= "0" & "10" & "00000" &-- byte0: R(1) FMT(2) TYPE(5)
                                            "0" & "000" & "0000" & --byte1: R(1) TC(3) R(4)
-                                           "0" & "0" & "00" & "00" & packet_length ; -- packet length is in words 
-                                                                                     --bytes 2/3: TD(1) EP(1) Attr(2) R(2) Length(10)					
+                                           "0" & "0" & "00" & "00" & packet_length ; -- packet length is in words
+                                                                                     --bytes 2/3: TD(1) EP(1) Attr(2) R(2) Length(10)
             header2			:= remoteaddress_next(31 downto 4) & "0000"; -- last four bits should always be 0!
-            header3			:= (others => '0');  -- reserved 
+            header3			:= (others => '0');  -- reserved
           else
             -- 64 bit addressing
-            
+
             header0			:= "0" & "11" & "00000" &-- byte0: R(1) FMT(2) TYPE(5)
                                            "0" & "000" & "0000" & --byte1: R(1) TC(3) R(4)
-                                           "0" & "0" & "00" & "00" & packet_length ; -- packet length is in words 
+                                           "0" & "0" & "00" & "00" & packet_length ; -- packet length is in words
                                                                                      --bytes 2/3: TD(1) EP(1) Attr(2) R(2) Length(10)
             header2			:= remoteaddress_next(63 downto 32);
             header3			:= remoteaddress_next(31 downto 4) & "0000"; -- last four bits should always be 0!						
@@ -518,7 +518,7 @@ begin
               if(interruptcounter = "111111") then
                 remoteaddress_interrupt		<= remoteaddress_var;
               end if;
-              
+
             else  -- pause DMA to check for other requests to happen on PCIe bus
               state   			<= pause_dma1;
               pause_counter		<= (others => '0');
@@ -611,17 +611,17 @@ begin
 
             if(interruptcounter = "111111" and interrupt_enabled = '1') then  -- interrupt every 64 DMA blocks
               state 			<= interrupt;
-            else	
+            else
               state				<= waiting;
               dma_done			<= '1';
             end if;
             interruptcounter <= interruptcounter + '1';
           end if;
-          
+
           test_out_r(69 downto 60)	<= dma_data_mem_addr_fpga(9 downto 0);
           test_out_r(59 downto 48)	<= dma_data_n_addrs_reg;
-          
-        when interrupt => 
+
+        when interrupt =>
           dma_status_register_reg(9)		<= '1';
           tx_valid_r		<= '0';
           tx_sop			<= '0';
@@ -630,14 +630,14 @@ begin
           
           app_msi_req			<= '1';
           app_msi_tc		<= (others => '0'); -- stay with traffic class 0
-          app_msi_num    <= IRQNUM; 
-          
+          app_msi_num    <= IRQNUM;
+
           if(app_msi_ack = '1') then
             dma_done			<= '1';
             app_msi_req		<= '0';
             state				<= waiting;
           end if;
-          
+
         when others =>
           state <= disabled;
       end case;
@@ -658,9 +658,9 @@ begin
       start_dma				<= '0';
       start_dma_next			<= '0';
       memoryblock_written  <= (others => '0');
-      
+
       memhalffull				<= '0';
-      
+
     elsif(dataclk'event and dataclk = '1') then
 
       empty_fifo_r <= empty_fifo;
@@ -675,7 +675,7 @@ begin
         memoryblock_written  <= (others => '0');
         memhalffull				<= '0';
       else
-        if( datawren = '1') then 
+        if( datawren = '1') then
           memwriteaddr	<= memwriteaddr + '1';
 			 memwriteaddr_long <= memwriteaddr_long + '1';
         end if;
@@ -683,7 +683,7 @@ begin
           memwriteaddreoe  <= memwriteaddr;
 			 memwriteaddreoe_long <= memwriteaddr_long;
         end if;
-        
+
         -- check for 4kB written data
         if(memwriteaddr(MEMWRITEADDRSIZE-4) /= memwriteaddr_last(MEMWRITEADDRSIZE-4)) then -- 64 bit words input
           memoryblock_written <= memwriteaddr_last(MEMWRITEADDRSIZE-1 downto MEMWRITEADDRSIZE-4);
@@ -691,7 +691,7 @@ begin
         end if;
         memwriteaddr_last <= memwriteaddr;
         start_dma_next <= start_dma;  -- wait one cycle until ref_clk sees transition
-        
+
 --        if(memwriteaddr_last(MEMWRITEADDRSIZE-1 downto 1) >= memaddr_last_packet) then
 --          diff := (memwriteaddr_last(MEMWRITEADDRSIZE-1 downto 2) - memaddr_last_packet);
 --        else
@@ -711,7 +711,7 @@ begin
         memhalffull <= diff(MEMREADADDRSIZE-1);
       end if;
     end if;
-  end process;
+    end process;
 
     e_dma_ram : entity work.ip_ram_2rw
     generic map (
@@ -738,11 +738,11 @@ begin
 --		data		=> datain,
 --		rdclk		=> dataclk,
 --		rdreq		=> "not"( empty_fifo),
---		wrclk		=> dataclk, 
---		wrreq		=> datawren, 
+--		wrclk		=> dataclk,
+--		wrreq		=> datawren,
 --		q			=> data_fifo,
 --		rdempty	=> empty_fifo,
---		wrfull	=> full_fifo 
+--		wrfull	=> full_fifo
 --	);
 
     e_dma_data_mem_addrs : entity work.ip_ram_2rw

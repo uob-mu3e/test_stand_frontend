@@ -1,6 +1,6 @@
 -------------------------------------------------------
 --! @link_to_fifo_32.vhd
---! @brief the link_to_fifo_32 sorts out the data from the 
+--! @brief the link_to_fifo_32 sorts out the data from the
 --! link and provides it as a fifo (32b package)
 --! Author: mkoeppel@uni-mainz.de
 -------------------------------------------------------
@@ -19,12 +19,12 @@ generic (
 port (
     i_rx            : in std_logic_vector(31 downto 0);
     i_rx_k          : in std_logic_vector(3 downto 0);
-    
+
     o_q             : out std_logic_vector(33 downto 0);
     i_ren           : in std_logic;
     o_rdempty       : out std_logic;
 
-    --! error counters 
+    --! error counters
     --! 0: fifo almost_full
     --! 1: fifo wrfull
     --! 2: # of skip event
@@ -41,7 +41,7 @@ port (
 end entity;
 
 architecture arch of link_to_fifo_32 is
-   
+
     type link_to_fifo_type is (idle, write_ts_0, write_ts_1, write_data, skip_data);
     signal link_to_fifo_state : link_to_fifo_type;
     signal cnt_skip_data, cnt_sub, cnt_events : std_logic_vector(31 downto 0);
@@ -49,7 +49,7 @@ architecture arch of link_to_fifo_32 is
     signal rx_156_data : std_logic_vector(33 downto 0);
     signal rx_156_wen, almost_full, wrfull : std_logic;
     signal wrusedw : std_logic_vector(LINK_FIFO_ADDR_WIDTH - 1 downto 0);
-    
+
     signal hit_reg : std_logic_vector(31 downto 0);
 
 begin
@@ -120,9 +120,9 @@ begin
                     rx_156_data(33 downto 32) <= "11"; -- sub header
                     cnt_sub <= cnt_sub + '1';
                 end if;
-                
+
                 hit_reg <= i_rx;
-                
+
                 if ( SKIP_DOUBLE_SUB = 1 and i_rx = hit_reg ) then
                     rx_156_wen <= '0';
                 else
@@ -144,7 +144,7 @@ begin
     end process;
 
     e_fifo : entity work.ip_dcfifo_v2
-    generic map(
+    generic map (
         g_ADDR_WIDTH => LINK_FIFO_ADDR_WIDTH,
         g_DATA_WIDTH => 34,
         g_RREG_N => 1--,
