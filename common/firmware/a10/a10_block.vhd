@@ -432,7 +432,7 @@ begin
     e_reset_156_n : entity work.reset_sync
     port map ( o_reset_n => reset_156_n, i_reset_n => i_reset_125_n, i_clk => clk_156 );
     o_reset_156_n <= reset_156_n;
-    
+
     e_reset_250_n : entity work.reset_sync
     port map ( o_reset_n => reset_250_n, i_reset_n => i_reset_125_n, i_clk => clk_250 );
     o_reset_250_n <= reset_250_n;
@@ -443,7 +443,7 @@ begin
     e_reset_pcie0_n : entity work.reset_sync
     port map ( o_reset_n => reset_pcie0_n, i_reset_n => i_reset_125_n, i_clk => pcie0_clk );
     o_reset_pcie0_n <= reset_pcie0_n;
-    
+
     e_reset_pcie1_n : entity work.reset_sync
     port map ( o_reset_n => reset_pcie1_n, i_reset_n => i_reset_125_n, i_clk => pcie1_clk );
     o_reset_pcie1_n <= reset_pcie1_n;
@@ -475,7 +475,7 @@ begin
         resets_n       => pcie0_resets_n_A,
         clk            => pcie0_clk--,
     );
-    
+
     gen_FARM : if ( g_FARM = 1 ) GENERATE
         --! generate reset regs for 250 MHz link clk for pcie0
         e_reset_logic_farm : entity work.reset_logic
@@ -499,7 +499,7 @@ begin
             clk            => clk_156--,
         );
      END GENERATE gen_SWB;
-    
+
     --! generate reset regs for DDR clk for pcie0
     e_reset_logic_ddr : entity work.reset_logic
     port map (

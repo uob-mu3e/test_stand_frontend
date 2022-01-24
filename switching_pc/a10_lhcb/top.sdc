@@ -18,8 +18,6 @@ create_clock -period "125.000 MHz" [get_ports A10_REFCLK_GBT_P_5]
 create_clock -period "125.000 MHz" [get_ports A10_REFCLK_GBT_P_6]
 create_clock -period "125.000 MHz" [get_ports A10_REFCLK_GBT_P_7]
 
-
-
 derive_pll_clocks -create_base_clocks
 
 derive_clock_uncertainty
