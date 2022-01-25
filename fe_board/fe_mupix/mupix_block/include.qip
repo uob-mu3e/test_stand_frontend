@@ -2,6 +2,7 @@
 
 set_global_assignment -name VHDL_FILE [file join $::quartus(qip_path) "comp_type_const/mupix_ctrl_reg_mapping.vhd"]
 set_global_assignment -name VHDL_FILE [file join $::quartus(qip_path) "comp_type_const/mupix_datapath_reg_mapping.vhd"]
+set_global_assignment -name VHDL_FILE [file join $::quartus(qip_path) "comp_type_const/mp_PLL_lock_reg_mapping.vhd"]
 
 set_global_assignment -name QIP_FILE [file join $::quartus(qip_path) "data_unpacker/data_unpacker.qip"]
 

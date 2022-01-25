@@ -163,9 +163,11 @@ architecture rtl of mupix_datapath is
     signal mp_sorter_reg            : work.util.rw_t;
     signal mp_lvds_rx_reg           : work.util.rw_t;
     signal mp_datapath_reg          : work.util.rw_t;
+    signal mp_pll_lock_reg          : work.util.rw_t;
 
-	signal ena3_counter				: std_logic_vector(31 downto 0);
-	signal ena4_counter				: std_logic_vector(31 downto 0);
+    signal ena3_counter             : std_logic_vector(31 downto 0);
+    signal ena4_counter             : std_logic_vector(31 downto 0);
+
 begin
 
     process(i_clk156)
@@ -183,17 +185,17 @@ begin
     begin
         if(rising_edge(i_clk125)) then
             if(i_run_state_125=RUN_STATE_SYNC) then
-				ena3_counter <= (others => '0');
-				ena4_counter <= (others => '0');
+                ena3_counter <= (others => '0');
+                ena4_counter <= (others => '0');
                 reset_125_n <= '0';
             else 
                 reset_125_n <=  '1';
-				if(i_trigger_in0 = '1') then
-					ena3_counter <= ena3_counter + '1';
-				end if;
-				if(i_trigger_in1 = '1') then
-					ena4_counter <= ena4_counter + '1';
-				end if;
+                if(i_trigger_in0 = '1') then
+                    ena3_counter <= ena3_counter + '1';
+                end if;
+                if(i_trigger_in1 = '1') then
+                    ena4_counter <= ena4_counter + '1';
+                end if;
             end if;
         end if;
     end process;
@@ -204,7 +206,8 @@ begin
     e_lvl2_sc_node: entity work.sc_node
     generic map (
         SLAVE1_ADDR_MATCH_g => "00010000--------",
-        SLAVE2_ADDR_MATCH_g => "00010001--------"--,
+        SLAVE2_ADDR_MATCH_g => "00010001--------",
+        SLAVE3_ADDR_MATCH_g => "00010010--------"--,
     )
     port map (
         i_clk          => i_clk156,
@@ -232,7 +235,13 @@ begin
         o_slave2_re    => mp_lvds_rx_reg.re,
         i_slave2_rdata => mp_lvds_rx_reg.rdata,
         o_slave2_we    => mp_lvds_rx_reg.we,
-        o_slave2_wdata => mp_lvds_rx_reg.wdata--,
+        o_slave2_wdata => mp_lvds_rx_reg.wdata,
+
+        o_slave3_addr  => mp_pll_lock_reg.addr(15 downto 0),
+        o_slave3_re    => mp_pll_lock_reg.re,
+        i_slave3_rdata => mp_pll_lock_reg.rdata,
+        o_slave3_we    => mp_pll_lock_reg.we,
+        o_slave3_wdata => mp_pll_lock_reg.wdata--,
     );
 
     mp_lvds_rx_reg_mapping_inst: entity work.mp_lvds_rx_reg_mapping
@@ -290,6 +299,23 @@ begin
         o_mp_reset_n_lvds           => reset_n_lvds,
         o_mp_hit_ena_cnt_select     => hit_ena_cnt_select,
         o_mp_hit_ena_cnt_sorter_sel => hitsorter_in_ena_cnt_sel--,
+    );
+
+    mp_pll_lock_reg_mapping: work.mp_pll_lock_reg_mapping
+    port map (
+        i_clk156            => i_clk156,
+        i_clk125            => i_clk125,
+        i_reset_n           => i_reset_n_regs,
+        i_reset_125         => reset_125_n,
+
+        i_reg_add           => mp_pll_lock_reg.addr(15 downto 0),
+        i_reg_re            => mp_pll_lock_reg.re,
+        o_reg_rdata         => mp_pll_lock_reg.rdata,
+        i_reg_we            => mp_pll_lock_reg.we,
+        i_reg_wdata         => mp_pll_lock_reg.wdata,
+
+        i_hit_ena(11 downto 0)  => hits_sorter_in_ena_buf,
+        i_counter               => counter125(31 downto 0)--,
     );
 
 ------------------------------------------------------------------------------------
