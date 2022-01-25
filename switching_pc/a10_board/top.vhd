@@ -228,10 +228,9 @@ begin
         o_spi_sclk(0)                   => RJ45_LED_R,
         o_spi_ss_n(0)                   => RS422_DE,
 
-        -- LED / BUTTONS
+        -- LEDs
         o_LED(1)                        => LED(0),
         o_LED_BRACKET                   => LED_BRACKET,
-        i_BUTTON                        => BUTTON,
 
         -- XCVR0 (6250 Mbps @ 156.25 MHz)
         i_xcvr0_rx( 3 downto  0)        => QSFPA_RX_p,

@@ -43,10 +43,9 @@ port (
     o_spi_sclk          : out   std_logic_vector(31 downto 0);
     o_spi_ss_n          : out   std_logic_vector(31 downto 0);
 
-    -- LED / BUTTONS
+    -- LEDs
     o_LED               : out   std_logic_vector(3 downto 0);
     o_LED_BRACKET       : out   std_logic_vector(3 downto 0);
-    i_BUTTON            : in    std_logic_vector(3 downto 0) := (others => '0');
 
 
 
@@ -278,9 +277,6 @@ architecture arch of a10_block is
     signal cnt_lock_125to250 : std_logic_vector(30 downto 0);
     signal locked_125to156, locked_125to250 : std_logic;
 
-    --! debouncer signals
-    signal button : std_logic_vector(i_button'range);
-
     function f_xcvr0_rx_p ( i : integer ) return integer is
     begin
         if ( i < g_XCVR0_RX_P'length ) then return g_XCVR0_RX_P(i); end if;
@@ -490,19 +486,6 @@ begin
 
     --! blinky leds
     o_LED(1) <= nios_pio(7);
-
-    --! debouncer for push_button
-    e_debouncer : entity work.debouncer
-    generic map (
-        W => i_button'length,
-        N => integer(g_CLK_MHZ * 1000000.0 * 0.001) -- 1ms
-    )
-    port map (
-        i_d         => i_button,
-        o_q         => button,
-        i_reset_n   => i_reset_n,
-        i_clk       => i_clk--,
-    );
 
     -- nios reset sequence
     e_nios_reset_n : entity work.debouncer
