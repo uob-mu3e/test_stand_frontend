@@ -55,17 +55,17 @@ begin
         g_DEVICE_FAMILY => "Arria 10"--
     )
     port map (
-        o_rdata     => fifo_rdata,
-        i_rack      => fifo_rack,
-        o_rempty    => fifo_rempty,
-
-        i_wdata     => wdata,
         i_we        => we,
+        i_wdata     => wdata,
         o_wfull     => wfull,
 
-        i_clk       => clk,
---        i_rclk      => clk,
+        i_rack      => fifo_rack,
+        o_rdata     => fifo_rdata,
+        o_rempty    => fifo_rempty,
+
 --        i_wclk      => clk,
+--        i_rclk      => clk,
+        i_clk       => clk,
         i_reset_n   => reset_n--,
     );
 
@@ -75,13 +75,13 @@ begin
         g_N => 2--,
     )
     port map (
-        o_rdata     => rdata,
-        i_rack      => rack,
-        o_rempty    => rempty,
-
-        i_wdata     => fifo_rdata,
         i_we        => not fifo_rempty,
+        i_wdata     => fifo_rdata,
         o_wfull_n   => fifo_rack,
+
+        i_rack      => rack,
+        o_rdata     => rdata,
+        o_rempty    => rempty,
 
         i_reset_n   => reset_n,
         i_clk       => clk--,

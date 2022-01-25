@@ -15,14 +15,14 @@ generic (
 );
 port (
     i_addr0     : in    std_logic_vector(g_ADDR0_WIDTH-1 downto 0);
-    i_wdata0    : in    std_logic_vector(g_DATA0_WIDTH-1 downto 0) := (others => '0');
     i_we0       : in    std_logic := '0';
+    i_wdata0    : in    std_logic_vector(g_DATA0_WIDTH-1 downto 0) := (others => '0');
     o_rdata0    : out   std_logic_vector(g_DATA0_WIDTH-1 downto 0);
     i_clk0      : in    std_logic;
 
     i_addr1     : in    std_logic_vector(g_ADDR1_WIDTH-1 downto 0);
-    i_wdata1    : in    std_logic_vector(g_DATA1_WIDTH-1 downto 0) := (others => '0');
     i_we1       : in    std_logic := '0';
+    i_wdata1    : in    std_logic_vector(g_DATA1_WIDTH-1 downto 0) := (others => '0');
     o_rdata1    : out   std_logic_vector(g_DATA1_WIDTH-1 downto 0);
     i_clk1      : in    std_logic--;
 );
@@ -81,14 +81,14 @@ begin
     )
     port map (
         address_a => i_addr0,
-        data_a => i_wdata0,
         wren_a => i_we0,
+        data_a => i_wdata0,
         q_a => o_rdata0,
         clock0 => i_clk0,
 
         address_b => i_addr1,
-        data_b => i_wdata1,
         wren_b => i_we1,
+        data_b => i_wdata1,
         q_b => o_rdata1,
         clock1 => i_clk1--,
     );
