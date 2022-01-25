@@ -13,7 +13,7 @@ use ieee.std_logic_unsigned.all;
 
 entity link_to_fifo_32 is
 generic (
-    SKIP_DOUBLE_SUB      : positive := 0;
+    SKIP_DOUBLE_SUB      : natural := 0;
     LINK_FIFO_ADDR_WIDTH : positive := 10--;
 );
 port (
