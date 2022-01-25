@@ -210,17 +210,20 @@ end entity;
 
 architecture arch of a10_block is
 
+    signal flash_address    : std_logic_vector(31 downto 0) := (others => '0');
     signal flash_reset_n    : std_logic;
-    signal nios_reset_n     : std_logic;
 
     signal reset_156_n      : std_logic;
     signal clk_156          : std_logic;
     signal reset_250_n      : std_logic;
     signal clk_250          : std_logic;
-    
-    signal reset_C_n        : std_logic;
 
-    signal flash_address    : std_logic_vector(31 downto 0) := (others => '0');
+    signal pcie0_clk        : std_logic;
+    signal reset_pcie0_n    : std_logic;
+    signal pcie1_clk        : std_logic;
+    signal reset_pcie1_n    : std_logic;
+
+    signal nios_reset_n     : std_logic;
 
     signal nios_i2c_scl     : std_logic;
     signal nios_i2c_scl_oe  : std_logic;
@@ -250,11 +253,6 @@ architecture arch of a10_block is
     signal xcvr2_tx_data    : std_logic_vector(g_XCVR2_CHANNELS*8-1 downto 0) := (others => '0');
     signal xcvr2_tx_datak   : std_logic_vector(g_XCVR2_CHANNELS-1 downto 0) := (others => '0');
 
-    signal pcie0_clk        : std_logic;
-    signal reset_pcie0_n    : std_logic;
-    signal pcie1_clk        : std_logic;
-    signal reset_pcie1_n    : std_logic;
-
     signal pcie0_rregs      : reg32array_pcie;
     signal pcie1_rregs      : reg32array_pcie;
     signal pcie0_wregs_A    : reg32array_pcie;
@@ -271,6 +269,8 @@ architecture arch of a10_block is
     signal pcie0_resets_n_B : std_logic_vector(31 downto 0);
     signal pcie0_resets_n_C : std_logic_vector(31 downto 0);
     signal pcie0_dma0_hfull : std_logic;
+
+    signal reset_C_n        : std_logic;
 
     --! pll lock counters
     signal cnt_lock_top : std_logic_vector(30 downto 0);
@@ -304,6 +304,12 @@ architecture arch of a10_block is
 
 begin
 
+    o_flash_reset_n <= flash_reset_n;
+    o_flash_address <= flash_address;
+
+    o_pcie0_clk <= pcie0_clk;
+    o_pcie1_clk <= pcie1_clk;
+
     --! output signals
     gen_pcie0_wregs_mapping : for i in 0 to 63 generate
         o_pcie0_wregs_A(i) <= pcie0_wregs_A(i);
@@ -313,15 +319,10 @@ begin
         o_pcie1_wregs_B(i) <= pcie1_wregs_B(i);
         o_pcie1_wregs_C(i) <= pcie1_wregs_C(i);
     end generate;
-    o_pcie0_clk <= pcie0_clk;
     o_pcie0_resets_n_A <= pcie0_resets_n_A;
     o_pcie0_resets_n_B <= pcie0_resets_n_B;
     o_pcie0_resets_n_C <= pcie0_resets_n_C;
     o_pcie0_dma0_hfull <= pcie0_dma0_hfull;
-    o_flash_reset_n <= flash_reset_n;
-    o_flash_address <= flash_address;
-
-    o_pcie1_clk <= pcie1_clk;
 
     --! pll counters
     e_cnt_top_locked : entity work.counter
@@ -390,10 +391,7 @@ begin
     e_reset_250_n : entity work.reset_sync
     port map ( o_reset_n => reset_250_n, i_reset_n => i_reset_125_n, i_clk => clk_250 );
     o_reset_250_n <= reset_250_n;
-    
-    e_reset_C_n : entity work.reset_sync
-    port map ( o_reset_n => reset_C_n, i_reset_n => i_reset_125_n, i_clk => i_pcie0_wregs_C_clk );
-    
+
     e_reset_pcie0_n : entity work.reset_sync
     port map ( o_reset_n => reset_pcie0_n, i_reset_n => i_reset_125_n, i_clk => pcie0_clk );
     o_reset_pcie0_n <= reset_pcie0_n;
@@ -413,6 +411,18 @@ begin
     e_clk_250_hz : entity work.clkdiv
     generic map ( P => 250000000 )
     port map ( o_clk => o_clk_250_hz, i_reset_n => reset_250_n, i_clk => clk_250 );
+
+    e_pcie0_clk_hz : entity work.clkdiv
+    generic map ( P => 250000000 )
+    port map ( o_clk => o_pcie0_clk_hz, i_reset_n => reset_pcie0_n, i_clk => pcie0_clk );
+
+    e_pcie1_clk_hz : entity work.clkdiv
+    generic map ( P => 250000000 )
+    port map ( o_clk => o_pcie1_clk_hz, i_reset_n => reset_pcie1_n, i_clk => pcie1_clk );
+
+    e_reset_C_n : entity work.reset_sync
+    port map ( o_reset_n => reset_C_n, i_reset_n => i_reset_125_n, i_clk => i_pcie0_wregs_C_clk );
+
 
     --! save git version to version register
     e_version_reg : entity work.version_reg
@@ -473,16 +483,6 @@ begin
     --! ------------------------------------------------------------------------
     --! ------------------------------------------------------------------------
     --! ------------------------------------------------------------------------
-
-    --! 100 MHz blinky to check the pcie0 clk
-    e_pcie0_clk_hz : entity work.clkdiv
-    generic map ( P => 250000000 )
-    port map ( o_clk => o_pcie0_clk_hz, i_reset_n => reset_pcie0_n, i_clk => pcie0_clk );
-
-    --! 100 MHz blinky to check the pcie1 clk
-    e_pcie1_clk_hz : entity work.clkdiv
-    generic map ( P => 250000000 )
-    port map ( o_clk => o_pcie1_clk_hz, i_reset_n => reset_pcie1_n, i_clk => pcie1_clk );
 
     --! blinky leds to check the wregs
     o_LED_BRACKET(1 downto 0) <= pcie0_wregs_A(LED_REGISTER_W)(1 downto 0);
