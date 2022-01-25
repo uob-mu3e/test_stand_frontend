@@ -41,6 +41,7 @@ port (
 
     -- outputs 156--------------------------------------------
     o_mp_lvds_link_mask         : out std_logic_vector(35 downto 0); -- lvds link mask
+    o_mp_use_arrival_time       : out std_logic_vector(35 downto 0);
     o_mp_lvds_invert            : out std_logic;
     o_mp_datagen_control        : out std_logic_vector(31 downto 0); -- control register for the mupix data gen
     o_mp_readout_mode           : out std_logic_vector(31 downto 0); -- Invert ts, degray, chip ID numbering, tot mode, ..
@@ -60,6 +61,7 @@ architecture rtl of mupix_datapath_reg_mapping is
     signal mp_readout_mode          : std_logic_vector(31 downto 0);
     signal mp_lvds_link_mask        : std_logic_vector(35 downto 0);
     signal mp_lvds_link_mask_ordered: std_logic_vector(35 downto 0);
+    signal mp_use_arrival_time      : std_logic_vector(35 downto 0);
     signal mp_lvds_invert           : std_logic;
     signal mp_data_bypass_select    : std_logic_vector(31 downto 0);
     signal mp_sorter_inject         : std_logic_vector(31 downto 0);
@@ -90,6 +92,7 @@ begin
             mp_datagen_control        <= (others => '0');
             mp_lvds_link_mask         <= (others => '0');
             mp_sorter_inject          <= (others => '0');
+            mp_use_arrival_time       <= (others => '0');
             
         elsif(rising_edge(i_clk156)) then
 
@@ -102,6 +105,7 @@ begin
             o_mp_hit_ena_cnt_select     <= mp_hit_ena_cnt_select;
             o_mp_hit_ena_cnt_sorter_sel <= mp_hit_ena_cnt_sorter_sel;
             o_mp_reset_n_lvds           <= mp_reset_n_lvds;
+            o_mp_use_arrival_time       <= mp_use_arrival_time;
 
             regaddr             := to_integer(unsigned(i_reg_add));
             o_reg_rdata         <= x"CCCCCCCC";
@@ -205,6 +209,20 @@ begin
             if ( regaddr = MP_RESET_LVDS_N_REGISTER_W and i_reg_re = '1' ) then
                 o_reg_rdata(0) <= mp_reset_n_lvds;
                 o_reg_rdata(31 downto 1) <= (others => '0');
+            end if;
+
+            if ( regaddr = MP_USE_ARRIVAL_TIME1_REGISTER_W and i_reg_we = '1' ) then
+                mp_use_arrival_time(31 downto 0) <= i_reg_wdata;
+            end if;
+            if ( regaddr = MP_USE_ARRIVAL_TIME1_REGISTER_W and i_reg_re = '1' ) then
+                o_reg_rdata <= mp_use_arrival_time(31 downto 0);
+            end if;
+            if ( regaddr = MP_USE_ARRIVAL_TIME2_REGISTER_W and i_reg_we = '1' ) then
+                mp_use_arrival_time(35 downto 32) <= i_reg_wdata(3 downto 0);
+            end if;
+            if ( regaddr = MP_USE_ARRIVAL_TIME2_REGISTER_W and i_reg_re = '1' ) then
+                o_reg_rdata( 3 downto 0)  <= mp_use_arrival_time(35 downto 32);
+                o_reg_rdata(31 downto 4)  <= (others => '0');
             end if;
 
         end if;

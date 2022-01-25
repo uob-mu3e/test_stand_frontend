@@ -91,6 +91,8 @@ constant MUPIX_LVDS_STATUS_BLOCK_LENGTH     : integer := 36;
     constant MP_HIT_ENA_CNT_SORTER_SELECT_REGISTER_W :  integer := 16#120C#;  -- DOC: register to select the link for the sorter input hin ena counter | MP_FEB
     constant MP_HIT_ENA_CNT_SORTER_OUT_REGISTER_R : integer := 16#120D#;      -- DOC: hit counter at sorter output | MP_FEB
     constant MP_RESET_LVDS_N_REGISTER_W         :  integer := 16#120F#;       -- DOC: reset register for mupix lvds rx | MP_FEB
+    constant MP_USE_ARRIVAL_TIME1_REGISTER_W    :  integer := 16#1210#;       -- DOC: use hit arrival time instead of timestamp from mupix (lower 32 chips) | MP_FEB
+    constant MP_USE_ARRIVAL_TIME2_REGISTER_W    :  integer := 16#1211#;       -- DOC: use hit arrival time instead of timestamp from mupix (uppder 4 chips) | MP_FEB
 
 -----------------------------------------------------------------
 ---- mupix lvds rx (0x1100-0x11FF)-------------------------------

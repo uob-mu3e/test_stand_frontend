@@ -101,6 +101,8 @@ architecture rtl of mupix_datapath is
     signal data_bypass_we           : std_logic;
     signal data_bypass_select       : std_logic_vector(31 downto 0);
 
+    signal mp_use_arrival_time      : std_logic_vector(35 downto 0);
+
     signal running                  : std_logic := '0';
 
     -- error signal output from unpacker
@@ -281,6 +283,7 @@ begin
         o_mp_readout_mode           => mp_readout_mode,
         o_mp_data_bypass_select     => data_bypass_select,
         o_mp_delta_ts_link_select   => delta_ts_link_select,
+        o_mp_use_arrival_time       => mp_use_arrival_time,
 
         -- outputs 125-------------------------------------------------
         o_sorter_inject             => sorter_inject,
@@ -505,9 +508,7 @@ begin
             o_tot(0)            => tot_hs(i),
             o_hit_ena           => hits_sorter_in_ena_buf(i)--,
         );
-        --hits_sorter_in_buf(i)       <= row_hs(i) & col_hs(i) & tot_hs(i)(4 downto 0) & ts_hs(i);
-		hits_sorter_in_buf(i)       <= row_hs(i) & col_hs(i) & tot_hs(i)(4 downto 0) & counter125(10 downto 0); -- TODO: change me
-		
+        hits_sorter_in_buf(i)       <= row_hs(i) & col_hs(i) & tot_hs(i)(4 downto 0) & ts_hs(i) when mp_use_arrival_time(I)='0' else row_hs(i) & col_hs(i) & tot_hs(i)(4 downto 0) & counter125(10 downto 0);
     END GENERATE;
 
     process(i_clk125)
