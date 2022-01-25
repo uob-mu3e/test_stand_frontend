@@ -88,6 +88,7 @@ package mudaq is
     subtype reg24 is std_logic_vector(23 downto 0);
     subtype reg16 is std_logic_vector(15 downto 0);
     subtype reg8  is std_logic_vector( 7 downto 0);
+    subtype reg4  is std_logic_vector( 3 downto 0);
 
     -- TODO: REMOVE THIS NUMBER HERE
     constant NREGISTERS :  integer := 64;
@@ -97,6 +98,7 @@ package mudaq is
     type reg24array is array (natural range <>) of reg24;
     type reg16array is array (natural range <>) of reg16;
     type  reg8array is array (natural range <>) of  reg8;
+    type  reg4array is array (natural range <>) of  reg4;
 
     --! type for run state
     subtype run_state_t is std_logic_vector(9 downto 0);
