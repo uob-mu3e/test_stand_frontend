@@ -28,12 +28,14 @@ port (
     i_wdata     : in    std_logic_vector(work.util.value_if(g_WDATA_WIDTH > 0, g_WDATA_WIDTH, g_DATA_WIDTH)-1 downto 0);
     i_we        : in    std_logic; -- write enable (request)
     o_wfull     : out   std_logic;
+    o_wfull_n   : out   std_logic;
     o_wusedw    : out   std_logic_vector(work.util.value_if(g_WADDR_WIDTH > 0, g_WADDR_WIDTH, g_ADDR_WIDTH)-1 downto 0);
     i_wclk      : in    std_logic;
 
     o_rdata     : out   std_logic_vector(work.util.value_if(g_RDATA_WIDTH > 0, g_RDATA_WIDTH, g_DATA_WIDTH)-1 downto 0);
     i_rack      : in    std_logic; -- read enable (request, acknowledge)
     o_rempty    : out   std_logic;
+    o_rempty_n  : out   std_logic;
     o_rusedw    : out   std_logic_vector(work.util.value_if(g_RADDR_WIDTH > 0, g_RADDR_WIDTH, g_ADDR_WIDTH)-1 downto 0);
     i_rclk      : in    std_logic;
 
@@ -65,9 +67,11 @@ begin
     o_rdata <= fifo_rdata(0);
     fifo_rack(0) <= i_rack;
     o_rempty <= fifo_rempty(0);
+    o_rempty_n <= not fifo_rempty(0);
     fifo_wdata(0) <= i_wdata;
     fifo_we(0) <= i_we;
     o_wfull <= fifo_wfull(0);
+    o_wfull_n <= not fifo_wfull(0);
 
     assert ( true
         and RADDR_WIDTH >= 2 and WADDR_WIDTH >= 2

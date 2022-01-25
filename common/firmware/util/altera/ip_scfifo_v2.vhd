@@ -16,11 +16,13 @@ port (
     i_wdata         : in    std_logic_vector(g_DATA_WIDTH-1 downto 0);
     i_we            : in    std_logic; -- write enable (request)
     o_wfull         : out   std_logic;
+    o_wfull_n       : out   std_logic;
     o_almost_full   : out   std_logic;
 
     o_rdata         : out   std_logic_vector(g_DATA_WIDTH-1 downto 0);
     i_rack          : in    std_logic; -- read enable (request, acknowledge)
     o_rempty        : out   std_logic;
+    o_rempty_n      : out   std_logic;
     o_almost_empty  : out   std_logic;
 
     o_usedw         : out   std_logic_vector(g_ADDR_WIDTH-1 downto 0);
@@ -50,9 +52,11 @@ begin
     o_rdata <= fifo_rdata(0);
     fifo_rack(0) <= i_rack;
     o_rempty <= fifo_rempty(0);
+    o_rempty_n <= not fifo_rempty(0);
     fifo_wdata(0) <= i_wdata;
     fifo_we(0) <= i_we;
     o_wfull <= fifo_wfull(0);
+    o_wfull_n <= not fifo_wfull(0);
 
     assert ( true
         and ( g_RREG_N = 0 or g_SHOWAHEAD = "ON" )
