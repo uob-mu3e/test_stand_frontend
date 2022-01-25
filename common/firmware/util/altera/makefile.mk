@@ -11,8 +11,6 @@ ifndef QUARTUS_ROOTDIR
     $(error QUARTUS_ROOTDIR is undefined)
 endif
 
-<<<<<<< HEAD
-=======
 ifndef QUARTUS_VERSION
     QUARTUS_VERSION := $(shell basename $(shell dirname $(QUARTUS_ROOTDIR)))
 endif
@@ -21,7 +19,6 @@ ifeq ($(QUARTUS_OUTPUT_FILES),)
     override QUARTUS_OUTPUT_FILES := output_files
 endif
 
->>>>>>> aac3fe22 ([util] makefile - get QUARTUS_VERSION from _ROOTDIR)
 # directory for generated files (*.qsys, *.sopcinfo, etc.)
 # TODO: rename PREFIX -> QP_TMP_DIR
 ifeq ($(PREFIX),)
