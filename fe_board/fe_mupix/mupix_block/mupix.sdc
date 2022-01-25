@@ -34,3 +34,5 @@ set_false_path -from {mupix_block:e_mupix_block|mupix_datapath:e_mupix_datapath|
 set_false_path -from {mupix_block:e_mupix_block|mupix_datapath:e_mupix_datapath|receiver_block_mupix:lvds_block|data_decoder:\gendec:*:datadec|state_out*} -to {mupix_block:e_mupix_block|mupix_datapath:e_mupix_datapath|receiver_block_mupix:lvds_block|o_rx_status[*][*]}
 
 set_false_path -from {mupix_block:e_mupix_block|mupix_datapath:e_mupix_datapath|hitsorter_wide:sorter|mp_sorter_reg_mapping:e_mp_sorter_reg_mapping|o_zero_suppression} -to {*}
+set_false_path -from {mupix_block:e_mupix_block|mupix_datapath:e_mupix_datapath|mupix_datapath_reg_mapping:e_mupix_datapath_reg_mapping|o_mp_use_arrival_time*} -to {*}
+set_false_path -from {mupix_block:e_mupix_block|mupix_datapath:e_mupix_datapath|counter125[10]} -to {mupix_block:e_mupix_block|mupix_datapath:e_mupix_datapath|mp_pll_lock_reg_mapping:mp_pll_lock_reg_mapping|arrival_time_distr156*}
