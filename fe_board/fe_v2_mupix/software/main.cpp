@@ -19,6 +19,9 @@ mscb_t mscb;
 
 #include "mupix.h"
 #include "mp_datapath.h"
+#include "include/feb_sc_registers.h"
+#include "../../fe/software/tmpDisplay.h"
+
 mupix_t mupix(&sc);
 mupix_datapath_t mupix_datapath(&sc);
 //definition of callback function for slow control packets
@@ -36,12 +39,12 @@ int main() {
     //mscb.init();
     sc.init();
     volatile sc_ram_t* ram = (sc_ram_t*) AVM_SC_BASE;
-    ram->data[0xFC03] = 0;
+    ram->data[FPGA_ID_REGISTER_RW] = 0;
 
     while (1) {
         printf("\n");
         printf("[fe_mupix] -------- menu --------\n");
-	printf("ID: 0x%08x\n", ram->data[0xFC03]);
+	printf("ID: 0x%08x\n", ram->data[FPGA_ID_REGISTER_RW]);
 
         printf("\n");
         printf("  [1] => Firefly channels\n");
@@ -52,6 +55,7 @@ int main() {
         printf("  [6] => mscb\n");
         printf("  [7] => reset system\n");
         printf("  [8] => datapath\n");
+        printf("  [9] => temperature Display\n");
         printf("  [f] => toggleFEBID\n");
 
         printf("Select entry ...\n");
@@ -82,15 +86,11 @@ int main() {
             mupix_datapath.menu();
             break;
         case '9':
-            printf("test: 0x%08x\n", ram->data[0xFC2C]);
+            menu_tmpDisplay((alt_u32*)(AVM_QSFP_BASE | ALT_CPU_DCACHE_BYPASS_MASK));
             break;
-        case 'a':
-            printf("testwrite:\n");
-            ram->data[0xFC2C]=0xAAAAAAAA;
-            break;
-	case 'f':
-    	    ram->data[0xFC03] ^= 1UL << 0;
-	    break;
+        case 'f':
+            ram->data[FPGA_ID_REGISTER_RW] ^= 1UL << 0;
+        break;
         default:
             printf("invalid command: '%c'\n", cmd);
         }

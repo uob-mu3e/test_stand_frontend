@@ -360,7 +360,7 @@ begin
         i_clk_125           => lvds_firefly_clk,
 
         i_areset_n          => pb_db(0),
-        
+
         i_testin            => pb_db(1)--,
     );
 

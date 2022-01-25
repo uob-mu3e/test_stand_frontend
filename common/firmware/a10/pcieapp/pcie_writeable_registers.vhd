@@ -147,21 +147,19 @@ begin
 			regwritten_r(TO_INTEGER(UNSIGNED(addr4))) <= '1';
 		end if;
 
-
-
-
 		case state is
 			when reset =>
-				state 			<= waiting;
 				rx_st_ready0   <= '0';
 				be3				<= '0';
 				be4				<= '0';
-	-------------------------------------------------------------------------------------
-			when waiting =>
+
+                state <= waiting;
+                --
+            when waiting =>
 				be3				<= '0';
 				be4				<= '0';
 				rx_st_ready0   <= '1';
-				
+
 				if(rx_st_sop0 = '1' and rx_bar = '1') then --  and inaddr32 = x"fb480040"
 					if(fmt = "10" and ptype = "00000") then -- 32 bit memory write request
 						if(inaddr32(2) = '1') then -- Unaligned write, first data word at word3
@@ -190,7 +188,9 @@ begin
 						state			<= waiting;
 					end if; -- 32 bit write/read request
 				end if; -- if Start of Packet
+
 				state <= waiting;
+                --
 		end case;
 	end if; -- if clk event
 	end process;
@@ -202,10 +202,10 @@ begin
 
     process(refclk)
     begin
-        if(rising_edge(refclk)) then
-            be3_prev    <= be3;
-            be4_prev    <= be4;
-        end if;
+    if(rising_edge(refclk)) then
+        be3_prev <= be3;
+        be4_prev <= be4;
+    end if;
     end process;
 
     writeregs_B_fifo_wdata <=

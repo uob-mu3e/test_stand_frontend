@@ -26,7 +26,7 @@ port (
     o_wsop      : out   std_logic;
     o_weop      : out   std_logic;
 
-    --! status counters 
+    --! status counters
     --! 0: e_stream_fifo full
     o_counters  : out work.util.slv32_array_t(0 downto 0);
 

@@ -1,6 +1,6 @@
 
-.cache/
-generated/
+.cache
+generated
 
 # cmake
 build/

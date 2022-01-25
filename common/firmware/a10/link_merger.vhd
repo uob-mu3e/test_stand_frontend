@@ -12,7 +12,7 @@ use ieee.std_logic_unsigned.all;
 
 
 entity link_merger is
-generic(
+generic (
     W : integer := 66;
     NLINKS_TOTL : integer := 3;
     TREE_DEPTH_w : positive := 8;
@@ -35,7 +35,7 @@ port (
     i_stream_rack : in std_logic--;
 
 );
-end entity link_merger;
+end entity;
 
 architecture arch of link_merger is
          

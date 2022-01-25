@@ -18,9 +18,9 @@
 #include <altera_avalon_pio_regs.h>
 
 #include <fcntl.h>
+#include <stdint.h>
 #include <stdio.h>
 #include <unistd.h>
-#include <stdint.h>
 
 // watchdog
 struct wd_t {

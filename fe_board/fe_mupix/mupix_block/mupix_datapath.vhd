@@ -12,10 +12,10 @@ use work.mudaq.all;
 
 
 entity mupix_datapath is
-    generic(
-        IS_TELESCOPE_g : std_logic := '0';
-        LINK_ORDER_g : mp_link_order_t--;
-    );
+generic (
+    IS_TELESCOPE_g : std_logic := '0';
+    LINK_ORDER_g : mp_link_order_t--;
+);
 port (
     i_reset_n           : in  std_logic;
     i_reset_n_regs      : in  std_logic;
@@ -49,7 +49,7 @@ port (
     i_trigger_in0_timestamp : in  std_logic_vector(31 downto 0);
     i_trigger_in1_timestamp : in  std_logic_vector(31 downto 0)--;
 );
-end mupix_datapath;
+end entity;
 
 architecture rtl of mupix_datapath is
 
@@ -168,13 +168,13 @@ begin
 
     process(i_clk156)
     begin
-        if(rising_edge(i_clk156)) then
-            if(i_run_state_156=RUN_STATE_SYNC) then
-                reset_156_n <= '0';
-            else 
-                reset_156_n <=  '1';
-            end if;
+    if rising_edge(i_clk156) then
+        if ( i_run_state_156 = RUN_STATE_SYNC ) then
+            reset_156_n <= '0';
+        else
+            reset_156_n <=  '1';
         end if;
+    end if;
     end process;
 
     process(i_clk125)
@@ -354,23 +354,23 @@ begin
 
     process(i_clk156)
     begin
-        if(rising_edge(i_clk156)) then
-            hit_ena_counters_reg            <= hit_ena_counters;
-            hitsorter_in_ena_counters_reg   <= hitsorter_in_ena_counters;
-            hitsorter_out_ena_cnt_reg       <= hitsorter_out_ena_cnt;
+    if rising_edge(i_clk156) then
+        hit_ena_counters_reg            <= hit_ena_counters;
+        hitsorter_in_ena_counters_reg   <= hitsorter_in_ena_counters;
+        hitsorter_out_ena_cnt_reg       <= hitsorter_out_ena_cnt;
 
-            if(to_integer(unsigned(hit_ena_cnt_select))<36) then
-                hit_ena_cnt <= hit_ena_counters_reg(to_integer(unsigned(hit_ena_cnt_select)));
-            else
-                hit_ena_cnt <= (others => '0');
-            end if;
-
-            if(to_integer(unsigned(hitsorter_in_ena_cnt_sel))<12) then
-                hitsorter_in_ena_cnt <= hitsorter_in_ena_counters_reg(to_integer(unsigned(hitsorter_in_ena_cnt_sel)));
-            else
-                hitsorter_in_ena_cnt <= (others => '0');
-            end if;
+        if(to_integer(unsigned(hit_ena_cnt_select))<36) then
+            hit_ena_cnt <= hit_ena_counters_reg(to_integer(unsigned(hit_ena_cnt_select)));
+        else
+            hit_ena_cnt <= (others => '0');
         end if;
+
+        if(to_integer(unsigned(hitsorter_in_ena_cnt_sel))<12) then
+            hitsorter_in_ena_cnt <= hitsorter_in_ena_counters_reg(to_integer(unsigned(hitsorter_in_ena_cnt_sel)));
+        else
+            hitsorter_in_ena_cnt <= (others => '0');
+        end if;
+    end if;
     end process;
 
 
@@ -655,4 +655,4 @@ begin
         q               => o_data_bypass--,
     );
 
-end rtl;
+end architecture;
