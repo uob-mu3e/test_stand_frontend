@@ -129,49 +129,49 @@ begin
     -- fix this now for 32 links
     fifos_first:
     FOR j in 0 to generate_fifos(0)-1 GENERATE
-        e_link_fifo : entity work.ip_dcfifo_mixed_widths
-        generic map(
-            ADDR_WIDTH_w => TREE_DEPTH_w,
-            DATA_WIDTH_w => write_width(0),
-            ADDR_WIDTH_r => TREE_DEPTH_r,
-            DATA_WIDTH_r => read_width(0)--,
+        e_link_fifo : entity work.ip_dcfifo_v2
+        generic map (
+            g_WADDR_WIDTH => TREE_DEPTH_w,
+            g_WDATA_WIDTH => write_width(0),
+            g_RADDR_WIDTH => TREE_DEPTH_r,
+            g_RDATA_WIDTH => read_width(0)--,
         )
         port map (
-            aclr 	=> not i_reset_n or reset_fifo_0(j),
-            data 	=> fifo_data_0(j),
-            rdclk 	=> i_clk,
-            rdreq 	=> fifo_ren_0(j),
-            wrclk 	=> i_clk,
-            wrreq 	=> fifo_wen_0(j),
-            q 		=> fifo_q_0_reg(j),
-            rdempty => fifo_empty_0_reg(j),
-            rdusedw => open,
-            wrfull 	=> fifo_full_0(j),
-            wrusedw => open--,
+            i_we        => fifo_wen_0(j),
+            i_wdata     => fifo_data_0(j),
+            o_wfull     => fifo_full_0(j),
+            i_wclk      => i_clk,
+
+            i_rack      => fifo_ren_0(j),
+            o_rdata     => fifo_q_0_reg(j),
+            o_rempty    => fifo_empty_0_reg(j),
+            i_rclk      => i_clk,
+
+            i_reset_n   => i_reset_n and (not reset_fifo_0(j))--,
         );
     END GENERATE;
     
     fifos_last:
     FOR j in 0 to generate_fifos(6)-1 GENERATE
-        e_link_fifo : entity work.ip_dcfifo_mixed_widths
-        generic map(
-            ADDR_WIDTH_w => TREE_DEPTH_w,
-            DATA_WIDTH_w => write_width(6),
-            ADDR_WIDTH_r => TREE_DEPTH_r,
-            DATA_WIDTH_r => read_width(6)--,
+        e_link_fifo : entity work.ip_dcfifo_v2
+        generic map (
+            g_WADDR_WIDTH => TREE_DEPTH_w,
+            g_WDATA_WIDTH => write_width(6),
+            g_RADDR_WIDTH => TREE_DEPTH_r,
+            g_RDATA_WIDTH => read_width(6)--,
         )
         port map (
-            aclr    => not i_reset_n,
-            data    => fifo_data_6(j),
-            rdclk   => i_clk,
-            rdreq   => i_ren, --fifo_ren_2(j),
-            wrclk   => i_clk,
-            wrreq   => fifo_wen_6(j),
-            q       => o_rdata,
-            rdempty => o_empty,
-            rdusedw => open,
-            wrfull  => fifo_full_6(j),
-            wrusedw => open--,
+            i_we        => fifo_wen_6(j),
+            i_wdata     => fifo_data_6(j),
+            o_wfull     => fifo_full_6(j),
+            i_wclk      => i_clk,
+
+            i_rack      => i_ren, --fifo_ren_2(j),
+            o_rdata     => o_rdata,
+            o_rempty    => o_empty,
+            i_rclk      => i_clk,
+
+            i_reset_n   => i_reset_n--,
         );
     END GENERATE;
     

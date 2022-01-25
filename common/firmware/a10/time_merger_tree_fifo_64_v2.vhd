@@ -161,23 +161,25 @@ begin
 --        reset_fifo(i) <= '0' when i_merge_state = '1' or last_layer = '1' else '1';
         
         gen_last_layer : IF last_layer = '1' and i < g_NLINKS_DATA GENERATE
-            e_last_fifo : entity work.ip_dcfifo_mixed_widths
+            e_last_fifo : entity work.ip_dcfifo_v2
             generic map(
-                ADDR_WIDTH_w    => TREE_w,
-                DATA_WIDTH_w    => w_width,
-                ADDR_WIDTH_r    => TREE_r,
-                DATA_WIDTH_r    => r_width--,
+                g_WADDR_WIDTH => TREE_w,
+                g_WDATA_WIDTH => w_width,
+                g_RADDR_WIDTH => TREE_r,
+                g_RDATA_WIDTH => r_width--,
             )
             port map (
-                aclr    => reset_fifo(i),
-                data    => data(i),
-                rdclk   => i_clk,
-                rdreq   => rdreq(i),
-                wrclk   => i_clk,
-                wrreq   => wrreq(i),
-                q       => last,
-                rdempty => rdempty(i),
-                wrfull  => wrfull(i)--,
+                i_we        => wrreq(i),
+                i_wdata     => data(i),
+                o_wfull     => wrfull(i),
+                i_wclk      => i_clk,
+
+                i_rack      => rdreq(i),
+                o_rdata     => last,
+                o_rempty    => rdempty(i),
+                i_rclk      => i_clk,
+
+                i_reset_n   => not reset_fifo(i)--,
             );
             
             -- reg for last FIFO output (timing)

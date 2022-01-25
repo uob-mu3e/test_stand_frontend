@@ -83,26 +83,26 @@ elsif rising_edge(clk) then
 end if;
 end process;
 
-e_link_fifo : entity work.ip_dcfifo_mixed_widths
-generic map(
-    ADDR_WIDTH_w => 7,
-    DATA_WIDTH_w => 32+6,
-    ADDR_WIDTH_r => 7,
-    DATA_WIDTH_r => 64+12--,
-)
-port map (
-    aclr    => not reset_n or reset_fifo_0(i),
-    data    => fifo_data_0(i),
-    rdclk   => clk,
-    rdreq   => fifo_ren_0(i),
-    wrclk   => clk,
-    wrreq   => fifo_wen_0(i),
-    q       => fifo_q_0_reg(i),
-    rdempty => fifo_empty_0_reg(i),
-    rdusedw => open,
-    wrfull  => fifo_full_0(i),
-    wrusedw => open--,
-);
+    e_link_fifo : entity work.ip_dcfifo_v2
+    generic map (
+        g_WADDR_WIDTH => 7,
+        g_WDATA_WIDTH => 32+6,
+        g_RADDR_WIDTH => 7,
+        g_RDATA_WIDTH => 64+12--,
+    )
+    port map (
+        i_we        => fifo_wen_0(i),
+        i_wdata     => fifo_data_0(i),
+        o_wfull     => fifo_full_0(i),
+        i_wclk      => clk,
+
+        i_rack      => fifo_ren_0(i),
+        o_rdata     => fifo_q_0_reg(i),
+        o_rempty    => fifo_empty_0_reg(i),
+        i_rclk      => clk,
+
+        i_reset_n   => reset_n and (not reset_fifo_0(i))--,
+    );
 
 process(clk, reset_n)
 begin

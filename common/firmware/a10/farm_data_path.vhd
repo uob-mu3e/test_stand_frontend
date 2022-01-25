@@ -835,50 +835,50 @@ begin
         i_clk   => B_mem_clk--,
     );
 
-    A_reqfifo : entity work.ip_dcfifo_mixed_widths
-    generic map(
-        ADDR_WIDTH_w    => 8,
-        DATA_WIDTH_w    => 32,
-        ADDR_WIDTH_r    => 10,
-        DATA_WIDTH_r    => 8--,
+    A_reqfifo : entity work.ip_dcfifo_v2
+    generic map (
+        g_WADDR_WIDTH => 8,
+        g_WDATA_WIDTH => 32,
+        g_RADDR_WIDTH => 10,
+        g_RDATA_WIDTH => 8--,
     )
     port map (
-        data        => ts_req_A,
-        wrreq       => req_en_A,
-        rdreq       => A_readreqfifo,
-        wrclk       => A_mem_clk,
-        rdclk       => A_mem_clk,
-        q           => A_reqfifoq,
-        rdempty     => A_reqfifo_empty,
-        rdusedw     => open,
-        wrfull      => open,
-        wrusedw     => open,
-        aclr        => reset--,
+        i_we        => req_en_A,
+        i_wdata     => ts_req_A,
+        o_wfull     => open,
+        i_wclk      => A_mem_clk,
+
+        i_rack      => A_readreqfifo,
+        o_rdata     => A_reqfifoq,
+        o_rempty    => A_reqfifo_empty,
+        i_rclk      => A_mem_clk,
+
+        i_reset_n   => not reset--,
     );
 
-    B_reqfifo : entity work.ip_dcfifo_mixed_widths
-    generic map(
-        ADDR_WIDTH_w    => 8,
-        DATA_WIDTH_w    => 32,
-        ADDR_WIDTH_r    => 10,
-        DATA_WIDTH_r    => 8--,
+    B_reqfifo : entity work.ip_dcfifo_v2
+    generic map (
+        g_WADDR_WIDTH => 8,
+        g_WDATA_WIDTH => 32,
+        g_RADDR_WIDTH => 10,
+        g_RDATA_WIDTH => 8--,
     )
     port map (
-        data        => ts_req_B,
-        wrreq       => req_en_B,
-        rdreq       => B_readreqfifo,
-        wrclk       => B_mem_clk,
-        rdclk       => B_mem_clk,
-        q           => B_reqfifoq,
-        rdempty     => B_reqfifo_empty,
-        rdusedw     => open,
-        wrfull      => open,
-        wrusedw     => open,
-        aclr        => reset--,
+        i_we        => req_en_B,
+        i_wdata     => ts_req_B,
+        o_wfull     => open,
+        i_wclk      => B_mem_clk,
+
+        i_rack      => B_readreqfifo,
+        o_rdata     => B_reqfifoq,
+        o_rempty    => B_reqfifo_empty,
+        i_rclk      => B_mem_clk,
+
+        i_reset_n   => not reset--,
     );
 
     A_mreadfifo : entity work.ip_dcfifo
-    generic map(
+    generic map (
         ADDR_WIDTH  => 4,
         DATA_WIDTH  => 22--,
     )
@@ -897,7 +897,7 @@ begin
     );
 
     B_mreadfifo : entity work.ip_dcfifo
-    generic map(
+    generic map (
         ADDR_WIDTH  => 4,
         DATA_WIDTH  => 22--,
     )
@@ -915,42 +915,46 @@ begin
         aclr        => not reset_B_n--,
     );
 
-    A_mdatafdfifo : entity work.ip_dcfifo_mixed_widths
-    generic map(
-        ADDR_WIDTH_w => 4,
-        DATA_WIDTH_w => 512,
-        ADDR_WIDTH_r => 8,
-        DATA_WIDTH_r => 256--,
+    A_mdatafdfifo : entity work.ip_dcfifo_v2
+    generic map (
+        g_WADDR_WIDTH => 4,
+        g_WDATA_WIDTH => 512,
+        g_RADDR_WIDTH => 8,
+        g_RDATA_WIDTH => 256--,
     )
     port map (
-        aclr    => not reset_A_n,
-        data    => A_mem_q,
-        rdclk   => pcieclk,
-        rdreq   => A_memdatafifo_read,
-        wrclk   => A_mem_clk,
-        wrreq   => A_mem_q_valid,
-        q       => A_memdatafifo_q,
-        rdempty => A_memdatafifo_empty,
-        wrfull  => open--,
+        i_we        => A_mem_q_valid,
+        i_wdata     => A_mem_q,
+        o_wfull     => open,
+        i_wclk      => A_mem_clk,
+
+        i_rack      => A_memdatafifo_read,
+        o_rdata     => A_memdatafifo_q,
+        o_rempty    => A_memdatafifo_empty,
+        i_rclk      => pcieclk,
+
+        i_reset_n   => reset_A_n--,
     );
 
-    B_mdatafdfifo : entity work.ip_dcfifo_mixed_widths
-    generic map(
-        ADDR_WIDTH_w => 4,
-        DATA_WIDTH_w => 512,
-        ADDR_WIDTH_r => 8,
-        DATA_WIDTH_r => 256--,
+    B_mdatafdfifo : entity work.ip_dcfifo_v2
+    generic map (
+        g_WADDR_WIDTH => 4,
+        g_WDATA_WIDTH => 512,
+        g_RADDR_WIDTH => 8,
+        g_RDATA_WIDTH => 256--,
     )
     port map (
-        aclr    => not reset_B_n,
-        data    => B_mem_q,
-        rdclk   => pcieclk,
-        rdreq   => B_memdatafifo_read,
-        wrclk   => B_mem_clk,
-        wrreq   => B_mem_q_valid,
-        q       => B_memdatafifo_q,
-        rdempty => B_memdatafifo_empty,
-        wrfull  => open--,
+        i_we        => B_mem_q_valid,
+        i_wdata     => B_mem_q,
+        o_wfull     => open,
+        i_wclk      => B_mem_clk,
+
+        i_rack      => B_memdatafifo_read,
+        o_rdata     => B_memdatafifo_q,
+        o_rempty    => B_memdatafifo_empty,
+        i_rclk      => pcieclk,
+
+        i_reset_n   => reset_B_n--,
     );
 
 end architecture;

@@ -57,25 +57,25 @@ begin
 
     o_mask_n(i) <= i_mask_n(i) or i_mask_n(i + size);
 
-    e_link_fifo : entity work.ip_dcfifo_mixed_widths
+    e_link_fifo : entity work.ip_dcfifo_v2
     generic map(
-        ADDR_WIDTH_w    => TREE_w,
-        DATA_WIDTH_w    => w_width,
-        ADDR_WIDTH_r    => TREE_r,
-        DATA_WIDTH_r    => r_width--,
+        g_WADDR_WIDTH => TREE_w,
+        g_WDATA_WIDTH => w_width,
+        g_RADDR_WIDTH => TREE_r,
+        g_RDATA_WIDTH => r_width--,
     )
     port map (
-        aclr    => not i_reset_n or reset_fifo(i),
-        data    => fifo_data_reg(i),
-        rdclk   => i_clk,
-        rdreq   => i_fifo_ren(i),
-        wrclk   => i_clk,
-        wrreq   => fifo_wen_reg(i),
-        q       => fifo_q_reg(i),
-        rdempty => fifo_empty_reg(i),
-        rdusedw => open,
-        wrfull  => fifo_full_reg(i),
-        wrusedw => open--,
+        i_we        => fifo_wen_reg(i),
+        i_wdata     => fifo_data_reg(i),
+        i_wclk      => i_clk,
+        o_wfull     => fifo_full_reg(i),
+
+        i_rack      => i_fifo_ren(i),
+        o_rdata     => fifo_q_reg(i),
+        o_rempty    => fifo_empty_reg(i),
+        i_rclk      => i_clk,
+
+        i_reset_n   => i_reset_n and (not reset_fifo(i))--,
     );
 
     process(i_clk, i_reset_n)

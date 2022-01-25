@@ -161,24 +161,26 @@ begin
                             tree_padding                                            when merger_finish(i) = '1' and merge_state = merge_hits else 
                             (others => '0');
             wrreq_0(i) <= '1' when merge_state = merge_hits and i_rempty(i) = '0' and wrfull_0(i) = '0' else '0';
-            
-            e_link_fifo : entity work.ip_dcfifo_mixed_widths
+
+            e_link_fifo : entity work.ip_dcfifo_v2
             generic map(
-                ADDR_WIDTH_w => TREE_DEPTH_w,
-                DATA_WIDTH_w => write_width(0),
-                ADDR_WIDTH_r => TREE_DEPTH_r,
-                DATA_WIDTH_r => read_width(0)--,
+                g_WADDR_WIDTH => TREE_DEPTH_w,
+                g_WDATA_WIDTH => write_width(0),
+                g_RADDR_WIDTH => TREE_DEPTH_r,
+                g_RDATA_WIDTH => read_width(0)--,
             )
             port map (
-                aclr    => reset_0(i),
-                data    => data_0(i),
-                rdclk   => i_clk,
-                rdreq   => rdreq_0(i),
-                wrclk   => i_clk,
-                wrreq   => wrreq_0(i),
-                q       => q_0(i),
-                rdempty => rdempty_0(i),
-                wrfull  => wrfull_0(i)--,
+                i_we        => wrreq_0(i),
+                i_wdata     => data_0(i),
+                o_wfull     => wrfull_0(i),
+                i_wclk      => i_clk,
+
+                i_rack      => rdreq_0(i),
+                o_rdata     => q_0(i),
+                o_rempty    => rdempty_0(i),
+                i_rclk      => i_clk,
+
+                i_reset_n   => not reset_0(i)--,
             );
             
             -- reg for FIFO outputs (timing)
