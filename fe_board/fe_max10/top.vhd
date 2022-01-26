@@ -140,6 +140,11 @@ architecture arch of top is
     signal SPI_ram_addr                         : std_logic_vector(13 downto 0);
     signal SPI_ram_rw                           : std_logic;
 
+	 signal adc_pll_locked 			: std_logic;
+	 signal adc_response_valid 	: std_logic;
+	 signal adc_response_channel	: std_logic_vector(4 downto 0);
+	 signal adc_response_data		: std_logic_vector(11 downto 0);
+	 
     -- adc nios
     signal adc_data_0                           : std_logic_vector(31 downto 0);
     signal adc_data_1                           : std_logic_vector(31 downto 0);
@@ -329,7 +334,64 @@ begin
         
     end if;
     end process;
+ 
+	 e_adc : component work.cmp.adc
+		port map(
+			adc_pll_clock_clk     => clk10,
+         adc_pll_locked_export => adc_pll_locked, 
+         clock_clk             => clk100,
+			reset_sink_reset_n    => reset_n,
+         response_valid        => adc_response_valid,
+         response_channel      => adc_response_channel,
+			response_data         => adc_response_data,
+         response_startofpacket=> open,
+         response_endofpacket  => open,
+         sequencer_csr_address => '0',
+         sequencer_csr_read    => '0',
+         sequencer_csr_write   => '0',
+         sequencer_csr_writedata => (others => '0'),
+         sequencer_csr_readdata => open
+     );
 
+	-- ADC multiplexer
+    process(clk100, reset_n)
+    begin
+    if (reset_n = '0') then
+          adc_data_0  <= (others => '0');
+			 adc_data_1  <= (others => '0');
+			 adc_data_2  <= (others => '0');
+			 adc_data_3  <= (others => '0');
+			 adc_data_4  <= (others => '0');
+    elsif(clk100'event and clk100 = '1')then
+		if(adc_response_valid = '1') then
+			case adc_response_channel is
+			when "00000" =>
+				adc_data_0(11 downto 0)		<= adc_response_data;
+			when "00001" =>
+				adc_data_0(27 downto 16)	<= adc_response_data;	
+			when "00010" =>
+				adc_data_1(11 downto 0)		<= adc_response_data;
+			when "00011" =>
+				adc_data_1(27 downto 16)	<= adc_response_data;		
+			when "00100" =>
+				adc_data_2(11 downto 0)		<= adc_response_data;
+			when "00101" =>
+				adc_data_2(27 downto 16)	<= adc_response_data;	
+			when "00110" =>
+				adc_data_3(11 downto 0)		<= adc_response_data;
+			when "00111" =>
+				adc_data_3(27 downto 16)	<= adc_response_data;	
+			when "01000" =>
+				adc_data_4(11 downto 0)		<= adc_response_data;
+			when "01001" =>
+				adc_data_4(27 downto 16)	<= adc_response_data;	
+			when others =>
+				
+			end case;
+		end if;
+	 end if;
+	 end process;
+	 
     -- NIOS
     -----------------------
     e_nios : component work.cmp.nios
@@ -342,15 +404,6 @@ begin
 
         -- generic pio
         pio_export                  => open,
-
-        -- adc
-        adc_pll_clock_clk           => clk10,
-        adc_pll_locked_export       => pll_locked,
-        adc_d0_export               => adc_data_0,
-        adc_d1_export               => adc_data_1,
-        adc_d2_export               => adc_data_2,
-        adc_d3_export               => adc_data_3,
-        adc_d4_export               => adc_data_4,
 
         -- arria spi
         ava_mm_address              => SPI_ram_addr,
