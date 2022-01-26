@@ -15,9 +15,9 @@ status_t status;
 
 int main() {
     base_init();
-    
+
     printf("Init ADC");
-    adc.init();
+//    adc.init();
 
     while (1) {
         printf("\n");
@@ -31,7 +31,7 @@ int main() {
 
         switch(cmd) {
         case 'a':
-            adc.menu();
+//            adc.menu();
             break;
         case 'b':
             status.menu();
