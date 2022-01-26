@@ -8,7 +8,7 @@ use ieee.numeric_std.all;
 
 
 entity dma_counter is
-	port(
+port (
 		i_clk 					:	in std_logic;
 		i_reset_n				:	in std_logic;
 		i_enable					:	in std_logic;
@@ -19,8 +19,8 @@ entity dma_counter is
 		o_dma_end_event		:	out std_logic;
 		o_dma_wen				:	out std_logic;
 		o_cnt 					: 	out std_logic_vector (159 downto 0)--;
-		);
-end dma_counter;
+);
+end entity;
 
 architecture arch of dma_counter is
 
@@ -89,4 +89,4 @@ elsif(rising_edge(i_clk)) then
 end if;
 end process;
 
-end arch;	
+end architecture;

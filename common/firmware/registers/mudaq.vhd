@@ -135,23 +135,23 @@ package mudaq is
         reset_state,
         out_of_DAQ
     );
-	
-	-- reset link words
-	constant RESET_LINK_RUN_PREPARE : std_logic_vector(7 DOWNTO 0) := x"10";
-	constant RESET_LINK_SYNC : std_logic_vector(7 DOWNTO 0) := x"11";
-	constant RESET_LINK_START_RUN : std_logic_vector(7 DOWNTO 0) := x"12";
-	constant RESET_LINK_END_RUN : std_logic_vector(7 DOWNTO 0) := x"13";
-	constant RESET_LINK_ABORT_RUN : std_logic_vector(7 DOWNTO 0) := x"14";
-	constant RESET_LINK_START_LINK_TEST : std_logic_vector(7 DOWNTO 0) := x"20";
-	constant RESET_LINK_STOP_LINK_TEST : std_logic_vector(7 DOWNTO 0) := x"21";
-	constant RESET_LINK_START_SYNC_TEST : std_logic_vector(7 DOWNTO 0) := x"24";
-	constant RESET_LINK_STOP_SYNC_TEST : std_logic_vector(7 DOWNTO 0) := x"25";
-	constant RESET_LINK_TEST_SYNC : std_logic_vector(7 DOWNTO 0) := x"26";
-	constant RESET_LINK_RESET : std_logic_vector(7 DOWNTO 0) := x"30";
-	constant RESET_LINK_STOP_RESET : std_logic_vector(7 DOWNTO 0) := x"31";
-	constant RESET_LINK_ENABLE : std_logic_vector(7 DOWNTO 0) := x"32";
-	constant RESET_LINK_DISABLE : std_logic_vector(7 DOWNTO 0) := x"33";
-	constant RESET_LINK_ADDRESS : std_logic_vector(7 DOWNTO 0) := x"34";
+
+    -- reset link words
+    constant RESET_LINK_RUN_PREPARE : std_logic_vector(7 DOWNTO 0) := x"10";
+    constant RESET_LINK_SYNC : std_logic_vector(7 DOWNTO 0) := x"11";
+    constant RESET_LINK_START_RUN : std_logic_vector(7 DOWNTO 0) := x"12";
+    constant RESET_LINK_END_RUN : std_logic_vector(7 DOWNTO 0) := x"13";
+    constant RESET_LINK_ABORT_RUN : std_logic_vector(7 DOWNTO 0) := x"14";
+    constant RESET_LINK_START_LINK_TEST : std_logic_vector(7 DOWNTO 0) := x"20";
+    constant RESET_LINK_STOP_LINK_TEST : std_logic_vector(7 DOWNTO 0) := x"21";
+    constant RESET_LINK_START_SYNC_TEST : std_logic_vector(7 DOWNTO 0) := x"24";
+    constant RESET_LINK_STOP_SYNC_TEST : std_logic_vector(7 DOWNTO 0) := x"25";
+    constant RESET_LINK_TEST_SYNC : std_logic_vector(7 DOWNTO 0) := x"26";
+    constant RESET_LINK_RESET : std_logic_vector(7 DOWNTO 0) := x"30";
+    constant RESET_LINK_STOP_RESET : std_logic_vector(7 DOWNTO 0) := x"31";
+    constant RESET_LINK_ENABLE : std_logic_vector(7 DOWNTO 0) := x"32";
+    constant RESET_LINK_DISABLE : std_logic_vector(7 DOWNTO 0) := x"33";
+    constant RESET_LINK_ADDRESS : std_logic_vector(7 DOWNTO 0) := x"34";
 
 
     -- time constants

@@ -15,7 +15,7 @@ use ieee.std_logic_unsigned.all;
 use work.mudaq.all;
 
 entity data_generator_a10 is
-    generic (
+generic (
         fpga_id: std_logic_vector(15 downto 0) := x"FFFF";
         max_row: std_logic_vector (7 downto 0) := (others => '0');
         max_col: std_logic_vector (7 downto 0) := (others => '0');
@@ -26,7 +26,7 @@ entity data_generator_a10 is
         -- Data type: x"01" = pixel, x"02" = scifi, x"03" = tiles
         DATA_TYPE : std_logic_vector(7 downto 0) := x"01"--;
     );
-    port(
+port (
 		clk 				: in  std_logic;
 		i_reset_n    		: in  std_logic;
 		enable_pix			: in  std_logic;
@@ -40,7 +40,7 @@ entity data_generator_a10 is
 		slow_down			: in  std_logic_vector(31 downto 0);
 		state_out			: out std_logic_vector(3 downto 0)
 );
-end entity data_generator_a10;
+end entity;
 
 architecture rtl of data_generator_a10 is
 
@@ -288,4 +288,4 @@ begin
 end process;
 
 
-end rtl;
+end architecture;

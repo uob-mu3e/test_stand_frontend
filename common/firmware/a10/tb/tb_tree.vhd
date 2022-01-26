@@ -37,12 +37,12 @@ architecture behav of tree_tb is
 		
 begin
   --  Component instantiation.
-  
+
 reset <= not reset_n;
 i_mask_n <= x"F";
   
   -- generate the clock
-ckProc: process
+process
 begin
    clk <= '0';
    wait for ckTime/2;
@@ -50,13 +50,13 @@ begin
    wait for ckTime/2;
 end process;
 
-inita : process
+process
 begin
-	   reset_n	 <= '0';
-	   wait for 8 ns;
-	   reset_n	 <= '1';
-	   wait;
-end process inita;
+    reset_n	 <= '0';
+    wait for 8 ns;
+    reset_n	 <= '1';
+    wait;
+end process;
 
 tree_layer_first:
 FOR i in 0 to 3 GENERATE
@@ -165,8 +165,8 @@ elsif rising_edge(clk) then
     fifo_empty_0(i) <= fifo_empty_0_reg(i);
 end if;
 end process;
-END GENERATE tree_layer_first;
- 
+END GENERATE;
+
 layer_1 : entity work.time_merger_tree_fifo_64
 generic map (  
     TREE_w => 7, TREE_r => 7,

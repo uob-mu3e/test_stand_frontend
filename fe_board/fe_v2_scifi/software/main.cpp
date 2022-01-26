@@ -17,6 +17,7 @@ sc_t sc;
 mscb_t mscb;
 #include "../../fe/software/reset.h"
 
+#include "include/feb_sc_registers.h"
 
 #include "smb_module.h"
 SMB_t SMB(sc);
@@ -41,7 +42,7 @@ int main() {
     while (1) {
         printf("\n");
         printf("[fe_dummy] -------- menu --------\n");
-        printf("ID: 0x%08x\n", ram->data[0xFF03]);
+        printf("ID: 0x%08x\n", ram->data[FPGA_ID_REGISTER_RW]);
 
         printf("\n");
         printf("  [1] => Firefly channels\n");

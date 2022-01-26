@@ -44,6 +44,5 @@ package scifi_registers is
     constant SCIFI_CTRL_DP_REGISTER_W            :   integer := 16#4049#;
     constant SCIFI_CTRL_RESET_REGISTER_W         :   integer := 16#404A#;
     constant SCIFI_CTRL_RESETDELAY_REGISTER_W    :   integer := 16#404B#;
-    
 
-end package scifi_registers;
+end package;
