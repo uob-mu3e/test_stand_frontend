@@ -919,7 +919,7 @@ begin
     generic map(
         ADDR_WIDTH_w => 4,
         DATA_WIDTH_w => 512,
-        ADDR_WIDTH_r => 8,
+        ADDR_WIDTH_r => 5,
         DATA_WIDTH_r => 256--,
     )
     port map (
@@ -938,7 +938,7 @@ begin
     generic map(
         ADDR_WIDTH_w => 4,
         DATA_WIDTH_w => 512,
-        ADDR_WIDTH_r => 8,
+        ADDR_WIDTH_r => 5,
         DATA_WIDTH_r => 256--,
     )
     port map (
