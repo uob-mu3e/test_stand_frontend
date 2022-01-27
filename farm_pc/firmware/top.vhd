@@ -421,8 +421,8 @@ begin
         i_clk_250_pcie     => pcie_fastclk_out,
 
         --! 250 MHz clock link / reset_n
-        i_reset_n_250_link => reset_250_n,
-        i_clk_250_link     => clk_250,
+        i_reset_n_250_link => reset_pcie0_n,
+        i_clk_250_link     => pcie_fastclk_out,
 
         -- Interface to memory bank A
         o_A_mem_clk        => A_mem_clk,
