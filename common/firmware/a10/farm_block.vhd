@@ -121,12 +121,14 @@ architecture arch of farm_block is
     signal w_pixel, r_pixel : std_logic_vector(g_NLINKS_PIXEL * 38 - 1 downto 0);
     signal link_data_pixel : std_logic_vector(g_NLINKS_PIXEL * 32 - 1 downto 0);
     signal link_datak_pixel : std_logic_vector(g_NLINKS_PIXEL * 4 - 1 downto 0);
+    signal link_data_valid_pixel : std_logic_vector(g_NLINKS_PIXEL * 2 - 1 downto 0);
     
     --! data gen scifi
     signal full_scifi, w_scifi_en, r_scifi_en, empty_scifi : std_logic;
     signal w_scifi, r_scifi : std_logic_vector(g_NLINKS_SCIFI * 38 - 1 downto 0);
     signal link_data_scifi : std_logic_vector(g_NLINKS_SCIFI * 32 - 1 downto 0);
     signal link_datak_scifi : std_logic_vector(g_NLINKS_SCIFI * 4 - 1 downto 0);
+    signal link_data_valid_scifi : std_logic_vector(g_NLINKS_SCIFI * 2 - 1 downto 0);
     
     --! link to fifo
     signal pixel_data, scifi_data : std_logic_vector(257 downto 0);
@@ -263,19 +265,19 @@ begin
     
     e_swb_data_merger_pixel : entity work.swb_data_merger
     generic map (
-        NLINKS      => g_NLINKS_PIXEL,
-        DATA_TYPE   => x"01"--,
+        NLINKS          => g_NLINKS_PIXEL,
+        DATA_TYPE       => x"01"--,
     )
     port map (
-        i_reset_n   => i_resets_n_link(RESET_BIT_FARM_DATA_PATH),
-        i_clk       => i_clk_250_link,
+        i_reset_n       => i_resets_n_link(RESET_BIT_FARM_DATA_PATH),
+        i_clk           => i_clk_250_link,
         
-        i_data      => r_pixel,
-        i_empty     => empty_pixel,
+        i_data          => r_pixel,
+        i_empty         => empty_pixel,
         
-        o_ren       => r_pixel_en,
-        o_data      => link_data_pixel,
-        o_datak     => link_datak_pixel--,
+        o_ren           => r_pixel_en,
+        o_data          => link_data_pixel,
+        o_data_valid    => link_data_valid_pixel--,
     );
     
     -- gen scifi data
@@ -313,20 +315,19 @@ begin
     
     e_swb_data_merger_scifi : entity work.swb_data_merger
     generic map (
-        NLINKS      => g_NLINKS_SCIFI,
-        DATA_TYPE   => x"02"--,
+        NLINKS          => g_NLINKS_SCIFI,
+        DATA_TYPE       => x"02"--,
     )
     port map (
-        i_reset_n   => i_resets_n_link(RESET_BIT_FARM_DATA_PATH),
-        i_clk       => i_clk_250_link,
+        i_reset_n       => i_resets_n_link(RESET_BIT_FARM_DATA_PATH),
+        i_clk           => i_clk_250_link,
         
-        i_data      => r_scifi,
-        i_empty     => empty_scifi,
+        i_data          => r_scifi,
+        i_empty         => empty_scifi,
         
-        o_ren       => r_scifi_en,
-        o_wen       => open,
-        o_data      => link_data_scifi,
-        o_datak     => link_datak_scifi--,
+        o_ren           => r_scifi_en,
+        o_data          => link_data_scifi,
+        o_data_valid    => link_data_valid_scifi--,
     );
     
     --! map links pixel / scifi

@@ -334,6 +334,12 @@ begin
             dma_request <= '0';
             dma_done <= '0';
 
+            --tx_data_r <= (others => '0');
+            tx_valid_r <= '0';
+            tx_sop <= '0';
+            tx_eop <= '0';
+            tx_empty <= "00";
+
             timeoutcounter <= timeoutcounter - '1';
 
             -- start the dma procedure either on command, after about a second or after 4 KB data have been written

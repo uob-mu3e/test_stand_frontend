@@ -119,12 +119,13 @@ M_write	<= counter_write when mode = countertest else
 				'0';
 
 M_address <= counter_address when mode = countertest else
-				 ddr3addr    when mode = dataflow;
-				
+    ddr3addr when ( mode = dataflow ) else
+    (others => '0');
+
 M_writedata	<= counter_writedata when mode = countertest else
-					ddr3datain    when mode = dataflow;	
-					
-					
+    ddr3datain when ( mode = dataflow ) else
+    (others => '0');
+
 ddr3_read_valid	<= M_readdatavalid when mode = dataflow else '0';
 ddr3dataout			<= M_readdata;			
 

@@ -919,7 +919,7 @@ begin
     generic map (
         g_WADDR_WIDTH => 4,
         g_WDATA_WIDTH => 512,
-        g_RADDR_WIDTH => 8,
+        g_RADDR_WIDTH => 5,
         g_RDATA_WIDTH => 256--,
     )
     port map (
@@ -940,7 +940,7 @@ begin
     generic map (
         g_WADDR_WIDTH => 4,
         g_WDATA_WIDTH => 512,
-        g_RADDR_WIDTH => 8,
+        g_RADDR_WIDTH => 5,
         g_RDATA_WIDTH => 256--,
     )
     port map (

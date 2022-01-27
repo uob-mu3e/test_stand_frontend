@@ -284,6 +284,7 @@ begin
         o_xcvr1_rx_datak                => rx_datak_raw,
         i_xcvr1_tx_data                 => tx_data,
         i_xcvr1_tx_datak                => tx_datak,
+        i_xcvr1_clk                     => pcie_fastclk_out,
 
         -- PCIe0
         i_pcie0_rx                      => PCIE_RX_p,
@@ -420,8 +421,8 @@ begin
         i_clk_250_pcie     => pcie_fastclk_out,
 
         --! 250 MHz clock link / reset_n
-        i_reset_n_250_link => reset_250_n,
-        i_clk_250_link     => clk_250,
+        i_reset_n_250_link => reset_pcie0_n,
+        i_clk_250_link     => pcie_fastclk_out,
 
         -- Interface to memory bank A
         o_A_mem_clk        => A_mem_clk,
