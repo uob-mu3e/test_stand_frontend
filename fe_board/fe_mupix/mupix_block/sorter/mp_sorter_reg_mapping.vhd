@@ -60,7 +60,7 @@ architecture rtl of mp_sorter_reg_mapping is
             credit                      <= i_credit;
 
             regaddr                     := to_integer(unsigned(i_reg_add));
-            o_reg_rdata                 <= x"CCCCCCCC";
+            o_reg_rdata                 <= (others => '0');
 
             -----------------------------------------------------------------
             ---- sorter regs ------------------------------------------------
@@ -95,7 +95,7 @@ architecture rtl of mp_sorter_reg_mapping is
                 sorter_delay <= i_reg_wdata(TSRANGE);
             end if;
             if ( regaddr = MP_SORTER_DELAY_REGISTER_W and i_reg_re = '1' ) then
-                o_reg_rdata<= (TSRANGE => sorter_delay, others => '0');
+                o_reg_rdata(TSRANGE) <= sorter_delay;
             end if;
 
             if ( regaddr = MP_SORTER_ZERO_SUPPRESSION_REGISTER_W and i_reg_we = '1' ) then
