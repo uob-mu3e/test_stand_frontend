@@ -284,6 +284,7 @@ begin
         o_xcvr1_rx_datak                => rx_datak_raw,
         i_xcvr1_tx_data                 => tx_data,
         i_xcvr1_tx_datak                => tx_datak,
+        i_xcvr1_clk                     => pcie_fastclk_out,
 
         -- PCIe0
         i_pcie0_rx                      => PCIE_RX_p,
