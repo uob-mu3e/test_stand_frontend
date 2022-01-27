@@ -93,7 +93,7 @@ architecture rtl of mp_sorter_reg_mapping is
                 sorter_delay <= i_reg_wdata(TSRANGE);
             end if;
             if ( regaddr = MP_SORTER_DELAY_REGISTER_W and i_reg_re = '1' ) then
-                o_reg_rdata(TSRANGE) <= sorter_delay;
+                o_reg_rdata<= (TSRANGE => sorter_delay, others => '0');
             end if;
 
             if ( regaddr = MP_SORTER_ZERO_SUPPRESSION_REGISTER_W and i_reg_we = '1' ) then
