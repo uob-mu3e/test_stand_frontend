@@ -38,12 +38,10 @@ architecture arch of ip_scfifo_v2 is
     type rdata_t is array (natural range <>) of std_logic_vector(o_rdata'range);
     signal fifo_rdata : rdata_t(g_RREG_N downto 0);
     signal fifo_rack, fifo_rempty : std_logic_vector(g_RREG_N downto 0);
-    signal rreset_n : std_logic;
 
     type wdata_t is array (natural range <>) of std_logic_vector(i_wdata'range);
     signal fifo_wdata : wdata_t(g_WREG_N downto 0);
     signal fifo_we, fifo_wfull : std_logic_vector(g_WREG_N downto 0);
-    signal wreset_n : std_logic;
 
 begin
 
@@ -110,7 +108,7 @@ begin
             i_rack => not fifo_wfull(i+1),
             o_rempty_n => fifo_we(i+1),
 
-            i_reset_n => wreset_n,
+            i_reset_n => i_reset_n,
             i_clk => i_clk--,
         );
     end generate;
@@ -133,7 +131,7 @@ begin
             i_rack => fifo_rack(i),
             o_rempty => fifo_rempty(i),
 
-            i_reset_n => rreset_n,
+            i_reset_n => i_reset_n,
             i_clk => i_clk--,
         );
     end generate;
