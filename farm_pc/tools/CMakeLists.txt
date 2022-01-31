@@ -3,7 +3,7 @@ FILE(GLOB_RECURSE INC_ALL "*.h")
 set(
     CUDA_NVCC_FLAGS
     ${CUDA_NVCC_FLAGS};
-    -std=c++17
+ #   -std=c++17
 )
 
 cuda_add_executable(gpu_dmatest gpu_dmatest.cu ${INC_ALL})
