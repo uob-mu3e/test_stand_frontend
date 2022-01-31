@@ -466,18 +466,19 @@ begin
         programming_control_export  => programming_control_nios
     );
 
--- Choose flash image with bp_mode_sel - the emergency image starts at 0xC0 00 00
-flash_programming_ctrl(30 downto 0) <= (22 => '1', 23=> '1', others => '0') when bp_mode_select = "01"
-                                        else (others => '0');
---flash_programming_ctrl(31)      <= programming_control_nios(0);
-
-
 process(reset_n, max10_osc_clk)
 begin
 if(reset_n = '0') then
    flash_programming_ctrl(31) <= '0';
     startupcounter <= 0;
 elsif( max10_osc_clk'event and  max10_osc_clk = '1') then
+	 -- Choose flash image with bp_mode_sel - the emergency image starts at 0xC0 00 00
+	 if(bp_mode_select = "01") then
+			flash_programming_ctrl(30 downto 0) <= "000" & X"0C00000";
+	  else
+			flash_programming_ctrl(30 downto 0) <= (others => '0');
+		end if;
+			
     if(pll_locked = '1')then
         startupcounter <= startupcounter +1;
         if(startupcounter > 4095000)then
