@@ -1,3 +1,8 @@
+quit -sim
+vlib work
+project compileall
+vsim work.mupix_ctrl_dummy_tb(rtl)
+
 onerror {resume}
 quietly WaveActivateNextPane {} 0
 add wave -noupdate /mupix_ctrl_dummy_tb/clk
