@@ -129,7 +129,7 @@ void MuFEB::LoadFirmware(std::string filename, uint16_t FPGA_ID)
             uint32_t limit = 1e6;
             if((addr & 0xFFFF) == 0)
                 limit = 1e5;
-            while(readback & 0x2 && count < limit){
+            while((readback & 0x2) && count < limit){
                 int ec = feb_sc.FEB_register_read(FEB.SB_Port(),PROGRAMMING_STATUS_REGISTER_R,readback);
                 if(ec != FEBSlowcontrolInterface::ERRCODES::OK){
                     printf("Error reading back!\n");
