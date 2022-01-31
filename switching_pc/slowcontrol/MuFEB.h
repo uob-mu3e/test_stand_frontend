@@ -51,7 +51,7 @@ class MuFEB {
       int WriteSorterDelay(uint16_t FPGA_ID, uint32_t delay);
       void ReadFirmwareVersionsToODB();
 
-      void LoadFirmware(std::string filename, uint16_t FPGA_ID);
+      void LoadFirmware(std::string filename, uint16_t FPGA_ID, bool emergencyImage = false);
 
       uint32_t ReadBackMergerRate(uint16_t FPGA_ID);
       uint32_t ReadBackResetPhase(uint16_t FPGA_ID);

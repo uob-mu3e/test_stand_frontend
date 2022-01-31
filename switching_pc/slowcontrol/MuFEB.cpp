@@ -88,7 +88,7 @@ void MuFEB::ReadFirmwareVersionsToODB()
     }
 }
 
-void MuFEB::LoadFirmware(std::string filename, uint16_t FPGA_ID)
+void MuFEB::LoadFirmware(std::string filename, uint16_t FPGA_ID, bool emergencyImage)
 {
 
     auto FEB = febs.at(FPGA_ID);
@@ -116,6 +116,9 @@ void MuFEB::LoadFirmware(std::string filename, uint16_t FPGA_ID)
 
     long pos =0;
     uint32_t addr=0;
+    if(emergencyImage)
+        addr = 0xC00000;
+
     while(pos*4 < fsize){
         uint32_t buffer[256];
         fread(buffer,sizeof(uint32_t),256, f);
