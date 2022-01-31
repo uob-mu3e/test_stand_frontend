@@ -73,6 +73,7 @@ architecture arch of top is
     signal clk10                                : std_logic;
     signal clk50                                : std_logic;
     signal pll_locked                           : std_logic;
+	 signal pll_locked_last								: std_logic;
 
     signal  version                             : std_logic_vector(31 downto 0);
     signal  status                              : std_logic_vector(31 downto 0);
@@ -140,12 +141,17 @@ architecture arch of top is
     signal SPI_ram_addr                         : std_logic_vector(13 downto 0);
     signal SPI_ram_rw                           : std_logic;
 
-	 signal adc_pll_locked 			: std_logic;
+	 -- ADC
 	 signal adc_response_valid 	: std_logic;
 	 signal adc_response_channel	: std_logic_vector(4 downto 0);
 	 signal adc_response_data		: std_logic_vector(11 downto 0);
 	 
-    -- adc nios
+	 signal adc_sequencer_csr_address:	std_logic;
+	 signal adc_sequencer_csr_read:		std_logic;
+	 signal adc_sequencer_csr_write:		std_logic;
+	 signal adc_sequencer_csr_writedata:	std_logic_vector(31 downto 0);
+	 signal adc_seqeuncer_csr_readdata:  std_logic_vector(31 downto 0);
+
     signal adc_data_0                           : std_logic_vector(31 downto 0);
     signal adc_data_1                           : std_logic_vector(31 downto 0);
     signal adc_data_2                           : std_logic_vector(31 downto 0);
@@ -335,10 +341,12 @@ begin
     end if;
     end process;
  
+
+ 
 	 e_adc : component work.cmp.adc
 		port map(
 			adc_pll_clock_clk     => clk10,
-         adc_pll_locked_export => adc_pll_locked, 
+         adc_pll_locked_export => pll_locked, 
          clock_clk             => clk100,
 			reset_sink_reset_n    => reset_n,
          response_valid        => adc_response_valid,
@@ -346,12 +354,30 @@ begin
 			response_data         => adc_response_data,
          response_startofpacket=> open,
          response_endofpacket  => open,
-         sequencer_csr_address => '0',
-         sequencer_csr_read    => '0',
-         sequencer_csr_write   => '0',
-         sequencer_csr_writedata => (others => '0'),
-         sequencer_csr_readdata => open
+         sequencer_csr_address => adc_sequencer_csr_address,
+         sequencer_csr_read    => adc_sequencer_csr_read,
+         sequencer_csr_write   => adc_sequencer_csr_write,
+         sequencer_csr_writedata => adc_sequencer_csr_writedata,
+         sequencer_csr_readdata => adc_seqeuncer_csr_readdata
      );
+	  
+	 -- Start the ADC sequencer
+	 process(clk100, reset_n)
+    begin
+    if (reset_n = '0') then
+		adc_sequencer_csr_read	<= '0';
+		adc_sequencer_csr_write	<= '0';
+		adc_sequencer_csr_address <= '0'; -- address is one bit and always 0
+		pll_locked_last				<= '0';
+	elsif(clk100'event and clk100 = '1')then
+		pll_locked_last	<= pll_locked;
+		adc_sequencer_csr_write	<= '0';
+		if(pll_locked = '1' and pll_locked_last = '0')then -- is this safe??
+			adc_sequencer_csr_write			<= '1';
+			adc_sequencer_csr_writedata	<= X"00000001";
+		end if;
+	end if;
+	end process;
 
 	-- ADC multiplexer
     process(clk100, reset_n)
@@ -383,7 +409,7 @@ begin
 				adc_data_3(27 downto 16)	<= adc_response_data;	
 			when "01000" =>
 				adc_data_4(11 downto 0)		<= adc_response_data;
-			when "01001" =>
+			when "10001" => -- Temperature sensor is channel 17!
 				adc_data_4(27 downto 16)	<= adc_response_data;	
 			when others =>
 				
