@@ -64,29 +64,36 @@ begin
         end loop;
         full <= '1';
     elsif rising_edge(i_clk) then
-        full <= not empty(g_N);
+        if ( i_rack = '1' and empty(1) = '0' ) then
+            -- read from cell(1) -> shift left
+            cell(1 to g_N) <= cell(2 to g_N+1);
+            empty(1 to g_N) <= empty(2 to g_N+1);
+            full <= '0';
+        elsif ( i_we = '1' and empty(g_N-1 to g_N) = "01" ) then
+            -- write to last empty cell
+            full <= '1';
+        else
+            full <= not empty(g_N);
+        end if;
 
-        for i in 1 to g_N loop
-            if ( i_rack = '1' and empty(1) = '0' ) then
-                -- read from cell(1) and shift left
-                cell(i) <= cell(i+1);
-                empty(i) <= empty(i+1);
-                -- copy wdata into first empty cell
-                -- NOTE: do not touch last cell (o_wfull is '1')
-                if ( empty(i to i+1) = "01" and i < g_N ) then
+        if ( i_rack = '1' and empty(1) = '0' ) then
+            -- copy wdata into last not empty cell
+            -- (but don't touch last cell - full is '1')
+            for i in 1 to g_N-1 loop
+                if ( empty(i to i+1) = "01" ) then
                     cell(i) <= i_wdata;
                     empty(i) <= not i_we;
                 end if;
-                full <= '0';
-            else
-                -- copy wdata into first empty cell
+            end loop;
+        else
+            -- copy wdata into first empty cell
+            for i in 1 to g_N loop
                 if ( empty(i-1 to i) = "01" ) then
                     cell(i) <= i_wdata;
                     empty(i) <= not i_we;
-                    full <= work.util.to_std_logic(i = g_N) and i_we;
                 end if;
-            end if;
-        end loop;
+            end loop;
+        end if;
     end if;
     end process;
 
