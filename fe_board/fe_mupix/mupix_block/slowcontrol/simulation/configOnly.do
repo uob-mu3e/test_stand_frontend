@@ -10,11 +10,7 @@ add wave -noupdate /mupix_ctrl_tb/reset_n
 add wave -noupdate /mupix_ctrl_tb/reg_we
 add wave -noupdate /mupix_ctrl_tb/reg_add
 add wave -noupdate /mupix_ctrl_tb/reg_wdata
-add wave -noupdate /mupix_ctrl_tb/e_mp_ctrl/e_mupix_ctrl_config_storage/o_data
-add wave -noupdate /mupix_ctrl_tb/e_mp_ctrl/e_mupix_ctrl_config_storage/i_rdreq
-add wave -noupdate /mupix_ctrl_tb/e_mp_ctrl/e_mupix_ctrl_config_storage/o_is_writing
-add wave -noupdate /mupix_ctrl_tb/e_mp_ctrl/e_mupix_ctrl_config_storage/fifo_write_final
-add wave -noupdate /mupix_ctrl_tb/e_mp_ctrl/e_mupix_ctrl_config_storage/fifo_wdata_final
+add wave -noupdate /mupix_ctrl_tb/e_mp_ctrl/*
 
 TreeUpdate [SetDefaultTree]
 WaveRestoreCursors {{Cursor 1} {4127596 ps} 0}
