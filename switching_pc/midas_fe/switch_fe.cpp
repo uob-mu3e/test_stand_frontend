@@ -1,51 +1,14 @@
-#define FEB_ENABLE_REGISTER_LOW_W FEB_ENABLE_REGISTER_W
-#define RUN_NR_ACK_REGISTER_LOW_R RUN_NR_ACK_REGISTER_R
+//#define FEB_ENABLE_REGISTER_LOW_W FEB_ENABLE_REGISTER_W
+//#define RUN_NR_ACK_REGISTER_LOW_R RUN_NR_ACK_REGISTER_R
+
+
 /********************************************************************\
 
   Name:         taken from switch_fe.cpp
   Created by:   Stefan Ritt
   Updated by:   Marius Koeppel, Konrad Briggl, Lukas Gerritzen, Niklaus Berger
 
-  Contents:     Code for switching front-end to illustrate
-                manual generation of slow control events
-                and hardware updates via cm_watch().
-
-                The values of
-
-                /Equipment/Switching SC/Settings/Active
-                /Equipment/Switching SC/Settings/Delay
-
-                are propagated to hardware when the ODB value changes.
-
-                The SC Commands
-
-                /Equipment/Switching SC/Settings/Write
-                /Equipment/Switching SC/Settings/Read
-
-                can be set to TRUE to trigger a specific action
-                in this front-end.
-
-		Scifi-Related actions:
-		/Equipment/Switching SC/Settings/SciFiConfig: triggers a configuration of all ASICs 
-		Mupix-Related actions:
-		/Equipment/Switching SC/Settings/MupixConfig: triggers a configuration of all ASICs 
-		/Equipment/Switching SC/Settings/MupixBoard: triggers a configuration of all Mupix motherboards 
-
-                For a real program, the "TODO" lines have to be 
-                replaced by actual hardware acces.
-
-                Custom page slow control
-                -----------
-
-                The custom page "sc.html" in this directory can be
-                used to control the settins of this frontend. To
-                do so, set "/Custom/Path" in the ODB to this 
-                directory and create a string
-
-                /Custom/Slow Control = sc.html
-
-                then click on "Slow Control" on the left lower corner
-                in the web status page.
+  Contents:     Code for switching front-end
 
 \********************************************************************/
 
@@ -88,12 +51,21 @@ using midas::odb;
 
 /*-- Globals -------------------------------------------------------*/
 
-/* Start address of power in the crate controller - TODO: Move to an appropriate header*/
-const uint8_t CC_POWER_OFFSET = 5;
-const uint8_t CC_VT_READOUT_START = 1;
+constexpr int switch_id = 0; // TODO to be loaded from outside (on compilation?)
+// 0 - Central
+// 1 - Recurl US
+// 2 - Recurl DS
+// 3 - Fibres
+// Note that for the moment, we allow all subdetectors in any SW board
 
+constexpr char * const fe_names[] = {"SW Central", "SW Upstream", "SW downstream", "SW Fibres"};
 /* The frontend name (client name) as seen by other MIDAS clients   */
-const char *frontend_name = "SW Frontend";
+constexpr char * const frontend_name = fe_names[switch_id];
+
+constexpr char * const eq_names[] = {"SwitchingC", "SwitchingUS", "SwitchingDS", "SwitchingF"};
+/* The frontend name (client name) as seen by other MIDAS clients   */
+constexpr char * const eq_name = eq_names[switch_id];
+
 /* The frontend file name, don't change it */
 const char *frontend_file_name = __FILE__;
 
@@ -116,9 +88,6 @@ INT max_event_size_frag = 5 * 1024 * 1024;
 /* buffer size to hold events */
 INT event_buffer_size = 10 * 10000;
 
-constexpr int switch_id = 0; // TODO to be loaded from outside (on compilation?)
-
-
 /* Inteface to the PCIe FPGA */
 mudaq::MudaqDevice * mup;
 
@@ -134,8 +103,7 @@ MupixFEB    * mupixfeb;
 SciFiFEB    * scififeb;
 TilesFEB    * tilefeb;
 
-/* Local state of FEB power*/
-std::array<uint8_t, N_FEBCRATES*MAX_FEBS_PER_CRATE> febpower{};
+
 /* Local state of sorter delays */
 std::array<uint32_t, N_FEBS[switch_id]> sorterdelays{};
 
@@ -146,14 +114,12 @@ INT read_WMEM_event(char *pevent, INT off);
 INT read_scifi_sc_event(char *pevent, INT off);
 INT read_scitiles_sc_event(char *pevent, INT off);
 INT read_mupix_sc_event(char *pevent, INT off);
-INT read_febcrate_sc_event(char *pevent, INT off);
 
 DWORD * fill_SSCN(DWORD *);
 
 void sc_settings_changed(odb o);
 void switching_board_mask_changed(odb o);
 void frontend_board_mask_changed(odb o);
-void febpower_changed(odb o);
 void sorterdelays_changed(odb o);
 void scifi_settings_changed(odb o);
 
@@ -170,7 +136,6 @@ void setup_history();
 void setup_alarms();
 
 INT init_mudaq(mudaq::MudaqDevice&  mu);
-INT init_crates();
 INT init_febs(mudaq::MudaqDevice&  mu);
 INT init_scifi(mudaq::MudaqDevice&  mu);
 INT init_scitiles(mudaq::MudaqDevice& mu);
@@ -181,8 +146,8 @@ INT init_mupix(mudaq::MudaqDevice& mu);
 /*-- Equipment list ------------------------------------------------*/
 enum EQUIPMENT_ID {Switching=0,SciFi,SciTiles,Mupix};
 EQUIPMENT equipment[] = {
-
-   {"Switching",                /* equipment name */
+// TODO: make this work for different switch ids
+   {"SwitchingC",                /* equipment name */
     {110, 0,                    /* event ID, trigger mask */
      "SYSTEM",                  /* event buffer */
      EQ_PERIODIC,               /* equipment type */
@@ -242,21 +207,6 @@ EQUIPMENT equipment[] = {
      "", "", "",},
      read_mupix_sc_event,          /* readout routine */
     },
-    {"FEBCrates",                    /* equipment name */
-    {114, 0,                      /* event ID, trigger mask */
-     "SYSTEM",                  /* event buffer */
-     EQ_PERIODIC,                 /* equipment type */
-     0,                         /* event source crate 0, all stations */
-     "MIDAS",                   /* format */
-     TRUE,                      /* enabled */
-     RO_ALWAYS | RO_ODB,   /* read during run transitions and update ODB */
-     10000,                      /* read every 10 sec */
-     0,                         /* stop run after this event limit */
-     0,                         /* number of sub events */
-     1,                         /* log history every event */
-     "", "", "",},
-     read_febcrate_sc_event,          /* readout routine */
-    },
     {""}
 };
 
@@ -278,9 +228,6 @@ INT interrupt_configure(INT cmd, INT source, POINTER_T adr)
 INT frontend_init()
 {
     set_equipment_status(equipment[EQUIPMENT_ID::Switching].name, "Initializing...", "var(--myellow)");
-    for(size_t i =0; i < febpower.size(); i++)
-        febpower[i] = 0;
-
 
     #ifdef MY_DEBUG
         odb::set_debug(true);
@@ -314,10 +261,7 @@ INT frontend_init()
     //init SC
     feb_sc->FEBsc_resetSecondary();
 
-    //init feb crates
-    status = init_crates();
-    if (status != SUCCESS)
-        return FE_ERR_DRIVER;
+
 
     //init febs (general)
     status = init_febs(*mup);
@@ -421,8 +365,9 @@ void setup_odb(){
     create_ssso_names_in_odb(settings,switch_id);
     create_sscn_names_in_odb(settings,switch_id);
 
+    string path = "/Equipment/" + std::string(eq_name) + "/Settings";
 
-    settings.connect("/Equipment/Switching/Settings", true);
+    settings.connect(path, true);
 
     /* Default values for /Equipment/Switching/Variables */
     odb sc_variables = {
@@ -452,47 +397,21 @@ void setup_odb(){
             {sorterbankname.c_str(), std::array<int, per_fe_SSSO_size*N_FEBS[switch_id]>{}}
     };
 
-    sc_variables.connect("/Equipment/Switching/Variables");
+    string path2 = "/Equipment/" + std::string(eq_name) + "/Variables";
+    sc_variables.connect(path2);
 
     odb firmware_variables = {
         {"Arria V Firmware Version", std::array<uint32_t, MAX_N_FRONTENDBOARDS>{}},
         {"Max 10 Firmware Version", std::array<uint32_t, MAX_N_FRONTENDBOARDS>{}},
         {"FEB Version", std::array<uint32_t, MAX_N_FRONTENDBOARDS>{20}},
     };
-
+    string path3 = "/Equipment/" + std::string(eq_name) + "/Variables/FEBFirmware";
     firmware_variables.connect("/Equipment/Switching/Variables/FEBFirmware");
-
-    std::array<uint16_t, MAX_N_FRONTENDBOARDS> arr;
-    arr.fill(255);
-
-    odb crate_settings = {
-        {"CrateControllerMSCB", std::array<std::string, N_FEBCRATES>{}},
-        {"CrateControllerNode", std::array<uint16_t, N_FEBCRATES>{}},
-        {"FEBCrate", arr},
-        {"FEBSlot", arr},
-        {"Names SCFC", std::array<std::string, per_crate_SCFC_size*N_FEBCRATES>()}
-    };
-
-    crate_settings.connect("/Equipment/FEBCrates/Settings");
-    // Why is the line above needed? Not having it realiably crashes the program
-    // when writing the names below
-     create_scfc_names_in_odb(crate_settings);
-
-    crate_settings.connect("/Equipment/FEBCrates/Settings");
-
-    odb crate_variables = {
-        {"FEBPower", std::array<uint8_t, N_FEBCRATES*MAX_FEBS_PER_CRATE>{}},
-        {"SCFC", std::array<float, per_crate_SCFC_size*N_FEBCRATES>()}
-    };
-
-    crate_variables.connect("/Equipment/FEBCrates/Variables");
-
 
     // add custom page to ODB
     odb custom("/Custom");
     custom["Switching&"] = "sc.html";
     custom["Febs&"] = "febs.html";
-    custom["FEBcrates&"] = "crates.html";
     custom["DAQcounters&"] = "daqcounters.html";
 
     // Inculde the line below to set up the FEBs and their mapping for the 2021 integration run
@@ -558,10 +477,6 @@ void setup_watches(){
     odb links_odb("/Equipment/Links/Settings/LinkMask");
     links_odb.watch(frontend_board_mask_changed);
 
-    // watch for changes in the FEB powering state
-    odb febpower_odb("/Equipment/FEBCrates/Variables/FEBPower");
-    febpower_odb.watch(febpower_changed);
-
     // Watch for sorter delay changes
     odb sorterdelay_settings("/Equipment/Switching/Settings/Sorter Delay");
     sorterdelay_settings.watch(sorterdelays_changed);
@@ -615,12 +530,6 @@ INT init_mudaq(mudaq::MudaqDevice &mu) {
 #else
     feb_sc = new FEBSlowcontrolInterface(mu);
 #endif
-    return SUCCESS;
-}
-
-INT init_crates() {
-    odb febpower_odb("/Equipment/FEBCrates/Variables/FEBPower");
-    febpower_changed(febpower_odb);
     return SUCCESS;
 }
 
@@ -946,44 +855,7 @@ INT resume_run(INT run_number, char *error)
    return CM_SUCCESS;
 }
 
-/*--- Read Slow Control Event from crate controllers to be put into data stream --------*/
-INT read_febcrate_sc_event(char *pevent, INT off){
-    bk_init(pevent);
-    float *pdata;
-    bk_create(pevent, "SCFC", TID_FLOAT, (void **)&pdata);
-    odb crates("/Equipment/FEBCrates/Settings");
-    for(uint32_t i = 0; i < N_FEBCRATES; i++){
-        *pdata++ = i;
-        std::string mscb = crates["CrateControllerMSCB"][i];
-        char cstr[256]; //not good...
-        strcpy(cstr, mscb.c_str());
-        if(mscb.empty()){
-            for(uint32_t j= 0; j < per_crate_SCFC_size-1; j++)// -1 as index is already written
-                *pdata++ = 0;
-        } else {
-            uint16_t node = crates["CrateControllerNode"][i];
-            int fd = mscb_init(cstr, sizeof(cstr), nullptr, 0);
-            if (fd < 0) {
-               cm_msg(MINFO, "read_febcrate_sc_event", "Cannot connect to node: %d", node);
-               for(uint32_t j= 0; j < per_crate_SCFC_size-1; j++)// -1 as index is already written
-                   *pdata++ = 0;
-               continue;
-            }
-            float data;
-            int size = sizeof(float);
-            for(int k=0; k < 4; k++){
-                mscb_read(fd, node, CC_VT_READOUT_START+k, &data, &size);
-                *pdata++ = data;
-            }
-            for(uint32_t j= 0; j < MAX_FEBS_PER_CRATE; j++)
-                *pdata++ = 0;
-        }
-    }
-    bk_close(pevent,pdata);
-    return bk_size(pevent);
 
-    return 0;
-}
 
 /*--- Read Slow Control Event from FEBs to be put into data stream --------*/
 INT read_sc_event(char *pevent, INT off)
@@ -1095,37 +967,7 @@ INT get_odb_value_by_string(const char *key_name){
     return ODB_DATA;
 }
 
-void febpower_changed(odb o)
-{
-    cm_msg(MINFO, "febpower_changed()" , "Febpower!");
-    std::vector<uint8_t> power_odb = o;
-    odb crates("/Equipment/FEBCrates/Settings");
-    for(size_t i =0; i < febpower.size(); i++){
-        if(febpower[i] != power_odb[i]){
-            uint16_t crate = crates["FEBCrate"][i];
-            uint16_t slot = crates["FEBSlot"][i];
-            std::string mscb = crates["CrateControllerMSCB"][crate];
-            char cstr[256]; //not good...
-            strcpy(cstr, mscb.c_str());
-            uint16_t node = crates["CrateControllerNode"][crate];
-            int fd = mscb_init(cstr, sizeof(cstr), nullptr, 0);
-            if (fd < 0) {
-               cm_msg(MINFO, "read_febcrate_sc_event", "Cannot connect to node: %d", node);
-               return;
-            }
-            uint8_t power = power_odb[i];
-            if(power){
-                cm_msg(MINFO, "febpower_changed", "Switching on FEB %d in crate %d", slot, crate);
-            }
-            else {
-                cm_msg(MINFO, "febpower_changed", "Switching off FEB %d in crate %d", slot, crate); 
-            }
 
-            mscb_write(fd, node, slot+CC_POWER_OFFSET,&power,sizeof(power));
-            febpower[i] = power;
-        }
-    }
-}
 
 void sorterdelays_changed(odb o)
 {
