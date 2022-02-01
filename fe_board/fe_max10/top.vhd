@@ -481,10 +481,12 @@ elsif( max10_osc_clk'event and  max10_osc_clk = '1') then
 			
     if(pll_locked = '1')then
         startupcounter <= startupcounter +1;
-        if(startupcounter > 4095000)then
+        
+		  if(startupcounter > 4095000)then
             flash_programming_ctrl(31) <= '1';
         end if;
-        if(startupcounter > 5000000)then
+        
+		  if(startupcounter > 5000000)then
             startupcounter <= 5001000;
             flash_programming_ctrl(31) <= '0';
             -- Reprogram the FPGA on request from the crate controller
@@ -521,8 +523,7 @@ e_flashprogramming_block: entity work.flashprogramming_block
         fpga_clk                => fpga_clk,
 
         fpp_crclocation         => fpp_crclocation,
-
-        -- NIOS interface
+		  
         flash_programming_ctrl          => flash_programming_ctrl,
         flash_w_cnt                     => flash_w_cnt,
         spi_flash_cmdaddr_to_flash      => spi_flash_cmdaddr_to_flash,
@@ -530,7 +531,7 @@ e_flashprogramming_block: entity work.flashprogramming_block
         spi_flash_data_to_flash_nios    => spi_flash_data_to_flash_nios,
         spi_flash_data_from_flash       => spi_flash_data_from_flash,
         spi_flash_status                => spi_flash_status,
-		spi_flash_fifo_data_nios        => spi_flash_fifo_data_nios, 
+		  spi_flash_fifo_data_nios        => spi_flash_fifo_data_nios, 
 		 
 		   -- Arria SPI interface
         spi_arria_byte_from_arria            => spi_arria_byte_from_arria,
