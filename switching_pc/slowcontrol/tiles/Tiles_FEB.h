@@ -20,7 +20,7 @@ class TilesFEB : public MutrigFEB{
    public:
       TilesFEB(const TilesFEB&)=delete;
       TilesFEB(FEBSlowcontrolInterface & feb_sc_,
-               const vector<mappedFEB> & febs_,
+               vector<mappedFEB> & febs_,
                const uint64_t & febmask_,
                const char* equipment_name_,
                const char* odb_prefix_,
@@ -44,13 +44,13 @@ class TilesFEB : public MutrigFEB{
 
       //Read all sipm matrix temperatures from FEB/TMB, store in subtree $odb_prefix/Variables/matrix_temperatures
       //Parameter FPGA_ID refers to global numbering, i.e. before mapping
-      int ReadBackMatrixTemperatures(uint16_t FPGA_ID);
-      void ReadBackAllMatrixTemperatures(){for(size_t i=0;i<febs.size();i++) ReadBackMatrixTemperatures(i);}
+      int ReadBackMatrixTemperatures(mappedFEB & FEB);
+      void ReadBackAllMatrixTemperatures(){for(auto feb : febs) ReadBackMatrixTemperatures(feb);}
 
       //Read all power monitor readings from FEB/TMB, store in subtree $odb_prefix/Variables/tmb_current , tmb_voltage
       //Parameter FPGA_ID refers to global numbering, i.e. before mapping
-      int ReadBackTMBPower(uint16_t FPGA_ID);
-      void ReadBackAllTMBPower(){for(size_t i=0;i<febs.size();i++) ReadBackTMBPower(i);}
+      int ReadBackTMBPower(mappedFEB & FEB);
+      void ReadBackAllTMBPower(){for(auto feb : febs) ReadBackTMBPower(feb);}
 
 
 

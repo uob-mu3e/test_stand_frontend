@@ -22,7 +22,7 @@ class SciFiFEB : public MutrigFEB{
 
       SciFiFEB(const SciFiFEB&)=delete;
       SciFiFEB(FEBSlowcontrolInterface & feb_sc_,
-               const vector<mappedFEB> & febs_,
+               vector<mappedFEB> & febs_,
                const uint64_t & febmask_,
                const char* equipment_name_,
                const char* odb_prefix_,

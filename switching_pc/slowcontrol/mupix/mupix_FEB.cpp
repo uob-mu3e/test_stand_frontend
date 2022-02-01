@@ -110,8 +110,8 @@ int MupixFEB::ConfigureASICs(){
 
     // write lvds mask from ODB to each feb
     char set_str[255];
-    for ( int feb=0; feb<GetNumFPGAs(); feb++ ) {
-        sprintf(set_str, "/Equipment/Mupix/Settings/FEBS/%u", feb);
+    for (auto feb : febs){
+        sprintf(set_str, "/Equipment/Mupix/Settings/FEBS/%u", feb.GetLinkID());
         //TODO: Can we avoid this silly back and forth casting?
         odb FEBsSettings(std::string(set_str).c_str());
         feb_sc.FEB_register_write(feb, MP_LVDS_LINK_MASK_REGISTER_W, (uint32_t) FEBsSettings["MP_LVDS_LINK_MASK"]);
@@ -135,11 +135,12 @@ int MupixFEB::ConfigureASICs(){
         }
         
         //mapping
-        uint16_t SB_ID=febs[FPGAid_from_ID(asic)].SB_Number();
-        uint16_t SP_ID=febs[FPGAid_from_ID(asic)].SB_Port();
+        auto FEB = febs[FPGAid_from_ID(asic)];
+        uint16_t SB_ID=FEB.SB_Number();
+        uint16_t SP_ID=FEB.SB_Port();
         uint16_t FA_ID=ASICid_from_ID(asic);
 
-        if(!febs[FPGAid_from_ID(asic)].IsScEnabled()){
+        if(!FEB.IsScEnabled()){
             printf(" [skipped]\n");
             return FE_SUCCESS;
         }
@@ -195,10 +196,10 @@ int MupixFEB::ConfigureASICs(){
 
             // check if FEB is busy
             rpc_status=FEB_REPLY_SUCCESS;
-            feb_sc.FEB_register_read(SP_ID, MP_CTRL_SPI_BUSY_REGISTER_R, spi_busy);
+            feb_sc.FEB_register_read(FEB, MP_CTRL_SPI_BUSY_REGISTER_R, spi_busy);
             while(spi_busy==1 && count < limit){
                 sleep(1);
-                feb_sc.FEB_register_read(SP_ID,MP_CTRL_SPI_BUSY_REGISTER_R,spi_busy);
+                feb_sc.FEB_register_read(FEB,MP_CTRL_SPI_BUSY_REGISTER_R,spi_busy);
                 count++;
                 cm_msg(MINFO, "MupixFEB", "Mupix config spi busy .. waiting");
             }
@@ -208,14 +209,14 @@ int MupixFEB::ConfigureASICs(){
                 cm_msg(MERROR, "setup_mupix", "FEB Mupix SPI timeout");
             } else { // do the SPI writing 
                 // TODO: make this correct
-                feb_sc.FEB_write(SP_ID, MP_CTRL_CHIP_MASK_REGISTER_W, 0x0);//chip_select_mask); //
+                feb_sc.FEB_write(FEB, MP_CTRL_CHIP_MASK_REGISTER_W, 0x0);//chip_select_mask); //
                 // TODO: include headers for addr.
-                feb_sc.FEB_write(SP_ID, MP_CTRL_SLOW_DOWN_REGISTER_W, 0x0000000F); // SPI slow down reg
-                feb_sc.FEB_write(SP_ID, MP_CTRL_ENABLE_REGISTER_W, 0x00000FC0); // reset Mupix config fifos
-                feb_sc.FEB_write(SP_ID, MP_CTRL_ENABLE_REGISTER_W, 0x00000000);
-                feb_sc.FEB_write(SP_ID, MP_CTRL_INVERT_REGISTER_W, 0x00000003); // idk, have to look it up
+                feb_sc.FEB_write(FEB, MP_CTRL_SLOW_DOWN_REGISTER_W, 0x0000000F); // SPI slow down reg
+                feb_sc.FEB_write(FEB, MP_CTRL_ENABLE_REGISTER_W, 0x00000FC0); // reset Mupix config fifos
+                feb_sc.FEB_write(FEB, MP_CTRL_ENABLE_REGISTER_W, 0x00000000);
+                feb_sc.FEB_write(FEB, MP_CTRL_INVERT_REGISTER_W, 0x00000003); // idk, have to look it up
                 // We now only write the default configuration for testing
-                rpc_status = feb_sc.FEB_write(SP_ID, MP_CTRL_ALL_REGISTER_W, payload,true);
+                rpc_status = feb_sc.FEB_write(FEB, MP_CTRL_ALL_REGISTER_W, payload,true);
             }
         } catch(std::exception& e) {
             cm_msg(MERROR, "setup_mupix", "Communication error while configuring MuPix %d: %s", asic, e.what());
@@ -245,11 +246,11 @@ int MupixFEB::ConfigureASICs(){
             for (auto it = GetTDACsJSON().at(asic).begin(); it != GetTDACsJSON().at(asic).end(); it++) {
                 std::cout << "KEY: " << it->first << "\n";
                 // check if FEB is busy
-                feb_sc.FEB_register_read(SP_ID, MP_CTRL_SPI_BUSY_REGISTER_R, spi_busy);
+                feb_sc.FEB_register_read(FEB, MP_CTRL_SPI_BUSY_REGISTER_R, spi_busy);
                 count = 0;
                 while ( spi_busy==1 && count < limit ) {
                     sleep(1);
-                    feb_sc.FEB_register_read(SP_ID, MP_CTRL_SPI_BUSY_REGISTER_R, spi_busy);
+                    feb_sc.FEB_register_read(FEB, MP_CTRL_SPI_BUSY_REGISTER_R, spi_busy);
                     count++;
                     cm_msg(MINFO, "MupixFEB", "Mupix config spi busy .. waiting");
                 }
@@ -260,10 +261,10 @@ int MupixFEB::ConfigureASICs(){
                     // first we write the row values from the value
                     for ( uint32_t v : it->second ) {
                         std::cout << "VALUE: " << v << "\n";
-                        feb_sc.FEB_register_write(SP_ID, MP_CTRL_TDAC_REGISTER_W, v);
+                        feb_sc.FEB_register_write(FEB, MP_CTRL_TDAC_REGISTER_W, v);
                     }
-                    feb_sc.FEB_register_write(SP_ID, MP_CTRL_ENABLE_REGISTER_W, reg_setBit(0x0,WR_TDAC_BIT,true));
-                    feb_sc.FEB_register_write(SP_ID,MP_CTRL_ENABLE_REGISTER_W,0x0);
+                    feb_sc.FEB_register_write(FEB, MP_CTRL_ENABLE_REGISTER_W, reg_setBit(0x0,WR_TDAC_BIT,true));
+                    feb_sc.FEB_register_write(FEB,MP_CTRL_ENABLE_REGISTER_W,0x0);
                     
                     // now we write the 128*7b col values where we write on col (key) at the time
                     curWord = 0;
@@ -275,21 +276,21 @@ int MupixFEB::ConfigureASICs(){
                                 curWord = curWord | (1 << curNBits);
                             }
                             if (curNBits == 32) {
-                                feb_sc.FEB_register_write(SP_ID, MP_CTRL_COL_REGISTER_W, curWord);
+                                feb_sc.FEB_register_write(FEB, MP_CTRL_COL_REGISTER_W, curWord);
                                 curWord = 0;
                                 curNBits = 0;
                             }
                         }
                     }
-                    feb_sc.FEB_register_write(SP_ID, MP_CTRL_ENABLE_REGISTER_W, reg_setBit(0x0,WR_COL_BIT,true));
-                    feb_sc.FEB_register_write(SP_ID,MP_CTRL_ENABLE_REGISTER_W,0x0);
+                    feb_sc.FEB_register_write(FEB, MP_CTRL_ENABLE_REGISTER_W, reg_setBit(0x0,WR_COL_BIT,true));
+                    feb_sc.FEB_register_write(FEB,MP_CTRL_ENABLE_REGISTER_W,0x0);
                 }
             }
         }
 
         // reset lvds links
-        feb_sc.FEB_register_write(SP_ID, MP_RESET_LVDS_N_REGISTER_W, 0x0);
-        feb_sc.FEB_register_write(SP_ID, MP_RESET_LVDS_N_REGISTER_W, 0x1);
+        feb_sc.FEB_register_write(FEB, MP_RESET_LVDS_N_REGISTER_W, 0x0);
+        feb_sc.FEB_register_write(FEB, MP_RESET_LVDS_N_REGISTER_W, 0x1);
 
         sleep(2);
         
@@ -347,11 +348,9 @@ unsigned char reverse(unsigned char b) {
    return b;
 }
 
-uint32_t MupixFEB::ReadBackLVDSStatus(DWORD* pdata, uint16_t FPGA_ID, uint16_t LVDS_ID)
+uint32_t MupixFEB::ReadBackLVDSStatus(DWORD* pdata, mappedFEB & FEB, uint16_t LVDS_ID)
 {
-    auto FEB = febs.at(FPGA_ID);
-
-    //skip disabled fibers
+   //skip disabled fibers
     if(!FEB.IsScEnabled())
         return 0;
 
@@ -360,37 +359,37 @@ uint32_t MupixFEB::ReadBackLVDSStatus(DWORD* pdata, uint16_t FPGA_ID, uint16_t L
         return 0;
     
     uint32_t val;
-    int status = feb_sc.FEB_register_read(FEB.SB_Port(), MP_LVDS_STATUS_START_REGISTER_W + LVDS_ID, val);
+    feb_sc.FEB_register_read(FEB, MP_LVDS_STATUS_START_REGISTER_W + LVDS_ID, val);
     
     return val;
 }
 
-uint32_t MupixFEB::ReadBackLVDSNumHits(uint16_t FPGA_ID, uint16_t LVDS_ID)
+uint32_t MupixFEB::ReadBackLVDSNumHits(mappedFEB & FEB, uint16_t LVDS_ID)
 {
     //cm_msg(MINFO, "MupixFEB::ReadBackLVDSNumHits" , "Implement Me");
     return 0;
 }
 
-uint32_t MupixFEB::ReadBackLVDSNumHitsInMupixFormat(uint16_t FPGA_ID, uint16_t LVDS_ID)
+uint32_t MupixFEB::ReadBackLVDSNumHitsInMupixFormat(mappedFEB & FEB, uint16_t LVDS_ID)
 {
     //cm_msg(MINFO, "MupixFEB::ReadBackLVDSNumHitsInMupixFormat" , "Implement Me");
     return 0;
 }
 
-DWORD* MupixFEB::ReadLVDSCounters(DWORD* pdata, uint16_t FPGA_ID)
+DWORD* MupixFEB::ReadLVDSCounters(DWORD* pdata, mappedFEB & FEB)
 {
     for(uint32_t i=0; i<64; i++){ // TODO: set currect LVDS links number
-        ReadBackLVDSStatus(pdata, FPGA_ID, i);
+        ReadBackLVDSStatus(pdata, FEB, i);
         // TODO: intrun fix for lvds configuration
         if (i>=lvds_links_per_feb) continue;
         // Link ID
         *(DWORD*)pdata++ = i;
         // read lvds status
-        *(DWORD*)pdata++ = ReadBackLVDSStatus(pdata, FPGA_ID, i);
+        *(DWORD*)pdata++ = ReadBackLVDSStatus(pdata, FEB, i);
         // number of hits from link
-        *(DWORD*)pdata++ = ReadBackLVDSNumHits(FPGA_ID, i);
+        *(DWORD*)pdata++ = ReadBackLVDSNumHits(FEB, i);
         // number of hits from link in mupix format
-        *(DWORD*)pdata++ = ReadBackLVDSNumHitsInMupixFormat(FPGA_ID, i);
+        *(DWORD*)pdata++ = ReadBackLVDSNumHitsInMupixFormat(FEB, i);
 
     };
     return pdata;
