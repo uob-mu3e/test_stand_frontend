@@ -4,6 +4,13 @@
 
 using midas::odb;
 
+FEBList::FEBList(uint16_t SB_index_):SB_index(SB_index_){
+    for(unsigned int i=0; i < MAX_LINKS_PER_SWITCHINGBOARD; i++)
+        linkstats.push_back(LinkStatus());
+
+    RebuildFEBList();
+};
+
 void FEBList::RebuildFEBList()
 {
     //clear vectors, we will rebuild them now
@@ -39,16 +46,23 @@ void FEBList::RebuildFEBList()
     int lastPrimary=-1;
     int nSecondaries=0;
     char reportStr[255];
-    for(uint16_t ID=0;ID<MAX_N_FRONTENDBOARDS;ID++){
+    for(uint16_t ID=0;ID<MAX_LINKS_PER_SWITCHINGBOARD;ID++){
+        uint16_t global_index = ID + SB_index*MAX_LINKS_PER_SWITCHINGBOARD;
         std::string name_link;
         std::string febnamesID;
-        sbnames[ID/MAX_LINKS_PER_SWITCHINGBOARD].get(name_link);
-        febnames[ID].get(febnamesID);
+        sbnames[SB_index].get(name_link);
+        febnames[global_index].get(febnamesID);
         name_link+=":";
         name_link+= febnamesID;
-        switch ((uint32_t)febtype[ID]) {
+        switch ((uint32_t)febtype[global_index]) {
             case FEBTYPE::Unused:
-                mFEBs.push_back({ID, linkmask[ID], name_link.c_str(), febcrate[ID], febslot[ID], febversion[ID]});
+                mFEBs.push_back({linkstats[ID],
+                                 global_index, 
+                                 linkmask[global_index], 
+                                 name_link.c_str(), 
+                                 febcrate[global_index], 
+                                 febslot[global_index], 
+                                 febversion[global_index]});
                 mpFEBs.push_back(mFEBs.back());
                 break;
             case FEBTYPE::FibreSecondary:
@@ -70,20 +84,26 @@ void FEBList::RebuildFEBList()
                 mLinkMask   |= 1ULL << ID;
 
                 lastPrimary=mFEBs.size();
-                mFEBs.push_back({ID,linkmask[ID],name_link.c_str(),febcrate[ID], febslot[ID], febversion[ID]});
+                mFEBs.push_back({linkstats[ID],
+                                global_index,
+                                linkmask[global_index],
+                                name_link.c_str(),
+                                febcrate[global_index], 
+                                febslot[global_index], 
+                                febversion[global_index]});
                 mpFEBs.push_back(mFEBs.back());
                 sprintf(reportStr,"TX Fiber %d is mapped to Link %u \"%s\"  --> SB=%u.%u %s",
                         ID,mFEBs[lastPrimary].GetLinkID(),mFEBs[lastPrimary].GetLinkName().c_str(),
                         mFEBs[lastPrimary].SB_Number(),mFEBs[lastPrimary].SB_Port(),
                         !mFEBs[lastPrimary].IsScEnabled()?"\t[SC disabled]":"");
                 cm_msg(MINFO,"FEBList::RebuildFEBList","%s",reportStr);
-                if(((uint32_t) febtype[ID]) == FEBTYPE::Pixel){
+                if(((uint32_t) febtype[global_index]) == FEBTYPE::Pixel){
                     mPixelFEBs.push_back(mFEBs.back());
                     mPixelFEBMask |= 1ULL << ID;
-                } else if(((uint32_t) febtype[ID]) == FEBTYPE::Fibre)    {
+                } else if(((uint32_t) febtype[global_index]) == FEBTYPE::Fibre)    {
                     mSciFiFEBs.push_back(mFEBs.back());
                     mSciFiFEBMask |= 1ULL << ID;
-                } else if(((uint32_t) febtype[ID]) == FEBTYPE::Tile)    {
+                } else if(((uint32_t) febtype[global_index]) == FEBTYPE::Tile)    {
                     mTileFEBs.push_back(mFEBs.back());
                     mTileFEBMask |= 1ULL << ID;
                 } else {

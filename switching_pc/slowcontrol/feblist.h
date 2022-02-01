@@ -6,6 +6,7 @@
 #include <stdint.h>
 
 #include "mappedfeb.h"
+#include "linkstatus.h"
 
 namespace midas{
     class odb;
@@ -23,7 +24,7 @@ namespace midas{
 class FEBList
 {
 public:
-    FEBList(uint16_t SB_index_):SB_index(SB_index_){RebuildFEBList();};
+    FEBList(uint16_t SB_index_);
     size_t nFEBS() const {return mFEBs.size();}
     size_t nPixelFEBS() const {return mPixelFEBs.size();}
     size_t nSciFiFEBS() const {return mSciFiFEBs.size();}
@@ -48,6 +49,7 @@ public:
     void RebuildFEBList();
 
 protected:
+    std::vector<LinkStatus> linkstats;
     const uint16_t SB_index;
     uint64_t mFEBMask;
     uint64_t mLinkMask;

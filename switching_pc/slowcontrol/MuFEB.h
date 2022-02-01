@@ -20,7 +20,7 @@ class MuFEB {
    public:
       MuFEB(const MuFEB&)=delete;
       MuFEB(FEBSlowcontrolInterface & feb_sc_,
-            const vector<mappedFEB> & febs_,
+            vector<mappedFEB> & febs_,
             const uint64_t & febmask_,
             const char* equipment_name_,
             const char* odb_prefix_,
@@ -49,24 +49,25 @@ class MuFEB {
 
       int WriteFEBIDs();
       int WriteFEBID(uint16_t FPGA_ID);
-      int WriteFEBID(mappedFEB &);
-      int WriteSorterDelay(uint16_t FPGA_ID, uint32_t delay);
+      int WriteFEBID(mappedFEB & FEB);
+      int WriteSorterDelay(mappedFEB & FEB, uint32_t delay);
       void ReadFirmwareVersionsToODB();
 
       void LoadFirmware(std::string filename, uint16_t FPGA_ID, bool emergencyImage = false);
 
-      uint32_t ReadBackMergerRate(uint16_t FPGA_ID);
-      uint32_t ReadBackResetPhase(uint16_t FPGA_ID);
-      uint32_t ReadBackTXReset(uint16_t FPGA_ID);
+      uint32_t ReadRegister(mappedFEB & FEB, const uint32_t reg, const uint32_t mask =0xFFFFFFFF);
+      uint32_t ReadBackMergerRate(mappedFEB & FEB);
+      uint32_t ReadBackResetPhase(mappedFEB & FEB);
+      uint32_t ReadBackTXReset(mappedFEB & FEB);
 
       DWORD *fill_SSFE(DWORD * pdata);
-      DWORD *read_SSFE_OneFEB(DWORD * pdata, uint32_t index, uint32_t version);
+      DWORD *read_SSFE_OneFEB(DWORD * pdata, mappedFEB & FEB);
 
       DWORD *fill_SSSO(DWORD * pdata);
-      DWORD *read_SSSO_OneFEB(DWORD * pdata, uint32_t index);
+      DWORD *read_SSSO_OneFEB(DWORD * pdata, mappedFEB & FEB);
 
       const vector<mappedFEB> getFEBs() const {return febs;}
-      const uint8_t getSB_number() const {return SB_number;}
+      uint8_t getSB_number() const {return SB_number;}
 
       static constexpr uint32_t EMERGENCY_IMAGE_START_ADDRESS = 0xC00000;
       static constexpr uint32_t FLASH_MAX_ADDRESS = 0xFFFFFF;
@@ -74,7 +75,7 @@ class MuFEB {
 protected:
 
       FEBSlowcontrolInterface & feb_sc;
-      const vector<mappedFEB> & febs;
+      vector<mappedFEB> & febs;
       const uint64_t & febmask;
       const char* equipment_name;
       const char* odb_prefix;

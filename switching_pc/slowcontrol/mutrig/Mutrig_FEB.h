@@ -26,7 +26,7 @@ class MutrigFEB : public MuFEB{
    public:
       MutrigFEB(const MutrigFEB&)=delete;
       MutrigFEB(FEBSlowcontrolInterface & feb_sc_,
-            const vector<mappedFEB> & febs_,
+            vector<mappedFEB> & febs_,
             const uint64_t & febmask_,
             const char* equipment_name_,
             const char* odb_prefix_,
@@ -52,16 +52,16 @@ class MutrigFEB : public MuFEB{
 
       //Read counter values from FEB, store in subtree $odb_prefix/Variables/Counters/
       //Parameter FPGA_ID refers to global numbering, i.e. before mapping
-      int ReadBackCounters(uint16_t FPGA_ID);
-      void ReadBackAllCounters(){for(size_t i=0;i<febs.size();i++) ReadBackCounters(i);}
-      int ResetCounters(uint16_t FPGA_ID);
-      void ResetAllCounters(){for(size_t i=0;i<febs.size();i++) ResetCounters(i);}
+      int ReadBackCounters(mappedFEB & FEB);
+      void ReadBackAllCounters(){for(auto feb : febs) ReadBackCounters(feb);}
+      int ResetCounters(mappedFEB & FEB);
+      void ResetAllCounters(){for(auto feb : febs) ResetCounters(feb);}
 
 
       //Read datapath status values from FEB, store in subtree $odb_prefix/Variables/FEB datapath status
       //Parameter FPGA_ID refers to global numbering, i.e. before mapping
-      int ReadBackDatapathStatus(uint16_t FPGA_ID);
-      void ReadBackAllDatapathStatus(){for(size_t i=0;i<febs.size();i++) ReadBackDatapathStatus(i);}
+      int ReadBackDatapathStatus(mappedFEB & FEB);
+      void ReadBackAllDatapathStatus(){for(auto feb : febs) ReadBackDatapathStatus(feb);}
 
       //Foreach loop over all asics under this prefix. Call with a lambda function,
       //e.g. midasODB::MapForEach(hDB, "/Equipment/SciFi",[mudaqdev_ptr](Config c,int asic){mudaqdev_ptr->ConfigureAsic(c,asic);});
@@ -75,16 +75,16 @@ class MutrigFEB : public MuFEB{
       /**
        * Use emulated mutric on fpga for config
        */
-      void setDummyConfig(uint16_t FPGA_ID,bool dummy = true);
+      void setDummyConfig(mappedFEB & FEB,bool dummy = true);
   
       /**
        * use mutrig data emulator on fpga
        * n:    number of events per frame
        * fast: enable fast mode for data generator (shorter events)
        */
-      void setDummyData_Enable(uint16_t FPGA_ID, bool dummy = true);
-      void setDummyData_Count(uint16_t FPGA_ID, int n = 255);
-      void setDummyData_Fast(uint16_t FPGA_ID, bool fast = false);
+      void setDummyData_Enable(mappedFEB & FEB, bool dummy = true);
+      void setDummyData_Count(mappedFEB & FEB, int n = 255);
+      void setDummyData_Fast(mappedFEB & FEB, bool fast = false);
   
       /**
        * Disable data from specified ASIC (asic number in global numbering scheme, i.e. before mapping)
@@ -94,26 +94,26 @@ class MutrigFEB : public MuFEB{
       /**
        * Disable PRBS decoder in FPGA
        */
-      void setPRBSDecoderDisable(uint32_t FPGA_ID,bool disable);
+      void setPRBSDecoderDisable(mappedFEB & FEB,bool disable);
 
       /**
        * Wait for lvds receivers ready strategy
        */
-      void setWaitForAll(uint32_t FPGA_ID,bool val);
-      void setWaitForAllSticky(uint32_t FPGA_ID,bool val);
+      void setWaitForAll(mappedFEB & FEB,bool val);
+      void setWaitForAllSticky(mappedFEB & FEB,bool val);
 
 
 
-      void syncReset(uint16_t FPGA_ID){chipReset(FPGA_ID);} //should be resetting the ASICs coarse counter only, missing pin on the asic. For future use
-      void chipReset(uint16_t FPGA_ID); //reset all asics (digital part, CC, fsms, etc.)
-      void DataPathReset(uint16_t FPGA_ID); //in FE-FPGA: everything upstream of merger (in the stream path)
-      void LVDS_RX_Reset(uint16_t FPGA_ID); //in FE-FPGA: LVDS receiver blocks
+      void syncReset(mappedFEB & FEB){chipReset(FEB);} //should be resetting the ASICs coarse counter only, missing pin on the asic. For future use
+      void chipReset(mappedFEB & FEB); //reset all asics (digital part, CC, fsms, etc.)
+      void DataPathReset(mappedFEB & FEB); //in FE-FPGA: everything upstream of merger (in the stream path)
+      void LVDS_RX_Reset(mappedFEB & FEB); //in FE-FPGA: LVDS receiver blocks
 
 
       //reset signal alignment control
-      void setResetSkewCphase(uint16_t FPGA_ID, BOOL cphase[]);
-      void setResetSkewCdelay(uint16_t FPGA_ID, BOOL cdelay[]);
-      void setResetSkewPhases(uint16_t FPGA_ID, INT phases[]);
+      void setResetSkewCphase(mappedFEB & FEB, BOOL cphase[]);
+      void setResetSkewCdelay(mappedFEB & FEB, BOOL cdelay[]);
+      void setResetSkewPhases(mappedFEB & FEB, INT phases[]);
 
 };//class MutrigFEB
 
