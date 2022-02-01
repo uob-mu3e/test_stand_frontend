@@ -94,6 +94,7 @@ top.qsf : $(MAKEFILE_LIST)
 	set_global_assignment -name PROJECT_OUTPUT_DIRECTORY output_files
 	set_global_assignment -name SOURCE_TCL_SCRIPT_FILE "util/altera/settings.tcl"
 	set_global_assignment -name QIP_FILE "$(PREFIX)/include.qip"
+	set_global_assignment -name PRE_FLOW_SCRIPT_FILE "quartus_sh:util/altera/pre_flow.tcl"
 	EOF
 
 all : top.qpf top.qsf $(PREFIX)/include.qip
@@ -144,6 +145,11 @@ $(PREFIX)/%.qsys : %.tcl device.tcl
 $(PREFIX)/%.sopcinfo : $(PREFIX)/%.qsys
 	# find and exec qsys-generate.sh
 	$(lastword $(realpath $(addsuffix qsys-generate.sh,$(dir $(MAKEFILE_LIST))))) "$<"
+
+.PHONY : pre_flow
+pre_flow :
+	# generate components_pkg.vhd
+	$(lastword $(realpath $(addsuffix components_pkg.sh,$(dir $(MAKEFILE_LIST))))) "$(PREFIX)" > "$(PREFIX)/components_pkg.vhd"
 
 .PHONY : flow
 flow : all
