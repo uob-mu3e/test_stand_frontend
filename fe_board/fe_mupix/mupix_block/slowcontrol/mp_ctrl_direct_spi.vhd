@@ -90,10 +90,13 @@ begin
             fifo_rd         <= '0';
             direct_spi_state<= idle;
             spi_bitpos      <= 0;
+            wait_cnt        <= (others => '0');
 
         elsif(rising_edge(i_clk)) then
             fifo_rd     <= '0';
             wait_cnt    <= wait_cnt + 1;
+            o_spi       <= '0';
+            o_spi_clk   <= '0';
 
             case direct_spi_state is
               when idle =>
