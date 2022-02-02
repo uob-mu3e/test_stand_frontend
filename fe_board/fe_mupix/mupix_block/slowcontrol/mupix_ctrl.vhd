@@ -54,8 +54,12 @@ architecture RTL of mupix_ctrl is
 
 begin
 
-    slow_down <= slow_down_buf(15 downto 0);
-    chip_select_mask <= chip_select_mask_sc when mp_ctrl_direct_spi_ena = '1' else chip_select_mask_mp_ctrl;
+    o_SIN                   <= (others => '0');
+    mp_ctrl_to_direct_spi   <= (others => (others => '0'));
+    mp_ctrl_to_direct_spi_wr<= (others => '0');
+    chip_select_mask_mp_ctrl<= (others => '0');
+    slow_down               <= slow_down_buf(15 downto 0);
+    chip_select_mask        <= chip_select_mask_sc when mp_ctrl_direct_spi_ena = '1' else chip_select_mask_mp_ctrl;
 
     e_mupix_ctrl_reg_mapping : entity work.mupix_ctrl_reg_mapping
     generic map (

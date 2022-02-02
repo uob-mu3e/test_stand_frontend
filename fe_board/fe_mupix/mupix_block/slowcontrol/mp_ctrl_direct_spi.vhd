@@ -32,7 +32,7 @@ entity mp_ctrl_direct_spi is
         i_fifo_write_direct : in  std_logic;
         i_fifo_data_direct  : in  std_logic_vector(31 downto 0);
 
-        i_spi_slow_down     : in  std_logic_vector(31 downto 0);
+        i_spi_slow_down     : in  std_logic_vector(15 downto 0);
         i_chip_mask         : in  std_logic_vector(N_CHIPS_PER_SPI_g-1 downto 0);
 
         o_spi               : out std_logic;

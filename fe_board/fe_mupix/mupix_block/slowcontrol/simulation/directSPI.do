@@ -34,6 +34,6 @@ force -freeze mupix_ctrl_tb/reg_re 0
 run 80ns
 
 
-run 4ms
+run 80000 ns
 
 WaveRestoreZoom 0ns 1000000ns

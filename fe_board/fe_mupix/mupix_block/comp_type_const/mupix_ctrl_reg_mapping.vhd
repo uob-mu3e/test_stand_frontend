@@ -69,19 +69,25 @@ architecture rtl of mupix_ctrl_reg_mapping is
         variable regaddr : integer;
     begin
         if (i_reset_n = '0') then 
-            o_mp_ctrl_enable          <= (others => '0');
-            mp_ctrl_invert_csn        <= '0';
-            o_mp_ctrl_data_all_we     <= '0';
-            o_mp_fifo_write           <= (others => '0');
-            o_mp_fifo_clear           <= (others => '0');
-            o_mp_ctrl_data            <= (others => '0');
-            o_mp_ctrl_data_all        <= (others => '0');
-            o_mp_ctrl_chip_config_mask<= (others => '0');
-            o_mp_ctrl_invert_29       <= '0';
-            o_mp_ctrl_invert_csn      <= '0';
-            o_mp_ctrl_slow_down       <= (others => '0');
-            o_mp_direct_spi_data_wr   <= (others => '0');
-            
+            o_mp_ctrl_enable            <= (others => '0');
+            mp_ctrl_invert_csn          <= '0';
+            o_mp_ctrl_data_all_we       <= '0';
+            o_mp_fifo_write             <= (others => '0');
+            o_mp_fifo_clear             <= (others => '0');
+            o_mp_ctrl_data              <= (others => '0');
+            o_mp_ctrl_data_all          <= (others => '0');
+            o_mp_ctrl_chip_config_mask  <= (others => '0');
+            mp_ctrl_chip_config_mask    <= (others => '0');
+            o_mp_ctrl_invert_29         <= '0';
+            o_mp_ctrl_invert_csn        <= '0';
+            o_mp_ctrl_slow_down         <= (others => '0');
+            mp_ctrl_slow_down           <= (others => '0');
+            o_mp_direct_spi_data_wr     <= (others => '0');
+            o_mp_direct_spi_data        <= (others => (others => '0'));
+            o_reg_rdata                 <= x"CCCCCCCC";
+            mp_ctrl_direct_spi_enable   <= '0';
+            o_mp_ctrl_direct_spi_enable <= '0';
+
         elsif(rising_edge(i_clk156)) then
 
             --regs for long paths
