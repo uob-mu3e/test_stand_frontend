@@ -26,6 +26,7 @@ entity mp_ctrl_direct_spi is
         i_fifo_write_mp_ctrl: in  std_logic := '0';
         i_fifo_data_mp_ctrl : in  std_logic_vector(31 downto 0);
         o_fifo_almost_full  : out std_logic;
+        o_direct_spi_busy   : out std_logic;
 
         -- bypass the usual path and write directly to spi from midas
         i_direct_spi_enable : in  std_logic := '0';
@@ -60,8 +61,9 @@ architecture RTL of mp_ctrl_direct_spi is
 
 begin
 
-    fifo_write <= i_fifo_write_direct when i_direct_spi_enable = '1' else i_fifo_write_mp_ctrl;
-    fifo_wdata <= i_fifo_data_direct  when i_direct_spi_enable = '1' else i_fifo_data_mp_ctrl;
+    fifo_write          <= i_fifo_write_direct when i_direct_spi_enable = '1' else i_fifo_write_mp_ctrl;
+    fifo_wdata          <= i_fifo_data_direct  when i_direct_spi_enable = '1' else i_fifo_data_mp_ctrl;
+    o_direct_spi_busy   <= fifo_empty;
 
     direct_spi_fifo: entity work.ip_scfifo
     generic map (

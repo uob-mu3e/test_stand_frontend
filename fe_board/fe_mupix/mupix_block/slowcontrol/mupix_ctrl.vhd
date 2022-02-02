@@ -50,6 +50,7 @@ architecture RTL of mupix_ctrl is
     signal mp_ctrl_to_direct_spi_wr : std_logic_vector(N_SPI_g-1 downto 0);
     signal sc_to_direct_spi         : reg32array(N_SPI_g-1 downto 0); -- Write data to direct spi from slowcontrol (needs to be enabled using mp_ctrl_direct_spi_ena first)
     signal sc_to_direct_spi_wr      : std_logic_vector(N_SPI_g-1 downto 0);
+    signal mp_direct_spi_busy       : std_logic_vector(N_SPI_g-1 downto 0);
     signal mp_ctrl_direct_spi_ena   : std_logic;
 
 begin
@@ -92,6 +93,7 @@ begin
         o_mp_ctrl_slow_down         => slow_down_buf,
         o_mp_direct_spi_data        => sc_to_direct_spi,
         o_mp_direct_spi_data_wr     => sc_to_direct_spi_wr,
+        i_mp_direct_spi_busy        => mp_direct_spi_busy,
         o_mp_ctrl_direct_spi_enable => mp_ctrl_direct_spi_ena--,
     );
 
@@ -112,6 +114,7 @@ begin
             i_direct_spi_enable  => mp_ctrl_direct_spi_ena,
             i_fifo_write_direct  => sc_to_direct_spi_wr(I),
             i_fifo_data_direct   => sc_to_direct_spi(I),
+            o_direct_spi_busy    => mp_direct_spi_busy(I),
 
             i_spi_slow_down      => slow_down,
             i_chip_mask          => chip_select_mask(I*N_CHIPS_PER_SPI_g+N_CHIPS_PER_SPI_g-1 downto I*N_CHIPS_PER_SPI_g),

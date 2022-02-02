@@ -56,7 +56,8 @@ constant MUPIX_LVDS_STATUS_BLOCK_LENGTH     : integer := 36;
     constant MP_CTRL_ALL_REGISTER_W             :  integer := 16#040B#; -- DOC: Write complete mupix configuration to this address | MP_FEB
     constant MP_CTRL_SPI_BUSY_REGISTER_R        :  integer := 16#0410#; -- DOC: Indicates if the mupix spi is busy, do not send new data | MP_FEB
     constant MP_CTRL_DIRECT_SPI_ENABLE_REGISTER_W :  integer := 16#0411#; -- DOC: Enable direct SPI configuration mode for mupix | MP_FEB
-    constant MP_CTRL_DIRECT_SPI_START_REGISTER_W :  integer := 16#0412#; -- DOC: Register for direct spi configuration mode, needs to be enabled first | MP_FEB
+    constant MP_CTRL_DIRECT_SPI_BUSY_REGISTER_R :  integer := 16#0412#; -- DOC: contains 1 bit for each spi bus, 1 if busy | MP_FEB
+    constant MP_CTRL_DIRECT_SPI_START_REGISTER_W :  integer := 16#0413#; -- DOC: Register for direct spi configuration mode, needs to be enabled first | MP_FEB
 
 -----------------------------------------------------------------
 ---- mupix datapath general (0x1300-0xFBFF)----------------------

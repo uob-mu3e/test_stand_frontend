@@ -28,10 +28,9 @@ port (
     i_reg_we                    : in  std_logic;
     i_reg_wdata                 : in  std_logic_vector(31 downto 0);
 
-    -- inputs  156--------------------------------------------
-    i_mp_spi_busy               : in std_logic := '0';
+    ----------------------------------------
 
-    -- outputs 156--------------------------------------------
+    i_mp_spi_busy               : in std_logic := '0';
 
     o_mp_ctrl_data              : out std_logic_vector(32*5 + 31 downto 0);
     o_mp_fifo_write             : out std_logic_vector( 5 downto 0) := (others => '0');
@@ -47,6 +46,7 @@ port (
     o_mp_ctrl_slow_down         : out std_logic_vector(31 downto 0);
     o_mp_direct_spi_data        : out reg32array(N_SPI_g-1 downto 0);
     o_mp_direct_spi_data_wr     : out std_logic_vector(N_SPI_g-1 downto 0);
+    i_mp_direct_spi_busy        : in  std_logic_vector(N_SPI_g-1 downto 0);
     o_mp_ctrl_direct_spi_enable : out std_logic--;
 );
 end entity;
@@ -195,6 +195,11 @@ architecture rtl of mupix_ctrl_reg_mapping is
             if ( regaddr = MP_CTRL_DIRECT_SPI_ENABLE_REGISTER_W and i_reg_re = '1' ) then
                 o_reg_rdata(0)  <= mp_ctrl_direct_spi_enable;
                 o_reg_rdata(31 downto 1) <= (others => '0');
+            end if;
+
+            if ( regaddr = MP_CTRL_DIRECT_SPI_BUSY_REGISTER_R and i_reg_re = '1' ) then
+                o_reg_rdata(N_SPI_g-1 downto 0) <= i_mp_direct_spi_busy;
+                o_reg_rdata(31 downto N_SPI_g) <= (others => '0');
             end if;
         end if;
     end process;
