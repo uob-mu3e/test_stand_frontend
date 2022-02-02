@@ -10,9 +10,14 @@ use ieee.numeric_std.all;
 
 use work.mupix_registers.all;
 use work.mupix.all;
+use work.mudaq.all;
 
 
 entity mupix_ctrl_reg_mapping is
+generic( 
+    N_CHIPS_PER_SPI_g       : positive := 3;
+    N_SPI_g                 : positive := 4 
+);
 port (
     i_clk156                    : in  std_logic;
     i_reset_n                   : in  std_logic;
@@ -24,7 +29,7 @@ port (
     i_reg_wdata                 : in  std_logic_vector(31 downto 0);
 
     -- inputs  156--------------------------------------------
-    i_mp_spi_busy               : in std_logic;
+    i_mp_spi_busy               : in std_logic := '0';
 
     -- outputs 156--------------------------------------------
 
@@ -34,16 +39,21 @@ port (
     o_mp_ctrl_data_all_we       : out std_logic;
     o_mp_fifo_clear             : out std_logic_vector( 5 downto 0) := (others => '0');
     o_mp_ctrl_enable            : out std_logic_vector( 5 downto 0);
-    o_mp_ctrl_chip_config_mask  : out std_logic_vector(11 downto 0);
     o_mp_ctrl_invert_29         : out std_logic;
     o_mp_ctrl_invert_csn        : out std_logic;
-    o_mp_ctrl_slow_down         : out std_logic_vector(31 downto 0)--;
+
+
+    o_mp_ctrl_chip_config_mask  : out std_logic_vector(N_SPI_g*N_CHIPS_PER_SPI_g-1 downto 0);
+    o_mp_ctrl_slow_down         : out std_logic_vector(31 downto 0);
+    o_mp_direct_spi_data        : out reg32array(N_SPI_g-1 downto 0);
+    o_mp_direct_spi_data_wr     : out std_logic_vector(N_SPI_g-1 downto 0);
+    o_mp_ctrl_direct_spi_enable : out std_logic--;
 );
 end entity;
 
 architecture rtl of mupix_ctrl_reg_mapping is
     signal mp_ctrl_slow_down        : std_logic_vector(31 downto 0);
-    signal mp_ctrl_chip_config_mask : std_logic_vector(31 downto 0);
+    signal mp_ctrl_chip_config_mask : std_logic_vector(63 downto 0);
     signal mp_ctrl_invert_29        : std_logic;
     signal mp_ctrl_invert_csn       : std_logic;
     signal mp_fifo_clear            : std_logic_vector( 5 downto 0);
@@ -51,6 +61,7 @@ architecture rtl of mupix_ctrl_reg_mapping is
     signal mp_ctrl_data_all         : std_logic_vector(31 downto 0);
     signal mp_ctrl_data_all_we      : std_logic;
     signal mp_spi_busy              : std_logic;
+    signal mp_ctrl_direct_spi_enable: std_logic;
 
     begin
 
@@ -69,23 +80,26 @@ architecture rtl of mupix_ctrl_reg_mapping is
             o_mp_ctrl_invert_29       <= '0';
             o_mp_ctrl_invert_csn      <= '0';
             o_mp_ctrl_slow_down       <= (others => '0');
+            o_mp_direct_spi_data_wr   <= (others => '0');
             
         elsif(rising_edge(i_clk156)) then
 
             --regs for long paths
             o_mp_ctrl_slow_down         <= mp_ctrl_slow_down;
-            o_mp_ctrl_chip_config_mask  <= mp_ctrl_chip_config_mask(11 downto 0);
+            o_mp_ctrl_chip_config_mask  <= mp_ctrl_chip_config_mask(N_SPI_g*N_CHIPS_PER_SPI_g-1 downto 0);
             o_mp_ctrl_invert_29         <= mp_ctrl_invert_29;
             o_mp_ctrl_invert_csn        <= mp_ctrl_invert_csn;
             regaddr                     := to_integer(unsigned(i_reg_add));
             o_reg_rdata                 <= x"CCCCCCCC";
             o_mp_fifo_write             <= (others => '0');
+            o_mp_direct_spi_data_wr     <= (others => '0');
             --o_mp_ctrl_data_all_we       <= '0';
             o_mp_fifo_clear             <= mp_fifo_clear;
             o_mp_ctrl_enable            <= mp_ctrl_enable;
             o_mp_ctrl_data_all          <= mp_ctrl_data_all;
             o_mp_ctrl_data_all_we       <= mp_ctrl_data_all_we;
             mp_spi_busy                 <= i_mp_spi_busy;
+            o_mp_ctrl_direct_spi_enable <= mp_ctrl_direct_spi_enable;
 
             -----------------------------------------------------------------
             ---- mupix ctrl -------------------------------------------------
@@ -128,11 +142,17 @@ architecture rtl of mupix_ctrl_reg_mapping is
                 o_reg_rdata <= mp_ctrl_slow_down;
             end if;
 
-            if ( regaddr = MP_CTRL_CHIP_MASK_REGISTER_W and i_reg_we = '1' ) then
-                mp_ctrl_chip_config_mask <= i_reg_wdata;
+            if ( regaddr = MP_CTRL_CHIP_MASK1_REGISTER_W and i_reg_we = '1' ) then
+                mp_ctrl_chip_config_mask(31 downto 0) <= i_reg_wdata;
             end if;
-            if ( regaddr = MP_CTRL_CHIP_MASK_REGISTER_W and i_reg_re = '1' ) then
-                o_reg_rdata <= mp_ctrl_chip_config_mask;
+            if ( regaddr = MP_CTRL_CHIP_MASK1_REGISTER_W and i_reg_re = '1' ) then
+                o_reg_rdata <= mp_ctrl_chip_config_mask(31 downto 0);
+            end if;
+            if ( regaddr = MP_CTRL_CHIP_MASK2_REGISTER_W and i_reg_we = '1' ) then
+                mp_ctrl_chip_config_mask(63 downto 32) <= i_reg_wdata;
+            end if;
+            if ( regaddr = MP_CTRL_CHIP_MASK2_REGISTER_W and i_reg_re = '1' ) then
+                o_reg_rdata <= mp_ctrl_chip_config_mask(63 downto 32);
             end if;
 
             if ( regaddr = MP_CTRL_INVERT_REGISTER_W and i_reg_we = '1' ) then
@@ -156,6 +176,20 @@ architecture rtl of mupix_ctrl_reg_mapping is
                 o_reg_rdata(31 downto 1) <= (others => '0');
             end if;
 
+            loopdirectspi: for I in 0 to N_SPI_g-1 loop
+            if ( regaddr = MP_CTRL_DIRECT_SPI_START_REGISTER_W+I and i_reg_we = '1' ) then
+                o_mp_direct_spi_data(I) <= i_reg_wdata;
+                o_mp_direct_spi_data_wr(I) <= '1';
+            end if;
+            end loop;
+
+            if ( regaddr = MP_CTRL_DIRECT_SPI_ENABLE_REGISTER_W and i_reg_we = '1' ) then
+                mp_ctrl_direct_spi_enable   <= i_reg_wdata(0);
+            end if;
+            if ( regaddr = MP_CTRL_DIRECT_SPI_ENABLE_REGISTER_W and i_reg_re = '1' ) then
+                o_reg_rdata(0)  <= mp_ctrl_direct_spi_enable;
+                o_reg_rdata(31 downto 1) <= (others => '0');
+            end if;
         end if;
     end process;
 

@@ -47,13 +47,16 @@ constant MUPIX_LVDS_STATUS_BLOCK_LENGTH     : integer := 36;
     constant MP_CTRL_TDAC_REGISTER_W            :  integer := 16#0406#; -- DOC: If you want to write the mupix TDAC reg only, send data here | MP_FEB
 
     constant MP_CTRL_SLOW_DOWN_REGISTER_W       :  integer := 16#0407#; -- DOC: Division factor for the mupix spi clk | MP_FEB
-    constant MP_CTRL_CHIP_MASK_REGISTER_W       :  integer := 16#0408#; -- DOC: MASK for the SPI writing to mupix (one can write in parallel) | MP_FEB
-    constant MP_CTRL_INVERT_REGISTER_W          :  integer := 16#0409#; -- DOC: To be removed, inversions in mupix SPI | MP_FEB
+    constant MP_CTRL_CHIP_MASK1_REGISTER_W      :  integer := 16#0408#; -- DOC: MASK for the SPI writing to mupix (one can write in parallel) | MP_FEB
+    constant MP_CTRL_CHIP_MASK2_REGISTER_W      :  integer := 16#0409#; -- DOC: MASK for the SPI writing to mupix (one can write in parallel) | MP_FEB
+    constant MP_CTRL_INVERT_REGISTER_W          :  integer := 16#040A#; -- DOC: To be removed, inversions in mupix SPI | MP_FEB
         constant MP_CTRL_INVERT_29_BIT          :  integer := 0;        -- DOC: inverts oder of the mupix 29 bit spi shift reg | MP_FEB
         constant MP_CTRL_INVERT_CSN_BIT         :  integer := 1;        -- DOC: inverts mupix spi chip select bit | MP_FEB
 
-    constant MP_CTRL_ALL_REGISTER_W             :  integer := 16#040A#; -- DOC: Write complete mupix configuration to this address | MP_FEB
-    constant MP_CTRL_SPI_BUSY_REGISTER_R        :  integer := 16#040F#; -- DOC: Indicates if the mupix spi is busy, do not send new data | MP_FEB
+    constant MP_CTRL_ALL_REGISTER_W             :  integer := 16#040B#; -- DOC: Write complete mupix configuration to this address | MP_FEB
+    constant MP_CTRL_SPI_BUSY_REGISTER_R        :  integer := 16#0410#; -- DOC: Indicates if the mupix spi is busy, do not send new data | MP_FEB
+    constant MP_CTRL_DIRECT_SPI_ENABLE_REGISTER_W :  integer := 16#0411#; -- DOC: Enable direct SPI configuration mode for mupix | MP_FEB
+    constant MP_CTRL_DIRECT_SPI_START_REGISTER_W :  integer := 16#0412#; -- DOC: Register for direct spi configuration mode, needs to be enabled first | MP_FEB
 
 -----------------------------------------------------------------
 ---- mupix datapath general (0x1300-0xFBFF)----------------------
