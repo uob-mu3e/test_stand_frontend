@@ -2,6 +2,7 @@
 #define FEBLIST_H
 
 #include <vector>
+#include <array>
 #include <string>
 #include <stdint.h>
 
@@ -26,16 +27,21 @@ class FEBList
 public:
     FEBList(uint16_t SB_index_);
     size_t nFEBS() const {return mFEBs.size();}
+    size_t nPrimaryFEBS() const {return mPrimaryFEBs.size();}
+    size_t nActiveFEBS() const {return mActiveFEBs.size();}
     size_t nPixelFEBS() const {return mPixelFEBs.size();}
     size_t nSciFiFEBS() const {return mSciFiFEBs.size();}
     size_t nTileFEBS() const {return mTileFEBs.size();}
 
-    const mappedFEB getFEB(size_t i) const {return mFEBs.at(i);}
+    //const mappedFEB getFEB(size_t i) const {return mFEBs.at(i);}
+    const mappedFEB getPrimaryFEB(size_t i) const {return mPrimaryFEBs.at(i);}
+    const mappedFEB getActiveFEB(size_t i) const {return mActiveFEBs.at(i);}
     const mappedFEB getPixelFEB(size_t i) const {return mPixelFEBs.at(i);}
     const mappedFEB getSciFiFEB(size_t i) const {return mSciFiFEBs.at(i);}
     const mappedFEB getTileFEB(size_t i) const {return mTileFEBs.at(i);}
 
-    const std::vector<mappedFEB> & getFEBs(){return mpFEBs;}
+    const std::vector<mappedFEB> & getPrimaryFEBs(){return mPrimaryFEBs;}
+    const std::vector<mappedFEB> & getActiveFEBs(){return mActiveFEBs;}
     const std::vector<mappedFEB> & getPixelFEBs(){return mPixelFEBs;}
     const std::vector<mappedFEB> & getSciFiFEBs(){return mSciFiFEBs;}
     const std::vector<mappedFEB> & getTileFEBs(){return mTileFEBs;}
@@ -49,7 +55,7 @@ public:
     void RebuildFEBList();
 
 protected:
-    std::vector<LinkStatus> linkstats;
+    std::array<LinkStatus, MAX_LINKS_PER_SWITCHINGBOARD> linkstats;
     const uint16_t SB_index;
     uint64_t mFEBMask;
     uint64_t mLinkMask;
@@ -57,7 +63,8 @@ protected:
     uint64_t mSciFiFEBMask;
     uint64_t mTileFEBMask;
     std::vector<mappedFEB> mFEBs;
-    std::vector<mappedFEB> mpFEBs;
+    std::vector<mappedFEB> mPrimaryFEBs;
+    std::vector<mappedFEB> mActiveFEBs;   
     std::vector<mappedFEB> mPixelFEBs;
     std::vector<mappedFEB> mSciFiFEBs;
     std::vector<mappedFEB> mTileFEBs;

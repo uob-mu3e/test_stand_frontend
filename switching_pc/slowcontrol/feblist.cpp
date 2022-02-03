@@ -5,9 +5,6 @@
 using midas::odb;
 
 FEBList::FEBList(uint16_t SB_index_):SB_index(SB_index_){
-    for(unsigned int i=0; i < MAX_LINKS_PER_SWITCHINGBOARD; i++)
-        linkstats.push_back(LinkStatus());
-
     RebuildFEBList();
 };
 
@@ -15,7 +12,8 @@ void FEBList::RebuildFEBList()
 {
     //clear vectors, we will rebuild them now
     mFEBs.clear();
-    mpFEBs.clear();
+    mPrimaryFEBs.clear();
+    mActiveFEBs.clear();
     mPixelFEBs.clear();
     mSciFiFEBs.clear();
     mTileFEBs.clear();
@@ -63,7 +61,7 @@ void FEBList::RebuildFEBList()
                                  febcrate[global_index], 
                                  febslot[global_index], 
                                  febversion[global_index]});
-                mpFEBs.push_back(mFEBs.back());
+                mPrimaryFEBs.push_back(mFEBs.back());
                 break;
             case FEBTYPE::FibreSecondary:
                 mLinkMask   |= 1ULL << ID;
@@ -91,12 +89,16 @@ void FEBList::RebuildFEBList()
                                 febcrate[global_index], 
                                 febslot[global_index], 
                                 febversion[global_index]});
-                mpFEBs.push_back(mFEBs.back());
+                mPrimaryFEBs.push_back(mFEBs.back());
+                mActiveFEBs.push_back(mFEBs.back());
+
                 sprintf(reportStr,"TX Fiber %d is mapped to Link %u \"%s\"  --> SB=%u.%u %s",
                         ID,mFEBs[lastPrimary].GetLinkID(),mFEBs[lastPrimary].GetLinkName().c_str(),
                         mFEBs[lastPrimary].SB_Number(),mFEBs[lastPrimary].SB_Port(),
                         !mFEBs[lastPrimary].IsScEnabled()?"\t[SC disabled]":"");
+
                 cm_msg(MINFO,"FEBList::RebuildFEBList","%s",reportStr);
+
                 if(((uint32_t) febtype[global_index]) == FEBTYPE::Pixel){
                     mPixelFEBs.push_back(mFEBs.back());
                     mPixelFEBMask |= 1ULL << ID;
