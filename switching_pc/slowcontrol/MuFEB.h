@@ -43,17 +43,17 @@ class MuFEB {
       virtual uint16_t GetASICSPerModule() const {return 0;}
       virtual uint16_t GetASICSPerFEB() const {return GetASICSPerModule() * GetModulesPerFEB();}
 
-      //Parameter FPGA_ID refers to global numbering, i.e. before mapping
-      int ReadBackRunState(uint16_t FPGA_ID);
-      void ReadBackAllRunState(){for(size_t i=0;i<febs.size();i++) ReadBackRunState(i);};
+      virtual void ResetAllCounters(){};
+      int ReadBackRunState(const mappedFEB & FEB);
+      void ReadBackAllRunState(){for(auto feb : febs) ReadBackRunState(feb);};
 
       int WriteFEBIDs();
-      int WriteFEBID(uint16_t FPGA_ID);
+      //int WriteFEBID(uint16_t FPGA_ID);
       int WriteFEBID(const mappedFEB & FEB);
       int WriteSorterDelay(const mappedFEB & FEB, uint32_t delay);
       void ReadFirmwareVersionsToODB();
 
-      void LoadFirmware(std::string filename, uint16_t FPGA_ID, bool emergencyImage = false);
+      void LoadFirmware(std::string filename, const mappedFEB & FEB, bool emergencyImage = false);
 
       uint32_t ReadRegister(const mappedFEB & FEB, const uint32_t reg, const uint32_t mask =0xFFFFFFFF);
       uint32_t ReadBackMergerRate(const mappedFEB & FEB);

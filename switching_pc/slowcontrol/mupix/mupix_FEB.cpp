@@ -62,10 +62,6 @@ uint16_t MupixFEB::GetNumASICs() const {
     return febs.size()*ASICsPerFEB();
 }
 
-void invert_datastream(uint32_t * datastream) {
-
-}
-
 void MupixFEB::SetTDACs() {
     char set_str[255];
     for (int asic = 0; asic < GetNumASICs(); asic++) {
@@ -119,11 +115,11 @@ int MupixFEB::ConfigureASICs(){
     }
     
     // configure each asic
-    int status = mupix::midasODB::MapForEachASIC(hDB, odb_prefix, [this](mupix::MupixConfig* config, int asic){
+    int status = mupix::midasODB::MapForEachASIC(hDB, odb_prefix, [this](mupix::MupixConfig* config, uint32_t asic){
 //                 if ( asic != 3 ) return 0;
         uint32_t rpc_status;
-        bool TDACsNotFound = false;
-        char set_str[255];
+        //bool TDACsNotFound = false;
+        //char set_str[255];
 
         // get settings from ODB for TDACs 
         odb swbSettings("/Equipment/Switching/Settings");
@@ -185,10 +181,10 @@ int MupixFEB::ConfigureASICs(){
             // mask all chips but not this one
             // TODO: make this correct
             uint32_t chip_select_mask = 0xfff; //all chips masked (12 times 1)
-            int pos = ASICid_from_ID(asic);
+            uint16_t pos = ASICid_from_ID(asic);
             bool isTelescope = false; // TODO: make this somehow dynamic for the telescope setup
 	        if ( asic == 3 && isTelescope ) pos = 3;
-            chip_select_mask &= ((~0x1) << pos);
+            chip_select_mask &= ((~0x1u) << pos);
             printf("chip_select_mask %04x\n", chip_select_mask);
             for (int i = 0; i < pos; ++i)
                 chip_select_mask |= (0x1 << i);
@@ -307,7 +303,7 @@ void MupixFEB::on_settings_changed(odb o, void * userdata)
 
     cm_msg(MINFO, "MupixFEB::on_settings_changed", "Setting changed (%s)", name.c_str());
 
-    MupixFEB* _this=static_cast<MupixFEB*>(userdata);
+    //MupixFEB* _this=static_cast<MupixFEB*>(userdata);
     
     BOOL bval;
 
