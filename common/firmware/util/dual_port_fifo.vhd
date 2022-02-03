@@ -50,6 +50,9 @@ begin
     o_rdata1        <= shift_reg(RDATA1_WIDTH_g-1 downto 0);
     o_rdata2        <= shift_reg(RDATA2_WIDTH_g-1 downto 0);
 
+    o_full  <= '1' when (bits_used = N_BITS_g or (i_we='1' and bits_used + WDATA_WIDTH_g >= N_BITS_g)) else '0';
+    o_empty <= '1' when (bits_used = 0 or (i_re1 = '1' and bits_used - RDATA1_WIDTH_g <= 0) or (i_re2 = '1' and bits_used - RDATA2_WIDTH_g <=0)) else '0';
+
     process(i_clk, i_reset_n)
         variable N_shift : integer;
         variable N_used_change : integer;
@@ -60,8 +63,6 @@ begin
     elsif(rising_edge(i_clk))then
         N_shift         := 0;
         N_used_change   := 0;
-        o_full          <= '0';
-        o_empty         <= '1';
 
         if(i_re1 = '1') then
             N_shift := N_shift + RDATA1_WIDTH_g;
@@ -86,10 +87,8 @@ begin
 
         if(bits_used + N_used_change >= N_BITS_g) then
             bits_used <= N_BITS_g;
-            o_full <= '1';
         elsif(bits_used + N_used_change <= 0) then
             bits_used <= 0;
-            o_empty <= '1';
         else
             bits_used <= bits_used + N_used_change;
         end if;
