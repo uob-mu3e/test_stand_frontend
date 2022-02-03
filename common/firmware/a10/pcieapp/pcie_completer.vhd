@@ -266,19 +266,24 @@ architecture RTL of pcie_completer is
 	
 	datain_rreg_fifo <= rreg_readaddr & rreg_readlength & rreg_header2;
 
-    e_rreg_fifo : component work.cmp.completer_fifo
-	PORT MAP
-	(
-		aclr		=> aclr,
-		clock		=> refclk,
-		data		=> datain_rreg_fifo,
-		rdreq		=> read_rreg_fifo,
-		wrreq		=> rreg_readen,
-		empty		=> empty_rreg_fifo,
-		full		=> full_rreg_fifo,
-		q			=> data_rreg_fifo,
-		usedw		=> open
-	);
+    e_rreg_fifo : entity work.ip_scfifo_v2
+    generic map (
+        g_ADDR_WIDTH => 5,
+        g_DATA_WIDTH => datain_rreg_fifo'length,
+        g_RREG_N => 1--, -- TNS=-4000
+    )
+    port map (
+        i_wdata         => datain_rreg_fifo,
+        i_we            => rreg_readen,
+        o_wfull         => full_rreg_fifo,
+
+        o_rdata         => data_rreg_fifo,
+        o_rempty        => empty_rreg_fifo,
+        i_rack          => read_rreg_fifo,
+
+        i_clk           => refclk,
+        i_reset_n       => local_rstn--,
+    );
 
     e_rreg_bytecounter : entity work.pcie_completion_bytecount
 	port map(
@@ -291,19 +296,24 @@ architecture RTL of pcie_completer is
 
 	datain_wreg_fifo <= wreg_readaddr & wreg_readlength & wreg_header2;
 
-    e_wreg_fifo : component work.cmp.completer_fifo
-	PORT MAP
-	(
-		aclr		=> aclr,
-		clock		=> refclk,
-		data		=> datain_wreg_fifo,
-		rdreq		=> read_wreg_fifo,
-		wrreq		=> wreg_readen,
-		empty		=> empty_wreg_fifo,
-		full		=> full_wreg_fifo,
-		q			=> data_wreg_fifo,
-		usedw		=> open
-	);
+    e_wreg_fifo : entity work.ip_scfifo_v2
+    generic map (
+        g_ADDR_WIDTH => 5,
+        g_DATA_WIDTH => datain_wreg_fifo'length,
+        g_RREG_N => 1--, -- TNS=-17
+    )
+    port map (
+        i_wdata         => datain_wreg_fifo,
+        i_we            => wreg_readen,
+        o_wfull         => full_wreg_fifo,
+
+        o_rdata         => data_wreg_fifo,
+        o_rempty        => empty_wreg_fifo,
+        i_rack          => read_wreg_fifo,
+
+        i_clk           => refclk,
+        i_reset_n       => local_rstn--,
+    );
 
     e_wreg_bytecounter : entity work.pcie_completion_bytecount
 	port map(
