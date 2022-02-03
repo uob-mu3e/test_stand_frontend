@@ -178,7 +178,7 @@ INT frontend_init()
             }else{
                 cb = new clockboard(ip, port);
             }
-        #endif;
+        #endif
     #endif
 
    if(!cb->isConnected())
@@ -277,11 +277,11 @@ INT read_cr_event(char *pevent, INT off [[maybe_unused]])
 {
 #ifdef NO_CLOCK_BOX
         return 0;
-#endif;
+#endif
 
 #ifdef A10_EMULATED_CLOCK_BOX
     return 0;
-#endif;
+#endif
 
     if(!cb->isConnected()){
         // terminate!
@@ -369,6 +369,7 @@ void cr_settings_changed(odb & o)
       int value = o;
       cm_msg(MINFO, "cr_settings_changed", "Set RX_MASK to %x", value);
       cb->disable_rx_channels(value);
+      return;
    }
 
    if (name == "TX_MASK") {
@@ -377,30 +378,35 @@ void cr_settings_changed(odb & o)
             cm_msg(MINFO, "cr_settings_changed", "Set TX_MASK[%i] to %x", i, value[i]);
             cb->disable_tx_channels(i/3,i%3,value[i]);
         }
+        return;
    }
 
     if (name == "TX_CLK_MASK") {
       int value = o;
       cm_msg(MINFO, "cr_settings_changed", "Set TX_CLK_MASK to %x", value);
       cb->disable_tx_clk_channels(value);
+      return;
    }
 
     if (name == "TX_RST_MASK") {
       int value = o;
       cm_msg(MINFO, "cr_settings_changed", "Set TX_RST_MASK to %x", value);
       cb->disable_tx_rst_channels(value);
+      return;
    }
 
     if (name == "TX_CLK_INVERT_MASK") {
       int value = o;
       cm_msg(MINFO, "cr_settings_changed", "Set TX_CLK_INVERT_MASK to %x", value);
       cb->invert_tx_clk_channels(value);
+      return;
    }
 
     if (name == "TX_RST_INVERT_MASK") {
       int value = o;
       cm_msg(MINFO, "cr_settings_changed", "Set TX_RST_INVERT_MASK to %x", value);
       cb->invert_tx_rst_channels(value);
+      return;
    }
 
     if (name == "Addressed") {
@@ -408,6 +414,7 @@ void cr_settings_changed(odb & o)
       cm_msg(MINFO, "cr_settings_changed", "Set addressed to %d", addressed);
       // TODO: propagate to hardware
    }
+
 
    auto it = cb->reset_protocol.commands.find(name);
 
