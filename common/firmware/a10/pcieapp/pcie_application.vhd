@@ -235,12 +235,12 @@ begin
 			refclk			=> refclk,
 
 			-- from IF
-			rx_st_data0 	=> rx_st_data0,
-			rx_st_eop0   	=> rx_st_eop0,
-			rx_st_sop0 		=> rx_st_sop0,
-			rx_st_ready0 	=> rx_st_ready_wreg,
-			rx_st_valid0 	=>	rx_st_valid0,
-			rx_bar 			=> rx_bar0(0),
+        i_rx_st_data0   => rx_st_data0,
+        i_rx_st_eop0    => rx_st_eop0,
+        i_rx_st_sop0    => rx_st_sop0,
+        o_rx_st_ready0  => rx_st_ready_wreg,
+        i_rx_st_valid0  => rx_st_valid0,
+        i_rx_bar        => rx_bar0(0),
 
 			-- registers
 			writeregs 		=> writeregs_s,
@@ -281,12 +281,12 @@ begin
 			refclk			=> refclk,
 	
 			-- from IF
-			rx_st_data0 	=> rx_st_data0,	
-			rx_st_eop0   	=> rx_st_eop0,
-			rx_st_sop0 		=> rx_st_sop0,
-			rx_st_ready0 	=> rx_st_ready_rreg,
-			rx_st_valid0 	=>	rx_st_valid0,
-			rx_bar 			=> rx_bar0(1),
+        i_rx_st_data0   => rx_st_data0,
+        i_rx_st_eop0    => rx_st_eop0,
+        i_rx_st_sop0    => rx_st_sop0,
+        o_rx_st_ready0  => rx_st_ready_rreg,
+        i_rx_st_valid0  => rx_st_valid0,
+        i_rx_bar        => rx_bar0(1),
 
 			-- to response engine
 			readaddr 		=> rreg_readaddr,
@@ -304,12 +304,12 @@ begin
 			refclk			=> refclk,
 	
 			-- from IF
-			rx_st_data0 	=> rx_st_data0,
-			rx_st_eop0   	=> rx_st_eop0,
-			rx_st_sop0 		=> rx_st_sop0,
-			rx_st_ready0 	=> rx_st_ready_wmem,
-			rx_st_valid0 	=>	rx_st_valid0,
-			rx_bar 			=> rx_bar0(2),
+        i_rx_st_data0   => rx_st_data0,
+        i_rx_st_eop0    => rx_st_eop0,
+        i_rx_st_sop0    => rx_st_sop0,
+        o_rx_st_ready0  => rx_st_ready_wmem,
+        i_rx_st_valid0  => rx_st_valid0,
+        i_rx_bar        => rx_bar0(2),
 
 			-- to memory
 			tomemaddr 		=> writememaddr_w,
@@ -329,12 +329,12 @@ begin
 			refclk			=> refclk,
 	
 			-- from IF
-			rx_st_data0 	=> rx_st_data0,
-			rx_st_eop0   	=> rx_st_eop0,
-			rx_st_sop0 		=> rx_st_sop0,
-			rx_st_ready0 	=> rx_st_ready_rmem,
-			rx_st_valid0 	=>	rx_st_valid0,
-			rx_bar 			=> rx_bar0(3),
+        i_rx_st_data0   => rx_st_data0,
+        i_rx_st_eop0    => rx_st_eop0,
+        i_rx_st_sop0    => rx_st_sop0,
+        o_rx_st_ready0  => rx_st_ready_rmem,
+        i_rx_st_valid0  => rx_st_valid0,
+        i_rx_bar        => rx_bar0(3),
 
 			-- to response engine
 			readaddr 		=> rmem_readaddr,
