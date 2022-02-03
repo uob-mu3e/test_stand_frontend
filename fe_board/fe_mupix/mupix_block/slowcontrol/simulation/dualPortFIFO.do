@@ -48,11 +48,27 @@ run 8ns
 force -freeze dual_port_fifo_tb/wdata "x1111111"
 run 8ns
 force -freeze dual_port_fifo_tb/wdata "xF0F01FC"
-run 80ns
+run 8ns
 force -freeze dual_port_fifo_tb/we 0
+force -freeze dual_port_fifo_tb/wdata "x0000000"
 run 80ns
 
+-- read 1 once
+force -freeze dual_port_fifo_tb/re1 1
+run 8ns
+force -freeze dual_port_fifo_tb/re1 0
+run 40ns
 
+-- read 1
+force -freeze dual_port_fifo_tb/re1 1
+run 40ns
+force -freeze dual_port_fifo_tb/re1 0
+run 40ns
 
+-- read 2 until empty
+force -freeze dual_port_fifo_tb/re2 1
+run 80ns
+force -freeze dual_port_fifo_tb/re2 0
+run 80ns
 
-WaveRestoreZoom 0ns 1000ns
+WaveRestoreZoom 0ns 5000ns
