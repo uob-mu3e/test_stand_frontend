@@ -130,23 +130,6 @@ EQUIPMENT equipment[] = {
      "", "", ""} ,
     read_cr_event,              /* readout routine */
    },
-
-    {"Links",              /* equipment name */
-     {103, 0,                     /* event ID, trigger mask */
-      "SYSTEM",                  /* event buffer */
-      EQ_PERIODIC,               /* equipment type */
-      0,                         /* event source */
-      "MIDAS",                   /* format */
-      TRUE,                      /* enabled */
-      RO_RUNNING | RO_STOPPED | RO_ODB,        /* read while running and stopped but not at transitions and update ODB */
-      10000,                     /* read every 10 sec */
-      0,                         /* stop run after this event limit */
-      0,                         /* number of sub events */
-      1,                         /* log history every event */
-      "", "", ""} ,
-     read_link_event,              /* readout routine */
-    },
-
    {""}
 };
 
@@ -382,12 +365,6 @@ void cr_settings_changed(odb & o)
 
    BOOL addressed = false;
 
-    if (name == "Active") {
-        bool value = o;
-        cm_msg(MINFO, "cr_settings_changed", "Set active to %d", value);
-        // TODO: propagate to hardware
-    }
-
     if (name == "RX_MASK") {
       int value = o;
       cm_msg(MINFO, "cr_settings_changed", "Set RX_MASK to %x", value);
@@ -453,7 +430,7 @@ void cr_settings_changed(odb & o)
                 cb->write_command(name,0,address);
               else
                  cb->write_command(name);
-              o = false; //TODO: Check if this works...
+              o = false; 
            }
        } else {
            // Run prepare needs the run number
@@ -467,7 +444,7 @@ void cr_settings_changed(odb & o)
                     cb->write_command(name,run,address);
                  else
                     cb->write_command(name,run);
-                 o = false; //TODO: Check if this works...
+                 o = false; 
               }
            } else {
                // Take the payload from the payload ODB field
@@ -480,7 +457,7 @@ void cr_settings_changed(odb & o)
                        cb->write_command(name,payload,address);
                      else
                        cb->write_command(name,payload);
-                    o = false; //TODO: Check if this works...
+                    o = false; 
                }
            }
        }
@@ -489,15 +466,10 @@ void cr_settings_changed(odb & o)
 
 void link_settings_changed(odb & o)
 {
-
+    // TODO: Is this needed??? Currently diasbled
    std::string name = o.get_name();
 
-   if (name == "SwitchingBoardMask") {
-      vector<INT> value = o;
-      cm_msg(MINFO, "link_settings_changed", "Set Switching Board Mask to %d %d %d %d",
-             value[0], value[1], value[2], value[3]);
-   }
-
+ 
     if (name == "LinkMask") {
       vector<INT> value = o;
       cm_msg(MINFO, "link_settings_changed", "Setting Link Board Mask");
@@ -569,7 +541,6 @@ void prepare_run_on_request(odb & o){
 void setup_odb(){
 
     odb settings = {
-        {"Active" , true},
         {"IP", "192.168.0.220"},
         {"Port", 50001},
         {"N_READBACK", 4},
@@ -580,6 +551,8 @@ void setup_odb(){
         {"RX_MASK", 0},
         {"TX_MASK", std::array<int,clockboard::MAXFIREFLY>{}},
         {"TX_INVERT_MASK",std::array<int,clockboard::MAXFIREFLY>{}},
+        {"SwitchingBoardMask", std::array<int,MAX_N_SWITCHINGBOARDS>{}},
+        {"SwitchingBoardNames", {"Central", "Recurl US", "Recurl DS", "Fibres"}},
         {"Run Prepare", false},
         {"Sync", false},
         {"Start Run", false},
@@ -637,7 +610,6 @@ void setup_odb(){
              settings["Names CRT1"][daughterstartindex + i*ndaughtervariables +  2 + j*nffvariables +2] = s;
          }
      }
-    //cout << "Dump: " <<  settings.dump() << endl;
 
     settings.connect("/Equipment/Clock Reset/Settings", true);
 
@@ -648,38 +620,23 @@ void setup_odb(){
     };
     variables.connect("/Equipment/Clock Reset/Variables");
 
-    odb linksettings = {
-        {"SwitchingBoardMask", std::array<int,MAX_N_SWITCHINGBOARDS>{}},
-        {"SwitchingBoardNames", {"Central", "Recurl US", "Recurl DS", "Fibres"}},
-        {"LinkMask", std::array<int,MAX_N_FRONTENDBOARDS>{}},
-        {"FrontEndBoardType", std::array<int,MAX_N_FRONTENDBOARDS>{}},
-        {"FrontEndBoardNames", std::array<std::string,MAX_N_FRONTENDBOARDS>{}}
-    };
-    linksettings.connect("/Equipment/Links/Settings");
-
-    odb linkvariables = {
-       {"SwitchingBoardStatus", std::array<int,MAX_N_SWITCHINGBOARDS>{}},
-       {"RXLinkStatus", std::array<int,MAX_N_FRONTENDBOARDS>{}},
-       {"TXLinkStatus", std::array<int,MAX_N_FRONTENDBOARDS>{}}
-    };
-    linkvariables.connect("/Equipment/Links/Variables");
 
     odb runtransitions;
     runtransitions.connect("/Equipment/Clock Reset/Run Transitions");
     runtransitions["Request Run Prepare"] = std::array<int, MAX_N_SWITCHINGBOARDS>{};
+    
 
     odb custom;
     custom.connect("/Custom");
     custom["Clock and Reset"] = "cr.html";
-    custom["Links"] = "links.html";
 }
 
 void setup_watches(){
     odb crodb("/Equipment/Clock Reset/Settings");
     crodb.watch(cr_settings_changed);
 
-    odb linkodb("/Equipment/Links/Settings");
-    linkodb.watch(link_settings_changed);
+   // odb linkodb("/Equipment/Links/Settings");
+   // linkodb.watch(link_settings_changed);
 
     odb rrp("/Equipment/Clock Reset/Run Transitions/Request Run Prepare");
     rrp.watch(prepare_run_on_request);
