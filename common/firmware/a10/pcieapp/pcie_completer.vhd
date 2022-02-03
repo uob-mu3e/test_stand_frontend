@@ -326,19 +326,21 @@ architecture RTL of pcie_completer is
 
 	datain_rmem_fifo <= "000000" & rmem_readaddr & rmem_readlength & rmem_header2;
 
-    e_rmem_fifo : component work.cmp.completer_wide_fifo
-	PORT MAP
-	(
-		aclr		=> aclr,
-		clock		=> refclk,
-		data		=> datain_rmem_fifo,
-		rdreq		=> read_rmem_fifo,
-		wrreq		=> rmem_readen,
-		empty		=> empty_rmem_fifo,
-		full		=> full_rmem_fifo,
-		q			=> data_rmem_fifo,
-		usedw		=> open
-	);
+    e_rmem_fifo : entity work.ip_scfifo
+    generic map (
+        ADDR_WIDTH => 5,
+        DATA_WIDTH => datain_rmem_fifo'length--,
+    )
+    port map (
+        sclr    => not local_rstn,
+        clock   => refclk,
+        data    => datain_rmem_fifo,
+        rdreq   => read_rmem_fifo,
+        wrreq   => rmem_readen,
+        empty   => empty_rmem_fifo,
+        full    => full_rmem_fifo,
+        q       => data_rmem_fifo--,
+    );
 
     e_rmem_bytecounter : entity work.pcie_completion_bytecount
 	port map(
@@ -351,19 +353,21 @@ architecture RTL of pcie_completer is
 	
 	datain_wmem_fifo <=  "000000" & wmem_readaddr & wmem_readlength & wmem_header2;
 
-    e_wmem_fifo : component work.cmp.completer_wide_fifo
-	PORT MAP
-	(
-		aclr		=> aclr,
-		clock		=> refclk,
-		data		=> datain_wmem_fifo,
-		rdreq		=> read_wmem_fifo,
-		wrreq		=> wmem_readen,
-		empty		=> empty_wmem_fifo,
-		full		=> full_wmem_fifo,
-		q			=> data_wmem_fifo,
-		usedw		=> open
-	);
+    e_wmem_fifo : entity work.ip_scfifo
+    generic map (
+        ADDR_WIDTH => 5,
+        DATA_WIDTH => datain_wmem_fifo'length--,
+    )
+    port map (
+        sclr    => not local_rstn,
+        clock   => refclk,
+        data    => datain_wmem_fifo,
+        rdreq   => read_wmem_fifo,
+        wrreq   => wmem_readen,
+        empty   => empty_wmem_fifo,
+        full    => full_wmem_fifo,
+        q       => data_wmem_fifo--,
+    );
 
     e_wmem_bytecounter : entity work.pcie_completion_bytecount
 	port map(
