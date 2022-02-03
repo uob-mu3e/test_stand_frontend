@@ -138,7 +138,7 @@ INT frontend_init()
 }
 
 INT init_crates() {
-    odb febpower_odb("/Equipment/FEBCrates/Variables/FEBPower");
+    odb febpower_odb("/Equipment/FEBCrates/Settings/FEBPower");
     febpower_changed(febpower_odb);
     return CM_SUCCESS;
 }
@@ -269,6 +269,7 @@ void setup_odb(){
         {"CrateControllerNode", std::array<uint16_t, N_FEBCRATES>{}},
         {"FEBCrate", arr},
         {"FEBSlot", arr},
+        {"FEBPower", std::array<uint8_t, N_FEBCRATES*MAX_FEBS_PER_CRATE>{}},
         {"Names SCFC", std::array<std::string, per_crate_SCFC_size*N_FEBCRATES>()}
     };
 
@@ -280,7 +281,6 @@ void setup_odb(){
     crate_settings.connect("/Equipment/FEBCrates/Settings");
 
     odb crate_variables = {
-        {"FEBPower", std::array<uint8_t, N_FEBCRATES*MAX_FEBS_PER_CRATE>{}},
         {"SCFC", std::array<float, per_crate_SCFC_size*N_FEBCRATES>()}
     };
 
@@ -303,6 +303,6 @@ void setup_alarms(){
 
 void setup_watches(){
     // watch for changes in the FEB powering state
-    odb febpower_odb("/Equipment/FEBCrates/Variables/FEBPower");
+    odb febpower_odb("/Equipment/FEBCrates/Settings/FEBPower");
     febpower_odb.watch(febpower_changed);
 }
