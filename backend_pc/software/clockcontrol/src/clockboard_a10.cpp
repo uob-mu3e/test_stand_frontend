@@ -18,7 +18,7 @@ using std::cout;
 using std::endl;
 
 
-    clockboard_a10::clockboard_a10(std::string addr, int port):clockboard(),connected(false), mu("/dev/mudaq0") {
+    clockboard_a10::clockboard_a10(std::string addr [[maybe_unused]], int port [[maybe_unused]]):clockboard(),connected(false), mu("/dev/mudaq0") {
 
         if ( !mu.open() ) {
             cout << "Could not open mudaq device " << endl;
@@ -31,11 +31,11 @@ using std::endl;
         }
         connected = true;
         cout << "MuDaq is ok" << endl;
-    };
+    }
 
-    bool clockboard_a10::isConnected(){return connected;};
+    bool clockboard_a10::isConnected(){return connected;}
 
-    int clockboard_a10::init_clockboard(uint16_t clkinvert, uint16_t rstinvert, uint16_t clkdisable, uint16_t rstdisable){
+    int clockboard_a10::init_clockboard(uint16_t clkinvert [[maybe_unused]], uint16_t rstinvert [[maybe_unused]], uint16_t clkdisable [[maybe_unused]], uint16_t rstdisable [[maybe_unused]]){
         // reset all (is this safe??)
         uint32_t reset_regs = 0;
         reset_regs = SET_RESET_BIT_ALL(reset_regs);
@@ -47,7 +47,7 @@ using std::endl;
         mu.write_register(CLK_LINK_1_REGISTER_W, 0xFFF00000);
         mu.write_register(CLK_LINK_2_REGISTER_W, 0xFFF00000);
         mu.write_register(CLK_LINK_3_REGISTER_W, 0xFFF00000);
-        mu.write_register(CLK_LINK_REST_REGISTER_W, 0xFFFFFFFFF);
+        mu.write_register(CLK_LINK_REST_REGISTER_W, 0xFFFFFFFF);
         mu.write_register(RESET_REGISTER_W, reset_regs);
         mu.write_register(RESET_REGISTER_W, 0x0);
 
