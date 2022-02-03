@@ -20,7 +20,7 @@ class MuFEB {
    public:
       MuFEB(const MuFEB&)=delete;
       MuFEB(FEBSlowcontrolInterface & feb_sc_,
-            vector<mappedFEB> & febs_,
+            const vector<mappedFEB> & febs_,
             const uint64_t & febmask_,
             const char* equipment_name_,
             const char* odb_prefix_,
@@ -49,22 +49,22 @@ class MuFEB {
 
       int WriteFEBIDs();
       int WriteFEBID(uint16_t FPGA_ID);
-      int WriteFEBID(mappedFEB & FEB);
-      int WriteSorterDelay(mappedFEB & FEB, uint32_t delay);
+      int WriteFEBID(const mappedFEB & FEB);
+      int WriteSorterDelay(const mappedFEB & FEB, uint32_t delay);
       void ReadFirmwareVersionsToODB();
 
       void LoadFirmware(std::string filename, uint16_t FPGA_ID, bool emergencyImage = false);
 
-      uint32_t ReadRegister(mappedFEB & FEB, const uint32_t reg, const uint32_t mask =0xFFFFFFFF);
-      uint32_t ReadBackMergerRate(mappedFEB & FEB);
-      uint32_t ReadBackResetPhase(mappedFEB & FEB);
-      uint32_t ReadBackTXReset(mappedFEB & FEB);
+      uint32_t ReadRegister(const mappedFEB & FEB, const uint32_t reg, const uint32_t mask =0xFFFFFFFF);
+      uint32_t ReadBackMergerRate(const mappedFEB & FEB);
+      uint32_t ReadBackResetPhase(const mappedFEB & FEB);
+      uint32_t ReadBackTXReset(const mappedFEB & FEB);
 
       DWORD *fill_SSFE(DWORD * pdata);
-      DWORD *read_SSFE_OneFEB(DWORD * pdata, mappedFEB & FEB);
+      DWORD *read_SSFE_OneFEB(DWORD * pdata, const mappedFEB & FEB);
 
       DWORD *fill_SSSO(DWORD * pdata);
-      DWORD *read_SSSO_OneFEB(DWORD * pdata, mappedFEB & FEB);
+      DWORD *read_SSSO_OneFEB(DWORD * pdata, const mappedFEB & FEB);
 
       const vector<mappedFEB> getFEBs() const {return febs;}
       uint8_t getSB_number() const {return SB_number;}
@@ -75,7 +75,7 @@ class MuFEB {
 protected:
 
       FEBSlowcontrolInterface & feb_sc;
-      vector<mappedFEB> & febs;
+      const vector<mappedFEB> & febs;
       const uint64_t & febmask;
       const char* equipment_name;
       const char* odb_prefix;

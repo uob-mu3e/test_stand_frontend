@@ -49,7 +49,7 @@ int MuFEB::WriteFEBID(uint16_t FPGA_ID){
 
 
 
-int MuFEB::WriteFEBID(mappedFEB & FEB){
+int MuFEB::WriteFEBID(const mappedFEB & FEB){
        
     uint32_t val=(FEB.GetLinkID()<<16)+FEB.GetLinkID();
 
@@ -81,7 +81,7 @@ int MuFEB::WriteFEBID(mappedFEB & FEB){
     return status;
 }
 
-int MuFEB::WriteSorterDelay(mappedFEB & FEB, uint32_t delay)
+int MuFEB::WriteSorterDelay(const mappedFEB & FEB, uint32_t delay)
 {
     std::vector<uint32_t> data(1,delay);
     return feb_sc.FEB_register_write(FEB, MP_SORTER_DELAY_REGISTER_W, data);
@@ -254,7 +254,7 @@ int MuFEB::ReadBackRunState(uint16_t FPGA_ID){
    return SUCCESS;
 }
 
-uint32_t MuFEB::ReadRegister(mappedFEB & FEB, const uint32_t reg, const uint32_t mask){
+uint32_t MuFEB::ReadRegister(const mappedFEB & FEB, const uint32_t reg, const uint32_t mask){
     if(!FEB.IsScEnabled()) return 0; //skip disabled fibers
     if(FEB.SB_Number()!=SB_number) return 0; //skip commands not for this SB
 
@@ -265,15 +265,15 @@ uint32_t MuFEB::ReadRegister(mappedFEB & FEB, const uint32_t reg, const uint32_t
 }
 
 
-uint32_t MuFEB::ReadBackMergerRate(mappedFEB & FEB){
+uint32_t MuFEB::ReadBackMergerRate(const mappedFEB & FEB){
     return ReadRegister(FEB, MERGER_RATE_REGISTER_R);
 }
 
-uint32_t MuFEB::ReadBackResetPhase(mappedFEB & FEB){
+uint32_t MuFEB::ReadBackResetPhase(const mappedFEB & FEB){
     return ReadRegister(FEB, RESET_PHASE_REGISTER_R, 0xFFFF);
 }
 
-uint32_t MuFEB::ReadBackTXReset(mappedFEB & FEB){
+uint32_t MuFEB::ReadBackTXReset(const mappedFEB & FEB){
     return ReadRegister(FEB, RESET_OPTICAL_LINKS_REGISTER_RW, 0xFFFFFFFC);
 }
 
@@ -313,7 +313,7 @@ DWORD* MuFEB::fill_SSFE(DWORD *pdata)
     return pdata;
 }
 
-DWORD *MuFEB::read_SSFE_OneFEB(DWORD *pdata, mappedFEB & FEB)
+DWORD *MuFEB::read_SSFE_OneFEB(DWORD *pdata, const mappedFEB & FEB)
 {
     uint32_t version = FEB.GetVersion();
     uint32_t data;
@@ -405,7 +405,7 @@ DWORD *MuFEB::fill_SSSO(DWORD *pdata)
     return pdata;
 }
 
-DWORD *MuFEB::read_SSSO_OneFEB(DWORD *pdata, mappedFEB & FEB)
+DWORD *MuFEB::read_SSSO_OneFEB(DWORD *pdata, const mappedFEB & FEB)
 {
     // Start with FEB index
     *pdata++ = FEB.SB_Port();

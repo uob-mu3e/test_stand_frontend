@@ -25,7 +25,7 @@ class MupixFEB  : public MuFEB{
       MupixFEB(const MupixFEB&)=delete;
     public:
       MupixFEB(FEBSlowcontrolInterface & feb_sc_,
-               vector<mappedFEB> & febs_,
+               const vector<mappedFEB> & febs_,
                const uint64_t & febmask_,
                const char* equipment_name_,
                const char* odb_prefix_,
