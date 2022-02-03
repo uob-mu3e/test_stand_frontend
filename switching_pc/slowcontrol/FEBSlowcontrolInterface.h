@@ -26,21 +26,25 @@ public:
     FEBSlowcontrolInterface(const FEBSlowcontrolInterface &) = delete;
     FEBSlowcontrolInterface& operator=(const FEBSlowcontrolInterface&) = delete;
 
-    virtual int FEB_write(mappedFEB & FEB, const uint32_t startaddr, const vector<uint32_t> & data, const bool nonincrementing = false);
-    virtual int FEB_write(mappedFEB & FEB, const uint32_t startaddr, const uint32_t data);
+    virtual int FEB_write(const mappedFEB & FEB, const uint32_t startaddr, const vector<uint32_t> & data, const bool nonincrementing = false, const bool broadcast = false);
+    virtual int FEB_write(const mappedFEB & FEB, const uint32_t startaddr, const uint32_t data);
+    virtual int FEB_broadcast(const uint32_t startaddr, const vector<uint32_t> & data, const bool nonincrementing = false);
+    virtual int FEB_broadcast(const uint32_t startaddr, const uint32_t data);
     // expects data vector with read-length size
-    virtual int FEB_read(mappedFEB & FEB, const uint32_t startaddr, vector<uint32_t> & data, const bool nonincrementing = false);
-    virtual int FEB_read(mappedFEB & FEB, const uint32_t startaddr, uint32_t & data);
+    virtual int FEB_read(const mappedFEB & FEB, const uint32_t startaddr, vector<uint32_t> & data, const bool nonincrementing = false);
+    virtual int FEB_read(const mappedFEB & FEB, const uint32_t startaddr, uint32_t & data);
 
-    virtual int FEB_register_write(mappedFEB & FEB, const uint32_t startaddr, const vector<uint32_t> & data, const bool nonincrementing = false);
-    virtual int FEB_register_write(mappedFEB & FEB, const uint32_t startaddr, const uint32_t data);
+    virtual int FEB_register_write(const mappedFEB & FEB, const uint32_t startaddr, const vector<uint32_t> & data, const bool nonincrementing = false, const bool broadcast = false);
+    virtual int FEB_register_write(const mappedFEB & FEB, const uint32_t startaddr, const uint32_t data);
+    virtual int FEB_register_broadcast(const uint32_t startaddr, const vector<uint32_t> & data, const bool nonincrementing = false);
+    virtual int FEB_register_broadcast(const uint32_t startaddr, const uint32_t data);
     // expects data vector with read-length size
-    virtual int FEB_register_read(mappedFEB & FEB, const uint32_t startaddr, vector<uint32_t> & data, const bool nonincrementing = false);
-    virtual int FEB_register_read(mappedFEB & FEB, const uint32_t startaddr, uint32_t & data);
+    virtual int FEB_register_read(const mappedFEB & FEB, const uint32_t startaddr, vector<uint32_t> & data, const bool nonincrementing = false);
+    virtual int FEB_register_read(const mappedFEB & FEB, const uint32_t startaddr, uint32_t & data);
 
     virtual void FEBsc_resetMain();
     virtual void FEBsc_resetSecondary();
-    virtual int FEBsc_NiosRPC(mappedFEB & FEB, uint16_t command, vector<vector<uint32_t> > payload_chunks);
+    virtual int FEBsc_NiosRPC(const mappedFEB & FEB, uint16_t command, vector<vector<uint32_t> > payload_chunks);
 
     enum ERRCODES {ADDR_INVALID= -20, SIZE_INVALID, SIZE_ZERO, FPGA_BUSY, FPGA_TIMEOUT, BAD_PACKET, WRONG_SIZE, NIOS_RPC_TIMEOUT, OK=0};
     enum OFFSETS {FEBsc_RPC_DATAOFFSET=0};

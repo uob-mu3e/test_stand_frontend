@@ -43,9 +43,11 @@ FEBSlowcontrolInterface::~FEBSlowcontrolInterface()
  *      Write enable to SC_MAIN_ENABLE_REGISTER_W
  */
 
-int FEBSlowcontrolInterface::FEB_write(mappedFEB & FEB, const uint32_t startaddr, const vector<uint32_t> & data, const bool nonincrementing)
+int FEBSlowcontrolInterface::FEB_write(const mappedFEB & FEB, const uint32_t startaddr, const vector<uint32_t> & data, const bool nonincrementing, const bool broadcast)
 {
     uint32_t FPGA_ID = FEB.SB_Port();
+    if(broadcast)
+        FPGA_ID = ADDRS::BROADCAST_ADDR;
 
      if(startaddr >= pow(2,16)){
         cout << "Address out of range: " << std::hex << startaddr << endl;
@@ -143,12 +145,23 @@ int FEBSlowcontrolInterface::FEB_write(mappedFEB & FEB, const uint32_t startaddr
     return OK;
 }
 
-int FEBSlowcontrolInterface::FEB_write(mappedFEB & FEB, const uint32_t startaddr, const uint32_t data)
+int FEBSlowcontrolInterface::FEB_write(const mappedFEB & FEB, const uint32_t startaddr, const uint32_t data)
 {
     return FEB_write(FEB, startaddr, vector<uint32_t>(1, data) );
 }
 
-int FEBSlowcontrolInterface::FEB_read(mappedFEB & FEB, const uint32_t startaddr, vector<uint32_t> &data, const bool nonincrementing)
+
+int FEBSlowcontrolInterface::FEB_broadcast(const uint32_t startaddr, const uint32_t data)
+{
+    return FEB_write(mappedFEB(), startaddr, vector<uint32_t>(1, data),false, true );
+}
+
+int FEBSlowcontrolInterface::FEB_broadcast(const uint32_t startaddr, const vector<uint32_t> & data, const bool nonincrementing)
+{
+    return FEB_write(mappedFEB(), startaddr, data, nonincrementing, true );
+}
+
+int FEBSlowcontrolInterface::FEB_read(const mappedFEB & FEB, const uint32_t startaddr, vector<uint32_t> &data, const bool nonincrementing)
 {
     uint32_t FPGA_ID = FEB.SB_Port();
 
@@ -244,7 +257,7 @@ int FEBSlowcontrolInterface::FEB_read(mappedFEB & FEB, const uint32_t startaddr,
     return ERRCODES::OK;
 }
 
-int FEBSlowcontrolInterface::FEB_read(mappedFEB & FEB, const uint32_t startaddr, uint32_t &data)
+int FEBSlowcontrolInterface::FEB_read(const mappedFEB & FEB, const uint32_t startaddr, uint32_t &data)
 {
     vector<uint32_t> d(1,0);
     int status = FEB_read(FEB, startaddr, d);
@@ -252,25 +265,6 @@ int FEBSlowcontrolInterface::FEB_read(mappedFEB & FEB, const uint32_t startaddr,
     return status;
 }
 
-int FEBSlowcontrolInterface::FEB_register_write(mappedFEB & FEB, const uint32_t startaddr, const vector<uint32_t> & data, const bool nonincrementing)
-{
-    return FEB_write(FEB,startaddr, data, nonincrementing);
-}
-
-int FEBSlowcontrolInterface::FEB_register_write(mappedFEB & FEB, const uint32_t startaddr, const uint32_t data)
-{
-    return FEB_write(FEB,startaddr, data);
-}
-
-int FEBSlowcontrolInterface::FEB_register_read(mappedFEB & FEB, const uint32_t startaddr, vector<uint32_t> &data, const bool nonincrementing)
-{
-    return FEB_read(FEB, startaddr, data, nonincrementing);
-}
-
-int FEBSlowcontrolInterface::FEB_register_read(mappedFEB & FEB, const uint32_t startaddr, uint32_t &data)
-{
-    return FEB_read(FEB, startaddr, data);
-}
 
 void FEBSlowcontrolInterface::FEBsc_resetMain()
 {
@@ -306,7 +300,7 @@ void FEBSlowcontrolInterface::FEBsc_resetSecondary()
     }
 }
 
-int FEBSlowcontrolInterface::FEBsc_NiosRPC(mappedFEB & FEB, uint16_t command, vector<vector<uint32_t> > payload_chunks)
+int FEBSlowcontrolInterface::FEBsc_NiosRPC(const mappedFEB & FEB, uint16_t command, vector<vector<uint32_t> > payload_chunks)
 {
     int status = 0;
     int index = 0;
