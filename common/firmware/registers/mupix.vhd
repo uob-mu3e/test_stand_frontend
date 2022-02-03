@@ -74,6 +74,24 @@ package mupix is
     type mp_config_regs_length_t    is array (5 downto 0) of integer;
     constant MP_CONFIG_REGS_LENGTH  : mp_config_regs_length_t := (512, 896, 896, 80, 90, 210);
 
+    type mp_conf_array_in  is array( natural range <> ) of mp_conf_storage_interface_in;
+    type mp_conf_array_out is array( natural range <> ) of mp_conf_storage_interface_out;
+
+    type mp_conf_storage_interface_in is record
+        spi_read        :   std_logic_vector(3 downto 0);
+        mu3e_read       :   std_logic_vector(3 downto 0);
+    end record;
+
+    type mp_conf_storage_interface_out is record
+        rdy             :   std_logic_vector(3 downto 0);
+        spi_data        :   std_logic_vector(3 downto 0);
+        conf            :   std_logic_vector(52 downto 0);
+        vdac            :   std_logic_vector(52 downto 0);
+        bias            :   std_logic_vector(52 downto 0);
+        tdac            :   std_logic_vector(52 downto 0);
+    end record;
+
+
     type mp_link_order_t    is array (35 downto 0) of integer;
     constant MP_LINK_ORDER  : mp_link_order_t := (33,31,29,35,32,28,34,30,27,26,25,20,24,23,21,22,19,18,15,11,9,17,13,10,16,14,12,5,3,2,6,4,1,8,7,0);
     constant MP_LINK_ORDER_TELESCOPE : mp_link_order_t := (0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,35,26,30,34,21,25,23,24,22,33,32,31,29,28,27,20,19,18);
