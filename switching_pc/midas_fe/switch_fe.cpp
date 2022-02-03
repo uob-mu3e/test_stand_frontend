@@ -58,13 +58,13 @@ constexpr int switch_id = 0; // TODO to be loaded from outside (on compilation?)
 // 3 - Fibres
 // Note that for the moment, we allow all subdetectors in any SW board
 
-constexpr char * const fe_names[] = {"SW Central", "SW Upstream", "SW downstream", "SW Fibres"};
+const string fe_names[] = {"SW Central", "SW Upstream", "SW downstream", "SW Fibres"};
 /* The frontend name (client name) as seen by other MIDAS clients   */
-constexpr char * const frontend_name = fe_names[switch_id];
+const string fe_name = fe_names[switch_id];
 
-constexpr char * const eq_names[] = {"SwitchingC", "SwitchingUS", "SwitchingDS", "SwitchingF"};
+const string eq_names[] = {"SwitchingC", "SwitchingUS", "SwitchingDS", "SwitchingF"};
 /* The frontend name (client name) as seen by other MIDAS clients   */
-constexpr char * const eq_name = eq_names[switch_id];
+const string eq_name = eq_names[switch_id];
 
 /* The frontend file name, don't change it */
 const char *frontend_file_name = __FILE__;
@@ -146,7 +146,7 @@ INT init_mupix(mudaq::MudaqDevice& mu);
 /*-- Equipment list ------------------------------------------------*/
 enum EQUIPMENT_ID {Switching=0,SciFi,SciTiles,Mupix};
 EQUIPMENT equipment[] = {
-// TODO: make this work for different switch ids
+// TODO: make this work for different switch ids, ultimately also only add relevant subdetectors
    {"SwitchingC",                /* equipment name */
     {110, 0,                    /* event ID, trigger mask */
      "SYSTEM",                  /* event buffer */
@@ -162,7 +162,7 @@ EQUIPMENT equipment[] = {
      "", "", ""},
      read_sc_event,             /* readout routine */
    },
-   {"SciFi",                    /* equipment name */
+   {"SciFiC",                    /* equipment name */
     {111, 0,                      /* event ID, trigger mask */
      "SYSTEM",                  /* event buffer */
      EQ_PERIODIC,                 /* equipment type */
@@ -177,7 +177,7 @@ EQUIPMENT equipment[] = {
      "", "", "",},
      read_scifi_sc_event,          /* readout routine */
     },
-   {"SciTiles",                    /* equipment name */
+   {"SciTilesC",                    /* equipment name */
     {112, 0,                      /* event ID, trigger mask */
      "SYSTEM",                  /* event buffer */
      EQ_PERIODIC,                 /* equipment type */
@@ -192,7 +192,7 @@ EQUIPMENT equipment[] = {
      "", "", "",},
      read_scitiles_sc_event,          /* readout routine */
     },
-    {"Mupix",                    /* equipment name */
+    {"MupixC",                    /* equipment name */
     {113, 0,                      /* event ID, trigger mask */
      "SYSTEM",                  /* event buffer */
      EQ_PERIODIC,                 /* equipment type */
@@ -209,7 +209,7 @@ EQUIPMENT equipment[] = {
     },
     {""}
 };
-
+constexpr int NEQUIPMENT = 4;
 
 /*-- Dummy routines ------------------------------------------------*/
 
@@ -247,21 +247,6 @@ INT frontend_init()
     INT status = init_mudaq(*mup);
     if (status != SUCCESS)
         return FE_ERR_DRIVER;
-
-
-    //set link enables so slow control can pass
-    odb cur_links_odb("/Equipment/Links/Settings/LinkMask");
-    try{
-        set_feb_enable(get_link_active_from_odb(cur_links_odb)); }
-    catch(...){ return FE_ERR_ODB;}
-    
-    // Create the FEB List
-    feblist = new FEBList(switch_id);
-
-    //init SC
-    feb_sc->FEBsc_resetSecondary();
-
-
 
     //init febs (general)
     status = init_febs(*mup);
@@ -326,7 +311,8 @@ void setup_odb(){
     std::array<uint16_t, N_FEBS[switch_id]> zeroarr;
     zeroarr.fill(0);
 
-    /* Default values for /Equipment/Switching/Settings */
+    /* TODO: This needs a cleanup! */
+    /* Default values for /Equipment/SwitchingX/Settings */
     odb settings = {
             {"Active", true},
             {"Delay", false},
@@ -411,6 +397,7 @@ void setup_odb(){
     // add custom page to ODB
     odb custom("/Custom");
     custom["Switching&"] = "sc.html";
+    custom["Links"] = "links.html";
     custom["Febs&"] = "febs.html";
     custom["DAQcounters&"] = "daqcounters.html";
 
@@ -418,7 +405,7 @@ void setup_odb(){
     //#include "odb_feb_mapping_integration_run_2021.h"
 
     // Inculde the line below to set up the FEBs and their mapping for 2021 EDM run
-    #include "odb_feb_mapping_edm_run_2021.h"
+    //#include "odb_feb_mapping_edm_run_2021.h"
 
 
 }
@@ -466,7 +453,7 @@ void setup_watches(){
     sc_variables.watch(sc_settings_changed);
 
     // watch if this switching board is enabled
-    odb switch_mask("/Equipment/Links/Settings/SwitchingBoardMask");
+    odb switch_mask("/Equipment/Clock Reset/Settings/SwitchingBoardMask");
     switch_mask.watch(switching_board_mask_changed);
 
     // watch if the mapping of FEBs to crates changed
@@ -484,22 +471,24 @@ void setup_watches(){
 
 void switching_board_mask_changed(odb o) {
 
-    string name = o.get_name();
-    cm_msg(MINFO, "switching_board_mask_changed", "Switching board masking changed");
-    cm_msg(MINFO, "switching_board_mask_changed", "For INT run we enable MuPix and SciFi Equipment");
+
 
     vector<INT> switching_board_mask = o;
-
     BOOL value = switching_board_mask[switch_id] > 0 ? true : false;
 
-    for(int i = 0; i < 4; i++) {
-        // for int run
-        if (i == 2) continue;
-        char str[128];
-        sprintf(str, "/Equipment/%s/Common", equipment[i].name);
-        //TODO: Can we avoid this silly back and forth casting?
-        odb enabled(std::string(str).c_str());
-        enabled["Enabled"] = value;
+    std::string path = "/Equipment/" + std::string(equipment[0].name) + "/Common/Enabled";
+
+
+    cm_msg(MINFO, "switching_board_mask_changed", "Switching board masking changed");
+    cm_msg(MINFO, "switching_board_mask_changed", "For INT run we enable MuPix and SciFi Equipment");
+    odb enabled(path);
+    if(enabled == value) // no change
+        return;
+    
+    for(int i = 0; i < NEQUIPMENT; i++) {
+        std::string path = "/Equipment/" + std::string(equipment[i].name) + "/Common/Enabled";
+        odb enabled(path);
+        enabled = value;
         cm_msg(MINFO, "switching_board_mask_changed", "Set Equipment %s enabled to %d", equipment[i].name, value);
     }
 
@@ -535,16 +524,27 @@ INT init_mudaq(mudaq::MudaqDevice &mu) {
 
 INT init_febs(mudaq::MudaqDevice & mu) {
 
-    odb sorterdelays_odb("/Equipment/Switching/Settings/Sorter Delay");
-    sorterdelays_changed(sorterdelays_odb);
+    //set link enables so slow control can pass
+    odb cur_links_odb("/Equipment/Links/Settings/LinkMask");
+    try{
+        set_feb_enable(get_link_active_from_odb(cur_links_odb)); }
+    catch(...){ return FE_ERR_ODB;}
+    
+    // Create the FEB List
+    feblist = new FEBList(switch_id);
+
+    // Should also go to init FEBs
+    //init SC
+    feb_sc->FEBsc_resetSecondary();
+
 
     // switching setup part
     //set_equipment_status(equipment[EQUIPMENT_ID::Switching].name, "Initializing...", "var(--myellow)");
     mufeb = new  MuFEB(*feb_sc,
-                        feblist->getFEBs(),
+                        feblist->getActiveFEBs(),
                         feblist->getFEBMask(),
                         equipment[EQUIPMENT_ID::Switching].name,
-                        "/Equipment/SciFi",
+                        "/Equipment/SciFi", // Why??
                         switch_id);
 
     //init all values on FEB
@@ -740,17 +740,17 @@ try{ // TODO: What can throw here?? Why?? Is there another way to handle this??
        cm_msg(MINFO,"switch_fe","Bypassing CRFE for run transition");
        // TODO: Get rid of hardcoded adresses here!
        DWORD valueRB = run_number;
-       feb_sc->FEB_register_write(FEBSlowcontrolInterface::ADDRS::BROADCAST_ADDR, RESET_PAYLOAD_REGISTER_RW, valueRB); //run number
+       feb_sc->FEB_broadcast(RESET_PAYLOAD_REGISTER_RW, valueRB); //run number
        valueRB= ((1<<RESET_BYPASS_BIT_ENABLE) |(1<<RESET_BYPASS_BIT_REQUEST)) | 0x10;
-       feb_sc->FEB_register_write(FEBSlowcontrolInterface::ADDRS::BROADCAST_ADDR, RUN_STATE_RESET_BYPASS_REGISTER_RW, valueRB); //run prep command
+       feb_sc->FEB_broadcast(RUN_STATE_RESET_BYPASS_REGISTER_RW, valueRB); //run prep command
        valueRB= 0xbcbcbcbc;
-       feb_sc->FEB_register_write(FEBSlowcontrolInterface::ADDRS::BROADCAST_ADDR, RESET_PAYLOAD_REGISTER_RW, valueRB); //reset payload
+       feb_sc->FEB_broadcast(RESET_PAYLOAD_REGISTER_RW, valueRB); //reset payload
        valueRB= (1<<RESET_BYPASS_BIT_ENABLE) | 0x00;
-       feb_sc->FEB_register_write(FEBSlowcontrolInterface::ADDRS::BROADCAST_ADDR, RUN_STATE_RESET_BYPASS_REGISTER_RW, valueRB); //reset command
+       feb_sc->FEB_broadcast(RUN_STATE_RESET_BYPASS_REGISTER_RW, valueRB); //reset command
    }else{
        /* send run prepare signal via CR system */
        // TODO: Move to odbxx
-       feb_sc->FEB_register_write(FEBSlowcontrolInterface::ADDRS::BROADCAST_ADDR, RUN_STATE_RESET_BYPASS_REGISTER_RW, 0); // disable reset bypass for all connected febs
+       feb_sc->FEB_broadcast(RUN_STATE_RESET_BYPASS_REGISTER_RW, 0); // disable reset bypass for all connected febs
        INT value = 1;
        cm_msg(MINFO,"switch_fe","Using CRFE for run transition");
        db_set_value_index(hDB,0,"Equipment/Clock Reset/Run Transitions/Request Run Prepare",
