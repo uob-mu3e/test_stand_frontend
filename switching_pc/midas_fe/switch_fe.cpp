@@ -51,21 +51,6 @@ using midas::odb;
 
 /*-- Globals -------------------------------------------------------*/
 
-constexpr int switch_id = 0; // TODO to be loaded from outside (on compilation?)
-// 0 - Central
-// 1 - Recurl US
-// 2 - Recurl DS
-// 3 - Fibres
-// Note that for the moment, we allow all subdetectors in any SW board
-
-const string fe_names[] = {"SW Central", "SW Upstream", "SW downstream", "SW Fibres"};
-/* The frontend name (client name) as seen by other MIDAS clients   */
-const string fe_name = fe_names[switch_id];
-
-const string eq_names[] = {"SwitchingC", "SwitchingUS", "SwitchingDS", "SwitchingF"};
-/* The frontend name (client name) as seen by other MIDAS clients   */
-const string eq_name = eq_names[switch_id];
-
 /* The frontend file name, don't change it */
 const char *frontend_file_name = __FILE__;
 
@@ -103,10 +88,6 @@ MupixFEB    * mupixfeb;
 SciFiFEB    * scififeb;
 TilesFEB    * tilefeb;
 
-
-/* Local state of sorter delays */
-std::array<uint32_t, N_FEBS[switch_id]> sorterdelays{};
-
 /*-- Function declarations -----------------------------------------*/
 
 INT read_sc_event(char *pevent, INT off);
@@ -141,75 +122,14 @@ INT init_scifi(mudaq::MudaqDevice&  mu);
 INT init_scitiles(mudaq::MudaqDevice& mu);
 INT init_mupix(mudaq::MudaqDevice& mu);
 
+// Here we choose which switching board we are
+#include "OneSwitchingBoard.h"
+//#include "CentralSwitchingBoard.h"
+// Others to be written
 
+/* Local state of sorter delays */
+std::array<uint32_t, N_FEBS[switch_id]> sorterdelays{};
 
-/*-- Equipment list ------------------------------------------------*/
-enum EQUIPMENT_ID {Switching=0,SciFi,SciTiles,Mupix};
-EQUIPMENT equipment[] = {
-// TODO: make this work for different switch ids, ultimately also only add relevant subdetectors
-   {"SwitchingC",                /* equipment name */
-    {110, 0,                    /* event ID, trigger mask */
-     "SYSTEM",                  /* event buffer */
-     EQ_PERIODIC,               /* equipment type */
-     0,                         /* event source */
-     "MIDAS",                   /* format */
-     TRUE,                      /* enabled */
-     RO_ALWAYS | RO_ODB,        /* read always and update ODB */
-     1000,                      /* read every 1 sec */
-     0,                         /* stop run after this event limit */
-     0,                         /* number of sub events */
-     1,                         /* log history every event */
-     "", "", ""},
-     read_sc_event,             /* readout routine */
-   },
-   {"SciFiC",                    /* equipment name */
-    {111, 0,                      /* event ID, trigger mask */
-     "SYSTEM",                  /* event buffer */
-     EQ_PERIODIC,                 /* equipment type */
-     0,                         /* event source crate 0, all stations */
-     "MIDAS",                   /* format */
-     FALSE,                      /* enabled */
-     RO_ALWAYS | RO_ODB,        /* read always and update ODB */
-     10000,                      /* read every 10 sec */
-     0,                         /* stop run after this event limit */
-     0,                         /* number of sub events */
-     1,                         /* log history every event */
-     "", "", "",},
-     read_scifi_sc_event,          /* readout routine */
-    },
-   {"SciTilesC",                    /* equipment name */
-    {112, 0,                      /* event ID, trigger mask */
-     "SYSTEM",                  /* event buffer */
-     EQ_PERIODIC,                 /* equipment type */
-     0,                         /* event source crate 0, all stations */
-     "MIDAS",                   /* format */
-     FALSE,                      /* enabled */
-     RO_ALWAYS | RO_ODB,        /* read always and update ODB */
-     10000,                      /* read every 10 sec */
-     0,                         /* stop run after this event limit */
-     0,                         /* number of sub events */
-     1,                         /* log history every event */
-     "", "", "",},
-     read_scitiles_sc_event,          /* readout routine */
-    },
-    {"MupixC",                    /* equipment name */
-    {113, 0,                      /* event ID, trigger mask */
-     "SYSTEM",                  /* event buffer */
-     EQ_PERIODIC,                 /* equipment type */
-     0,                         /* event source crate 0, all stations */
-     "MIDAS",                   /* format */
-     TRUE,                      /* enabled */
-     RO_ALWAYS | RO_ODB,   /* read during run transitions and update ODB */
-     1000,                      /* read every 1 sec */
-     0,                         /* stop run after this event limit */
-     0,                         /* number of sub events */
-     1,                         /* log history every event */
-     "", "", "",},
-     read_mupix_sc_event,          /* readout routine */
-    },
-    {""}
-};
-constexpr int NEQUIPMENT = 4;
 
 /*-- Dummy routines ------------------------------------------------*/
 
@@ -255,20 +175,26 @@ INT frontend_init()
 
 
     //init scifi
-    status = init_scifi(*mup);
-    if (status != SUCCESS)
-        return FE_ERR_DRIVER;
+    if constexpr(has_scifi){
+        status = init_scifi(*mup);
+        if (status != SUCCESS)
+            return FE_ERR_DRIVER;
+    }
+
     
-    /*
     //init scitiles
-    status = init_scitiles(*mup);
-    if (status != SUCCESS)
-        return FE_ERR_DRIVER;*/
+    if constexpr(has_tiles){
+        status = init_scitiles(*mup);
+        if (status != SUCCESS)
+            return FE_ERR_DRIVER;
+    }
 
     //init mupix
-    status = init_mupix(*mup);
-    if (status != SUCCESS)
-        return FE_ERR_DRIVER;
+    if constexpr(has_pixels){
+        status = init_mupix(*mup);
+        if (status != SUCCESS)
+            return FE_ERR_DRIVER;
+    }
 
     // TODO: Define generic history panels
 
@@ -314,8 +240,22 @@ void setup_odb(){
     /* TODO: This needs a cleanup! */
     /* Default values for /Equipment/SwitchingX/Settings */
     odb settings = {
-            {"Active", true},
-            {"Delay", false},
+            {"Sorter Delay", zeroarr},
+            // For this, switch_id has to be known at compile time (calls for a preprocessor macro or some constexpr magic, I guess)
+            {namestr.c_str(), std::array<std::string, per_fe_SSFE_size*N_FEBS[switch_id]>()},
+            {cntnamestr.c_str(), std::array<std::string, num_swb_counters_per_feb*N_FEBS[switch_id]+4>()},
+            {sorternamestr.c_str(), std::array<std::string, per_fe_SSSO_size*N_FEBS[switch_id]>()}
+    };
+
+    create_ssfe_names_in_odb(settings,switch_id);
+    create_ssso_names_in_odb(settings,switch_id);
+    create_sscn_names_in_odb(settings,switch_id);
+
+    string path_s = "/Equipment/" + std::string(eq_name) + "/Settings";
+    settings.connect(path_s, true);
+
+    /* Clean up, move subdetector specific stuff */
+    odb commands = {
             {"Write", false},
             {"Single Write", false},
             {"Read", false},
@@ -339,21 +279,13 @@ void setup_odb(){
             {"Load Firmware", false},
             {"Firmware File",""},
             {"Firmware FEB ID",0},
-            {"Firmware Is Emergency Image", false},
-            {"Sorter Delay", zeroarr},
-            // For this, switch_id has to be known at compile time (calls for a preprocessor macro, I guess)
-            {namestr.c_str(), std::array<std::string, per_fe_SSFE_size*N_FEBS[switch_id]>()},
-            {cntnamestr.c_str(), std::array<std::string, num_swb_counters_per_feb*N_FEBS[switch_id]+4>()},
-            {sorternamestr.c_str(), std::array<std::string, per_fe_SSSO_size*N_FEBS[switch_id]>()}
+            {"Firmware Is Emergency Image", false}
     };
 
-    create_ssfe_names_in_odb(settings,switch_id);
-    create_ssso_names_in_odb(settings,switch_id);
-    create_sscn_names_in_odb(settings,switch_id);
 
-    string path = "/Equipment/" + std::string(eq_name) + "/Settings";
+    string path_c = "/Equipment/" + std::string(eq_name) + "/Commands";
+    commands.connect(path_c, true);
 
-    settings.connect(path, true);
 
     /* Default values for /Equipment/Switching/Variables */
     odb sc_variables = {
@@ -394,7 +326,16 @@ void setup_odb(){
     string path3 = "/Equipment/" + std::string(eq_name) + "/Variables/FEBFirmware";
     firmware_variables.connect("/Equipment/Switching/Variables/FEBFirmware");
 
-    // add custom page to ODB
+    odb link_settings = {
+        {"LinkMask", std::array<uint32_t, MAX_LINKS_PER_SWITCHINGBOARD>{}},
+        {"FEBType", std::array<uint32_t, MAX_LINKS_PER_SWITCHINGBOARD>{}},
+        {"FEBName", std::array<uint32_t, MAX_LINKS_PER_SWITCHINGBOARD>{}},
+    };
+    string path_ls = "/Equipment/" + std::string(link_eq_name) + "/Settings";
+    link_settings.connect(path_ls);
+
+
+    // add custom pages to ODB
     odb custom("/Custom");
     custom["Switching&"] = "sc.html";
     custom["Links"] = "links.html";
@@ -449,7 +390,8 @@ void setup_history(){
 
 void setup_watches(){
     //UI watch
-    odb sc_variables("/Equipment/Switching/Settings");
+    string path_c = "/Equipment/" + std::string(eq_name) + "/Commands";
+    odb sc_variables(path_c);
     sc_variables.watch(sc_settings_changed);
 
     // watch if this switching board is enabled
@@ -461,26 +403,26 @@ void setup_watches(){
     crates.watch(frontend_board_mask_changed);
 
     // watch if this links are enabled
-    odb links_odb("/Equipment/Links/Settings/LinkMask");
+    string path_l = "/Equipment/" + std::string(link_eq_name) + "/Settings/LinkMask";
+    odb links_odb(path_l);
     links_odb.watch(frontend_board_mask_changed);
 
     // Watch for sorter delay changes
-    odb sorterdelay_settings("/Equipment/Switching/Settings/Sorter Delay");
+    string path_sd = "/Equipment/" + std::string(eq_name) + "/Settings/Sorter Delay";
+    odb sorterdelay_settings(path_sd);
     sorterdelay_settings.watch(sorterdelays_changed);
 }
 
 void switching_board_mask_changed(odb o) {
-
-
 
     vector<INT> switching_board_mask = o;
     BOOL value = switching_board_mask[switch_id] > 0 ? true : false;
 
     std::string path = "/Equipment/" + std::string(equipment[0].name) + "/Common/Enabled";
 
-
     cm_msg(MINFO, "switching_board_mask_changed", "Switching board masking changed");
     cm_msg(MINFO, "switching_board_mask_changed", "For INT run we enable MuPix and SciFi Equipment");
+
     odb enabled(path);
     if(enabled == value) // no change
         return;
@@ -525,21 +467,18 @@ INT init_mudaq(mudaq::MudaqDevice &mu) {
 INT init_febs(mudaq::MudaqDevice & mu) {
 
     //set link enables so slow control can pass
-    odb cur_links_odb("/Equipment/Links/Settings/LinkMask");
-    try{
-        set_feb_enable(get_link_active_from_odb(cur_links_odb)); }
-    catch(...){ return FE_ERR_ODB;}
+    string path_l = "/Equipment/" + std::string(link_eq_name) + "/Settings/LinkMask";
+    odb cur_links_odb(path_l);
+    set_feb_enable(get_link_active_from_odb(cur_links_odb));
     
     // Create the FEB List
     feblist = new FEBList(switch_id);
 
-    // Should also go to init FEBs
     //init SC
     feb_sc->FEBsc_resetSecondary();
 
 
     // switching setup part
-    //set_equipment_status(equipment[EQUIPMENT_ID::Switching].name, "Initializing...", "var(--myellow)");
     mufeb = new  MuFEB(*feb_sc,
                         feblist->getActiveFEBs(),
                         feblist->getFEBMask(),
@@ -553,11 +492,10 @@ INT init_febs(mudaq::MudaqDevice & mu) {
     // Get all the relevant firmware versions
     mufeb->ReadFirmwareVersionsToODB();
 
-    // Init sorter delays
-    odb sorterdelay_odb("/Equipment/Switching/Settings/Sorter Delay");
+    // Init sorter delays -- Should be subdetector specific??
+    string path_sd = "/Equipment/" + std::string(eq_name) + "/Settings/Sorter Delay";
+    odb sorterdelay_odb(path_sd);
     sorterdelays_changed(sorterdelay_odb);
-
-    //set_equipment_status(equipment[EQUIPMENT_ID::Switching].name, "Ok", "var(--mgreen)");
 
     return SUCCESS;
 }
@@ -678,11 +616,10 @@ INT frontend_loop()
 
 INT begin_of_run(INT run_number, char *error)
 {
+    for(int i = 0; i < NEQUIPMENT; i++) 
+        set_equipment_status(equipment[i].name, "Starting Run", "var(--morange)");
 
-   int status;
 try{ // TODO: What can throw here?? Why?? Is there another way to handle this??
-   set_equipment_status(equipment[EQUIPMENT_ID::SciFi].name, "Starting Run", "var(--morange)");
-   set_equipment_status(equipment[EQUIPMENT_ID::Mupix].name, "Starting Run", "var(--morange)");
 
    /* Set new run number */
    mup->write_register(RUN_NR_REGISTER_W, run_number);
@@ -694,33 +631,12 @@ try{ // TODO: What can throw here?? Why?? Is there another way to handle this??
    mup->write_register(RESET_REGISTER_W, 0x0);
 
    /* get link active from odb. */
-    odb cur_links_odb("/Equipment/Links/Settings/LinkMask");
+    string path_l = "/Equipment/" + std::string(link_eq_name) + "/Settings/LinkMask";
+    odb cur_links_odb(path_l);
     uint64_t link_active_from_odb = get_link_active_from_odb(cur_links_odb);
 
-   //configure ASICs for SciFi
-   //status=scififeb->ConfigureASICs();
-   //if(status!=SUCCESS){
-   //   cm_msg(MERROR,"switch_fe","ASIC configuration failed");
-   //   return CM_TRANSITION_CANCELED;
-   //}
-
-//   //configure ASICs for Tiles
-//   status=tilefeb->ConfigureASICs();
-//   if(status!=SUCCESS){
-//      cm_msg(MERROR,"switch_fe","ASIC configuration failed");
-//      return CM_TRANSITION_CANCELED;
-//   }
-//
-//   //configure Pixel sensors
-//   status=mupixfeb->ConfigureASICs();
-//   if(status!=SUCCESS){
-//      cm_msg(MERROR,"switch_fe","ASIC configuration failed");
-//      return CM_TRANSITION_CANCELED;
-//   }
-
-
    //last preparations
-   scififeb->ResetAllCounters();
+   mufeb->ResetAllCounters();
 
 
    // TODO: Switch to odbxx here
@@ -1045,18 +961,6 @@ void sc_settings_changed(odb o)
     mudaq::MudaqDevice & mu = *mup;
 #endif
 
-    if (name == "Active") {
-        bool value = o;
-        cm_msg(MINFO, "sc_settings_changed", "Set active to %d", value);
-        // TODO: propagate to hardware
-    }
-
-    if (name == "Delay") {
-        INT value = o;
-        cm_msg(MINFO, "sc_settings_changed", "Set delay to %d", value);
-        // TODO: propagate to hardware
-    }
-
     if (name == "Reset SC Main" && o) {
         bool value = o;
         if(value){
@@ -1238,12 +1142,10 @@ uint64_t get_link_active_from_odb(odb o){
    /* get link active from odb */
    uint64_t link_active_from_odb = 0;
    for(uint32_t link = 0; link < MAX_LINKS_PER_SWITCHINGBOARD; link++) {
-      int offset = MAX_LINKS_PER_SWITCHINGBOARD * switch_id;
-      int cur_mask = o[offset + link];
+      int cur_mask = o[link];
       if((cur_mask == FEBLINKMASK::ON) || (cur_mask == FEBLINKMASK::DataOn)){
         //a standard FEB link (SC and data) is considered enabled if RX and TX are. 
 	    //a secondary FEB link (only data) is enabled if RX is.
-	    //Here we are concerned only with run transitions and slow control, the farm frontend may define this differently.
         link_active_from_odb += (1 << link);
       }
    }
