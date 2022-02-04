@@ -4,6 +4,7 @@
 #include <vector>
 #include <array>
 #include <string>
+#include <optional>
 #include <stdint.h>
 
 #include "mappedfeb.h"
@@ -34,11 +35,13 @@ public:
     size_t nTileFEBS() const {return mTileFEBs.size();}
 
     //const mappedFEB getFEB(size_t i) const {return mFEBs.at(i);}
-    const mappedFEB getPrimaryFEB(size_t i) const {return mPrimaryFEBs.at(i);}
-    const mappedFEB getActiveFEB(size_t i) const {return mActiveFEBs.at(i);}
-    const mappedFEB getPixelFEB(size_t i) const {return mPixelFEBs.at(i);}
-    const mappedFEB getSciFiFEB(size_t i) const {return mSciFiFEBs.at(i);}
-    const mappedFEB getTileFEB(size_t i) const {return mTileFEBs.at(i);}
+    const mappedFEB & getPrimaryFEB(size_t i) const {return mPrimaryFEBs.at(i);}
+    const mappedFEB & getActiveFEB(size_t i) const {return mActiveFEBs.at(i);}
+    const mappedFEB & getPixelFEB(size_t i) const {return mPixelFEBs.at(i);}
+    const mappedFEB & getSciFiFEB(size_t i) const {return mSciFiFEBs.at(i);}
+    const mappedFEB & getTileFEB(size_t i) const {return mTileFEBs.at(i);}
+
+    std::optional<const mappedFEB> getFEBatPort(uint8_t SB_Port);
 
     const std::vector<mappedFEB> & getPrimaryFEBs(){return mPrimaryFEBs;}
     const std::vector<mappedFEB> & getActiveFEBs(){return mActiveFEBs;}

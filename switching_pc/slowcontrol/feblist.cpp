@@ -6,7 +6,7 @@ using midas::odb;
 
 FEBList::FEBList(uint16_t SB_index_):SB_index(SB_index_){
     RebuildFEBList();
-};
+}
 
 void FEBList::RebuildFEBList()
 {
@@ -117,4 +117,14 @@ void FEBList::RebuildFEBList()
     sprintf(reportStr,"Found %lu FEBs, remapping %d secondaries.",mFEBs.size(),nSecondaries);
     cm_msg(MINFO,"FEBList::RebuildFEBList","%s", reportStr);
 
+}
+
+
+
+std::optional<const mappedFEB> FEBList::getFEBatPort(uint8_t SB_Port){
+    for(auto feb : mFEBs){
+        if(feb.SB_Port() == SB_Port)
+            return feb;
+    }
+    return {};
 }
