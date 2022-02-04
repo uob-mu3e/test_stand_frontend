@@ -807,9 +807,7 @@ INT read_sc_event(char *pevent, INT off)
 /*--- Read Counters from SWBs to be put into data stream --------*/
 DWORD * fill_SSCN(DWORD * pdata)
 {
-    // TODO: Could we get this from the feblist?
-    odb cur_links_odb("/Equipment/Links/Settings/LinkMask");
-    std::bitset<64> cur_link_active_from_odb = get_link_active_from_odb(cur_links_odb);
+    std::bitset<64> cur_link_active_from_odb = feblist->getLinkMask();
 
     // first read general counters
     *pdata++ = read_counters(SWB_STREAM_FIFO_FULL_PIXEL_CNT);
@@ -818,15 +816,23 @@ DWORD * fill_SSCN(DWORD * pdata)
     *pdata++ = read_counters(SWB_BANK_BUILDER_TAG_FIFO_FULL_PIXEL_CNT);
 
     for(uint32_t i=0; i < N_FEBS[switch_id]; i++){
+        
         *pdata++ = i;
         *pdata++ = (cur_link_active_from_odb.test(i) == 1 ? (read_counters(SWB_LINK_FIFO_ALMOST_FULL_PIXEL_CNT | (i << 8))) : 0);
         *pdata++ = (cur_link_active_from_odb.test(i) == 1 ? (read_counters(SWB_LINK_FIFO_FULL_PIXEL_CNT | (i << 8))) : 0);
         *pdata++ = (cur_link_active_from_odb.test(i) == 1 ? (read_counters(SWB_SKIP_EVENT_PIXEL_CNT | (i << 8))) : 0);
         *pdata++ = (cur_link_active_from_odb.test(i) == 1 ? (read_counters(SWB_EVENT_PIXEL_CNT | (i << 8))) : 0);
         *pdata++ = (cur_link_active_from_odb.test(i) == 1 ? (read_counters(SWB_SUB_HEADER_PIXEL_CNT | (i << 8))) : 0);
-        *pdata++ = (cur_link_active_from_odb.test(i) == 1 ? mufeb->ReadBackMergerRate(i) : 0);
-        *pdata++ = (cur_link_active_from_odb.test(i) == 1 ? mufeb->ReadBackResetPhase(i) : 0);
-        *pdata++ = (cur_link_active_from_odb.test(i) == 1 ? mufeb->ReadBackTXReset(i) : 0);
+        if(feblist->getFEBatPort(i)){
+            auto feb = feblist->getFEBatPort(i).value();
+            *pdata++ = (cur_link_active_from_odb.test(i) == 1 ? mufeb->ReadBackMergerRate(feb) : 0);
+            *pdata++ = (cur_link_active_from_odb.test(i) == 1 ? mufeb->ReadBackResetPhase(feb) : 0);
+            *pdata++ = (cur_link_active_from_odb.test(i) == 1 ? mufeb->ReadBackTXReset(feb) : 0);
+        } else {
+            *pdata++ = 0;
+            *pdata++ = 0;
+            *pdata++ = 0;
+        }
     }
     return pdata;
 }
@@ -834,7 +840,6 @@ DWORD * fill_SSCN(DWORD * pdata)
 /*--- Read Slow Control Event from SciFi to be put into data stream --------*/
 
 INT read_scifi_sc_event(char *pevent, INT off){
-	static int i=0;
 
     //TODO: Make this more proper: move this to class driver routine and make functions not writing to ODB all the time (only on update).
     //Add readout function for this one that gets data from class variables and writes midas banks
@@ -847,7 +852,6 @@ INT read_scifi_sc_event(char *pevent, INT off){
 /*--- Read Slow Control Event from SciTiles to be put into data stream --------*/
 
 INT read_scitiles_sc_event(char *pevent, INT off){
-	static int i=0;
     
     //TODO: Make this more proper: move this to class driver routine and make functions not writing to ODB all the time (only on update).
     //Add readout function for this one that gets data from class variables and writes midas banks
@@ -866,7 +870,7 @@ INT read_mupix_sc_event(char *pevent, INT off){
     bk_init(pevent);
     DWORD *pdata;
     bk_create(pevent, banknamePSLL.c_str(), TID_INT, (void **)&pdata);
-    pdata = mupixfeb->fill_PSLL(pdata, feblist->getPixelFEBs().size());
+    pdata = mupixfeb->fill_PSLL(pdata);
     bk_close(pevent, pdata);
 
 //     TODO: implement bank PSLM
@@ -884,14 +888,18 @@ INT get_odb_value_by_string(const char *key_name){
 }
 
 
-
+// TODO: Should go to the MuFEB (or MuPixFEB)
 void sorterdelays_changed(odb o)
 {
     cm_msg(MINFO, "sorterdelays_changed()" , "Sorterdelays!");
     std::vector<uint32_t> delays_odb = o;
-    for(size_t i =0; i < sorterdelays.size(); i++){
+    assert(delays_odb.size() >= feblist->getActiveFEBs().size());
+    // TODO: Fix use of raw index!
+    for(uint32_t i=0; i < N_FEBS[switch_id]; i++){
         if(sorterdelays[i] != delays_odb[i]){
-            mufeb->WriteSorterDelay(switch_id*MAX_FEBS_PER_SWITCHINGBOARD+i, delays_odb[i]);
+            auto feb = feblist->getFEBatPort(i);
+            if(feb)
+                mufeb->WriteSorterDelay(feb.value(), delays_odb[i]);
             sorterdelays[i] = delays_odb[i];
         }
     }
@@ -912,7 +920,8 @@ void scifi_settings_changed(odb o)
             for ( auto FEB : scififeb->getFEBs() ) {
                 if (!FEB.IsScEnabled()) continue; //skip disabled
                 if (FEB.SB_Number() != scififeb->getSB_number()) continue; //skip commands not for me
-                scififeb->DataPathReset(FEB.SB_Port());
+                
+                scififeb->DataPathReset(FEB);
             }
             o = false;
         }
@@ -923,7 +932,7 @@ void scifi_settings_changed(odb o)
             for ( auto FEB : scififeb->getFEBs() ) {
                 if (!FEB.IsScEnabled()) continue; //skip disabled
                 if (FEB.SB_Number() != scififeb->getSB_number()) continue; //skip commands not for me
-                scififeb->chipReset(FEB.SB_Port());
+                scififeb->chipReset(FEB);
             }
             o = false;
         }
@@ -934,7 +943,7 @@ void scifi_settings_changed(odb o)
             for ( auto FEB : scififeb->getFEBs() ) {
                 if (!FEB.IsScEnabled()) continue; //skip disabled
                 if (FEB.SB_Number() != scififeb->getSB_number()) continue; //skip commands not for me
-                scififeb->LVDS_RX_Reset(FEB.SB_Port());
+                scififeb->LVDS_RX_Reset(FEB);
             }
             o = false;
         }
@@ -984,7 +993,11 @@ void sc_settings_changed(odb o)
        odb writesize("Equipment/Switching/Variables/DATA_WRITE_SIZE");
        odb dataarray("Equipment/Switching/Variables/DATA_WRITE");
        vector<uint32_t> dataarrayv = dataarray;
-       feb_sc->FEB_write(fpgaid, startaddr, dataarrayv);
+        auto feb = feblist->getFEBatPort(fpgaid);
+        if(feb)
+            feb_sc->FEB_write(feb.value(), startaddr, dataarrayv);
+        else
+            cm_msg(MERROR, "sc_settings_changed - Write", "FEB does not exist");
         o = false;
    }
 
@@ -993,8 +1006,11 @@ void sc_settings_changed(odb o)
        odb startaddr("Equipment/Switching/Variables/START_ADD_READ");
        odb readsize("Equipment/Switching/Variables/LENGTH_READ");
        vector<uint32_t> data(readsize);
-
-       feb_sc->FEB_read(fpgaid, startaddr, data);
+        auto feb = feblist->getFEBatPort(fpgaid);
+        if(feb)
+            feb_sc->FEB_read(feb.value(), startaddr, data);
+        else
+            cm_msg(MERROR, "sc_settings_changed - Read", "FEB does not exist");
        // TODO: Do something with the value we read...
        o = false;
    }
@@ -1005,7 +1021,11 @@ void sc_settings_changed(odb o)
         odb startaddr("Equipment/Switching/Variables/START_ADD_WRITE");
 
         uint32_t data = datawrite;
-        feb_sc->FEB_write(fpgaid, startaddr, data);
+        auto feb = feblist->getFEBatPort(fpgaid);
+        if(feb)
+            feb_sc->FEB_write(feb.value(), startaddr, data);
+        else
+            cm_msg(MERROR, "sc_settings_changed - Single Write", "FEB does not exist");
         o = false;
     }
 
@@ -1015,6 +1035,7 @@ void sc_settings_changed(odb o)
         INT WM_DATA;
         INT SIZE_WM_DATA = sizeof(WM_DATA);
 
+        // TODO: Change to ODBXX
         HNDLE key_WM_DATA;
         db_find_key(hDB, 0, "Equipment/Switching/Variables/WM_DATA", &key_WM_DATA);
         db_set_num_values(hDB, key_WM_DATA, WM_LENGTH);
@@ -1033,7 +1054,7 @@ void sc_settings_changed(odb o)
         INT RM_LENGTH=get_odb_value_by_string("Equipment/Switching/Variables/RM_LENGTH");
         INT RM_DATA;
         INT SIZE_RM_DATA = sizeof(RM_DATA);
-
+        // TODO: Change to ODBXX
         HNDLE key_WM_DATA;
         db_find_key(hDB, 0, "Equipment/Switching/Variables/RM_DATA", &key_WM_DATA);
         db_set_num_values(hDB, key_WM_DATA, RM_LENGTH);
@@ -1103,13 +1124,13 @@ void sc_settings_changed(odb o)
 	  cm_msg(MINFO, "sc_settings_changed", "Reset Bypass Command %d, payload %d", command, payload);
 
         // TODO: get rid of hardcoded addresses
-        feb_sc->FEB_register_write(FEBSlowcontrolInterface::ADDRS::BROADCAST_ADDR, 0xf5, payload);
-        feb_sc->FEB_register_write(FEBSlowcontrolInterface::ADDRS::BROADCAST_ADDR, 0xf4, command);
+        feb_sc->FEB_broadcast(0xf5, payload);
+        feb_sc->FEB_broadcast(0xf4, command);
         // reset payload and command TODO: Is this needed?
         payload=0xbcbcbcbc;
         command=0;
-        feb_sc->FEB_register_write(FEBSlowcontrolInterface::ADDRS::BROADCAST_ADDR, 0xf5, payload);
-        feb_sc->FEB_register_write(FEBSlowcontrolInterface::ADDRS::BROADCAST_ADDR, 0xf4, command);
+        feb_sc->FEB_broadcast(0xf5, payload);
+        feb_sc->FEB_broadcast(0xf4, command);
         //reset odb flag
           command=command&(1<<8);
           o = command;
@@ -1117,10 +1138,10 @@ void sc_settings_changed(odb o)
     if (name == "Sorter Zero Suppression Mupix") {
         if (o) {
             cm_msg(MINFO, "sc_settings_changed", "Sorter Zero Suppression Mupix on");
-            feb_sc->FEB_register_write(FEBSlowcontrolInterface::ADDRS::BROADCAST_ADDR, MP_SORTER_ZERO_SUPPRESSION_REGISTER_W, 0x1);
+            feb_sc->FEB_broadcast(MP_SORTER_ZERO_SUPPRESSION_REGISTER_W, 0x1);
         } else {
             cm_msg(MINFO, "sc_settings_changed", "Sorter Zero Suppression Mupix off");
-            feb_sc->FEB_register_write(FEBSlowcontrolInterface::ADDRS::BROADCAST_ADDR, MP_SORTER_ZERO_SUPPRESSION_REGISTER_W, 0x0);
+            feb_sc->FEB_broadcast(MP_SORTER_ZERO_SUPPRESSION_REGISTER_W, 0x0);
         }
     }
     if (name == "Load Firmware" && o) {
@@ -1128,7 +1149,12 @@ void sc_settings_changed(odb o)
         string fname = odb("/Equipment/Switching/Settings/Firmware File");
         uint32_t id = odb("/Equipment/Switching/Settings/Firmware FEB ID");
         bool emergency = odb("/Equipment/Switching/Settings/Firmware Is Emergency Image");
-        mufeb->LoadFirmware(fname,id, emergency);
+
+        auto feb = feblist->getFEBatPort(id);
+        if(feb)
+            mufeb->LoadFirmware(fname,feb.value(), emergency);
+        else
+            cm_msg(MERROR, "sc_settings_changed - Single Write", "FEB does not exist");
         o = false;
     }
 
@@ -1154,11 +1180,11 @@ uint64_t get_link_active_from_odb(odb o){
 
 void set_feb_enable(uint64_t enablebits){
    //mup->write_register(FEB_ENABLE_REGISTER_HIGH_W, enablebits >> 32); TODO make 64 bits
-   mup->write_register(FEB_ENABLE_REGISTER_LOW_W,  enablebits & 0xFFFFFFFF);
+   mup->write_register(FEB_ENABLE_REGISTER_W,  enablebits & 0xFFFFFFFF);
 }
 
 uint64_t get_runstart_ack(){
-   uint64_t reg = mup->read_register_ro(RUN_NR_ACK_REGISTER_LOW_R);
+   uint64_t reg = mup->read_register_ro(RUN_NR_ACK_REGISTER_R);
 //   reg |= mup->read_register_ro(RUN_NR_ACK_REGISTER_HIGH_R) << 32; TODO make 64 bits
    return reg;
 }
