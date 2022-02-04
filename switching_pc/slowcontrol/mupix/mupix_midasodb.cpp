@@ -61,13 +61,13 @@ int setup_db(const char* prefix, MupixFEB* FEB_interface, bool init_FEB, bool wr
 
     //init all values on FEB
     if(init_FEB){
-        BOOL bval;
+        //BOOL bval;
 
-        bval = settings_daq["dummy_config"];
+        //bval = settings_daq["dummy_config"];
         // TODO: do something here
         //FEB_interface->setDummyConfig(SciFiFEB::FPGA_broadcast_ID,bval); 
         
-        bval = settings_daq["dummy_data"];
+        //bval = settings_daq["dummy_data"];
         // TODO: do something here
         //FEB_interface->setDummyData_Enable(SciFiFEB::FPGA_broadcast_ID,bval);
         
@@ -169,11 +169,12 @@ int MapForEachASIC(HNDLE& db_rootentry, const char* prefix, std::function<int(Mu
 	INT status = DB_SUCCESS;
 	char set_str[255];
 
-    unsigned int nrow = 200;
-    unsigned int ncol = 128; //TODO: somewhere global?
+    //unsigned int nrow = 200;
+    //unsigned int ncol = 128; //TODO: somewhere global?
 
+    // TODO: Change to odbxx
     //Retrieve number of ASICs
-	INT nasics;
+	uint32_t nasics;
 	int size = sizeof(nasics);
     sprintf(set_str, "%s/Settings/ASICs/Global/Num asics", prefix);
     status=db_get_value(db_rootentry, 0, set_str, &nasics, &size, TID_INT, 0);
