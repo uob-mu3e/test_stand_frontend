@@ -10,6 +10,7 @@ constexpr bool has_scifi = true;
 constexpr bool has_tiles = true;
 constexpr bool has_pixels = true;
 
+const char *frontend_name = "SW Integartion";
 const string fe_name = "SW Integration";
 const string eq_name = "SwitchingI";
 const string link_eq_name = "LinksI";

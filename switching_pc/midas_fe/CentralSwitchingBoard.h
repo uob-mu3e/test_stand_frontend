@@ -10,6 +10,7 @@ constexpr bool has_scifi = false;
 constexpr bool has_tiles = false;
 constexpr bool has_pixels = true;
 
+const char *frontend_name = "SW Central";
 const string fe_name = "SW Central";
 const string eq_name = "SwitchingC";
 const string link_eq_name = "LinksC";
