@@ -106,8 +106,6 @@ protected:
       uint32_t reg_setRange(uint32_t reg_in, uint8_t length, uint8_t offset, uint32_t value);
 
 
-
-
 };//class MuFEB
 
 

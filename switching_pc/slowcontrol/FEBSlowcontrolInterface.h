@@ -34,14 +34,6 @@ public:
     virtual int FEB_read(const mappedFEB & FEB, const uint32_t startaddr, vector<uint32_t> & data, const bool nonincrementing = false);
     virtual int FEB_read(const mappedFEB & FEB, const uint32_t startaddr, uint32_t & data);
 
-    virtual int FEB_register_write(const mappedFEB & FEB, const uint32_t startaddr, const vector<uint32_t> & data, const bool nonincrementing = false, const bool broadcast = false);
-    virtual int FEB_register_write(const mappedFEB & FEB, const uint32_t startaddr, const uint32_t data);
-    virtual int FEB_register_broadcast(const uint32_t startaddr, const vector<uint32_t> & data, const bool nonincrementing = false);
-    virtual int FEB_register_broadcast(const uint32_t startaddr, const uint32_t data);
-    // expects data vector with read-length size
-    virtual int FEB_register_read(const mappedFEB & FEB, const uint32_t startaddr, vector<uint32_t> & data, const bool nonincrementing = false);
-    virtual int FEB_register_read(const mappedFEB & FEB, const uint32_t startaddr, uint32_t & data);
-
     virtual void FEBsc_resetMain();
     virtual void FEBsc_resetSecondary();
     virtual int FEBsc_NiosRPC(const mappedFEB & FEB, uint16_t command, vector<vector<uint32_t> > payload_chunks);

@@ -316,14 +316,14 @@ int FEBSlowcontrolInterface::FEBsc_NiosRPC(const mappedFEB & FEB, uint16_t comma
         return ERRCODES::WRONG_SIZE;
 
     // Write the position of the payload in the offset register
-    status=FEB_register_write(FEB, CMD_OFFSET_REGISTER_RW, vector<uint32_t>(1,OFFSETS::FEBsc_RPC_DATAOFFSET));
+    status=FEB_write(FEB, CMD_OFFSET_REGISTER_RW, vector<uint32_t>(1,OFFSETS::FEBsc_RPC_DATAOFFSET));
     if(status < 0)
         return status;
 
     // Write the command in the upper 16 bits of the length register and
     // the size of the payload in the lower 16 bits
     // This triggers the callback function on the frontend board
-    status=FEB_register_write(FEB, CMD_LEN_REGISTER_RW,
+    status=FEB_write(FEB, CMD_LEN_REGISTER_RW,
                      vector<uint32_t>(1,(((uint32_t)command) << 16) | index));
     
     if(status < 0)
@@ -335,7 +335,7 @@ int FEBSlowcontrolInterface::FEBsc_NiosRPC(const mappedFEB & FEB, uint16_t comma
     while(1){
         if(++timeout_cnt >= 500) return ERRCODES::NIOS_RPC_TIMEOUT;
         std::this_thread::sleep_for(std::chrono::milliseconds(2));
-        status=FEB_register_read(FEB, CMD_LEN_REGISTER_RW, readback);
+        status=FEB_read(FEB, CMD_LEN_REGISTER_RW, readback);
         if(status < 0)
             return status;
 

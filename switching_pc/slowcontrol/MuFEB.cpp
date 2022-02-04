@@ -48,7 +48,7 @@ int MuFEB::WriteFEBID(const mappedFEB & FEB){
 
     char reportStr[255];
        
-    int status = feb_sc.FEB_register_write(FEB, FPGA_ID_REGISTER_RW, val);
+    int status = feb_sc.FEB_write(FEB, FPGA_ID_REGISTER_RW, val);
     
     if(status == FEBSlowcontrolInterface::ERRCODES::OK){
         sprintf(reportStr,"Successfully set FEBID of %s: Link%u, SB%u.%u to (%4.4x)-%4.4x",
@@ -77,7 +77,7 @@ int MuFEB::WriteFEBID(const mappedFEB & FEB){
 int MuFEB::WriteSorterDelay(const mappedFEB & FEB, uint32_t delay)
 {
     std::vector<uint32_t> data(1,delay);
-    return feb_sc.FEB_register_write(FEB, MP_SORTER_DELAY_REGISTER_W, data);
+    return feb_sc.FEB_write(FEB, MP_SORTER_DELAY_REGISTER_W, data);
 }
 
 void MuFEB::ReadFirmwareVersionsToODB()
@@ -93,16 +93,16 @@ void MuFEB::ReadFirmwareVersionsToODB()
         if(!FEB.IsScEnabled()) continue; //skip disabled fibers
         if(FEB.SB_Number()!=SB_number) continue; //skip commands not for this SB
         if(!FEB.GetLinkStatus().LinkIsOK()) continue; // no point in trying -- TODO: Where to warn?
-         if(feb_sc.FEB_register_read(FEB, GIT_HASH_REGISTER_R, arria) != FEBSlowcontrolInterface::ERRCODES::OK)
+         if(feb_sc.FEB_read(FEB, GIT_HASH_REGISTER_R, arria) != FEBSlowcontrolInterface::ERRCODES::OK)
             cm_msg(MINFO,"MuFEB::ReadFirmwareVersionsToODB", "Failed to read Arria firmware version");
          else
             arriaversions[FEB.GetLinkID()] = arria[0];
-         if(feb_sc.FEB_register_read(FEB, MAX10_VERSION_REGISTER_R, max) != FEBSlowcontrolInterface::ERRCODES::OK)
+         if(feb_sc.FEB_read(FEB, MAX10_VERSION_REGISTER_R, max) != FEBSlowcontrolInterface::ERRCODES::OK)
             cm_msg(MINFO,"MuFEB::ReadFirmwareVersionsToODB", "Failed to read Max firmware version");
          else
             maxversions[FEB.GetLinkID()] = max[0];
 
-         if(feb_sc.FEB_register_read(FEB, MAX10_STATUS_REGISTER_R, max) != FEBSlowcontrolInterface::ERRCODES::OK)
+         if(feb_sc.FEB_read(FEB, MAX10_STATUS_REGISTER_R, max) != FEBSlowcontrolInterface::ERRCODES::OK)
             cm_msg(MINFO,"MuFEB::ReadFirmwareVersionsToODB", "Failed to read Max status register");
          else{
              // TODO: Handle this properly
@@ -471,7 +471,6 @@ float MuFEB::Max10ExternalTemeperatureConversion(uint16_t reg)
     // See TI TMP235 data sheet, page 8: Voffs = 500 mV, Tc = 10 mV/C, Tinfl = 0 C
     return (vout - 0.5)/0.01 + 0;
 }
-
 
 // The following is from the MAX10 ADC UG
 
