@@ -201,13 +201,22 @@ INT read_febcrate_sc_event(char *pevent, INT off){
                 *pdata++ = 0;
         } else {
             uint16_t node = crates["CrateControllerNode"][i];
-            int fd = mscb_init(cstr, sizeof(cstr), nullptr, 0);
+            int fd = mscb_init(cstr, 0, nullptr, 0);
             if (fd < 0) {
-               cm_msg(MINFO, "read_febcrate_sc_event", "Cannot connect to node: %d", node);
+               cm_msg(MINFO, "read_febcrate_sc_event", "Cannot connect to submaster: %s", cstr);
                for(uint32_t j= 0; j < per_crate_SCFC_size-1; j++)// -1 as index is already written
                    *pdata++ = 0;
+                mscb_exit(fd);
                continue;
             }
+            int status = mscb_ping(fd, node, 0, 0);
+            if (status != MSCB_SUCCESS) {
+                cm_msg(MINFO, "read_febcrate_sc_event", "Cannot connect to node: %d", node);
+                for(uint32_t j= 0; j < per_crate_SCFC_size-1; j++)// -1 as index is already written
+                   *pdata++ = 0;
+                mscb_exit(fd);
+                continue;
+             }
             float data;
             int size = sizeof(float);
             for(int k=0; k < 4; k++){
@@ -216,6 +225,7 @@ INT read_febcrate_sc_event(char *pevent, INT off){
             }
             for(uint32_t j= 0; j < MAX_FEBS_PER_CRATE; j++)
                 *pdata++ = 0;
+            mscb_exit(fd);
         }
     }
     bk_close(pevent,pdata);
@@ -227,7 +237,7 @@ INT read_febcrate_sc_event(char *pevent, INT off){
 
 void febpower_changed(odb o)
 {
-    cm_msg(MINFO, "febpower_changed()" , "Febpower!");
+    //cm_msg(MINFO, "febpower_changed()" , "Febpower!");
     std::vector<uint8_t> power_odb = o;
     odb crates("/Equipment/FEBCrates/Settings");
     for(size_t i =0; i < febpower.size(); i++){
@@ -238,11 +248,20 @@ void febpower_changed(odb o)
             char cstr[256]; //not good...
             strcpy(cstr, mscb.c_str());
             uint16_t node = crates["CrateControllerNode"][crate];
-            int fd = mscb_init(cstr, sizeof(cstr), nullptr, 0);
+            int fd = mscb_init(cstr, 0, nullptr, 0);
             if (fd < 0) {
-               cm_msg(MINFO, "read_febcrate_sc_event", "Cannot connect to node: %d", node);
+               cm_msg(MINFO, "febpower_changed", "Cannot connect to submaster: %s", mscb.c_str());
+               mscb_exit(fd);
                return;
             }
+
+            int status = mscb_ping(fd, node, 0, 0);
+            if (status != MSCB_SUCCESS) {
+                cm_msg(MINFO, "febpower_changed", "Cannot connect to node: %d", node);
+                mscb_exit(fd);
+                return;
+             }
+
             uint8_t power = power_odb[i];
             if(power){
                 cm_msg(MINFO, "febpower_changed", "Switching on FEB %d in crate %d", slot, crate);
@@ -253,6 +272,7 @@ void febpower_changed(odb o)
 
             mscb_write(fd, node, slot+CC_POWER_OFFSET,&power,sizeof(power));
             febpower[i] = power;
+            mscb_exit(fd);
         }
     }
 }

@@ -78,8 +78,8 @@ function Crate(x,y,dx,dy, index){
     this.index = index;
     this.active = 0;
 
-    this.mscb_node = "mscb338";
-    this.mscb_device = "15";
+    this.mscb_node = "mscbXXX";
+    this.mscb_device = "XX";
     this.U24 = 0.0;
     this.U33 = 0.0;
     this.U5  = 0.0;
@@ -170,7 +170,7 @@ window.addEventListener('click', function(event) {
                         var newval = 0;
                         if(oldval === 0)
                             newval = 1 ;
-                        mjsonrpc_db_set_value("/Equipment/FEBCrates/Variables/FEBPower["+ind+"]", newval);
+                        mjsonrpc_db_set_value("/Equipment/FEBCrates/Settings/FEBPower["+ind+"]", newval);
                         crates[i].FEBs[j].powered = newval;
                         found = true;
                         break;
@@ -212,10 +212,6 @@ function update_sc(valuex){
             crates[i].U5  = scfc[3+scfcpercrate*i];
             crates[i].temp= scfc[4+scfcpercrate*i];
 
-            for(var j=0; j < 16; j++){
-                if(crates[i].FEBs[j].index >= 0)
-                    crates[i].FEBs[j].powered = value["febpower"][crates[i].FEBs[j].index];
-            }
         } else {
             crates[i].active = 0;
         }
@@ -244,6 +240,12 @@ function update_slots(valuex){
     for(var i=0; i < 8; i++){
         crates[i].mscb_node = value["cratecontrollermscb"][i];
         crates[i].mscb_device = parseInt(value["cratecontrollernode"][i],16);
+
+        for(var j=0; j < 16; j++){
+            if(crates[i].FEBs[j].index >= 0)
+                crates[i].FEBs[j].powered = value["febpower"][crates[i].FEBs[j].index];
+        }
+
     }
 }
 
