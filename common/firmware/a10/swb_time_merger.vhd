@@ -297,21 +297,23 @@ begin
         end process;
     END GENERATE;
 
-    e_swb_time_fifo : entity work.ip_scfifo
+    e_swb_time_fifo : entity work.ip_scfifo_v2
     generic map (
-        ADDR_WIDTH => 8,
-        DATA_WIDTH => W,
-        DEVICE => "Arria 10"--,
+        g_ADDR_WIDTH => 8,
+        g_DATA_WIDTH => W,
+        g_RREG_N => 0--,
     )
     port map (
-        q               => fifo_q,
-        empty           => o_rempty,
-        rdreq           => i_ren,
-        data            => wdata,
-        full            => wfull,
-        wrreq           => wen,--not rempty and not wfull,
-        sclr            => not i_reset_n,
-        clock           => i_clk--,
+        i_wdata         => wdata,
+        i_we            => wen,--not rempty and not wfull,
+        o_wfull         => wfull,
+
+        o_rdata         => fifo_q,
+        o_rempty        => o_rempty,
+        i_rack          => i_ren,
+
+        i_clk           => i_clk,
+        i_reset_n       => i_reset_n--,
     );
     
     -- data path
