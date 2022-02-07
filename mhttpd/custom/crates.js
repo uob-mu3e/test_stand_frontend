@@ -31,16 +31,29 @@ function FEB(x,y,dx,dy, slot){
     this.dx= dx;
     this.dy= dy;
 
+    // power button
+    this.px = x+5;
+    this.py = y+50;
+    this.pdx= dx-10;
+    this.pdy= dy-55;
+
     this.slot = slot;
     this.index = -1;
     this.powered = 0;
 
-    this.draw = function(){
+    this.draw = function(selected){
         if(this.powered > 0)
             cc.fillStyle = "rgb(80,80,180)";
         else
             cc.fillStyle = "rgb(200,200,200)";
+
+        
+
         cc.fillRect(this.x, this.y,this.dx, this.dy);
+        if(selected){
+            cc.strokeStyle = "rgb(0,0,0)";
+            cc.strokeRect(this.x, this.y,this.dx, this.dy);
+        }
 
         cc.fillStyle = "Black";
         cc.font = "12px Arial, sans-serif";
@@ -61,7 +74,7 @@ function FEB(x,y,dx,dy, slot){
             text = "OFF";
             cc.fillStyle = "rgb(180,180,180)";
         }
-        cc.fillRect(this.x+5, this.y+50,this.dx-10, this.dy-55);
+        cc.fillRect(this.px, this.py,this.pdx, this.pdy);
         cc.fillStyle = "Black";
         cc.font = "15px Arial";
         cc.fillText(text, this.x+15, this.y+70);
@@ -77,6 +90,7 @@ function Crate(x,y,dx,dy, index){
 
     this.index = index;
     this.active = 0;
+    this.selected = -1;
 
     this.mscb_node = "mscbXXX";
     this.mscb_device = "XX";
@@ -112,7 +126,7 @@ function Crate(x,y,dx,dy, index){
         write_temperature("T", this.temp, this.x+120, this.y+60);
 
         for(var j=0; j < 16; j++){
-            this.FEBs[j].draw();
+            this.FEBs[j].draw(j==this.selected);
         }
 
     }
@@ -162,10 +176,10 @@ window.addEventListener('click', function(event) {
         for(var j=0; j < 16; j++){
             var ind = crates[i].FEBs[j].index;
             if(!found && ind >= 0){
-                if(mouse.x >= crates[i].FEBs[j].x &&
-                   mouse.x <= crates[i].FEBs[j].x +crates[i].FEBs[j].dx &&
-                   mouse.y >= crates[i].FEBs[j].y &&
-                   mouse.y <= crates[i].FEBs[j].y + crates[i].FEBs[j].dy){
+                if(mouse.x >= crates[i].FEBs[j].px &&
+                   mouse.x <= crates[i].FEBs[j].px +crates[i].FEBs[j].pdx &&
+                   mouse.y >= crates[i].FEBs[j].py &&
+                   mouse.y <= crates[i].FEBs[j].py + crates[i].FEBs[j].pdy){
                         var oldval =     crates[i].FEBs[j].powered;
                         var newval = 0;
                         if(oldval === 0)
@@ -175,6 +189,18 @@ window.addEventListener('click', function(event) {
                         found = true;
                         break;
                 }
+                if(mouse.x >= crates[i].FEBs[j].x &&
+                    mouse.x <= crates[i].FEBs[j].x +crates[i].FEBs[j].dx &&
+                    mouse.y >= crates[i].FEBs[j].y &&
+                    mouse.y <= crates[i].FEBs[j].y + crates[i].FEBs[j].dy){
+                        if(crates[i].selected === j)
+                            crates[i].selected = -1; 
+                        else
+                            crates[i].selected = j;
+                        found = true;
+                        break;
+                 }
+
             }
         }
         if(found) break;
