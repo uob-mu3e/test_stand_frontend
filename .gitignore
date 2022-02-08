@@ -1,6 +1,11 @@
+#
 
-.cache/
-generated/
+# git
+.git
+*.orig
+
+.cache
+generated
 
 # cmake
 build/

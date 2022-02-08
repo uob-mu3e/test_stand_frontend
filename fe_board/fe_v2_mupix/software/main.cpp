@@ -2,9 +2,11 @@
 #include "include/base.h"
 #include "include/xcvr.h"
 
-#include "../../fe/software/si5345_fe_v2_mupix.h"
-si5345_t si5345_1 { SPI_SI_BASE, 0 };
-si5345_t si5345_2 { SPI_SI_BASE, 1 };
+#include "../../fe/software/si5345.h"
+#include "../../fe/software/si5345_regs1_mupix.h"
+#include "../../fe/software/si5345_regs2.h"
+si5345_t si5345_1 { SPI_SI_BASE, 0, si5345_regs1_mupix, sizeof(si5345_regs1_mupix) / sizeof(si5345_regs1_mupix[0]) };
+si5345_t si5345_2 { SPI_SI_BASE, 1, si5345_regs2, sizeof(si5345_regs2) / sizeof(si5345_regs2[0]) };
 //si5345_t si5345 { SPI_SI_BASE, 0 };
 
 #include "../../fe/software/sc.h"
@@ -34,11 +36,12 @@ int main() {
     //mscb.init();
     sc.init();
     volatile sc_ram_t* ram = (sc_ram_t*) AVM_SC_BASE;
+    ram->data[0xFC03] = 0;
 
     while (1) {
         printf("\n");
         printf("[fe_mupix] -------- menu --------\n");
-	printf("ID: 0x%08x\n", ram->data[0xFFFB]);
+	printf("ID: 0x%08x\n", ram->data[0xFC03]);
 
         printf("\n");
         printf("  [1] => Firefly channels\n");
@@ -49,6 +52,7 @@ int main() {
         printf("  [6] => mscb\n");
         printf("  [7] => reset system\n");
         printf("  [8] => datapath\n");
+        printf("  [f] => toggleFEBID\n");
 
         printf("Select entry ...\n");
         char cmd = wait_key();
@@ -77,6 +81,16 @@ int main() {
         case '8':
             mupix_datapath.menu();
             break;
+        case '9':
+            printf("test: 0x%08x\n", ram->data[0xFC2C]);
+            break;
+        case 'a':
+            printf("testwrite:\n");
+            ram->data[0xFC2C]=0xAAAAAAAA;
+            break;
+	case 'f':
+    	    ram->data[0xFC03] ^= 1UL << 0;
+	    break;
         default:
             printf("invalid command: '%c'\n", cmd);
         }

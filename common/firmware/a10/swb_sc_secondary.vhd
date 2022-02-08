@@ -36,7 +36,6 @@ architecture arch of swb_sc_secondary is
 	signal mem_addr_o : std_logic_vector(15 downto 0);
 	signal mem_wren_o : std_logic;
 	signal current_link : integer range 0 to NLINKS - 1;
-	
 
 	type state_type is (init, waiting, starting);
 	signal state : state_type;
@@ -69,7 +68,7 @@ begin
 		mem_wren_o <= '0';
 
 		case state is
-		
+
 				when init =>
 					stateout(3 downto 0) <= x"1";
 					mem_addr_o 	<= mem_addr_o + '1';
@@ -78,7 +77,7 @@ begin
 					if ( mem_addr_o = x"FFFE" ) then
 						mem_addr_finished_out <= (others => '1');
 						state <= waiting;
-					end if;		
+					end if;
 
 				when waiting =>
 					stateout(3 downto 0) <= x"2";
@@ -118,7 +117,7 @@ begin
 					mem_wren_o <= '0';
 					state <= waiting;
 		end case;
-		
+
 	end if;
 	end process;
 

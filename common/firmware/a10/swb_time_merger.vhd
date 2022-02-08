@@ -297,23 +297,25 @@ begin
         end process;
     END GENERATE;
 
-    e_swb_time_fifo : entity work.ip_scfifo
+    e_swb_time_fifo : entity work.ip_scfifo_v2
     generic map (
-        ADDR_WIDTH => 8,
-        DATA_WIDTH => W,
-        DEVICE => "Arria 10"--,
+        g_ADDR_WIDTH => 8,
+        g_DATA_WIDTH => W,
+        g_RREG_N => 1--, -- TNS=-1700
     )
     port map (
-        q               => fifo_q,
-        empty           => o_rempty,
-        rdreq           => i_ren,
-        data            => wdata,
-        full            => wfull,
-        wrreq           => wen,--not rempty and not wfull,
-        sclr            => not i_reset_n,
-        clock           => i_clk--,
+        i_wdata         => wdata,
+        i_we            => wen,--not rempty and not wfull,
+        o_wfull         => wfull,
+
+        o_rdata         => fifo_q,
+        o_rempty        => o_rempty,
+        i_rack          => i_ren,
+
+        i_clk           => i_clk,
+        i_reset_n       => i_reset_n--,
     );
-    
+
     -- data path
     o_header    <= '1' when fifo_q(37 downto 32) = pre_marker else '0';
     o_trailer   <= '1' when fifo_q(37 downto 32) = tr_marker else '0';
@@ -323,7 +325,8 @@ begin
     o_header_debug  <= '1' when rdata_debug_s(37 downto 32) = pre_marker else '0';
     o_trailer_debug <= '1' when rdata_debug_s(37 downto 32) = tr_marker else '0';
     link_number     <= rdata_debug_s(37 downto 32);
-    e_lookup : entity work.chip_lookup_int_2021
+    e_lookup : entity work.chip_lookup
+	generic map ( g_LOOPUP_NAME => "edmRun2021" )
     port map ( i_fpgaID => rdata_debug_s(35 downto 32), i_chipID => rdata_debug_s(25 downto 22), o_chipID => chipID );
     o_q_debug <= rdata_debug_s(31 downto 0) when  rdata_debug_s(37 downto 32) = pre_marker or 
                                                   rdata_debug_s(37 downto 32) = tr_marker  or 

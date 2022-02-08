@@ -119,7 +119,7 @@ architecture arch of top is
 
 
 
-    -- 250 MHz pcie clock 
+    -- 250 MHz pcie clock
     signal reset_pcie0_n : std_logic;
 
     -- pcie read / write registers
@@ -129,7 +129,7 @@ architecture arch of top is
     signal pcie0_writeregs_B  : work.util.slv32_array_t(63 downto 0);
     signal pcie0_readregs_A   : work.util.slv32_array_t(63 downto 0);
     signal pcie0_readregs_B   : work.util.slv32_array_t(63 downto 0);
-    
+
     signal pcie_fastclk_out     : std_logic;
 
     -- pcie read / write memory
@@ -149,6 +149,9 @@ architecture arch of top is
     signal farm_rx_data, farm_tx_data : work.util.slv32_array_t(23 downto 0) := (others => X"000000BC");
     signal farm_rx_datak, farm_tx_datak : work.util.slv4_array_t(23 downto 0) := (others => "0001");
 
+    -- pll locked signal top
+    signal locked_100to125 : std_logic;
+
 begin
 
     A10_LED <= not led;
@@ -167,6 +170,7 @@ begin
     --! (can be connected to SMA input as global clock)
     e_pll_100to125 : component work.cmp.ip_pll_100to125
     port map (
+        locked => locked_100to125,
         outclk_0 => pll_125,
         refclk => clk_100,
         rst => not reset_100_n--,
@@ -205,8 +209,8 @@ begin
 --             5,  6,  4,  7,  3,  8,  0,  9,  2, 10,  1, 11, -- CON0
 --            17, 18, 16, 20, 15, 19, 14, 21, 13, 22, 12, 23  -- CON1
             -- 1 is 12
-                11,  1, 10,  2,  9,  0,  8,  3,  7,  4,  6,  5, -- CON0 
-                23, 12, 22, 13, 21, 14, 19, 15, 20, 16, 18, 17  -- CON1
+            11,  1, 10,  2,  9,  0,  8,  3,  7,  4,  6,  5, -- CON0
+            23, 12, 22, 13, 21, 14, 19, 15, 20, 16, 18, 17  -- CON1
             -- 1 is 1
         ),
         g_XCVR0_TX_P => (
@@ -326,8 +330,10 @@ begin
         o_pcie0_resets_n_B              => pcie0_resets_n_B,
 
         -- resets clk
+        top_pll_locked                  => locked_100to125,
+
         o_reset_pcie0_n                 => reset_pcie0_n,
-        
+
         o_reset_156_n                   => reset_156_n,
         o_clk_156                       => clk_156,
         o_clk_156_hz                    => led(2),
@@ -364,7 +370,7 @@ begin
 
         i_writeregs_250 => pcie0_writeregs_A,
         i_writeregs_156 => pcie0_writeregs_B,
-    
+
         o_readregs_250  => pcie0_readregs_A,
         o_readregs_156  => pcie0_readregs_B,
 

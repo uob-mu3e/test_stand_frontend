@@ -14,14 +14,14 @@ generic (
     g_ALTERA_RAM_STYLE : string := "no_rw_check"--;
 );
 port (
-    i_raddr     : in    std_logic_vector(g_ADDR_WIDTH-1 downto 0);
-    o_rdata     : out   std_logic_vector(g_DATA_WIDTH-1 downto 0);
-    i_rclk      : in    std_logic;
-
     i_waddr     : in    std_logic_vector(g_ADDR_WIDTH-1 downto 0);
     i_wdata     : in    std_logic_vector(g_DATA_WIDTH-1 downto 0);
     i_we        : in    std_logic;
-    i_wclk      : in    std_logic--;
+    i_wclk      : in    std_logic;
+
+    i_raddr     : in    std_logic_vector(g_ADDR_WIDTH-1 downto 0);
+    o_rdata     : out   std_logic_vector(g_DATA_WIDTH-1 downto 0);
+    i_rclk      : in    std_logic--;
 );
 end entity;
 

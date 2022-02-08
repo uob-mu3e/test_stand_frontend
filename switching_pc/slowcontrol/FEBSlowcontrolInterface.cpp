@@ -46,7 +46,7 @@ FEBSlowcontrolInterface::~FEBSlowcontrolInterface()
 int FEBSlowcontrolInterface::FEB_write(const uint32_t FPGA_ID, const uint32_t startaddr, const vector<uint32_t> & data, const bool nonincrementing)
 {
 
-     if(!(startaddr < pow(2,FEB_SC_RAM_SIZE) || (startaddr < 65535 && startaddr > 65535-FEB_SC_ADDR_RANGE_HI))){
+     if(startaddr >= pow(2,16)){
         cout << "Address out of range: " << std::hex << startaddr << endl;
         return ERRCODES::ADDR_INVALID;
      }
@@ -54,11 +54,6 @@ int FEBSlowcontrolInterface::FEB_write(const uint32_t FPGA_ID, const uint32_t st
     if(FPGA_ID > 15 and FPGA_ID != ADDRS::BROADCAST_ADDR){
         cout << "FPGA ID out of range: " << FPGA_ID << endl;
         return ERRCODES::ADDR_INVALID;
-     }
-
-    if(data.size() > FEB_SC_DATA_SIZE_RANGE_HI){
-        cout << "Length too big: " << data.size() << endl;
-        return ERRCODES::SIZE_INVALID;
      }
 
     if(!data.size()){
@@ -155,7 +150,7 @@ int FEBSlowcontrolInterface::FEB_write(const uint32_t FPGA_ID, const uint32_t st
 int FEBSlowcontrolInterface::FEB_read(const uint32_t FPGA_ID, const uint32_t startaddr, vector<uint32_t> &data, const bool nonincrementing)
 {
 
-     if(!(startaddr < pow(2,FEB_SC_RAM_SIZE) || (startaddr < 65535 && startaddr > 65535-FEB_SC_ADDR_RANGE_HI))){
+     if(startaddr >= pow(2,16)){
         cout << "Address out of range: " << std::hex << startaddr << endl;
         return ERRCODES::ADDR_INVALID;
      }
@@ -163,11 +158,6 @@ int FEBSlowcontrolInterface::FEB_read(const uint32_t FPGA_ID, const uint32_t sta
     if(FPGA_ID > 15){
         cout << "FPGA ID out of range: " << FPGA_ID << endl;
         return ERRCODES::ADDR_INVALID;
-     }
-
-    if(data.size() > FEB_SC_DATA_SIZE_RANGE_HI){
-        cout << "Length too big: " << data.size() << endl;
-        return ERRCODES::SIZE_INVALID;
      }
 
     if(!data.size()){
@@ -262,22 +252,22 @@ int FEBSlowcontrolInterface::FEB_read(const uint32_t FPGA_ID, const uint32_t sta
 
 int FEBSlowcontrolInterface::FEB_register_write(const uint32_t FPGA_ID, const uint32_t startaddr, const vector<uint32_t> & data, const bool nonincrementing)
 {
-    return FEB_write(FPGA_ID,startaddr | 0xFF00, data, nonincrementing);
+    return FEB_write(FPGA_ID,startaddr, data, nonincrementing);
 }
 
 int FEBSlowcontrolInterface::FEB_register_write(const uint32_t FPGA_ID, const uint32_t startaddr, const uint32_t data)
 {
-    return FEB_write(FPGA_ID,startaddr | 0xFF00, data);
+    return FEB_write(FPGA_ID,startaddr, data);
 }
 
 int FEBSlowcontrolInterface::FEB_register_read(const uint32_t FPGA_ID, const uint32_t startaddr, vector<uint32_t> &data, const bool nonincrementing)
 {
-    return FEB_read(FPGA_ID, startaddr | 0xFF00, data, nonincrementing);
+    return FEB_read(FPGA_ID, startaddr, data, nonincrementing);
 }
 
 int FEBSlowcontrolInterface::FEB_register_read(const uint32_t FPGA_ID, const uint32_t startaddr, uint32_t &data)
 {
-    return FEB_read(FPGA_ID, startaddr | 0xFF00, data);
+    return FEB_read(FPGA_ID, startaddr, data);
 }
 
 void FEBSlowcontrolInterface::FEBsc_resetMain()

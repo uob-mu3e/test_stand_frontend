@@ -10,6 +10,9 @@ use ieee.std_logic_1164.all;
 use ieee.numeric_std.all;
 use ieee.std_logic_unsigned.all;
 
+use work.mudaq.all;
+use work.a10_pcie_registers.all;
+
 
 entity farm_midas_event_builder is
 generic(
@@ -123,7 +126,7 @@ architecture arch of farm_midas_event_builder is
         EVENT_IDLE, event_head, bank_data_pixel_header, bank_data_pixel_one,
         bank_data_pixel, bank_data_scifi_header, bank_data_scifi_one,
         bank_data_scifi, align_event_size, bank_set_length_pixel,
-        bank_set_length_scifi, write_tagging_fifo--,
+        bank_set_length_scifi, write_tagging_fifo, bank_set_length_scifi_only--,
     );
     signal event_tagging_state : event_tagging_state_type;
     signal w_ram_add_reg, w_ram_add, scifi_header_add, header_add : std_logic_vector(RAM_ADDR - 1 downto 0);
@@ -144,7 +147,7 @@ architecture arch of farm_midas_event_builder is
     signal r_ram_add : std_logic_vector(RAM_ADDR - 1 downto 0);
     signal header_pixel : std_logic_vector(N_PIXEL * 32 + 1 downto 0);
     signal header_scifi : std_logic_vector(N_SCIFI * 32 + 1 downto 0);
-    signal w_ram_data, w_ram_pixel_header, w_ram_scifi_data : std_logic_vector(383 downto 0);
+    signal w_ram_header, w_ram_data, w_ram_pixel_header, w_ram_scifi_data : std_logic_vector(383 downto 0);
     signal r_ram_data : std_logic_vector(383 downto 0);
     signal bank_size_pixel, bank_size_scifi : std_logic_vector(31 downto 0);
     signal i_scifi_reg, i_pixel_reg : std_logic_vector(255 downto 0);
@@ -200,8 +203,7 @@ begin
         ADDR_WIDTH_A    => RAM_ADDR,
         ADDR_WIDTH_B    => RAM_ADDR,
         DATA_WIDTH_A    => 384,
-        DATA_WIDTH_B    => 384,
-        DEVICE          => "Arria 10"--,
+        DATA_WIDTH_B    => 384--,
     )
     port map (
         address_a       => w_ram_add,
@@ -219,8 +221,7 @@ begin
     e_tagging_fifo_event : entity work.ip_scfifo
     generic map (
         ADDR_WIDTH      => RAM_ADDR,
-        DATA_WIDTH      => RAM_ADDR + 48,
-        DEVICE          => "Arria 10"--,
+        DATA_WIDTH      => RAM_ADDR + 48--,
     )
     port map (
         data            => w_fifo_data,
@@ -230,9 +231,6 @@ begin
         q               => r_fifo_data,
         full            => tag_fifo_full,
         empty           => tag_fifo_empty,
-        almost_empty    => open,
-        almost_full     => open,
-        usedw           => open,
         sclr            => not i_reset_n_250--,
     );
 
@@ -240,8 +238,7 @@ begin
     e_convert_hits : entity work.ip_scfifo
     generic map(
         ADDR_WIDTH => 6,
-        DATA_WIDTH => 384,
-        DEVICE       => "Arria 10"--,
+        DATA_WIDTH => 384--,
     )
     port map (
         sclr            => not i_reset_n_250,
@@ -251,10 +248,7 @@ begin
         wrreq           => wen_convert_fifo,
         q               => q_convert_fifo,
         empty           => empty_convert_fifo,
-        full            => open,
-        almost_empty    => open,
-        almost_full     => open,
-        usedw           => open--,
+        full            => open--,
     );
 
     pixel_header <= '1' when i_pixel(N_PIXEL * 32 + 1 downto N_PIXEL * 32) = "01" else '0';

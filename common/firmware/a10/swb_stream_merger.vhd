@@ -26,7 +26,7 @@ port (
     o_wsop      : out   std_logic;
     o_weop      : out   std_logic;
 
-    --! status counters 
+    --! status counters
     --! 0: e_stream_fifo full
     o_counters  : out work.util.slv32_array_t(0 downto 0);
 
@@ -80,22 +80,23 @@ begin
         i_clk       => i_clk--,
     );
 
-    e_stream_fifo : entity work.ip_scfifo
+    e_stream_fifo : entity work.ip_scfifo_v2
     generic map (
-        ADDR_WIDTH  => 8,
-        DATA_WIDTH  => 34,
-        RAM_OUT_REG => "ON",
-        DEVICE      => "Arria 10"--,
+        g_ADDR_WIDTH => 8,
+        g_DATA_WIDTH => 34,
+        g_RREG_N => 1--, -- TNS=-900
     )
     port map (
-        q               => q_stream,
-        empty           => o_rempty,
-        rdreq           => i_ren,
-        data            => wdata,
-        full            => wfull,
-        wrreq           => we,
-        sclr            => not i_reset_n,
-        clock           => i_clk--,
+        i_wdata         => wdata,
+        i_we            => we,
+        o_wfull         => wfull,
+
+        o_rdata         => q_stream,
+        o_rempty        => o_rempty,
+        i_rack          => i_ren,
+
+        i_clk           => i_clk,
+        i_reset_n       => i_reset_n--,
     );
 
     --! only output data not datak

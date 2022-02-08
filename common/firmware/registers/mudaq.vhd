@@ -134,6 +134,23 @@ package mudaq is
         out_of_DAQ
     );
 
+    -- reset link words
+    constant RESET_LINK_RUN_PREPARE : std_logic_vector(7 DOWNTO 0) := x"10";
+    constant RESET_LINK_SYNC : std_logic_vector(7 DOWNTO 0) := x"11";
+    constant RESET_LINK_START_RUN : std_logic_vector(7 DOWNTO 0) := x"12";
+    constant RESET_LINK_END_RUN : std_logic_vector(7 DOWNTO 0) := x"13";
+    constant RESET_LINK_ABORT_RUN : std_logic_vector(7 DOWNTO 0) := x"14";
+    constant RESET_LINK_START_LINK_TEST : std_logic_vector(7 DOWNTO 0) := x"20";
+    constant RESET_LINK_STOP_LINK_TEST : std_logic_vector(7 DOWNTO 0) := x"21";
+    constant RESET_LINK_START_SYNC_TEST : std_logic_vector(7 DOWNTO 0) := x"24";
+    constant RESET_LINK_STOP_SYNC_TEST : std_logic_vector(7 DOWNTO 0) := x"25";
+    constant RESET_LINK_TEST_SYNC : std_logic_vector(7 DOWNTO 0) := x"26";
+    constant RESET_LINK_RESET : std_logic_vector(7 DOWNTO 0) := x"30";
+    constant RESET_LINK_STOP_RESET : std_logic_vector(7 DOWNTO 0) := x"31";
+    constant RESET_LINK_ENABLE : std_logic_vector(7 DOWNTO 0) := x"32";
+    constant RESET_LINK_DISABLE : std_logic_vector(7 DOWNTO 0) := x"33";
+    constant RESET_LINK_ADDRESS : std_logic_vector(7 DOWNTO 0) := x"34";
+
 
     -- time constants
     constant TIME_125MHz_1s     : std_logic_vector(27 DOWNTO 0) := x"7735940";
@@ -209,4 +226,58 @@ package mudaq is
     constant COMMAND_PROG_SECURITY_REGISTERS    : std_logic_vector(7 downto 0) := X"42";
     constant COMMAND_READ_SECURITY_REGISTERS    : std_logic_vector(7 downto 0) := X"42";
 
+   function link_36_to_std (
+        i : in  integer--;
+    ) return std_logic_vector;
+
 end package;
+
+package body mudaq is
+
+    function link_36_to_std (
+        i : in  integer--;
+    ) return std_logic_vector is
+    begin
+        case i is
+        when  0 => return "000000";
+        when  1 => return "000001";
+        when  2 => return "000010";
+        when  3 => return "000011";
+        when  4 => return "000100";
+        when  5 => return "000101";
+        when  6 => return "000110";
+        when  7 => return "000111";
+        when  8 => return "001000";
+        when  9 => return "001001";
+        when 10 => return "001010";
+        when 11 => return "001011";
+        when 12 => return "001100";
+        when 13 => return "001101";
+        when 14 => return "001110";
+        when 15 => return "001111";
+        when 16 => return "010000";
+        when 17 => return "010001";
+        when 18 => return "010010";
+        when 19 => return "010011";
+        when 20 => return "010100";
+        when 21 => return "010101";
+        when 22 => return "010110";
+        when 23 => return "010111";
+        when 24 => return "011000";
+        when 25 => return "011001";
+        when 26 => return "011010";
+        when 27 => return "011011";
+        when 28 => return "011100";
+        when 29 => return "011101";
+        when 30 => return "011110";
+        when 31 => return "011111";
+        when 32 => return "100000";
+        when 33 => return "100001";
+        when 34 => return "100010";
+        when 35 => return "100011";
+        when others =>
+            return "111111";
+        end case;
+    end function;
+
+end package body;

@@ -19,13 +19,13 @@ generic (
     g_ADDR_WIDTH : positive := 8--;
 );
 port (
-    o_rdata     : out   std_logic_vector(g_DATA_WIDTH-1 downto 0);
-    i_rack      : in    std_logic;
-    o_rempty    : out   std_logic;
-
     i_wdata     : in    std_logic_vector(g_DATA_WIDTH-1 downto 0);
     i_we        : in    std_logic;
     o_wfull     : out   std_logic;
+
+    o_rdata     : out   std_logic_vector(g_DATA_WIDTH-1 downto 0);
+    i_rack      : in    std_logic;
+    o_rempty    : out   std_logic;
 
     i_reset_n   : in    std_logic;
     i_clk       : in    std_logic--;
@@ -52,9 +52,6 @@ architecture arch of fifo_sc is
     signal rdata_rdw : std_logic_vector(g_DATA_WIDTH-1 downto 0);
 
 begin
-
-    -- psl assert always ( i_rack = '0' or rempty = '0' ) @ i_clk ;
-    -- psl assert always ( i_we = '0' or wfull = '0' ) @ i_clk ;
 
     -- psl assert always ( we = '1' |=> rempty = '0' ) @ i_clk ;
 
@@ -111,6 +108,7 @@ begin
     );
 
     o_rdata <=
+        (others => '-') when ( rempty = '1' ) else
         rdata_rdw when ( rdw = '1' ) else
         rdata;
 

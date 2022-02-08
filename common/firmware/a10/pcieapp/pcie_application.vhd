@@ -18,9 +18,9 @@ use work.mudaq.all;
 
 entity pcie_application is
 generic (
-			DMAMEMWRITEADDRSIZE : integer := 14;
-			DMAMEMREADADDRSIZE  : integer := 12;
-			DMAMEMWRITEWIDTH	  : integer := 32
+    DMAMEMWRITEADDRSIZE : integer := 14;
+    DMAMEMREADADDRSIZE  : integer := 12;
+    DMAMEMWRITEWIDTH    : integer := 32--;
 );
 port (
     o_writeregs_B               : out   reg32array_pcie;
@@ -205,10 +205,9 @@ architecture RTL of pcie_application is
 		
 		signal testout_completer : 	std_logic_vector(127 downto 0);
 		signal testout_dma:				std_logic_vector(71 downto 0);
-		
-		
-		begin
-		
+
+begin
+
 		writeregs 	<= writeregs_s;
 		regwritten	<= regwritten_s;
 		readregs_s	<= readregs_int(63 downto 56) & readregs(55 downto 0);
@@ -236,13 +235,13 @@ architecture RTL of pcie_application is
 			refclk			=> refclk,
 
 			-- from IF
-			rx_st_data0 	=> rx_st_data0,
-			rx_st_eop0   	=> rx_st_eop0,
-			rx_st_sop0 		=> rx_st_sop0,
-			rx_st_ready0 	=> rx_st_ready_wreg,
-			rx_st_valid0 	=>	rx_st_valid0,
-			rx_bar 			=> rx_bar0(0),
-		
+        i_rx_st_data0   => rx_st_data0,
+        i_rx_st_eop0    => rx_st_eop0,
+        i_rx_st_sop0    => rx_st_sop0,
+        o_rx_st_ready0  => rx_st_ready_wreg,
+        i_rx_st_valid0  => rx_st_valid0,
+        i_rx_bar        => rx_bar0(0),
+
 			-- registers
 			writeregs 		=> writeregs_s,
 			regwritten		=> regwritten_s,
@@ -254,8 +253,8 @@ architecture RTL of pcie_application is
 			readen 			=> wreg_readen,
 			-- debugging
 			inaddr32_w		=> inaddr32_w
-		);
-		
+    );
+
 		-- map to test port
 		--process(refclk, local_rstn)
 		--begin
@@ -275,23 +274,20 @@ architecture RTL of pcie_application is
 		--	end if;
 		--end if;
 		--end process;
-		
-		
-		
 
     e_pcie_readable_registers : entity work.pcie_readable_registers
-		port map(
+    port map (
 			local_rstn		=> local_rstn,
 			refclk			=> refclk,
 	
 			-- from IF
-			rx_st_data0 	=> rx_st_data0,	
-			rx_st_eop0   	=> rx_st_eop0,
-			rx_st_sop0 		=> rx_st_sop0,
-			rx_st_ready0 	=> rx_st_ready_rreg,
-			rx_st_valid0 	=>	rx_st_valid0,
-			rx_bar 			=> rx_bar0(1),
-				
+        i_rx_st_data0   => rx_st_data0,
+        i_rx_st_eop0    => rx_st_eop0,
+        i_rx_st_sop0    => rx_st_sop0,
+        o_rx_st_ready0  => rx_st_ready_rreg,
+        i_rx_st_valid0  => rx_st_valid0,
+        i_rx_bar        => rx_bar0(1),
+
 			-- to response engine
 			readaddr 		=> rreg_readaddr,
 			readlength 		=> rreg_readlength,
@@ -299,22 +295,21 @@ architecture RTL of pcie_application is
 			readen 			=> rreg_readen,
 			-- debugging
 			inaddr32_r		=> inaddr32_r
-		);
-
+    );
 
     e_pcie_writeable_memory : entity work.pcie_writeable_memory
-		port map(
+    port map (
 			local_rstn		=> local_rstn,
 			refclk			=> refclk,
 	
 			-- from IF
-			rx_st_data0 	=> rx_st_data0,
-			rx_st_eop0   	=> rx_st_eop0,
-			rx_st_sop0 		=> rx_st_sop0,
-			rx_st_ready0 	=> rx_st_ready_wmem,
-			rx_st_valid0 	=>	rx_st_valid0,
-			rx_bar 			=> rx_bar0(2),
-		
+        i_rx_st_data0   => rx_st_data0,
+        i_rx_st_eop0    => rx_st_eop0,
+        i_rx_st_sop0    => rx_st_sop0,
+        o_rx_st_ready0  => rx_st_ready_wmem,
+        i_rx_st_valid0  => rx_st_valid0,
+        i_rx_bar        => rx_bar0(2),
+
 			-- to memory
 			tomemaddr 		=> writememaddr_w,
 			tomemdata 		=> writememdata,
@@ -325,37 +320,33 @@ architecture RTL of pcie_application is
 			readlength 		=> wmem_readlength,
 			header2 			=>	wmem_header2,
 			readen 			=> wmem_readen
-		);
-
+    );
 
     e_pcie_readable_memory : entity work.pcie_readable_memory
-		port map(
+    port map (
 			local_rstn		=> local_rstn,
 			refclk			=> refclk,
 	
 			-- from IF
-			rx_st_data0 	=> rx_st_data0,
-			rx_st_eop0   	=> rx_st_eop0,
-			rx_st_sop0 		=> rx_st_sop0,
-			rx_st_ready0 	=> rx_st_ready_rmem,
-			rx_st_valid0 	=>	rx_st_valid0,
-			rx_bar 			=> rx_bar0(3),
-		
+        i_rx_st_data0   => rx_st_data0,
+        i_rx_st_eop0    => rx_st_eop0,
+        i_rx_st_sop0    => rx_st_sop0,
+        o_rx_st_ready0  => rx_st_ready_rmem,
+        i_rx_st_valid0  => rx_st_valid0,
+        i_rx_bar        => rx_bar0(3),
+
 			-- to response engine
 			readaddr 		=> rmem_readaddr,
 			readlength 		=> rmem_readlength,
 			header2 			=>	rmem_header2,
 			readen 			=> rmem_readen
-		);
-
-		
-
+    );
 
     e_pcie_completer : entity work.pcie_completer
-		port map(
+    port map (
 			local_rstn		=> local_rstn,
 			refclk			=> refclk,
-	
+
 			-- to IF
 			tx_st_data0 	=> tx_st_data0,
 			tx_st_eop0		=> tx_st_eop0,
@@ -430,48 +421,52 @@ architecture RTL of pcie_application is
 			-- test port
 			testout				=> testout_completer,
 			testout_ena			=> testout_ena
-	);
-	
-	
+    );
+
 		writememaddr <= writememaddr_r when writememwren = '0' else	
 					writememaddr_w;
 
-    e_pcie_wram_narrow : component work.cmp.pcie_wram_narrow
-        PORT MAP
-        (
-                address_a        => writememaddr,
-                address_b       	=> writememreadaddr, 
-                clock_a          => refclk,
-                clock_b         	=> writememclk,
-                data_a          	=> writememdata,
-                data_b           => (others => '0'),
-                wren_a           => writememwren,
-                wren_b          	=> '0',
-                q_a              => writememq,
-                q_b              => writememreaddata
-        );
+    e_pcie_wram_narrow : entity work.ip_ram_2rw
+    generic map (
+        g_ADDR0_WIDTH => writememaddr'length,
+        g_DATA0_WIDTH => writememdata'length,
+        g_ADDR1_WIDTH => writememreadaddr'length,
+        g_DATA1_WIDTH => writememreaddata'length--,
+    )
+    port map (
+        i_addr0     => writememaddr,
+        i_wdata0    => writememdata,
+        i_we0       => writememwren,
+        o_rdata0    => writememq,
+        i_clk0      => refclk,
 
-	  
-		  
+        i_addr1     => writememreadaddr,
+        o_rdata1    => writememreaddata,
+        i_clk1      => writememclk--,
+    );
 
-    e_pcie_ram_narrow : component work.cmp.pcie_ram_narrow
-	PORT MAP
-	(
-		data						=> readmem_data,
-		rdaddress				=> readmem_readaddr,
-		rdclock					=> refclk,
-		wraddress				=> readmem_addr,
-		wrclock					=> readmemclk,
-		wren						=> readmem_wren,
-		q							=> readmem_readdata
-	);
+    e_pcie_ram_narrow : entity work.ip_ram_2rw
+    generic map (
+        g_ADDR0_WIDTH => readmem_addr'length,
+        g_DATA0_WIDTH => readmem_data'length,
+        g_ADDR1_WIDTH => readmem_readaddr'length,
+        g_DATA1_WIDTH => readmem_readdata'length,
+        g_RDATA0_REG => 1,
+        g_RDATA1_REG => 1--,
+    )
+    port map (
+        i_addr0     => readmem_addr,
+        i_wdata0    => readmem_data,
+        i_we0       => readmem_wren,
+        i_clk0      => readmemclk,
 
-	
-
-
+        i_addr1     => readmem_readaddr,
+        o_rdata1    => readmem_readdata,
+        i_clk1      => refclk--,
+    );
 
     e_dma_engine_1 : entity work.dma_engine
-	generic map(
+    generic map (
 			MEMWRITEADDRSIZE => DMAMEMWRITEADDRSIZE,
 			MEMREADADDRSIZE  => DMAMEMREADADDRSIZE,
 			MEMWRITEWIDTH	  => DMAMEMWRITEWIDTH,
@@ -480,8 +475,7 @@ architecture RTL of pcie_application is
 			NOW_BIT			  => DMA_BIT_NOW,
 			ENABLE_INTERRUPT_BIT => DMA_BIT_ENABLE_INTERRUPTS
 	)
-	
-	port map(
+    port map (
 		local_rstn				=> local_rstn,
 		refclk					=> refclk,
 		
@@ -526,13 +520,10 @@ architecture RTL of pcie_application is
 		dma_register_written				=> regwritten_s(DMA_REGISTER_W),
 		dma_status_register				=> readregs_int(DMA_STATUS_REGISTER_R),
 		test_out								=> testout_dma
-		
-		);
-		
-		
+    );
 
     e_dma_engine_2 : entity work.dma_engine
-	generic map(
+    generic map (
 			MEMWRITEADDRSIZE => DMAMEMWRITEADDRSIZE,
 			MEMREADADDRSIZE  => DMAMEMREADADDRSIZE,
 			MEMWRITEWIDTH	  => DMAMEMWRITEWIDTH,
@@ -541,8 +532,7 @@ architecture RTL of pcie_application is
 			NOW_BIT			  => DMA2_BIT_NOW,
 			ENABLE_INTERRUPT_BIT => DMA2_BIT_ENABLE_INTERRUPTS
 	)
-	
-	port map(
+    port map (
 		local_rstn				=> local_rstn,
 		refclk					=> refclk,
 		
@@ -587,12 +577,7 @@ architecture RTL of pcie_application is
 		dma_register_written				=> regwritten_s(DMA_REGISTER_W),
 		dma_status_register				=> readregs_int(DMA2_STATUS_REGISTER_R),
 		test_out								=> open
-		
-		);
-
-		
-		
-
+    );
 
 process(refclk, local_rstn)
 begin

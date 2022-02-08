@@ -298,21 +298,19 @@ begin
 --------------------------------------------------
     g_rx_align: for I in 0 to 3 generate
         e_rx_align: entity work.rx_align
-        port map(
+        generic map (
+            g_BYTES => 4--,
+        )
+        port map (
             o_data                  => rx_data_parallel(31+I*32 downto I*32),
             o_datak                 => rx_datak(3+I*4 downto I*4),
-
             o_locked                => locked(I),
+
+            o_bitslip               => enapatternalign(I),
 
             i_data                  => data_not_aligned(31+I*32 downto I*32),
             i_datak                 => datak_not_aligned(3+I*4 downto I*4),
-            
-            i_syncstatus            => syncstatus(3+I*4 downto I*4),
-            i_patterndetect         => patterndetect(3+I*4 downto I*4),
-            o_enapatternalign       => enapatternalign(I),
-
-            i_errdetect             => errdetect(3+I*4 downto I*4),
-            i_disperr               => disperr(3+I*4 downto I*4),
+            i_error                 => work.util.or_reduce(errdetect(3+I*4 downto I*4) or disperr(3+I*4 downto I*4)),
 
             i_reset_n               => rx_align_reset_n(I),
             i_clk                   => rx_clk(I)--,
@@ -667,7 +665,6 @@ begin
         DATA_WIDTH  => 8,
         SHOWAHEAD   => "OFF",
         OVERFLOW    => "ON",
-		  REGOUT      => 0,
         DEVICE      => "Arria V"--,
     )
     port map(
@@ -686,7 +683,6 @@ begin
         DATA_WIDTH  => 220,
         SHOWAHEAD   => "OFF",
         OVERFLOW    => "ON",
-		  REGOUT      => 0,
         DEVICE      => "Arria V"--,
     )
     port map(
@@ -717,7 +713,6 @@ begin
         DATA_WIDTH  => 280,
         SHOWAHEAD   => "OFF",
         OVERFLOW    => "ON",
-		  REGOUT      => 0,
         DEVICE      => "Arria V"--,
     )
     port map(
@@ -755,7 +750,6 @@ begin
         DATA_WIDTH  => 9,
         SHOWAHEAD   => "OFF",
         OVERFLOW    => "ON",
-		  REGOUT      => 0,
         DEVICE      => "Arria V"--,
     )
     port map(

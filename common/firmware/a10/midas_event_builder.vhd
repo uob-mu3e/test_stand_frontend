@@ -268,8 +268,7 @@ begin
         e_sync_fifo : entity work.ip_dcfifo
         generic map(
             ADDR_WIDTH  => 6,
-            DATA_WIDTH  => 36,
-            DEVICE      => "Arria 10"--,
+            DATA_WIDTH  => 36--,
         )
         port map (
             data        => sync_fifo_data(i),
@@ -306,8 +305,7 @@ begin
         e_fifo : entity work.ip_dcfifo
         generic map(
             ADDR_WIDTH  => LINK_FIFO_ADDR_WIDTH,
-            DATA_WIDTH  => 38,
-            DEVICE      => "Arria 10"--,
+            DATA_WIDTH  => 38--,
         )
         port map (
             data        => link_data_f(i),
@@ -347,8 +345,7 @@ begin
         ADDR_WIDTH_A    => 12,
         ADDR_WIDTH_B    => 9,
         DATA_WIDTH_A    => 32,
-        DATA_WIDTH_B    => 256,
-        DEVICE          => "Arria 10"--,
+        DATA_WIDTH_B    => 256--,
     )
     port map (
         address_a       => w_ram_add,
@@ -366,8 +363,7 @@ begin
     e_tagging_fifo_event : entity work.ip_scfifo
     generic map (
         ADDR_WIDTH      => 12,
-        DATA_WIDTH      => 12,
-        DEVICE          => "Arria 10"--,
+        DATA_WIDTH      => 12--,
     )
     port map (
         data            => w_fifo_data,
@@ -377,9 +373,6 @@ begin
         q               => r_fifo_data,
         full            => tag_fifo_full,
         empty           => tag_fifo_empty,
-        almost_empty    => open,
-        almost_full     => open,
-        usedw           => open,
         sclr            => reset_dma--,
     );
 
@@ -410,8 +403,7 @@ begin
         e_stream_fifo : entity work.ip_scfifo
         generic map (
             ADDR_WIDTH => 8,
-            DATA_WIDTH => 36,
-            DEVICE => "Arria 10"--,
+            DATA_WIDTH => 36--,
         )
         port map (
             q               => stream_rdata,
@@ -506,8 +498,7 @@ begin
         e_stream_fifo : entity work.ip_scfifo
         generic map (
             ADDR_WIDTH => 8,
-            DATA_WIDTH => 34,
-            DEVICE => "Arria 10"--,
+            DATA_WIDTH => 34--,
         )
         port map (
             q               => stream_rdata(33 downto 0),
@@ -642,10 +633,10 @@ begin
                 w_ram_en    <= '1';
                 w_ram_add   <= w_ram_add_reg + 1;
                 -- MIDAS expects bank names in ascii:
-                --w_ram_data <=   work.util.hex_to_ascii(link_data(11 downto 8)) &
-                --                work.util.hex_to_ascii(link_data(15 downto 12)) &
-                --                work.util.hex_to_ascii(link_data(19 downto 16)) &
-                --                work.util.hex_to_ascii(link_data(23 downto 20));
+                --w_ram_data <=   work.util.to_slv(work.util.to_hstring(link_data(11 downto 8))) &
+                --                work.util.to_slv(work.util.to_hstring(link_data(15 downto 12))) &
+                --                work.util.to_slv(work.util.to_hstring(link_data(19 downto 16))) &
+                --                work.util.to_slv(work.util.to_hstring(link_data(23 downto 20)));
                 if(link_data(23 downto 8) = x"FEB0") then
                     w_ram_data <= x"30424546";
                 elsif(link_data(23 downto 8) = x"FEB1") then

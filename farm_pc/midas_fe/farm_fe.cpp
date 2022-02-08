@@ -659,8 +659,9 @@ uint32_t check_event(T* buffer, uint32_t idx, uint32_t* pdata) {
     //printf("Data: %8.8x\n", buffer[idx+4+eventDataSize/4-1]);
 
     if ( !(buffer[idx+4+eventDataSize/4-1] == 0xAFFEAFFE or buffer[idx+4+eventDataSize/4-1] == 0xFC00009C or buffer[idx+4+eventDataSize/4-1] == 0xFC00019C) ) {
-      printf("Data: %8.8x\n", buffer[idx+4+eventDataSize/4-2]);
-      return -1;
+        printf("Error: Wrong trailer");
+        printf("Data: %8.8x\n", buffer[idx+4+eventDataSize/4-2]);
+        return -1;
     }
 
     uint32_t dma_buf[4+eventDataSize/4];
@@ -669,8 +670,12 @@ uint32_t check_event(T* buffer, uint32_t idx, uint32_t* pdata) {
       //printf("%8.8x %8.8x\n", i, buffer[idx + i]);
     }
 
+<<<<<<< HEAD
 
     //copy_n(&dma_buf[0], sizeof(dma_buf)/4, pdata);
+=======
+    copy_n(&dma_buf[0], sizeof(dma_buf)/4, pdata);
+>>>>>>> origin/improve_ip_timing
 
     return sizeof(dma_buf);
 }

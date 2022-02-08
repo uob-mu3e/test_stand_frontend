@@ -46,21 +46,6 @@ const struct pci_device_id PCI_DEVICE_IDS[] = {
     { 0, },
 };
 
-static
-int wrap_ring(int int1, int int2, int wrap, int divisor) {
-    int result = 0;
-    if ((int1 - int2) > 0) {
-        result = (int1 - int2) / divisor;
-    }
-    else if ((int1 - int2) < 0) {
-        result = wrap + (int1 - int2) / divisor;
-    }
-    else if ((int1 - int2) == 0) {
-        result = 0;
-    }
-    return result;
-}
-
 #include <linux/miscdevice.h>
 
 static DEFINE_IDA(mudaq_ida);

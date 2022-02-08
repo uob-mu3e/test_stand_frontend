@@ -20,7 +20,7 @@ entity mupix_ctrl is
         i_clk               : in  std_logic;
         i_reset_n           : in  std_logic;
 
-        i_reg_add           : in  std_logic_vector(7 downto 0);
+        i_reg_add           : in  std_logic_vector(15 downto 0);
         i_reg_re            : in  std_logic;
         o_reg_rdata         : out std_logic_vector(31 downto 0);
         i_reg_we            : in  std_logic;

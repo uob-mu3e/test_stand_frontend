@@ -84,7 +84,7 @@ port (
     B_oct_rzqin           : in    std_logic                      := 'X';             -- oct_rzqin
     B_pll_ref_clk         : in    std_logic                      := 'X'              -- clk
 );
-end entity ddr3_block;
+end entity;
 
 architecture RTL of ddr3_block is
     
@@ -271,9 +271,5 @@ begin
 		M_burstcount	=> B_burstcount,
 		M_readdatavalid	=> B_readdatavalid
 	);
-	
-	
-	end architecture RTL;
-	
-	
-	
+
+end architecture;

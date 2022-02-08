@@ -6,7 +6,7 @@ use work.mudaq.all;
 use work.a10_pcie_registers.all;
 
 entity tb_data_path_farm is
-end entity tb_data_path_farm;
+end entity;
 
 
 architecture TB of tb_data_path_farm is
@@ -419,15 +419,14 @@ begin
         B_mem_read		=> B_mem_read,
         B_mem_q			=> B_mem_q,
         B_mem_q_valid	=> B_mem_q_valid
-	);
+    );
 
     e_ddr3_a : entity work.ip_ram
     generic map (
         ADDR_WIDTH_A    => 9,
         ADDR_WIDTH_B    => 9,
         DATA_WIDTH_A    => 512,
-        DATA_WIDTH_B    => 512,
-        DEVICE          => "Arria 10"--,
+        DATA_WIDTH_B    => 512--,
     )
     port map (
         address_a       => A_mem_addr(8 downto 0),
@@ -447,8 +446,7 @@ begin
         ADDR_WIDTH_A    => 9,
         ADDR_WIDTH_B    => 9,
         DATA_WIDTH_A    => 512,
-        DATA_WIDTH_B    => 512,
-        DEVICE          => "Arria 10"--,
+        DATA_WIDTH_B    => 512--,
     )
     port map (
         address_a       => B_mem_addr(8 downto 0),
@@ -557,6 +555,5 @@ begin
 -- 		B_mem_q(25 downto 0)  <= B_mem_addr_del4;
 	end if;
 	end process;
-end TB;
 
-
+end architecture;

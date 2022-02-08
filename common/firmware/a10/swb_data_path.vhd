@@ -195,7 +195,7 @@ begin
         --       If its full stop --> tell MIDAS --> stop run --> no event mixing
         e_link_to_fifo_32 : entity work.link_to_fifo_32
         generic map (
-            SKIP_DOUBLE_SUB      => 1,
+            SKIP_DOUBLE_SUB      => 2, -- 1 means skip 2 means dont skip
             LINK_FIFO_ADDR_WIDTH => LINK_FIFO_ADDR_WIDTH--,
         )
         port map (
@@ -377,10 +377,7 @@ begin
 --    e_merger_fifo : entity work.ip_scfifo
 --    generic map (
 --        ADDR_WIDTH      => 10,
---        DATA_WIDTH      => W,
---        RAM_OUT_REG     => "ON",
---        REGOUT          => 1,
---        DEVICE          => "Arria 10"--,
+--        DATA_WIDTH      => W--,
 --    )
 --    port map (
 --        data            => gen_data,

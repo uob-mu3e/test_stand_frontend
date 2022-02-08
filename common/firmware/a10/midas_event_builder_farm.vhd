@@ -15,10 +15,10 @@ generic (
 port(
         i_clk_data:         in  std_logic;
         i_clk_dma:          in  std_logic;
-        
+
         i_reset_data_n:     in  std_logic;
         i_reset_dma_n:      in  std_logic;
-        
+
         -- link 0 to 3
         i_rx_data:          in  std_logic_vector(NLINKS * 64 - 1 downto 0);
         i_rx_datak:         in  std_logic_vector(NLINKS * 4 - 1 downto 0);
@@ -26,7 +26,7 @@ port(
         o_event_data:       out std_logic_vector(NLINKS * 64 - 1 downto 0);
         o_event_wren:       out std_logic;
         o_endofevent:       out std_logic;
-        
+
         -- error cnt signals
         o_error:  out std_logic_vector(31 downto 0)--;
 );
@@ -243,8 +243,7 @@ FOR i in 0 to NLINKS - 1 GENERATE
     e_fifo : entity work.ip_dcfifo
     generic map(
         ADDR_WIDTH  => LINK_FIFO_ADDR_WIDTH,
-        DATA_WIDTH  => 38,
-        DEVICE      => "Arria 10"--,
+        DATA_WIDTH  => 38--,
     )
     port map (
         data        => link_fifo_data(37 + i * 38 downto 0 + i * 38),
@@ -283,8 +282,7 @@ END GENERATE buffer_link_fifos;
         ADDR_WIDTH_A    => 12,
         ADDR_WIDTH_B    => 9,
         DATA_WIDTH_A    => 32,
-        DATA_WIDTH_B    => 256,
-        DEVICE          => "Arria 10"--,
+        DATA_WIDTH_B    => 256--,
     )
     port map (
         address_a       => w_ram_add,
@@ -302,8 +300,7 @@ END GENERATE buffer_link_fifos;
     e_tagging_fifo_event : entity work.ip_scfifo
     generic map (
         ADDR_WIDTH      => 12,
-        DATA_WIDTH      => 12,
-        DEVICE          => "Arria 10"--,
+        DATA_WIDTH      => 12--,
     )
     port map (
         data            => w_fifo_data,
@@ -313,9 +310,6 @@ END GENERATE buffer_link_fifos;
         q               => r_fifo_data,
         full            => tag_fifo_full,
         empty           => tag_fifo_empty,
-        almost_empty    => open,
-        almost_full     => open,
-        usedw           => open,
         sclr            => reset_dma--,
     );
 
@@ -344,8 +338,7 @@ END GENERATE buffer_link_fifos;
     e_stream_fifo : entity work.ip_scfifo
     generic map (
         ADDR_WIDTH => 8,
-        DATA_WIDTH => 36,
-        DEVICE => "Arria 10"--,
+        DATA_WIDTH => 36--,
     )
     port map (
         q               => stream_rdata,
@@ -481,10 +474,10 @@ END GENERATE buffer_link_fifos;
                 w_ram_en    <= '1';
                 w_ram_add   <= w_ram_add_reg + 1;
                 -- MIDAS expects bank names in ascii:
-                --w_ram_data <=   work.util.hex_to_ascii(link_data(11 downto 8)) &
-                --                work.util.hex_to_ascii(link_data(15 downto 12)) &
-                --                work.util.hex_to_ascii(link_data(19 downto 16)) &
-                --                work.util.hex_to_ascii(link_data(23 downto 20));
+                --w_ram_data <=   work.util.to_slv(work.util.to_hstring(link_data(11 downto 8))) &
+                --                work.util.to_slv(work.util.to_hstring(link_data(15 downto 12))) &
+                --                work.util.to_slv(work.util.to_hstring(link_data(19 downto 16))) &
+                --                work.util.to_slv(work.util.to_hstring(link_data(23 downto 20)));
                 if(link_data(23 downto 8) = x"FEB0") then
                     w_ram_data <= x"30424546";
                 elsif(link_data(23 downto 8) = x"FEB1") then
