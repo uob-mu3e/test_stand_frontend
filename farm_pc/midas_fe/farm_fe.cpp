@@ -44,7 +44,7 @@ BOOL equipment_common_overwrite = FALSE;
 INT display_period = 0;
 
 /* DMA Buffer and related */
-uint32_t *dma_buf;
+volatile uint32_t *dma_buf;
 size_t dma_buf_size = MUDAQ_DMABUF_DATA_LEN;
 uint32_t dma_buf_nwords = dma_buf_size/sizeof(uint32_t);
 uint32_t laddr;
@@ -670,12 +670,7 @@ uint32_t check_event(T* buffer, uint32_t idx, uint32_t* pdata) {
       //printf("%8.8x %8.8x\n", i, buffer[idx + i]);
     }
 
-<<<<<<< HEAD
-
-    //copy_n(&dma_buf[0], sizeof(dma_buf)/4, pdata);
-=======
     copy_n(&dma_buf[0], sizeof(dma_buf)/4, pdata);
->>>>>>> origin/improve_ip_timing
 
     return sizeof(dma_buf);
 }
@@ -709,6 +704,9 @@ INT read_stream_thread(void *param) {
     
     // DMA buffer stuff
     uint32_t size_dma_buf;
+    uint32_t words_written;
+    uint32_t cnt_loop;
+    uint32_t endofevent;
     
     // actuall readout loop
     while (is_readout_thread_enabled()) {
@@ -734,31 +732,6 @@ INT read_stream_thread(void *param) {
             printf("ERROR: rb_get_wp -> rb_status != DB_SUCCESS\n");
             break;
         }
-
-        // change readout state to switch between pixel and scifi
-        uint32_t current_readout_register = mu.read_register_rw(SWB_READOUT_STATE_REGISTER_W);
-        uint32_t current_pixel_mask_n = mu.read_register_rw(SWB_LINK_MASK_PIXEL_REGISTER_W);
-        uint32_t current_scifi_mask_n = mu.read_register_rw(SWB_LINK_MASK_SCIFI_REGISTER_W);
-
-//        if ( current_pixel_mask_n != 0 && current_scifi_mask_n != 0 ) {
-//            current_readout_register ^= 1UL << 7;
-//            mu.write_register(SWB_READOUT_STATE_REGISTER_W, current_readout_register);
-//            //cout << "1state: " << hex << mu.read_register_rw(SWB_READOUT_STATE_REGISTER_W) << endl;
-//        } else if ( current_pixel_mask_n != 0 && current_scifi_mask_n == 0 ) {
-            current_readout_register |= (1 << 7);
-            mu.write_register(SWB_READOUT_STATE_REGISTER_W, current_readout_register);
-            //cout << "2state: " << hex << mu.read_register_rw(SWB_READOUT_STATE_REGISTER_W) << endl;
-//        } else if ( current_pixel_mask_n == 0 && current_scifi_mask_n != 0 ) {
-//            current_readout_register &= ~(1 << 7);
-//            mu.write_register(SWB_READOUT_STATE_REGISTER_W, current_readout_register);
-//            //cout << "3state: " << hex << mu.read_register_rw(SWB_READOUT_STATE_REGISTER_W) << endl;
-//        } else {
-//            //cout << "4state: " << endl;
-//            continue;
-//        }
-
-        // disable DMA
-        mu.disable();
         
         // start DMA
         mu.enable_continous_readout(0);
@@ -772,31 +745,21 @@ INT read_stream_thread(void *param) {
         usleep(10);
         mu.write_register(RESET_REGISTER_W, 0x0);
 
-        uint32_t cnt_loop = 0;
-        while ( (mu.read_register_ro(EVENT_BUILD_STATUS_REGISTER_R) & 1) == 0 ) {
-            if (cnt_loop == 100000) break;
-            cnt_loop++;
-//             check mask for timeout
-            usleep(100);
-//            if ( mu.read_register_rw(SWB_LINK_MASK_PIXEL_REGISTER_W) == 0 && mu.read_register_rw(SWB_LINK_MASK_SCIFI_REGISTER_W) == 0 ) {
-//                break;
-//            } else if ( mu.read_register_rw(SWB_LINK_MASK_PIXEL_REGISTER_W) != 0 && mu.read_register_rw(SWB_LINK_MASK_SCIFI_REGISTER_W) != 0 ) {
-//                continue;
-//            } else if ( mu.read_register_rw(SWB_LINK_MASK_PIXEL_REGISTER_W) != 0 ) {
-//                current_readout_register = mu.read_register_rw(SWB_READOUT_STATE_REGISTER_W);
-//                current_readout_register |= (1 << 7);
-//                mu.write_register(SWB_READOUT_STATE_REGISTER_W, current_readout_register);
-//            } else if ( mu.read_register_rw(SWB_LINK_MASK_SCIFI_REGISTER_W) != 0 ) {
-//                current_readout_register = mu.read_register_rw(SWB_READOUT_STATE_REGISTER_W);
-//                current_readout_register &= ~(1 << 7);
-//                mu.write_register(SWB_READOUT_STATE_REGISTER_W, current_readout_register);
-//           }
-        }
-
-        uint32_t words_written = mu.read_register_ro(DMA_CNT_WORDS_REGISTER_R);
+        // wait for FPGA
+        cnt_loop = 0;
+        while ( (mu.read_register_ro(EVENT_BUILD_STATUS_REGISTER_R) & 1) == 0 ) { cnt_loop++; ss_sleep(10); }
 
         // disable dma
         mu.disable();
+        
+        // get written words from FPGA
+        words_written  = mu.read_register_ro(DMA_CNT_WORDS_REGISTER_R);
+        
+        // get lastWritten / endofevent
+        // since we only use the DMA write 4kB at the end on the farm firmware
+        lastlastWritten = 0;
+        lastWritten = mu.last_written_addr();
+        endofevent = mu.last_endofevent_addr();
         
         // stop readout
         mu.write_register(SWB_READOUT_LINK_REGISTER_W, 0x0);
@@ -805,21 +768,9 @@ INT read_stream_thread(void *param) {
         // reset all
         mu.write_register(RESET_REGISTER_W, reset_reg);
 
-        // check mask
-        if ( mu.read_register_rw(SWB_LINK_MASK_PIXEL_REGISTER_W) == 0 && mu.read_register_rw(SWB_LINK_MASK_SCIFI_REGISTER_W) == 0 ) continue;
-
         // check cnt loop
-        if (cnt_loop == 100000) {
-            printf("ERROR: cnt_loop == 100000\n");
-            continue;
-        }
+        if (cnt_loop == 100000) { printf("ERROR: cnt_loop == 100000\n"); break; }
         
-        // and get lastWritten / endofevent
-        // since we only use the DMA write 4kB at the end on the farm firmware
-        lastlastWritten = 0;
-        lastWritten = mu.last_written_addr();
-        uint32_t endofevent = mu.last_endofevent_addr();
-
         // walk events to find end of last event
         uint32_t offset = 0;
         uint32_t cnt = 0;
@@ -827,16 +778,36 @@ INT read_stream_thread(void *param) {
         printf("lastWritten: 0x%08X ", lastWritten);
         printf("endofevent: 0x%08X ", endofevent);
         printf("words_written: 0x%08X ", words_written);
+        printf("words_written*8: 0x%08X ", words_written*8);
         printf("dma_buf[words_written]: 0x%08X ", dma_buf[words_written]);
+        printf("dma_buf[words_written*8]: 0x%08X ", dma_buf[words_written*8]);
+        printf("dma_buf[words_written*8-1]: 0x%08X ", dma_buf[words_written*8-1]);
         printf("dma_buf[words_written-1]: 0x%08X ", dma_buf[words_written-1]);
         printf("dma_buf[lastWritten]: 0x%08X ", dma_buf[lastWritten]);
         printf("dma_buf[lastWritten-1]: 0x%08X ", dma_buf[lastWritten-1]);
         printf("dma_buf[endofevent]: 0x%08X ", dma_buf[endofevent]);
         printf("dma_buf[endofevent+1]: 0x%08X ", dma_buf[endofevent+1]);
+        printf("total data: %d MB ", (words_written*8-1)*4/1000000);
+        printf("dma_buf_size: %d %d ", dma_buf_size, 1 * (1024 * 1024));
         printf("dma_buf[endofevent-1]: 0x%08X\n", dma_buf[endofevent-1]);
         
-        memcpy(pdata, dma_buf, words_written*4);
-        rb_increment_wp(rbh, words_written*4); // in byte length
+        // increase words_written if there is another event
+        if ( dma_buf[words_written*8] != 0xFFFFFFFF ) {
+            printf("%d\n", dma_buf[words_written*8+3] / 4);
+            words_written += (dma_buf[words_written*8+3] / 4 + 4) / 8;
+        }
+        
+        //size_dma_buf = check_event(dma_buf, offset, pdata);
+        
+//         copy_n(&dma_buf[0], (words_written*8-1)*4, pdata);
+        memcpy(pdata, const_cast<uint32_t*>(dma_buf), (words_written*8-1)*4);
+//         memcpy(pdata, const_cast<uint32_t*>(dma_buf), size_dma_buf);
+        for ( int i = 0; i < 100; i++)
+            printf("dma_buf[size_dma_buf]: 0x%08X %d\n", dma_buf[i], i);
+        for ( int i = words_written*8-100; i < words_written*8+100; i++)
+            printf("dma_buf[size_dma_buf]: 0x%08X %d %d\n", dma_buf[i], i, words_written*8);
+        rb_increment_wp(rbh, (words_written*8-1)*4); // in byte length
+        
     }
 
     // tell framework that we finished
