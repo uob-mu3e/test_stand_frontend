@@ -44,7 +44,7 @@ BOOL equipment_common_overwrite = FALSE;
 INT display_period = 0;
 
 /* DMA Buffer and related */
-volatile uint32_t *dma_buf;
+uint32_t *dma_buf;
 size_t dma_buf_size = MUDAQ_DMABUF_DATA_LEN;
 uint32_t dma_buf_nwords = dma_buf_size/sizeof(uint32_t);
 uint32_t laddr;
@@ -53,18 +53,19 @@ uint32_t readindex;
 uint32_t wlen;
 uint32_t lastreadindex;
 uint32_t lastlastWritten;
+uint32_t lastWritten;
 uint32_t lastRunWritten;
 bool moreevents;
 bool firstevent;
 
 /* maximum event size produced by this frontend */
-INT max_event_size = dma_buf_size; //TODO: how to define this?
+INT max_event_size = dma_buf_size; // we fix this for now to 32MB
 
 /* maximum event size for fragmented events (EQ_FRAGMENTED) */
 INT max_event_size_frag = 5 * 1024 * 1024;
 
 /* buffer size to hold events */
-INT event_buffer_size = 32 * max_event_size;
+INT event_buffer_size = 2 * max_event_size;
 
 mudaq::DmaMudaqDevice * mup;
 mudaq::DmaMudaqDevice::DataBlock block;
@@ -669,7 +670,7 @@ uint32_t check_event(T* buffer, uint32_t idx, uint32_t* pdata) {
     }
 
 
-    copy_n(&dma_buf[0], sizeof(dma_buf)/4, pdata);
+    //copy_n(&dma_buf[0], sizeof(dma_buf)/4, pdata);
 
     return sizeof(dma_buf);
 }
@@ -681,33 +682,52 @@ INT read_stream_thread(void *param) {
     // get mudaq
     mudaq::DmaMudaqDevice & mu = *mup;
 
+    // set registers to default values and disable DMA
     uint32_t reset_reg = 0;
     reset_reg = SET_RESET_BIT_EVENT_COUNTER(reset_reg);
     reset_reg = SET_RESET_BIT_DATAGEN(reset_reg);
     reset_reg = SET_RESET_BIT_DATA_PATH(reset_reg);
+    mu.disable();
 
     // tell framework that we are alive
     signal_readout_thread_active(0, TRUE);
 
     // obtain ring buffer for inter-thread data exchange
     int rbh = get_event_rbh(0);
+    int status;
 
+    // max number of requested words
     uint32_t max_requested_words = dma_buf_nwords/2;
     
+    // get midas buffer
+    uint32_t *pdata;
+    
+    // DMA buffer stuff
+    uint32_t size_dma_buf;
+    
+    // actuall readout loop
     while (is_readout_thread_enabled()) {
 
         // don't readout events if we are not running
-        if (run_state != STATE_RUNNING) {
-            ss_sleep(100);
+        if (!readout_enabled()) {
+            // do not produce events when run is stopped
+            ss_sleep(10);// don't eat all CPU
             continue;
         }
 
-        // get midas buffer
-        uint32_t* pdata = nullptr;
-        int rb_status = rb_get_wp(rbh, (void**)&pdata, 0);
-        if ( rb_status != DB_SUCCESS ) {
-            printf("ERROR: rb_get_wp -> rb_status != DB_SUCCESS\n");
+        // obtain buffer space with 10 ms timeout
+        status = rb_get_wp(rbh, (void **) &pdata, 10);
+        
+        // just try again if buffer has no space
+        if (status == DB_TIMEOUT) {
+            printf("WARNING: DB_TIMEOUT\n");
             continue;
+        }
+        
+        // stop if there is an error in the ODB
+        if ( status != DB_SUCCESS ) {
+            printf("ERROR: rb_get_wp -> rb_status != DB_SUCCESS\n");
+            break;
         }
 
         // change readout state to switch between pixel and scifi
@@ -732,23 +752,23 @@ INT read_stream_thread(void *param) {
 //            continue;
 //        }
 
-        // disable dma
+        // disable DMA
         mu.disable();
-        // start dma
+        
+        // start DMA
         mu.enable_continous_readout(0);
 
         // wait for requested data
         // request to read dma_buffer_size/2 (count in blocks of 256 bits)
         mu.write_register(GET_N_DMA_WORDS_REGISTER_W, max_requested_words / (256/32));
-        //cout << "request " << max_requested_words << endl;
-
+        
         // reset data path
         mu.write_register(RESET_REGISTER_W, reset_reg);
         usleep(10);
         mu.write_register(RESET_REGISTER_W, 0x0);
 
         uint32_t cnt_loop = 0;
-        while ( (mu.read_register_ro(0x1C) & 1) == 0 ) {
+        while ( (mu.read_register_ro(EVENT_BUILD_STATUS_REGISTER_R) & 1) == 0 ) {
             if (cnt_loop == 100000) break;
             cnt_loop++;
 //             check mask for timeout
@@ -768,13 +788,15 @@ INT read_stream_thread(void *param) {
 //           }
         }
 
-        uint32_t words_written = mu.read_register_ro(0x32);
+        uint32_t words_written = mu.read_register_ro(DMA_CNT_WORDS_REGISTER_R);
 
         // disable dma
         mu.disable();
+        
         // stop readout
         mu.write_register(SWB_READOUT_LINK_REGISTER_W, 0x0);
         mu.write_register(GET_N_DMA_WORDS_REGISTER_W, 0x0);
+        
         // reset all
         mu.write_register(RESET_REGISTER_W, reset_reg);
 
@@ -782,64 +804,34 @@ INT read_stream_thread(void *param) {
         if ( mu.read_register_rw(SWB_LINK_MASK_PIXEL_REGISTER_W) == 0 && mu.read_register_rw(SWB_LINK_MASK_SCIFI_REGISTER_W) == 0 ) continue;
 
         // check cnt loop
-        if (cnt_loop == 100000) continue;
+        if (cnt_loop == 100000) {
+            printf("ERROR: cnt_loop == 100000\n");
+            continue;
+        }
         
         // and get lastWritten / endofevent
-        // NOTE (24.06.2021): for the moment we dont really care for the endofevent
         // since we only use the DMA write 4kB at the end on the farm firmware
         lastlastWritten = 0;
-        uint32_t lastWritten = mu.last_written_addr();
-        //uint32_t endofevent = mu.last_endofevent_addr();
+        lastWritten = mu.last_written_addr();
+        uint32_t endofevent = mu.last_endofevent_addr();
 
         // walk events to find end of last event
         uint32_t offset = 0;
         uint32_t cnt = 0;
-        while(true) {
-            int rb_status = rb_get_wp(rbh, (void**)&pdata, 10);
-            if ( rb_status != DB_SUCCESS ) {
-                printf("ERROR: rb_get_wp -> rb_status != DB_SUCCESS\n");
-                printf("Events written %d\n", cnt);
-                continue;
-            }
-
-            // check enough space for header
-            if(offset + 4 > lastWritten) break;
-            uint32_t eventLength = 16 + dma_buf[(offset + 3) % dma_buf_nwords];
-            // check if length is to big (not needed at the moment but we still check it)
-            if(eventLength > max_requested_words * 4) {
-                printf("ERROR: (eventLength = 0x%08X) > max_event_size\n", eventLength);
-                printf("Events written %d\n", cnt);
-                break;
-            }
-
-            // check enough space for data
-            if(offset + eventLength / 4 > lastWritten) break;
-            uint32_t size_dma_buf = check_event(dma_buf, offset, pdata);
-            //printf("data2: %8.8x offset: %8.8x lastwritten: %8.8x sizeEvent: %d\n", dma_buf[offset], offset, lastWritten, size_dma_buf);
-            if ( size_dma_buf == -1 ) {
-                printf("size_dma_buf == -1\n");
-                printf("Events written %d\n", cnt);
-                break;
-            }
-
-            offset += eventLength / 4;
-            
-            if ( offset > lastWritten/2 ) {
-                printf("Offset to big\n");
-                printf("Events written %d\n", cnt);
-                break;
-            }
-            if ( dma_buf[offset] != 0x00000001 ) {
-                printf("dma_buf[offset] != 0x00000001\n");
-                printf("Events written %d\n", cnt);
-                break;
-            }
-            
-            cnt++;
-            pdata+=size_dma_buf;
-            rb_increment_wp(rbh, size_dma_buf); // in byte length
-
-        }
+        size_dma_buf = 0;
+        printf("lastWritten: 0x%08X ", lastWritten);
+        printf("endofevent: 0x%08X ", endofevent);
+        printf("words_written: 0x%08X ", words_written);
+        printf("dma_buf[words_written]: 0x%08X ", dma_buf[words_written]);
+        printf("dma_buf[words_written-1]: 0x%08X ", dma_buf[words_written-1]);
+        printf("dma_buf[lastWritten]: 0x%08X ", dma_buf[lastWritten]);
+        printf("dma_buf[lastWritten-1]: 0x%08X ", dma_buf[lastWritten-1]);
+        printf("dma_buf[endofevent]: 0x%08X ", dma_buf[endofevent]);
+        printf("dma_buf[endofevent+1]: 0x%08X ", dma_buf[endofevent+1]);
+        printf("dma_buf[endofevent-1]: 0x%08X\n", dma_buf[endofevent-1]);
+        
+        memcpy(pdata, dma_buf, words_written*4);
+        rb_increment_wp(rbh, words_written*4); // in byte length
     }
 
     // tell framework that we finished
