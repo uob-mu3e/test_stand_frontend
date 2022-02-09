@@ -27,6 +27,8 @@ class FEBList
 {
 public:
     FEBList(uint16_t SB_index_);
+    FEBList(const FEBList &) = delete; // Do not copy!
+    FEBList& operator=(FEBList const &) = delete; // Do not assign
     size_t nFEBS() const {return mFEBs.size();}
     size_t nPrimaryFEBS() const {return mPrimaryFEBs.size();}
     size_t nActiveFEBS() const {return mActiveFEBs.size();}
