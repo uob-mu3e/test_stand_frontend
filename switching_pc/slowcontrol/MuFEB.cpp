@@ -85,9 +85,9 @@ void MuFEB::ReadFirmwareVersionsToODB()
     vector<uint32_t> arria(1);
     vector<uint32_t> max(1);
 
-    odb arriaversions("/Equipment/Switching/Variables/FEBFirmware/Arria V Firmware Version");
-    odb maxversions("/Equipment/Switching/Variables/FEBFirmware/Max 10 Firmware Version");
-    odb febversions("/Equipment/Switching/Variables/FEBFirmware/FEB Version");
+    odb arriaversions(link_equipment_name + "Variables/FEBFirmware/Arria V Firmware Version");
+    odb maxversions(link_equipment_name + "Variables/FEBFirmware/Max 10 Firmware Version");
+    odb febversions(link_equipment_name + "Variables/FEBFirmware/FEB Version");
 
     for(auto FEB: febs){
         if(!FEB.IsScEnabled()) continue; //skip disabled fibers
@@ -214,31 +214,25 @@ int MuFEB::ReadBackRunState(const mappedFEB & FEB){
         return FEB.GetLinkStatus().GetStatus();
 
    vector<uint32_t> val(2);
-   char set_str[255];
+   //val[0] is reset_bypass register
+   //val[1] is reset_bypass payload 
+   // Make sure this is always the case...
+   assert(RESET_PAYLOAD_REGISTER_RW-RUN_STATE_RESET_BYPASS_REGISTER_RW==1);
    int status = feb_sc.FEB_read(FEB, RUN_STATE_RESET_BYPASS_REGISTER_RW , val);
-
-   //printf("FEB %d, state 0x%08x\n", FPGA_ID, val[0]);
 
    if(status!=FEBSlowcontrolInterface::ERRCODES::OK) return status;
 
-   //val[0] is reset_bypass register
-   //val[1] is reset_bypass payload
-   char path[255];
-
    BOOL bypass_enabled=true;
    if(((val[0])&0x1ff)==0x000) bypass_enabled=false;
-    // set odb value_index index = FPGA_ID, value = bypass_enabled
-        
-    sprintf(path, "%s/Variables", odb_prefix);
-    odb variables_feb_run_state((std::string)path);
 
-    sprintf(set_str, "Bypass enabled %d", FEB.SB_Port());
-    variables_feb_run_state[set_str] = bypass_enabled;
+    odb variables_feb_bpe("/Equipment/"+link_equipment_name+"/Variables/BypassEnabled");
+    variables_feb_bpe[FEB.SB_Port()] = bypass_enabled;
 
     // set odb value_index index = FPGA_ID, value = value
     DWORD value=(val[0]>>16) & 0x3ff;
-    sprintf(set_str, "Run state %d", FEB.SB_Port());
-    variables_feb_run_state[set_str] = value;
+
+    odb variables_feb_run_state("/Equipment/"+ link_equipment_name + "/Variables/RunState");
+    variables_feb_run_state[FEB.SB_Port()] = value;
 
    return SUCCESS;
 }

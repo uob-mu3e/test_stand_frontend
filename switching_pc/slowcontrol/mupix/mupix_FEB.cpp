@@ -43,10 +43,7 @@ using midas::odb;
 
 //Mapping to physical ports of switching board.
 uint16_t MupixFEB::ASICsPerFEB() const {
-    char set_str[255];
-    sprintf(set_str, "/Equipment/Mupix/Settings/FEBS");
-    //TODO: Can we avoid this silly back and forth casting?
-    odb FEBsSettings(std::string(set_str).c_str());
+    odb FEBsSettings(odb_prefix + "/Settings/FEBS");
     return (uint16_t) FEBsSettings["ASICsPerFEB"];
 }
 
@@ -63,11 +60,9 @@ uint16_t MupixFEB::GetNumASICs() const {
 }
 
 void MupixFEB::SetTDACs() {
-    char set_str[255];
+
     for (int asic = 0; asic < GetNumASICs(); asic++) {
-        sprintf(set_str, "/Equipment/Mupix/Settings/TDACs/%u", asic);
-        //TODO: Can we avoid this silly back and forth casting?
-        odb TDACsSettings(std::string(set_str).c_str());
+        odb TDACsSettings(odb_prefix + "/Settings/TDACs/" + std::to_string(asic));
         std::string TDACFILE = TDACsSettings["TDACFILE"];
         std::ifstream data(TDACFILE);
         std::string line;
@@ -102,26 +97,24 @@ void MupixFEB::SetTDACs() {
 int MupixFEB::ConfigureASICs(){
     
     printf("MupixFEB::ConfigureASICs()\n");
-    cm_msg(MINFO, "MupixFEB" , "Configuring sensors under prefix %s/Settings/ASICs/", odb_prefix);
+    cm_msg(MINFO, "MupixFEB" , "Configuring sensors under prefix %s/Settings/ASICs/", odb_prefix.c_str());
 
     // write lvds mask from ODB to each feb
-    char set_str[255];
     for (auto feb : febs){
-        sprintf(set_str, "/Equipment/Mupix/Settings/FEBS/%u", feb.GetLinkID());
-        //TODO: Can we avoid this silly back and forth casting?
-        odb FEBsSettings(std::string(set_str).c_str());
+        odb FEBsSettings(odb_prefix + "/Equipment/Mupix/Settings/FEBS/" + std::to_string(feb.GetLinkID()));
         feb_sc.FEB_write(feb, MP_LVDS_LINK_MASK_REGISTER_W, (uint32_t) FEBsSettings["MP_LVDS_LINK_MASK"]);
         feb_sc.FEB_write(feb, MP_LVDS_LINK_MASK2_REGISTER_W, (uint32_t) FEBsSettings["MP_LVDS_LINK_MASK2"]);
     }
     
     // configure each asic
-    int status = mupix::midasODB::MapForEachASIC(hDB, odb_prefix, [this](mupix::MupixConfig* config, uint32_t asic){
+    int status = mupix::midasODB::MapForEachASIC(odb_prefix, [this](mupix::MupixConfig* config, uint32_t asic){
 //                 if ( asic != 3 ) return 0;
         uint32_t rpc_status;
         //bool TDACsNotFound = false;
         //char set_str[255];
 
         // get settings from ODB for TDACs 
+        // TODO: Has to move!!!
         odb swbSettings("/Equipment/Switching/Settings");
         bool useTDACs = swbSettings["MupixSetTDACConfig"];
         uint32_t MupixChipToConfigure = swbSettings["MupixChipToConfigure"];
@@ -147,7 +140,7 @@ int MupixFEB::ConfigureASICs(){
 
         cm_msg(MINFO, "MupixFEB",
                 "Configuring sensor %s/Settings/ASICs/%i/: Mapped to FEB%u -> SB%u.%u  ASIC #%d",
-                odb_prefix,asic,FPGAid_from_ID(asic),SB_ID,SP_ID,FA_ID);
+                odb_prefix.c_str(),asic,FPGAid_from_ID(asic),SB_ID,SP_ID,FA_ID);
 
         // TODO: There is a lot of copy/paste in the following - I guess we can condense this
         // down a lot with a well chosen function call
@@ -216,13 +209,13 @@ int MupixFEB::ConfigureASICs(){
             }
         } catch(std::exception& e) {
             cm_msg(MERROR, "setup_mupix", "Communication error while configuring MuPix %d: %s", asic, e.what());
-            set_equipment_status(equipment_name, "SB-FEB Communication error", "red");
+            set_equipment_status(equipment_name.c_str(), "SB-FEB Communication error", "red");
             return FE_ERR_HW; //note: return of lambda function
         }
 
         if(rpc_status!=FEB_REPLY_SUCCESS){
             //configuration mismatch, report and break foreach-loop
-            set_equipment_status(equipment_name,  "MuPix config failed", "red");
+            set_equipment_status(equipment_name.c_str(),  "MuPix config failed", "red");
             cm_msg(MERROR, "setup_mupix", "MuPix configuration error for ASIC %i", asic);
             return FE_ERR_HW;//note: return of lambda function
         }

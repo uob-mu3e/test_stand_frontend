@@ -22,16 +22,17 @@ using midas::odb;
 class MutrigFEB : public MuFEB{
    protected:
       std::map<uint16_t,std::map<uint32_t,uint32_t> > m_reg_shadow; /*[FPGA_ID][reg]*/
-
+      std::string odb_prefix;
    public:
       MutrigFEB(const MutrigFEB&)=delete;
       MutrigFEB(FEBSlowcontrolInterface & feb_sc_,
             const vector<mappedFEB> & febs_,
             const uint64_t & febmask_,
-            const char* equipment_name_,
-            const char* odb_prefix_,
+            std::string equipment_name_,
+            std::string link_equipment_name_,
+            std::string odb_prefix_,
             const uint8_t SB_number_):
-      MuFEB(feb_sc_, febs_, febmask_, equipment_name_, odb_prefix_, SB_number_)
+      MuFEB(feb_sc_, febs_, febmask_, equipment_name_, link_equipment_name_, SB_number_),odb_prefix(odb_prefix_)
       {}
       virtual ~MutrigFEB(){}
       uint16_t GetNumASICs() const {return febs.size()*GetModulesPerFEB()*GetASICSPerModule();}

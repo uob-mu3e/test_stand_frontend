@@ -69,7 +69,6 @@ using midas::odb;
 
 int MutrigFEB::WriteAll(){
 
-    char set_str[255];
     if(GetNumASICs() == 0) return 0;
     //initial Shadow register values
 
@@ -78,12 +77,8 @@ int MutrigFEB::WriteAll(){
     for (size_t i = 0; i < febs.size(); i++) {
         m_reg_shadow[i][FE_DPCTRL_REG] = 0x1FFFFFFF;
     }
-    
-    sprintf(set_str, "%s/Settings/Daq", odb_prefix);
-    // TODO: maybe change this string casting
-    // string is needed since odb takes only string
-    std::string odb_str(set_str);
-    odb odb_set_str(odb_str);
+
+    odb odb_set_str(odb_prefix+"/Settings/Daq");
     // use lambda function for passing this
 //    odb_set_str.watch([this](odb &o){
 //        on_settings_changed(o, this);
@@ -110,7 +105,7 @@ int MutrigFEB::MapForEach(std::function<int(mutrig::MutrigConfig* /*mutrig confi
 //ASIC configuration:
 //Configure all asics under prefix (e.g. prefix="/Equipment/SciFi")
 int MutrigFEB::ConfigureASICs(){
-    cm_msg(MINFO, "setup_mutrig" , "Configuring MuTRiG asics under prefix %s/Settings/ASICs/", odb_prefix);
+    cm_msg(MINFO, "setup_mutrig" , "Configuring MuTRiG asics under prefix %s/Settings/ASICs/", odb_prefix.c_str());
     int status = MapForEach([this](mutrig::MutrigConfig* config, int asic){
             uint32_t rpc_status;
             
@@ -133,7 +128,7 @@ int MutrigFEB::ConfigureASICs(){
             cm_msg(MINFO,
                     "setup_mutrig" ,
                     "Configuring MuTRiG asic %s/Settings/ASICs/%i/: Mapped to FEB%u -> SB%u.%u  ASIC #%d",
-                    odb_prefix,asic,FPGAid_from_ID(asic),SB_ID,SP_ID,FA_ID);
+                    odb_prefix.c_str(),asic,FPGAid_from_ID(asic),SB_ID,SP_ID,FA_ID);
 
 
             try {
@@ -156,12 +151,12 @@ int MutrigFEB::ConfigureASICs(){
                 rpc_status = feb_sc.FEBsc_NiosRPC(FEB, feb::CMD_MUTRIG_ASIC_CFG | (asic % GetASICSPerFEB()), payload);
             } catch(std::exception& e) {
                 cm_msg(MERROR, "setup_mutrig", "Communication error while configuring MuTRiG %d: %s", asic, e.what());
-                set_equipment_status(equipment_name, "SB-FEB Communication error", "red");
+                set_equipment_status(equipment_name.c_str(), "SB-FEB Communication error", "red");
                 return FE_ERR_HW; //note: return of lambda function
             }
             if(rpc_status!=FEB_REPLY_SUCCESS){
                 //configuration mismatch, report and break foreach-loop
-                set_equipment_status(equipment_name,  "MuTRiG config failed", "red");
+                set_equipment_status(equipment_name.c_str(),  "MuTRiG config failed", "red");
                 cm_msg(MERROR, "setup_mutrig", "MuTRiG configuration error for ASIC %i", (asic % GetASICSPerFEB()));
                 return FE_SUCCESS;//note: return of lambda function
             }
@@ -248,19 +243,13 @@ int MutrigFEB::ReadBackCounters(mappedFEB & FEB){
                    val);
 
    static std::array<std::array<uint32_t,9>,8> last_counters;
-   //store in midas
-   //INT status;
-   //int index=0;
-   char path[255];
+
    uint32_t value;
    uint32_t odbval;
    for(auto nASIC=0 + FEB.SB_Port() * GetASICSPerFEB(); nASIC < rpc_ret + FEB.SB_Port() * GetASICSPerFEB(); nASIC++){
 
-       // get midas odb object
-       sprintf(path,"%s/Variables/Counters", odb_prefix);
-       //odb variables_counters(path);
-       //TODO: Can we avoid this silly back and forth casting?
-       odb variables_counters(std::string(path).c_str());
+ 
+       odb variables_counters(odb_prefix + "/Variables/Counters");
 
        // db_set_value_index
        value=val[nASIC*15+0];
@@ -323,10 +312,7 @@ int MutrigFEB::ReadBackDatapathStatus(mappedFEB & FEB){
    int status=feb_sc.FEB_read(FEB, FE_DPMON_STATUS_REG, val);
    if(status!=3) return status;
 
-    // get odb object
-    char path[255];
-    sprintf(path, "%s/Variables/FEB datapath status", odb_prefix);
-    odb variables_feb_datapath_status(path);
+    odb variables_feb_datapath_status(odb_prefix + "/Variables/FEB datapath status");
 
     // db_set_value_index
     value=val[0] & (1<<0);
@@ -479,10 +465,7 @@ void MutrigFEB::on_settings_changed(odb o, void * userdata)
         (name == "resetskew_cdelay")||
         (name == "resetskew_phases")){
 
-        char set_str[255];
-
-        sprintf(set_str, "%s/Settings/Daq", _this->odb_prefix);
-        odb settings_daq(set_str);
+        odb settings_daq(_this->odb_prefix + "/Settings/Daq");
 
         auto cphase = settings_daq["resetskew_cphase"];
         auto cdelay = settings_daq["resetskew_cdelay"];

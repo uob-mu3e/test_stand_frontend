@@ -26,7 +26,7 @@ namespace midas{
 class FEBList
 {
 public:
-    FEBList(uint16_t SB_index_);
+    FEBList(uint16_t SB_index_, std::string eq_name_);
     FEBList(const FEBList &) = delete; // Do not copy!
     FEBList& operator=(FEBList const &) = delete; // Do not assign
     size_t nFEBS() const {return mFEBs.size();}
@@ -60,8 +60,9 @@ public:
     void RebuildFEBList();
 
 protected:
-    std::array<LinkStatus, MAX_LINKS_PER_SWITCHINGBOARD> linkstats;
     const uint16_t SB_index;
+    std::string eq_name;
+    std::array<LinkStatus, MAX_LINKS_PER_SWITCHINGBOARD> linkstats;
     uint64_t mFEBMask;
     uint64_t mLinkMask;
     uint64_t mPixelFEBMask;

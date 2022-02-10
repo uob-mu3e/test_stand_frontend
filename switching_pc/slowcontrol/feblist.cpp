@@ -4,7 +4,7 @@
 
 using midas::odb;
 
-FEBList::FEBList(uint16_t SB_index_):SB_index(SB_index_){
+FEBList::FEBList(uint16_t SB_index_, std::string eq_name_):SB_index(SB_index_),eq_name(eq_name_){
     RebuildFEBList();
 }
 
@@ -26,15 +26,16 @@ void FEBList::RebuildFEBList()
     mTileFEBMask =0;
 
     // get odb instance for links settings
-    odb links_settings("/Equipment/Links/Settings");
+    odb links_settings("/Equipment/"+eq_name+"/Settings");
 
     //fields to assemble fiber-driven name
-    auto febtype = links_settings["FrontEndBoardType"];
+    auto febtype = links_settings["FEBType"];
     auto linkmask = links_settings["LinkMask"];
-    auto sbnames = links_settings["SwitchingBoardNames"];
-    auto febnames = links_settings["FrontEndBoardNames"];
+    auto linkfeb = links_settings["LinkFEB"];
+    odb sbnames("/Equipment/Clock Reset/Settings/SwitchingBoardNames");
+    auto febnames = links_settings["FEBName"];
 
-    odb febversion("/Equipment/Switching/Variables/FEBFirmware/FEB Version");
+    odb febversion("/Equipment/"+eq_name+"/Variables/FEBFirmware/FEB Version");
 
     odb febcrate("/Equipment/FEBCrates/Settings/FEBCrate");
     odb febslot("/Equipment/FEBCrates/Settings/FEBSlot");
@@ -44,23 +45,23 @@ void FEBList::RebuildFEBList()
     int lastPrimary=-1;
     int nSecondaries=0;
     char reportStr[255];
-    for(uint16_t ID=0;ID<MAX_LINKS_PER_SWITCHINGBOARD;ID++){
-        uint16_t global_index = ID + SB_index*MAX_LINKS_PER_SWITCHINGBOARD;
+    for(uint16_t ID=0;ID<N_FEBS[SB_index];ID++){
+        uint16_t global_index = linkfeb[ID];
         std::string name_link;
         std::string febnamesID;
         sbnames[SB_index].get(name_link);
-        febnames[global_index].get(febnamesID);
+        febnames[ID].get(febnamesID);
         name_link+=":";
         name_link+= febnamesID;
-        switch ((uint32_t)febtype[global_index]) {
+        switch ((uint32_t)febtype[ID]) {
             case FEBTYPE::Unused:
                 mFEBs.push_back({linkstats[ID],
                                  global_index, 
-                                 linkmask[global_index], 
+                                 linkmask[ID], 
                                  name_link.c_str(), 
                                  febcrate[global_index], 
                                  febslot[global_index], 
-                                 febversion[global_index]});
+                                 febversion[ID]});
                 mPrimaryFEBs.push_back(mFEBs.back());
                 break;
             case FEBTYPE::FibreSecondary:

@@ -12,17 +12,17 @@ constexpr bool has_pixels = true;
 
 const char *frontend_name = "SW Central";
 const string fe_name = "SW Central";
-const string eq_name = "SwitchingC";
-const string link_eq_name = "LinksC";
-const string scifi_eq_name = "Njet";
-const string tile_eq_name = "Njet";
+const string eq_name = "SwitchingCentral";
+const string link_eq_name = "LinksCentral";
+const string scifi_eq_name = "ScifiCentral";
+const string tile_eq_name = "TileCentral";
 const string pixel_eq_name = "PixelsC";
 
 /*-- Equipment list ------------------------------------------------*/
 enum EQUIPMENT_ID {Switching=0,Links, Mupix};
 constexpr int NEQUIPMENT = 3;
 EQUIPMENT equipment[NEQUIPMENT+1] = {
-   {"SwitchingC",                /* equipment name */
+   {"SwitchingCentral",         /* equipment name */
     {110, 0,                    /* event ID, trigger mask */
      "SYSTEM",                  /* event buffer */
      EQ_PERIODIC,               /* equipment type */
@@ -37,7 +37,7 @@ EQUIPMENT equipment[NEQUIPMENT+1] = {
      "", "", ""},
      read_sc_event,             /* readout routine */
    },
-   {"LinksC",                /* equipment name */
+   {"LinksCentral",             /* equipment name */
     {110, 0,                    /* event ID, trigger mask */
      "SYSTEM",                  /* event buffer */
      EQ_PERIODIC,               /* equipment type */
@@ -52,8 +52,8 @@ EQUIPMENT equipment[NEQUIPMENT+1] = {
      "", "", ""},
      read_sc_event,             /* readout routine */
    },
-    {"MupixC",                    /* equipment name */
-    {113, 0,                      /* event ID, trigger mask */
+    {"MupixCentral",            /* equipment name */
+    {113, 0,                    /* event ID, trigger mask */
      "SYSTEM",                  /* event buffer */
      EQ_PERIODIC,                 /* equipment type */
      0,                         /* event source crate 0, all stations */

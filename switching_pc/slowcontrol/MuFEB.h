@@ -22,20 +22,20 @@ class MuFEB {
       MuFEB(FEBSlowcontrolInterface & feb_sc_,
             const vector<mappedFEB> & febs_,
             const uint64_t & febmask_,
-            const char* equipment_name_,
-            const char* odb_prefix_,
+            std::string equipment_name_,
+            std::string link_equipment_name_,
             const uint8_t SB_number_):
               feb_sc(feb_sc_),
               febs(febs_),
               febmask(febmask_),
               equipment_name(equipment_name_),
-              odb_prefix(odb_prefix_),
+              link_equipment_name(link_equipment_name_),
               SB_number(SB_number_)
         {}
       virtual ~MuFEB(){}
 
-      const char* GetName(){return equipment_name;}
-      const char* GetPrefix(){return odb_prefix;}
+      const std::string GetName(){return equipment_name;}
+      const std::string GetLinkEquipmentName(){return link_equipment_name;}
 
       virtual uint16_t GetNumASICs() const {return 0;}
       virtual uint16_t GetNumFPGAs() const {return febs.size();}
@@ -77,8 +77,9 @@ protected:
       FEBSlowcontrolInterface & feb_sc;
       const vector<mappedFEB> & febs;
       const uint64_t & febmask;
-      const char* equipment_name;
-      const char* odb_prefix;
+      std::string equipment_name;
+      std::string link_equipment_name;
+      //const char* odb_prefix;
       const uint8_t SB_number;
 
       //Mapping from ASIC number to FPGA_ID and ASIC_ID

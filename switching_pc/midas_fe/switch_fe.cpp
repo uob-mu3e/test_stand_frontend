@@ -251,7 +251,7 @@ void setup_odb(){
     create_ssso_names_in_odb(settings,switch_id);
     create_sscn_names_in_odb(settings,switch_id);
 
-    string path_s = "/Equipment/" + std::string(eq_name) + "/Settings";
+    string path_s = "/Equipment/" + eq_name + "/Settings";
     settings.connect(path_s, true);
 
     /* Clean up, move subdetector specific stuff */
@@ -283,7 +283,7 @@ void setup_odb(){
     };
 
 
-    string path_c = "/Equipment/" + std::string(eq_name) + "/Commands";
+    string path_c = "/Equipment/" + eq_name + "/Commands";
     commands.connect(path_c, true);
 
 
@@ -315,25 +315,43 @@ void setup_odb(){
             {sorterbankname.c_str(), std::array<int, per_fe_SSSO_size*N_FEBS[switch_id]>{}}
     };
 
-    string path2 = "/Equipment/" + std::string(eq_name) + "/Variables";
+    string path2 = "/Equipment/" + eq_name + "/Variables";
     sc_variables.connect(path2);
 
     odb firmware_variables = {
-        {"Arria V Firmware Version", std::array<uint32_t, MAX_N_FRONTENDBOARDS>{}},
-        {"Max 10 Firmware Version", std::array<uint32_t, MAX_N_FRONTENDBOARDS>{}},
-        {"FEB Version", std::array<uint32_t, MAX_N_FRONTENDBOARDS>{20}},
+        {"Arria V Firmware Version", std::array<uint32_t, N_FEBS[switch_id]>{}},
+        {"Max 10 Firmware Version", std::array<uint32_t, N_FEBS[switch_id]>{}},
+        {"FEB Version", std::array<uint32_t, N_FEBS[switch_id]>{20}},
     };
-    string path3 = "/Equipment/" + std::string(eq_name) + "/Variables/FEBFirmware";
-    firmware_variables.connect("/Equipment/Switching/Variables/FEBFirmware");
+    string path3 = "/Equipment/" + link_eq_name + "/Variables/FEBFirmware";
+    firmware_variables.connect(path3);
 
     odb link_settings = {
-        {"LinkMask", std::array<uint32_t, MAX_LINKS_PER_SWITCHINGBOARD>{}},
-        {"FEBType", std::array<uint32_t, MAX_LINKS_PER_SWITCHINGBOARD>{}},
-        {"FEBName", std::array<uint32_t, MAX_LINKS_PER_SWITCHINGBOARD>{}},
+        {"LinkMask", std::array<uint32_t,N_FEBS[switch_id]>{}},
+        {"LinkFEB", std::array<uint32_t, N_FEBS[switch_id]>{}},
+        {"FEBType", std::array<uint32_t, N_FEBS[switch_id]>{}},
+        {"FEBName", std::array<uint32_t, N_FEBS[switch_id]>{}},
     };
-    string path_ls = "/Equipment/" + std::string(link_eq_name) + "/Settings";
+    string path_ls = "/Equipment/" + link_eq_name + "/Settings";
     link_settings.connect(path_ls);
 
+
+    odb link_variables = {
+        {"BypassEnabled", std::array<uint32_t,N_FEBS[switch_id]>{}},
+        {"RunState", std::array<uint32_t, N_FEBS[switch_id]>{}},
+    };
+    string path_lv = "/Equipment/" + link_eq_name + "/Variables";
+    link_settings.connect(path_lv);
+
+    odb datapath_variables = {
+            {"PLL locked", std::array<uint32_t, N_FEBS[switch_id]>{}},
+            {"Buffer full", std::array<uint32_t, N_FEBS[switch_id]>{}},
+            {"Frame desync", std::array<uint32_t, N_FEBS[switch_id]>{}},
+            {"DPA locked", std::array<uint32_t, N_FEBS[switch_id]>{}},
+            {"RX ready", std::array<uint32_t, N_FEBS[switch_id]>{}}
+    };
+    string path_dp = "/Equipment/" + link_eq_name + "/Variables/FEB datapath status";
+    datapath_variables.connect(path_dp);
 
     // add custom pages to ODB
     odb custom("/Custom");
@@ -353,37 +371,37 @@ void setup_odb(){
 
 void setup_history(){
 
-    hs_define_panel("Switching", "All FEBs", {"Switching:Merger Timeout All FEBs"});
+    hs_define_panel(eq_name.c_str(), "All FEBs", {"Switching:Merger Timeout All FEBs"});
 
     //TODO: The 12 is the integration run number used to reduce clutter
     for(uint i= 0; i < 12; i++){
         std::string name("FEB"+std::to_string(i));
         std::vector<std::string> tnames;
-        tnames.push_back(std::string("Switching:" + name + std::string(" Arria Temperature")));
-        tnames.push_back(std::string("Switching:" + name + std::string(" MAX Temperature")));
-        tnames.push_back(std::string("Switching:" + name + std::string(" SI1 Temperature")));
-        tnames.push_back(std::string("Switching:" + name + std::string(" SI2 Temperature")));
-        tnames.push_back(std::string("Switching:" + name + std::string(" ext Arria Temperature")));
-        tnames.push_back(std::string("Switching:" + name + std::string(" DCDC Temperature")));
-        tnames.push_back(std::string("Switching:" + name + std::string(" Firefly1 Temperature")));
+        tnames.push_back(std::string(eq_name.c_str() + name + std::string(" Arria Temperature")));
+        tnames.push_back(std::string(eq_name.c_str() + name + std::string(" MAX Temperature")));
+        tnames.push_back(std::string(eq_name.c_str() + name + std::string(" SI1 Temperature")));
+        tnames.push_back(std::string(eq_name.c_str() + name + std::string(" SI2 Temperature")));
+        tnames.push_back(std::string(eq_name.c_str() + name + std::string(" ext Arria Temperature")));
+        tnames.push_back(std::string(eq_name.c_str() + name + std::string(" DCDC Temperature")));
+        tnames.push_back(std::string(eq_name.c_str() + name + std::string(" Firefly1 Temperature")));
 
        std::vector<std::string> vnames;
-       vnames.push_back(std::string("Switching:" + name + std::string(" Voltage 1.1")));
-       vnames.push_back(std::string("Switching:" + name + std::string(" Voltage 1.8")));
-       vnames.push_back(std::string("Switching:" + name + std::string(" Voltage 2.5")));
-       vnames.push_back(std::string("Switching:" + name + std::string(" Voltage 3.3")));
-       vnames.push_back(std::string("Switching:" + name + std::string(" Voltage 20")));
-       vnames.push_back(std::string("Switching:" + name + std::string(" Firefly1 Voltage")));
+       vnames.push_back(std::string(eq_name.c_str() + name + std::string(" Voltage 1.1")));
+       vnames.push_back(std::string(eq_name.c_str() + name + std::string(" Voltage 1.8")));
+       vnames.push_back(std::string(eq_name.c_str() + name + std::string(" Voltage 2.5")));
+       vnames.push_back(std::string(eq_name.c_str() + name + std::string(" Voltage 3.3")));
+       vnames.push_back(std::string(eq_name.c_str() + name + std::string(" Voltage 20")));
+       vnames.push_back(std::string(eq_name.c_str() + name + std::string(" Firefly1 Voltage")));
 
        std::vector<std::string> pnames;
-       pnames.push_back(std::string("Switching:" + name + std::string(" Firefly1 RX1 Power")));
-       pnames.push_back(std::string("Switching:" + name + std::string(" Firefly1 RX2 Power")));
-       pnames.push_back(std::string("Switching:" + name + std::string(" Firefly1 RX3 Power")));
-       pnames.push_back(std::string("Switching:" + name + std::string(" Firefly1 RX4 Power")));
+       pnames.push_back(std::string(eq_name.c_str() + name + std::string(" Firefly1 RX1 Power")));
+       pnames.push_back(std::string(eq_name.c_str() + name + std::string(" Firefly1 RX2 Power")));
+       pnames.push_back(std::string(eq_name.c_str() + name + std::string(" Firefly1 RX3 Power")));
+       pnames.push_back(std::string(eq_name.c_str() + name + std::string(" Firefly1 RX4 Power")));
 
-       hs_define_panel("Switching",std::string(name + std::string(" Temperatures")).c_str(),tnames);
-       hs_define_panel("Switching",std::string(name + std::string(" Voltages")).c_str(),vnames);
-       hs_define_panel("Switching",std::string(name + std::string(" RX Power")).c_str(),pnames);
+       hs_define_panel(eq_name.c_str(),std::string(name + std::string(" Temperatures")).c_str(),tnames);
+       hs_define_panel(eq_name.c_str(),std::string(name + std::string(" Voltages")).c_str(),vnames);
+       hs_define_panel(eq_name.c_str(),std::string(name + std::string(" RX Power")).c_str(),pnames);
     }
 }
 
@@ -467,12 +485,12 @@ INT init_mudaq(mudaq::MudaqDevice &mu) {
 INT init_febs(mudaq::MudaqDevice & mu) {
 
     //set link enables so slow control can pass
-    string path_l = "/Equipment/" + std::string(link_eq_name) + "/Settings/LinkMask";
+    string path_l = "/Equipment/" + link_eq_name + "/Settings/LinkMask";
     odb cur_links_odb(path_l);
     set_feb_enable(get_link_active_from_odb(cur_links_odb));
     
     // Create the FEB List
-    feblist = new FEBList(switch_id);
+    feblist = new FEBList(switch_id, link_eq_name);
 
     //init SC
     feb_sc->FEBsc_resetSecondary();
@@ -483,7 +501,7 @@ INT init_febs(mudaq::MudaqDevice & mu) {
                         feblist->getActiveFEBs(),
                         feblist->getFEBMask(),
                         equipment[EQUIPMENT_ID::Switching].name,
-                        "/Equipment/SciFi", // Why??
+                        "This is here to find out why", // Why??
                         switch_id);
 
     //init all values on FEB
@@ -509,11 +527,11 @@ INT init_scifi(mudaq::MudaqDevice & mu) {
                      feblist->getSciFiFEBs(),
                      feblist->getSciFiFEBMask(),
                      equipment[EQUIPMENT_ID::SciFi].name,
-                     "/Equipment/SciFi",
+                     equipment[EQUIPMENT_ID::Links].name,
                       switch_id); //create FEB interface signleton for scifi
 
     
-    int status=mutrig::midasODB::setup_db("/Equipment/SciFi",scififeb);
+    int status=mutrig::midasODB::setup_db("/Equipment/" + scifi_eq_name,*scififeb);
     if(status != SUCCESS){
         set_equipment_status(equipment[EQUIPMENT_ID::SciFi].name, "Start up failed", "var(--mred)");
         return status;
@@ -526,11 +544,11 @@ INT init_scifi(mudaq::MudaqDevice & mu) {
     //set custom page
     odb custom("/Custom");
     custom["SciFi-ASICs"] = "mutrigTdc.html";
-    custom["Pixel Control"] = "pixel_tracker.html";
+    //
 
     // setup watches
     if ( scififeb->GetNumASICs() != 0 ){
-        odb scifi_setting("/Equipment/SciFi/Settings/Daq");
+        odb scifi_setting("/Equipment/" + scifi_eq_name + "/Settings/Daq");
         scifi_setting.watch(scifi_settings_changed);
     }
 
@@ -548,9 +566,9 @@ INT init_scitiles(mudaq::MudaqDevice & mu) {
                      feblist->getTileFEBs(),
                      feblist->getTileFEBMask(),
                      equipment[EQUIPMENT_ID::SciTiles].name,
-                     "/Equipment/SciTiles",
+                     equipment[EQUIPMENT_ID::Links].name,
                       switch_id); //create FEB interface signleton for scitiles
-    int status=mutrig::midasODB::setup_db("/Equipment/SciTiles", tilefeb);
+    int status=mutrig::midasODB::setup_db("/Equipment/" + tile_eq_name, *tilefeb);
     if(status != SUCCESS){
         set_equipment_status(equipment[EQUIPMENT_ID::SciTiles].name, "Start up failed", "var(--mred)");
         return status;
@@ -578,10 +596,10 @@ INT init_mupix(mudaq::MudaqDevice & mu) {
                      feblist->getPixelFEBs(),
                      feblist->getPixelFEBMask(),
                      equipment[EQUIPMENT_ID::Mupix].name,
-                     "/Equipment/Mupix",
+                     equipment[EQUIPMENT_ID::Links].name,
                      switch_id); //create FEB interface signleton for mupix
 
-    int status=mupix::midasODB::setup_db("/Equipment/Mupix", mupixfeb, true, false);//true);
+    int status=mupix::midasODB::setup_db("/Equipment/" + pixel_eq_name, *mupixfeb, true, false);//true);
     if(status != SUCCESS){
         set_equipment_status(equipment[EQUIPMENT_ID::Mupix].name, "Start up failed", "var(--mred)");
         return status;
@@ -592,7 +610,8 @@ INT init_mupix(mudaq::MudaqDevice & mu) {
     set_equipment_status(equipment[EQUIPMENT_ID::Mupix].name, "Ok", "var(--mgreen)");
 
     //TODO: set custom page
-    //odb custom("/Custom");
+    odb custom("/Custom");
+    custom["Pixel Control"] = "pixel_tracker.html";
     //custom["Mupix&"] = "mupix_custompage.html";
 
     return SUCCESS;
