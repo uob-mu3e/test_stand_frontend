@@ -15,7 +15,7 @@ const string fe_name = "SW Integration";
 const string eq_name = "SwitchingIntegration";
 const string link_eq_name = "LinksIntegration";
 const string scifi_eq_name = "ScifiIntegration";
-const string tile_eq_name = "TilesItegration";
+const string tile_eq_name = "TilesIntegration";
 const string pixel_eq_name = "PixelsIntegration";
 
 /*-- Equipment list ------------------------------------------------*/
@@ -67,7 +67,7 @@ EQUIPMENT equipment[NEQUIPMENT+1] = {
      "", "", "",},
      read_scifi_sc_event,          /* readout routine */
     },
-   {"SciTilesIntegration",       /* equipment name */
+   {"TilesIntegration",       /* equipment name */
     {112, 0,                      /* event ID, trigger mask */
      "SYSTEM",                  /* event buffer */
      EQ_PERIODIC,                 /* equipment type */
@@ -82,7 +82,7 @@ EQUIPMENT equipment[NEQUIPMENT+1] = {
      "", "", "",},
      read_scitiles_sc_event,          /* readout routine */
     },
-    {"MupixIntegration",         /* equipment name */
+    {"PixelsIntegration",         /* equipment name */
     {113, 0,                      /* event ID, trigger mask */
      "SYSTEM",                  /* event buffer */
      EQ_PERIODIC,                 /* equipment type */

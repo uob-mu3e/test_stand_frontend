@@ -108,18 +108,18 @@ int setup_db(std::string prefix, MupixFEB & FEB_interface, bool init_FEB, bool w
     };
 
     // TODO: why do I have to connect here? In switch_fe.cpp we do first the naming and than we connect
-    settings.connect(prefix + "Settings", write_defaults);
+    settings.connect(prefix + "/Settings", write_defaults);
 
     create_psll_names_in_odb(settings, N_FEBS_MUPIX_INT_2021, lvds_links_per_feb);
 
-    settings.connect(prefix + "Settings", write_defaults=write_defaults);
+    settings.connect(prefix + "/Settings", write_defaults=write_defaults);
 
     /* Default values for /Equipment/Mupix/Variables */
     odb variables = {
         {banknamePSLL.c_str(), std::array<int, per_fe_PSLL_size*N_FEBS_MUPIX_INT_2021*lvds_links_per_feb>{}}
     };
 
-    variables.connect(prefix + "Variables", write_defaults=write_defaults);
+    variables.connect(prefix + "/Variables", write_defaults=write_defaults);
 
     return DB_SUCCESS;
 }
@@ -165,66 +165,29 @@ int MapForEachASIC(std::string prefix, std::function<int(MupixConfig* /*mupix co
 
 	//Iterate over ASICs
     // TODO: Get that back!
-	/*for(unsigned int asic = 0; asic < nasics; ++asic) {
+	for(unsigned int asic = 0; asic < nasics; ++asic) {
 
         if (daq["mask"][asic])
             continue;
 
 		MupixConfig config;
 		config.reset();
-		char set_str[255];
-		int status, size;
+		//har set_str[255];
+		//int status, size;
 		// structs from ODB
-		
-		HNDLE hCHIPDACS;
-        MUPIX_BIASDACS mt;
-        sprintf(set_str, "%s/Settings/BIASDACS/%i", prefix, asic);
-		printf("mupix_midasodb: Mapping ODB to Config for %s, asic %d: Using key %s\n",prefix,asic, set_str);
-		status = db_find_key(db_rootentry, 0, set_str, &hCHIPDACS);
-		if(status != DB_SUCCESS) {
-			cm_msg(MERROR, "mupix::midasODB::MapMupixConfigFromDB", "Cannot find key %s", set_str);
-		}
-		size = sizeof(mt);
-		status = db_get_record(db_rootentry, hCHIPDACS, &mt, &size, 0);
-		if(status != DB_SUCCESS) {
-			cm_msg(MERROR, "mupix::midasODB::MapMupixConfigFromDB", "Cannot retrieve settings");
-		}
-        config.Parse_BiasDACs_from_struct(mt);
+        odb biasdacs(prefix + "/Settings/BIASDACS/" + std::to_string(asic));
+        config.Parse_BiasDACs_from_odb(biasdacs);
 
-        HNDLE hDIGIROWDACS;
-        MUPIX_CONFDACS mdr;
-        sprintf(set_str, "%s/Settings/CONFDACS/%i", prefix, asic);
-        printf("mupix_midasodb: Mapping ODB to Config for %s, asic %d: Using key %s\n",prefix,asic, set_str);
-        status = db_find_key(db_rootentry, 0, set_str, &hDIGIROWDACS);
-        if(status != DB_SUCCESS) {
-            cm_msg(MERROR, "mupix::midasODB::MapMupixConfigFromDB", "Cannot find key %s", set_str);
-        }
-        size = sizeof(mdr);
-        status = db_get_record(db_rootentry, hDIGIROWDACS, &mdr, &size, 0);
-        if(status != DB_SUCCESS) {
-            cm_msg(MERROR, "mupix::midasODB::MapMupixConfigFromDB", "Cannot retrieve settings");
-        }
-        config.Parse_ConfDACs_from_struct(mdr);
+        odb confdacs(prefix + "/Settings/CONFDACS/" + std::to_string(asic));
+        config.Parse_ConfDACs_from_odb(confdacs);
 
-        HNDLE hCOLDACS;
-        MUPIX_VDACS mdc;
-        sprintf(set_str, "%s/Settings/VDACS/%i", prefix, asic);
-        printf("mupix_midasodb: Mapping ODB to Config for %s, asic %d: Using key %s\n",prefix,asic, set_str);
-        status = db_find_key(db_rootentry, 0, set_str, &hCOLDACS);
-        if(status != DB_SUCCESS) {
-            cm_msg(MERROR, "mupix::midasODB::MapMupixConfigFromDB", "Cannot find key %s", set_str);
-        }
-        size = sizeof(mdc);
-        status = db_get_record(db_rootentry, hCOLDACS, &mdc, &size, 0);
-        if(status != DB_SUCCESS) {
-            cm_msg(MERROR, "mupix::midasODB::MapMupixConfigFromDB", "Cannot retrieve settings");
-        }
-        config.Parse_VDACs_from_struct(mdc);
+        odb coldacs(prefix +"/Setrtings/VDACS/" + std::to_string(asic));
+        config.Parse_VDACs_from_odb(coldacs);
 
         //note: this needs to be passed as pointer, otherwise there is a memory corruption after exiting the lambda
 		status=func(&config,asic);
 		if (status != SUCCESS) break;
-	}*/
+	}
 	return status;
 }
 

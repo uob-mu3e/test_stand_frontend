@@ -330,7 +330,7 @@ void setup_odb(){
         {"LinkMask", std::array<uint32_t,N_FEBS[switch_id]>{}},
         {"LinkFEB", std::array<uint32_t, N_FEBS[switch_id]>{}},
         {"FEBType", std::array<uint32_t, N_FEBS[switch_id]>{}},
-        {"FEBName", std::array<uint32_t, N_FEBS[switch_id]>{}},
+        {"FEBName", std::array<std::string, N_FEBS[switch_id]>{}},
     };
     string path_ls = "/Equipment/" + link_eq_name + "/Settings";
     link_settings.connect(path_ls);
