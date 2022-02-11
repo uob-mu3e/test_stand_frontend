@@ -16,7 +16,7 @@ const string eq_name = "SwitchingCentral";
 const string link_eq_name = "LinksCentral";
 const string scifi_eq_name = "ScifiCentral";
 const string tile_eq_name = "TileCentral";
-const string pixel_eq_name = "PixelsC";
+const string pixel_eq_name = "PixelsCentral";
 
 /*-- Equipment list ------------------------------------------------*/
 enum EQUIPMENT_ID {Switching=0,Links, Mupix};
@@ -52,7 +52,7 @@ EQUIPMENT equipment[NEQUIPMENT+1] = {
      "", "", ""},
      read_sc_event,             /* readout routine */
    },
-    {"MupixCentral",            /* equipment name */
+    {"PixelsCentral",            /* equipment name */
     {113, 0,                    /* event ID, trigger mask */
      "SYSTEM",                  /* event buffer */
      EQ_PERIODIC,                 /* equipment type */
