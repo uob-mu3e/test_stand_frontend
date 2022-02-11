@@ -243,13 +243,13 @@ for(var i=0; i < 4; i++){
 
 function init(){
 
-   mjsonrpc_db_get_values(["/Equipment/Links/Settings"]).then(function(rpc) {
+   mjsonrpc_db_get_values(["/Equipment/LinksIntegration/Settings"]).then(function(rpc) {
        update_masks(rpc.result.data[0]);
     }).catch(function(error) {
        mjsonrpc_error_alert(error);
     });
 
-    mjsonrpc_db_get_values(["/Equipment/Switching/Variables/FEBFirmware"]).then(function(rpc) {
+    mjsonrpc_db_get_values(["/Equipment/LinksIntegration/Variables/FEBFirmware"]).then(function(rpc) {
         update_firmware(rpc.result.data[0]);
      }).catch(function(error) {
         mjsonrpc_error_alert(error);
@@ -261,29 +261,39 @@ function init(){
         mjsonrpc_error_alert(error);
      });
 
-
-
-    mjsonrpc_db_get_values(["/Equipment/Switching/Variables"]).then(function(rpc) {
-
+    mjsonrpc_db_get_values(["/Equipment/SwitchingIntegration/Variables"]).then(function(rpc) {
         var scvals = rpc.result.data[0]["SCFE"];
         if(scvals)
              update_sc(scvals, 0);
-        scvals = rpc.result.data[0]["SUFE"];
-        if(scvals)
-             update_sc(scvals, 1);
-        scvals = rpc.result.data[0]["SDFE"];
-        if(scvals)
-             update_sc(scvals, 1);
-        scvals = rpc.result.data[0]["SFFE"];
-        if(scvals)
-             update_sc(scvals, 1);
-     }).catch(function(error) {
+    }).catch(function(error) {
         mjsonrpc_error_alert(error);
-     });
+    });    
+     
+    mjsonrpc_db_get_values(["/Equipment/SwitchingUpstream/Variables"]).then(function(rpc) {
+        var scvals = rpc.result.data[0]["SUFE"];
+        if(scvals)
+             update_sc(scvals, 1);
+    }).catch(function(error) {
+                mjsonrpc_error_alert(error);
+    });    
+          
 
-
-
-
+    mjsonrpc_db_get_values(["/Equipment/SwitchingDownstream/Variables"]).then(function(rpc) {
+        var scvals = rpc.result.data[0]["SDFE"];
+        if(scvals)
+             update_sc(scvals, 2);
+    }).catch(function(error) {
+                mjsonrpc_error_alert(error);
+    });         
+    
+    mjsonrpc_db_get_values(["/Equipment/SwitchingFibres/Variables"]).then(function(rpc) {
+        var scvals = rpc.result.data[0]["SFFE"];
+        if(scvals)
+             update_sc(scvals, 3);
+    }).catch(function(error) {
+                mjsonrpc_error_alert(error);
+    });      
+    
     draw(-1);
 }
 
@@ -458,6 +468,6 @@ function update_slots(valuex){
 
 function start_programming() {
     if (confirm("Do you want to program this FEB?")) {
-        mjsonrpc_db_set_value("/Equipment/Switching/Settings/Load Firmware", 1);
+        mjsonrpc_db_set_value("/Equipment/SwitchinIntegration/Commands/Load Firmware", 1);
     }
 }
