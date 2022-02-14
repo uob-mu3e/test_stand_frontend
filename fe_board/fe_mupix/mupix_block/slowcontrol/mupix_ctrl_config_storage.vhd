@@ -24,7 +24,7 @@ entity mupix_ctrl_config_storage is
         i_reset_n           : in  std_logic;
 
         i_chip_cvb          : in  std_logic_vector(N_CHIPS_g-1 downto 0);   -- used for conf, vdac, bias and combined
-        i_chip_tdac         : in  integer range 0 to N_CHIPS_g;             -- used for TDACs (will stay like this if i dont implement a way to write equal TDACs in parallel)
+        i_chip_tdac         : in  integer range 0 to N_CHIPS_g-1;           -- used for TDACs (will stay like this if i dont implement a way to write equal TDACs in parallel)
 
         i_conf_reg_data     : in  reg32;
         i_conf_reg_we       : in  std_logic;
@@ -111,12 +111,10 @@ begin
         conf_dpf_we(I) <= i_conf_reg_we and i_chip_cvb(I);
         vdac_dpf_we(I) <= i_vdac_reg_we and i_chip_cvb(I);
         bias_dpf_we(I) <= i_bias_reg_we and i_chip_cvb(I);
-        tdac_dpf_we -- TODO
 
         conf_dpf_wdata(I) <= i_conf_reg_data;
         vdac_dpf_wdata(I) <= i_vdac_reg_data;
         bias_dpf_wdata(I) <= i_bias_reg_data;
-        tdac_dpf_wdata -- TODO
 
         conf: entity work.dual_port_fifo
           generic map (
@@ -199,6 +197,23 @@ begin
           );
 
     end generate;
+
+    tdac_memory: entity work.tdac_memory
+      generic map (
+        N_CHIPS_g => N_CHIPS_g
+      )
+      port map (
+        i_clk            => i_clk,
+        i_reset_n        => i_reset_n,
+
+        o_tdac_dpf_we    => tdac_dpf_we,
+        o_tdac_dpf_wdata => tdac_dpf_wdata,
+        i_tdac_dpf_empty => tdac_dpf_empty,
+
+        i_data           => i_tdac_data,
+        i_we             => i_tdac_we,
+        i_chip           => i_chip_tdac
+      );
 
 
     -- process(i_clk, i_reset_n) -- read process
