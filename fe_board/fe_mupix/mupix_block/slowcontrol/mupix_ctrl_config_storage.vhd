@@ -103,7 +103,7 @@ begin
 
     gen_dp_fifos: for I in 0 to N_CHIPS_g generate
 
-        o_data(I).rdy <= tdac_dpf_full(I) & bias_dpf_full(I) & vdac_dpf_full(I) & conf_dpf_full(I);
+        o_data(I).rdy <= (TDAC_BIT => tdac_dpf_full(I), BIAS_BIT => bias_dpf_full(I), VDAC_BIT => vdac_dpf_full(I), CONF_BIT => conf_dpf_full(I));
 
         conf_dpf_we(I) <= (i_conf_reg_we and i_chip_cvb(I)) or conf_dpf_we_splitter;
         vdac_dpf_we(I) <= (i_vdac_reg_we and i_chip_cvb(I)) or vdac_dpf_we_splitter;
@@ -127,9 +127,9 @@ begin
             o_empty   => conf_dpf_empty(I),
             i_we      => conf_dpf_we(I),
             i_wdata   => conf_dpf_wdata(I),
-            i_re1     => i_read(I).spi_read(0),
-            o_rdata1  => o_data(I).spi_data(0 downto 0),
-            i_re2     => i_read(I).mu3e_read(0),
+            i_re1     => i_read(I).spi_read(CONF_BIT),
+            o_rdata1  => o_data(I).spi_data(CONF_BIT downto CONF_BIT),
+            i_re2     => i_read(I).mu3e_read(CONF_BIT),
             o_rdata2  => o_data(I).conf
           );
 
@@ -147,9 +147,9 @@ begin
             o_empty   => vdac_dpf_empty(I),
             i_we      => vdac_dpf_we(I),
             i_wdata   => vdac_dpf_wdata(I),
-            i_re1     => i_read(I).spi_read(1),
-            o_rdata1  => o_data(I).spi_data(1 downto 1),
-            i_re2     => i_read(I).mu3e_read(1),
+            i_re1     => i_read(I).spi_read(VDAC_BIT),
+            o_rdata1  => o_data(I).spi_data(VDAC_BIT downto VDAC_BIT),
+            i_re2     => i_read(I).mu3e_read(VDAC_BIT),
             o_rdata2  => o_data(I).vdac
           );
 
@@ -167,9 +167,9 @@ begin
             o_empty   => bias_dpf_empty(I),
             i_we      => bias_dpf_we(I),
             i_wdata   => bias_dpf_wdata(I),
-            i_re1     => i_read(I).spi_read(2),
-            o_rdata1  => o_data(I).spi_data(2 downto 2),
-            i_re2     => i_read(I).mu3e_read(2),
+            i_re1     => i_read(I).spi_read(BIAS_BIT),
+            o_rdata1  => o_data(I).spi_data(BIAS_BIT downto BIAS_BIT),
+            i_re2     => i_read(I).mu3e_read(BIAS_BIT),
             o_rdata2  => o_data(I).bias
           );
         
@@ -187,9 +187,9 @@ begin
             o_empty   => tdac_dpf_empty(I),
             i_we      => tdac_dpf_we(I),
             i_wdata   => tdac_dpf_wdata(I),
-            i_re1     => i_read(I).spi_read(3),
-            o_rdata1  => o_data(I).spi_data(3 downto 3),
-            i_re2     => i_read(I).mu3e_read(3),
+            i_re1     => i_read(I).spi_read(TDAC_BIT),
+            o_rdata1  => o_data(I).spi_data(TDAC_BIT downto TDAC_BIT),
+            i_re2     => i_read(I).mu3e_read(TDAC_BIT),
             o_rdata2  => o_data(I).tdac
           );
 

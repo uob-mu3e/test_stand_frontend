@@ -166,11 +166,28 @@ begin
 
     -- TODO
 
-
     ------------------------------------------------------
     -- SPI writing
     ------------------------------------------------------
-    gendirect_spi: for I in 0 to N_SPI_g-1 generate 
+
+    gen_spi: for I in 0 to N_SPI_g-1 generate
+
+        mp_ctrl_spi_inst: entity work.mp_ctrl_spi
+        generic map (
+            N_CHIPS_PER_SPI_g      => N_CHIPS_PER_SPI_g
+        )
+        port map (
+            i_clk                   => i_clk,
+            i_reset_n               => i_reset_n,
+            
+            o_read                  => signals_to_storage(I*N_CHIPS_PER_SPI_g+N_CHIPS_PER_SPI_g-1 downto N_CHIPS_PER_SPI_g*I).spi_read,
+            i_data                  => signals_from_storage(I*N_CHIPS_PER_SPI_g+N_CHIPS_PER_SPI_g-1 downto N_CHIPS_PER_SPI_g*I),
+            o_data_to_direct_spi    => mp_ctrl_to_direct_spi(I),
+            o_data_to_direct_spi_we => mp_ctrl_to_direct_spi_wr(I),
+            i_direct_spi_fifo_full  => direct_spi_fifo_full(I),
+            o_spi_chip_selct_mask   => spi_chip_select_mask_mp_ctrl(I*N_CHIPS_PER_SPI_g+N_CHIPS_PER_SPI_g-1 downto N_CHIPS_PER_SPI_g*I)
+        );
+
         mp_ctrl_direct_spi_inst: entity work.mp_ctrl_direct_spi
         generic map (
             DIRECT_SPI_FIFO_SIZE_g => DIRECT_SPI_FIFO_SIZE_g,

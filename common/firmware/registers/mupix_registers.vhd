@@ -25,6 +25,11 @@ constant MUPIX_LVDS_STATUS_BLOCK_LENGTH     : integer := 36;
 ---- mupix ctrl (0x0400-0x0FFF)----------------------------------
 -----------------------------------------------------------------
 
+    constant BIAS_BIT                               :  integer := 0;        -- DOC: used wherever BIAS, CONF, VDAC and TDAC need order | MP_FEB
+    constant CONF_BIT                               :  integer := 1;        -- DOC: used wherever BIAS, CONF, VDAC and TDAC need order | MP_FEB
+    constant VDAC_BIT                               :  integer := 2;        -- DOC: used wherever BIAS, CONF, VDAC and TDAC need order | MP_FEB
+    constant TDAC_BIT                               :  integer := 3;        -- DOC: used wherever BIAS, CONF, VDAC and TDAC need order | MP_FEB
+
     constant MP_CTRL_COMBINED_START_REGISTER_W      :  integer := 16#0400#; -- DOC: Used to send combined config data to the mupix, chip ID encoded in addr as regaddr + chipID | MP_FEB
     constant MP_CTRL_TDAC_START_REGISTER_W          :  integer := 16#0430#; -- DOC: Used to send TDAC to the mupix, chip ID encoded in addr as regaddr + chipID | MP_FEB
     constant MP_CTRL_CHIP_SELECT1_REGISTER_W        :  integer := 16#0460#; -- DOC: Used to specify the chip ID in case of direct SPI or direct register configuration | MP_FEB

@@ -15,31 +15,52 @@ use ieee.std_logic_misc.all;
 
 use work.mupix.all;
 use work.mudaq.all;
+use work.mupix_registers.all;
 
 
 entity mp_ctrl_spi is
-    generic( 
-        DIRECT_SPI_FIFO_SIZE_g: positive := 4;
+    generic(
         N_CHIPS_PER_SPI_g: positive := 4--;
     );
     port(
         i_clk                   : in  std_logic;
         i_reset_n               : in  std_logic;
 
+        -- connections to config storage
+        o_read                  : out std_logic_vector(3 downto 0);
+        i_data                  : in  mp_conf_array_out(N_CHIPS_PER_SPI_g-1 downto 0);
+
+        -- connections to direct spi entity
+        o_data_to_direct_spi    : out std_logic_vector(31 downto 0);
+        o_data_to_direct_spi_we : out std_logic;
+        i_direct_spi_fifo_full  : in  std_logic;
         o_spi_chip_selct_mask   : out std_logic_vector(N_CHIPS_PER_SPI_g-1 downto 0)--;
     );
 end entity mp_ctrl_spi;
 
 architecture RTL of mp_ctrl_spi is
 
+    signal vdac_rdy             : std_logic_vector(N_CHIPS_PER_SPI_g-1 downto 0);
+    signal bias_rdy             : std_logic_vector(N_CHIPS_PER_SPI_g-1 downto 0);
+    signal conf_rdy             : std_logic_vector(N_CHIPS_PER_SPI_g-1 downto 0);
+    signal tdac_rdy             : std_logic_vector(N_CHIPS_PER_SPI_g-1 downto 0);
 
 begin
+
+    genrdy: for I in 0 to N_CHIPS_PER_SPI_g-1 generate
+        vdac_rdy(I) <= i_data.rdy(VDAC_BIT);
+        bias_rdy(I) <= i_data.rdy(BIAS_BIT);
+        conf_rdy(I) <= i_data.rdy(CONF_BIT);
+        tdac_rdy(I) <= i_data.rdy(TDAC_BIT);
+    end generate;
 
     process (i_clk, i_reset_n) is
     begin
         if(i_reset_n = '0') then
+            o_read <= (others => '0');
 
         elsif(rising_edge(i_clk)) then
+            o_read <= (others => '0');
          
         end if;
     end process;
