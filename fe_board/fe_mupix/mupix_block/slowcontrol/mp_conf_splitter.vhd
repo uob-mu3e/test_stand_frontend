@@ -1,6 +1,7 @@
 ----------------------------------------------------------------------------
--- entity to split mupix conf into CONF, VDAC and BIAS
--- M. Mueller, Feb 2022
+-- entity to split mupix conf from midas into CONF, VDAC and BIAS parts
+-- M. Mueller
+-- Feb 2022
 -----------------------------------------------------------------------------
 
 library ieee;

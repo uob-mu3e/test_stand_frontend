@@ -1,6 +1,9 @@
 ----------------------------------------------------------------------------
 -- storage logic of MP configuration
 -- M. Mueller
+-- Feb 2022
+
+-- everything related to storing mupix configuration on the FEB
 -----------------------------------------------------------------------------
 
 library ieee;

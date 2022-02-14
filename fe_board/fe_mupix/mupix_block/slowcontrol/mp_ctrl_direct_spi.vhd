@@ -2,6 +2,9 @@
 -- Mupix direct SPI 
 -- M. Mueller
 -- JAN 2022
+
+-- gets the 29 bit word that needs to go into the mupix spi reg and writes it
+-- input either from register (software) or rest of mp_ctrl block
 -----------------------------------------------------------------------------
 
 library ieee;
