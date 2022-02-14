@@ -77,18 +77,6 @@ begin
         i_reg_we                    => i_reg_we,
         i_reg_wdata                 => i_reg_wdata,
 
-        -- inputs  156--------------------------------------------
-        --i_mp_spi_busy               => spi_busy,
-
-        -- outputs 156--------------------------------------------
-        -- o_mp_ctrl_data              => config_storage_input_data,
-        -- o_mp_fifo_write             => config_storage_write,
-        -- o_mp_fifo_clear             => mp_fifo_clear,
-        -- o_mp_ctrl_data_all          => config_storage_in_all,
-        -- o_mp_ctrl_data_all_we       => config_storage_in_all_we,
-        -- o_mp_ctrl_enable            => enable_shift_reg_6,
-        -- o_mp_ctrl_invert_29         => invert_29_bitpos,
-        -- o_mp_ctrl_invert_csn        => invert_csn,
         o_mp_ctrl_chip_config_mask  => chip_select_mask_sc,
         o_mp_ctrl_slow_down         => slow_down_buf,
         o_mp_direct_spi_data        => sc_to_direct_spi,

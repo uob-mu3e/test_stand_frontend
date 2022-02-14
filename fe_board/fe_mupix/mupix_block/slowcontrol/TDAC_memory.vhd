@@ -32,7 +32,8 @@ end entity tdac_memory;
 
 architecture RTL of tdac_memory is
 
-
 begin
-
+    -- TODO
+    o_tdac_dpf_wdata    <= (others => (others => '0'));
+    o_tdac_dpf_we       <= (others => '0');
 end RTL;
