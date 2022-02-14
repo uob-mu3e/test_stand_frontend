@@ -40,29 +40,36 @@ entity mupix_ctrl is
 end entity mupix_ctrl;
 
 architecture RTL of mupix_ctrl is
-    signal slow_down                : std_logic_vector(15 downto 0);
-    signal slow_down_buf            : std_logic_vector(31 downto 0);
-    signal chip_select_mask         : std_logic_vector(N_CHIPS_PER_SPI_g*N_SPI_g-1 downto 0); -- SPI chip select mask
-    signal chip_select_mask_sc      : std_logic_vector(N_CHIPS_PER_SPI_g*N_SPI_g-1 downto 0);
-    signal chip_select_mask_mp_ctrl : std_logic_vector(N_CHIPS_PER_SPI_g*N_SPI_g-1 downto 0);
-    signal direct_spi_fifo_full     : std_logic_vector(N_SPI_g-1 downto 0);
-    signal mp_ctrl_to_direct_spi    : reg32array(N_SPI_g-1 downto 0); -- Write data to direct spi from rest of ctrl firmware
-    signal mp_ctrl_to_direct_spi_wr : std_logic_vector(N_SPI_g-1 downto 0);
-    signal sc_to_direct_spi         : reg32array(N_SPI_g-1 downto 0); -- Write data to direct spi from slowcontrol (needs to be enabled using mp_ctrl_direct_spi_ena first)
-    signal sc_to_direct_spi_wr      : std_logic_vector(N_SPI_g-1 downto 0);
-    signal mp_direct_spi_busy       : std_logic_vector(N_SPI_g-1 downto 0);
-    signal mp_ctrl_direct_spi_ena   : std_logic;
+    signal slow_down                    : std_logic_vector(15 downto 0);
+    signal slow_down_buf                : std_logic_vector(31 downto 0);
+    signal spi_chip_select_mask         : std_logic_vector(N_CHIPS_PER_SPI_g*N_SPI_g-1 downto 0); -- SPI chip select mask
+    signal spi_chip_select_mask_sc      : std_logic_vector(N_CHIPS_PER_SPI_g*N_SPI_g-1 downto 0);
+    signal spi_chip_select_mask_mp_ctrl : std_logic_vector(N_CHIPS_PER_SPI_g*N_SPI_g-1 downto 0);
+    signal direct_spi_fifo_full         : std_logic_vector(N_SPI_g-1 downto 0);
+    signal mp_ctrl_to_direct_spi        : reg32array(N_SPI_g-1 downto 0); -- Write data to direct spi from rest of ctrl firmware
+    signal mp_ctrl_to_direct_spi_wr     : std_logic_vector(N_SPI_g-1 downto 0);
+    signal sc_to_direct_spi             : reg32array(N_SPI_g-1 downto 0); -- Write data to direct spi from slowcontrol (needs to be enabled using mp_ctrl_direct_spi_ena first)
+    signal sc_to_direct_spi_wr          : std_logic_vector(N_SPI_g-1 downto 0);
+    signal mp_direct_spi_busy           : std_logic_vector(N_SPI_g-1 downto 0);
+    signal mp_ctrl_direct_spi_ena       : std_logic;
+
+    signal signals_from_storage     : mp_conf_array_out(N_CHIPS_PER_SPI_g*N_SPI_g-1 downto 0);
+    signal signals_to_storage       : mp_conf_array_in(N_CHIPS_PER_SPI_g*N_SPI_g-1 downto 0);
 
 begin
 
-    o_SIN                   <= (others => '0');
-    mp_ctrl_to_direct_spi   <= (others => (others => '0'));
-    mp_ctrl_to_direct_spi_wr<= (others => '0');
-    chip_select_mask_mp_ctrl<= (others => '0');
-    slow_down               <= slow_down_buf(15 downto 0);
-    chip_select_mask        <= chip_select_mask_sc when mp_ctrl_direct_spi_ena = '1' else chip_select_mask_mp_ctrl;
+    o_SIN                       <= (others => '0');
+    mp_ctrl_to_direct_spi       <= (others => (others => '0'));
+    mp_ctrl_to_direct_spi_wr    <= (others => '0');
+    spi_chip_select_mask_mp_ctrl<= (others => '0');
+    slow_down                   <= slow_down_buf(15 downto 0);
+    spi_chip_select_mask        <= spi_chip_select_mask_sc when mp_ctrl_direct_spi_ena = '1' else spi_chip_select_mask_mp_ctrl;
 
+
+
+    ------------------------------------------------------
     -- SC regs
+    ------------------------------------------------------
     e_mupix_ctrl_reg_mapping : entity work.mupix_ctrl_reg_mapping
     generic map (
         N_CHIPS_PER_SPI_g      => N_CHIPS_PER_SPI_g,
@@ -78,7 +85,24 @@ begin
         i_reg_we                    => i_reg_we,
         i_reg_wdata                 => i_reg_wdata,
 
-        o_mp_ctrl_chip_config_mask  => chip_select_mask_sc,
+        i_mp_spi_busy               => '0',
+
+        o_chip_cvb                  => open,
+        o_chip_tdac                 => open,
+
+        o_conf_reg_data             => open,
+        o_conf_reg_we               => open,
+        o_vdac_reg_data             => open,
+        o_vdac_reg_we               => open,
+        o_bias_reg_data             => open,
+        o_bias_reg_we               => open,
+
+        o_combined_data             => open,
+        o_combined_data_we          => open,
+
+        o_tdac_data                 => open,
+        o_tdac_we                   => open,
+
         o_mp_ctrl_slow_down         => slow_down_buf,
         o_mp_direct_spi_data        => sc_to_direct_spi,
         o_mp_direct_spi_data_wr     => sc_to_direct_spi_wr,
@@ -86,6 +110,49 @@ begin
         o_mp_ctrl_direct_spi_enable => mp_ctrl_direct_spi_ena--,
     );
 
+    ------------------------------------------------------
+    -- config storage
+    ------------------------------------------------------
+
+    mupix_ctrl_config_storage_inst: entity work.mupix_ctrl_config_storage
+      generic map (
+        N_CHIPS_g => N_CHIPS_PER_SPI_g * N_SPI_g
+      )
+      port map (
+        i_clk              => i_clk,
+        i_reset_n          => i_reset_n,
+
+        -- inputs to write storage data
+        i_chip_cvb         => i_chip_cvb,
+        i_chip_tdac        => i_chip_tdac,
+
+        i_conf_reg_data    => direct_conf_reg_data,
+        i_conf_reg_we      => direct_conf_reg_we,
+        i_vdac_reg_data    => direct_vdac_reg_data,
+        i_vdac_reg_we      => direct_vdac_reg_we,
+        i_bias_reg_data    => direct_bias_reg_data,
+        i_bias_reg_we      => direct_bias_reg_we,
+
+        i_combined_data    => combined_data,
+        i_combined_data_we => combined_data_we,
+        i_tdac_data        => tdac_data,
+        i_tdac_we          => tdac_we,
+
+        -- connections to SPI and custom protocol writing
+        o_data             => signals_from_storage,
+        i_read             => signals_to_storage
+      );
+
+    ------------------------------------------------------
+    -- custom protocol (aka "mu3e slowcontrol") writing
+    ------------------------------------------------------
+
+    -- TODO
+
+
+    ------------------------------------------------------
+    -- SPI writing
+    ------------------------------------------------------
     gendirect_spi: for I in 0 to N_SPI_g-1 generate 
         mp_ctrl_direct_spi_inst: entity work.mp_ctrl_direct_spi
         generic map (
@@ -106,7 +173,7 @@ begin
             o_direct_spi_busy    => mp_direct_spi_busy(I),
 
             i_spi_slow_down      => slow_down,
-            i_chip_mask          => chip_select_mask(I*N_CHIPS_PER_SPI_g+N_CHIPS_PER_SPI_g-1 downto I*N_CHIPS_PER_SPI_g),
+            i_chip_mask          => spi_chip_select_mask(I*N_CHIPS_PER_SPI_g+N_CHIPS_PER_SPI_g-1 downto I*N_CHIPS_PER_SPI_g),
 
             o_spi                => o_mosi(I),
             o_spi_clk            => o_clock(I),

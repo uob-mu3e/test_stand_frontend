@@ -23,8 +23,10 @@ entity mp_ctrl_spi is
         N_CHIPS_PER_SPI_g: positive := 4--;
     );
     port(
-        i_clk               : in  std_logic;
-        i_reset_n           : in  std_logic--;
+        i_clk                   : in  std_logic;
+        i_reset_n               : in  std_logic;
+
+        o_spi_chip_selct_mask   : out std_logic_vector(N_CHIPS_PER_SPI_g-1 downto 0)--;
     );
 end entity mp_ctrl_spi;
 
