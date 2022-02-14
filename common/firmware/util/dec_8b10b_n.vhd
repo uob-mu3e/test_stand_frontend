@@ -20,10 +20,12 @@ end entity;
 
 architecture arch of dec_8b10b_n is
 
+    signal data10 : std_logic_vector(i_data'range);
     signal data : std_logic_vector(o_data'range);
     signal datak : std_logic_vector(o_datak'range);
     signal disp : std_logic_vector(g_BYTES downto 0);
     signal disperr, err : std_logic_vector(g_BYTES-1 downto 0);
+    signal disperr_q, err_q : std_logic_vector(g_BYTES-1 downto 0);
 
 begin
 
@@ -31,7 +33,7 @@ begin
     begin
         e_enc_8b10b : entity work.dec_8b10b
         port map (
-            i_data => i_data(i*10 + 9 downto 0 + i*10),
+            i_data => data10(i*10 + 9 downto 0 + i*10),
             i_disp => disp(i),
             o_data(7 downto 0) => data(i*8 + 7 downto 0 + i*8),
             o_data(8) => datak(i),
@@ -41,22 +43,23 @@ begin
         );
     end generate;
 
+    o_err <= work.util.or_reduce(disperr_q or err_q);
+
     process(i_clk, i_reset_n)
     begin
     if ( i_reset_n = '0' ) then
+        data10 <= (others => '0');
         o_data <= (others => '0');
         o_datak <= (others => '0');
         disp(0) <= '0';
-        o_err <= '0';
         --
     elsif rising_edge(i_clk) then
+        data10 <= i_data;
         o_data <= data;
         o_datak <= datak;
         disp(0) <= disp(g_BYTES);
-        o_err <= '0';
-        if ( disperr /= (disperr'range => '0') or err /= (err'range => '0') ) then
-            o_err <= '1';
-        end if;
+        disperr_q <= disperr;
+        err_q <= err;
         --
     end if;
     end process;

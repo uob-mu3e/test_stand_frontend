@@ -7,7 +7,7 @@ use work.feb_sc_registers.all;
 
 entity fe_block is
 generic (
-    feb_mapping : work.util.natural_array_t(3 downto 0) := 3&2&1&0;
+    feb_mapping : integer_vector(3 downto 0) := 3&2&1&0;
     PHASE_WIDTH_g : positive := 16;
     NIOS_CLK_MHZ_g : real;
     N_LINKS : positive := 1--;

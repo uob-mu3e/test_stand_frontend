@@ -10,12 +10,12 @@ entity a10_block is
 generic (
     g_XCVR0_CHANNELS    : integer := 16;
     g_XCVR0_N           : integer := 4;
-    g_XCVR0_RX_P        : work.util.integer_array_t := ( 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15 );
-    g_XCVR0_TX_P        : work.util.integer_array_t := ( 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15 );
+    g_XCVR0_RX_P        : integer_vector := ( 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15 );
+    g_XCVR0_TX_P        : integer_vector := ( 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15 );
     g_XCVR1_CHANNELS    : integer := 0;
     g_XCVR1_N           : integer := 0;
-    g_XCVR1_RX_P        : work.util.integer_array_t := ( 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15 );
-    g_XCVR1_TX_P        : work.util.integer_array_t := ( 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15 );
+    g_XCVR1_RX_P        : integer_vector := ( 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15 );
+    g_XCVR1_TX_P        : integer_vector := ( 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15 );
     g_XCVR2_CHANNELS    : integer := 0;
     g_XCVR3_CHANNELS    : integer := 0;
     g_SFP_CHANNELS      : integer := 0;
@@ -477,12 +477,12 @@ begin
     --! 100 MHz blinky to check the pcie0 clk
     e_pcie0_clk_hz : entity work.clkdiv
     generic map ( P => 250000000 )
-    port map ( o_clk => o_pcie0_clk_hz, i_reset_n => i_reset_n, i_clk => pcie0_clk );
+    port map ( o_clk => o_pcie0_clk_hz, i_reset_n => reset_pcie0_n, i_clk => pcie0_clk );
 
     --! 100 MHz blinky to check the pcie1 clk
     e_pcie1_clk_hz : entity work.clkdiv
     generic map ( P => 250000000 )
-    port map ( o_clk => o_pcie1_clk_hz, i_reset_n => i_reset_n, i_clk => pcie1_clk );
+    port map ( o_clk => o_pcie1_clk_hz, i_reset_n => reset_pcie1_n, i_clk => pcie1_clk );
 
     --! blinky leds to check the wregs
     o_LED_BRACKET(1 downto 0) <= pcie0_wregs_A(LED_REGISTER_W)(1 downto 0);
@@ -684,6 +684,12 @@ begin
 
     generate_xcvr1_fifo : for i in g_XCVR1_CHANNELS-1 downto 0 generate
     e_xcvr1_fifo : entity work.xcvr_fifo
+    generic map (
+        g_FIFO_TX_WREG_N => 0,
+        g_FIFO_TX_RREG_N => 1, -- TNS=-160 (i_xcvr1_clk)
+        g_FIFO_RX_WREG_N => 0,
+        g_FIFO_RX_RREG_N => 0--,
+    )
     port map (
         i_xcvr_rx_data      => xcvr1_rx_data(f_xcvr1_rx_p(i)),
         i_xcvr_rx_datak     => xcvr1_rx_datak(f_xcvr1_rx_p(i)),
@@ -819,7 +825,7 @@ begin
         i_pcie0_rregs_C     => i_pcie0_rregs_C,
 
         i_local_pcie0_rregs_A   => local_pcie0_rregs_A,
-        i_local_pcie0_rregs_C	=> local_pcie0_rregs_C,
+        i_local_pcie0_rregs_C   => local_pcie0_rregs_C,
 
         o_pcie0_rregs       => pcie0_rregs,
 

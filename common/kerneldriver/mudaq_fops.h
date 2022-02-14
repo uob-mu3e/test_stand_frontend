@@ -1,5 +1,20 @@
 
 static
+int wrap_ring(int int1, int int2, int wrap, int divisor) {
+    int result = 0;
+    if ((int1 - int2) > 0) {
+        result = (int1 - int2) / divisor;
+    }
+    else if ((int1 - int2) < 0) {
+        result = wrap + (int1 - int2) / divisor;
+    }
+    else if ((int1 - int2) == 0) {
+        result = 0;
+    }
+    return result;
+}
+
+static
 ssize_t mudaq_fops_read(struct file *filp, char __user *buf, size_t count, loff_t *f_pos) {
     struct mudaq* mu = filp->private_data;
     DECLARE_WAITQUEUE(wait, current);

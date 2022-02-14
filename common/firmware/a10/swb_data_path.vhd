@@ -377,10 +377,7 @@ begin
 --    e_merger_fifo : entity work.ip_scfifo
 --    generic map (
 --        ADDR_WIDTH      => 10,
---        DATA_WIDTH      => W,
---        RAM_OUT_REG     => "ON",
---        REGOUT          => 1,
---        DEVICE          => "Arria 10"--,
+--        DATA_WIDTH      => W--,
 --    )
 --    port map (
 --        data            => gen_data,

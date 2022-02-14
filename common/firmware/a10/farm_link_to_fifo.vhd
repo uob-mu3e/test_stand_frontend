@@ -106,8 +106,7 @@ begin
         e_sync_fifo : entity work.ip_dcfifo
         generic map(
             ADDR_WIDTH  => 4,
-            DATA_WIDTH  => 34,
-            DEVICE      => "Arria 10"--,
+            DATA_WIDTH  => 34--,
         )
         port map (
             data        => rx_data(i),

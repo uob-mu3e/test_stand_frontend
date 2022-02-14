@@ -114,7 +114,7 @@ begin
 
     g_rx : for i in g_CHANNELS-1 downto 0 generate
     begin
-        process(rx_parallel_data)
+        process(rx_parallel_data, rx)
         begin
             rx(i).data10 <= rx_parallel_data(g_BYTES*10-1 + g_BYTES*10*i downto g_BYTES*10*i);
             o_rx_data(g_BYTES*8-1 + g_BYTES*8*i downto g_BYTES*8*i) <= rx(i).data;

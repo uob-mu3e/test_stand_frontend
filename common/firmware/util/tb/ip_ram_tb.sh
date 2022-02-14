@@ -4,10 +4,9 @@ IFS="$(printf '\n\t')"
 unset CDPATH
 cd "$(dirname -- "$(readlink -e -- "$0")")" || exit 1
 
-export STOPTIME=40us
-
 entity=$(basename "$0" .sh)
 
-../../util/sim.sh "$entity" "$entity.vhd" \
-    *.vhd \
-    ../*.vhd ../altera/*.vhd
+STOP_TIME_US=1 \
+../sim.sh "$entity" \
+    ../*.vhd \
+    "$entity.vhd"
