@@ -125,13 +125,17 @@ int main(int argc, char *argv[])
         return ret_val;
     }
 
+    // reset all
+    uint32_t reset_regs = 0;
+    reset_regs = SET_RESET_BIT_DATA_PATH(reset_regs);
+    reset_regs = SET_RESET_BIT_DATAGEN(reset_regs);
+    cout << "Reset Regs: " << hex << reset_regs << endl;
+    mu.write_register(RESET_REGISTER_W, reset_regs);
+
     // request data to read dma_buffer_size/2 (count in blocks of 256 bits) 
     uint32_t max_requested_words = dma_buf_nwords/2;
     cout << "request " << max_requested_words << endl;
     mu.write_register(GET_N_DMA_WORDS_REGISTER_W, max_requested_words / (256/32));
-
-    // Enable register on FPGA for continous readout and enable dma
-    mu.enable_continous_readout(0);
     
     // setup datagen
     mu.write_register(DATAGENERATOR_DIVIDER_REGISTER_W, 0x2);
@@ -155,13 +159,10 @@ int main(int argc, char *argv[])
     // use time merger to readout links
     if ( atoi(argv[1]) == 4 ) mu.write_register(mask_n_add, strtol(argv[4], NULL, 16));
     if ( atoi(argv[1]) == 4 ) mu.write_register(SWB_READOUT_STATE_REGISTER_W, 0x44| (set_pixel << 7));
-    
-    // reset all
-    uint32_t reset_regs = 0;
-    reset_regs = SET_RESET_BIT_DATA_PATH(reset_regs);
-	reset_regs = SET_RESET_BIT_DATAGEN(reset_regs);
-    cout << "Reset Regs: " << hex << reset_regs << endl;
-    mu.write_register(RESET_REGISTER_W, reset_regs);
+
+    // Enable register on FPGA for continous readout and enable dma
+    mu.enable_continous_readout(0);
+
 	usleep(10);
     mu.write_register(RESET_REGISTER_W, 0x0);
 

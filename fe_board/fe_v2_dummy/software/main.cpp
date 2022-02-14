@@ -21,6 +21,8 @@ mscb_t mscb;
 #include "../../fe/software/reset.h"
 #include "../../fe/software/tmpDisplay.h"
 
+#include "include/feb_sc_registers.h"
+
 //definition of callback function for slow control packets
 alt_u16 sc_t::callback(alt_u16 cmd, volatile alt_u32* data, alt_u16 n) {
     //return mupix.callback(cmd,data,n);
@@ -40,8 +42,8 @@ int main() {
     while (1) {
         printf("\n");
         printf("[fe_dummy] -------- menu --------\n");
-        printf("[lol_n/intr_n] S1 status: 0x%08x, S2 status: 0x%08x\n", ram->data[0xFF2B], ram->data[0xFF2B]);
-	    printf("ID: 0x%08x\n", ram->data[0xFF03]);
+        printf("TODO: [lol_n/intr_n] S1 status: 0x%08x, S2 status: 0x%08x\n", 0,0); // TODO: find these regs again
+	    printf("ID: 0x%08x\n", ram->data[FPGA_ID_REGISTER_RW]);
 
         printf("\n");
         printf("  [1] => Firefly channels\n");
