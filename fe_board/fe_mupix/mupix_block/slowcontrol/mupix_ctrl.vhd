@@ -40,6 +40,7 @@ entity mupix_ctrl is
 end entity mupix_ctrl;
 
 architecture RTL of mupix_ctrl is
+
     signal slow_down                    : std_logic_vector(15 downto 0);
     signal slow_down_buf                : std_logic_vector(31 downto 0);
     signal spi_chip_select_mask         : std_logic_vector(N_CHIPS_PER_SPI_g*N_SPI_g-1 downto 0); -- SPI chip select mask
@@ -53,8 +54,24 @@ architecture RTL of mupix_ctrl is
     signal mp_direct_spi_busy           : std_logic_vector(N_SPI_g-1 downto 0);
     signal mp_ctrl_direct_spi_ena       : std_logic;
 
-    signal signals_from_storage     : mp_conf_array_out(N_CHIPS_PER_SPI_g*N_SPI_g-1 downto 0);
-    signal signals_to_storage       : mp_conf_array_in(N_CHIPS_PER_SPI_g*N_SPI_g-1 downto 0);
+    signal signals_from_storage         : mp_conf_array_out(N_CHIPS_PER_SPI_g*N_SPI_g-1 downto 0);
+    signal signals_to_storage           : mp_conf_array_in(N_CHIPS_PER_SPI_g*N_SPI_g-1 downto 0);
+
+    signal direct_conf_reg_data         : reg32;
+    signal direct_bias_reg_data         : reg32;
+    signal direct_vdac_reg_data         : reg32;
+    signal direct_conf_reg_we           : std_logic;
+    signal direct_bias_reg_we           : std_logic;
+    signal direct_vdac_reg_we           : std_logic;
+
+    signal chip_select_cvb              : std_logic_vector(N_CHIPS_PER_SPI_g*N_SPI_g-1 downto 0);
+    signal chip_select_tdac             : integer range 0 to N_CHIPS_PER_SPI_g*N_SPI_g-1;
+
+    signal combined_data                : reg32;
+    signal combined_data_we             : std_logic;
+
+    signal tdac_data                    : reg32;
+    signal tdac_we                      : std_logic;
 
 begin
 
@@ -87,21 +104,21 @@ begin
 
         i_mp_spi_busy               => '0',
 
-        o_chip_cvb                  => open,
-        o_chip_tdac                 => open,
+        o_chip_cvb                  => chip_select_cvb,
+        o_chip_tdac                 => chip_select_tdac,
 
-        o_conf_reg_data             => open,
-        o_conf_reg_we               => open,
-        o_vdac_reg_data             => open,
-        o_vdac_reg_we               => open,
-        o_bias_reg_data             => open,
-        o_bias_reg_we               => open,
+        o_conf_reg_data             => direct_conf_reg_data,
+        o_conf_reg_we               => direct_conf_reg_we,
+        o_vdac_reg_data             => direct_vdac_reg_data,
+        o_vdac_reg_we               => direct_vdac_reg_we,
+        o_bias_reg_data             => direct_bias_reg_data,
+        o_bias_reg_we               => direct_bias_reg_we,
 
-        o_combined_data             => open,
-        o_combined_data_we          => open,
+        o_combined_data             => combined_data,
+        o_combined_data_we          => combined_data_we,
 
-        o_tdac_data                 => open,
-        o_tdac_we                   => open,
+        o_tdac_data                 => tdac_data,
+        o_tdac_we                   => tdac_we,
 
         o_mp_ctrl_slow_down         => slow_down_buf,
         o_mp_direct_spi_data        => sc_to_direct_spi,
@@ -123,8 +140,8 @@ begin
         i_reset_n          => i_reset_n,
 
         -- inputs to write storage data
-        i_chip_cvb         => i_chip_cvb,
-        i_chip_tdac        => i_chip_tdac,
+        i_chip_cvb         => chip_select_cvb,
+        i_chip_tdac        => chip_select_tdac,
 
         i_conf_reg_data    => direct_conf_reg_data,
         i_conf_reg_we      => direct_conf_reg_we,
