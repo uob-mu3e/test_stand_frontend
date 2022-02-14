@@ -238,16 +238,16 @@ architecture RTL of pcie_completer is
     signal ndmasopcount         : std_logic_vector(7 downto 0);
     signal ndmaeopcount         : std_logic_vector(7 downto 0);
 
+    signal tx_st_valid0_r       : STD_LOGIC;
     signal tx_st_eop0_r         : STD_LOGIC;
     signal tx_st_sop0_r         : STD_LOGIC;
-    signal tx_st_valid0_r       : STD_LOGIC;
     signal tx_st_empty0_r       : STD_LOGIC_VECTOR(1 downto 0);
 
 begin
 
+    tx_st_valid0 <= tx_st_valid0_r;
     tx_st_eop0 <= tx_st_eop0_r;
     tx_st_sop0 <= tx_st_sop0_r;
-    tx_st_valid0 <= tx_st_valid0_r;
 
     dummydata <= (others => '0');
 

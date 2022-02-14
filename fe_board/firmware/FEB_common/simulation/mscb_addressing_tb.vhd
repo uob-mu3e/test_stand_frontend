@@ -20,7 +20,7 @@ architecture rtl of mscb_addressing_tb is
 
 begin
 
-  clk   <= not clk  after 4 ns; 
+    clk <= not clk after 4 ns;
 
     e_mscb_addressing : entity work.mscb_addressing
     port map (

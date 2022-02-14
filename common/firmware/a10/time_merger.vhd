@@ -544,7 +544,7 @@ begin
                                     fifo_wen_6(i) <= '1';
                                     layer_6_state(i) <= "1110";
                                 end if;
-                            elsif ( fifo_q_5(i)(37 downto 0) = tree_padding and fifo_q_5(i + size_last)(37 downto 0) = tree_padding ) then 
+                            elsif ( fifo_q_5(i)(37 downto 0) = tree_padding and fifo_q_5(i + size_last)(37 downto 0) = tree_padding ) then
                                 fifo_data_6(i)(75 downto 0) <= tree_padding & tree_padding;
                                 fifo_wen_6(i) <= '1';
                                 layer_6_state(i) <= "1110";
@@ -603,8 +603,8 @@ begin
                         -- TODO: define signal for empty since the fifo should be able to get empty if no hits are comming
                         if ( fifo_full_6(i) = '1' ) then
                             --
-                        elsif ( fifo_empty_5(i + size_last) = '0' and fifo_ren_5(i + size_last) = '0' and fifo_ren_5_reg(i + size_last) = '0' ) then       
-                            -- TODO: what to do when fifo_q_1(i)(69 downto 66) is zero? maybe error cnt?     
+                        elsif ( fifo_empty_5(i + size_last) = '0' and fifo_ren_5(i + size_last) = '0' and fifo_ren_5_reg(i + size_last) = '0' ) then
+                            -- TODO: what to do when fifo_q_1(i)(69 downto 66) is zero? maybe error cnt?
                             if ( fifo_q_5(i)(69 downto 66) <= fifo_q_5(i + size_last)(31 downto 28) and fifo_q_5(i)(75 downto 38) /= tree_zero and fifo_q_5(i)(75 downto 38) /= tree_padding ) then
                                 fifo_data_6(i)(75 downto 38) <= fifo_q_5(i)(75 downto 38);
                                 layer_6_state(i)(1) <= '1';

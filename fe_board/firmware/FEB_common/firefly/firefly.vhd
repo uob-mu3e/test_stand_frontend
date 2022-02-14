@@ -545,7 +545,6 @@ firefly_reg_mapping_inst: entity work.firefly_reg_mapping
         ADDR_WIDTH  => 4,
         DATA_WIDTH  => 220,
         SHOWAHEAD   => "OFF",
-        OVERFLOW    => "ON",
         DEVICE      => "Arria V"--,
     )
     port map (
@@ -575,7 +574,6 @@ firefly_reg_mapping_inst: entity work.firefly_reg_mapping
         ADDR_WIDTH  => 2,
         DATA_WIDTH  => 280,
         SHOWAHEAD   => "OFF",
-        OVERFLOW    => "ON",
         DEVICE      => "Arria V"--,
     )
     port map (
@@ -612,7 +610,6 @@ firefly_reg_mapping_inst: entity work.firefly_reg_mapping
         ADDR_WIDTH  => 2,
         DATA_WIDTH  => 9,
         SHOWAHEAD   => "OFF",
-        OVERFLOW    => "ON",
         DEVICE      => "Arria V"--,
     )
     port map (
