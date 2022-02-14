@@ -33,6 +33,5 @@ begin
         o_wrreq         => addressing_wrreq,
         o_rdreq         => addressing_rdreq
     );
-	 
 
 end architecture; 

@@ -12,10 +12,10 @@ port (
     A10_LED                             : OUT   STD_LOGIC_VECTOR(7 DOWNTO 0);
 
     -- Color LEDs
-    A10_LED_3C_1                        : OUT   STD_LOGIC_VECTOR(2 DOWNTO 0);
-    A10_LED_3C_2                        : OUT   STD_LOGIC_VECTOR(2 DOWNTO 0);
-    A10_LED_3C_3                        : OUT   STD_LOGIC_VECTOR(2 DOWNTO 0);
-    A10_LED_3C_4                        : OUT   STD_LOGIC_VECTOR(2 DOWNTO 0);
+    A10_LED_3C_1                        : out   std_logic_vector(2 downto 0);
+    A10_LED_3C_2                        : out   std_logic_vector(2 downto 0);
+    A10_LED_3C_3                        : out   std_logic_vector(2 downto 0);
+    A10_LED_3C_4                        : out   std_logic_vector(2 downto 0);
 
 
 

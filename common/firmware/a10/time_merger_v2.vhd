@@ -47,7 +47,7 @@ port (
 end entity;
 
 architecture arch of time_merger_v2 is
- 
+
     -- constants
     constant check_zeros : std_logic_vector(N - 1 downto 0) := (others => '0');
     constant check_ones  : std_logic_vector(N - 1 downto 0) := (others => '1');
@@ -67,7 +67,7 @@ architecture arch of time_merger_v2 is
 
     -- error signals
     signal error_gtime1, error_gtime2, error_shtime, error_merger, header_trailer_we : std_logic;
-    signal error_pre, error_sh : std_logic_vector(N - 1 downto 0);   
+    signal error_pre, error_sh : std_logic_vector(N - 1 downto 0);
 
     -- merger tree
     type fifo_width_t is array (6 downto 0) of integer;
@@ -98,7 +98,7 @@ architecture arch of time_merger_v2 is
     -- debug signals
     signal rdata_last_layer : std_logic_vector(W - 1 downto 0);
     signal rdata_hit_time : std_logic_vector(4 * 8 - 1 downto 0);
-    
+
 begin
 
     -- ports out
@@ -141,9 +141,9 @@ begin
     merger_state_signal <= '1' when merge_state = merge_hits else '0';
 
     gen_write_0 : FOR i in 0 to generate_fifos(0)-1 GENERATE
-        
+
         gen_zero_layer : IF i < g_NLINKS_DATA GENERATE
-        
+
             reg_merge_state : process(i_clk, i_reset_n)
             begin
             if ( i_reset_n = '0' ) then
@@ -156,9 +156,9 @@ begin
                 end if;
             end if;
             end process;
-            
+
             data_0(i)  <=   work.mudaq.link_36_to_std(i) & i_rdata(i)(31 downto 0)   when merger_finish(i) = '0' and merge_state = merge_hits else
-                            tree_padding                                            when merger_finish(i) = '1' and merge_state = merge_hits else 
+                            tree_padding                                            when merger_finish(i) = '1' and merge_state = merge_hits else
                             (others => '0');
             wrreq_0(i) <= '1' when merge_state = merge_hits and i_rempty(i) = '0' and wrfull_0(i) = '0' else '0';
 
@@ -182,7 +182,7 @@ begin
 
                 i_reset_n   => not reset_0(i)--,
             );
-            
+
             -- reg for FIFO outputs (timing)
             rdreq_0(i) <= '1' when rdempty_0(i) = '0' and wrfull_0_reg(i) = '0' else '0';
             rdreq_0_reg(i) <= '1' when rdempty_0_reg(i) = '0' and wrfull_0_reg_reg(i) = '0' else '0';
@@ -220,13 +220,13 @@ begin
 
             end if;
             end process;
-            
+
         END GENERATE;
-        
+
     END GENERATE;
-    
+
     layer_1 : entity work.time_merger_tree_fifo_64_v2
-    generic map (  
+    generic map (
         TREE_w => TREE_DEPTH_w, TREE_r => TREE_DEPTH_r, g_NLINKS_DATA => g_NLINKS_DATA,
         r_width => read_width(0), w_width => write_width(1), last_layer => '0',
         compare_fifos => generate_fifos(0), gen_fifos => generate_fifos(1)--,
@@ -252,7 +252,7 @@ begin
     );
 
     layer_2 : entity work.time_merger_tree_fifo_64_v2
-    generic map (  
+    generic map (
         TREE_w => TREE_DEPTH_w, TREE_r => TREE_DEPTH_r, g_NLINKS_DATA => g_NLINKS_DATA,
         r_width => read_width(1), w_width => write_width(2), last_layer => '0',
         compare_fifos => generate_fifos(1), gen_fifos => generate_fifos(2)--,
@@ -278,7 +278,7 @@ begin
     );
 
     layer_3 : entity work.time_merger_tree_fifo_64_v2
-    generic map (  
+    generic map (
         TREE_w => TREE_DEPTH_w, TREE_r => TREE_DEPTH_r, g_NLINKS_DATA => g_NLINKS_DATA,
         r_width => read_width(2), w_width => write_width(3), last_layer => '0',
         compare_fifos => generate_fifos(2), gen_fifos => generate_fifos(3)--,
@@ -304,7 +304,7 @@ begin
     );
 
     layer_4 : entity work.time_merger_tree_fifo_64_v2
-    generic map (  
+    generic map (
         TREE_w => TREE_DEPTH_w, TREE_r => TREE_DEPTH_r, g_NLINKS_DATA => g_NLINKS_DATA,
         r_width => read_width(3), w_width => write_width(4), last_layer => '0',
         compare_fifos => generate_fifos(3), gen_fifos => generate_fifos(4)--,
@@ -330,7 +330,7 @@ begin
     );
 
     layer_5 : entity work.time_merger_tree_fifo_64_v2
-    generic map (  
+    generic map (
         TREE_w => TREE_DEPTH_w, TREE_r => TREE_DEPTH_r, g_NLINKS_DATA => g_NLINKS_DATA,
         r_width => read_width(4), w_width => write_width(5), last_layer => '0',
         compare_fifos => generate_fifos(4), gen_fifos => generate_fifos(5)--,
@@ -354,9 +354,9 @@ begin
         i_reset_n       => i_reset_n,
         i_clk           => i_clk--,
     );
-    
+
     layer_6 : entity work.time_merger_tree_fifo_64_v2
-    generic map (  
+    generic map (
         TREE_w => TREE_DEPTH_w, TREE_r => TREE_DEPTH_r, g_NLINKS_DATA => g_NLINKS_DATA,
         r_width => read_width(6), w_width => write_width(6), last_layer => '1',
         compare_fifos => generate_fifos(5), gen_fifos => generate_fifos(6)--,
@@ -380,9 +380,9 @@ begin
         i_reset_n       => i_reset_n,
         i_clk           => i_clk--,
     );
-    
+
     alignment_done <= '1' when last_layer_state = x"8" else '0';
-    
+
     -- write data
     process(i_clk, i_reset_n)
     begin
@@ -407,10 +407,10 @@ begin
         header_trailer_we <= '0';
         --
     elsif rising_edge(i_clk) then
-        
+
         header_trailer <= (others => '0');
         header_trailer_we <= '0';
-    
+
         case merge_state is
             when wait_for_pre =>
                 -- readout until all fifos have preamble
@@ -427,13 +427,13 @@ begin
                 else
                     wait_cnt_pre <= wait_cnt_pre + '1';
                 end if;
-                
+
                 -- if wait for pre gets timeout
                 if ( wait_cnt_pre = TIMEOUT ) then
                     error_pre <= sop_wait;
                     merge_state <= error_state;
                 end if;
-                
+
             -- TODO: change this to one cycle
             when get_time1 =>
                 -- get MSB from FPGA time
@@ -441,7 +441,7 @@ begin
                     merge_state <= compare_time1;
                     gtime1 <= i_rdata;
                 end if;
-                
+
             when compare_time1 =>
                 -- compare MSB from FPGA time
                 FOR I in N - 1 downto 0 LOOP
@@ -449,9 +449,9 @@ begin
                         error_gtime1 <= '1';
                     end if;
                 END LOOP;
-                
-                -- check if fifo is not full and all links have same time              
-                -- dont check at the moment error_gtime1 = '0' and 
+
+                -- check if fifo is not full and all links have same time
+                -- dont check at the moment error_gtime1 = '0' and
                 if ( full_6(0) = '0' ) then
                     merge_state <= get_time2;
                     -- reset signals
@@ -461,11 +461,11 @@ begin
                     header_trailer(31 downto 0) <= gtime1(i_link)(31 downto 0);
                     header_trailer_we <= '1';
                 end if;
-                -- dont check at the moment 
-                -- elsif ( error_gtime1 = '1' ) then 
+                -- dont check at the moment
+                -- elsif ( error_gtime1 = '1' ) then
                 --     merge_state <= error_state;
                 -- end if;
-            
+
             -- TODO: change this to one cycle
             when get_time2 =>
                 -- get LSB from FPGA time
@@ -475,7 +475,7 @@ begin
                     merge_state <= compare_time2;
                     gtime2 <= i_rdata;
                 end if;
-                
+
             when compare_time2 =>
                 -- compare LSB from FPGA time
                 FOR I in N - 1 downto 0 LOOP
@@ -483,7 +483,7 @@ begin
                         error_gtime2 <= '1';
                     end if;
                 END LOOP;
-                
+
                 -- check if fifo is not full and all links have same time
                 -- error_gtime2 = '0'
                 if ( full_6(0) = '0' ) then
@@ -495,17 +495,17 @@ begin
                     header_trailer(31 downto 0) <= gtime2(i_link)(31 downto 0);
                     header_trailer_we <= '1';
                 end if;
-                -- dont check at the moment 
+                -- dont check at the moment
                 --elsif ( error_gtime2 = '1' ) then
                 --   merge_state <= error_state;
                 --end if;
-                
+
             when wait_for_sh =>
-                -- dont check at the moment 
+                -- dont check at the moment
                 --if ( error_gtime2 = '1' ) then
                 --    merge_state <= error_state;
                 --end if;
-            
+
                 -- readout until all fifos have sub header
                 if ( shop_wait = check_ones and full_6(0) = '0' ) then
                     merge_state <= wait_for_sh_written;
@@ -535,17 +535,17 @@ begin
                     --    v_overflow := v_overflow or overflow;
                     --END LOOP;
                 end if;
-                
+
                 -- if wait for pre gets timeout
                 if ( wait_cnt_sh = TIMEOUT ) then
                     error_sh <= shop_wait;
                     merge_state <= error_state;
                 end if;
-            
+
             -- TODO: change this to one cycle
             when wait_for_sh_written =>
                 merge_state <= merge_hits;
-                
+
             when merge_hits =>
                 if ( error_shtime = '1' ) then
                     merge_state <= error_state;
@@ -557,31 +557,31 @@ begin
                         error_shtime <= '1';
                     end if;
                 END LOOP;
-                
+
                 -- TODO use generatic timeout for the moment
                 wait_cnt_merger <= wait_cnt_merger + '1';
                 if ( wait_cnt_merger = TIMEOUT ) then
                     merge_state <= error_state;
                     error_merger <= '1';
                 end if;
-                
+
                 -- change state
                 -- TODO error if sh is not there
                 if ( shop_wait = check_ones and alignment_done = '1' ) then
                     merge_state <= wait_for_sh;
                 end if;
-                
+
                 -- TODO error if pre is not there
                 -- TODO this should not happen -- error
                 if ( sop_wait = check_ones and alignment_done = '1' ) then
                     merge_state <= wait_for_pre;
                 end if;
-                
+
                 -- TODO error if trailer is not there
                 if ( eop_wait = check_ones and alignment_done = '1' ) then
                     merge_state <= trailer;
                 end if;
-                
+
             when trailer =>
                 -- send trailer
                 if( full_6(0) = '0' ) then
@@ -598,7 +598,7 @@ begin
                 error_merger <= '0';
                 error_pre <= (others => '0');
                 error_sh <= (others => '0');
-                                
+
             when error_state =>
                 -- send error message xxxxxxDC
                 -- 12: error gtime1
@@ -619,10 +619,10 @@ begin
                 end if;
                 header_trailer_we <= '1';
                 merge_state <= trailer;
-                            
+
             when others =>
                 merge_state <= wait_for_pre;
-                
+
         end case;
         --
     end if;

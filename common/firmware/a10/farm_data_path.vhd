@@ -229,9 +229,7 @@ begin
         rdclk       => A_mem_clk,
         q           => sync_A_q,
         rdempty     => sync_A_empty,
-        rdusedw     => open,
         wrfull      => open,
-        wrusedw     => open,
         aclr        => reset--,
     );
 
@@ -252,9 +250,7 @@ begin
         rdclk       => B_mem_clk,
         q           => sync_B_q,
         rdempty     => sync_B_empty,
-        rdusedw     => open,
         wrfull      => open,
-        wrusedw     => open,
         aclr        => reset--,
     );
 
@@ -890,9 +886,7 @@ begin
         rdclk       => pcieclk,
         q           => A_memreadfifo_q,
         rdempty     => A_memreadfifo_empty,
-        rdusedw     => open,
         wrfull      => open,
-        wrusedw     => open,
         aclr        => not reset_A_n--,
     );
 
@@ -909,9 +903,7 @@ begin
         rdclk       => pcieclk,
         q           => B_memreadfifo_q,
         rdempty     => B_memreadfifo_empty,
-        rdusedw     => open,
         wrfull      => open,
-        wrusedw     => open,
         aclr        => not reset_B_n--,
     );
 

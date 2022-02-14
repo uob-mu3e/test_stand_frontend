@@ -39,18 +39,18 @@ port (
     o_error_sh : out std_logic_vector(N - 1 downto 0);
     o_error_gtime : out std_logic_vector(1 downto 0);
     o_error_shtime : out std_logic;
-    
+
     i_reset_n   : in    std_logic;
     i_clk       : in    std_logic--;
 );
 end entity;
 
 architecture arch of time_merger is
- 
+
     type fpga_id_array_t is array (N - 1 downto 0) of std_logic_vector(15 downto 0);
     type sheader_time_array_t is array (N - 1 downto 0) of std_logic_vector(5 downto 0);
     subtype index_int is natural range 0 to 36; -- since we have a maximum number of 36 links, default is 36
-    
+
     constant check_zeros : std_logic_vector(N - 1 downto 0) := (others => '0');
     constant check_ones : std_logic_vector(N - 1 downto 0) := (others => '1');
     constant check_zeros_t_3 : std_logic_vector(4 downto 0) := (others => '0');
@@ -68,18 +68,18 @@ architecture arch of time_merger is
     signal overflow : std_logic_vector(15 downto 0);
     signal sheader_time : sheader_time_array_t;
     signal fpga_id : fpga_id_array_t;
-    
+
     -- merge signals
     signal min_fpga_id : std_logic_vector(15 downto 0);
     signal sop_wait, shop_wait, time_wait, rack_link : std_logic_vector(N - 1 downto 0);
     signal link_good : std_logic_vector(63 downto 0);
-    
+
     -- merger tree (at the moment for 32 links)
     type fifo_width_t is array (6 downto 0) of integer;
     constant read_width : fifo_width_t := (W, 64+12, 64+12, 64+12, 64+12, 64+12, 64+12);
     constant write_width : fifo_width_t := (64+12, 64+12, 64+12, 64+12, 64+12, 64+12, 32+6);
     constant generate_fifos : fifo_width_t := (1, 2, 4, 8, 16, 32, 64);
-        
+
     signal fifo_data_0              : work.util.slv38_array_t(generate_fifos(0) - 1 downto 0);
     signal fifo_q_0, fifo_q_0_reg   : work.util.slv76_array_t(generate_fifos(0) - 1 downto 0);
     signal wait_cnt_fifo_0          : work.util.slv2_array_t(generate_fifos(0) - 1 downto 0);
@@ -111,7 +111,7 @@ architecture arch of time_merger is
     signal layer_6_state            : work.util.slv4_array_t(generate_fifos(6) - 1 downto 0);
     signal fifo_wen_6, fifo_full_6  : std_logic_vector(generate_fifos(6) - 1 downto 0);
     signal alignment_done : std_logic_vector(generate_fifos(6) - 1 downto 0) := (others => '0');
-    
+
 begin
 
     -- ports out
@@ -120,11 +120,11 @@ begin
     o_error_shtime <= error_shtime;
     o_error_pre <= error_pre;
     o_error_sh <= error_sh;
-    
+
     generate_rack : FOR I in N-1 downto 0 GENERATE
         o_rack(I) <= rack(I) or rack_hit(I) or rack_link(I);
     END GENERATE;
-    
+
      -- generate tree fifos
     -- fix this now for 32 links
     fifos_first:
@@ -150,7 +150,7 @@ begin
             i_reset_n   => i_reset_n and (not reset_fifo_0(j))--,
         );
     END GENERATE;
-    
+
     fifos_last:
     FOR j in 0 to generate_fifos(6)-1 GENERATE
         e_link_fifo : entity work.ip_dcfifo_v2
@@ -174,7 +174,7 @@ begin
             i_reset_n   => i_reset_n--,
         );
     END GENERATE;
-    
+
     -- readout fifo
     process(i_clk, i_reset_n)
     begin
@@ -190,9 +190,9 @@ begin
         fpga_id <= (others => (others => '0'));
         --
     elsif rising_edge(i_clk) then
-    
+
         rack_link <= (others => '0');
-        
+
         if ( or_reduce(i_mask_n) /= '0' ) then
             FOR I in N - 1 downto 0 LOOP
                 -- link is good ('1') if link is not empty, wfull not full, not masked, w_ack is zero, i_rdata has hit data else '0'
@@ -201,7 +201,7 @@ begin
                 else
                     link_good(I) <= '0';
                 end if;
-                
+
                 -- read out fifo if not empty, not start of package and not masked
                 if ( merge_state /= wait_for_pre ) then
                     sop_wait(I) <= '1';
@@ -214,7 +214,7 @@ begin
                     sop_wait(I) <= '1';
                     rack_link(I) <= '1';
                 end if;
-                
+
                 -- read out fifo if not empty, not sub header of package and not masked
                 if ( merge_state /= wait_for_sh ) then
                     shop_wait(I) <= '1';
@@ -235,7 +235,7 @@ begin
                 else
                     time_wait(I) <= '1';
                 end if;
-                
+
                 -- check for state change in merge_hits state
                 if ( i_rempty(I) = '0' and i_rshop(I) = '1' and i_mask_n(I) = '1' and rack(I) = '0' and rack_hit(I) = '0' and merge_state = merge_hits ) then
                     sh_state(I) <= '0';
@@ -244,7 +244,7 @@ begin
                 else
                     sh_state(I) <= '1';
                 end if;
-                
+
                 if ( i_rempty(I) = '0' and i_rsop(I) = '1' and i_mask_n(I) = '1' and rack(I) = '0' and rack_hit(I) = '0' and merge_state = merge_hits ) then
                     pre_state(I) <= '0';
                 elsif ( i_mask_n(I) = '0' ) then
@@ -252,7 +252,7 @@ begin
                 else
                     pre_state(I) <= '1';
                 end if;
-                
+
                 if ( i_rempty(I) = '0' and i_reop(I) = '1' and i_mask_n(I) = '1' and rack(I) = '0' and rack_hit(I) = '0' and merge_state = merge_hits ) then
                     tr_state(I) <= '0';
                 elsif ( i_mask_n(I) = '0' ) then
@@ -291,7 +291,7 @@ begin
 
         if ( merge_state = merge_hits ) then
             case layer_0_state(i) is
-                
+
                 when "0000" =>
                     if ( i_mask_n(i) = '0' and fifo_full_0(i) = '0' ) then
                         saw_header_0(i) <= '1';
@@ -352,7 +352,7 @@ begin
         end if;
     end if;
     end process;
-    
+
     process(i_clk, i_reset_n)
     begin
     if ( i_reset_n /= '1' ) then
@@ -367,9 +367,9 @@ begin
     END GENERATE;
 
     merger_state_signal <= '1' when merge_state = merge_hits else '0';
-    
+
     layer_1 : entity work.time_merger_tree_fifo_64
-    generic map (  
+    generic map (
         TREE_w => TREE_DEPTH_w, TREE_r => TREE_DEPTH_r,
         r_width => read_width(0), w_width => write_width(1),
         compare_fifos => generate_fifos(0), gen_fifos => generate_fifos(1)--,
@@ -391,7 +391,7 @@ begin
     );
 
     layer_2 : entity work.time_merger_tree_fifo_64
-    generic map (  
+    generic map (
         TREE_w => TREE_DEPTH_w, TREE_r => TREE_DEPTH_r,
         r_width => read_width(1), w_width => write_width(2),
         compare_fifos => generate_fifos(1), gen_fifos => generate_fifos(2)--,
@@ -413,7 +413,7 @@ begin
     );
 
     layer_3 : entity work.time_merger_tree_fifo_64
-    generic map (  
+    generic map (
         TREE_w => TREE_DEPTH_w, TREE_r => TREE_DEPTH_r,
         r_width => read_width(2), w_width => write_width(3),
         compare_fifos => generate_fifos(2), gen_fifos => generate_fifos(3)--,
@@ -435,7 +435,7 @@ begin
     );
 
     layer_4 : entity work.time_merger_tree_fifo_64
-    generic map (  
+    generic map (
         TREE_w => TREE_DEPTH_w, TREE_r => TREE_DEPTH_r,
         r_width => read_width(3), w_width => write_width(4),
         compare_fifos => generate_fifos(3), gen_fifos => generate_fifos(4)--,
@@ -457,7 +457,7 @@ begin
     );
 
     layer_5 : entity work.time_merger_tree_fifo_64
-    generic map (  
+    generic map (
         TREE_w => TREE_DEPTH_w, TREE_r => TREE_DEPTH_r,
         r_width => read_width(4), w_width => write_width(5),
         compare_fifos => generate_fifos(4), gen_fifos => generate_fifos(5)--,
@@ -477,7 +477,7 @@ begin
         i_reset_n       => i_reset_n,
         i_clk           => i_clk--,
     );
-    
+
     tree_layer_last:
     FOR i in 0 to generate_fifos(6) - 1 GENERATE
     process(i_clk, i_reset_n)
@@ -639,7 +639,7 @@ begin
                 -- 75 downto 70 -> link number 2
                 -- 77 downto 76 -> header trailer marker
                 fifo_data_6(i)(37 downto 0) <= header_trailer;
-                -- padding for now 
+                -- padding for now
                 fifo_data_6(i)(75 downto 38) <= tree_paddingk;
                 fifo_wen_6(i) <= '1';
             end if;
@@ -647,7 +647,7 @@ begin
     end if;
     end process;
     END GENERATE;
-    
+
     -- write data
     process(i_clk, i_reset_n)
     begin
@@ -674,11 +674,11 @@ begin
         check_overflow <= '0';
         --
     elsif rising_edge(i_clk) then
-        
+
         rack <= (others => '0');
         header_trailer <= (others => '0');
         header_trailer_we <= '0';
-    
+
         case merge_state is
             when wait_for_pre =>
                 -- readout until all fifos have preamble
@@ -696,20 +696,20 @@ begin
                     header_trailer(7 downto 0) <= x"BC";
                     header_trailer_we <= '1';
                 end if;
-                
+
                 -- if wait for pre gets timeout
                 if ( wait_cnt_pre = TIMEOUT ) then
                     error_pre <= sop_wait;
                     merge_state <= error_state;
                 end if;
-                
+
             when get_time1 =>
                 -- get MSB from FPGA time
                 if ( time_wait = check_zeros ) then
                     merge_state <= compare_time1;
                     gtime1 <= i_rdata;
                 end if;
-                
+
             when compare_time1 =>
                 -- compare MSB from FPGA time
                 FOR I in N - 1 downto 0 LOOP
@@ -717,8 +717,8 @@ begin
                         error_gtime1 <= '1';
                     end if;
                 END LOOP;
-                
-                -- check if fifo is not full and all links have same time              
+
+                -- check if fifo is not full and all links have same time
                 if ( error_gtime1 = '0' and fifo_full_6(0) = '0' ) then
                     merge_state <= get_time2;
                     rack <= i_mask_n;
@@ -728,10 +728,10 @@ begin
                     header_trailer(37 downto 32) <= ts1_marker;
                     header_trailer(31 downto 0) <= gtime1(i_link)(35 downto 4);
                     header_trailer_we <= '1';
-                elsif ( error_gtime1 = '1' ) then 
+                elsif ( error_gtime1 = '1' ) then
                     merge_state <= error_state;
                 end if;
-                
+
             when get_time2 =>
                 -- get LSB from FPGA time
                 if ( error_gtime1 = '1' ) then
@@ -740,7 +740,7 @@ begin
                     merge_state <= compare_time2;
                     gtime2 <= i_rdata;
                 end if;
-                
+
             when compare_time2 =>
                 -- compare LSB from FPGA time
                 FOR I in N - 1 downto 0 LOOP
@@ -748,7 +748,7 @@ begin
                         error_gtime2 <= '1';
                     end if;
                 END LOOP;
-                
+
                 -- check if fifo is not full and all links have same time
                 if ( error_gtime2 = '0' and fifo_full_6(0) = '0' ) then
                     merge_state <= wait_for_sh;
@@ -761,17 +761,17 @@ begin
                 elsif ( error_gtime2 = '1' ) then
                     merge_state <= error_state;
                 end if;
-                
+
             when wait_for_sh =>
                 if ( error_gtime2 = '1' ) then
                     merge_state <= error_state;
                 end if;
-            
+
                 -- readout until all fifos have sub header
                 if ( shop_wait /= check_zeros ) then
                     wait_cnt_sh <= wait_cnt_sh + '1';
                 -- TODO handle overflow
---                 elsif ( check_overflow = '1' ) then    
+--                 elsif ( check_overflow = '1' ) then
 --                     check_overflow <= '0';
 --                     FOR I in 15 downto 0 LOOP
 --                         if ( i_rdata(N-1 downto 0)(I + 4) = 0 ) then
@@ -803,16 +803,16 @@ begin
                     header_trailer(15 downto 0) <= overflow;
                     header_trailer_we <= '1';
                 end if;
-                
+
                 -- if wait for pre gets timeout
                 if ( wait_cnt_sh = TIMEOUT ) then
                     error_sh <= shop_wait;
                     merge_state <= error_state;
                 end if;
-                
+
             when wait_for_sh_written =>
                 merge_state <= merge_hits;
-                
+
             when merge_hits =>
                 if ( error_shtime = '1' ) then
                     merge_state <= error_state;
@@ -824,30 +824,30 @@ begin
                         error_shtime <= '1';
                     end if;
                 END LOOP;
-                
+
                 -- TODO use generatic timeout for the moment
                 wait_cnt_merger <= wait_cnt_merger + '1';
                 if ( wait_cnt_merger = TIMEOUT ) then
                     merge_state <= error_state;
                     error_merger <= '1';
                 end if;
-                
+
                 -- change state
                 -- TODO error if sh is not there
                 if ( sh_state = check_zeros and and_reduce(alignment_done) = '1' ) then
                     merge_state <= wait_for_sh;
                 end if;
-                
+
                 -- TODO error if pre is not there
                 if ( pre_state = check_zeros and and_reduce(alignment_done) = '1' ) then
                     merge_state <= wait_for_pre;
                 end if;
-                
+
                 -- TODO error if trailer is not there
                 if ( tr_state = check_zeros and and_reduce(alignment_done) = '1' ) then
                     merge_state <= trailer;
                 end if;
-                
+
             when trailer =>
                 -- send trailer
                 if( fifo_full_6(0) = '0' ) then
@@ -865,7 +865,7 @@ begin
                 error_pre <= (others => '0');
                 error_sh <= (others => '0');
                 error_tr <= (others => '0');
-                                
+
             when error_state =>
                 -- send error message xxxxxxDC
                 -- 12: error gtime1
@@ -886,10 +886,10 @@ begin
                 end if;
                 header_trailer_we <= '1';
                 merge_state <= trailer;
-                            
+
             when others =>
                 merge_state <= wait_for_pre;
-                
+
         end case;
         --
     end if;
