@@ -46,6 +46,7 @@ INT display_period = 0;
 /* DMA Buffer and related */
 volatile uint32_t *dma_buf;
 size_t dma_buf_size = MUDAQ_DMABUF_DATA_LEN;
+uint32_t *dma_buf_copy = (uint32_t *) malloc(dma_buf_size);
 uint32_t dma_buf_nwords = dma_buf_size/sizeof(uint32_t);
 uint32_t laddr;
 uint32_t newdata;
@@ -173,6 +174,7 @@ INT frontend_init()
 void stream_settings_changed(odb o)
 {
     std::string name = o.get_name();
+    uint32_t current_state;
 
     cm_msg(MINFO, "stream_settings_changed", "Stream stettings changed");
 
@@ -185,11 +187,11 @@ void stream_settings_changed(odb o)
     if (name == "Datagen Enable") {
         cm_msg(MINFO, "stream_settings_changed", "Set Disable Datagen to %s", o ? "y" : "n");
         if (o) {
-            uint32_t current_state = mup->read_register_rw(SWB_READOUT_STATE_REGISTER_W);
+            current_state = mup->read_register_rw(SWB_READOUT_STATE_REGISTER_W);
             current_state |= (1 << 0);
             mup->write_register(SWB_READOUT_STATE_REGISTER_W, current_state);
         } else {
-            uint32_t current_state = mup->read_register_rw(SWB_READOUT_STATE_REGISTER_W);
+            current_state = mup->read_register_rw(SWB_READOUT_STATE_REGISTER_W);
             current_state &= ~(1 << 0);
             mup->write_register(SWB_READOUT_STATE_REGISTER_W, current_state);
         }
@@ -198,11 +200,11 @@ void stream_settings_changed(odb o)
     if (name == "use_merger") {
         cm_msg(MINFO, "stream_settings_changed", "Set Disable Merger to %s", o ? "y" : "n");
         if (o) {
-            uint32_t current_state = mup->read_register_rw(SWB_READOUT_STATE_REGISTER_W);
+            current_state = mup->read_register_rw(SWB_READOUT_STATE_REGISTER_W);
             current_state |= (1 << 2);
             mup->write_register(SWB_READOUT_STATE_REGISTER_W, current_state);
         } else {
-            uint32_t current_state = mup->read_register_rw(SWB_READOUT_STATE_REGISTER_W);
+            current_state = mup->read_register_rw(SWB_READOUT_STATE_REGISTER_W);
             current_state &= ~(1 << 2);
             mup->write_register(SWB_READOUT_STATE_REGISTER_W, current_state);
         }
@@ -697,7 +699,7 @@ INT read_stream_thread(void *param) {
     int status;
 
     // max number of requested words
-    uint32_t max_requested_words = dma_buf_nwords/2;
+    uint32_t max_requested_words = dma_buf_nwords / 2;
     
     // get midas buffer
     uint32_t *pdata;
@@ -707,6 +709,11 @@ INT read_stream_thread(void *param) {
     uint32_t words_written;
     uint32_t cnt_loop;
     uint32_t endofevent;
+
+    // readout state
+    uint32_t current_readout_register;
+    uint32_t current_pixel_mask_n;
+    uint32_t current_scifi_mask_n;
     
     // actuall readout loop
     while (is_readout_thread_enabled()) {
@@ -732,22 +739,29 @@ INT read_stream_thread(void *param) {
             printf("ERROR: rb_get_wp -> rb_status != DB_SUCCESS\n");
             break;
         }
-        
-        // start DMA
-        mu.enable_continous_readout(0);
+
+        // reset data path
+        //mu.write_register(RESET_REGISTER_W, reset_reg);
+
+        // change readout state to switch between pixel and scifi
+        current_readout_register = mu.read_register_rw(SWB_READOUT_STATE_REGISTER_W);
+        current_pixel_mask_n = mu.read_register_rw(SWB_LINK_MASK_PIXEL_REGISTER_W);
+        current_scifi_mask_n = mu.read_register_rw(SWB_LINK_MASK_SCIFI_REGISTER_W);
+        current_readout_register |= (1 << 7);
+        mu.write_register(SWB_READOUT_STATE_REGISTER_W, current_readout_register);
 
         // wait for requested data
         // request to read dma_buffer_size/2 (count in blocks of 256 bits)
         mu.write_register(GET_N_DMA_WORDS_REGISTER_W, max_requested_words / (256/32));
-        
-        // reset data path
-        mu.write_register(RESET_REGISTER_W, reset_reg);
+
+        // start DMA and stop reset
+        mu.enable_continous_readout(0);
         usleep(10);
         mu.write_register(RESET_REGISTER_W, 0x0);
 
         // wait for FPGA
         cnt_loop = 0;
-        while ( (mu.read_register_ro(EVENT_BUILD_STATUS_REGISTER_R) & 1) == 0 ) { cnt_loop++; ss_sleep(10); }
+        while ( (mu.read_register_ro(EVENT_BUILD_STATUS_REGISTER_R) & 0x1) == 0x0 ) { cnt_loop++; ss_sleep(10); }
 
         // disable dma
         mu.disable();
@@ -787,26 +801,35 @@ INT read_stream_thread(void *param) {
         printf("dma_buf[lastWritten-1]: 0x%08X ", dma_buf[lastWritten-1]);
         printf("dma_buf[endofevent]: 0x%08X ", dma_buf[endofevent]);
         printf("dma_buf[endofevent+1]: 0x%08X ", dma_buf[endofevent+1]);
+        printf("dma_buf[endofevent*8-1]: 0x%08X ", dma_buf[endofevent*8-1]);
+        printf("dma_buf[endofevent*8]: 0x%08X ", dma_buf[endofevent*8]);
         printf("total data: %d MB ", (words_written*8-1)*4/1000000);
         printf("dma_buf_size: %d %d ", dma_buf_size, 1 * (1024 * 1024));
         printf("dma_buf[endofevent-1]: 0x%08X\n", dma_buf[endofevent-1]);
         
         // increase words_written if there is another event
         if ( dma_buf[words_written*8] != 0xFFFFFFFF ) {
-            printf("%d\n", dma_buf[words_written*8+3] / 4);
-            words_written += (dma_buf[words_written*8+3] / 4 + 4) / 8;
+            for ( unsigned int i = words_written*8; i < (words_written*8 + (dma_buf[words_written*8+3] / 4 + 4)); i++ )
+                printf("0x%08X %i\n", dma_buf[i], i);
+            //words_written += (dma_buf[words_written*8+3] / 4 + 4) / 8;
         }
-        
-        //size_dma_buf = check_event(dma_buf, offset, pdata);
-        
-//         copy_n(&dma_buf[0], (words_written*8-1)*4, pdata);
-        memcpy(pdata, const_cast<uint32_t*>(dma_buf), (words_written*8-1)*4);
-//         memcpy(pdata, const_cast<uint32_t*>(dma_buf), size_dma_buf);
-        for ( int i = 0; i < 100; i++)
-            printf("dma_buf[size_dma_buf]: 0x%08X %d\n", dma_buf[i], i);
-        for ( int i = words_written*8-100; i < words_written*8+100; i++)
+
+        uint32_t size = (words_written*8 + (dma_buf[words_written*8+3] / 4 + 4)) - (words_written*8);
+
+        printf("size %d\n", size);
+
+        memcpy(dma_buf_copy, const_cast<uint32_t*>(&dma_buf[words_written*8]), size*4);
+        copy_n(&dma_buf_copy[0], size*4, pdata);
+        //memcpy(pdata, const_cast<uint32_t*>(&dma_buf[words_written*8]), size*4);//((words_written+(dma_buf[words_written*8+3] / 4 + 4) / 8)*8-1)*4);
+        for ( unsigned int i = 0; i < 100; i++)
+            printf("dma_buf[i]: 0x%08X %d\n", dma_buf[i], i);
+        for ( unsigned int i = words_written*8-100; i < words_written*8+100; i++)
             printf("dma_buf[size_dma_buf]: 0x%08X %d %d\n", dma_buf[i], i, words_written*8);
-        rb_increment_wp(rbh, (words_written*8-1)*4); // in byte length
+        for ( unsigned int i = words_written*8; i < (words_written*8 + (dma_buf[words_written*8+3] / 4 + 4)); i++ )
+            printf("0x%08X  %d\n", dma_buf[i], i);
+        for ( unsigned int i = 0; i < size; i++ )
+            printf("0x%08X  %d\n", dma_buf_copy[i], i);
+        rb_increment_wp(rbh, size*4);//(words_written*8-1)*4); // in byte length
         
     }
 
