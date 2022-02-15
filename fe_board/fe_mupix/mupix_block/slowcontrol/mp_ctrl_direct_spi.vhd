@@ -61,12 +61,13 @@ architecture RTL of mp_ctrl_direct_spi is
     signal wait_cnt             : std_logic_vector(15 downto 0);
 
     signal spi_bitpos           : integer range 31 downto 0;
+    signal internal_chip_mask   : std_logic_vector(N_CHIPS_PER_SPI_g-1 downto 0);
 
 begin
 
     fifo_write          <= i_fifo_write_direct when i_direct_spi_enable = '1' else i_fifo_write_mp_ctrl;
     fifo_wdata          <= i_fifo_data_direct  when i_direct_spi_enable = '1' else i_fifo_data_mp_ctrl;
-    o_direct_spi_busy   <= fifo_empty;
+    o_direct_spi_busy   <= not fifo_empty;
 
     direct_spi_fifo: entity work.ip_scfifo
     generic map (
@@ -89,13 +90,14 @@ begin
     process (i_clk, i_reset_n) is
     begin
         if(i_reset_n = '0') then
-            o_spi           <= '0';
-            o_spi_clk       <= '0';
-            o_csn           <= (others => '1');
-            fifo_rd         <= '0';
-            direct_spi_state<= idle;
-            spi_bitpos      <= 0;
-            wait_cnt        <= (others => '0');
+            o_spi               <= '0';
+            o_spi_clk           <= '0';
+            o_csn               <= (others => '1');
+            fifo_rd             <= '0';
+            direct_spi_state    <= idle;
+            spi_bitpos          <= 0;
+            wait_cnt            <= (others => '0');
+            internal_chip_mask  <= (others => '0');
 
         elsif(rising_edge(i_clk)) then
             fifo_rd     <= '0';
@@ -106,8 +108,9 @@ begin
             case direct_spi_state is
               when idle =>
                 if(fifo_empty = '0') then
-                    fifo_rd <= '1';
-                    direct_spi_state <= rd;
+                    fifo_rd             <= '1';
+                    direct_spi_state    <= rd;
+                    internal_chip_mask  <= i_chip_mask;
                 end if;
               when rd =>
                 direct_spi_state <= wr;
@@ -144,7 +147,7 @@ begin
                 end case;
               when ld =>
                 if(wait_cnt=i_spi_slow_down) then
-                    o_csn <= i_chip_mask;
+                    o_csn <= internal_chip_mask;
                 end if;
                 if(wait_cnt = i_spi_slow_down + i_spi_slow_down) then 
                     direct_spi_state <= idle;

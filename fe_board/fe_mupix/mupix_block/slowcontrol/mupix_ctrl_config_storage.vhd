@@ -60,6 +60,11 @@ architecture RTL of mupix_ctrl_config_storage is
     signal bias_dpf_empty : std_logic_vector(N_CHIPS_g-1 downto 0);
     signal tdac_dpf_empty : std_logic_vector(N_CHIPS_g-1 downto 0);
 
+    signal conf_rdy : std_logic_vector(N_CHIPS_g-1 downto 0);
+    signal vdac_rdy : std_logic_vector(N_CHIPS_g-1 downto 0);
+    signal bias_rdy : std_logic_vector(N_CHIPS_g-1 downto 0);
+    signal tdac_rdy : std_logic_vector(N_CHIPS_g-1 downto 0);
+
     signal conf_dpf_we : std_logic_vector(N_CHIPS_g-1 downto 0);
     signal vdac_dpf_we : std_logic_vector(N_CHIPS_g-1 downto 0);
     signal bias_dpf_we : std_logic_vector(N_CHIPS_g-1 downto 0);
@@ -103,7 +108,42 @@ begin
 
     gen_dp_fifos: for I in 0 to N_CHIPS_g generate
 
-        o_data(I).rdy <= (TDAC_BIT => tdac_dpf_full(I), BIAS_BIT => bias_dpf_full(I), VDAC_BIT => vdac_dpf_full(I), CONF_BIT => conf_dpf_full(I));
+        o_data(I).rdy <= (TDAC_BIT => tdac_rdy(I), BIAS_BIT => bias_rdy(I), VDAC_BIT => vdac_rdy(I), CONF_BIT => conf_rdy(I));
+
+        process (i_clk, i_reset_n) is
+        begin
+          if(i_reset_n = '0') then 
+            tdac_rdy(I) <= (others => '0');
+            bias_rdy(I) <= (others => '0');
+            vdac_rdy(I) <= (others => '0');
+            conf_rdy(I) <= (others => '0');
+          elsif rising_edge(i_clk) then
+            -- data is ready when dpf becomes full and stays ready until its empty
+            if(tdac_dpf_full(I) = '1') then 
+                tdac_rdy(I) <= '1';
+            elsif(tdac_dpf_empty(I) = '1') then
+                tdac_rdy(I) <= '0';
+            end if;
+
+            if(conf_dpf_full(I) = '1') then 
+                conf_rdy(I) <= '1';
+            elsif(conf_dpf_empty(I) = '1') then
+                conf_rdy(I) <= '0';
+            end if;
+
+            if(bias_dpf_full(I) = '1') then 
+                bias_rdy(I) <= '1';
+            elsif(bias_dpf_empty(I) = '1') then
+                bias_rdy(I) <= '0';
+            end if;
+
+            if(vdac_dpf_full(I) = '1') then 
+                vdac_rdy(I) <= '1';
+            elsif(vdac_dpf_empty(I) = '1') then
+                vdac_rdy(I) <= '0';
+            end if;
+          end if;
+        end process;
 
         conf_dpf_we(I) <= (i_conf_reg_we and i_chip_cvb(I)) or conf_dpf_we_splitter;
         vdac_dpf_we(I) <= (i_vdac_reg_we and i_chip_cvb(I)) or vdac_dpf_we_splitter;

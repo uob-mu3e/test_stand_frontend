@@ -27,13 +27,14 @@ entity mp_ctrl_spi is
         i_reset_n               : in  std_logic;
 
         -- connections to config storage
-        o_read                  : out std_logic_vector(3 downto 0);
+        o_read                  : out mp_conf_array_in(N_CHIPS_PER_SPI_g-1 downto 0);
         i_data                  : in  mp_conf_array_out(N_CHIPS_PER_SPI_g-1 downto 0);
 
         -- connections to direct spi entity
         o_data_to_direct_spi    : out std_logic_vector(31 downto 0);
         o_data_to_direct_spi_we : out std_logic;
         i_direct_spi_fifo_full  : in  std_logic;
+        i_direct_spi_fifo_empty : in  std_logic;
         o_spi_chip_selct_mask   : out std_logic_vector(N_CHIPS_PER_SPI_g-1 downto 0)--;
     );
 end entity mp_ctrl_spi;
@@ -45,253 +46,267 @@ architecture RTL of mp_ctrl_spi is
     signal conf_rdy             : std_logic_vector(N_CHIPS_PER_SPI_g-1 downto 0);
     signal tdac_rdy             : std_logic_vector(N_CHIPS_PER_SPI_g-1 downto 0);
 
+    signal chip_is_writing      : std_logic_vector(N_CHIPS_PER_SPI_g-1 downto 0);
+    signal chip_is_writing_int  : integer range 0 to N_CHIPS_PER_SPI_g-1;
+    signal reg_is_writing       : std_logic_vector(3 downto 0);
+
+    type mp_spi_state_type      is (idle, waiting, load_bits, writing, shift_col_by_one, load);
+    signal mp_spi_state         : mp_spi_state_type;
+    type mp_spi_clk_state_type  is (zero1, clk1, zero2, clk2, zero3);
+    signal mp_spi_clk_state     : mp_spi_clk_state_type;
+    type col_shift_state_type   is (zero1, clk1, zero2, clk2, zero3, load, write1, write2, zero4);
+    signal col_shift_state      : col_shift_state_type;
+
+    signal spi_data_vector      : reg32array(N_CHIPS_PER_SPI_g-1 downto 0);
+
+    signal vdac                 : std_logic;
+    signal bias                 : std_logic;
+    signal conf                 : std_logic;
+    signal tdac                 : std_logic;
+
+
+    -- bits in 29-bit spi reg
+    -- "documentation" in Mupix10.hpp, Mupix8_daq repo
+    signal Sin_Bias             : std_logic;
+    signal Ck1_Bias             : std_logic;
+    signal Ck2_Bias             : std_logic;
+    signal Sin_Conf             : std_logic;
+    signal Ck1_Conf             : std_logic;
+    signal Ck2_Conf             : std_logic;
+    signal Sin_VDAC             : std_logic;
+    signal Ck1_VDAC             : std_logic;
+    signal Ck2_VDAC             : std_logic;
+    signal Sin_Col              : std_logic;
+    signal Ck1_Col              : std_logic;
+    signal Ck2_Col              : std_logic;
+    signal Sin_Test             : std_logic;
+    signal Ck1_Test             : std_logic;
+    signal Ck2_Test             : std_logic;
+    signal Sin_TDAC             : std_logic;
+    signal Ck1_TDAC             : std_logic;
+    signal Ck2_TDAC             : std_logic;
+    signal Load_Bias            : std_logic;
+    signal Load_Conf            : std_logic;
+    signal Load_VDAC            : std_logic;
+    signal Load_Col             : std_logic;
+    signal Load_Test            : std_logic;
+    signal Load_TDAC            : std_logic;
+    signal Readback             : std_logic;
+    signal PCH                  : std_logic;
+    signal WR                   : std_logic;
+    signal WrEnable             : std_logic;
+    signal Injection            : std_logic;
+
+    signal dpf_empty_this_round : std_logic_vector(3 downto 0);
+
 begin
 
+    -- map signals to 29 bit mupix spi vector  (check order and positon of 000)
+    o_data_to_direct_spi <= Sin_Bias & Ck1_Bias & Ck2_Bias & Sin_Conf & Ck1_Conf & Ck2_Conf & Sin_VDAC & Ck1_VDAC & Ck2_VDAC & Sin_Col & Ck1_Col Ck2_Col & Sin_Test & Ck1_Test & Ck2_Test & Sin_TDAC & Ck1_TDAC & Ck2_TDAC &
+                            Load_Bias & Load_Conf & Load_VDAC & Load_Col & Load_Test & Load_TDAC & Readback & PCH & WR & WrEnable & Injection & "000";
+
+    -- things that we are going to fully ignore here:
+    -- if you want to use them you need to use direct spi intput from slowcontrol and you need to know what you are doing (see code in mupix8_daq repo, Feb2022)
+    -- do not expect things to be fast if you do that
+
+    Sin_Test  <= '0';
+    Ck1_Test  <= '0';
+    Ck2_Test  <= '0';
+    Load_Test <= '0';
+    Readback  <= '0';
+    PCH       <= '0';
+    Injection <= '0';
+
+    -- bug in mupix 10 (to be removed)
+    Load_Conf <= '1';
+
+    -- hardwire bits
+    Sin_Bias <= bias;
+    Sin_Conf <= conf;
+    Sin_VDAC <= vdac;
+    Sin_TDAC <= tdac;
+
+
     genrdy: for I in 0 to N_CHIPS_PER_SPI_g-1 generate
-        vdac_rdy(I) <= i_data.rdy(VDAC_BIT);
-        bias_rdy(I) <= i_data.rdy(BIAS_BIT);
-        conf_rdy(I) <= i_data.rdy(CONF_BIT);
-        tdac_rdy(I) <= i_data.rdy(TDAC_BIT);
+        vdac_rdy(I) <= i_data(I).rdy(VDAC_BIT);
+        bias_rdy(I) <= i_data(I).rdy(BIAS_BIT);
+        conf_rdy(I) <= i_data(I).rdy(CONF_BIT);
+        tdac_rdy(I) <= i_data(I).rdy(TDAC_BIT);
     end generate;
 
     process (i_clk, i_reset_n) is
     begin
         if(i_reset_n = '0') then
-            o_read <= (others => '0');
+            for I in 0 to N_CHIPS_PER_SPI_g-1 loop
+                o_read(I).spi_read  <= (others => '0');
+            end loop;
+            o_data_to_direct_spi    <= (others => '0');
+            o_data_to_direct_spi_we <= '0';
+            o_spi_chip_selct_mask   <= (others => '1');
+            mp_spi_clk_state        <= zero1;
+            mp_spi_state            <= idle;
+            col_shift_state         <= zero1;
+            chip_is_writing_int     <= 0;
+
+            Ck1_Bias    <= '0';
+            Ck2_Bias    <= '0';
+            Ck1_Col     <= '0';
+            Ck2_Col     <= '0';
+            Ck1_Conf    <= '0';
+            Ck2_Conf    <= '0';
+            Ck1_TDAC    <= '0';
+            Ck2_TDAC    <= '0';
+            Ck1_Col     <= '0';
+            Ck2_Col     <= '0';
 
         elsif(rising_edge(i_clk)) then
-            o_read <= (others => '0');
-         
+            -- defaults
+            for I in 0 to N_CHIPS_PER_SPI_g-1 loop
+                o_read(I).spi_read  <= (others => '0');
+            end loop;
+            o_data_to_direct_spi    <= (others => '0');
+            o_data_to_direct_spi_we <= '0';
+            Ck1_Bias    <= '0';
+            Ck2_Bias    <= '0';
+            Ck1_Col     <= '0';
+            Ck2_Col     <= '0';
+            Ck1_Conf    <= '0';
+            Ck2_Conf    <= '0';
+            Ck1_TDAC    <= '0';
+            Ck2_TDAC    <= '0';
+            Ck1_Col     <= '0';
+            Ck2_Col     <= '0';
+
+            case mp_spi_state is
+              when idle =>
+                if(or_reduce(vdac_rdy & bias_rdy & conf_rdy & tdac_rdy)='1' and i_direct_spi_fifo_empty = '1') then 
+                    mp_spi_state    <= load_bits;
+                    for I in 0 to N_CHIPS_PER_SPI_g-1 loop -- decide on the chip that is supposed to write this round (could also write more than 1 chip if bits are identical but i dont want to right now)
+                        if(or_reduce(i_data(I).rdy = '1')) then
+                            chip_is_writing     <= (I => '1', others => '0');
+                            o_read              <= (I => (spi_read => i_data(I).rdy), others =>(spi_read => (others => '0')));
+                            reg_is_writing      <= i_data(I).rdy;
+                            chip_is_writing_int <= I;
+                        end if;
+                    end loop;
+                    -- now we know the chip (chip_is_writing, chip is writing int) and the regs of that chip (reg_is_writing) that we want to write this round
+                end if;
+
+              when load_bits =>
+                mp_spi_state <= waiting;
+                -- save the bits we want to write this round
+                vdac <= i_data(chip_is_writing_int).spi_data(VDAC_BIT) when reg_is_writing(VDAC_BIT) = '1' else '0';
+                conf <= i_data(chip_is_writing_int).spi_data(CONF_BIT) when reg_is_writing(VDAC_BIT) = '1' else '0';
+                bias <= i_data(chip_is_writing_int).spi_data(BIAS_BIT) when reg_is_writing(VDAC_BIT) = '1' else '0';
+                tdac <= i_data(chip_is_writing_int).spi_data(TDAC_BIT) when reg_is_writing(VDAC_BIT) = '1' else '0';
+
+              when waiting =>
+                -- if we emptied the dpf with this read we need to add additional steps at the end (load reg for vdac, conf and bias, shift by one shenanigans for tdac)
+                -- -> save here which one we emptied so rest of firmware can start filling them again immediately
+                dpf_empty_this_round    <= reg_is_writing and not i_data(chip_is_writing_int).rdy; -- TODO: check if this is actually the place where to check for empty
+                -- set chip mask for direct spi, leave it until we get here again
+                o_spi_chip_selct_mask   <= (chip_is_writing_int=> '0', others => '1');
+                mp_spi_state            <= writing;
+                mp_spi_clk_state        <= zero1;
+
+              when writing =>
+                -- now send the 5 29-bit words to direct SPI that we need to write a bit (no need to check if there is space since we only start from idle when i_direct_spi_fifo_empty)
+                o_data_to_direct_spi_we <= '1';
+                case mp_spi_clk_state is
+
+                  when zero1 =>
+                    mp_spi_clk_state <= clk1;
+                    -- default all
+                  when clk1 =>
+                    mp_spi_clk_state <= zero2;
+                    Ck1_Bias <= reg_is_writing(BIAS_BIT);
+                    Ck1_VDAC <= reg_is_writing(VDAC_BIT);
+                    Ck1_Conf <= reg_is_writing(CONF_BIT);
+                    Ck1_TDAC <= reg_is_writing(TDAC_BIT);
+                    -- others to default
+                  when zero2 =>
+                    mp_spi_clk_state <= clk2;
+                    -- default all
+                  when clk2 =>
+                    mp_spi_clk_state <= zero3;
+                    Ck2_Bias <= reg_is_writing(BIAS_BIT);
+                    Ck2_VDAC <= reg_is_writing(VDAC_BIT);
+                    Ck2_Conf <= reg_is_writing(CONF_BIT);
+                    Ck2_TDAC <= reg_is_writing(TDAC_BIT);
+                    -- others to default
+                  when zero3 => -- is this one needed ?
+                    mp_spi_clk_state <= zero1;
+                    -- default all
+
+                    -- decide what to do next: 
+                    -- default is to go back to idle and get the next round of bits:
+                    mp_spi_state <= idle;
+
+                    -- if this was the last round of bits for any of the 4 regs we need to load the reg
+                    if(or_reduce(dpf_empty_this_round) = '1') then 
+                        mp_spi_state <= load;
+                    end if;
+                  when others =>
+                    mp_spi_clk_state <= zero1;
+                    o_data_to_direct_spi_we <= '0';
+                end case;
+
+                when load =>
+                    o_data_to_direct_spi_we <= '1';
+
+                    -- load only the regs that are writing and for which dpf went empty this round
+                    Load_Bias <= reg_is_writing(BIAS_BIT) and dpf_empty_this_round(BIAS_BIT);
+                    Load_conf <= reg_is_writing(CONF_BIT) and dpf_empty_this_round(CONF_BIT);
+                    Load_VDAC <= reg_is_writing(VDAC_BIT) and dpf_empty_this_round(VDAC_BIT);
+                    Load_TDAC <= reg_is_writing(TDAC_BIT) and dpf_empty_this_round(TDAC_BIT);
+
+                    -- when TDACs have to be loaded this round we need to do the shift by one shenanigans (we could continue clocking in bias, conf and vdac data while doing shift by one shenanigans but seems not worth the effort)
+                    if((reg_is_writing(TDAC_BIT) and dpf_empty_this_round(TDAC_BIT)) = '1') then 
+                        mp_spi_state <= shift_col_by_one;
+                        col_shift_state <= zero1;
+                    else
+                        mp_spi_state <= idle;
+                    end if;
+
+                when shift_col_by_one => -- TODO: first shift by one needs to put a 1 into col reg
+                    o_data_to_direct_spi_we <= '1';
+
+                    case col_shift_state is
+                      when zero1 => -- is this one needed ?
+                        col_shift_state <= clk1;
+                      when clk1 =>
+                        col_shift_state <= zero2;
+                        Ck1_Col <= '1';
+                      when zero2 =>
+                        col_shift_state <= clk2;
+                      when clk2 =>
+                        col_shift_state <= zero3;
+                        Ck2_Col <= '1';
+                      when zero3 =>
+                        col_shift_state <= load;
+                      when load =>
+                        col_shift_state <= write1;
+                        Load_Col <= '1';
+                      when write1 =>
+                        col_shift_state <= write2;
+                        WR       <= '1';
+                        WrEnable <= '1'; -- TODO: should this be enough ? .. i think so
+                      when write2 =>
+                        col_shift_state <= zero4;
+                        --WR       <= '1';
+                        --WrEnable <= '1';
+                      when zero4 => -- is this one needed ?
+                        col_shift_state <= zero1;
+                        mp_spi_state <= idle;
+                      when others =>
+                        col_shift_state <= zero1;
+                        o_data_to_direct_spi_we <= '0';
+                    end case;
+
+              when others =>
+                mp_spi_state <= idle;
+            end case;
+
         end if;
     end process;
 end RTL;
-
--- the old thing: 
-
-
-    -- signal mp_fifo_clear            : std_logic_vector(5 downto 0) := (others => '0');
-    -- signal config_storage_input_data: std_logic_vector(32*5 + 31 downto 0);
-    -- signal config_storage_in_all    : std_logic_vector(31 downto 0);
-    -- signal config_storage_in_all_we : std_logic;
-    -- signal is_writing               : std_logic_vector(5 downto 0);
-    -- signal is_writing_this_round    : std_logic_vector(5 downto 0);
-    -- signal config_storage_write     : std_logic_vector(5 downto 0);
-    -- signal enable_shift_reg_6       : std_logic_vector(5 downto 0);
-    -- signal clk1                     : std_logic_vector(5 downto 0);
-    -- signal clk2                     : std_logic_vector(5 downto 0);
-    -- signal clk_step                 : std_logic_vector(3 downto 0);
-
-    -- signal rd_config                : std_logic;
-    -- signal config_data              : std_logic_vector(5 downto 0);
-    -- signal config_data29            : std_logic_vector(31 downto 0);
-    -- signal config_data29_raw        : std_logic_vector(31 downto 0);
-    -- signal waiting_for_load_round   : std_logic_vector(5 downto 0);
-
-    -- signal slow_down                : std_logic_vector(15 downto 0);
-    -- signal slow_down_buf            : std_logic_vector(31 downto 0);
-    -- signal invert_29_bitpos         : std_logic;
-    -- signal invert_csn               : std_logic;
-    -- signal wait_cnt                 : std_logic_vector(15 downto 0);
-    -- type mp_ctrl_state_type         is (idle, load_config, set_clks, writing, ld_spi_reg);
-    -- signal mp_ctrl_state            : mp_ctrl_state_type;
-    -- type spi_bit_state_type         is (beforepulse, duringpulse, afterpulse);
-    -- signal spi_bit_state            : spi_bit_state_type;
-    -- signal spi_busy                 : std_logic;
-
-    -- signal spi_dout                 : std_logic;
-    -- signal spi_clk                  : std_logic;
-    -- signal spi_bitpos               : integer range 31 downto 0;
-    -- signal chip_select_n            : std_logic_vector(11 downto 0);
-
-    -- e_mupix_ctrl_config_storage : entity work.mupix_ctrl_config_storage
-    -- port map(
-    --     i_clk                       => i_clk,
-    --     i_reset_n                   => i_reset_n,
-    --     i_clr_fifo                  => mp_fifo_clear,
-
-    --     i_data                      => config_storage_input_data,
-    --     i_wrreq                     => config_storage_write,
-
-    --     i_data_all                  => config_storage_in_all,
-    --     i_wrreq_all                 => config_storage_in_all_we,
-
-    --     o_data                      => config_data,
-    --     o_is_writing                => is_writing,
-    --     i_enable                    => enable_shift_reg_6,
-    --     i_rdreq                     => rd_config--,
-    -- );
-
-    -- gen: for I in 0 to 31 generate
-    --     config_data29(I) <= config_data29_raw(31-I) when invert_29_bitpos = '1' else config_data29_raw(I);
-    -- end generate;
-
-    -- process(i_clk, i_reset_n)
-    -- begin
-    --     if(i_reset_n = '0')then
-    --         wait_cnt                <= (others => '0');
-    --         mp_ctrl_state           <= idle;
-    --         config_data29_raw       <= (others => '0');
-    --         is_writing_this_round   <= (others => '0');
-    --         waiting_for_load_round  <= (others => '0');
-    --         clk1                    <= (others => '0');
-    --         clk2                    <= (others => '0');
-    --         clk_step                <= (others => '0');
-    --         chip_select_n           <= (others => '1');
-    --         spi_dout                <= '0';
-    --         spi_clk                 <= '0';
-    --         spi_bitpos              <= 0;
-    --         -- o_csn                <= (others => '1'); -- do we want this ? (is a load signal)
-
-    --     elsif(rising_edge(i_clk))then
-    --         rd_config   <= '0';
-    --         wait_cnt    <= wait_cnt + 1;
-    --         o_mosi      <= (others => spi_dout);
-    --         o_clock     <= (others => spi_clk);
-    --         spi_busy    <= '1';
-    --         --if(invert_csn = '1') then 
-    --             o_csn       <= not chip_select_n;
-    --         --else
-    --         --    o_csn       <= chip_select_n;
-    --         --end if;
-
-    --         case mp_ctrl_state is
-    --             when idle =>
-    --                 waiting_for_load_round  <= (others => '0');
-    --                 spi_busy                <= '0';
-
-    --                 if(or_reduce(is_writing) = '1') then
-    --                     mp_ctrl_state   <= load_config;
-    --                     rd_config       <= '1';
-    --                     wait_cnt        <= (others => '0');
-    --                 end if;
-
-    --             when load_config =>
-    --                 chip_select_n                   <= (others => '1');
-    --                 config_data29_raw               <= (others => '0');
-    --                 clk_step                        <= (others => '0');
-    --                 if(wait_cnt = x"0001") then
-    --                     for I in 0 to 5 loop
-    --                         config_data29_raw(I*3)  <= config_data(I); -- TODO: check order !!
-    --                     end loop;
-    --                     is_writing_this_round       <= is_writing;
-    --                     mp_ctrl_state               <= set_clks;
-    --                 end if;
-
-    --             when set_clks =>
-    --                 clk_step    <= clk_step + 1;
-    --                 for I in 0 to 5 loop
-    --                     if(is_writing_this_round(I)='1') then
-    --                         waiting_for_load_round(I)   <= '1';
-    --                         -- clocks (1.step 0 0, 2.step 1 0, 3.step 0 0, 4.step 0 1, 5.step 0 0)
-    --                         case clk_step is
-    --                             when x"0" => 
-    --                                 config_data29_raw(I*3 + 1) <= '0';
-    --                                 config_data29_raw(I*3 + 2) <= '0';
-    --                             when x"1" => 
-    --                                 config_data29_raw(I*3 + 1) <= '1';
-    --                                 config_data29_raw(I*3 + 2) <= '0';
-    --                             when x"2" => 
-    --                                 config_data29_raw(I*3 + 1) <= '0';
-    --                                 config_data29_raw(I*3 + 2) <= '0';
-    --                             when x"3" => 
-    --                                 config_data29_raw(I*3 + 1) <= '0';
-    --                                 config_data29_raw(I*3 + 2) <= '1';
-    --                             when x"4" => 
-    --                                 config_data29_raw(I*3 + 1) <= '0';
-    --                                 config_data29_raw(I*3 + 2) <= '0';
-    --                             when others =>
-                                    
-    --                         end case;
-    --                     else
-    --                         config_data29_raw(I*3 + 1) <= '0';
-    --                         config_data29_raw(I*3 + 2) <= '0';
-    --                     end if;
-    --                 end loop;
-
-    --                 if(or_reduce(is_writing)='1' and clk_step=x"5") then -- next bit
-    --                     mp_ctrl_state <= load_config;
-    --                     rd_config     <= '1';
-    --                     wait_cnt      <= (others => '0');
-    --                 end if;
-
-    --                 if(or_reduce(is_writing)='0') then -- done
-    --                     mp_ctrl_state <= idle;
-    --                 end if;
- 
-    --                 if(or_reduce(is_writing)='0' and clk_step=x"5") then -- extra round for load conf
-    --                     mp_ctrl_state <= writing;
-    --                     spi_bit_state <= beforepulse;
-    --                     wait_cnt      <= (others => '0');
-    --                     config_data29_raw <= (19 => '1', others => '0');
-    --                 end if;
-
-    --                 if(clk_step=x"6") then -- extra round for load
-    --                     mp_ctrl_state <= writing;
-    --                     spi_bit_state <= beforepulse;
-    --                     wait_cnt      <= (others => '0');
-    --                     config_data29_raw <= (19 => '1', others => '0');
-    --                     for I in 0 to 5 loop
-    --                          -- set ld bits that have written something since last idle
-    --                         config_data29_raw(18 + I) <= waiting_for_load_round(I);
-    --                     end loop;
-    --                     config_data29_raw(19) <= '1';
-    --                 end if;
-
-    --                 if(clk_step=x"7") then -- extra round for load remove
-    --                     mp_ctrl_state <= writing;
-    --                     spi_bit_state <= beforepulse;
-    --                     wait_cnt      <= (others => '0');
-    --                     config_data29_raw <= (19 => '1', others => '0');
-    --                 end if;
-
-    --                 if(clk_step=x"0" or clk_step=x"1" or clk_step=x"2" or clk_step=x"3" or clk_step=x"4") then -- writing
-    --                     mp_ctrl_state <= writing;
-    --                     spi_bit_state <= beforepulse;
-    --                     wait_cnt      <= (others => '0');
-    --                 end if;
-
-    --             when writing =>
-    --                 spi_dout                <= config_data29(spi_bitpos);
-    --                 case spi_bit_state is
-    --                     when beforepulse => 
-    --                         spi_clk <= '0';
-    --                         if(wait_cnt(14 downto 0) = slow_down(15 downto 1)) then -- wait_cnt = slow_down/2
-    --                             wait_cnt        <= (others => '0');
-    --                             spi_bit_state   <= duringpulse;
-    --                         end if;
-    --                     when duringpulse =>
-    --                         spi_clk <= '1';
-    --                         if(wait_cnt = slow_down) then
-    --                             wait_cnt        <= (others => '0');
-    --                             spi_bit_state   <= afterpulse;
-    --                         end if;
-    --                     when afterpulse =>
-    --                         spi_clk <= '0';
-    --                         if(wait_cnt(14 downto 0) = slow_down(15 downto 1)) then -- wait_cnt = slow_down/2
-    --                             wait_cnt            <= (others => '0');
-    --                             spi_bit_state       <= beforepulse;
-    --                             if(spi_bitpos=31) then
-    --                                 mp_ctrl_state   <= ld_spi_reg;
-    --                                 spi_bitpos      <= 0;
-    --                             else
-    --                                 spi_bitpos      <= spi_bitpos + 1;
-    --                             end if;
-    --                         end if;
-    --                     when others =>
-    --                         spi_bit_state <= beforepulse;
-    --                 end case;
-
-    --             when ld_spi_reg =>
-    --                 if(wait_cnt=slow_down) then
-    --                     chip_select_n   <= chip_select_mask;
-    --                 end if;
-    --                 if(wait_cnt = slow_down + slow_down) then 
-    --                     mp_ctrl_state   <= set_clks;
-    --                     chip_select_n   <= (others => '1');
-    --                 end if;
-    --             when others =>
-    --                 mp_ctrl_state <= idle;
-    --         end case;
-            
-    --     end if;
-    -- end process;

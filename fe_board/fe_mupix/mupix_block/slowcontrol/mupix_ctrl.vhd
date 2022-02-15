@@ -185,6 +185,7 @@ begin
             o_data_to_direct_spi    => mp_ctrl_to_direct_spi(I),
             o_data_to_direct_spi_we => mp_ctrl_to_direct_spi_wr(I),
             i_direct_spi_fifo_full  => direct_spi_fifo_full(I),
+            i_direct_spi_fifo_empty => not mp_direct_spi_busy(I),
             o_spi_chip_selct_mask   => spi_chip_select_mask_mp_ctrl(I*N_CHIPS_PER_SPI_g+N_CHIPS_PER_SPI_g-1 downto N_CHIPS_PER_SPI_g*I)
         );
 
