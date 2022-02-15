@@ -24,6 +24,7 @@ i2c_t i2c;
 #include "tmb_module.h"
 TMB_t TMB(i2c,sc);
 
+#include "include/feb_sc_registers.h"
 
 //definition of callback function for slow control packets
 alt_u16 sc_t::callback(alt_u16 cmd, volatile alt_u32* data, alt_u16 n) {
@@ -44,7 +45,7 @@ int main() {
     while (1) {
         printf("\n");
         printf("[fe_dummy] -------- menu --------\n");
-	printf("ID: 0x%08x\n", ram->data[0xFFFB]);
+	printf("ID: 0x%08x\n", ram->data[FPGA_ID_REGISTER_RW]);
 
         printf("\n");
         printf("  [1] => Firefly channels\n");
@@ -59,7 +60,7 @@ int main() {
         char cmd = wait_key();
         switch(cmd) {
         case '1':
-            menu_xcvr((alt_u32*)(AVM_QSFP_BASE | ALT_CPU_DCACHE_BYPASS_MASK));
+            menu_xcvr((alt_u32*)((AVM_SC_BASE + 4*0xFF00) | ALT_CPU_DCACHE_BYPASS_MASK));
             break;
         case '2':
             TMB.menu_TMB_main();

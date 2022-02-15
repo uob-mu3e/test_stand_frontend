@@ -146,6 +146,7 @@ architecture arch of fe_block_v2 is
 
     signal sc_ram, sc_reg           : work.util.rw_t;
     signal fe_reg                   : work.util.rw_t;
+    signal firefly_reg              : work.util.rw_t;
 
     signal reg_cmdlen               : std_logic_vector(31 downto 0);
     signal reg_offset               : std_logic_vector(31 downto 0);
@@ -168,8 +169,6 @@ architecture arch of fe_block_v2 is
 
     signal run_number               : std_logic_vector(31 downto 0);
     signal merger_rate_count        : std_logic_vector(31 downto 0);
-
-    signal av_ffly                  : work.util.avalon_t;
 
     signal ffly_rx_data             : std_logic_vector(127 downto 0);
     signal ffly_rx_datak            : std_logic_vector(15 downto 0);
@@ -272,8 +271,10 @@ begin
     e_lvl0_sc_node: entity work.sc_node
     generic map(
         ADD_SLAVE1_DELAY_g  => SC_READ_DELAY_g-2,
+        ADD_SLAVE2_DELAY_g  => SC_READ_DELAY_g-2,
         N_REPLY_CYCLES_g    => SC_READ_DELAY_g-1,
-        SLAVE1_ADDR_MATCH_g => "111111----------"--,
+        SLAVE1_ADDR_MATCH_g => "11111111--------",
+        SLAVE2_ADDR_MATCH_g => "111111----------"--,
     )
     port map(
         i_clk           => i_clk_156,
@@ -291,11 +292,17 @@ begin
         o_slave0_we     => o_subdet_reg_we,
         o_slave0_wdata  => o_subdet_reg_wdata,
 
-        o_slave1_addr   => fe_reg.addr(15 downto 0),
-        o_slave1_re     => fe_reg.re,
-        i_slave1_rdata  => fe_reg.rdata,
-        o_slave1_we     => fe_reg.we,
-        o_slave1_wdata  => fe_reg.wdata--,
+        o_slave1_addr   => firefly_reg.addr(15 downto 0),
+        o_slave1_re     => firefly_reg.re,
+        i_slave1_rdata  => firefly_reg.rdata,
+        o_slave1_we     => firefly_reg.we,
+        o_slave1_wdata  => firefly_reg.wdata,
+
+        o_slave2_addr   => fe_reg.addr(15 downto 0),
+        o_slave2_re     => fe_reg.re,
+        i_slave2_rdata  => fe_reg.rdata,
+        o_slave2_we     => fe_reg.we,
+        o_slave2_wdata  => fe_reg.wdata--,
     );
 
     e_reg_mapping : entity work.feb_reg_mapping
@@ -378,13 +385,6 @@ begin
         avm_sc_write            => av_sc.write,
         avm_sc_writedata        => av_sc.writedata,
         avm_sc_waitrequest      => av_sc.waitrequest,
-
-        avm_qsfp_address        => av_ffly.address(13 downto 0),
-        avm_qsfp_read           => av_ffly.read,
-        avm_qsfp_readdata       => av_ffly.readdata,
-        avm_qsfp_write          => av_ffly.write,
-        avm_qsfp_writedata      => av_ffly.writedata,
-        avm_qsfp_waitrequest    => av_ffly.waitrequest,
 
         --
         -- nios base
@@ -656,13 +656,12 @@ begin
         i_int_n                         => i_ffly_Int_n,
         i_modPrs_n                      => i_ffly_ModPrs_n,
 
-        --Avalon
-        i_avs_address                   => av_ffly.address(13 downto 0),
-        i_avs_read                      => av_ffly.read,
-        o_avs_readdata                  => av_ffly.readdata,
-        i_avs_write                     => av_ffly.write,
-        i_avs_writedata                 => av_ffly.writedata,
-        o_avs_waitrequest               => av_ffly.waitrequest,
+        -- SC
+        i_reg_add                       => firefly_reg.addr(15 downto 0),
+        i_reg_re                        => firefly_reg.re,
+        o_reg_rdata                     => firefly_reg.rdata,
+        i_reg_we                        => firefly_reg.we,
+        i_reg_wdata                     => firefly_reg.wdata,
 
         o_testclkout                    => open,
         o_testout                       => open,

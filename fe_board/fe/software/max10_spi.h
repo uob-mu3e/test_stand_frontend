@@ -66,9 +66,9 @@ struct max10_spi_t {
                 printf("invalid command: '%c'\n", cmd);
             }
             for ( int i=0; i<5; i++ ) {
-                    printf("ADC Data%i: 0x%08X\n", i, ram->data[0xFF11 + i]);
+                    printf("ADC Data%i: 0x%08X\n", i, ram->data[MAX10_ADC_0_1_REGISTER_R + i]);
             }
-            printf("On-die temperature = %d\n", celsius_lookup(((ram->data[0xFF10] << 16) >> 16) - 3417) - 40);
+            printf("On-die temperature = %d\n", celsius_lookup(((ram->data[ARRIA_TEMP_REGISTER_RW] << 16) >> 16) - 3417) - 40);
             if (loop == false) return;
             usleep(200000);
         }

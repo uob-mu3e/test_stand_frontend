@@ -3,6 +3,7 @@
  * date : 2020
  */
 #include "stdlib.h"
+#include "include/feb_sc_registers.h"
 
 void menu_tmpDisplay(volatile alt_u32* xcvr, char ID = 'A') {
     
@@ -22,10 +23,10 @@ void menu_tmpDisplay(volatile alt_u32* xcvr, char ID = 'A') {
         xcvr[0x00] = ('1' - '0') & 0xFF;
         printf("Firefly 2 [°C] :  %i\n", xcvr[0x26]);
         printf("\n");
-        sc.ram->data[0xFFF8] = 0x00000003;
-        sc.ram->data[0xFFF8] = 0x00000002;
+        sc.ram->data[ARRIA_TEMP_REGISTER_RW] = 0x00000003;
+        sc.ram->data[ARRIA_TEMP_REGISTER_RW] = 0x00000002;
         usleep(2000000);
-        printf("ArriaV    [°C] :  %i\n", sc.ram->data[0xFFF8] - 0x80);
+        printf("ArriaV    [°C] :  %i\n", sc.ram->data[ARRIA_TEMP_REGISTER_RW] - 0x80);
 
         usleep(200000);
     }
