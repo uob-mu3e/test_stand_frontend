@@ -82,7 +82,7 @@ begin
                             -- 192 BIAS Bits
                             o_bias_dpf_we(I)         <= '1';
                             o_bias_dpf_wdata(I)      <= i_data;
-                            data_in_leftovers        <= (others => '0');
+                            data_in_leftovers(I)     <= '0';
                         when 6 =>
                             -- 18 Bias Bits
                             o_bias_dpf_we(I)        <= '1';
