@@ -50,7 +50,7 @@ architecture RTL of mp_ctrl_spi is
     signal chip_is_writing_int  : integer range 0 to N_CHIPS_PER_SPI_g-1;
     signal reg_is_writing       : std_logic_vector(3 downto 0);
 
-    type mp_spi_state_type      is (idle, waiting, load_bits, writing, shift_col_by_one, load);
+    type mp_spi_state_type      is (init,idle, waiting, load_bits, writing, shift_col_by_one, load);
     signal mp_spi_state         : mp_spi_state_type;
     type mp_spi_clk_state_type  is (zero1, clk1, zero2, clk2, zero3);
     signal mp_spi_clk_state     : mp_spi_clk_state_type;
@@ -63,6 +63,7 @@ architecture RTL of mp_ctrl_spi is
     signal bias                 : std_logic;
     signal conf                 : std_logic;
     signal tdac                 : std_logic;
+    signal col                  : std_logic;
 
 
     -- bits in 29-bit spi reg
@@ -98,6 +99,8 @@ architecture RTL of mp_ctrl_spi is
     signal Injection            : std_logic;
 
     signal dpf_empty_this_round : std_logic_vector(3 downto 0);
+    signal initialise           : std_logic;
+    signal init_counter         : integer range 0 to 1023;
 
 begin
 
@@ -125,6 +128,7 @@ begin
     Sin_Conf <= conf;
     Sin_VDAC <= vdac;
     Sin_TDAC <= tdac;
+    Sin_Col  <= col;
 
 
     genrdy: for I in 0 to N_CHIPS_PER_SPI_g-1 generate
@@ -144,9 +148,11 @@ begin
             o_data_to_direct_spi_we <= '0';
             o_spi_chip_selct_mask   <= (others => '1');
             mp_spi_clk_state        <= zero1;
-            mp_spi_state            <= idle;
+            mp_spi_state            <= init;
+            init_counter            <= 0;
             col_shift_state         <= zero1;
             chip_is_writing_int     <= 0;
+            col                     <= '0';
 
             Ck1_Bias    <= '0';
             Ck2_Bias    <= '0';
@@ -158,6 +164,7 @@ begin
             Ck2_TDAC    <= '0';
             Ck1_Col     <= '0';
             Ck2_Col     <= '0';
+            
 
         elsif(rising_edge(i_clk)) then
             -- defaults
@@ -176,9 +183,56 @@ begin
             Ck2_TDAC    <= '0';
             Ck1_Col     <= '0';
             Ck2_Col     <= '0';
+            col         <= '0';
 
             case mp_spi_state is
+              when init =>
+                -- 0 col register of all chips, put a single 1 into start of col register for all chips
+                o_spi_chip_selct_mask <= (others => '0');
+                
+                if(init_counter = 600) then
+                    col <= '1';
+                end if;
+
+                case mp_spi_clk_state is
+                  when zero1 =>
+                    if(init_counter = 601) then -- init done, go to idle
+                        o_data_to_direct_spi_we <= '1';
+                        Load_Col <= '1';
+                        mp_spi_state <= idle;
+                        mp_spi_clk_state <= zero1;
+
+                    elsif(i_direct_spi_fifo_empty = '1') then 
+                        mp_spi_clk_state <= clk1;
+                        init_counter <= init_counter + 1;
+                        o_data_to_direct_spi_we <= '1';
+                    end if;
+                    -- default all
+                  when clk1 =>
+                    o_data_to_direct_spi_we <= '1';
+                    mp_spi_clk_state <= zero2;
+                    Ck1_Col <= '1';
+                    -- others to default
+                  when zero2 =>
+                    o_data_to_direct_spi_we <= '1';
+                    mp_spi_clk_state <= clk2;
+                    -- default all
+                  when clk2 =>
+                    o_data_to_direct_spi_we <= '1';
+                    mp_spi_clk_state <= zero3;
+                    Ck2_Col <= '1'; 
+                    -- others to default
+                  when zero3 => -- is this one needed ?
+                    mp_spi_clk_state <= zero1;
+                    o_data_to_direct_spi_we <= '1';
+                    -- default all
+                  when others =>
+                    mp_spi_clk_state <= zero1;
+                    o_data_to_direct_spi_we <= '0';
+                end case;
+
               when idle =>
+                o_spi_chip_selct_mask <= (others => '1');
                 if(or_reduce(vdac_rdy & bias_rdy & conf_rdy & tdac_rdy)='1' and i_direct_spi_fifo_empty = '1') then 
                     mp_spi_state    <= load_bits;
                     for I in 0 to N_CHIPS_PER_SPI_g-1 loop -- decide on the chip that is supposed to write this round (could also write more than 1 chip if bits are identical but i dont want to right now)
