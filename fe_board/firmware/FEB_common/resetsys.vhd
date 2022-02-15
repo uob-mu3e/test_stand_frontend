@@ -158,7 +158,7 @@ BEGIN
 
     e_fifo_sync : entity work.fifo_sync
     generic map (
-        RDATA_RESET_g => RUN_STATE_IDLE--,
+        g_RDATA_RESET => RUN_STATE_IDLE--,
     )
     port map (
         o_rdata     => o_state_156,
@@ -172,7 +172,7 @@ BEGIN
 
     e_fifo_sync2 : entity work.fifo_sync
     generic map (
-        RDATA_RESET_g => (reset_bypass'range => '0')--,
+        g_RDATA_RESET => (reset_bypass'range => '0')--,
     )
     port map (
         o_rdata     => reset_bypass_125_rx,
@@ -186,7 +186,7 @@ BEGIN
 
     e_fifo_sync3 : entity work.fifo_sync
     generic map (
-        RDATA_RESET_g => (reset_bypass_payload'range => '0')--,
+        g_RDATA_RESET => (reset_bypass_payload'range => '0')--,
     )
     port map (
         o_rdata     => reset_bypass_payload_125_rx,
@@ -200,7 +200,7 @@ BEGIN
 
     e_fifo_sync4 : entity work.fifo_sync
     generic map (
-        RDATA_RESET_g => (phase_50'range => '0')--,
+        g_RDATA_RESET => (phase_50'range => '0')--,
     )
     port map (
         o_rdata     => o_phase,
@@ -214,7 +214,7 @@ BEGIN
 
     e_fifo_sync5 : entity work.fifo_sync
     generic map (
-        RDATA_RESET_g => (run_number_125_rx'range => '0')--,
+        g_RDATA_RESET => (run_number_125_rx'range => '0')--,
     )
     port map (
         o_rdata     => run_number_out,
@@ -228,7 +228,7 @@ BEGIN
 
     e_fifo_sync6 : entity work.fifo_sync
     generic map (
-        RDATA_RESET_g => (fpga_id'range => '0')--,
+        g_RDATA_RESET => (fpga_id'range => '0')--,
     )
     port map (
         o_rdata     => fpga_id_125_rx,
