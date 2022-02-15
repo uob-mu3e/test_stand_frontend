@@ -85,6 +85,7 @@ function Feb(x,y,dx,dy, index){
     this.dy= dy;
 
     this.index = index;
+    this.febnum = 0;
     this.active = 0;
     this.name = "";
     this.type = "";
@@ -243,53 +244,48 @@ for(var i=0; i < 4; i++){
 
 function init(){
 
-   mjsonrpc_db_get_values(["/Equipment/LinksIntegration/Settings"]).then(function(rpc) {
-       update_masks(rpc.result.data[0]);
-    }).catch(function(error) {
-       mjsonrpc_error_alert(error);
-    });
-
-    mjsonrpc_db_get_values(["/Equipment/LinksIntegration/Variables/FEBFirmware"]).then(function(rpc) {
-        update_firmware(rpc.result.data[0]);
+    mjsonrpc_db_get_values(["/Equipment/Clock Reset/Settings"]).then(function(rpc) {
+        update_swmask(rpc.result.data[0],0);
      }).catch(function(error) {
         mjsonrpc_error_alert(error);
      });
 
-    mjsonrpc_db_get_values(["/Equipment/FEBCrates/Settings"]).then(function(rpc) {
-        update_slots(rpc.result.data[0]);
-     }).catch(function(error) {
-        mjsonrpc_error_alert(error);
-     });
-
-    mjsonrpc_db_get_values(["/Equipment/SwitchingIntegration/Variables"]).then(function(rpc) {
-        var scvals = rpc.result.data[0]["SCFE"];
-        if(scvals)
-             update_sc(scvals, 0);
+    mjsonrpc_db_get_values(["/Equipment/SwitchingCentral/Variables"]).then(function(rpc) {
+        if(rpc.result.data[0]){
+            var scvals = rpc.result.data[0]["SCFE"];
+            if(scvals)
+                 update_sc(scvals, 0);
+        }
     }).catch(function(error) {
         mjsonrpc_error_alert(error);
     });    
      
     mjsonrpc_db_get_values(["/Equipment/SwitchingUpstream/Variables"]).then(function(rpc) {
-        var scvals = rpc.result.data[0]["SUFE"];
-        if(scvals)
-             update_sc(scvals, 1);
+        if(rpc.result.data[0]){
+            var scvals = rpc.result.data[0]["SUFE"];
+            if(scvals)
+                update_sc(scvals, 1);
+        }
     }).catch(function(error) {
                 mjsonrpc_error_alert(error);
     });    
           
-
     mjsonrpc_db_get_values(["/Equipment/SwitchingDownstream/Variables"]).then(function(rpc) {
-        var scvals = rpc.result.data[0]["SDFE"];
-        if(scvals)
-             update_sc(scvals, 2);
+        if(rpc.result.data[0]){
+            var scvals = rpc.result.data[0]["SDFE"];
+            if(scvals)
+                update_sc(scvals, 2);
+        }
     }).catch(function(error) {
                 mjsonrpc_error_alert(error);
     });         
     
     mjsonrpc_db_get_values(["/Equipment/SwitchingFibres/Variables"]).then(function(rpc) {
-        var scvals = rpc.result.data[0]["SFFE"];
-        if(scvals)
-             update_sc(scvals, 3);
+        if(rpc.result.data[0]){
+            var scvals = rpc.result.data[0]["SFFE"];
+            if(scvals)
+                update_sc(scvals, 3);
+        }
     }).catch(function(error) {
                 mjsonrpc_error_alert(error);
     });      
@@ -356,50 +352,123 @@ function draw(boardselindex){
 
 init();
 
+function update_swmask(valuex) {
+    var value = valuex;
+    if(typeof valuex === 'string')
+        value = JSON.parse(valuex);
+    var swmask = value["switchingboardmask"];
+    var swnames = value["switchingboardnames"];
 
-function update_masks(valuex) {
+    for(var i=0; i < 4; i++){
+        switchingboards[i].active = swmask[i];
+        switchingboards[i].name = swnames[i];
+    }
+
+    if(switchingboards[0].active){
+        mjsonrpc_db_get_values(["/Equipment/LinksCentral/Settings"]).then(function(rpc) {
+            update_masks(rpc.result.data[0],0);
+        }).catch(function(error) {
+            mjsonrpc_error_alert(error);
+        });
+
+        mjsonrpc_db_get_values(["/Equipment/LinksCentral/Variables/FEBFirmware"]).then(function(rpc) {
+            update_firmware(rpc.result.data[0],0);
+         }).catch(function(error) {
+            mjsonrpc_error_alert(error);
+         });
+    }
+
+    if(switchingboards[1].active){
+        mjsonrpc_db_get_values(["/Equipment/LinksUpstream/Settings"]).then(function(rpc) {
+            update_masks(rpc.result.data[0],1);
+        }).catch(function(error) {
+            mjsonrpc_error_alert(error);
+        });
+
+        mjsonrpc_db_get_values(["/Equipment/LinksUpstream/Variables/FEBFirmware"]).then(function(rpc) {
+            update_firmware(rpc.result.data[0],1);
+         }).catch(function(error) {
+            mjsonrpc_error_alert(error);
+         });
+    }  
+    
+    if(switchingboards[2].active){
+        mjsonrpc_db_get_values(["/Equipment/LinksDownstream/Settings"]).then(function(rpc) {
+            update_masks(rpc.result.data[0],2);
+         }).catch(function(error) {
+            mjsonrpc_error_alert(error);
+        });
+
+        mjsonrpc_db_get_values(["/Equipment/LinksDownstream/Variables/FEBFirmware"]).then(function(rpc) {
+            update_firmware(rpc.result.data[0],3);
+         }).catch(function(error) {
+            mjsonrpc_error_alert(error);
+         });
+    }
+
+    if(switchingboards[3].active){
+        mjsonrpc_db_get_values(["/Equipment/LinksFibre/Settings"]).then(function(rpc) {
+            update_masks(rpc.result.data[0],3);
+        }).catch(function(error) {
+            mjsonrpc_error_alert(error);
+        });
+
+        mjsonrpc_db_get_values(["/Equipment/LinksFibre/Variables/FEBFirmware"]).then(function(rpc) {
+            update_firmware(rpc.result.data[0],4);
+        }).catch(function(error) {
+            mjsonrpc_error_alert(error);
+        });
+    }
+
+    draw(boardselindex);
+}
+
+
+function update_masks(valuex, swb) {
 
     var value = valuex;
     if(typeof valuex === 'string')
         value = JSON.parse(valuex);
 
-
-    var swmask = value["switchingboardmask"];
-    var swnames = value["switchingboardnames"];
     var femask = value["linkmask"];
-    var fenames = value["frontendboardnames"];
-    var fetypes = value["frontendboardtype"];
+    var linkfeb = value["linkfeb"];
+    var fenames = value["febname"];
+    var fetypes = value["febtype"];
 
-    for(var i=0; i < 4; i++){
-        switchingboards[i].active = swmask[i];
-        switchingboards[i].name  = swnames[i];
-        for(var j=0; j < nfebs[i]; j++){
-            var index = 48*i+j;
-            febs[i][j].name     = fenames[index];
-            febs[i][j].active   = femask[index];
-            if(fetypes[index] == 1){
-                febs[i][j].type = "Pixel";
-                febs[i][j].shorttype = "P";
-            } else if(fetypes[index] == 2){
-                febs[i][j].type = "Fibre";
-                febs[i][j].shorttype = "F";
-            } else if   (fetypes[index] == 3){
-                febs[i][j].type = "Tiles";
-                febs[i][j].shorttype = "T";
-            } else if   (fetypes[index] == 4){
-                febs[i][j].type = "FibreSecondary";
-                febs[i][j].shorttype = "FS";
-                febs[i][j].active   = 0;
-            } else {
-                febs[i][j].type = "Undef.";
-                febs[i][j].shorttype = "U";
-            }
+    for(var j=0; j < nfebs[swb]; j++){
+        febs[swb][j].name     = fenames[j];
+        febs[swb][j].active   = femask[j];
+        febs[swb][j].febnum   = parseInt(linkfeb[j],16);
+        if(fetypes[j] == 1){
+            febs[swb][j].type = "Pixel";
+            febs[swb][j].shorttype = "P";
+        } else if(fetypes[j] == 2){
+            febs[swb][j].type = "Fibre";
+            febs[swb][j].shorttype = "F";
+        } else if   (fetypes[swb] == 3){
+            febs[swb][j].type = "Tiles";
+            febs[swb][j].shorttype = "T";
+        } else if   (fetypes[swb] == 4){
+            febs[swb][j].type = "FibreSecondary";
+            febs[swb][j].shorttype = "FS";
+            febs[swb][j].active   = 0;
+        } else {
+            febs[swb][j].type = "Undef.";
+            febs[swb][j].shorttype = "U";    
         }
     }
+
+    mjsonrpc_db_get_values(["/Equipment/FEBCrates/Settings"]).then(function(rpc) {
+        update_slots(rpc.result.data[0]);
+     }).catch(function(error) {
+        mjsonrpc_error_alert(error);
+     });
+
+
     draw(boardselindex);
 }
 
-function update_firmware(valuex) {
+function update_firmware(valuex, swb) {
 
     var value = valuex;
     if(typeof valuex === 'string')
@@ -408,12 +477,9 @@ function update_firmware(valuex) {
     var arria = value["arria v firmware version"];
     var max = value["max 10 firmware version"];
 
-    for(var i=0; i < 4; i++){
-        for(var j=0; j < nfebs[i]; j++){
-            var index = 48*i+j;
-            febs[i][j].arria_firmware = arria[index];
-            febs[i][j].max_firmware   = max[index];
-        }
+    for(var j=0; j < nfebs[swb]; j++){
+        febs[swb][j].arria_firmware = arria[j];
+        febs[swb][j].max_firmware   = max[j];    
     }
     draw(boardselindex);
 }
@@ -458,9 +524,11 @@ function update_slots(valuex){
 
     for(var i=0; i < 4; i++){
         for(var j=0; j < nfebs[i]; j++){
-            var index = 48*i+j;
-            febs[i][j].crate = parseInt(crate[index],16);
-            febs[i][j].slot   = parseInt(slot[index],16);
+            var index = febs[i][j].febnum;
+            if(index < 128){
+                febs[i][j].crate = parseInt(crate[index],16);
+                febs[i][j].slot  = parseInt(slot[index],16);
+            }
         }
     }
     draw(boardselindex);
@@ -468,6 +536,6 @@ function update_slots(valuex){
 
 function start_programming() {
     if (confirm("Do you want to program this FEB?")) {
-        mjsonrpc_db_set_value("/Equipment/SwitchinIntegration/Commands/Load Firmware", 1);
+        mjsonrpc_db_set_value("/Equipment/SwitchingCentral/Commands/Load Firmware", 1);
     }
 }

@@ -280,7 +280,6 @@ void febpower_changed(odb o)
 // ODB Setup //////////////////////////////
 void setup_odb(){
 
-    // TODO: This has to go somewhere else
     std::array<uint16_t, MAX_N_FRONTENDBOARDS> arr;
     arr.fill(255);
 

@@ -123,8 +123,8 @@ INT init_scitiles(mudaq::MudaqDevice& mu);
 INT init_mupix(mudaq::MudaqDevice& mu);
 
 // Here we choose which switching board we are
-#include "OneSwitchingBoard.h"
-//#include "CentralSwitchingBoard.h"
+#include "OneSwitchingBoard.inc"
+//#include "CentralSwitchingBoard.inc"
 // Others to be written
 
 /* Local state of sorter delays */
@@ -318,17 +318,22 @@ void setup_odb(){
     string path2 = "/Equipment/" + eq_name + "/Variables";
     sc_variables.connect(path2);
 
+    std::array<uint32_t, N_FEBS[switch_id]> verarray;
+    verarray.fill(20);
     odb firmware_variables = {
         {"Arria V Firmware Version", std::array<uint32_t, N_FEBS[switch_id]>{}},
         {"Max 10 Firmware Version", std::array<uint32_t, N_FEBS[switch_id]>{}},
-        {"FEB Version", std::array<uint32_t, N_FEBS[switch_id]>{20}},
+        {"FEB Version", verarray},
     };
     string path3 = "/Equipment/" + link_eq_name + "/Variables/FEBFirmware";
     firmware_variables.connect(path3);
 
+
+    std::array<uint32_t, N_FEBS[switch_id]> febarray;
+    febarray.fill(255);
     odb link_settings = {
         {"LinkMask", std::array<uint32_t,N_FEBS[switch_id]>{}},
-        {"LinkFEB", std::array<uint32_t, N_FEBS[switch_id]>{}},
+        {"LinkFEB", febarray},
         {"FEBType", std::array<uint32_t, N_FEBS[switch_id]>{}},
         {"FEBName", std::array<std::string, N_FEBS[switch_id]>{}},
     };
@@ -341,7 +346,7 @@ void setup_odb(){
         {"RunState", std::array<uint32_t, N_FEBS[switch_id]>{}},
     };
     string path_lv = "/Equipment/" + link_eq_name + "/Variables";
-    link_settings.connect(path_lv);
+    link_variables.connect(path_lv);
 
     odb datapath_variables = {
             {"PLL locked", std::array<uint32_t, N_FEBS[switch_id]>{}},
@@ -501,7 +506,7 @@ INT init_febs(mudaq::MudaqDevice & mu) {
                         feblist->getActiveFEBs(),
                         feblist->getFEBMask(),
                         equipment[EQUIPMENT_ID::Switching].name,
-                        "This is here to find out why", // Why??
+                        equipment[EQUIPMENT_ID::Links].name,
                         switch_id);
 
     //init all values on FEB

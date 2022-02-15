@@ -10,19 +10,19 @@ constexpr bool has_scifi = true;
 constexpr bool has_tiles = true;
 constexpr bool has_pixels = true;
 
-const char *frontend_name = "SW Integration";
-const string fe_name = "SW Integration";
-const string eq_name = "SwitchingIntegration";
-const string link_eq_name = "LinksIntegration";
-const string scifi_eq_name = "ScifiIntegration";
-const string tile_eq_name = "TilesIntegration";
-const string pixel_eq_name = "PixelsIntegration";
+const char *frontend_name = "SW Central";
+const string fe_name = "SW Central";
+const string eq_name = "SwitchingCentral";
+const string link_eq_name = "LinksCentral";
+const string scifi_eq_name = "ScifiCentral";
+const string tile_eq_name = "TilesCentral";
+const string pixel_eq_name = "PixelsCentral";
 
 /*-- Equipment list ------------------------------------------------*/
 enum EQUIPMENT_ID {Switching=0,Links, SciFi,SciTiles,Mupix};
 constexpr int NEQUIPMENT = 5;
 EQUIPMENT equipment[NEQUIPMENT+1] = {
-   {"SwitchingIntegration",     /* equipment name */
+   {"SwitchingCentral",     /* equipment name */
     {110, 0,                    /* event ID, trigger mask */
      "SYSTEM",                  /* event buffer */
      EQ_PERIODIC,               /* equipment type */
@@ -37,7 +37,7 @@ EQUIPMENT equipment[NEQUIPMENT+1] = {
      "", "", ""},
      read_sc_event,             /* readout routine */
    },
-   {"LinksIntegration",         /* equipment name */
+   {"LinksCentral",         /* equipment name */
     {110, 0,                    /* event ID, trigger mask */
      "SYSTEM",                  /* event buffer */
      EQ_PERIODIC,               /* equipment type */
@@ -52,7 +52,7 @@ EQUIPMENT equipment[NEQUIPMENT+1] = {
      "", "", ""},
      read_sc_event,             /* readout routine */
    },
-   {"SciFiIntegration",         /* equipment name */
+   {"SciFiCentral",         /* equipment name */
     {111, 0,                    /* event ID, trigger mask */
      "SYSTEM",                  /* event buffer */
      EQ_PERIODIC,                 /* equipment type */
@@ -67,7 +67,7 @@ EQUIPMENT equipment[NEQUIPMENT+1] = {
      "", "", "",},
      read_scifi_sc_event,          /* readout routine */
     },
-   {"TilesIntegration",       /* equipment name */
+   {"TilesCentral",       /* equipment name */
     {112, 0,                      /* event ID, trigger mask */
      "SYSTEM",                  /* event buffer */
      EQ_PERIODIC,                 /* equipment type */
@@ -82,7 +82,7 @@ EQUIPMENT equipment[NEQUIPMENT+1] = {
      "", "", "",},
      read_scitiles_sc_event,          /* readout routine */
     },
-    {"PixelsIntegration",         /* equipment name */
+    {"PixelsCentral",         /* equipment name */
     {113, 0,                      /* event ID, trigger mask */
      "SYSTEM",                  /* event buffer */
      EQ_PERIODIC,                 /* equipment type */

@@ -54,8 +54,8 @@ int MuFEB::WriteFEBID(const mappedFEB & FEB){
         sprintf(reportStr,"Successfully set FEBID of %s: Link%u, SB%u.%u to (%4.4x)-%4.4x",
              FEB.GetLinkName().c_str(),FEB.GetLinkID(),
              FEB.SB_Number(),FEB.SB_Port(),(val>>16)&0xffff,val&0xffff);
-
         cm_msg(MINFO,"MuFEB::WriteFEBID", "%s", reportStr);
+         FEB.GetLinkStatus().SetStatus(LINKSTATUS::OK);
         return 0;        
     }
 
@@ -85,14 +85,22 @@ void MuFEB::ReadFirmwareVersionsToODB()
     vector<uint32_t> arria(1);
     vector<uint32_t> max(1);
 
-    odb arriaversions(link_equipment_name + "Variables/FEBFirmware/Arria V Firmware Version");
-    odb maxversions(link_equipment_name + "Variables/FEBFirmware/Max 10 Firmware Version");
-    odb febversions(link_equipment_name + "Variables/FEBFirmware/FEB Version");
+    odb arriaversions("/Equipment/" + link_equipment_name + "/Variables/FEBFirmware/Arria V Firmware Version");
+    odb maxversions("/Equipment/" + link_equipment_name + "/Variables/FEBFirmware/Max 10 Firmware Version");
+    odb febversions("/Equipment/" + link_equipment_name + "/Variables/FEBFirmware/FEB Version");
+
 
     for(auto FEB: febs){
-        if(!FEB.IsScEnabled()) continue; //skip disabled fibers
-        if(FEB.SB_Number()!=SB_number) continue; //skip commands not for this SB
-        if(!FEB.GetLinkStatus().LinkIsOK()) continue; // no point in trying -- TODO: Where to warn?
+        if(!FEB.IsScEnabled()){
+            continue; //skip disabled fibers
+        }
+        if(FEB.SB_Number()!=SB_number){ 
+            continue; //skip commands not for this SB
+        }
+        if(!FEB.GetLinkStatus().LinkIsOK()){
+             continue; // no point in trying -- TODO: Where to warn?
+        }     
+         
          if(feb_sc.FEB_read(FEB, GIT_HASH_REGISTER_R, arria) != FEBSlowcontrolInterface::ERRCODES::OK)
             cm_msg(MINFO,"MuFEB::ReadFirmwareVersionsToODB", "Failed to read Arria firmware version");
          else

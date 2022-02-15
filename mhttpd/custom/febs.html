@@ -18,9 +18,10 @@
     <table class="mtable" cellpadding="6">
       <tr>
         <td rowspan=22 style="text-align: right;">
-                <div name="modb" data-odb-path="/Equipment/LinksIntegration/Settings" onchange="update_masks(this.value)">
-                <div name="modb" data-odb-path="/Equipment/LinksIntegration/Variables/FEBFirmware" onchange="update_firmware(this.value)">
-                <div name="modb" data-odb-path="/Equipment/SwitchingIntegration/Variables/SCFE" onchange="update_sc(this.value,0)">
+                <div name="modb" data-odb-path="/Equipment/Clock Reset/Settings" onchange="update_swmask(this.value)"></div>
+                <div name="modb" data-odb-path="/Equipment/LinksCentral/Settings" onchange="update_masks(this.value)">
+                <div name="modb" data-odb-path="/Equipment/LinksCentral/Variables/FEBFirmware" onchange="update_firmware(this.value)">
+                <div name="modb" data-odb-path="/Equipment/SwitchingCentral/Variables/SCFE" onchange="update_sc(this.value,0)">
                 <div name="modb" data-odb-path="/Equipment/SwitchingUpstream/Variables/SUFE" onchange="update_sc(this.value,1)">
                 <div name="modb" data-odb-path="/Equipment/SwitchingDownstream/Variables/SDFE" onchange="update_sc(this.value,2)">
                 <div name="modb" data-odb-path="/Equipment/SwitchingFibres/Variables/SFFE" onchange="update_sc(this.value,3)">
@@ -32,7 +33,7 @@
         </td>
         </tr>
         <tr>
-        <td name="modbvalue" data-odb-path="/Equipment/SwitchingIntegration/Commands/Firmware File" data-odb-editable="1"></td>
+        <td name="modbvalue" data-odb-path="/Equipment/SwitchingCentral/Commands/Firmware File" data-odb-editable="1"></td>
        </tr>
        <tr>
        <td>
@@ -40,7 +41,7 @@
        </td>
        </tr>
        <tr>
-        <td name="modbvalue" data-odb-path="/Equipment/SwitchingIntegration/Commands/Firmware FEB ID" data-odb-editable="1"></td>
+        <td name="modbvalue" data-odb-path="/Equipment/SwitchingCentral/Commands/Firmware FEB ID" data-odb-editable="1"></td>
        </tr>
        <tr>
         <td>
@@ -51,7 +52,7 @@
          <td>
           <input type="checkbox" 
           name="modbcheckbox" 
-          data-odb-path="/Equipment/SwitchingIntegration/Commands/Firmware Is Emergency Image"
+          data-odb-path="/Equipment/SwitchingCentral/Commands/Firmware Is Emergency Image"
           data-odb-editable="1">
          </input>
          </td>

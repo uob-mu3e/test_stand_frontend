@@ -47,6 +47,8 @@ void FEBList::RebuildFEBList()
     char reportStr[255];
     for(uint16_t ID=0;ID<N_FEBS[SB_index];ID++){
         uint16_t global_index = linkfeb[ID];
+        if(global_index == 255)
+            continue;
         std::string name_link;
         std::string febnamesID;
         sbnames[SB_index].get(name_link);
@@ -62,7 +64,7 @@ void FEBList::RebuildFEBList()
                                  febcrate[global_index], 
                                  febslot[global_index], 
                                  febversion[ID]});
-                mPrimaryFEBs.push_back(mFEBs.back());
+                //mPrimaryFEBs.push_back(mFEBs.back());
                 break;
             case FEBTYPE::FibreSecondary:
                 mLinkMask   |= 1ULL << ID;
@@ -115,7 +117,7 @@ void FEBList::RebuildFEBList()
                 break;
         }
     }
-    sprintf(reportStr,"Found %lu FEBs, remapping %d secondaries.",mFEBs.size(),nSecondaries);
+    sprintf(reportStr,"Found %lu FEBs, remapping %d secondaries.",mPrimaryFEBs.size(),nSecondaries);
     cm_msg(MINFO,"FEBList::RebuildFEBList","%s", reportStr);
 
 }
