@@ -113,10 +113,10 @@ begin
         process (i_clk, i_reset_n) is
         begin
           if(i_reset_n = '0') then 
-            tdac_rdy(I) <= (others => '0');
-            bias_rdy(I) <= (others => '0');
-            vdac_rdy(I) <= (others => '0');
-            conf_rdy(I) <= (others => '0');
+            tdac_rdy(I) <= '0';
+            bias_rdy(I) <= '0';
+            vdac_rdy(I) <= '0';
+            conf_rdy(I) <= '0';
           elsif rising_edge(i_clk) then
             -- data is ready when dpf becomes full and stays ready until its empty
             if(tdac_dpf_full(I) = '1') then 
@@ -145,13 +145,13 @@ begin
           end if;
         end process;
 
-        conf_dpf_we(I) <= (i_conf_reg_we and i_chip_cvb(I)) or conf_dpf_we_splitter;
-        vdac_dpf_we(I) <= (i_vdac_reg_we and i_chip_cvb(I)) or vdac_dpf_we_splitter;
-        bias_dpf_we(I) <= (i_bias_reg_we and i_chip_cvb(I)) or bias_dpf_we_splitter;
+        conf_dpf_we(I) <= (i_conf_reg_we and i_chip_cvb(I)) or conf_dpf_we_splitter(I);
+        vdac_dpf_we(I) <= (i_vdac_reg_we and i_chip_cvb(I)) or vdac_dpf_we_splitter(I);
+        bias_dpf_we(I) <= (i_bias_reg_we and i_chip_cvb(I)) or bias_dpf_we_splitter(I);
 
-        conf_dpf_wdata(I) <= conf_dpf_wdata_splitter when conf_dpf_we_splitter='1' else i_conf_reg_data;
-        vdac_dpf_wdata(I) <= vdac_dpf_wdata_splitter when vdac_dpf_we_splitter='1' else i_vdac_reg_data;
-        bias_dpf_wdata(I) <= bias_dpf_wdata_splitter when bias_dpf_we_splitter='1' else i_bias_reg_data;
+        conf_dpf_wdata(I) <= conf_dpf_wdata_splitter(I) when conf_dpf_we_splitter(I)='1' else i_conf_reg_data;
+        vdac_dpf_wdata(I) <= vdac_dpf_wdata_splitter(I) when vdac_dpf_we_splitter(I)='1' else i_vdac_reg_data;
+        bias_dpf_wdata(I) <= bias_dpf_wdata_splitter(I) when bias_dpf_we_splitter(I)='1' else i_bias_reg_data;
 
         conf: entity work.dual_port_fifo
           generic map (

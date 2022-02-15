@@ -74,9 +74,6 @@ package mupix is
     type mp_config_regs_length_t    is array (5 downto 0) of integer;
     constant MP_CONFIG_REGS_LENGTH  : mp_config_regs_length_t := (512, 896, 896, 80, 90, 210);
 
-    type mp_conf_array_in  is array( natural range <> ) of mp_conf_storage_interface_in;
-    type mp_conf_array_out is array( natural range <> ) of mp_conf_storage_interface_out;
-
     type mp_conf_storage_interface_in is record
         spi_read        :   std_logic_vector(3 downto 0);
         mu3e_read       :   std_logic_vector(3 downto 0);
@@ -90,6 +87,9 @@ package mupix is
         bias            :   std_logic_vector(52 downto 0);
         tdac            :   std_logic_vector(52 downto 0);
     end record;
+
+    type mp_conf_array_in  is array( natural range <> ) of mp_conf_storage_interface_in;
+    type mp_conf_array_out is array( natural range <> ) of mp_conf_storage_interface_out;
 
 
     type mp_link_order_t    is array (35 downto 0) of integer;

@@ -52,6 +52,7 @@ architecture RTL of mupix_ctrl is
     signal sc_to_direct_spi             : reg32array(N_SPI_g-1 downto 0); -- Write data to direct spi from slowcontrol (needs to be enabled using mp_ctrl_direct_spi_ena first)
     signal sc_to_direct_spi_wr          : std_logic_vector(N_SPI_g-1 downto 0);
     signal mp_direct_spi_busy           : std_logic_vector(N_SPI_g-1 downto 0);
+    signal mp_direct_spi_busy_n         : std_logic_vector(N_SPI_g-1 downto 0);
     signal mp_ctrl_direct_spi_ena       : std_logic;
 
     signal signals_from_storage         : mp_conf_array_out(N_CHIPS_PER_SPI_g*N_SPI_g-1 downto 0);
@@ -81,6 +82,7 @@ begin
     spi_chip_select_mask_mp_ctrl<= (others => '0');
     slow_down                   <= slow_down_buf(15 downto 0);
     spi_chip_select_mask        <= spi_chip_select_mask_sc when mp_ctrl_direct_spi_ena = '1' else spi_chip_select_mask_mp_ctrl;
+    mp_direct_spi_busy_n        <= not mp_direct_spi_busy;
 
 
 
@@ -180,12 +182,12 @@ begin
             i_clk                   => i_clk,
             i_reset_n               => i_reset_n,
             
-            o_read                  => signals_to_storage(I*N_CHIPS_PER_SPI_g+N_CHIPS_PER_SPI_g-1 downto N_CHIPS_PER_SPI_g*I).spi_read,
+            o_read                  => signals_to_storage(I*N_CHIPS_PER_SPI_g+N_CHIPS_PER_SPI_g-1 downto N_CHIPS_PER_SPI_g*I),
             i_data                  => signals_from_storage(I*N_CHIPS_PER_SPI_g+N_CHIPS_PER_SPI_g-1 downto N_CHIPS_PER_SPI_g*I),
             o_data_to_direct_spi    => mp_ctrl_to_direct_spi(I),
             o_data_to_direct_spi_we => mp_ctrl_to_direct_spi_wr(I),
             i_direct_spi_fifo_full  => direct_spi_fifo_full(I),
-            i_direct_spi_fifo_empty => not mp_direct_spi_busy(I),
+            i_direct_spi_fifo_empty => mp_direct_spi_busy_n(I),
             o_spi_chip_selct_mask   => spi_chip_select_mask_mp_ctrl(I*N_CHIPS_PER_SPI_g+N_CHIPS_PER_SPI_g-1 downto N_CHIPS_PER_SPI_g*I)
         );
 
