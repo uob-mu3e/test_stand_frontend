@@ -322,7 +322,7 @@ begin
                         mp_spi_state <= idle;
                     end if;
 
-                when shift_col_by_one => -- TODO: first shift by one needs to put a 1 into col reg
+                when shift_col_by_one =>
                     o_data_to_direct_spi_we <= '1';
 
                     case col_shift_state is
