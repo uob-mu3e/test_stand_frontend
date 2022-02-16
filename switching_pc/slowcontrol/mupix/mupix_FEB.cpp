@@ -346,6 +346,9 @@ uint32_t MupixFEB::ReadBackLVDSStatus(mappedFEB & FEB, uint16_t LVDS_ID)
     //skip commands not for this SB
     if(FEB.SB_Number()!=SB_number)
         return 0;
+
+    if(!FEB.GetLinkStatus().LinkIsOK())
+        return 0;    
     
     uint32_t val;
     feb_sc.FEB_read(FEB, MP_LVDS_STATUS_START_REGISTER_W + LVDS_ID, val);

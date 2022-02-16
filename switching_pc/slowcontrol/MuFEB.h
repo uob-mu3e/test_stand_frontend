@@ -47,6 +47,8 @@ class MuFEB {
       int ReadBackRunState(const mappedFEB & FEB);
       void ReadBackAllRunState(){for(auto feb : febs) ReadBackRunState(feb);};
 
+      vector<uint32_t> CheckLinks(uint32_t nlinks);
+
       int WriteFEBIDs();
       //int WriteFEBID(uint16_t FPGA_ID);
       int WriteFEBID(const mappedFEB & FEB);

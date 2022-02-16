@@ -208,6 +208,30 @@ void MuFEB::LoadFirmware(std::string filename, const mappedFEB & FEB, bool emerg
     fclose(f);
 }
 
+vector<uint32_t> MuFEB::CheckLinks(uint32_t nlinks){
+    vector<uint32_t> result(nlinks,LINKSTATUS::Unknown);
+    for(auto feb : febs){
+        //skip commands not for this SB
+        if(feb.SB_Number()!=SB_number)
+            continue;
+        //skip disabled fibers
+        if(!feb.IsScEnabled())
+            result[feb.SB_Port()] = LINKSTATUS::Disabled;
+
+        uint32_t val =0;
+        int status = feb_sc.FEB_read(feb, GIT_HASH_REGISTER_R , val);
+        if(status==FEBSlowcontrolInterface::ERRCODES::OK){
+            result[feb.SB_Port()] = LINKSTATUS::OK;
+            feb.GetLinkStatus().SetStatus(LINKSTATUS::OK);
+            feb.GetLinkStatus().ResetMessageCounters();
+        } else {
+            result[feb.SB_Port()] = LINKSTATUS::Fault;
+            feb.GetLinkStatus().SetStatus(LINKSTATUS::Fault);
+        }
+    }
+    return result;
+}
+
 int MuFEB::ReadBackRunState(const mappedFEB & FEB){
 
     //skip disabled fibers
@@ -275,6 +299,7 @@ DWORD* MuFEB::fill_SSFE(DWORD *pdata)
     for(auto FEB: febs){
        if(!FEB.IsScEnabled()) continue; //skip disabled fibers
        if(FEB.SB_Number()!=SB_number) continue;
+       if(!FEB.GetLinkStatus().LinkIsOK()) continue;
 
        uint32_t port = FEB.SB_Port();
        // Fill in zeroes for non-existing ports
@@ -368,6 +393,7 @@ DWORD *MuFEB::fill_SSSO(DWORD *pdata)
     for(auto FEB: febs){
        if(!FEB.IsScEnabled()) continue; //skip disabled fibers
        if(FEB.SB_Number()!=SB_number) continue;
+       if(!FEB.GetLinkStatus().LinkIsOK()) continue;
 
        uint32_t port = FEB.SB_Port();
        // Fill in zeroes for non-existing ports

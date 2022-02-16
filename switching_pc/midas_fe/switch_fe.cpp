@@ -323,11 +323,10 @@ void setup_odb(){
     odb firmware_variables = {
         {"Arria V Firmware Version", std::array<uint32_t, N_FEBS[switch_id]>{}},
         {"Max 10 Firmware Version", std::array<uint32_t, N_FEBS[switch_id]>{}},
-        {"FEB Version", verarray},
+        {"FEB Version", verarray}
     };
     string path3 = "/Equipment/" + link_eq_name + "/Variables/FEBFirmware";
     firmware_variables.connect(path3);
-
 
     std::array<uint32_t, N_FEBS[switch_id]> febarray;
     febarray.fill(255);
@@ -335,15 +334,16 @@ void setup_odb(){
         {"LinkMask", std::array<uint32_t,N_FEBS[switch_id]>{}},
         {"LinkFEB", febarray},
         {"FEBType", std::array<uint32_t, N_FEBS[switch_id]>{}},
-        {"FEBName", std::array<std::string, N_FEBS[switch_id]>{}},
+        {"FEBName", std::array<std::string, N_FEBS[switch_id]>{}}
     };
     string path_ls = "/Equipment/" + link_eq_name + "/Settings";
     link_settings.connect(path_ls);
 
 
     odb link_variables = {
+        {"LinkStatus", std::array<uint32_t, N_FEBS[switch_id]>{}},
         {"BypassEnabled", std::array<uint32_t,N_FEBS[switch_id]>{}},
-        {"RunState", std::array<uint32_t, N_FEBS[switch_id]>{}},
+        {"RunState", std::array<uint32_t, N_FEBS[switch_id]>{}}
     };
     string path_lv = "/Equipment/" + link_eq_name + "/Variables";
     link_variables.connect(path_lv);
@@ -800,6 +800,11 @@ INT resume_run(INT run_number, char *error)
 /*--- Read Slow Control Event from FEBs to be put into data stream --------*/
 INT read_sc_event(char *pevent, INT off)
 {    
+    auto vec = mufeb->CheckLinks(N_FEBS[switch_id]);
+    string path_l = "/Equipment/" + std::string(link_eq_name) + "/Variables/LinkStatus";
+    odb linkstatus_odb(path_l);
+    linkstatus_odb = vec;
+
     //cm_msg(MINFO, "switch_fe::read_sc_event()" , "Reading FEB SC");
     mufeb->ReadBackAllRunState();
 
@@ -849,9 +854,15 @@ DWORD * fill_SSCN(DWORD * pdata)
         *pdata++ = (cur_link_active_from_odb.test(i) == 1 ? (read_counters(SWB_SUB_HEADER_PIXEL_CNT | (i << 8))) : 0);
         if(feblist->getFEBatPort(i)){
             auto feb = feblist->getFEBatPort(i).value();
-            *pdata++ = (cur_link_active_from_odb.test(i) == 1 ? mufeb->ReadBackMergerRate(feb) : 0);
-            *pdata++ = (cur_link_active_from_odb.test(i) == 1 ? mufeb->ReadBackResetPhase(feb) : 0);
-            *pdata++ = (cur_link_active_from_odb.test(i) == 1 ? mufeb->ReadBackTXReset(feb) : 0);
+            if(feb.GetLinkStatus().LinkIsOK()){
+                *pdata++ = (cur_link_active_from_odb.test(i) == 1 ? mufeb->ReadBackMergerRate(feb) : 0);
+                *pdata++ = (cur_link_active_from_odb.test(i) == 1 ? mufeb->ReadBackResetPhase(feb) : 0);
+                *pdata++ = (cur_link_active_from_odb.test(i) == 1 ? mufeb->ReadBackTXReset(feb) : 0);
+            } else {
+                *pdata++ = 0;
+                *pdata++ = 0;
+                *pdata++ = 0;
+            }
         } else {
             *pdata++ = 0;
             *pdata++ = 0;
