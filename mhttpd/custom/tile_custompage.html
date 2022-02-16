@@ -250,10 +250,10 @@ function loadODB(init_set) {
 	// only the active chip, channel is shown
 	// be aware of the fact that all channels and chips are present
 
-	var paths = [	"/Equipment/SciTiles/Settings/ASICs/Global",
-			"/Equipment/SciTiles/Settings/ASICs/TDCs",
-			"/Equipment/SciTiles/Settings/ASICs/Channels",
-			"/Equipment/SciTiles/Settings/Daq",
+	var paths = [	"/Equipment/TilesCentral/Settings/ASICs/Global",
+			"/Equipment/TilesCentral/Settings/ASICs/TDCs",
+			"/Equipment/TilesCentral/Settings/ASICs/Channels",
+			"/Equipment/TilesCentral/Settings/Daq",
 		];
 	mjsonrpc_db_get_values(paths).then(function (rpc) {
 		//console.log(rpc)
@@ -318,7 +318,7 @@ function loadODB(init_set) {
 //Save all (all channels and tdcs) settings back to ODB
 function storeODB() {
 	var settings = JSON.parse(localStorage.getItem('settings'));
-	var prefix = "/Equipment/SciTiles/Settings/"
+	var prefix = "/Equipment/TilesCentral/Settings/"
 	// global
 	var paths       = asicsettings_global_int.concat(asicsettings_global_bool).map(function(i) { return prefix+"ASICs/Global/"+i; });
 	var values      = asicsettings_global_int.concat(asicsettings_global_bool).map(function(n) { return settings.glob[n]; });
@@ -603,59 +603,59 @@ function readback() {
 				<table id="daq_table">
 					<tr>
 						<td colspan=2><label for="dummy_config">DUMMY CONFIG</label></td>
-						<td><input type="checkbox" name="modbcheckbox" id="dummy_config" data-odb-path="/Equipment/SciTiles/Settings/Daq/dummy_config" title="If enabled, ignore different replies from ASICs when configuring via SPI"></input></td>
+						<td><input type="checkbox" name="modbcheckbox" id="dummy_config" data-odb-path="/Equipment/TilesCentral/Settings/Daq/dummy_config" title="If enabled, ignore different replies from ASICs when configuring via SPI"></input></td>
 						<td></td>
 					</tr>
 					<tr>
 						<td colspan=2><label for="dummy_data">DUMMY DATA</label></td>
-						<td><input type="checkbox" name="modbcheckbox" id="dummy_data" data-odb-path="/Equipment/SciTiles/Settings/Daq/dummy_data" title="Enable dummy data generator on FPGA"></input></td>
+						<td><input type="checkbox" name="modbcheckbox" id="dummy_data" data-odb-path="/Equipment/TilesCentral/Settings/Daq/dummy_data" title="Enable dummy data generator on FPGA"></input></td>
 						<td></td>
 					</tr>
 					<tr>
 						<td colspan=2><label for="dummy_data_fast">DUMMY FAST</label></td>
-						<td><input type="checkbox" name="modbcheckbox" id="dummy_data_fast" data-odb-path="/Equipment/SciTiles/Settings/Daq/dummy_data_fast" title="Produce short events in dummy data generator on FPGA"></input></td>
+						<td><input type="checkbox" name="modbcheckbox" id="dummy_data_fast" data-odb-path="/Equipment/TilesCentral/Settings/Daq/dummy_data_fast" title="Produce short events in dummy data generator on FPGA"></input></td>
 						<td></td>
 					</tr>
 					<tr>
 						<td colspan><label for="dummy_data_n">DUMMY NUM</label></td>
 						<td></td>
-						<!--<td><input type="number"  name="modbnumber" id="dummy_data_n" min="0" max="255" step="1" size="3" value="254"  data-odb-path="/Equipment/SciTiles/Settings/Daq/dummy_data_n" data-odb-editable="1" /></td> -->
+						<!--<td><input type="number"  name="modbnumber" id="dummy_data_n" min="0" max="255" step="1" size="3" value="254"  data-odb-path="/Equipment/TilesCentral/Settings/Daq/dummy_data_n" data-odb-editable="1" /></td> -->
 						<!-- FIXME: odb connection seems to be broken once id is set, thus we can not save this field to json at the moment-->
-						<td><div name="modbvalue" data-odb-path="/Equipment/SciTiles/Settings/Daq/dummy_data_n" data-odb-editable="1" title="Number of hits to be generated per ASIC using the FPGAs dummy data generator"></div></td>
+						<td><div name="modbvalue" data-odb-path="/Equipment/TilesCentral/Settings/Daq/dummy_data_n" data-odb-editable="1" title="Number of hits to be generated per ASIC using the FPGAs dummy data generator"></div></td>
 					</tr>
 					<tr>
 						<td colspan=2><label for="prbs_decode_disable">PRBS decoder disable</label></td>
-						<td><input type="checkbox" name="modbcheckbox" id="prbs_decode_disable" data-odb-path="/Equipment/SciTiles/Settings/Daq/prbs_decode_disable" title="bypass PRBS decoder on the FPGA"></input></td>
+						<td><input type="checkbox" name="modbcheckbox" id="prbs_decode_disable" data-odb-path="/Equipment/TilesCentral/Settings/Daq/prbs_decode_disable" title="bypass PRBS decoder on the FPGA"></input></td>
 						<td></td>
 					</tr>
 					<tr>
 						<td colspan=2><label for="lvds_waitforall">Wait for all</label></td>
-						<td><input type="checkbox" name="modbcheckbox" id="lvds_waitforall" data-odb-path="/Equipment/SciTiles/Settings/Daq/lvds_waitforall" title="data receivers are only allowed to produce frames when all enabled receivers are locked. Helps to keep synchronization and avoid buffer overruns at start of a run."></input></td>
+						<td><input type="checkbox" name="modbcheckbox" id="lvds_waitforall" data-odb-path="/Equipment/TilesCentral/Settings/Daq/lvds_waitforall" title="data receivers are only allowed to produce frames when all enabled receivers are locked. Helps to keep synchronization and avoid buffer overruns at start of a run."></input></td>
 						<td></td>
 					</tr>
 					<tr>
 						<td colspan=2><label for="lvds_waitforall_sticky">Wait for all sticky</label></td>
-						<td><input type="checkbox" name="modbcheckbox" id="lvds_waitforall_sticky" data-odb-path="/Equipment/SciTiles/Settings/Daq/lvds_waitforall_sticky" title="Once a receiver has locked, do not stop producing data even if it the link is lost. Ready bits are reset at start of run."></input></td>
+						<td><input type="checkbox" name="modbcheckbox" id="lvds_waitforall_sticky" data-odb-path="/Equipment/TilesCentral/Settings/Daq/lvds_waitforall_sticky" title="Once a receiver has locked, do not stop producing data even if it the link is lost. Ready bits are reset at start of run."></input></td>
 						<td></td>
 					</tr>
 					<tr>
 						<td colspan=1>Reset Blocks</td>
 						<td>
-						<button name="modbbutton" class="button_2 button_s" id="reset_datapath" data-odb-path="/Equipment/SciTiles/Settings/Daq/reset_datapath" data-odb-value="1">
+						<button name="modbbutton" class="button_2 button_s" id="reset_datapath" data-odb-path="/Equipment/TilesCentral/Settings/Daq/reset_datapath" data-odb-value="1">
 							Dpath</button>
 						</td>
 						<td>
-						<button name="modbbutton" class="button_2 button_s" id="reset_asics" data-odb-path="/Equipment/SciTiles/Settings/Daq/reset_asics" data-odb-value="1">
+						<button name="modbbutton" class="button_2 button_s" id="reset_asics" data-odb-path="/Equipment/TilesCentral/Settings/Daq/reset_asics" data-odb-value="1">
 							ASICs</button>
 		                                </button>
 						</td>
 						<td>
-						<button name="modbbutton" class="button_2 button_s" id="reset_lvds" data-odb-path="/Equipment/SciTiles/Settings/Daq/reset_lvds" data-odb-value="1">
+						<button name="modbbutton" class="button_2 button_s" id="reset_lvds" data-odb-path="/Equipment/TilesCentral/Settings/Daq/reset_lvds" data-odb-value="1">
 							LVDS</button>
 		                                </button>
 						</td>
 						<td>
-						<button name="modbbutton" class="button_2 button_s" id="reset_counters" data-odb-path="/Equipment/SciTiles/Settings/Daq/reset_counters" data-odb-value="1">
+						<button name="modbbutton" class="button_2 button_s" id="reset_counters" data-odb-path="/Equipment/TilesCentral/Settings/Daq/reset_counters" data-odb-value="1">
 							Counters</button>
 		                                </button>
 						</td>
