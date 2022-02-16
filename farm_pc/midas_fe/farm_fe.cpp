@@ -731,6 +731,7 @@ INT read_stream_thread(void *param) {
         // just try again if buffer has no space
         if (status == DB_TIMEOUT) {
             printf("WARNING: DB_TIMEOUT\n");
+            ss_sleep(10);// don't eat all CPU
             continue;
         }
         
@@ -808,28 +809,72 @@ INT read_stream_thread(void *param) {
         printf("dma_buf[endofevent-1]: 0x%08X\n", dma_buf[endofevent-1]);
         
         // increase words_written if there is another event
-        if ( dma_buf[words_written*8] != 0xFFFFFFFF ) {
-            for ( unsigned int i = words_written*8; i < (words_written*8 + (dma_buf[words_written*8+3] / 4 + 4)); i++ )
-                printf("0x%08X %i\n", dma_buf[i], i);
-            //words_written += (dma_buf[words_written*8+3] / 4 + 4) / 8;
-        }
+//         if ( dma_buf[words_written*8] != 0xFFFFFFFF ) {
+//             for ( unsigned int i = words_written*8; i < (words_written*8 + (dma_buf[words_written*8+3] / 4 + 4)); i++ )
+//                 printf("0x%08X %i\n", dma_buf[i], i);
+//             words_written += (dma_buf[words_written*8+3] / 4 + 4) / 8;
+//         }
 
         uint32_t size = (words_written*8 + (dma_buf[words_written*8+3] / 4 + 4)) - (words_written*8);
 
-        printf("size %d\n", size);
+//         printf("size %d\n", size);
 
-        memcpy(dma_buf_copy, const_cast<uint32_t*>(&dma_buf[words_written*8]), size*4);
-        copy_n(&dma_buf_copy[0], size*4, pdata);
-        //memcpy(pdata, const_cast<uint32_t*>(&dma_buf[words_written*8]), size*4);//((words_written+(dma_buf[words_written*8+3] / 4 + 4) / 8)*8-1)*4);
-        for ( unsigned int i = 0; i < 100; i++)
-            printf("dma_buf[i]: 0x%08X %d\n", dma_buf[i], i);
-        for ( unsigned int i = words_written*8-100; i < words_written*8+100; i++)
-            printf("dma_buf[size_dma_buf]: 0x%08X %d %d\n", dma_buf[i], i, words_written*8);
-        for ( unsigned int i = words_written*8; i < (words_written*8 + (dma_buf[words_written*8+3] / 4 + 4)); i++ )
-            printf("0x%08X  %d\n", dma_buf[i], i);
+        //memcpy(dma_buf_copy, const_cast<uint32_t*>(&dma_buf[words_written*8]), size*4);
+        //copy_n(&dma_buf_copy[0], size*4, pdata);
+        
+        dma_buf_copy[ 0 ] = 0x00000001;           // Trigger Mask & Event ID
+        dma_buf_copy[ 1 ] = 0x00000001;             // Serial number
+        dma_buf_copy[ 2 ] = ss_time();            // time
+        dma_buf_copy[ 3 ] = 32 * 4 - 4 * 4;// event size
+
+        dma_buf_copy[ 4 ] = 32 * 4 - 6 * 4;// all bank size
+        dma_buf_copy[ 5 ] = 0x31;                 // flags
+
+        // bank PCD0 first FEB
+        dma_buf_copy[ 6 ] = 'P' << 0 | 'C' << 8 | 'D' << 16 | '0' << 24;// bank name
+        dma_buf_copy[ 7 ] = 0x06;                                       // bank type TID_DWORD
+        dma_buf_copy[ 8 ] = 10 * 4;                                     // data size
+        dma_buf_copy[ 9 ] = 0x0;                                        // reserved
+
+        dma_buf_copy[10 ] = 0xE80000BC;                                // preamble
+        dma_buf_copy[11 ] = 0x00000000;                                // TS0
+        dma_buf_copy[12 ] = ss_time();                                 // TS1
+        dma_buf_copy[13 ] = 0xFC000000;                                // sub header
+        dma_buf_copy[14 ] = 0xABABABAB;  // hit0
+        dma_buf_copy[15 ] = 0xABABABAB;  // hit1
+        dma_buf_copy[16 ] = 0xABABABAB;// chip 3 beam ref bits 22:1 -> fast TS
+        dma_buf_copy[17 ] = 0xABABABAB;// chip 4 sintilator bits 22:1 -> fast TS
+        dma_buf_copy[18 ] = 0xFC00009C;                                // TRAILER
+        dma_buf_copy[19 ] = 0xAFFEAFFE;                                // PADDING
+
+        // bank PCD1 second FEB
+        dma_buf_copy[20 ] = 'P' << 0 | 'C' << 8 | 'D' << 16 | '1' << 24;// bank name
+        dma_buf_copy[21 ] = 0x6;                                       // bank type TID_DWORD
+        dma_buf_copy[22 ] = 8 * 4;                                     // data size
+        dma_buf_copy[23 ] = 0x0;                                       // reserved
+
+        dma_buf_copy[24 ] = 0xE80001BC;                              // preamble
+        dma_buf_copy[25 ] = 0x00000000;                              // TS0
+        dma_buf_copy[26 ] = ss_time();                               // TS1
+        dma_buf_copy[27 ] = 0xFC000000;                              // sub header
+        dma_buf_copy[28 ] = 0xABABABAB;// hit0
+        dma_buf_copy[29 ] = 0xABABABAB;// hit1
+        dma_buf_copy[30 ] = 0xFC00009C;                              // TRAILER
+        dma_buf_copy[31 ] = 0xAFFEAFFE;                              // PADDING
+        
+        size = 32;
+        
+        memcpy(pdata, dma_buf_copy, size*sizeof(uint32_t));//((words_written+(dma_buf[words_written*8+3] / 4 + 4) / 8)*8-1)*4);
+//         for ( unsigned int i = 0; i < 100; i++)
+//             printf("dma_buf[i]: 0x%08X %d\n", dma_buf[i], i);
+//         for ( unsigned int i = words_written*8-100; i < words_written*8+100; i++)
+//             printf("dma_buf[size_dma_buf]: 0x%08X %d %d\n", dma_buf[i], i, words_written*8);
+//         for ( unsigned int i = words_written*8; i < (words_written*8 + (dma_buf[words_written*8+3] / 4 + 4)); i++ )
+//             printf("0x%08X  %d\n", dma_buf[i], i);
         for ( unsigned int i = 0; i < size; i++ )
             printf("0x%08X  %d\n", dma_buf_copy[i], i);
-        rb_increment_wp(rbh, size*4);//(words_written*8-1)*4); // in byte length
+        rb_increment_wp(rbh, size*sizeof(uint32_t));//(words_written*8-1)*4); // in byte length
+        
         
     }
 
