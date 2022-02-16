@@ -18,4 +18,4 @@ sleep 1
 
 #../../cmake-build/farm_pc/tools/swb_dmatest 3 0 0 0x1 1
 ../../cmake-build/farm_pc/tools/swb_dmatest 2 0 0 0x1 0
-head --lines=1000 memory_content.txt > "swb_dmatest.out"
+head --lines=256 memory_content.txt > "swb_dmatest.out"
