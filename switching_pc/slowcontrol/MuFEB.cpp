@@ -31,21 +31,51 @@ using std::endl;
 
 using midas::odb;
 
-int MuFEB::WriteFEBID(){
+int MuFEB::WriteFEBIDs(){
     for(auto FEB: febs){
        if(!FEB.IsScEnabled()) continue; //skip disabled fibers
        if(FEB.SB_Number()!=SB_number) continue; //skip commands not for this SB
-       uint32_t val=0x00000000; // TODO: Where does this hard-coded value come from?
-       val+=(FEB.GetLinkID()<<16)+FEB.GetLinkID();
+            
+            WriteFEBID(FEB);
 
-       char reportStr[255];
-       sprintf(reportStr,"Setting FEBID of %s: Link%u, SB%u.%u to (%4.4x)-%4.4x",
+    }
+}
+
+
+int WriteFEBID(uint16_t FPGA_ID){};
+
+
+
+int MuFEB::WriteFEBID(mappedFEB & FEB){
+       
+    uint32_t val=(FEB.GetLinkID()<<16)+FEB.GetLinkID();
+
+    char reportStr[255];
+       
+    int status = feb_sc.FEB_register_write(FEB.SB_Port(), FPGA_ID_REGISTER_RW, val);
+    
+    if(status == FEBSlowcontrolInterface::ERRCODES::OK){
+        sprintf(reportStr,"Successfully set FEBID of %s: Link%u, SB%u.%u to (%4.4x)-%4.4x",
              FEB.GetLinkName().c_str(),FEB.GetLinkID(),
              FEB.SB_Number(),FEB.SB_Port(),(val>>16)&0xffff,val&0xffff);
-       cm_msg(MINFO,"MuFEB::WriteFEBID",reportStr);
-       feb_sc.FEB_register_write(FEB.SB_Port(), FPGA_ID_REGISTER_RW, val);
+
+        cm_msg(MINFO,"MuFEB::WriteFEBID",reportStr);
+        return 0;        
     }
-    return 0;
+
+    if(status == FEBSlowcontrolInterface::ERRCODES::FPGA_BUSY){
+        cm_msg(MERROR,"MuFEB::WriteFEBID","Switching FPGA busy - should not happen!");
+        return FEBSlowcontrolInterface::ERRCODES::FPGA_BUSY;   
+    }
+
+   sprintf(reportStr,"Failed to set FEBID of %s: Link%u, SB%u.%u to (%4.4x)-%4.4x",
+             FEB.GetLinkName().c_str(),FEB.GetLinkID(),
+             FEB.SB_Number(),FEB.SB_Port(),(val>>16)&0xffff,val&0xffff);
+
+    cm_msg(MERROR,"MuFEB::WriteFEBID",reportStr); 
+    FEB.SetStatus(LINKSTATUS::Fault);
+
+    return status;
 }
 
 int MuFEB::WriteSorterDelay(uint16_t FPGA_ID, uint32_t delay)
@@ -88,7 +118,7 @@ void MuFEB::ReadFirmwareVersionsToODB()
     }
 }
 
-void MuFEB::LoadFirmware(std::string filename, uint16_t FPGA_ID)
+void MuFEB::LoadFirmware(std::string filename, uint16_t FPGA_ID, bool emergencyImage)
 {
 
     auto FEB = febs.at(FPGA_ID);
@@ -103,37 +133,52 @@ void MuFEB::LoadFirmware(std::string filename, uint16_t FPGA_ID)
     long fsize = ftell(f);
     rewind (f);
 
+    if(emergencyImage == false && fsize > EMERGENCY_IMAGE_START_ADDRESS){
+        cm_msg(MERROR,"MuFEB::LoadFirmware", "Programming file %s of size %ld does not fit into primary image area", filename.c_str(), fsize);
+        fclose(f);
+        return;
+    }
+
+    if(emergencyImage == true && fsize > (FLASH_MAX_ADDRESS - EMERGENCY_IMAGE_START_ADDRESS)){
+        cm_msg(MERROR,"MuFEB::LoadFirmware", "Programming file %s of size %ld does not fit into emergency image area", filename.c_str(), fsize);
+        fclose(f);
+        return;
+    }
+
     cm_msg(MINFO,"MuFEB::LoadFirmware", "Programming %s of size %ld", filename.c_str(), fsize);
     cm_yield(1);
     printf("Programming %s of size %ld\n",filename.c_str(), fsize);
 
     //clear the FIFO
-    feb_sc.FEB_register_write(FEB.SB_Port(),PROGRAMMING_CTRL_W,2);
-    feb_sc.FEB_register_write(FEB.SB_Port(),PROGRAMMING_CTRL_W,0);
+    feb_sc.FEB_register_write(FEB.SB_Port(),PROGRAMMING_CTRL_REGISTER_W,2);
+    feb_sc.FEB_register_write(FEB.SB_Port(),PROGRAMMING_CTRL_REGISTER_W,0);
 
-    feb_sc.FEB_register_write(FEB.SB_Port(),PROGRAMMING_CTRL_W,1);
+    feb_sc.FEB_register_write(FEB.SB_Port(),PROGRAMMING_CTRL_REGISTER_W,1);
 
 
     long pos =0;
     uint32_t addr=0;
+    if(emergencyImage)
+        addr = EMERGENCY_IMAGE_START_ADDRESS;
+
     while(pos*4 < fsize){
         uint32_t buffer[256];
         fread(buffer,sizeof(uint32_t),256, f);
         vector<uint32_t> data(buffer, buffer+256);
-        feb_sc.FEB_register_write(FEB.SB_Port(),PROGRAMMING_DATA_W,data,true);
+        feb_sc.FEB_register_write(FEB.SB_Port(),PROGRAMMING_DATA_REGISTER_W,data,true);
 
         for(int i=0; i < 4; i++){
-            feb_sc.FEB_register_write(FEB.SB_Port(),PROGRAMMING_ADDR_W,addr);            
+            feb_sc.FEB_register_write(FEB.SB_Port(),PROGRAMMING_ADDR_REGISTER_W,addr);            
             uint32_t readback = 2;
             uint32_t count = 0;
             uint32_t limit = 1e6;
             if((addr & 0xFFFF) == 0)
                 limit = 1e5;
-            while(readback & 0x2 && count < limit){
-                int ec = feb_sc.FEB_register_read(FEB.SB_Port(),PROGRAMMING_STATUS_R,readback);
+            while((readback & 0x2) && count < limit){
+                int ec = feb_sc.FEB_register_read(FEB.SB_Port(),PROGRAMMING_STATUS_REGISTER_R,readback);
                 if(ec != FEBSlowcontrolInterface::ERRCODES::OK){
                     printf("Error reading back!\n");
-                    feb_sc.FEB_register_write(FEB.SB_Port(),PROGRAMMING_CTRL_W,0);
+                    feb_sc.FEB_register_write(FEB.SB_Port(),PROGRAMMING_CTRL_REGISTER_W,0);
                 }
                 count++;
                 usleep(100);
@@ -141,7 +186,7 @@ void MuFEB::LoadFirmware(std::string filename, uint16_t FPGA_ID)
             addr += 256;
             if(count == limit){
                 printf("Timeout\n");
-                feb_sc.FEB_register_write(FEB.SB_Port(),PROGRAMMING_CTRL_W,0);
+                feb_sc.FEB_register_write(FEB.SB_Port(),PROGRAMMING_CTRL_REGISTER_W,0);
             }
         }
         pos  += 256;
@@ -150,9 +195,9 @@ void MuFEB::LoadFirmware(std::string filename, uint16_t FPGA_ID)
 
     }
 
-    feb_sc.FEB_register_write(FEB.SB_Port(),PROGRAMMING_CTRL_W,0);
+    feb_sc.FEB_register_write(FEB.SB_Port(),PROGRAMMING_CTRL_REGISTER_W,0);
 
-    feb_sc.FEB_register_write(FEB.SB_Port(),PROGRAMMING_CTRL_W,0);
+    feb_sc.FEB_register_write(FEB.SB_Port(),PROGRAMMING_CTRL_REGISTER_W,0);
 
     cm_msg(MINFO,"MuFEB::LoadFirmware", "Done programming");
     cm_yield(1);

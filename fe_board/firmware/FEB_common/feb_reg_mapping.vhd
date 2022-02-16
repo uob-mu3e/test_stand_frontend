@@ -227,18 +227,18 @@ begin
             o_reg_rdata <= i_max10_status;
         end if;
         -- Programming
-        if ( regaddr = PROGRAMMING_STATUS_R and i_reg_re = '1' ) then
+        if ( regaddr = PROGRAMMING_STATUS_REGISTER_R and i_reg_re = '1' ) then
             o_reg_rdata <= i_programming_status;
         end if;  
-        if ( regaddr = PROGRAMMING_CTRL_W and i_reg_we = '1' ) then
+        if ( regaddr = PROGRAMMING_CTRL_REGISTER_W and i_reg_we = '1' ) then
             o_programming_ctrl  <= i_reg_wdata;
         end if;      
-        if ( regaddr = PROGRAMMING_ADDR_W and i_reg_we = '1' ) then
+        if ( regaddr = PROGRAMMING_ADDR_REGISTER_W and i_reg_we = '1' ) then
             o_programming_addr  <= i_reg_wdata;
             o_programming_addr_ena  <= '1';
             addr_ena_del <= "111111";
         end if;  
-        if ( regaddr = PROGRAMMING_DATA_W and i_reg_we = '1' ) then
+        if ( regaddr = PROGRAMMING_DATA_REGISTER_W and i_reg_we = '1' ) then
             o_programming_data  <= i_reg_wdata;
             o_programming_data_ena  <= '1';
         end if;  
