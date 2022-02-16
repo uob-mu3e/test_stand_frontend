@@ -24,9 +24,10 @@ class TilesFEB : public MutrigFEB{
                const uint64_t & febmask_,
                std::string equipment_name_,
                std::string link_equipment_name_,
+               std::string tile_equipment_name_,
                const uint8_t SB_number_)
         :
-    MutrigFEB(feb_sc_, febs_, febmask_, equipment_name_, link_equipment_name_, "/Equipment/" + equipment_name_, SB_number_){}
+    MutrigFEB(feb_sc_, febs_, febmask_, equipment_name_, link_equipment_name_, "/Equipment/" + tile_equipment_name_, SB_number_){}
 
 
       //Mapping from ASIC number to FPGA_ID and ASIC_ID

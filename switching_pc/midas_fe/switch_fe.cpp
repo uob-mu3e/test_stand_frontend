@@ -531,8 +531,9 @@ INT init_scifi(mudaq::MudaqDevice & mu) {
     scififeb = new SciFiFEB(*feb_sc,
                      feblist->getSciFiFEBs(),
                      feblist->getSciFiFEBMask(),
-                     equipment[EQUIPMENT_ID::SciFi].name,
+                     equipment[EQUIPMENT_ID::Switching].name,
                      equipment[EQUIPMENT_ID::Links].name,
+                     equipment[EQUIPMENT_ID::SciFi].name,
                       switch_id); //create FEB interface signleton for scifi
 
     
@@ -566,23 +567,24 @@ INT init_scitiles(mudaq::MudaqDevice & mu) {
 
     
     //SciTiles setup part
-    set_equipment_status(equipment[EQUIPMENT_ID::SciTiles].name, "Initializing...", "var(--myellow)");
+    set_equipment_status(equipment[EQUIPMENT_ID::Tiles].name, "Initializing...", "var(--myellow)");
     tilefeb = new TilesFEB(*feb_sc,
                      feblist->getTileFEBs(),
                      feblist->getTileFEBMask(),
-                     equipment[EQUIPMENT_ID::SciTiles].name,
+                     equipment[EQUIPMENT_ID::Switching].name,
                      equipment[EQUIPMENT_ID::Links].name,
+                     equipment[EQUIPMENT_ID::Tiles].name,
                       switch_id); //create FEB interface signleton for scitiles
     int status=mutrig::midasODB::setup_db("/Equipment/" + tile_eq_name, *tilefeb);
     if(status != SUCCESS){
-        set_equipment_status(equipment[EQUIPMENT_ID::SciTiles].name, "Start up failed", "var(--mred)");
+        set_equipment_status(equipment[EQUIPMENT_ID::Tiles].name, "Start up failed", "var(--mred)");
         return status;
     }
     //init all values on FEB
     tilefeb->WriteAll();
     tilefeb->WriteFEBIDs();
 
-    set_equipment_status(equipment[EQUIPMENT_ID::SciTiles].name, "Ok", "var(--mgreen)");
+    set_equipment_status(equipment[EQUIPMENT_ID::Tiles].name, "Ok", "var(--mgreen)");
 
     //set custom page
     odb custom("/Custom");
@@ -596,23 +598,24 @@ INT init_mupix(mudaq::MudaqDevice & mu) {
 
 
     //Mupix setup part
-    set_equipment_status(equipment[EQUIPMENT_ID::Mupix].name, "Initializing...", "var(--myellow)");
+    set_equipment_status(equipment[EQUIPMENT_ID::Pixels].name, "Initializing...", "var(--myellow)");
     mupixfeb = new MupixFEB(*feb_sc,
                      feblist->getPixelFEBs(),
                      feblist->getPixelFEBMask(),
-                     equipment[EQUIPMENT_ID::Mupix].name,
+                     equipment[EQUIPMENT_ID::Switching].name,
                      equipment[EQUIPMENT_ID::Links].name,
+                     equipment[EQUIPMENT_ID::Pixels].name,
                      switch_id); //create FEB interface signleton for mupix
 
     int status=mupix::midasODB::setup_db("/Equipment/" + pixel_eq_name, *mupixfeb, true, false);//true);
     if(status != SUCCESS){
-        set_equipment_status(equipment[EQUIPMENT_ID::Mupix].name, "Start up failed", "var(--mred)");
+        set_equipment_status(equipment[EQUIPMENT_ID::Pixels].name, "Start up failed", "var(--mred)");
         return status;
     }
     //init all values on FEB
     mupixfeb->WriteFEBIDs();
     
-    set_equipment_status(equipment[EQUIPMENT_ID::Mupix].name, "Ok", "var(--mgreen)");
+    set_equipment_status(equipment[EQUIPMENT_ID::Pixels].name, "Ok", "var(--mgreen)");
 
     //TODO: set custom page
     odb custom("/Custom");
@@ -718,7 +721,7 @@ try{ // TODO: What can throw here?? Why?? Is there another way to handle this??
    }
 
    set_equipment_status(equipment[EQUIPMENT_ID::SciFi].name, "Scintillating...", "mblue");
-   set_equipment_status(equipment[EQUIPMENT_ID::Mupix].name, "Running...", "mgreen");
+   set_equipment_status(equipment[EQUIPMENT_ID::Pixels].name, "Running...", "mgreen");
    return CM_SUCCESS;
 }catch(...){return CM_TRANSITION_CANCELED;}
 }
@@ -752,7 +755,7 @@ try{
       print_ack_state();
       set_equipment_status(equipment[EQUIPMENT_ID::Switching].name, "Not Ok", "var(--mred)");
       set_equipment_status(equipment[EQUIPMENT_ID::SciFi].name, "Transition interrupted", "var(--morange)");
-      set_equipment_status(equipment[EQUIPMENT_ID::Mupix].name, "Transition interrupted", "var(--morange)");
+      set_equipment_status(equipment[EQUIPMENT_ID::Pixels].name, "Transition interrupted", "var(--morange)");
       return CM_TRANSITION_CANCELED;
    }
 
@@ -776,7 +779,7 @@ try{
 
    set_equipment_status(equipment[EQUIPMENT_ID::Switching].name, "Ok", "var(--mgreen)");
    set_equipment_status(equipment[EQUIPMENT_ID::SciFi].name, "Ok", "var(--mgreen)");
-   set_equipment_status(equipment[EQUIPMENT_ID::Mupix].name, "Ok", "var(--mgreen)");
+   set_equipment_status(equipment[EQUIPMENT_ID::Pixels].name, "Ok", "var(--mgreen)");
    return CM_SUCCESS;
 }catch(...){return CM_TRANSITION_CANCELED;}
 }

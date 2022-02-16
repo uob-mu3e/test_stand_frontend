@@ -33,7 +33,7 @@ void create_psll_names_in_odb(odb & settings, uint32_t N_FEBS_MUPIX, uint32_t N_
 //Foreach loop over all boards/asics under this prefix. Call with a lambda function,
 //e.g. midasODB::MapForEach(hDB, "/Equipment/PixelsCentral",[mudaqdev_ptr](Config c,int asic){mudaqdev_ptr->ConfigureAsic(c,asic);});
 //Function must return SUCCESS, otherwise loop is stopped.
-int MapForEachASIC(std::string prefix, std::function<int(MupixConfig* /*mupix config*/,int /*ASIC #*/)> func);
+int MapForEachASIC(std::string pixelprefix, std::function<int(MupixConfig* /*mupix config*/,int /*ASIC #*/)> func);
 } } // namespace mupix::midasODB
 
 #endif // MUPIX_MIDASODB_H

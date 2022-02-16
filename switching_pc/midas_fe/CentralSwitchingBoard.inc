@@ -19,7 +19,7 @@ const string tile_eq_name = "TileCentral";
 const string pixel_eq_name = "PixelsCentral";
 
 /*-- Equipment list ------------------------------------------------*/
-enum EQUIPMENT_ID {Switching=0,Links, Mupix};
+enum EQUIPMENT_ID {Switching=0,Links, Pixels};
 constexpr int NEQUIPMENT = 3;
 EQUIPMENT equipment[NEQUIPMENT+1] = {
    {"SwitchingCentral",         /* equipment name */

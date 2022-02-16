@@ -152,16 +152,15 @@ void create_psll_names_in_odb(odb & settings, uint32_t N_FEBS_MUPIX, uint32_t N_
 }
 
 
-int MapForEachASIC(std::string prefix, std::function<int(MupixConfig* /*mupix config*/,int /*ASIC #*/)> func)
+int MapForEachASIC(std::string pixelprefix, std::function<int(MupixConfig* /*mupix config*/,int /*ASIC #*/)> func)
 {
 	INT status = DB_SUCCESS;
 
 
-    // TODO: Change to odbxx
     //Retrieve number of ASICs
-    odb nasics(prefix + "/Settings/ASICs/Global/Num asics");
+    odb nasics(pixelprefix + "/Settings/ASICs/Global/Num asics");
     
-    odb daq(prefix + "/Settings/Daq");
+    odb daq(pixelprefix + "/Settings/Daq");
 
 	//Iterate over ASICs
     // TODO: Get that back!
@@ -175,13 +174,13 @@ int MapForEachASIC(std::string prefix, std::function<int(MupixConfig* /*mupix co
 		//har set_str[255];
 		//int status, size;
 		// structs from ODB
-        odb biasdacs(prefix + "/Settings/BIASDACS/" + std::to_string(asic));
+        odb biasdacs(pixelprefix + "/Settings/BIASDACS/" + std::to_string(asic));
         config.Parse_BiasDACs_from_odb(biasdacs);
 
-        odb confdacs(prefix + "/Settings/CONFDACS/" + std::to_string(asic));
+        odb confdacs(pixelprefix + "/Settings/CONFDACS/" + std::to_string(asic));
         config.Parse_ConfDACs_from_odb(confdacs);
 
-        odb coldacs(prefix +"/Setrtings/VDACS/" + std::to_string(asic));
+        odb coldacs(pixelprefix +"/Setrtings/VDACS/" + std::to_string(asic));
         config.Parse_VDACs_from_odb(coldacs);
 
         //note: this needs to be passed as pointer, otherwise there is a memory corruption after exiting the lambda

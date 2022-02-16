@@ -280,6 +280,7 @@ uint32_t MuFEB::ReadRegister(const mappedFEB & FEB, const uint32_t reg, const ui
 }
 
 
+
 uint32_t MuFEB::ReadBackMergerRate(const mappedFEB & FEB){
     return ReadRegister(FEB, MERGER_RATE_REGISTER_R);
 }

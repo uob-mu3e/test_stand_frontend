@@ -24,15 +24,20 @@ class MupixFEB  : public MuFEB{
       std::map<uint8_t,std::map<uint32_t,uint32_t> > m_reg_shadow; /*[FPGA_ID][reg]*/
       MupixFEB(const MupixFEB&)=delete;
       std::string odb_prefix;
+      std::string pixel_odb_prefix;
     public:
       MupixFEB(FEBSlowcontrolInterface & feb_sc_,
                const vector<mappedFEB> & febs_,
                const uint64_t & febmask_,
-               std::string equipment_name_,
+               std::string switch_equipment_name_,
                std::string link_equipment_name_,
+               std::string pixel_equipment_name_,
                const uint8_t SB_number_)
         :
-       MuFEB(feb_sc_, febs_, febmask_, equipment_name_, link_equipment_name_, SB_number_), odb_prefix("/Equipment/" + equipment_name_){}
+       MuFEB(feb_sc_, febs_, febmask_, switch_equipment_name_, link_equipment_name_, SB_number_), 
+              odb_prefix("/Equipment/" + switch_equipment_name_), 
+              pixel_odb_prefix("/Equipment/" + pixel_equipment_name_)
+              {}
 
       //Mapping from ASIC number to FPGA_ID and ASIC_ID
       virtual uint16_t FPGAid_from_ID(int asic) const;
