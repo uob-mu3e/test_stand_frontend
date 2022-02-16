@@ -1005,12 +1005,17 @@ void sc_settings_changed(odb o)
     mudaq::MudaqDevice & mu = *mup;
 #endif
 
+    /* Unfortunately we cannot do a string matching case statement.
+    Nested if would work, but be very nested. We choose ifs with returns*/
+
+
     if (name == "Reset SC Main" && o) {
         bool value = o;
         if(value){
              feb_sc->FEBsc_resetMain();
              o = false;
         }
+        return;
     }
 
     if (name == "Reset SC Secondary" && o) {
@@ -1019,6 +1024,7 @@ void sc_settings_changed(odb o)
             feb_sc->FEBsc_resetSecondary();
              o = false;
         }
+        return;
     }
 
 
@@ -1034,6 +1040,7 @@ void sc_settings_changed(odb o)
         else
             cm_msg(MERROR, "sc_settings_changed - Write", "FEB does not exist");
         o = false;
+        return;
    }
 
    if (name == "Read" && o) {
@@ -1048,6 +1055,7 @@ void sc_settings_changed(odb o)
             cm_msg(MERROR, "sc_settings_changed - Read", "FEB does not exist");
        // TODO: Do something with the value we read...
        o = false;
+       return;
    }
 
    if (name == "Single Write" && o) {
@@ -1062,6 +1070,7 @@ void sc_settings_changed(odb o)
         else
             cm_msg(MERROR, "sc_settings_changed - Single Write", "FEB does not exist");
         o = false;
+        return;
     }
 
     if (name == "Read WM" && o) {
@@ -1080,6 +1089,7 @@ void sc_settings_changed(odb o)
         }
 
         o = false;
+        return;
     }
 
     if (name == "Read RM" && o) {
@@ -1099,6 +1109,7 @@ void sc_settings_changed(odb o)
         }
 
         o = false;
+        return;
     }
 
     if (name == "Last RM ADD" && o) {
@@ -1111,6 +1122,7 @@ void sc_settings_changed(odb o)
         db_set_value(hDB, 0, STR_LAST_RM_ADD, &NEW_LAST_RM_ADD, SIZE_NEW_LAST_RM_ADD, 1, TID_INT);
         
         o = false;
+        return;
     }
 
     if (name == "SciFiConfig" && o) {
@@ -1120,6 +1132,7 @@ void sc_settings_changed(odb o)
          	//TODO: what to do? 
           }
        o = false;
+       return;
     }
     if (name == "SciFiAllOff" && o) {
         cm_msg(MERROR, "SciFiAllOff", "Configuring all SciFi ASICs in All Off mode.");
@@ -1129,12 +1142,14 @@ void sc_settings_changed(odb o)
             //TODO: what to do?
         }
        o = false;
+       return;
     }
     if (name == "SciFiTDCTest") {
           int status=scififeb->ChangeTDCTest(o);
           if(status!=SUCCESS){
               cm_msg(MERROR, "SciFiConfig" , "Changing SciFi test pulses failed");
           }
+          return;
     }
     if (name == "SciTilesConfig" && o) {
           int status=tilefeb->ConfigureASICs();
@@ -1142,6 +1157,7 @@ void sc_settings_changed(odb o)
          	//TODO: what to do?
           }
       o = false;
+      return;
     }
     if (name == "MupixConfig" && o) {
           int status=mupixfeb->ConfigureASICs();
@@ -1149,6 +1165,7 @@ void sc_settings_changed(odb o)
          	//TODO: what to do? 
           }
       o = false;
+      return;
     }
     if (name == "Reset Bypass Command") {
          uint32_t command = o;
@@ -1169,6 +1186,7 @@ void sc_settings_changed(odb o)
         //reset odb flag
           command=command&(1<<8);
           o = command;
+          return;
     }
     if (name == "Sorter Zero Suppression Mupix") {
         if (o) {
@@ -1178,6 +1196,7 @@ void sc_settings_changed(odb o)
             cm_msg(MINFO, "sc_settings_changed", "Sorter Zero Suppression Mupix off");
             feb_sc->FEB_broadcast(MP_SORTER_ZERO_SUPPRESSION_REGISTER_W, 0x0);
         }
+        return;
     }
     if (name == "Load Firmware" && o) {
         cm_msg(MINFO, "sc_settings_changed", "Load firmware triggered");
@@ -1191,6 +1210,7 @@ void sc_settings_changed(odb o)
         else
             cm_msg(MERROR, "sc_settings_changed - Single Write", "FEB does not exist");
         o = false;
+        return;
     }
 
 }

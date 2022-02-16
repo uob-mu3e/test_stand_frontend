@@ -413,6 +413,7 @@ void cr_settings_changed(odb & o)
       addressed = o;
       cm_msg(MINFO, "cr_settings_changed", "Set addressed to %d", addressed);
       // TODO: propagate to hardware
+      return;
    }
 
 
@@ -438,6 +439,7 @@ void cr_settings_changed(odb & o)
               else
                  cb->write_command(name);
               o = false; 
+              return;
            }
        } else {
            // Run prepare needs the run number
@@ -452,6 +454,7 @@ void cr_settings_changed(odb & o)
                  else
                     cb->write_command(name,run);
                  o = false; 
+                 return;
               }
            } else {
                // Take the payload from the payload ODB field
@@ -465,6 +468,7 @@ void cr_settings_changed(odb & o)
                      else
                        cb->write_command(name,payload);
                     o = false; 
+                    return;
                }
            }
        }
