@@ -106,7 +106,7 @@ begin
       );
 
 
-    gen_dp_fifos: for I in 0 to N_CHIPS_g generate
+    gen_dp_fifos: for I in 0 to N_CHIPS_g-1 generate
 
         o_data(I).rdy <= (TDAC_BIT => tdac_rdy(I), BIAS_BIT => bias_rdy(I), VDAC_BIT => vdac_rdy(I), CONF_BIT => conf_rdy(I));
 
@@ -226,7 +226,7 @@ begin
             o_full    => tdac_dpf_full(I),
             o_empty   => tdac_dpf_empty(I),
             i_we      => tdac_dpf_we(I),
-            i_wdata   => tdac_dpf_wdata(I),
+            i_wdata   => tdac_dpf_wdata(I)(27 downto 0), -- TODO: check which bits to throw
             i_re1     => i_read(I).spi_read(TDAC_BIT),
             o_rdata1  => o_data(I).spi_data(TDAC_BIT downto TDAC_BIT),
             i_re2     => i_read(I).mu3e_read(TDAC_BIT),

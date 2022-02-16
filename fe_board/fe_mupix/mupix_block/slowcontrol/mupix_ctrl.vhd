@@ -76,10 +76,6 @@ architecture RTL of mupix_ctrl is
 
 begin
 
-    o_SIN                       <= (others => '0');
-    mp_ctrl_to_direct_spi       <= (others => (others => '0'));
-    mp_ctrl_to_direct_spi_wr    <= (others => '0');
-    spi_chip_select_mask_mp_ctrl<= (others => '0');
     slow_down                   <= slow_down_buf(15 downto 0);
     spi_chip_select_mask        <= spi_chip_select_mask_sc when mp_ctrl_direct_spi_ena = '1' else spi_chip_select_mask_mp_ctrl;
     mp_direct_spi_busy_n        <= not mp_direct_spi_busy;

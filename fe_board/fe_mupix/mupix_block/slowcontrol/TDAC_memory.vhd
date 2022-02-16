@@ -40,11 +40,11 @@ architecture RTL of tdac_memory is
         in_use          :   boolean;
         full            :   boolean;
         chip            :   integer range 0 to N_CHIPS_g-1;
-        chip_page_ID    :   integer range 0 to TODO : max pages per chip;
+        --chip_page_ID    :   integer range 0 to TODO : max pages per chip;
     end record;
 
     type TDAC_page_array_type   is array( natural range <> ) of TDAC_page_type;
-    signal TDAC_page_array      : TDAC_page_array_type(TODO: n pages-1 downto 0);
+    --signal TDAC_page_array      : TDAC_page_array_type(TODO: n pages-1 downto 0);
 
     signal ram_we               : std_logic;
     signal ram_wdata            : std_logic;
@@ -73,12 +73,12 @@ begin
         g_ADDR_WIDTH       => ADDR_WIDTH_g--,
       )
       port map (
-        i_raddr => i_raddr,
-        o_rdata => o_rdata,
+        i_raddr => x"00",
+        o_rdata => open,
         i_rclk  => i_clk,
-        i_waddr => i_waddr,
-        i_wdata => i_wdata,
-        i_we    => i_we,
+        i_waddr => x"00",
+        i_wdata => x"00000000",
+        i_we    => '0',
         i_wclk  => i_clk
       );
 end RTL;

@@ -73,7 +73,7 @@ begin
                 data_in_all_position_32 <= data_in_all_position_32 + 1;
             end if;
 
-            for I in 0 to N_CHIPS_g loop
+            for I in 0 to N_CHIPS_g-1 loop
 
                 if(i_data_we='1' and i_chip_cvb(I)='1') then
 

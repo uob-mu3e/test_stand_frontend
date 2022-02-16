@@ -249,10 +249,24 @@ begin
               when load_bits =>
                 mp_spi_state <= waiting;
                 -- save the bits we want to write this round
-                vdac <= i_data(chip_is_writing_int).spi_data(VDAC_BIT) when reg_is_writing(VDAC_BIT) = '1' else '0';
-                conf <= i_data(chip_is_writing_int).spi_data(CONF_BIT) when reg_is_writing(VDAC_BIT) = '1' else '0';
-                bias <= i_data(chip_is_writing_int).spi_data(BIAS_BIT) when reg_is_writing(VDAC_BIT) = '1' else '0';
-                tdac <= i_data(chip_is_writing_int).spi_data(TDAC_BIT) when reg_is_writing(VDAC_BIT) = '1' else '0';
+
+                vdac <= '0';
+                conf <= '0';
+                bias <= '0';
+                tdac <= '0';
+
+                if(reg_is_writing(VDAC_BIT) = '1') then 
+                    vdac <= i_data(chip_is_writing_int).spi_data(VDAC_BIT);
+                end if;
+                if(reg_is_writing(CONF_BIT) = '1') then 
+                    conf <= i_data(chip_is_writing_int).spi_data(CONF_BIT);
+                end if;
+                if(reg_is_writing(BIAS_BIT) = '1') then 
+                    bias <= i_data(chip_is_writing_int).spi_data(BIAS_BIT);
+                end if;
+                if(reg_is_writing(TDAC_BIT) = '1') then 
+                    tdac <= i_data(chip_is_writing_int).spi_data(TDAC_BIT);
+                end if;
 
               when waiting =>
                 -- if we emptied the dpf with this read we need to add additional steps at the end (load reg for vdac, conf and bias, shift by one shenanigans for tdac)
