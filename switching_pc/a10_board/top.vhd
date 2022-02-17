@@ -125,7 +125,8 @@ architecture rtl of top is
     signal reset_156_n : std_logic;
 
     -- 250 MHz pcie clock
-    signal reset_pcie0_n : std_logic;
+    signal pcie0_clk : std_logic;
+    signal pcie0_reset_n : std_logic;
 
     -- flash
     signal flash_cs_n : std_logic;
@@ -137,8 +138,6 @@ architecture rtl of top is
     signal pcie0_writeregs_B  : work.util.slv32_array_t(63 downto 0);
     signal pcie0_readregs_A   : work.util.slv32_array_t(63 downto 0);
     signal pcie0_readregs_B   : work.util.slv32_array_t(63 downto 0);
-
-    signal pcie_fastclk_out     : std_logic;
 
     -- pcie read / write memory
     signal readmem_writedata    : std_logic_vector(31 downto 0);
@@ -201,7 +200,6 @@ begin
         g_XCVR2_CHANNELS => 4,
         g_XCVR3_CHANNELS => 4,
         g_PCIE0_X => 8,
-        g_PCIE1_X => 0,
         g_FARM    => 0,
         g_CLK_MHZ => 50.0--,
     )
@@ -262,7 +260,8 @@ begin
         o_pcie0_tx                      => PCIE_TX_p,
         i_pcie0_perst_n                 => PCIE_PERST_n,
         i_pcie0_refclk                  => PCIE_REFCLK_p,
-        o_pcie0_clk                     => pcie_fastclk_out,
+        o_pcie0_reset_n                 => pcie0_reset_n,
+        o_pcie0_clk                     => pcie0_clk,
         o_pcie0_clk_hz                  => LED(3),
 
         -- PCIe0 DMA0
@@ -270,7 +269,7 @@ begin
         i_pcie0_dma0_we                 => dma_data_wren,
         i_pcie0_dma0_eoe                => dmamem_endofevent,
         o_pcie0_dma0_hfull              => pcie0_dma0_hfull,
-        i_pcie0_dma0_clk                => pcie_fastclk_out,
+        i_pcie0_dma0_clk                => pcie0_clk,
 
         -- PCIe0 read interface to writable memory
         i_pcie0_wmem_addr               => writememreadaddr,
@@ -289,7 +288,7 @@ begin
 
         -- PCIe0 read interface for writable registers
         o_pcie0_wregs_A                 => pcie0_writeregs_A,
-        i_pcie0_wregs_A_clk             => pcie_fastclk_out,
+        i_pcie0_wregs_A_clk             => pcie0_clk,
         o_pcie0_wregs_B                 => pcie0_writeregs_B,
         i_pcie0_wregs_B_clk             => clk_156,
         o_pcie0_wregs_C                 => open,
@@ -299,8 +298,6 @@ begin
 
         -- resets clk
         top_pll_locked                  => locked_50to125,
-
-        o_reset_pcie0_n                 => reset_pcie0_n,
 
         o_reset_156_n                   => reset_156_n,
         o_clk_156                       => clk_156,
@@ -384,8 +381,8 @@ begin
         o_farm_tx_datak => open,
 
         --! 250 MHz clock / reset_n
-        i_reset_n_250   => reset_pcie0_n,
-        i_clk_250       => pcie_fastclk_out,
+        i_reset_n_250   => pcie0_reset_n,
+        i_clk_250       => pcie0_clk,
 
         --! 156 MHz clock / reset_n
         i_reset_n_156   => reset_156_n,

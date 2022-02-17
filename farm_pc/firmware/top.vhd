@@ -156,7 +156,7 @@ architecture rtl of top is
     signal reset_250_n  : std_logic;
 
     -- 250 MHz pcie clock 
-    signal reset_pcie0_n    : std_logic;
+    signal pcie0_reset_n    : std_logic;
     signal pcie_fastclk_out : std_logic;
     
     -- DDR clk
@@ -237,7 +237,6 @@ begin
         g_XCVR1_CHANNELS => 16,
         g_XCVR1_N => 4,
         g_PCIE0_X => 8,
-        g_PCIE1_X => 0,
         g_FARM    => 1,
         g_CLK_MHZ => 50.0--,
     )
@@ -291,6 +290,7 @@ begin
         o_pcie0_tx                      => PCIE_TX_p,
         i_pcie0_perst_n                 => PCIE_PERST_n,
         i_pcie0_refclk                  => PCIE_REFCLK_p,
+        o_pcie0_reset_n                 => pcie0_reset_n,
         o_pcie0_clk                     => pcie_fastclk_out,
         o_pcie0_clk_hz                  => LED(3),
 
@@ -334,8 +334,6 @@ begin
         -- resets clk
         top_pll_locked                  => locked_50to125,
 
-        o_reset_pcie0_n                 => reset_pcie0_n,
-        
         o_reset_250_n                   => reset_250_n,
         o_clk_250                       => clk_250,
         o_clk_250_hz                    => LED(2),
@@ -417,11 +415,11 @@ begin
         o_dma_data      => dma_data,
 
         --! 250 MHz clock pice / reset_n
-        i_reset_n_250_pcie => reset_pcie0_n,
+        i_reset_n_250_pcie => pcie0_reset_n,
         i_clk_250_pcie     => pcie_fastclk_out,
 
         --! 250 MHz clock link / reset_n
-        i_reset_n_250_link => reset_pcie0_n,
+        i_reset_n_250_link => pcie0_reset_n,
         i_clk_250_link     => pcie_fastclk_out,
 
         -- Interface to memory bank A
