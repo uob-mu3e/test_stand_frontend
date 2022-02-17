@@ -43,7 +43,7 @@ end entity dual_port_fifo;
 architecture RTL of dual_port_fifo is
 
     signal shift_reg            : std_logic_vector(N_BITS_g-1 downto 0);
-    signal bits_used            : integer range 0 to N_BITS_g;
+    signal bits_used            : integer range 0 to N_BITS_g + WDATA_WIDTH_g;
 
 begin
 
@@ -54,32 +54,23 @@ begin
     o_empty <= '1' when (bits_used = 0 or (i_re1 = '1' and bits_used - RDATA1_WIDTH_g <= 0) or (i_re2 = '1' and bits_used - RDATA2_WIDTH_g <=0)) else '0';
 
     process(i_clk, i_reset_n)
-        variable N_shift : integer;
-        variable N_used_change : integer;
+        variable N_used_change : integer range -(RDATA1_WIDTH_g+RDATA2_WIDTH_g) to (RDATA1_WIDTH_g+RDATA2_WIDTH_g+WDATA_WIDTH_g);
     begin
     if(i_reset_n = '0') then 
         shift_reg       <= (others => '0');
         bits_used       <= 0;
     elsif(rising_edge(i_clk))then
-        N_shift         := 0;
         N_used_change   := 0;
 
         if(i_re1 = '1') then
-            N_shift := N_shift + RDATA1_WIDTH_g;
+            shift_reg(N_BITS_g-1-RDATA1_WIDTH_g downto 0) <= shift_reg(N_BITS_g-1 downto RDATA1_WIDTH_g);
+            shift_reg(N_BITS_g-1 downto N_BITS_g-RDATA1_WIDTH_g) <= (others => '0');
             N_used_change := - RDATA1_WIDTH_g;
-        end if;
-        if(i_re2 = '1') then
-            N_shift := N_shift + RDATA2_WIDTH_g;
+        elsif(i_re2 = '1') then
+            shift_reg(N_BITS_g-1-RDATA2_WIDTH_g downto 0) <= shift_reg(N_BITS_g-1 downto RDATA2_WIDTH_g);
+            shift_reg(N_BITS_g-1 downto N_BITS_g-RDATA2_WIDTH_g) <= (others => '0');
             N_used_change := N_used_change - RDATA2_WIDTH_g;
-        end if;
-
-        shift_reg(N_BITS_g-1-N_shift downto 0) <= shift_reg(N_BITS_g-1 downto N_shift);
-
-        if(N_shift /= 0) then
-            shift_reg(N_BITS_g-1 downto N_BITS_g-N_shift) <= (others => '0');
-        end if;
-
-        if(i_we = '1') then
+        elsif(i_we = '1') then
             shift_reg(N_BITS_g-1 downto N_BITS_g-WDATA_WIDTH_g) <= i_wdata;
             shift_reg(N_BITS_g-1-WDATA_WIDTH_g downto 0) <= shift_reg(N_BITS_g-1 downto WDATA_WIDTH_g);
             N_used_change := N_used_change + WDATA_WIDTH_g;

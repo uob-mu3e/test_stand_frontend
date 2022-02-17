@@ -144,7 +144,6 @@ begin
             for I in 0 to N_CHIPS_PER_SPI_g-1 loop
                 o_read(I).spi_read  <= (others => '0');
             end loop;
-            o_data_to_direct_spi    <= (others => '0');
             o_data_to_direct_spi_we <= '0';
             o_spi_chip_selct_mask   <= (others => '1');
             mp_spi_clk_state        <= zero1;
@@ -171,7 +170,6 @@ begin
             for I in 0 to N_CHIPS_PER_SPI_g-1 loop
                 o_read(I).spi_read  <= (others => '0');
             end loop;
-            o_data_to_direct_spi    <= (others => '0');
             o_data_to_direct_spi_we <= '0';
             Ck1_Bias    <= '0';
             Ck2_Bias    <= '0';
@@ -273,7 +271,14 @@ begin
                 -- -> save here which one we emptied so rest of firmware can start filling them again immediately
                 dpf_empty_this_round    <= reg_is_writing and not i_data(chip_is_writing_int).rdy; -- TODO: check if this is actually the place where to check for empty
                 -- set chip mask for direct spi, leave it until we get here again
-                o_spi_chip_selct_mask   <= (chip_is_writing_int=> '0', others => '1');
+                
+                --o_spi_chip_selct_mask   <= (chip_is_writing_int=> '0', others => '1'); -- (quartus does not like it)
+                for I in 0 to N_CHIPS_PER_SPI_g-1 loop
+                    if(chip_is_writing_int=I) then 
+                        o_spi_chip_selct_mask(I) <= '0';
+                    end if;
+                end loop;
+                
                 mp_spi_state            <= writing;
                 mp_spi_clk_state        <= zero1;
 
@@ -324,7 +329,7 @@ begin
 
                     -- load only the regs that are writing and for which dpf went empty this round
                     Load_Bias <= reg_is_writing(BIAS_BIT) and dpf_empty_this_round(BIAS_BIT);
-                    Load_conf <= reg_is_writing(CONF_BIT) and dpf_empty_this_round(CONF_BIT);
+                    --Load_conf <= reg_is_writing(CONF_BIT) and dpf_empty_this_round(CONF_BIT); -- is always 1, mupix10 bug
                     Load_VDAC <= reg_is_writing(VDAC_BIT) and dpf_empty_this_round(VDAC_BIT);
                     Load_TDAC <= reg_is_writing(TDAC_BIT) and dpf_empty_this_round(TDAC_BIT);
 

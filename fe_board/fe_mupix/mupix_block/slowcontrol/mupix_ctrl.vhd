@@ -27,52 +27,52 @@ entity mupix_ctrl is
 
         i_reg_add           : in  std_logic_vector(15 downto 0);
         i_reg_re            : in  std_logic;
-        o_reg_rdata         : out std_logic_vector(31 downto 0);
+        o_reg_rdata         : out std_logic_vector(31 downto 0) := (others => '0');
         i_reg_we            : in  std_logic;
         i_reg_wdata         : in  std_logic_vector(31 downto 0);
 
-        o_SIN               : out std_logic_vector( 3 downto 0);
+        o_SIN               : out std_logic_vector( 3 downto 0) := (others => '0');
 
-        o_clock             : out std_logic_vector(N_SPI_g-1 downto 0);
-        o_mosi              : out std_logic_vector(N_SPI_g-1 downto 0);
-        o_csn               : out std_logic_vector(N_CHIPS_PER_SPI_g*N_SPI_g-1 downto 0)--;
+        o_clock             : out std_logic_vector(N_SPI_g-1 downto 0) := (others => '0');
+        o_mosi              : out std_logic_vector(N_SPI_g-1 downto 0) := (others => '0');
+        o_csn               : out std_logic_vector(N_CHIPS_PER_SPI_g*N_SPI_g-1 downto 0) := (others => '0')--;
         );
 end entity mupix_ctrl;
 
 architecture RTL of mupix_ctrl is
 
-    signal slow_down                    : std_logic_vector(15 downto 0);
-    signal slow_down_buf                : std_logic_vector(31 downto 0);
-    signal spi_chip_select_mask         : std_logic_vector(N_CHIPS_PER_SPI_g*N_SPI_g-1 downto 0); -- SPI chip select mask
-    signal spi_chip_select_mask_sc      : std_logic_vector(N_CHIPS_PER_SPI_g*N_SPI_g-1 downto 0);
-    signal spi_chip_select_mask_mp_ctrl : std_logic_vector(N_CHIPS_PER_SPI_g*N_SPI_g-1 downto 0);
-    signal direct_spi_fifo_full         : std_logic_vector(N_SPI_g-1 downto 0);
+    signal slow_down                    : std_logic_vector(15 downto 0) := (others => '0');
+    signal slow_down_buf                : std_logic_vector(31 downto 0) := (others => '0');
+    signal spi_chip_select_mask         : std_logic_vector(N_CHIPS_PER_SPI_g*N_SPI_g-1 downto 0) := (others => '0'); -- SPI chip select mask
+    signal spi_chip_select_mask_sc      : std_logic_vector(N_CHIPS_PER_SPI_g*N_SPI_g-1 downto 0) := (others => '0');
+    signal spi_chip_select_mask_mp_ctrl : std_logic_vector(N_CHIPS_PER_SPI_g*N_SPI_g-1 downto 0) := (others => '0');
+    signal direct_spi_fifo_full         : std_logic_vector(N_SPI_g-1 downto 0) := (others => '0');
     signal mp_ctrl_to_direct_spi        : reg32array(N_SPI_g-1 downto 0); -- Write data to direct spi from rest of ctrl firmware
-    signal mp_ctrl_to_direct_spi_wr     : std_logic_vector(N_SPI_g-1 downto 0);
+    signal mp_ctrl_to_direct_spi_wr     : std_logic_vector(N_SPI_g-1 downto 0) := (others => '0');
     signal sc_to_direct_spi             : reg32array(N_SPI_g-1 downto 0); -- Write data to direct spi from slowcontrol (needs to be enabled using mp_ctrl_direct_spi_ena first)
-    signal sc_to_direct_spi_wr          : std_logic_vector(N_SPI_g-1 downto 0);
-    signal mp_direct_spi_busy           : std_logic_vector(N_SPI_g-1 downto 0);
-    signal mp_direct_spi_busy_n         : std_logic_vector(N_SPI_g-1 downto 0);
-    signal mp_ctrl_direct_spi_ena       : std_logic;
+    signal sc_to_direct_spi_wr          : std_logic_vector(N_SPI_g-1 downto 0) := (others => '0');
+    signal mp_direct_spi_busy           : std_logic_vector(N_SPI_g-1 downto 0) := (others => '0');
+    signal mp_direct_spi_busy_n         : std_logic_vector(N_SPI_g-1 downto 0) := (others => '0');
+    signal mp_ctrl_direct_spi_ena       : std_logic := '0';
 
-    signal signals_from_storage         : mp_conf_array_out(N_CHIPS_PER_SPI_g*N_SPI_g-1 downto 0);
+    signal signals_from_storage         : mp_conf_array_out(N_CHIPS_PER_SPI_g*N_SPI_g-1 downto 0) := (others => (rdy => (others => '0'), spi_data => (others => '0'), conf => (others => '0'), bias => (others => '0'), vdac => (others => '0'), tdac => (others => '0')));
     signal signals_to_storage           : mp_conf_array_in(N_CHIPS_PER_SPI_g*N_SPI_g-1 downto 0);
 
-    signal direct_conf_reg_data         : reg32;
-    signal direct_bias_reg_data         : reg32;
-    signal direct_vdac_reg_data         : reg32;
-    signal direct_conf_reg_we           : std_logic;
-    signal direct_bias_reg_we           : std_logic;
-    signal direct_vdac_reg_we           : std_logic;
+    signal direct_conf_reg_data         : reg32 := (others => '0');
+    signal direct_bias_reg_data         : reg32 := (others => '0');
+    signal direct_vdac_reg_data         : reg32 := (others => '0');
+    signal direct_conf_reg_we           : std_logic := '0';
+    signal direct_bias_reg_we           : std_logic := '0';
+    signal direct_vdac_reg_we           : std_logic := '0';
 
-    signal chip_select_cvb              : std_logic_vector(N_CHIPS_PER_SPI_g*N_SPI_g-1 downto 0);
-    signal chip_select_tdac             : integer range 0 to N_CHIPS_PER_SPI_g*N_SPI_g-1;
+    signal chip_select_cvb              : std_logic_vector(N_CHIPS_PER_SPI_g*N_SPI_g-1 downto 0) := (others => '0');
+    signal chip_select_tdac             : integer range 0 to N_CHIPS_PER_SPI_g*N_SPI_g-1 := 0;
 
-    signal combined_data                : reg32;
-    signal combined_data_we             : std_logic;
+    signal combined_data                : reg32 := (others => '0');
+    signal combined_data_we             : std_logic := '0';
 
-    signal tdac_data                    : reg32;
-    signal tdac_we                      : std_logic;
+    signal tdac_data                    : reg32 := (others => '0');
+    signal tdac_we                      : std_logic := '0';
 
 begin
 
@@ -137,7 +137,7 @@ begin
         i_clk              => i_clk,
         i_reset_n          => i_reset_n,
 
-        -- inputs to write storage data
+        --inputs to write storage data
         i_chip_cvb         => chip_select_cvb,
         i_chip_tdac        => chip_select_tdac,
 
@@ -153,7 +153,7 @@ begin
         i_tdac_data        => tdac_data,
         i_tdac_we          => tdac_we,
 
-        -- connections to SPI and custom protocol writing
+        --connections to SPI and custom protocol writing
         o_data             => signals_from_storage,
         i_read             => signals_to_storage
       );
