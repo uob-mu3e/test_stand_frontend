@@ -7,13 +7,10 @@ use work.mudaq.all;
 
 entity swb_time_merger is
 generic (
-    W : positive := 32;
-    TREE_w : positive := 10;
-    TREE_r : positive := 10;
-    -- Data type: x"01" = pixel, x"02" = scifi, x"03" = tiles
-    DATA_TYPE: std_logic_vector(7 downto 0) := x"01";
+    g_ADDR_WIDTH : positive := 11;
     g_NLINKS_DATA : positive := 8;
-    g_NLINKS_FARM : positive := 8--;
+    -- Data type: x"01" = pixel, x"02" = scifi, x"03" = tiles
+    DATA_TYPE: std_logic_vector(7 downto 0) := x"01"--;
 );
 port (
     -- input streams
@@ -29,14 +26,7 @@ port (
     i_en            : in    std_logic;
     o_rack          : out   std_logic_vector(g_NLINKS_DATA - 1 downto 0);
 
-    -- counters
-    -- swb time fifo full
-    -- cnt_gtime1_error;
-    -- cnt_gtime2_error;
-    -- cnt_shtime_error;
-    -- wait_cnt_pre;
-    -- wait_cnt_sh;
-    -- wait_cnt_merger;
+    -- TODO: add me
     o_counters      : out   work.util.slv32_array_t(6 downto 0);
 
     -- output stream
@@ -73,31 +63,20 @@ architecture arch of swb_time_merger is
     signal wdata_debug, q_stream_debug : std_logic_vector(2+W-1 downto 0);
     signal almost_full, we_debug : std_logic;
 
-    -- counters
-    signal counters : work.util.slv32_array_t(5 downto 0);
-
 begin
-
-    --! counters
-    e_swb_time_fifo_full : entity work.counter
-    generic map ( WRAP => true, W => 32 )
-    port map ( o_cnt => o_counters(0), i_ena => wfull, i_reset_n => i_reset_n, i_clk => i_clk );
-    o_counters(6 downto 1) <= counters;
 
     e_time_merger : entity work.time_merger_v4
     generic map (
-        W => W,
-        TREE_DEPTH_w => TREE_w,
-        TREE_DEPTH_r => TREE_r,
+        g_ADDR_WIDTH => TREE_w,
         g_NLINKS_DATA => g_NLINKS_DATA,
         DATA_TYPE => DATA_TYPE--,
     )
     port map (
         -- input streams
-        i_rdata                 => i_rx,
-        i_rsop                  => i_rsop,
-        i_reop                  => i_reop,
-        i_rshop                 => i_rshop,
+        i_data                  => i_rx,
+        i_sop                   => i_rsop,
+        i_eop                   => i_reop,
+        i_shop                  => i_rshop,
         i_hit                   => i_hit,
         i_t0                    => i_t0,
         i_t1                    => i_t1,
@@ -112,22 +91,16 @@ begin
         i_rack                  => i_ren,
         o_empty                 => o_rempty,
 
-        -- error outputs
-        o_error_pre             => open,
-        o_error_sh              => open,
-        o_error_gtime           => open,
-        o_error_shtime          => open,
-
         -- counters
-        o_counters              => counters,
+        o_error                 => open,
 
+        i_en                    => i_en,
         i_reset_n               => i_reset_n,
         i_clk                   => i_clk--,
     );
 
     --! map output data
-    --! TODO: handle errors, at the moment they are sent out at the end of normal event
-    -- o_error <= ;
+    --! TODO: cnt errors, at the moment they are sent out at the end of normal event
     o_wdata <= wdata;
     o_wsop  <= wsop;
     o_weop  <= weop;

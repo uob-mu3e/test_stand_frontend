@@ -387,66 +387,12 @@ begin
     --! ------------------------------------------------------------------------
     --! ------------------------------------------------------------------------
     --! ------------------------------------------------------------------------
-    process(i_clk_250, reset_250_n)
-    begin
-    if ( reset_250_n /= '1' ) then
-        o_farm_data     <= x"000000BC";
-        o_farm_datak    <= "0001";
-        farm_out_state  <= idle;
-        farm_rack       <= '0';
-        --
-    elsif ( rising_edge(i_clk_250) ) then
-
-        o_farm_data     <= x"000000BC";
-        o_farm_datak    <= "0001";
-        farm_rack       <= '0';
-
-        if ( farm_rempty = '1' ) then
-            --
-        else
-            case farm_out_state is
-
-            when idle =>
-                if ( farm_header = '1' ) then
-                    farm_out_state <= write_ts_0;
-                    o_farm_data     <= farm_data;
-                    o_farm_datak    <= "0001";
-                    farm_rack       <= '1';
-                end if;
-
-            when write_ts_0 =>
-                farm_out_state  <= write_ts_1;
-                o_farm_data     <= farm_data;
-                o_farm_datak    <= "0000";
-                farm_rack       <= '1';
-
-            when write_ts_1 =>
-                farm_out_state  <= write_data;
-                o_farm_data     <= farm_data;
-                o_farm_datak    <= "0000";
-                farm_rack       <= '1';
-
-            when write_data =>
-                farm_rack       <= '1';
-                if ( i_rx(7 downto 0) = x"9C" and i_rx_k = "0001" ) then
-                    farm_out_state  <= idle;
-                    o_farm_data     <= farm_data(31 downto 0); -- trailer
-                    o_farm_datak    <= "0001";
-                elsif ( farm_data(31 downto 26) = "111111" ) then
-                    o_farm_data     <= "111111" & x"FFFF" & farm_data(25 downto 16); -- sub header
-                    o_farm_datak    <= "0000";
-                else
-                    o_farm_data     <= farm_data(31 downto 28) & chipID & farm_data(21 downto 1); -- hit
-                    o_farm_datak    <= "0000";
-                end if;
-
-            when others =>
-                farm_out_state <= idle;
-
-            end case;
-        end if;
-        --
-    end if;
-    end process;
+    o_farm_data  <= x"000000BC" when farm_rempty  = '1' else farm_data;
+    o_farm_datak <= "0001"      when farm_rempty  = '1' else 
+                    "0001"      when farm_header  = '1' else 
+                    "0001"      when farm_trailer = '1' else 
+                    "0000";
+                    farm_data;
+    farm_rack    <= '0' when farm_rempty = '1' else '0';
 
 end architecture;

@@ -31,7 +31,7 @@ package mudaq is
     constant K27_7 : std_logic_vector(7 downto 0) := X"FB";
     constant K29_7 : std_logic_vector(7 downto 0) := X"FD";
     constant K30_7 : std_logic_vector(7 downto 0) := X"FE";
-    
+
 
     --! data path farm types
     subtype dataplusts_type is std_logic_vector(519 downto 0);
@@ -43,16 +43,20 @@ package mudaq is
     constant tszero : tsrange_type := (others => '0');
 
 
-    --! data path swb types
-    constant tree_padding   : std_logic_vector(37 downto 0) := "11" & x"FFFFFFFFF";
-    constant tree_paddingk  : std_logic_vector(37 downto 0) := "11" & x"EEEEEEEEE";
-    constant tree_zero      : std_logic_vector(37 downto 0) := "00" & x"000000000";
-    constant pre_marker     : std_logic_vector(5 downto 0)  := "110000";
-    constant sh_marker      : std_logic_vector(5 downto 0)  := "110001";
-    constant tr_marker      : std_logic_vector(5 downto 0)  := "110010";
-    constant ts1_marker     : std_logic_vector(5 downto 0)  := "110011";
-    constant ts2_marker     : std_logic_vector(5 downto 0)  := "110100";
-    constant err_marker     : std_logic_vector(5 downto 0)  := "110101";
+    --! time merger tree constants
+    constant IDEL : std_logic_vector(3 downto 0)    := x"0";
+    constant ONEMASK : std_logic_vector(3 downto 0) := x"1";
+    constant WAITING : std_logic_vector(3 downto 0) := x"2";
+    constant HEADER : std_logic_vector(3 downto 0)  := x"3";
+    constant TS0 : std_logic_vector(3 downto 0)     := x"4";
+    constant TS1 : std_logic_vector(3 downto 0)     := x"5";
+    constant SHEADER : std_logic_vector(3 downto 0) := x"6";
+    constant HIT : std_logic_vector(3 downto 0)     := x"7";
+    constant ONEHIT : std_logic_vector(3 downto 0)  := x"8";
+    constant TRAILER : std_logic_vector(3 downto 0) := x"9";
+    constant ONEERROR : std_logic_vector(3 downto 0) := x"a";
+    type N_LINKS_TREE_t is array (3 downto 0) of integer;
+    constant N_LINKS_TREE : N_LINKS_TREE_t := (1, 2, 4, 8);
 
 
     --! FEB - SWB protocol
