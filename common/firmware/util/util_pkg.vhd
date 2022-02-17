@@ -28,6 +28,8 @@ package util is
     type slv32_array_t is array ( natural range <> ) of slv32_t;
     subtype slv34_t is std_logic_vector(33 downto 0);
     type slv34_array_t is array ( natural range <> ) of slv34_t;
+    subtype slv35_t is std_logic_vector(34 downto 0);
+    type slv35_array_t is array ( natural range <> ) of slv35_t;
     subtype slv38_t is std_logic_vector(37 downto 0);
     type slv38_array_t is array ( natural range <> ) of slv38_t;
     subtype slv64_t is std_logic_vector(63 downto 0);

@@ -90,8 +90,8 @@ architecture arch of swb_block is
     signal farm_data_valid : work.util.slv2_array_t(g_NLINKS_FARM_TOTL-1 downto 0);
     signal pixel_farm_data : work.util.slv32_array_t(g_NLINKS_FARM_PIXEL-1 downto 0);
     signal scifi_farm_data : work.util.slv32_array_t(g_NLINKS_FARM_SCIFI-1 downto 0);
-    signal pixel_farm_data_valid : work.util.slv2_array_t(g_NLINKS_FARM_PIXEL-1 downto 0);
-    signal scifi_farm_data_valid : work.util.slv2_array_t(g_NLINKS_FARM_SCIFI-1 downto 0);
+    signal pixel_farm_datak : work.util.slv4_array_t(g_NLINKS_FARM_PIXEL-1 downto 0);
+    signal scifi_farm_datak : work.util.slv4_array_t(g_NLINKS_FARM_SCIFI-1 downto 0);
     
     --! DMA
     signal pixel_dma_data, scifi_dma_data : std_logic_vector (255 downto 0);
@@ -113,8 +113,8 @@ architecture arch of swb_block is
     --! counters
     signal counter_swb_data_pixel_156 : work.util.slv32_array_t(g_NLINKS_DATA_PIXEL*5-1 downto 0);
     signal counter_swb_data_scifi_156 : work.util.slv32_array_t(g_NLINKS_DATA_SCIFI*5-1 downto 0);
-    signal counter_swb_data_pixel_250, counter_swb_data_scifi_250 : work.util.slv32_array_t(4 downto 0);
-    signal counter_swb_250 : work.util.slv32_array_t(9 downto 0);
+    signal counter_swb_data_pixel_250, counter_swb_data_scifi_250 : work.util.slv32_array_t(5 downto 0);
+    signal counter_swb_250 : work.util.slv32_array_t(10 downto 0);
 
 begin
 
@@ -135,7 +135,7 @@ begin
     -- TODO: merger counters, sync to MIDAS
     e_counters : entity work.swb_readout_counters
     generic map (
-        g_A_CNT             => 10,
+        g_A_CNT             => 11,
         g_NLINKS_DATA_SCIFI => g_NLINKS_DATA_SCIFI,
         g_NLINKS_DATA_PIXEL => g_NLINKS_DATA_PIXEL--,
     )
@@ -263,28 +263,10 @@ begin
     scifi_mask_n    <= x"00000000" & i_writeregs_250(SWB_LINK_MASK_SCIFI_REGISTER_W);
 
     -- farm data
-    farm_data(g_NLINKS_FARM_PIXEL - 1 downto 0)                                               <= pixel_farm_data;
-    farm_data_valid(g_NLINKS_FARM_PIXEL - 1 downto 0)                                         <= pixel_farm_data_valid;
-    farm_data(g_NLINKS_FARM_PIXEL + g_NLINKS_FARM_SCIFI - 1 downto g_NLINKS_FARM_PIXEL)       <= scifi_farm_data;
-    farm_data_valid(g_NLINKS_FARM_PIXEL + g_NLINKS_FARM_SCIFI - 1 downto g_NLINKS_FARM_PIXEL) <= scifi_farm_data_valid;
-
-    process(i_clk_250)
-    begin
-    if rising_edge(i_clk_250) then
-        for i in farm_data'range loop
-            o_farm_tx_data(i) <= farm_data(i);
-            o_farm_tx_datak(i) <= "0000";
-            if ( farm_data_valid(i) = "00" ) then
-                o_farm_tx_data(i) <= X"000000BC";
-                o_farm_tx_datak(i) <= "0001";
-            elsif ( farm_data_valid(i) = "11" ) then
-                --
-            else
-                o_farm_tx_datak(i) <= "0001";
-            end if;
-        end loop;
-    end if;
-    end process;
+    o_farm_tx_data(g_NLINKS_FARM_PIXEL - 1 downto 0)                                          <= pixel_farm_data;
+    o_farm_tx_datak(g_NLINKS_FARM_PIXEL - 1 downto 0)                                         <= pixel_farm_datak;
+    o_farm_tx_data(g_NLINKS_FARM_PIXEL + g_NLINKS_FARM_SCIFI - 1 downto g_NLINKS_FARM_PIXEL)  <= scifi_farm_data;
+    o_farm_tx_datak(g_NLINKS_FARM_PIXEL + g_NLINKS_FARM_SCIFI - 1 downto g_NLINKS_FARM_PIXEL) <= scifi_farm_datak;
 
     -- link mapping
     gen_pixel_data_mapping : FOR i in 0 to g_NLINKS_DATA_PIXEL - 1 GENERATE
@@ -297,8 +279,8 @@ begin
     END GENERATE gen_scifi_data_mapping;
 
     -- counter mapping
-    counter_swb_250(4 downto 0) <= counter_swb_data_pixel_250;
-    counter_swb_250(9 downto 5) <= counter_swb_data_scifi_250;
+    counter_swb_250(5 downto 0) <= counter_swb_data_pixel_250;
+    counter_swb_250(10 downto 6) <= counter_swb_data_scifi_250;
 
     -- DAM mapping
     o_dma_wren      <= pixel_dma_wren when i_writeregs_250(SWB_READOUT_STATE_REGISTER_W)(USE_BIT_PIXEL) = '1' else scifi_dma_wren;
@@ -313,8 +295,7 @@ begin
     --! ------------------------------------------------------------------------
     e_swb_data_path_pixel : entity work.swb_data_path
     generic map (
-        g_NLINKS_TOTL           => 64,
-        g_NLINKS_FARM           => g_NLINKS_FARM_PIXEL,
+        g_LOOPUP_NAME           => "intRun2021",
         g_NLINKS_DATA           => g_NLINKS_DATA_PIXEL,
         LINK_FIFO_ADDR_WIDTH    => 13,
         TREE_w                  => 10,
@@ -346,7 +327,7 @@ begin
         i_dmamemhalffull => i_dmamemhalffull,
         
         o_farm_data      => pixel_farm_data,
-        o_farm_data_valid=> pixel_farm_data_valid,
+        o_farm_datak     => pixel_farm_datak,
 
         o_dma_wren       => pixel_dma_wren,
         o_dma_cnt_words  => pixel_dma_cnt_words,

@@ -9,7 +9,7 @@ package a10_pcie_registers is
         constant RESET_REGISTER_W                               :  integer := 16#01#; -- DOC: Reset Register | ALL
             constant RESET_BIT_ALL                                  :  integer := 0;  -- DOC: Reset bit to reset all | ALL
             constant RESET_BIT_DATAGEN                              :  integer := 1;  -- DOC: Reset bit for the datagenerator which is generating the link data from FEBs | SWB
-            constant RESET_BIT_BOARD                                :  integer := 2;  -- DOC: Not used at the moment | ALL
+            constant RESET_BIT_SWB_STREAM_MERGER                    :  integer := 2;  -- DOC: Reset Round Robin Merger | SWB
             constant RESET_BIT_WORDALIGN                            :  integer := 3;  -- DOC: Not used at the moment | ALL
             constant RESET_BIT_RECEIVER                             :  integer := 4;  -- DOC: Not used at the moment | ALL
             constant RESET_BIT_DATAFIFO                             :  integer := 5;  -- DOC: Not used at the moment | ALL
@@ -29,7 +29,7 @@ package a10_pcie_registers is
             constant RESET_BIT_DATAFLOW                             :  integer := 20; -- DOC: Not used at the moment | ALL
             constant RESET_BIT_LINK_MERGER                          :  integer := 21; -- DOC: Not used at the moment | ALL
             constant RESET_BIT_DATA_PATH                            :  integer := 22; -- DOC: Reset bit for the data path | SWB
-            constant RESET_BIT_FARM_DATA_PATH                       :  integer := 23; -- DOC: Reset bit for the data path | SWB
+            constant RESET_BIT_FARM_DATA_PATH                       :  integer := 23; -- DOC: Reset bit for the data path | FARM
             constant RESET_BIT_PCIE                                 :  integer := 31; -- DOC: Not used at the moment | ALL
 
         constant DATAGENERATOR_REGISTER_W                       : integer := 16#02#; -- DOC: Register to control the datagenerator which is generating the link data from FEBs | SWB
