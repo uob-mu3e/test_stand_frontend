@@ -174,10 +174,9 @@ begin
         -- do some error checking
         shop_time0(i) <= a_h(i)(29 downto 28) & a_h(i)(20 downto 16);
         shop_time1(i) <= b_h(i)(29 downto 28) & b_h(i)(20 downto 16);
-        error(i)      <= (others => '0')                            when i_reset_n /= '1' else
-                         error(i)(3 downto 1) & '1'                 when layer_state(i) = TS0 and a_h(i) /= b_h(i) else
-                         error(i)(3 downto 2) & '1' & error(i)(0)   when layer_state(i) = TS1 and a_h(i)(31 downto 27) /= b_h(i)(31 downto 27) else
-                         error(i)(3) & '1' & error(i)(1 downto 0)   when layer_state(i) = SHEADER and shop_time0(i) /= shop_time1(i) else
+        error(i)      <= x"1"	when layer_state(i) = TS0 and a_h(i) /= b_h(i) else
+                         x"2"	when layer_state(i) = TS1 and a_h(i)(31 downto 27) /= b_h(i)(31 downto 27) else
+                         x"3"	when layer_state(i) = SHEADER and shop_time0(i) /= shop_time1(i) else
                          (others => '0');
 
         data(i)         <=  "011" & a_h(i) when layer_state(i) = ONEERROR and i_error(i) = '1' else
