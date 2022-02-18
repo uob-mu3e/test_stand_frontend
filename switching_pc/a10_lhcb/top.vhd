@@ -19,7 +19,7 @@ port (
 
 
 
-    -- POD 0-7
+    -- rx/tx PODs 0-7 (6 links per POD)
     rx_gbt                              : IN    STD_LOGIC_VECTOR(47 DOWNTO 0);
     tx_gbt                              : OUT   STD_LOGIC_VECTOR(47 DOWNTO 0);
     A10_REFCLK_GBT_P_0                  : IN    STD_LOGIC; -- <- SI5345_1/2[IN2] <- SI53340_1[CLK1] <- SMA1

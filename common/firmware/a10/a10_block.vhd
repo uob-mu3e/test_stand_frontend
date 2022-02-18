@@ -354,7 +354,6 @@ begin
     e_reset_C_n : entity work.reset_sync
     port map ( o_reset_n => reset_C_n, i_reset_n => i_reset_125_n, i_clk => i_pcie0_wregs_C_clk );
 
-
     --! save git version to version register
     e_version_reg : entity work.version_reg
     port map (
