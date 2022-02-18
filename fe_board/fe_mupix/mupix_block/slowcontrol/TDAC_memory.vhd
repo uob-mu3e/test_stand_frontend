@@ -17,7 +17,7 @@ use IEEE.math_real."log2";
 entity tdac_memory is
     generic( 
         N_CHIPS_g                 : positive := 4;
-        PAGE_ADDR_WIDTH_g         : positive := 6;
+        PAGE_ADDR_WIDTH_g         : positive := 2;
         ADDR_WIDTH_g              : positive := 8--;
     );
     port(
@@ -25,7 +25,7 @@ entity tdac_memory is
         i_reset_n           : in  std_logic;
 
         o_tdac_dpf_we       : out std_logic_vector(N_CHIPS_g-1 downto 0);
-        o_tdac_dpf_wdata    : out reg32array(N_CHIPS_g-1 downto 0);
+        o_tdac_dpf_wdata    : out std_logic_vector(3 downto 0);
         i_tdac_dpf_empty    : in  std_logic_vector(N_CHIPS_g-1 downto 0);
 
         i_data              : in  std_logic_vector(31 downto 0);
@@ -40,7 +40,7 @@ architecture RTL of tdac_memory is
     constant N_COLS_PER_PAGE  : integer := 128/N_PAGES_PER_CHIP;
 
 
-    constant N_PAGES : integer := 16; -- TODO
+    constant N_PAGES : integer := 8; -- TODO
 
     
 
@@ -90,13 +90,8 @@ architecture RTL of tdac_memory is
 
 
 begin
-    -- TODO
-    o_tdac_dpf_wdata    <= (others => (others => '0'));
-    o_tdac_dpf_we       <= (others => '0');
-
 
     ram_waddr           <= current_page_addr & addr_in_current_page;
-
 
     process (i_clk, i_reset_n) is
     begin
@@ -119,8 +114,8 @@ begin
             ---------------------------------------------
             -- write process
             ---------------------------------------------
-            ram_we      <= i_we;
-            ram_wdata   <= i_data;
+            ram_we          <= i_we;
+            ram_wdata       <= i_data;
 
             for I in 0 to N_PAGES-1 loop
                 if(TDAC_page_array(I).in_use = false) then
@@ -130,7 +125,7 @@ begin
             end loop;
 
             if(i_we = '1') then 
-                if(addr_in_current_page= (others => '1')) then  -- TODO insert proper end addr (complete cols)
+                if(addr_in_current_page= "000100") then  -- TODO insert proper end addr (complete cols)
                     TDAC_page_array(current_write_page).full     <= true;
                     addr_in_current_page                         <= (others => '0');
                     current_write_page                           <= next_free_page_int;
@@ -152,6 +147,10 @@ begin
             -----------------------------------------------
             -- read process
             -----------------------------------------------
+            o_tdac_dpf_we <= (others => '0');
+
+
+            -- TODO select only correct read page ID for chip X
             if(page_cycler = N_PAGES-1) then 
                 page_cycler <= 0;
             else
@@ -174,7 +173,23 @@ begin
                 end loop;
               when reading =>
                 -- read the page for bit_in_tdac, incr. bit_in_tdac , if bit_in_tdac = 6 --> in_use=0
-              
+                if(TDAC_page_array(read_page).addr = "000011") then  -- end addr-1 to avoid cycler selecting the same (now empty) TDAC_page again
+                    if(TDAC_page_array(read_page).bit_in_tdac = 6) then 
+                        TDAC_page_array(read_page).full <= false;
+                        TDAC_page_array(read_page).in_use <= false;
+                    else
+                        TDAC_page_array(read_page).bit_in_tdac <= TDAC_page_array(read_page).bit_in_tdac + 1;
+                    end if;
+                end if;
+
+                if(TDAC_page_array(read_page).addr = "000100") then  -- TODO: put in correct end addr
+                    read_state <= searching_match;
+                end if;
+
+                o_tdac_dpf_we(read_chip) <= '1';
+
+                ram_raddr <= std_logic_vector(to_unsigned(read_page,PAGE_ADDR_WIDTH_g)) & TDAC_page_array(read_page).addr;
+
               when others =>
                 read_state <= searching_match;
             end case;
@@ -184,16 +199,20 @@ begin
         end if;
     end process;
 
+    genwdata: for I in 0 to 3 generate
+        o_tdac_dpf_wdata(I)<= ram_raddr(7+I+TDAC_page_array(read_page).bit_in_tdac);
+    end generate;
+
     ram_1r1w_inst: entity work.ram_1r1w -- better split into multiple RAM IP's each with size of 1 page ?
       generic map (
         g_DATA_WIDTH       => 32,
         g_ADDR_WIDTH       => ADDR_WIDTH_g--,
       )
       port map (
-        i_raddr => x"00",
-        o_rdata => open,
+        i_raddr => ram_raddr,
+        o_rdata => ram_rdata,
         i_rclk  => i_clk,
-        i_waddr => ram_wdata,
+        i_waddr => ram_waddr,
         i_wdata => ram_wdata,
         i_we    => ram_we,
         i_wclk  => i_clk

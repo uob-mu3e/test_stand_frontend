@@ -73,7 +73,7 @@ architecture RTL of mupix_ctrl_config_storage is
     signal conf_dpf_wdata : reg32array(N_CHIPS_g-1 downto 0);
     signal vdac_dpf_wdata : reg32array(N_CHIPS_g-1 downto 0);
     signal bias_dpf_wdata : reg32array(N_CHIPS_g-1 downto 0);
-    signal tdac_dpf_wdata : reg32array(N_CHIPS_g-1 downto 0);
+    signal tdac_dpf_wdata : std_logic_vector(3 downto 0);
 
     signal conf_dpf_we_splitter : std_logic_vector(N_CHIPS_g-1 downto 0);
     signal vdac_dpf_we_splitter : std_logic_vector(N_CHIPS_g-1 downto 0);
@@ -216,7 +216,7 @@ begin
         tdac: entity work.dual_port_fifo
           generic map (
             N_BITS_g       => MP_CONFIG_REGS_LENGTH(3),
-            WDATA_WIDTH_g  => 28,
+            WDATA_WIDTH_g  => 4,
             RDATA1_WIDTH_g => 1,
             RDATA2_WIDTH_g => 53
           )
@@ -226,7 +226,7 @@ begin
             o_full    => tdac_dpf_full(I),
             o_empty   => tdac_dpf_empty(I),
             i_we      => tdac_dpf_we(I),
-            i_wdata   => tdac_dpf_wdata(I)(27 downto 0), -- TODO: check which bits to throw
+            i_wdata   => tdac_dpf_wdata,
             i_re1     => i_read(I).spi_read(TDAC_BIT),
             o_rdata1  => o_data(I).spi_data(TDAC_BIT downto TDAC_BIT),
             i_re2     => i_read(I).mu3e_read(TDAC_BIT),
