@@ -16,9 +16,9 @@ use work.a10_pcie_registers.all;
 
 entity farm_block is
 generic (
-    g_NLINKS_TOTL  : positive := 16;
-    g_NLINKS_PIXEL : positive := 8;
-    g_NLINKS_SCIFI : positive := 8--;
+    g_NLINKS_TOTL  : positive := 3;
+    g_NLINKS_PIXEL : positive := 2;
+    g_NLINKS_SCIFI : positive := 1--;
 );
 port (
 
@@ -116,19 +116,9 @@ architecture arch of farm_block is
     signal rx : work.util.slv32_array_t(g_NLINKS_TOTL-1 downto 0);
     signal rx_k : work.util.slv4_array_t(g_NLINKS_TOTL-1 downto 0);
     
-    --! data gen pixel
-    signal full_pixel, w_pixel_en, r_pixel_en, empty_pixel : std_logic;
-    signal w_pixel, r_pixel : std_logic_vector(g_NLINKS_PIXEL * 38 - 1 downto 0);
-    signal link_data_pixel : std_logic_vector(g_NLINKS_PIXEL * 32 - 1 downto 0);
-    signal link_datak_pixel : std_logic_vector(g_NLINKS_PIXEL * 4 - 1 downto 0);
-    signal link_data_valid_pixel : std_logic_vector(g_NLINKS_PIXEL * 2 - 1 downto 0);
-    
-    --! data gen scifi
-    signal full_scifi, w_scifi_en, r_scifi_en, empty_scifi : std_logic;
-    signal w_scifi, r_scifi : std_logic_vector(g_NLINKS_SCIFI * 38 - 1 downto 0);
-    signal link_data_scifi : std_logic_vector(g_NLINKS_SCIFI * 32 - 1 downto 0);
-    signal link_datak_scifi : std_logic_vector(g_NLINKS_SCIFI * 4 - 1 downto 0);
-    signal link_data_valid_scifi : std_logic_vector(g_NLINKS_SCIFI * 2 - 1 downto 0);
+    --! data gen links
+    signal gen_link : std_logic_vector(31 downto 0);
+    signal gen_link_k : std_logic_vector(3 downto 0);
     
     --! link to fifo
     signal pixel_data, scifi_data : std_logic_vector(257 downto 0);
@@ -226,113 +216,34 @@ begin
     
     --! SWB Data Generation
     --! generate data in the format from the SWB
-    --! PIXEL, SCIFI --> Int Run 2021
+    --! PIXEL US, PIXEL DS, SCIFI --> Int Run 2021
     --! ------------------------------------------------------------------------
     --! ------------------------------------------------------------------------
     --! ------------------------------------------------------------------------
     -- gen pixel data
-    e_data_gen_pixel : entity work.data_generator_merged_data
-    generic map(
-        NLINKS => g_NLINKS_PIXEL,
-        go_to_sh => 2,
-        go_to_trailer => 3--,
-    )
-    port map(
-        i_clk       => i_clk_250_link,
-        i_reset_n   => i_resets_n_link(RESET_BIT_FARM_DATA_PATH),
-        i_en        => not full_pixel and i_writeregs_link(FARM_READOUT_STATE_REGISTER_W)(USE_BIT_GEN_MERGE),
-        i_sd        => x"00000002",
-        o_data      => w_pixel,
-        o_data_we   => w_pixel_en,
-        o_state     => open--,
-    );
-    
-    e_merger_fifo_pixel : entity work.ip_scfifo
+    e_data_gen_link : entity work.data_generator_a10
     generic map (
-        ADDR_WIDTH      => 10,
-        DATA_WIDTH      => g_NLINKS_PIXEL * 38--,
+        DATA_TYPE => DATA_TYPE,
+        go_to_sh => 3,
+        go_to_trailer => 4--,
     )
     port map (
-        data            => w_pixel,
-        wrreq           => w_pixel_en,
-        rdreq           => r_pixel_en,
-        clock           => i_clk_250_link,
-        q               => r_pixel,
-        full            => full_pixel,
-        empty           => empty_pixel,
-        sclr            => not i_reset_n_250_link--,
-    );
-    
-    e_swb_data_merger_pixel : entity work.swb_data_merger
-    generic map (
-        NLINKS          => g_NLINKS_PIXEL,
-        DATA_TYPE       => x"01"--,
-    )
-    port map (
-        i_reset_n       => i_resets_n_link(RESET_BIT_FARM_DATA_PATH),
-        i_clk           => i_clk_250_link,
-        
-        i_data          => r_pixel,
-        i_empty         => empty_pixel,
-        
-        o_ren           => r_pixel_en,
-        o_data          => link_data_pixel,
-        o_data_valid    => link_data_valid_pixel--,
-    );
-    
-    -- gen scifi data
-    e_data_gen_scifi : entity work.data_generator_merged_data
-    generic map(
-        NLINKS => g_NLINKS_SCIFI,
-        go_to_sh => 2,
-        go_to_trailer => 3--,
-    )
-    port map(
-        i_clk       => i_clk_250_link,
-        i_reset_n   => i_resets_n_link(RESET_BIT_FARM_DATA_PATH),
-        i_en        => not full_scifi and i_writeregs_link(FARM_READOUT_STATE_REGISTER_W)(USE_BIT_GEN_MERGE),
-        i_sd        => x"00000002",
-        o_data      => w_scifi,
-        o_data_we   => w_scifi_en,
-        o_state     => open--,
-    );
-    
-    e_merger_fifo_scifi : entity work.ip_scfifo
-    generic map (
-        ADDR_WIDTH      => 10,
-        DATA_WIDTH      => g_NLINKS_SCIFI * 38--,
-    )
-    port map (
-        data            => w_scifi,
-        wrreq           => w_scifi_en,
-        rdreq           => r_scifi_en,
-        clock           => i_clk_250_link,
-        q               => r_scifi,
-        full            => full_scifi,
-        empty           => empty_scifi,
-        sclr            => not i_reset_n_250_link--,
-    );
-    
-    e_swb_data_merger_scifi : entity work.swb_data_merger
-    generic map (
-        NLINKS          => g_NLINKS_SCIFI,
-        DATA_TYPE       => x"02"--,
-    )
-    port map (
-        i_reset_n       => i_resets_n_link(RESET_BIT_FARM_DATA_PATH),
-        i_clk           => i_clk_250_link,
-        
-        i_data          => r_scifi,
-        i_empty         => empty_scifi,
-        
-        o_ren           => r_scifi_en,
-        o_data          => link_data_scifi,
-        o_data_valid    => link_data_valid_scifi--,
+        i_reset_n           => i_resets_n_link(RESET_BIT_DATAGEN),
+        enable_pix          => i_writeregs_pcie(FARM_READOUT_STATE_REGISTER_W)(USE_BIT_GEN_LINK_FARM),
+        i_dma_half_full     => '0',
+        random_seed         => (others => '1'),
+        data_pix_generated  => gen_link,
+        datak_pix_generated => gen_link_k,
+        data_pix_ready      => open,
+        start_global_time   => (others => '0'),
+        delay               => (others => '0'),
+        slow_down           => i_writeregs_pcie(DATAGENERATOR_DIVIDER_REGISTER_W),
+        state_out           => open,
+        clk                 => i_clk_250_link--,
     );
     
     --! map links pixel / scifi
-    --! NOTE: we say that g_NLINKS_PIXEL = g_NLINKS_SCIFI at the moment
-    gen_link_data : FOR I in 0 to g_NLINKS_PIXEL - 1 GENERATE
+    gen_link_data : FOR I in 0 to g_NLINKS_TOTL - 1 GENERATE
     
         process(i_clk_250_link, i_reset_n_250_link)
         begin
@@ -342,11 +253,11 @@ begin
             rx(I+g_NLINKS_SCIFI)   <= (others => '0');
             rx_k(I+g_NLINKS_SCIFI) <= (others => '0');
         elsif ( rising_edge( i_clk_250_link ) ) then
-            if ( i_writeregs_link(FARM_READOUT_STATE_REGISTER_W)(USE_BIT_GEN_MERGE) = '1' ) then
-                rx(I)   <= link_data_pixel(I*32 + 31 downto I*32);
-                rx_k(I) <= link_datak_pixel(I*4 + 3 downto I*4);
-                rx(I+g_NLINKS_SCIFI) <= link_data_scifi(I*32 + 31 downto I*32);
-                rx_k(I+g_NLINKS_SCIFI) <= link_datak_scifi(I*4 + 3 downto I*4);
+            if ( i_writeregs_link(FARM_READOUT_STATE_REGISTER_W)(USE_BIT_GEN_LINK_FARM) = '1' ) then
+                rx(I)   <= gen_link;
+                rx_k(I) <= gen_link_k;
+                rx(I+g_NLINKS_SCIFI) <= gen_link;
+                rx_k(I+g_NLINKS_SCIFI) <= gen_link_k;
             else
                 rx(I)   <= i_rx(I);
                 rx_k(I) <= i_rx_k(I);
@@ -362,7 +273,7 @@ begin
     --! Link Alignment
     --! align data according to detector data
     --! two types of data will be extracted from the links
-    --! PIXEL, SCIFI --> Int Run 2021
+    --! PIXEL US, PIXEL DS, SCIFI --> Int Run 2021
     --! ------------------------------------------------------------------------
     --! ------------------------------------------------------------------------
     --! ------------------------------------------------------------------------
