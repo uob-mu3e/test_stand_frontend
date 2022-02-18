@@ -109,6 +109,10 @@ begin
             last_page_cycler        <= N_PAGES-1;
             cycler_last_full        <= false;
             cycler_last_chip        <= 0;
+            o_tdac_dpf_we           <= (others => '0');
+            ram_we                  <= '0';
+            ram_wdata               <= (others => '0');
+            ram_raddr               <= (others => '0');
             
         elsif(rising_edge(i_clk)) then
 
@@ -211,7 +215,7 @@ begin
     end process;
 
     genwdata: for I in 0 to 3 generate
-        o_tdac_dpf_wdata(I)<= ram_raddr(7+I+TDAC_page_array(read_page).bit_in_tdac);
+        o_tdac_dpf_wdata(I)<= ram_rdata(7+I+TDAC_page_array(read_page).bit_in_tdac);
     end generate;
 
     ram_1r1w_inst: entity work.ram_1r1w -- better split into multiple RAM IP's each with size of 1 page ?

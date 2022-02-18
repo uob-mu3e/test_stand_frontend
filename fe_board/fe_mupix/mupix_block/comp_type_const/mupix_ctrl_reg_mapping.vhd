@@ -76,6 +76,13 @@ architecture rtl of mupix_ctrl_reg_mapping is
             o_tdac_we                   <= '0';
             o_vdac_reg_we               <= '0';
             o_bias_reg_we               <= '0';
+            o_conf_reg_data             <= (others => '0');
+            o_bias_reg_data             <= (others => '0');
+            o_vdac_reg_data             <= (others => '0');
+            o_tdac_data                 <= (others => '0');
+            o_chip_cvb                  <= (others => '0');
+            o_combined_data             <= (others => '0');
+            conf_write_chip_select      <= (others => '0');
 
         elsif(rising_edge(i_clk156)) then
 

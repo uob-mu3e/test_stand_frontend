@@ -157,12 +157,26 @@ begin
             Ck2_Bias    <= '0';
             Ck1_Col     <= '0';
             Ck2_Col     <= '0';
+            Ck1_VDAC    <= '0';
+            Ck2_VDAC    <= '0';
             Ck1_Conf    <= '0';
             Ck2_Conf    <= '0';
             Ck1_TDAC    <= '0';
             Ck2_TDAC    <= '0';
             Ck1_Col     <= '0';
             Ck2_Col     <= '0';
+            bias        <= '0';
+            conf        <= '0';
+            vdac        <= '0';
+            tdac        <= '0';
+            col         <= '0';
+            WrEnable    <= '0';
+            WR          <= '0';
+            Load_TDAC   <= '0';
+            Load_Col    <= '0';
+            Load_VDAC   <= '0';
+            Load_Bias   <= '0';
+
             
 
         elsif(rising_edge(i_clk)) then
