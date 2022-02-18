@@ -24,9 +24,8 @@ port (
     i_hit           : in  std_logic_vector(N_LINKS_IN - 1 downto 0);
     i_t0            : in  std_logic_vector(N_LINKS_IN - 1 downto 0);
     i_t1            : in  std_logic_vector(N_LINKS_IN - 1 downto 0);
-    i_rempty        : in  std_logic_vector(N_LINKS_IN - 1 downto 0);
+    i_empty         : in  std_logic_vector(N_LINKS_IN - 1 downto 0);
     i_mask_n        : in  std_logic_vector(N_LINKS_IN - 1 downto 0);
-    i_en            : in  std_logic;
     o_rack          : out std_logic_vector(N_LINKS_IN - 1 downto 0);
     i_error         : in  std_logic_vector(N_LINKS_IN - 1 downto 0);
 
@@ -38,11 +37,12 @@ port (
     o_hit           : out std_logic_vector(N_LINKS_OUT - 1 downto 0);
     o_t0            : out std_logic_vector(N_LINKS_OUT - 1 downto 0);
     o_t1            : out std_logic_vector(N_LINKS_OUT - 1 downto 0);
-    o_rempty        : out std_logic_vector(N_LINKS_OUT - 1 downto 0);
+    o_empty         : out std_logic_vector(N_LINKS_OUT - 1 downto 0);
     o_mask_n        : out std_logic_vector(N_LINKS_OUT - 1 downto 0);
     i_rack          : in  std_logic_vector(N_LINKS_OUT - 1 downto 0);
-    o_error         : in  std_logic_vector(N_LINKS_OUT - 1 downto 0);
+    o_error         : out std_logic_vector(N_LINKS_OUT - 1 downto 0);
 
+    i_en            : in  std_logic;
     i_reset_n       : in  std_logic;
     i_clk           : in  std_logic--;
 );
@@ -89,7 +89,7 @@ begin
 
         o_mask_n(i) <= i_mask_n(i) or i_mask_n(i + size);
 
-        e_last_fifo_link_debug : entity work.ip_scfifo_v2
+        e_tree_fifo : entity work.ip_scfifo_v2
         generic map (
             g_ADDR_WIDTH => g_ADDR_WIDTH,
             g_DATA_WIDTH => 35,
@@ -102,7 +102,7 @@ begin
             o_wfull         => wrfull(i),
 
             o_rdata         => q_data(i),
-            o_rempty        => o_rempty(i),
+            o_rempty        => o_empty(i),
             i_rack          => i_rack(i),
 
             i_clk           => i_clk,
@@ -125,13 +125,13 @@ begin
         -- [2]               [tr,2]                [3,sh,2]
         -- [b]               [b]                   [b]
         layer_state(i) <=             -- check if both are mask or if we are in enabled or in reset
-                            IDEL      when (i_rmask_n(i) = '1' and i_rmask_n(i+size) = '1') or i_en = '0' or i_reset_n /= '1' else
+                            IDEL      when (i_mask_n(i) = '1' and i_mask_n(i+size) = '1') or i_en = '0' or i_reset_n /= '1' else
                                       -- we forword the error the chain
                             ONEERROR  when (i_error(i) = '1' or i_error(i+size) = '1') and wrfull(i) = '0' else
                                       -- simple case on of the links is mask so we just send the other throw the tree
-                            ONEMASK   when (i_rmask_n(i) = '1' or i_rmask_n(i+size) = '1') and wrfull(i) = '0' else
+                            ONEMASK   when (i_mask_n(i) = '1' or i_mask_n(i+size) = '1') and wrfull(i) = '0' else
                                       -- wait if one input is empty or the output fifo is full
-                            WAITING   when i_rdempty(i) = '1' or i_rdempty(i+size) = '1' or wrfull(i) = '1' else
+                            WAITING   when i_empty(i) = '1' or i_empty(i+size) = '1' or wrfull(i) = '1' else
                                       -- since we check in before that we should have two links not masked and both are not empty we 
                                       -- want to see from both a header
                             HEADER    when i_sop(i) = '1' and i_sop(i+size) = '1' and (last_state(i) = IDEL or last_state(i) = TRAILER) else
@@ -150,36 +150,35 @@ begin
                             WAITING;
 
         wrreq(i)        <=  '1' when layer_state(i) = HEADER or layer_state(i) = TS0 or layer_state(i) = TS1 or layer_state(i) = SHEADER or layer_state(i) = HIT or layer_state(i) = ONEHIT or layer_state(i) = TRAILER or layer_state(i) = ONEERROR else
-                            not i_rdempty(i) when layer_state(i) = ONEMASK and i_rmask_n(i+size) = '1' else
-                            not i_rdempty(i+size) when layer_state(i) = ONEMASK and i_rmask_n(i) = '1' else
+                            not i_empty(i) when layer_state(i) = ONEMASK and i_mask_n(i+size) = '1' else
+                            not i_empty(i+size) when layer_state(i) = ONEMASK and i_mask_n(i) = '1' else
                             '0';
 
-        o_rdreq(i)      <=  '1' when layer_state(i) = HEADER or layer_state(i) = TS0 or layer_state(i) = TS1 or layer_state(i) = SHEADER or layer_state(i) = TRAILER else
+        o_rack(i)       <=  '1' when layer_state(i) = HEADER or layer_state(i) = TS0 or layer_state(i) = TS1 or layer_state(i) = SHEADER or layer_state(i) = TRAILER else
                             '1' when layer_state(i) = ONEHIT and i_hit(i) = '1' else
                             '1' when layer_state(i) = HIT and a(i) <= b(i) else
-                            not i_rdempty(i) when layer_state(i) = ONEMASK and i_rmask_n(i+size) = '1' else
+                            not i_empty(i) when layer_state(i) = ONEMASK and i_mask_n(i+size) = '1' else
                             '0';
 
-        o_rdreq(i+size) <=  '1' when layer_state(i) = HEADER or layer_state(i) = TS0 or layer_state(i) = TS1 or layer_state(i) = SHEADER or layer_state(i) = TRAILER else
+        o_rack(i+size)  <=  '1' when layer_state(i) = HEADER or layer_state(i) = TS0 or layer_state(i) = TS1 or layer_state(i) = SHEADER or layer_state(i) = TRAILER else
                             '1' when layer_state(i) = ONEHIT and i_hit(i) = '1' else
                             '1' when layer_state(i) = HIT and b(i) < a(i) else
-                            not i_rdempty(i+size) when layer_state(i) = ONEMASK and i_rmask_n(i) = '1' else
+                            not i_empty(i+size) when layer_state(i) = ONEMASK and i_mask_n(i) = '1' else
                             '0';
 
         -- or'ed overflow
-        overflow(i) <=  a_h(i)(15 downto 0)  or b_h(i)(15 downto 0)  when layer_state(i) = SHEADER 
+        overflow(i) <=  a_h(i)(15 downto 0)  or b_h(i)(15 downto 0)  when layer_state(i) = SHEADER else
                         a_h(i)(31 downto 16) or b_h(i)(31 downto 16) when layer_state(i) = TRAILER else
                         (others => '0');
 
         -- do some error checking
         shop_time0(i) <= a_h(i)(29 downto 28) & a_h(i)(20 downto 16);
         shop_time1(i) <= b_h(i)(29 downto 28) & b_h(i)(20 downto 16);
-        error(i)      <= (others => '0')                        when i_reset_n /= '1' else
-                         error(i)(3 downto 1) & '1'             when layer_state(i) = TS0 and a_h(i) /= b_h(i) else
-                         error(i)(3 downto 2) & '1' error(i)(0) when layer_state(i) = TS1 and a_h(i)(31 downto 27) /= b_h(i)(31 downto 27) else
-                         error(i)(3) & '1' error(i)(1 downto 0) when layer_state(i) = SHEADER and shop_time0(i) /= shop_time0(i) else
+        error(i)      <= (others => '0')                            when i_reset_n /= '1' else
+                         error(i)(3 downto 1) & '1'                 when layer_state(i) = TS0 and a_h(i) /= b_h(i) else
+                         error(i)(3 downto 2) & '1' & error(i)(0)   when layer_state(i) = TS1 and a_h(i)(31 downto 27) /= b_h(i)(31 downto 27) else
+                         error(i)(3) & '1' & error(i)(1 downto 0)   when layer_state(i) = SHEADER and shop_time0(i) /= shop_time0(i) else
                          error(i);
-        o_error(i) <= error(i);
 
         data(i)         <=  "011" & a_h(i) when layer_state(i) = ONEERROR and i_error(i) = '1' else
                             "011" & b_h(i) when layer_state(i) = ONEERROR and i_error(i+size) = '1' else
@@ -189,13 +188,13 @@ begin
                             -- we write out the full ts1 here but we can ignore the lower bits from 10-0 later
                             "101" & a_h(i) when layer_state(i) = TS1 else
                             "111" & a_h(i)(31 downto 16) & overflow(i) when layer_state(i) = SHEADER else
-                            "001" & overflow(i) & x"0009C" when layer_state(i) = TRAILER else
+                            "001" & overflow(i) & x"009C" when layer_state(i) = TRAILER else
                             "000" & a_h(i) when layer_state(i) = ONEHIT and i_hit(i) = '1' else
                             "000" & b_h(i) when layer_state(i) = ONEHIT and i_hit(i+size) = '1' else
                             "000" & a_h(i) when layer_state(i) = HIT and a(i) <= b(i) else
                             "000" & b_h(i) when layer_state(i) = HIT and b(i) < a(i) else
-                            "000" & a_h(i) when layer_state(i) = ONEMASK and i_rmask_n(i+size) = '1' else
-                            "000" & b_h(i) when layer_state(i) = ONEMASK and i_rmask_n(i) = '1' else
+                            "000" & a_h(i) when layer_state(i) = ONEMASK and i_mask_n(i+size) = '1' else
+                            "000" & b_h(i) when layer_state(i) = ONEMASK and i_mask_n(i) = '1' else
                             (others => '0');
 
         -- set last layer state

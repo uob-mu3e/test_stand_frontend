@@ -20,6 +20,8 @@ package util is
     type slv4_array_t is array ( natural range <> ) of slv4_t;
     subtype slv6_t is std_logic_vector(5 downto 0);
     type slv6_array_t is array ( natural range <> ) of slv6_t;
+    subtype slv7_t is std_logic_vector(6 downto 0);
+    type slv7_array_t is array ( natural range <> ) of slv7_t;
     subtype slv8_t is std_logic_vector(7 downto 0);
     type slv8_array_t is array ( natural range <> ) of slv8_t;
     subtype slv16_t is std_logic_vector(15 downto 0);

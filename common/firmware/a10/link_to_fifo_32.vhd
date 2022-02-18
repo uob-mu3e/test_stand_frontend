@@ -111,14 +111,14 @@ begin
                 end if;
 
             when write_ts_0 =>
-                link_to_fifo_state          <= write_ts_1;
-                rx_156_data <= "100" & i_rx; -- ts0
-                rx_156_wen  <= '1';
+                link_to_fifo_state  <= write_ts_1;
+                rx_156_data         <= "100" & i_rx; -- ts0
+                rx_156_wen          <= '1';
 
             when write_ts_1 =>
-                link_to_fifo_state <= write_data;
-                rx_156_data   <= "101" & i_rx; -- ts1
-                rx_156_wen  <= '1';
+                link_to_fifo_state  <= write_data;
+                rx_156_data         <= "101" & i_rx; -- ts1
+                rx_156_wen          <= '1';
 
             when write_data =>
                 if ( i_rx(7 downto 0) = x"9C" and i_rx_k = "0001" ) then
@@ -128,7 +128,7 @@ begin
                     -- we shift the subheader around here the marker will be 1111111 for chipID = 128
                     -- on position 27 downto 21, overflow will be 15 downto 0 and the time stamp
                     -- will be shifted from ts(10-9) to 29-28 and from ts(8-4)to 20-16
-                    rx_156_data <= "111" & "00" i_rx(22 downto 21) & "1111111" & i_rx(20 downto 16) & i_rx(15 downto 0); -- sub header
+                    rx_156_data <= "111" & "00" & i_rx(22 downto 21) & "1111111" & i_rx(20 downto 16) & i_rx(15 downto 0); -- sub header
                     cnt_sub     <= cnt_sub + '1';
                 else
                     rx_156_data <= "000" & i_rx(31 downto 28) & chipID & i_rx(21 downto 1); -- hit

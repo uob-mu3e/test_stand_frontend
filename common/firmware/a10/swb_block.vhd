@@ -23,7 +23,8 @@ generic (
     g_NLINKS_FEB_TOTL   : positive := 16;
     g_NLINKS_FARM_TOTL  : positive := 16;
     g_NLINKS_FARM_PIXEL : positive := 8;
-    g_NLINKS_DATA_PIXEL : positive := 12;
+    g_NLINKS_DATA_PIXEL_US : positive := 8;
+    g_NLINKS_DATA_PIXEL_DS : positive := 8;
     g_NLINKS_FARM_SCIFI : positive := 8;
     g_NLINKS_DATA_SCIFI : positive := 4;
     SWB_ID              : std_logic_vector(7 downto 0) := x"01"--;
@@ -105,16 +106,16 @@ architecture arch of swb_block is
     signal rx_sc_k         : work.util.slv4_array_t(g_NLINKS_FEB_TOTL-1 downto 0);
     signal rx_rc           : work.util.slv32_array_t(g_NLINKS_FEB_TOTL-1 downto 0);
     signal rx_rc_k         : work.util.slv4_array_t(g_NLINKS_FEB_TOTL-1 downto 0);
-    signal rx_data_pixel   : work.util.slv32_array_t(g_NLINKS_DATA_PIXEL-1 downto 0);
-    signal rx_data_k_pixel : work.util.slv4_array_t(g_NLINKS_DATA_PIXEL-1 downto 0);
+    signal rx_data_pixel   : work.util.slv32_array_t(g_NLINKS_DATA_PIXEL_US-1 downto 0);
+    signal rx_data_k_pixel : work.util.slv4_array_t(g_NLINKS_DATA_PIXEL_US-1 downto 0);
     signal rx_data_scifi   : work.util.slv32_array_t(g_NLINKS_DATA_SCIFI-1 downto 0);
     signal rx_data_k_scifi : work.util.slv4_array_t(g_NLINKS_DATA_SCIFI-1 downto 0);
     
     --! counters
-    signal counter_swb_data_pixel_156 : work.util.slv32_array_t(g_NLINKS_DATA_PIXEL*5-1 downto 0);
+    signal counter_swb_data_pixel_156 : work.util.slv32_array_t(g_NLINKS_DATA_PIXEL_US*5-1 downto 0);
     signal counter_swb_data_scifi_156 : work.util.slv32_array_t(g_NLINKS_DATA_SCIFI*5-1 downto 0);
     signal counter_swb_data_pixel_250, counter_swb_data_scifi_250 : work.util.slv32_array_t(5 downto 0);
-    signal counter_swb_250 : work.util.slv32_array_t(10 downto 0);
+    signal counter_swb_250 : work.util.slv32_array_t(11 downto 0);
 
 begin
 
@@ -135,9 +136,9 @@ begin
     -- TODO: merger counters, sync to MIDAS
     e_counters : entity work.swb_readout_counters
     generic map (
-        g_A_CNT             => 11,
+        g_A_CNT             => 12,
         g_NLINKS_DATA_SCIFI => g_NLINKS_DATA_SCIFI,
-        g_NLINKS_DATA_PIXEL => g_NLINKS_DATA_PIXEL--,
+        g_NLINKS_DATA_PIXEL => g_NLINKS_DATA_PIXEL_US--,
     )
     port map (
         --! register inputs for pcie0
@@ -269,18 +270,18 @@ begin
     o_farm_tx_datak(g_NLINKS_FARM_PIXEL + g_NLINKS_FARM_SCIFI - 1 downto g_NLINKS_FARM_PIXEL) <= scifi_farm_datak;
 
     -- link mapping
-    gen_pixel_data_mapping : FOR i in 0 to g_NLINKS_DATA_PIXEL - 1 GENERATE
+    gen_pixel_data_mapping : FOR i in 0 to g_NLINKS_DATA_PIXEL_US - 1 GENERATE
         rx_data_pixel(i)   <= rx_data(i);
         rx_data_k_pixel(i) <= rx_data_k(i);
     END GENERATE gen_pixel_data_mapping;
-    gen_scifi_data_mapping : FOR i in g_NLINKS_DATA_PIXEL to g_NLINKS_DATA_PIXEL + g_NLINKS_DATA_SCIFI - 1 GENERATE
-        rx_data_scifi(i-g_NLINKS_DATA_PIXEL)   <= rx_data(i);
-        rx_data_k_scifi(i-g_NLINKS_DATA_PIXEL) <= rx_data_k(i);
+    gen_scifi_data_mapping : FOR i in g_NLINKS_DATA_PIXEL_US to g_NLINKS_DATA_PIXEL_US + g_NLINKS_DATA_SCIFI - 1 GENERATE
+        rx_data_scifi(i-g_NLINKS_DATA_PIXEL_US)   <= rx_data(i);
+        rx_data_k_scifi(i-g_NLINKS_DATA_PIXEL_US) <= rx_data_k(i);
     END GENERATE gen_scifi_data_mapping;
 
     -- counter mapping
     counter_swb_250(5 downto 0) <= counter_swb_data_pixel_250;
-    counter_swb_250(10 downto 6) <= counter_swb_data_scifi_250;
+    counter_swb_250(11 downto 6) <= counter_swb_data_scifi_250;
 
     -- DAM mapping
     o_dma_wren      <= pixel_dma_wren when i_writeregs_250(SWB_READOUT_STATE_REGISTER_W)(USE_BIT_PIXEL) = '1' else scifi_dma_wren;
@@ -293,17 +294,16 @@ begin
     --! ------------------------------------------------------------------------
     --! ------------------------------------------------------------------------
     --! ------------------------------------------------------------------------
-    e_swb_data_path_pixel : entity work.swb_data_path
+    e_swb_data_path_pixel_us : entity work.swb_data_path
     generic map (
         g_LOOPUP_NAME           => "intRun2021",
-        g_NLINKS_DATA           => g_NLINKS_DATA_PIXEL,
+        g_ADDR_WIDTH            => 11,
+        g_NLINKS_DATA           => g_NLINKS_DATA_PIXEL_US,
         LINK_FIFO_ADDR_WIDTH    => 13,
-        TREE_w                  => 10,
-        TREE_r                  => 10,
         SWB_ID                  => SWB_ID,
         -- Data type: x"01" = pixel, x"02" = scifi, x"03" = tiles
         DATA_TYPE               => x"01"--;
-    )
+    )    
     port map(
         i_clk_156        => i_clk_156,
         i_clk_250        => i_clk_250,
@@ -316,7 +316,7 @@ begin
 
         i_rx             => rx_data_pixel,
         i_rx_k           => rx_data_k_pixel,
-        i_rmask_n        => pixel_mask_n(g_NLINKS_DATA_PIXEL-1 downto 0),
+        i_rmask_n        => pixel_mask_n(g_NLINKS_DATA_PIXEL_US-1 downto 0),
 
         i_writeregs_156  => i_writeregs_156,
         i_writeregs_250  => i_writeregs_250,
@@ -326,8 +326,8 @@ begin
 
         i_dmamemhalffull => i_dmamemhalffull,
         
-        o_farm_data      => pixel_farm_data,
-        o_farm_datak     => pixel_farm_datak,
+        o_farm_data      => pixel_farm_data(0),
+        o_farm_datak     => pixel_farm_datak(0),
 
         o_dma_wren       => pixel_dma_wren,
         o_dma_cnt_words  => pixel_dma_cnt_words,

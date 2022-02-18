@@ -23,21 +23,20 @@ port (
     i_t1            : in    std_logic_vector(g_NLINKS_DATA - 1 downto 0);
     i_rempty        : in    std_logic_vector(g_NLINKS_DATA - 1 downto 0) := (others => '1');
     i_rmask_n       : in    std_logic_vector(g_NLINKS_DATA - 1 downto 0);
-    i_en            : in    std_logic;
     o_rack          : out   std_logic_vector(g_NLINKS_DATA - 1 downto 0);
 
     -- TODO: add me
-    o_counters      : out   work.util.slv32_array_t(6 downto 0);
+    o_counters      : out   work.util.slv32_array_t(6 downto 0) := (others => '0');
 
     -- output stream
-    o_wdata         : out   std_logic_vector(W-1 downto 0);
+    o_wdata         : out   std_logic_vector(31 downto 0);
     o_rempty        : out   std_logic;
     i_ren           : in    std_logic;
     o_wsop          : out   std_logic;
     o_weop          : out   std_logic;
 
     -- output stream debug
-    o_wdata_debug   : out   std_logic_vector(W-1 downto 0);
+    o_wdata_debug   : out   std_logic_vector(31 downto 0);
     o_rempty_debug  : out   std_logic;
     i_ren_debug     : in    std_logic;
     o_wsop_debug    : out   std_logic;
@@ -45,6 +44,7 @@ port (
 
     o_error         : out   std_logic;
 
+    i_en            : in    std_logic;
     i_reset_n       : in    std_logic;
     i_clk           : in    std_logic--;
 );
@@ -53,21 +53,21 @@ end entity;
 architecture arch of swb_time_merger is
 
     -- data path farm signals
-    signal wdata : std_logic_vector(2+W-1 downto 0);
+    signal wdata : std_logic_vector(31 downto 0);
     signal wsop, weop : std_logic;
 
     -- debug path signals
     type write_debug_type is (idle, write_data, skip_data);
     signal write_debug_state : write_debug_type;
     signal wrusedw : std_logic_vector(8 - 1 downto 0);
-    signal wdata_debug, q_stream_debug : std_logic_vector(2+W-1 downto 0);
+    signal wdata_debug, q_stream_debug : std_logic_vector(33 downto 0);
     signal almost_full, we_debug : std_logic;
 
 begin
 
     e_time_merger : entity work.time_merger_v4
     generic map (
-        g_ADDR_WIDTH => TREE_w,
+        g_ADDR_WIDTH => g_ADDR_WIDTH,
         g_NLINKS_DATA => g_NLINKS_DATA,
         DATA_TYPE => DATA_TYPE--,
     )
@@ -80,7 +80,7 @@ begin
         i_hit                   => i_hit,
         i_t0                    => i_t0,
         i_t1                    => i_t1,
-        i_rempty                => i_rempty,
+        i_empty                 => i_rempty,
         i_mask_n                => i_rmask_n,
         o_rack                  => o_rack,
 
@@ -159,14 +159,14 @@ begin
     e_stream_fifo_debug : entity work.ip_scfifo_v2
     generic map (
         g_ADDR_WIDTH => 8,
-        g_DATA_WIDTH => 2+W,
+        g_DATA_WIDTH => 34,
         g_RREG_N => 1--, -- TNS=-900
     )
     port map (
         i_wdata         => wdata_debug,
         i_we            => we_debug,
         o_wfull         => open, -- we dont use the full since we check wrusedw
-        o_wusedw        => wrusedw,
+        o_usedw         => wrusedw,
 
         o_rdata         => q_stream_debug,
         o_rempty        => o_rempty_debug,
@@ -177,9 +177,9 @@ begin
     );
 
     --! map output data debug
-    o_wdata_debug   <= q_stream_debug(W-1 downto 0);
-    o_wsop_debug    <= q_stream_debug(2+W-1);
-    o_weop_debug    <= q_stream_debug(1+W-1);
+    o_wdata_debug   <= q_stream_debug(31 downto 0);
+    o_wsop_debug    <= q_stream_debug(33);
+    o_weop_debug    <= q_stream_debug(32);
 
     process(i_clk, i_reset_n)
     begin

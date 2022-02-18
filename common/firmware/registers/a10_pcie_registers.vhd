@@ -10,7 +10,7 @@ package a10_pcie_registers is
             constant RESET_BIT_ALL                                  :  integer := 0;  -- DOC: Reset bit to reset all | ALL
             constant RESET_BIT_DATAGEN                              :  integer := 1;  -- DOC: Reset bit for the datagenerator which is generating the link data from FEBs | SWB
             constant RESET_BIT_SWB_STREAM_MERGER                    :  integer := 2;  -- DOC: Reset Round Robin Merger | SWB
-            constant RESET_BIT_WORDALIGN                            :  integer := 3;  -- DOC: Not used at the moment | ALL
+            constant RESET_BIT_SWB_TIME_MERGER                      :  integer := 3;  -- DOC: Reset Time Merger | SWB
             constant RESET_BIT_RECEIVER                             :  integer := 4;  -- DOC: Not used at the moment | ALL
             constant RESET_BIT_DATAFIFO                             :  integer := 5;  -- DOC: Not used at the moment | ALL
             constant RESET_BIT_FIFOPLL                              :  integer := 6;  -- DOC: Not used at the moment | ALL

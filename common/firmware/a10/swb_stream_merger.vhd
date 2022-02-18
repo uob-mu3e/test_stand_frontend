@@ -6,6 +6,7 @@ use ieee.numeric_std.all;
 -- merge packets delimited by SOP and EOP from N input streams
 entity swb_stream_merger is
 generic (
+    g_ADDR_WIDTH : positive := 8;
     W : positive := 32;
     N : positive--;
 );
@@ -48,13 +49,13 @@ architecture arch of swb_stream_merger is
     signal rdata : std_logic_vector(N*W-1 downto 0);
     signal rempty : std_logic_vector(N-1 downto 0);
     signal wdata : std_logic_vector(W-1 downto 0);
-    signal q_stream : std_logic_vector(2+W-1 downto 0);
+    signal q_stream, wdata_farm : std_logic_vector(2+W-1 downto 0);
     signal wfull, we, wsop, weop : std_logic;
 
     -- debug path signals
     type write_debug_type is (idle, write_data, skip_data);
     signal write_debug_state : write_debug_type;
-    signal wrusedw : std_logic_vector(8 - 1 downto 0);
+    signal wrusedw : std_logic_vector(g_ADDR_WIDTH - 1 downto 0);
     signal wdata_debug, q_stream_debug : std_logic_vector(2+W-1 downto 0);
     signal almost_full, we_debug : std_logic;
 
@@ -96,14 +97,15 @@ begin
         i_clk       => i_clk--,
     );
 
+    wdata_farm <= wsop & weop & wdata;
     e_stream_fifo_farm : entity work.ip_scfifo_v2
     generic map (
-        g_ADDR_WIDTH => 8,
-        g_DATA_WIDTH => 2+6+W,
+        g_ADDR_WIDTH => g_ADDR_WIDTH,
+        g_DATA_WIDTH => 2+W,
         g_RREG_N => 1--, -- TNS=-900
     )
     port map (
-        i_wdata         => wsop & weop & wdata,
+        i_wdata         => wdata_farm,
         i_we            => we,
         o_wfull         => wfull,
 
@@ -116,9 +118,9 @@ begin
     );
 
     --! map output data
-    o_wdata <= q_stream(6+W-1 downto 0);
-    o_wsop  <= q_stream(2+6+W-1);
-    o_weop  <= q_stream(1+6+W-1);
+    o_wdata <= q_stream(W-1 downto 0);
+    o_wsop  <= q_stream(2+W-1);
+    o_weop  <= q_stream(1+W-1);
 
     --! write data to debug fifo
     process(i_clk, i_reset_n)
@@ -140,7 +142,7 @@ begin
 
             when idle =>
                 -- start on start of package
-                if ( q_stream(2+6+W-1) = '1' ) then
+                if ( q_stream(2+W-1) = '1' ) then
                     if ( almost_full = '1' ) then
                         write_debug_state   <= skip_data;
                     else
@@ -152,13 +154,13 @@ begin
             when write_data =>
                 we_debug            <= '1';
                 -- stop on end of package
-                if ( q_stream(1+6+W-1) = '1' ) then
+                if ( q_stream(1+W-1) = '1' ) then
                     write_debug_state   <= idle;
                 end if;
 
             when skip_data =>
                 -- stop on end of package
-                if ( q_stream(1+6+W-1) = '1' ) then
+                if ( q_stream(1+W-1) = '1' ) then
                     write_debug_state <= idle;
                 end if;
 
@@ -173,15 +175,15 @@ begin
 
     e_stream_fifo_debug : entity work.ip_scfifo_v2
     generic map (
-        g_ADDR_WIDTH => 8,
-        g_DATA_WIDTH => 2+6+W,
+        g_ADDR_WIDTH => g_ADDR_WIDTH,
+        g_DATA_WIDTH => 2+W,
         g_RREG_N => 1--, -- TNS=-900
     )
     port map (
         i_wdata         => wdata_debug,
         i_we            => we_debug,
         o_wfull         => open, -- we dont use the full since we check wrusedw
-        o_wusedw        => wrusedw,
+        o_usedw         => wrusedw,
 
         o_rdata         => q_stream_debug,
         o_rempty        => o_rempty_debug,
@@ -192,16 +194,16 @@ begin
     );
 
     --! map output data debug
-    o_wdata_debug   <= q_stream_debug(6+W-1 downto 0);
-    o_wsop_debug    <= q_stream_debug(2+6+W-1);
-    o_weop_debug    <= q_stream_debug(1+6+W-1);
+    o_wdata_debug   <= q_stream_debug(W-1 downto 0);
+    o_wsop_debug    <= q_stream_debug(2+W-1);
+    o_weop_debug    <= q_stream_debug(1+W-1);
 
     process(i_clk, i_reset_n)
     begin
     if ( i_reset_n = '0' ) then
         almost_full <= '0';
     elsif rising_edge(i_clk) then
-        if(wrusedw(8 - 1) = '1') then
+        if(wrusedw(g_ADDR_WIDTH - 1) = '1') then
             almost_full <= '1';
         else
             almost_full <= '0';

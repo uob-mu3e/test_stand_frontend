@@ -106,7 +106,8 @@ architecture rtl of top is
     constant g_NLINKS_FEB_TOTL   : positive := 16;
     constant g_NLINKS_FARM_TOTL  : positive := 16;
     constant g_NLINKS_FARM_PIXEL : positive := 8;
-    constant g_NLINKS_DATA_PIXEL : positive := 10;
+    constant g_NLINKS_DATA_PIXEL_US : positive := 8;
+    constant g_NLINKS_DATA_PIXEL_DS : positive := 8;
     constant g_NLINKS_FARM_SCIFI : positive := 8;
     constant g_NLINKS_DATA_SCIFI : positive := 4;
     constant g_NLINKS_FARM_TILE  : positive := 8;
@@ -349,7 +350,8 @@ begin
         g_NLINKS_FEB_TOTL       => g_NLINKS_FEB_TOTL,
         g_NLINKS_FARM_TOTL      => g_NLINKS_FARM_TOTL,
         g_NLINKS_FARM_PIXEL     => g_NLINKS_FARM_PIXEL,
-        g_NLINKS_DATA_PIXEL     => g_NLINKS_DATA_PIXEL,
+        g_NLINKS_DATA_PIXEL_US  => g_NLINKS_DATA_PIXEL_US,
+        g_NLINKS_DATA_PIXEL_DS  => g_NLINKS_DATA_PIXEL_DS,
         g_NLINKS_FARM_SCIFI     => g_NLINKS_FARM_SCIFI,
         g_NLINKS_DATA_SCIFI     => g_NLINKS_DATA_SCIFI,
         SWB_ID                  => SWB_ID--,

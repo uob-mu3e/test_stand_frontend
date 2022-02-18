@@ -19,10 +19,9 @@ use work.mudaq.all;
 entity swb_data_path is
 generic (
     g_LOOPUP_NAME : string := "intRun2021";
+    g_ADDR_WIDTH : positive := 11;
     g_NLINKS_DATA : positive := 8;
     LINK_FIFO_ADDR_WIDTH : positive := 10;
-    TREE_w : positive := 10;
-    TREE_r : positive := 10;
     SWB_ID : std_logic_vector(7 downto 0) := x"01";
     -- Data type: x"01" = pixel, x"02" = scifi, x"03" = tiles
     DATA_TYPE : std_logic_vector(7 downto 0) := x"01"--;
@@ -80,12 +79,14 @@ architecture arch of swb_data_path is
     signal stream_rdata, stream_rdata_debug : std_logic_vector(31 downto 0);
     signal stream_counters : work.util.slv32_array_t(0 downto 0);
     signal stream_rempty, stream_ren, stream_header, stream_trailer : std_logic;
+    signal stream_rempty_debug, stream_ren_debug, stream_header_debug, stream_trailer_debug : std_logic;
     signal stream_rack : std_logic_vector(g_NLINKS_DATA-1 downto 0);
 
     --! timer merger
-    signal merger_rdata : std_logic_vector(W-1 downto 0);
+    signal merger_rdata : std_logic_vector(31 downto 0);
     signal merger_rdata_debug : std_logic_vector(31 downto 0);
-    signal merger_rempty, merger_rempty_debug, merger_ren, merger_header, merger_trailer, merger_error : std_logic;
+    signal merger_rempty, merger_ren, merger_header, merger_trailer : std_logic;
+    signal merger_rempty_debug, merger_ren_debug, merger_header_debug, merger_trailer_debug : std_logic;
     signal merger_rack : std_logic_vector (g_NLINKS_DATA-1 downto 0);
     
     --! event builder
@@ -94,8 +95,8 @@ architecture arch of swb_data_path is
     signal builder_rempty, builder_rack, builder_header, builder_trailer : std_logic;
 
     --! links to farm
-    signal farm_data : std_logic_vector(37 downto 0);
-    signal farm_rack, farm_rempty : std_logic;
+    signal farm_data : std_logic_vector(31 downto 0);
+    signal farm_rack, farm_rempty, farm_header, farm_trailer : std_logic;
 
     --! status counters
     signal link_to_fifo_cnt : work.util.slv32_array_t((g_NLINKS_DATA*5)-1 downto 0);
@@ -238,16 +239,16 @@ begin
     --! ------------------------------------------------------------------------
     e_stream : entity work.swb_stream_merger
     generic map (
+        g_ADDR_WIDTH => g_ADDR_WIDTH,
         W => 32,
         N => g_NLINKS_DATA--,
     )
     port map (
-        i_rdata     => rx_q,
+        i_rdata     => rx_q_s,
         i_rsop      => sop,
         i_reop      => eop,
         i_rempty    => rx_rdempty,
         i_rmask_n   => i_rmask_n,
-        i_en        => i_writeregs_250(SWB_READOUT_STATE_REGISTER_W)(USE_BIT_STREAM),
         o_rack      => stream_rack,
 
         -- farm data
@@ -266,7 +267,8 @@ begin
 
         o_counters  => stream_counters,
 
-        i_reset_n   => i_resets_n_250(RESET_BIT_DATAGEN),
+        i_en        => i_writeregs_250(SWB_READOUT_STATE_REGISTER_W)(USE_BIT_STREAM),
+        i_reset_n   => i_resets_n_250(RESET_BIT_SWB_STREAM_MERGER),
         i_clk       => i_clk_250--,
     );
 
@@ -277,33 +279,31 @@ begin
     --! ------------------------------------------------------------------------
     e_time_merger : entity work.swb_time_merger
     generic map (
-        W               => 32,
-        TREE_w          => TREE_w,
-        TREE_r          => TREE_r,
-        DATA_TYPE       => DATA_TYPE,
-        g_NLINKS_DATA   => g_NLINKS_DATA--,
+        g_ADDR_WIDTH    => g_ADDR_WIDTH,
+        g_NLINKS_DATA   => g_NLINKS_DATA,
+        DATA_TYPE       => DATA_TYPE--,
     )
     port map (
-        i_rx            => rx_q,
+        i_rx            => rx_q_s,
         i_rsop          => sop,
         i_reop          => eop,
         i_rshop         => shop,
         i_hit           => hit,
         i_t0            => t0,
-        i_t1            => t1
+        i_t1            => t1,
         i_rempty        => rx_rdempty,
         i_rmask_n       => i_rmask_n,
         o_rack          => merger_rack,
 
         -- farm data
-        o_q             => merger_rdata,
+        o_wdata         => merger_rdata,
         o_rempty        => merger_rempty,
         i_ren           => merger_ren,
         o_wsop          => merger_header,
         o_weop          => merger_trailer,
 
         -- data for debug readout
-        o_q_debug       => merger_rdata_debug,
+        o_wdata_debug   => merger_rdata_debug,
         o_rempty_debug  => merger_rempty_debug,
         i_ren_debug     => merger_ren_debug,
         o_wsop_debug    => merger_header_debug,
@@ -311,7 +311,8 @@ begin
 
         o_error         => open,
 
-        i_reset_n       => reset_250_n,
+        i_en            => i_writeregs_250(SWB_READOUT_STATE_REGISTER_W)(USE_BIT_MERGER),
+        i_reset_n       => i_resets_n_250(RESET_BIT_SWB_TIME_MERGER),
         i_clk           => i_clk_250--,
     );
 
@@ -320,6 +321,10 @@ begin
     --! ------------------------------------------------------------------------
     --! ------------------------------------------------------------------------
     --! ------------------------------------------------------------------------
+    rx_ren          <=  stream_rack when i_writeregs_250(SWB_READOUT_STATE_REGISTER_W)(USE_BIT_STREAM) = '1' else
+                        merger_rack when i_writeregs_250(SWB_READOUT_STATE_REGISTER_W)(USE_BIT_MERGER) = '1' else
+                        (others => '0');
+
     builder_data    <=  stream_rdata_debug when i_writeregs_250(SWB_READOUT_STATE_REGISTER_W)(USE_BIT_STREAM) = '1' else
                         merger_rdata_debug when i_writeregs_250(SWB_READOUT_STATE_REGISTER_W)(USE_BIT_MERGER) = '1' else
                         (others => '0');
@@ -334,7 +339,7 @@ begin
                         '0';                    
     stream_ren_debug <= builder_rack when i_writeregs_250(SWB_READOUT_STATE_REGISTER_W)(USE_BIT_STREAM) = '1' else '0';
     merger_ren_debug <= builder_rack when i_writeregs_250(SWB_READOUT_STATE_REGISTER_W)(USE_BIT_MERGER) = '1' else '0';
-    
+
     farm_data       <=  stream_rdata when i_writeregs_250(SWB_READOUT_STATE_REGISTER_W)(USE_BIT_STREAM) = '1' else
                         merger_rdata when i_writeregs_250(SWB_READOUT_STATE_REGISTER_W)(USE_BIT_MERGER) = '1' else
                         (others => '0');
@@ -392,7 +397,6 @@ begin
                     "0001"      when farm_header  = '1' else 
                     "0001"      when farm_trailer = '1' else 
                     "0000";
-                    farm_data;
-    farm_rack    <= '0' when farm_rempty = '1' else '0';
+    farm_rack    <= '0' when farm_rempty = '1' else '1';
 
 end architecture;

@@ -12,9 +12,7 @@ end entity;
 architecture arch of tb_swb_data_path is
 
     constant CLK_MHZ : real := 10000.0; -- MHz
-    constant g_NLINKS_TOTL : integer := 64;
-    constant g_NLINKS_FARM : integer := 8;
-    constant g_NLINKS_DATA : integer := 10;
+    constant g_NLINKS_DATA : integer := 8;
 
     signal clk, clk_fast, reset_n : std_logic := '0';
     --! data link signals
@@ -28,8 +26,8 @@ architecture arch of tb_swb_data_path is
 
     signal counter : work.util.slv32_array_t(5+(g_NLINKS_DATA*5)-1 downto 0);
     
-    signal farm_data : work.util.slv32_array_t(g_NLINKS_FARM - 1  downto 0);
-    signal farm_datak : work.util.slv4_array_t(g_NLINKS_FARM - 1  downto 0);
+    signal farm_data : std_logic_vector(31  downto 0);
+    signal farm_datak : std_logic_vector(3  downto 0);
     signal fram_wen, dma_wren, dma_done, endofevent : std_logic;
     signal dma_data : std_logic_vector (255 downto 0);
     signal mask_n : std_logic_vector(63 downto 0);
@@ -54,14 +52,14 @@ begin
     --! 1            | 0          | 1          | 0              | 0        | -                           | Generate data for all 64 links, time merging of links, readout via DAM         | x
     --! 0            | 0          | 0          | 1              | 1        | -                           | Generate time merged data, send to farm                                        | x
     resets_n_156(RESET_BIT_DATAGEN)                             <= '0', '1' after (1.0 us / CLK_MHZ);
+    resets_n_250(RESET_BIT_SWB_STREAM_MERGER)                   <= '0', '1' after (1.0 us / CLK_MHZ);
+    resets_n_250(RESET_BIT_SWB_TIME_MERGER)                     <= '0', '1' after (1.0 us / CLK_MHZ);
     writeregs_156(DATAGENERATOR_DIVIDER_REGISTER_W)             <= x"00000002";
     writeregs_156(SWB_READOUT_STATE_REGISTER_W)(USE_BIT_GEN_LINK)   <= '1';
     -- USE_GEN_LINK, USE_STREAM, USE_MERGER, USE_LINK, USE_GEN_MERGER, USE_FARM
     -- writeregs_250(SWB_READOUT_STATE_REGISTER_W)(5 downto 0)     <= "0100";
-    writeregs_250(SWB_READOUT_STATE_REGISTER_W)(USE_BIT_STREAM)     <= '0';
-    writeregs_250(SWB_READOUT_STATE_REGISTER_W)(USE_BIT_MERGER)     <= '1';
-    writeregs_250(SWB_READOUT_STATE_REGISTER_W)(USE_BIT_GEN_MERGER) <= '0';
-    writeregs_250(SWB_READOUT_STATE_REGISTER_W)(USE_BIT_FARM)       <= '0';
+    writeregs_250(SWB_READOUT_STATE_REGISTER_W)(USE_BIT_STREAM)     <= '1';
+    writeregs_250(SWB_READOUT_STATE_REGISTER_W)(USE_BIT_MERGER)     <= '0';
         
     writeregs_250(SWB_LINK_MASK_PIXEL_REGISTER_W)               <= x"00000048";
     writeregs_250(SWB_READOUT_LINK_REGISTER_W)                  <= x"00000001";
@@ -76,12 +74,10 @@ begin
     --! ------------------------------------------------------------------------
     e_swb_data_path : entity work.swb_data_path
     generic map (
-        g_NLINKS_TOTL           => g_NLINKS_TOTL,
-        g_NLINKS_FARM           => g_NLINKS_FARM,
+        g_LOOPUP_NAME           => "intRun2021",
+        g_ADDR_WIDTH            => 8,
         g_NLINKS_DATA           => g_NLINKS_DATA,
         LINK_FIFO_ADDR_WIDTH    => 8,
-        TREE_w                  => 10,
-        TREE_r                  => 10,
         SWB_ID                  => x"01",
         -- Data type: x"01" = pixel, x"02" = scifi, x"03" = tiles
         DATA_TYPE               => x"01"--;
@@ -109,8 +105,8 @@ begin
 
         i_dmamemhalffull => '0',
         
-        o_farm_data      => open,
-        o_farm_data_valid=> open,
+        o_farm_data      => farm_data,
+        o_farm_datak     => farm_datak,
 
         o_dma_wren       => dma_wren,
         o_dma_done       => dma_done,
