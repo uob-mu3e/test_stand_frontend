@@ -118,8 +118,8 @@ architecture arch of swb_block is
     --! counters
     signal counter_swb_data_pixel_156 : work.util.slv32_array_t(g_NLINKS_DATA_PIXEL*5-1 downto 0);
     signal counter_swb_data_scifi_156 : work.util.slv32_array_t(g_NLINKS_DATA_SCIFI*5-1 downto 0);
-    signal counter_swb_data_pixel_250, counter_swb_data_scifi_250 : work.util.slv32_array_t(5 downto 0);
-    signal counter_swb_250 : work.util.slv32_array_t(11 downto 0);
+    signal counter_swb_data_pixel_250_us, counter_swb_data_pixel_250_ds, counter_swb_data_scifi_250 : work.util.slv32_array_t(5 downto 0);
+    signal counter_swb_250 : work.util.slv32_array_t(17 downto 0);
 
 begin
 
@@ -140,7 +140,7 @@ begin
     -- TODO: merger counters, sync to MIDAS
     e_counters : entity work.swb_readout_counters
     generic map (
-        g_A_CNT             => 12,
+        g_A_CNT             => 18,
         g_NLINKS_DATA_SCIFI => g_NLINKS_DATA_SCIFI,
         g_NLINKS_DATA_PIXEL => g_NLINKS_DATA_PIXEL--,
     )
@@ -284,8 +284,9 @@ begin
     END GENERATE gen_scifi_data_mapping;
 
     -- counter mapping
-    counter_swb_250(5 downto 0) <= counter_swb_data_pixel_250;
-    counter_swb_250(11 downto 6) <= counter_swb_data_scifi_250;
+    counter_swb_250(5 downto 0) <= counter_swb_data_pixel_250_us;
+    counter_swb_250(11 downto 6) <= counter_swb_data_pixel_250_ds;
+    counter_swb_250(17 downto 12) <= counter_swb_data_scifi_250;
 
     -- DAM mapping
     o_dma_wren      <=  pixel_dma_wren(0) when i_writeregs_250(SWB_READOUT_STATE_REGISTER_W)(USE_BIT_PIXEL_US) = '1' else
@@ -341,7 +342,7 @@ begin
         i_writeregs_250  => i_writeregs_250,
 
         o_counter_156    => counter_swb_data_pixel_156(g_NLINKS_DATA_PIXEL_US*5-1 downto 0),
-        o_counter_250    => counter_swb_data_pixel_250(g_NLINKS_DATA_PIXEL_US*5-1 downto 0),
+        o_counter_250    => counter_swb_data_pixel_250_us,
         
         i_dmamemhalffull => i_dmamemhalffull,
         
@@ -375,15 +376,15 @@ begin
         i_resets_n_156   => i_resets_n_156,
         i_resets_n_250   => i_resets_n_250,
 
-        i_rx             => rx_data_pixel(g_NLINKS_DATA_PIXEL_DS+g_NLINKS_DATA_PIXEL_US-1 downto g_NLINKS_DATA_PIXEL_US),
-        i_rx_k           => rx_data_k_pixel(g_NLINKS_DATA_PIXEL_DS+g_NLINKS_DATA_PIXEL_US-1 downto g_NLINKS_DATA_PIXEL_US),
-        i_rmask_n        => pixel_mask_n(g_NLINKS_DATA_PIXEL_DS+g_NLINKS_DATA_PIXEL_US-1 downto g_NLINKS_DATA_PIXEL_US),
+        i_rx             => rx_data_pixel(g_NLINKS_DATA_PIXEL-1 downto g_NLINKS_DATA_PIXEL_US),
+        i_rx_k           => rx_data_k_pixel(g_NLINKS_DATA_PIXEL-1 downto g_NLINKS_DATA_PIXEL_US),
+        i_rmask_n        => pixel_mask_n(g_NLINKS_DATA_PIXEL-1 downto g_NLINKS_DATA_PIXEL_US),
 
         i_writeregs_156  => i_writeregs_156,
         i_writeregs_250  => i_writeregs_250,
 
-        o_counter_156    => counter_swb_data_pixel_156((g_NLINKS_DATA_PIXEL_DS+g_NLINKS_DATA_PIXEL_US)*5-1 downto g_NLINKS_DATA_PIXEL_US),
-        o_counter_250    => counter_swb_data_pixel_250((g_NLINKS_DATA_PIXEL_DS+g_NLINKS_DATA_PIXEL_US)*5-1 downto g_NLINKS_DATA_PIXEL_US),
+        o_counter_156    => counter_swb_data_pixel_156(g_NLINKS_DATA_PIXEL*5-1 downto g_NLINKS_DATA_PIXEL_US*5),
+        o_counter_250    => counter_swb_data_pixel_250_ds,
 
         i_dmamemhalffull => i_dmamemhalffull,
         
