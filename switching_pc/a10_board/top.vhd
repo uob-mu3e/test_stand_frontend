@@ -103,13 +103,13 @@ architecture rtl of top is
 
     -- constants
     constant SWB_ID : std_logic_vector(7 downto 0) := x"01";
-    constant g_NLINKS_FEB_TOTL   : positive := 16;
-    constant g_NLINKS_FARM_TOTL  : positive := 16;
-    constant g_NLINKS_FARM_PIXEL : positive := 8;
-    constant g_NLINKS_DATA_PIXEL_US : positive := 8;
-    constant g_NLINKS_DATA_PIXEL_DS : positive := 8;
-    constant g_NLINKS_FARM_SCIFI : positive := 8;
-    constant g_NLINKS_DATA_SCIFI : positive := 4;
+    constant g_NLINKS_FEB_TOTL   : positive := 12;
+    constant g_NLINKS_FARM_TOTL  : positive := 3;
+    constant g_NLINKS_FARM_PIXEL : positive := 2;
+    constant g_NLINKS_DATA_PIXEL_US : positive := 5;
+    constant g_NLINKS_DATA_PIXEL_DS : positive := 5;
+    constant g_NLINKS_FARM_SCIFI : positive := 1;
+    constant g_NLINKS_DATA_SCIFI : positive := 2;
     constant g_NLINKS_FARM_TILE  : positive := 8;
     constant g_NLINKS_DATA_TILE  : positive := 12;
 
@@ -350,6 +350,7 @@ begin
         g_NLINKS_FEB_TOTL       => g_NLINKS_FEB_TOTL,
         g_NLINKS_FARM_TOTL      => g_NLINKS_FARM_TOTL,
         g_NLINKS_FARM_PIXEL     => g_NLINKS_FARM_PIXEL,
+        g_NLINKS_DATA_PIXEL     => g_NLINKS_DATA_PIXEL_DS + g_NLINKS_DATA_PIXEL_US,
         g_NLINKS_DATA_PIXEL_US  => g_NLINKS_DATA_PIXEL_US,
         g_NLINKS_DATA_PIXEL_DS  => g_NLINKS_DATA_PIXEL_DS,
         g_NLINKS_FARM_SCIFI     => g_NLINKS_FARM_SCIFI,
@@ -357,10 +358,10 @@ begin
         SWB_ID                  => SWB_ID--,
     )
     port map (
-        i_rx            => rx_data_raw,
-        i_rx_k          => rx_datak_raw,
-        o_tx            => tx_data,
-        o_tx_k          => tx_datak,
+        i_rx            => rx_data_raw(g_NLINKS_FEB_TOTL-1 downto 0),
+        i_rx_k          => rx_datak_raw(g_NLINKS_FEB_TOTL-1 downto 0),
+        o_tx            => tx_data(g_NLINKS_FEB_TOTL-1 downto 0),
+        o_tx_k          => tx_datak(g_NLINKS_FEB_TOTL-1 downto 0),
 
         i_writeregs_250 => pcie0_writeregs_A,
         i_writeregs_156 => pcie0_writeregs_B,

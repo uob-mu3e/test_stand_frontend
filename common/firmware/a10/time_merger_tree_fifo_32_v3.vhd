@@ -138,9 +138,9 @@ begin
                                       -- we now want that both hits have ts0
                             TS0       when i_t0(i) = '1' and i_t0(i+size) = '1' and last_state(i) = HEADER else
                                       -- we now want that both hits have ts1
-                            i_t0       when i_t1(i) = '1' and i_t1(i+size) = '1' and last_state(i) = TS0 else
+                            TS1       when i_t1(i) = '1' and i_t1(i+size) = '1' and last_state(i) = TS0 else
                                       -- we check if both hits have a subheader
-                            SHEADER   when i_shop(i) = '1' and i_shop(i+size) = '1' and (last_state(i) = TS1 or last_state(i) = HIT or last_state(i) = SHEADER) else
+                            SHEADER   when i_shop(i) = '1' and i_shop(i+size) = '1' and (last_state(i) = TS1 or last_state(i) = HIT or last_state(i) = ONEHIT or last_state(i) = SHEADER) else
                                       -- we check if both hits have a hit
                             HIT       when i_hit(i) = '1' and i_hit(i+size) = '1' and (last_state(i) = SHEADER or last_state(i) = HIT) else
                                       -- we check if one has a subheader or trailer and the other link has a hit
@@ -161,7 +161,7 @@ begin
                             '0';
 
         o_rack(i+size)  <=  '1' when layer_state(i) = HEADER or layer_state(i) = TS0 or layer_state(i) = TS1 or layer_state(i) = SHEADER or layer_state(i) = TRAILER else
-                            '1' when layer_state(i) = ONEHIT and i_hit(i) = '1' else
+                            '1' when layer_state(i) = ONEHIT and i_hit(i+size) = '1' else
                             '1' when layer_state(i) = HIT and b(i) < a(i) else
                             not i_empty(i+size) when layer_state(i) = ONEMASK and i_mask_n(i+size) = '1' else
                             '0';
