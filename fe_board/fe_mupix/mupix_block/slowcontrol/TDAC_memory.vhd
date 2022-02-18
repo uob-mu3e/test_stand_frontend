@@ -73,7 +73,7 @@ architecture RTL of tdac_memory is
     subtype page_id_type        is integer range 0 to N_PAGES_PER_CHIP-1;
     type page_id_array_type     is array( natural range <>) of page_id_type;
 
-    signal current_write_page_id : page_id_array_type(N_CHIPS_g-1 downto 0);
+    signal current_write_page_id : page_id_array_type(N_CHIPS_g-1 downto 0); -- current TDAC page (number between 0 and N_PAGES_PER_CHIP-1) for each mupix chip, read and write side of memory
     signal current_read_page_id  : page_id_array_type(N_CHIPS_g-1 downto 0);
 
     type read_state_type         is (searching_match,reading);
@@ -83,6 +83,7 @@ architecture RTL of tdac_memory is
     signal last_page_cycler      : integer range 0 to N_PAGES-1;
     signal cycler_last_full      : boolean;
     signal cycler_last_chip      : integer range 0 to N_CHIPS_g-1;
+    signal cycler_last_ID        : integer range 0 to N_PAGES_PER_CHIP-1;
 
     signal read_chip             : integer range 0 to N_CHIPS_g-1;
     signal read_page             : integer range 0 to N_PAGES-1;
@@ -131,11 +132,14 @@ begin
                     current_write_page                           <= next_free_page_int;
                     current_page_addr                            <= next_free_page;
 
-                    if(TDAC_page_array(current_write_page).page_id = N_PAGES_PER_CHIP-1) then
-                        TDAC_page_array(current_write_page).page_id <= 0;
+                    TDAC_page_array(current_write_page).page_id  <= current_write_page_id(i_chip);
+
+                    if(current_write_page_id(i_chip) = N_PAGES_PER_CHIP-1) then
+                        current_write_page_id(i_chip)            <= 0;
                     else
-                        TDAC_page_array(current_write_page).page_id <= TDAC_page_array(current_write_page).page_id + 1;
+                        current_write_page_id(i_chip)            <= current_write_page_id(i_chip) + 1;
                     end if;
+
                 else
                     addr_in_current_page <= addr_in_current_page + '1';
                     TDAC_page_array(current_write_page).chip    <= i_chip; 
@@ -160,12 +164,13 @@ begin
             last_page_cycler <= page_cycler;
             cycler_last_chip <= TDAC_page_array(page_cycler).chip;
             cycler_last_full <= TDAC_page_array(page_cycler).full;
+            cycler_last_ID   <= TDAC_page_array(page_cycler).page_id;
 
 
             case read_state is
               when searching_match =>
-                for I in 0 to N_CHIPS_g loop
-                    if(cycler_last_full= true and cycler_last_chip = I and i_tdac_dpf_empty(I) = '1') then
+                for I in 0 to N_CHIPS_g-1 loop
+                    if(cycler_last_full= true and cycler_last_chip = I and i_tdac_dpf_empty(I) = '1' and cycler_last_ID = current_read_page_id(I)) then
                         read_state <= reading;
                         read_chip <= I;
                         read_page <= last_page_cycler;
@@ -175,8 +180,14 @@ begin
                 -- read the page for bit_in_tdac, incr. bit_in_tdac , if bit_in_tdac = 6 --> in_use=0
                 if(TDAC_page_array(read_page).addr = "000011") then  -- end addr-1 to avoid cycler selecting the same (now empty) TDAC_page again
                     if(TDAC_page_array(read_page).bit_in_tdac = 6) then 
-                        TDAC_page_array(read_page).full <= false;
-                        TDAC_page_array(read_page).in_use <= false;
+                        TDAC_page_array(read_page).full         <= false;
+                        TDAC_page_array(read_page).in_use       <= false;
+
+                        if(current_read_page_id(read_chip) = N_PAGES_PER_CHIP-1) then
+                            current_read_page_id(read_chip)     <= 0;
+                        else
+                            current_read_page_id(read_chip)     <= current_read_page_id(read_chip) + 1;
+                        end if;
                     else
                         TDAC_page_array(read_page).bit_in_tdac <= TDAC_page_array(read_page).bit_in_tdac + 1;
                     end if;
