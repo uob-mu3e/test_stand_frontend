@@ -125,11 +125,11 @@ begin
         -- [2]               [tr,2]                [3,sh,2]
         -- [b]               [b]                   [b]
         layer_state(i) <=             -- check if both are mask or if we are in enabled or in reset
-                            IDEL      when (i_mask_n(i) = '1' and i_mask_n(i+size) = '1') or i_en = '0' or i_reset_n /= '1' else
+                            IDEL      when (i_mask_n(i) = '0' and i_mask_n(i+size) = '0') or i_en = '0' or i_reset_n /= '1' else
                                       -- we forword the error the chain
                             ONEERROR  when (i_error(i) = '1' or i_error(i+size) = '1') and wrfull(i) = '0' else
                                       -- simple case on of the links is mask so we just send the other throw the tree
-                            ONEMASK   when (i_mask_n(i) = '1' or i_mask_n(i+size) = '1') and wrfull(i) = '0' else
+                            ONEMASK   when (i_mask_n(i) = '0' or i_mask_n(i+size) = '0') and wrfull(i) = '0' else
                                       -- wait if one input is empty or the output fifo is full
                             WAITING   when i_empty(i) = '1' or i_empty(i+size) = '1' or wrfull(i) = '1' else
                                       -- since we check in before that we should have two links not masked and both are not empty we 
@@ -138,9 +138,9 @@ begin
                                       -- we now want that both hits have ts0
                             TS0       when i_t0(i) = '1' and i_t0(i+size) = '1' and last_state(i) = HEADER else
                                       -- we now want that both hits have ts1
-                            TS1       when i_t1(i) = '1' and i_t1(i+size) = '1' and last_state(i) = TS0 else
+                            i_t0       when i_t1(i) = '1' and i_t1(i+size) = '1' and last_state(i) = TS0 else
                                       -- we check if both hits have a subheader
-                            SHEADER   when i_shop(i) = '1' and i_shop(i+size) = '1' and (last_state(i) = TS1 or last_state(i) = HIT) else
+                            SHEADER   when i_shop(i) = '1' and i_shop(i+size) = '1' and (last_state(i) = TS1 or last_state(i) = HIT or last_state(i) = SHEADER) else
                                       -- we check if both hits have a hit
                             HIT       when i_hit(i) = '1' and i_hit(i+size) = '1' and (last_state(i) = SHEADER or last_state(i) = HIT) else
                                       -- we check if one has a subheader or trailer and the other link has a hit
@@ -150,20 +150,20 @@ begin
                             WAITING;
 
         wrreq(i)        <=  '1' when layer_state(i) = HEADER or layer_state(i) = TS0 or layer_state(i) = TS1 or layer_state(i) = SHEADER or layer_state(i) = HIT or layer_state(i) = ONEHIT or layer_state(i) = TRAILER or layer_state(i) = ONEERROR else
-                            not i_empty(i) when layer_state(i) = ONEMASK and i_mask_n(i+size) = '1' else
-                            not i_empty(i+size) when layer_state(i) = ONEMASK and i_mask_n(i) = '1' else
+                            not i_empty(i) when layer_state(i) = ONEMASK and i_mask_n(i) = '1' else
+                            not i_empty(i+size) when layer_state(i) = ONEMASK and i_mask_n(i+size) = '1' else
                             '0';
 
         o_rack(i)       <=  '1' when layer_state(i) = HEADER or layer_state(i) = TS0 or layer_state(i) = TS1 or layer_state(i) = SHEADER or layer_state(i) = TRAILER else
                             '1' when layer_state(i) = ONEHIT and i_hit(i) = '1' else
                             '1' when layer_state(i) = HIT and a(i) <= b(i) else
-                            not i_empty(i) when layer_state(i) = ONEMASK and i_mask_n(i+size) = '1' else
+                            not i_empty(i) when layer_state(i) = ONEMASK and i_mask_n(i) = '1' else
                             '0';
 
         o_rack(i+size)  <=  '1' when layer_state(i) = HEADER or layer_state(i) = TS0 or layer_state(i) = TS1 or layer_state(i) = SHEADER or layer_state(i) = TRAILER else
                             '1' when layer_state(i) = ONEHIT and i_hit(i) = '1' else
                             '1' when layer_state(i) = HIT and b(i) < a(i) else
-                            not i_empty(i+size) when layer_state(i) = ONEMASK and i_mask_n(i) = '1' else
+                            not i_empty(i+size) when layer_state(i) = ONEMASK and i_mask_n(i+size) = '1' else
                             '0';
 
         -- or'ed overflow
@@ -193,8 +193,18 @@ begin
                             "000" & b_h(i) when layer_state(i) = ONEHIT and i_hit(i+size) = '1' else
                             "000" & a_h(i) when layer_state(i) = HIT and a(i) <= b(i) else
                             "000" & b_h(i) when layer_state(i) = HIT and b(i) < a(i) else
-                            "000" & a_h(i) when layer_state(i) = ONEMASK and i_mask_n(i+size) = '1' else
-                            "000" & b_h(i) when layer_state(i) = ONEMASK and i_mask_n(i) = '1' else
+                            "010" & a_h(i) when layer_state(i) = ONEMASK and i_mask_n(i) = '1' and i_sop(i)  = '1' else
+                            "100" & a_h(i) when layer_state(i) = ONEMASK and i_mask_n(i) = '1' and i_t0(i)   = '1' else
+                            "101" & a_h(i) when layer_state(i) = ONEMASK and i_mask_n(i) = '1' and i_t1(i)   = '1' else
+                            "111" & a_h(i) when layer_state(i) = ONEMASK and i_mask_n(i) = '1' and i_shop(i) = '1' else
+                            "000" & a_h(i) when layer_state(i) = ONEMASK and i_mask_n(i) = '1' and i_hit(i)  = '1' else
+                            "001" & a_h(i) when layer_state(i) = ONEMASK and i_mask_n(i) = '1' and i_eop(i)  = '1' else
+                            "010" & b_h(i) when layer_state(i) = ONEMASK and i_mask_n(i+size) = '1' and i_sop(i+size)  = '1' else
+                            "100" & b_h(i) when layer_state(i) = ONEMASK and i_mask_n(i+size) = '1' and i_t0(i+size)   = '1' else
+                            "101" & b_h(i) when layer_state(i) = ONEMASK and i_mask_n(i+size) = '1' and i_t1(i+size)   = '1' else
+                            "111" & b_h(i) when layer_state(i) = ONEMASK and i_mask_n(i+size) = '1' and i_shop(i+size) = '1' else
+                            "000" & b_h(i) when layer_state(i) = ONEMASK and i_mask_n(i+size) = '1' and i_hit(i+size)  = '1' else
+                            "001" & b_h(i) when layer_state(i) = ONEMASK and i_mask_n(i+size) = '1' and i_eop(i+size)  = '1' else
                             (others => '0');
 
         -- set last layer state
