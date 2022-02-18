@@ -64,10 +64,11 @@ architecture arch of swb_midas_event_builder is
     signal serial_number, time_tmp, type_bank, flags, bank_size_cnt, event_size_cnt : std_logic_vector(31 downto 0);
     
     -- event readout state machine
-    type event_counter_state_type is (waiting, get_data, runing, skip_event);
+    type event_counter_state_type is (waiting, get_data, runing, skip_event, write_4kb_padding);
     signal event_counter_state : event_counter_state_type;
+    signal cnt_4kb_done : std_logic;
     signal event_last_ram_add : std_logic_vector(8 downto 0);
-    signal word_counter, word_counter_endofevent : std_logic_vector(31 downto 0);
+    signal word_counter, word_counter_endofevent, cnt_4kb : std_logic_vector(31 downto 0);
 
     -- error cnt
     signal cnt_tag_fifo_full : std_logic_vector(31 downto 0);
@@ -87,7 +88,7 @@ begin
     port map ( o_cnt => o_counters(3), i_ena => tag_fifo_full, i_reset_n => i_reset_n_250, i_clk => i_clk_250 );
 
     --! data out
-    o_data <= r_ram_data;
+    o_data <= r_ram_data when event_counter_state /= write_4kb_padding else (others => '1');
 
     e_ram_32_256 : entity work.ip_ram
     generic map (
@@ -356,7 +357,8 @@ begin
     process(i_clk_250, i_reset_n_250)
     begin
     if ( i_reset_n_250 = '0' ) then
-        o_wen        <= '0';
+        o_wen               <= '0';
+        cnt_4kb_done        <= '0';
         o_endofevent        <= '0';
         o_state_out         <= x"0";
         cnt_skip_event_dma  <= (others => '0');
@@ -378,57 +380,71 @@ begin
         
         if ( i_wen = '0' ) then
             word_counter <= (others => '0');
+            cnt_4kb_done <= '0';
         end if;
         
-        if ( i_wen = '1' and word_counter >= i_get_n_words ) then
+        if ( i_wen = '1' and word_counter >= i_get_n_words and cnt_4kb_done = '1' ) then
             o_done <= '1';
             o_dma_cnt_words <= word_counter_endofevent;
         end if;
 
         case event_counter_state is
         when waiting =>
-                o_state_out             <= x"A";
-                if (tag_fifo_empty = '0') then
-                    r_fifo_en           <= '1';
-                    event_last_ram_add  <= r_fifo_data(11 downto 3);
-                    r_ram_add           <= r_ram_add + '1';
-                    event_counter_state <= get_data;
-                end if;
+            o_state_out             <= x"A";
+            if ( i_wen = '1' and word_counter >= i_get_n_words ) then
+                event_counter_state <= write_4kb_padding;
+                cnt_4kb             <= (others => '0');
+            elsif ( tag_fifo_empty = '0' ) then
+                r_fifo_en           <= '1';
+                event_last_ram_add  <= r_fifo_data(11 downto 3);
+                r_ram_add           <= r_ram_add + '1';
+                event_counter_state <= get_data;
+            end if;
 
         when get_data =>
-                o_state_out             <= x"B";
-                if ( i_dmamemhalffull = '1' or ( i_get_n_words /= (i_get_n_words'range => '0') and word_counter >= i_get_n_words ) ) then
-                    event_counter_state <= skip_event;
-                    cnt_skip_event_dma  <= cnt_skip_event_dma + '1';
-                else
-                    o_wen               <= i_wen;
-                    word_counter        <= word_counter + '1';
-                    event_counter_state <= runing;
-                end if;
-                r_ram_add       <= r_ram_add + '1';
+            o_state_out             <= x"B";
+            if ( i_dmamemhalffull = '1' or ( i_get_n_words /= (i_get_n_words'range => '0') and word_counter >= i_get_n_words ) ) then
+                event_counter_state <= skip_event;
+                cnt_skip_event_dma  <= cnt_skip_event_dma + '1';
+            else
+                o_wen               <= i_wen;
+                word_counter        <= word_counter + '1';
+                event_counter_state <= runing;
+            end if;
+            r_ram_add       <= r_ram_add + '1';
 
         when runing =>
-                o_state_out             <= x"C";
-                o_wen                   <= i_wen;
-                word_counter            <= word_counter + '1';
-                if(r_ram_add = event_last_ram_add - '1') then
-                    o_endofevent        <= '1'; -- end of event
-                    event_counter_state <= waiting;
-                    if ( word_counter + '1' <= i_get_n_words ) then
-                        word_counter_endofevent <= word_counter + '1';
-                    end if;
-                else
-                    r_ram_add <= r_ram_add + '1';
+            o_state_out             <= x"C";
+            o_wen                   <= i_wen;
+            word_counter            <= word_counter + '1';
+            if(r_ram_add = event_last_ram_add - '1') then
+                o_endofevent        <= '1'; -- end of event
+                event_counter_state <= waiting;
+                if ( word_counter + '1' <= i_get_n_words ) then
+                    word_counter_endofevent <= word_counter + '1';
                 end if;
+            else
+                r_ram_add <= r_ram_add + '1';
+            end if;
+            
+         when write_4kb_padding =>
+            o_state_out <= x"D";
+            o_wen       <= i_wen;
+            if ( cnt_4kb = "01111111" ) then
+                cnt_4kb_done <= '1';
+                event_counter_state <= waiting;
+            else
+                cnt_4kb <= cnt_4kb + '1';
+            end if;
 
         when skip_event =>
-                o_state_out <= x"E";
-                if(r_ram_add = event_last_ram_add - '1') then
-                    event_counter_state	<= waiting;
-                else
-                    r_ram_add <= r_ram_add + '1';
-                end if;
-
+            o_state_out <= x"E";
+            if(r_ram_add = event_last_ram_add - '1') then
+                event_counter_state	<= waiting;
+            else
+                r_ram_add <= r_ram_add + '1';
+            end if;
+            
         when others =>
                 o_state_out <= x"D";
                 event_counter_state	<= waiting;
