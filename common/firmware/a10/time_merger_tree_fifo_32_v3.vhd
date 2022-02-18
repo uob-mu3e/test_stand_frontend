@@ -66,7 +66,6 @@ architecture arch of time_merger_tree_fifo_32_v3 is
     signal overflow : work.util.slv16_array_t(N_LINKS_OUT - 1 downto 0) := (others => (others => '0'));
 
     -- error signals
-    signal shop_time0, shop_time1 : work.util.slv7_array_t(N_LINKS_OUT - 1 downto 0) := (others => (others => '0'));
     signal error : work.util.slv4_array_t(N_LINKS_OUT - 1 downto 0);
 
 begin
@@ -172,13 +171,11 @@ begin
                         (others => '0');
 
         -- do some error checking
-        shop_time0(i) <= a_h(i)(29 downto 28) & a_h(i)(20 downto 16);
-        shop_time1(i) <= b_h(i)(29 downto 28) & b_h(i)(20 downto 16);
         error(i)      <= (others => '0')                            when i_reset_n /= '1' else
                          error(i)(3 downto 1) & '1'                 when layer_state(i) = TS0 and a_h(i) /= b_h(i) else
                          error(i)(3 downto 2) & '1' & error(i)(0)   when layer_state(i) = TS1 and a_h(i)(31 downto 27) /= b_h(i)(31 downto 27) else
                          error(i)(3) & '1' & error(i)(1 downto 0)   when layer_state(i) = SHEADER and shop_time0(i) /= shop_time0(i) else
-                         error(i);
+                         (others => '0');
 
         data(i)         <=  "011" & a_h(i) when layer_state(i) = ONEERROR and i_error(i) = '1' else
                             "011" & b_h(i) when layer_state(i) = ONEERROR and i_error(i+size) = '1' else
