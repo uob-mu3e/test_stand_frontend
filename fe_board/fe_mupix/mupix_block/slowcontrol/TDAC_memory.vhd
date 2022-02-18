@@ -101,7 +101,7 @@ begin
             current_page_addr       <= (others => '0');
             current_write_page      <= 0;
             next_free_page          <= (others => '0');
-            TDAC_page_array         <= (others => (full => false, in_use => false, bit_in_tdac => 0, page_id => 0));
+            TDAC_page_array         <= (others => (full => false, in_use => false, bit_in_tdac => 0, page_id => 0, addr => (others => '0'), chip => 0));
             current_read_page_id    <= (others => 0);
             current_write_page_id   <= (others => 0);
             read_state              <= searching_match;
@@ -141,7 +141,7 @@ begin
                     end if;
 
                 else
-                    addr_in_current_page <= addr_in_current_page + '1';
+                    addr_in_current_page <= std_logic_vector(to_unsigned(to_integer(unsigned(addr_in_current_page)) + 1,ADDR_WIDTH_g-PAGE_ADDR_WIDTH_g));
                     TDAC_page_array(current_write_page).chip    <= i_chip; 
                     TDAC_page_array(current_write_page).in_use  <= true; 
                 end if;
