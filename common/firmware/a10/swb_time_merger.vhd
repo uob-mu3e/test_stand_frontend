@@ -26,7 +26,7 @@ port (
     o_rack          : out   std_logic_vector(g_NLINKS_DATA - 1 downto 0);
 
     -- TODO: add me
-    o_counters      : out   work.util.slv32_array_t(6 downto 0) := (others => '0');
+    o_counters      : out   work.util.slv32_array_t(6 downto 0);
 
     -- output stream
     o_wdata         : out   std_logic_vector(31 downto 0);
