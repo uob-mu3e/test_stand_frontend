@@ -303,7 +303,7 @@ begin
         SWB_ID                  => SWB_ID,
         -- Data type: x"01" = pixel, x"02" = scifi, x"03" = tiles
         DATA_TYPE               => x"01"--;
-    )    
+    )
     port map(
         i_clk_156        => i_clk_156,
         i_clk_250        => i_clk_250,
