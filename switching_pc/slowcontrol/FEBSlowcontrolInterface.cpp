@@ -124,21 +124,29 @@ int FEBSlowcontrolInterface::FEB_write(const mappedFEB & FEB, const uint32_t sta
         std::this_thread::sleep_for(std::chrono::microseconds(20));
     }
     if(count==20){
-        cm_msg(MERROR, "MudaqDevice::FEBsc_write" , "Timeout occured waiting for reply");
-        cm_msg(MERROR, "MudaqDevice::FEBsc_write", "Wanted to write to FPGA %d, Addr %d, length %zu", FPGA_ID, startaddr, data.size());
+        FEB.GetLinkStatus().CountBadMessage();
+        if(FEB.GetLinkStatus().LinkIsOK()){
+            cm_msg(MERROR, "MudaqDevice::FEBsc_write", "Timeout occured waiting for reply: Wanted to write to FPGA %d, Addr %d, length %zu", FPGA_ID, startaddr, data.size());
+        }
         return ERRCODES::FPGA_TIMEOUT;
     }
     if(!sc_packet_deque.front().Good()){
-        cm_msg(MERROR, "MudaqDevice::FEBsc_write" , "Received bad packet");
+        FEB.GetLinkStatus().CountBadMessage();
+        if(FEB.GetLinkStatus().LinkIsOK()){
+            cm_msg(MERROR, "MudaqDevice::FEBsc_write" , "Received bad packet");
+        }
         sc_packet_deque.pop_front();
         return ERRCODES::BAD_PACKET;
     }
     if(!sc_packet_deque.front().IsResponse()){
-        cm_msg(MERROR, "MudaqDevice::FEBsc_write" , "Received request packet, this should not happen...");
+        FEB.GetLinkStatus().CountBadMessage();
+        if(FEB.GetLinkStatus().LinkIsOK()){
+            cm_msg(MERROR, "MudaqDevice::FEBsc_write" , "Received request packet, this should not happen...");
+        }
         sc_packet_deque.pop_front();
         return ERRCODES::BAD_PACKET;
     }
-
+    FEB.GetLinkStatus().CountGoodMessage();
     // Message was consumed, drop it
     sc_packet_deque.pop_front();
 
@@ -223,25 +231,36 @@ int FEBSlowcontrolInterface::FEB_read(const mappedFEB & FEB, const uint32_t star
         std::this_thread::sleep_for(std::chrono::microseconds(20));
     }
     if(count==10){
-        cm_msg(MERROR, "MudaqDevice::FEBsc_read" , "Timeout occured waiting for reply");
-        cm_msg(MERROR, "MudaqDevice::FEBsc_read",  "Wanted to read from FPGA %d, Addr %d, length %zu, memaddr %d", FPGA_ID, startaddr, data.size(), m_FEBsc_rmem_addr);
+        FEB.GetLinkStatus().CountBadMessage();
+        if(FEB.GetLinkStatus().LinkIsOK()){
+            cm_msg(MERROR, "MudaqDevice::FEBsc_read",  "Timeout occured waiting for reply: Wanted to read from FPGA %d, Addr %d, length %zu, memaddr %d", FPGA_ID, startaddr, data.size(), m_FEBsc_rmem_addr);
+        }
         return ERRCODES::FPGA_TIMEOUT;
     }
     if(!sc_packet_deque.front().Good()){
-        cm_msg(MERROR, "MudaqDevice::FEBsc_read" , "Received bad packet, resetting");
+        FEB.GetLinkStatus().CountBadMessage();
+        if(FEB.GetLinkStatus().LinkIsOK()){
+            cm_msg(MERROR, "MudaqDevice::FEBsc_read" , "Received bad packet, resetting");
+        }
         sc_packet_deque.pop_front();
         FEBsc_resetSecondary();
         return ERRCODES::BAD_PACKET;
     }
     if(!sc_packet_deque.front().IsResponse()){
-        cm_msg(MERROR, "MudaqDevice::FEBsc_read" , "Received request packet, this should not happen..., resetting");
+        FEB.GetLinkStatus().CountBadMessage();
+        if(FEB.GetLinkStatus().LinkIsOK()){
+            cm_msg(MERROR, "MudaqDevice::FEBsc_read" , "Received request packet, this should not happen..., resetting");
+        }
         sc_packet_deque.pop_front();
         FEBsc_resetSecondary();
         return ERRCODES::BAD_PACKET;
     }
     if(sc_packet_deque.front().GetLength()!=data.size()){
-        cm_msg(MERROR, "MudaqDevice::FEBsc_read", "Wanted to read from FPGA %d, Addr %d, length %zu", FPGA_ID, startaddr, data.size());
-        cm_msg(MERROR, "MudaqDevice::FEBsc_read" , "Received packet fails size check, communication error, resetting");
+        FEB.GetLinkStatus().CountBadMessage();
+        if(FEB.GetLinkStatus().LinkIsOK()){
+            cm_msg(MERROR, "MudaqDevice::FEBsc_read", "Wanted to read from FPGA %d, Addr %d, length %zu", FPGA_ID, startaddr, data.size());
+            cm_msg(MERROR, "MudaqDevice::FEBsc_read" , "Received packet fails size check, communication error, resetting");
+        }
         sc_packet_deque.pop_front();
         FEBsc_resetSecondary();
         return ERRCODES::WRONG_SIZE;
@@ -250,7 +269,8 @@ int FEBSlowcontrolInterface::FEB_read(const mappedFEB & FEB, const uint32_t star
     for(uint32_t index =0; index < data.size(); index++){
         data[index] = sc_packet_deque.front().data()[index+3];
     }
-
+    
+    FEB.GetLinkStatus().CountGoodMessage();
     // Message was consumed, drop it
     sc_packet_deque.pop_front();
 

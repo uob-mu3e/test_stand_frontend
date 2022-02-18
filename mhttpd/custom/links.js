@@ -351,6 +351,35 @@ function init(){
         mjsonrpc_error_alert(error);
      });
 
+
+     mjsonrpc_db_get_values(["/Equipment/LinksCentral/Variables/LinkStatus"]).then(function(rpc) {
+        if(rpc.result.data[0]) 
+            update_status(rpc.result.data[0],0);
+    }).catch(function(error) {
+       mjsonrpc_error_alert(error);
+    });
+
+    mjsonrpc_db_get_values(["/Equipment/LinksUpstream/Variables/LinkStatus"]).then(function(rpc) {
+        if(rpc.result.data[0])
+            update_status(rpc.result.data[0],1);
+     }).catch(function(error) {
+        mjsonrpc_error_alert(error);
+     });
+
+     mjsonrpc_db_get_values(["/Equipment/LinksDownstream/Variables/LinkStatus"]).then(function(rpc) {
+        if(rpc.result.data[0])
+            update_status(rpc.result.data[0],2);
+     }).catch(function(error) {
+        mjsonrpc_error_alert(error);
+     });
+     
+     mjsonrpc_db_get_values(["/Equipment/LinksFibre/Variables/LinkStatus"]).then(function(rpc) {
+        if(rpc.result.data[0])
+            update_status(rpc.result.data[0],3);
+     }).catch(function(error) {
+        mjsonrpc_error_alert(error);
+     }); 
+
     draw(-1);
 }
 
@@ -526,24 +555,23 @@ function update_boarddrawing(valuex) {
     draw(rxselindex, txselindex);
 }
 
-/* To be added later
-function update_linkdrawing(valuex) {
-
+function update_status(valuex, swb) {
     var value = valuex;
     if(typeof valuex === 'string')
         value = JSON.parse(valuex);
-
-    var rxstat = value["rxlinkstatus"];
-    var txstat = value["txlinkstatus"];
-    for(var i=0; i < 192; i++){
-       rxlinks[i].status = rxstat[i];
-       txlinks[i].status = txstat[i];
+    
+    for(var i=0; i < nlinksrx[swb]; i++){
+        if(rxlinks[swb][i].status > 0)
+            rxlinks[swb][i].status = value[i];
     }
 
-    draw(rxselindex, txselindex);
+    for(var i=0; i < nlinkstx[swb]; i++){
+        if(txlinks[swb][i].status > 0)
+            txlinks[swb][i].status = value[i];
+    } 
 
+    draw(rxselindex, txselindex);
 }
-*/
 
 function update_masks(valuex, swb) {
 
