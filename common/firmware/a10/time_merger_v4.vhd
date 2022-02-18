@@ -46,6 +46,10 @@ end entity;
 
 architecture arch of time_merger_v4 is
 
+    -- input signals
+    signal data : work.util.slv32_array_t(N_LINKS_TREE(0) - 1 downto 0) := (others => (others => '0'));
+    signal shop, sop, eop, hit, t0, t1, empty, mask_n, rack, error : std_logic_vector(N_LINKS_TREE(0) - 1 downto 0) := (others => '0');
+
     -- layer0
     signal data0 : work.util.slv32_array_t(N_LINKS_TREE(1) - 1 downto 0);
     signal shop0, sop0, eop0, hit0, t00, t10, empty0, mask_n0, rack0, error0 : std_logic_vector(N_LINKS_TREE(1) - 1 downto 0);
@@ -56,6 +60,19 @@ architecture arch of time_merger_v4 is
 
 begin
 
+    --! map input signals to always have vectors of size 8 for the first layer
+    data(g_NLINKS_DATA - 1 downto 0)    <= i_data(g_NLINKS_DATA - 1 downto 0);
+    shop(g_NLINKS_DATA - 1 downto 0)    <= i_shop(g_NLINKS_DATA - 1 downto 0);
+    sop(g_NLINKS_DATA - 1 downto 0)     <= i_sop(g_NLINKS_DATA - 1 downto 0);
+    eop(g_NLINKS_DATA - 1 downto 0)     <= i_eop(g_NLINKS_DATA - 1 downto 0);
+    hit(g_NLINKS_DATA - 1 downto 0)     <= i_hit(g_NLINKS_DATA - 1 downto 0);
+    t0(g_NLINKS_DATA - 1 downto 0)      <= i_t0(g_NLINKS_DATA - 1 downto 0);
+    t1(g_NLINKS_DATA - 1 downto 0)      <= i_t1(g_NLINKS_DATA - 1 downto 0);
+    empty(g_NLINKS_DATA - 1 downto 0)   <= i_empty(g_NLINKS_DATA - 1 downto 0);
+    mask_n(g_NLINKS_DATA - 1 downto 0)  <= i_mask_n(g_NLINKS_DATA - 1 downto 0);
+    o_rack(g_NLINKS_DATA - 1 downto 0)  <= rack(g_NLINKS_DATA - 1 downto 0);
+        
+
     --! setup tree from layer0 8-4, layer1 4-2, layer2 2-1
     layer0 : entity work.time_merger_tree_fifo_32_v3
     generic map (
@@ -63,16 +80,16 @@ begin
     )
     port map (
         -- input data stream
-        i_data          => i_data,
-        i_shop          => i_shop,
-        i_sop           => i_sop,
-        i_eop           => i_eop,
-        i_hit           => i_hit,
-        i_t0            => i_t0,
-        i_t1            => i_t1,
-        i_empty         => i_empty,
-        i_mask_n        => i_mask_n,
-        o_rack          => o_rack,
+        i_data          => data,
+        i_shop          => shop,
+        i_sop           => sop,
+        i_eop           => eop,
+        i_hit           => hit,
+        i_t0            => t0,
+        i_t1            => t1,
+        i_empty         => empty,
+        i_mask_n        => mask_n,
+        o_rack          => rack,
         i_error         => (others => '0'),
 
         -- output data stream
