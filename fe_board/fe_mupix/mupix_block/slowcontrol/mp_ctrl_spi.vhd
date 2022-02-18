@@ -99,7 +99,6 @@ architecture RTL of mp_ctrl_spi is
     signal Injection            : std_logic;
 
     signal dpf_empty_this_round : std_logic_vector(3 downto 0);
-    signal initialise           : std_logic;
     signal init_counter         : integer range 0 to 1023;
 
 begin
@@ -147,6 +146,9 @@ begin
             o_data_to_direct_spi_we <= '0';
             o_spi_chip_selct_mask   <= (others => '1');
             mp_spi_clk_state        <= zero1;
+            dpf_empty_this_round    <= (others => '0');
+            reg_is_writing          <= (others => '0');
+            chip_is_writing         <= (others => '0');
 
             -- IMPORTANT: needs to go into init case, use idle only for simulation here !!!
             --mp_spi_state            <= init;
@@ -193,13 +195,25 @@ begin
             Ck2_Bias    <= '0';
             Ck1_Col     <= '0';
             Ck2_Col     <= '0';
+            Ck1_VDAC    <= '0';
+            Ck2_VDAC    <= '0';
             Ck1_Conf    <= '0';
             Ck2_Conf    <= '0';
             Ck1_TDAC    <= '0';
             Ck2_TDAC    <= '0';
             Ck1_Col     <= '0';
             Ck2_Col     <= '0';
+            bias        <= '0';
+            conf        <= '0';
+            vdac        <= '0';
+            tdac        <= '0';
             col         <= '0';
+            WrEnable    <= '0';
+            WR          <= '0';
+            Load_TDAC   <= '0';
+            Load_Col    <= '0';
+            Load_VDAC   <= '0';
+            Load_Bias   <= '0';
 
             case mp_spi_state is
               when init =>
@@ -248,7 +262,6 @@ begin
                 end case;
 
               when idle =>
-                o_spi_chip_selct_mask <= (others => '1');
                 if(or_reduce(vdac_rdy & bias_rdy & conf_rdy & tdac_rdy)='1' and i_direct_spi_fifo_empty = '1') then 
                     mp_spi_state    <= load_bits;
                     for I in 0 to N_CHIPS_PER_SPI_g-1 loop -- decide on the chip that is supposed to write this round (could also write more than 1 chip if bits are identical but i dont want to right now)
