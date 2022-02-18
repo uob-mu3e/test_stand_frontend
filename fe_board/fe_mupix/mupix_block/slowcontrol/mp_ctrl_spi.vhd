@@ -147,7 +147,11 @@ begin
             o_data_to_direct_spi_we <= '0';
             o_spi_chip_selct_mask   <= (others => '1');
             mp_spi_clk_state        <= zero1;
-            mp_spi_state            <= init;
+
+            -- IMPORTANT: needs to go into init case, use idle only for simulation here !!!
+            --mp_spi_state            <= init;
+            mp_spi_state            <= idle;
+            
             init_counter            <= 0;
             col_shift_state         <= zero1;
             chip_is_writing_int     <= 0;

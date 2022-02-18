@@ -13,6 +13,7 @@ add wave -noupdate /mupix_ctrl_tb/reg_add
 add wave -noupdate /mupix_ctrl_tb/reg_wdata
 add wave -noupdate -group mp_ctrl /mupix_ctrl_tb/e_mp_ctrl/*
 add wave -noupdate -group mp_ctrl_regs /mupix_ctrl_tb/e_mp_ctrl/e_mupix_ctrl_reg_mapping/*
+add wave -noupdate -group spi /mupix_ctrl_tb/e_mp_ctrl/gen_spi(0)/mp_ctrl_spi_inst/*
 add wave -noupdate -group direct_spi /mupix_ctrl_tb/e_mp_ctrl/gen_spi(0)/mp_ctrl_direct_spi_inst/*
 add wave -noupdate -group direct_spi_fifo /mupix_ctrl_tb/e_mp_ctrl/gen_spi(0)/mp_ctrl_direct_spi_inst/direct_spi_fifo/*
 add wave -noupdate -group conf_storage /mupix_ctrl_tb/e_mp_ctrl/mupix_ctrl_config_storage_inst/*
@@ -46,9 +47,23 @@ force -freeze mupix_ctrl_tb/reg_add [examine mupix_registers/MP_CTRL_SLOW_DOWN_R
 force -freeze mupix_ctrl_tb/reg_wdata "x00000004"
 force -freeze mupix_ctrl_tb/reg_we 1
 run 8ns
+force -freeze mupix_ctrl_tb/reg_add [examine mupix_registers/MP_CTRL_CHIP_SELECT1_REGISTER_W]
+force -freeze mupix_ctrl_tb/reg_wdata "x00000001"
+run 8ns
 force -freeze mupix_ctrl_tb/reg_add [examine mupix_registers/MP_CTRL_DIRECT_SPI_ENABLE_REGISTER_W]
 force -freeze mupix_ctrl_tb/reg_wdata "x00000000"
+run 8ns
+force -freeze mupix_ctrl_tb/reg_add [examine mupix_registers/MP_CTRL_BIAS_REGISTER_W]
+force -freeze mupix_ctrl_tb/reg_wdata "x12345678"
 run 8ns 
+force -freeze mupix_ctrl_tb/reg_wdata "xACACACCA"
+run 48ns
+force -freeze mupix_ctrl_tb/reg_add [examine mupix_registers/MP_CTRL_CONF_REGISTER_W]
+force -freeze mupix_ctrl_tb/reg_wdata "F0F0F0F0"
+run 24ns 
+force -freeze mupix_ctrl_tb/reg_add [examine mupix_registers/MP_CTRL_VDAC_REGISTER_W]
+force -freeze mupix_ctrl_tb/reg_wdata "x01010101"
+run 24ns 
 force -freeze mupix_ctrl_tb/reg_we 0
 run 80000 ns
 

@@ -155,7 +155,7 @@ begin
 
         conf: entity work.dual_port_fifo
           generic map (
-            N_BITS_g       => MP_CONFIG_REGS_LENGTH(0),
+            N_BITS_g       => 96, --MP_CONFIG_REGS_LENGTH(CONF_BIT), TODO: same as bias
             WDATA_WIDTH_g  => 32,
             RDATA1_WIDTH_g => 1,
             RDATA2_WIDTH_g => 53
@@ -175,7 +175,7 @@ begin
 
         vdac: entity work.dual_port_fifo
           generic map (
-            N_BITS_g       => MP_CONFIG_REGS_LENGTH(1),
+            N_BITS_g       => 96,--MP_CONFIG_REGS_LENGTH(VDAC_BIT), TODO: same as bias
             WDATA_WIDTH_g  => 32,
             RDATA1_WIDTH_g => 1,
             RDATA2_WIDTH_g => 53
@@ -195,7 +195,7 @@ begin
 
         bias: entity work.dual_port_fifo
           generic map (
-            N_BITS_g       => MP_CONFIG_REGS_LENGTH(2),
+            N_BITS_g       => 224, --MP_CONFIG_REGS_LENGTH(BIAS_BIT), -- 224 is a waste of bits, but otherwise the overflow happens at the beginning of the shift reg and not at the end. TODO: fix this ?
             WDATA_WIDTH_g  => 32,
             RDATA1_WIDTH_g => 1,
             RDATA2_WIDTH_g => 53
@@ -215,7 +215,7 @@ begin
         
         tdac: entity work.dual_port_fifo
           generic map (
-            N_BITS_g       => MP_CONFIG_REGS_LENGTH(3),
+            N_BITS_g       => MP_CONFIG_REGS_LENGTH(5),
             WDATA_WIDTH_g  => 4,
             RDATA1_WIDTH_g => 1,
             RDATA2_WIDTH_g => 53
