@@ -13,9 +13,10 @@ use ieee.std_logic_unsigned.all;
 
 entity farm_link_to_fifo is
 generic (
-    g_NLINKS_SWB_TOTL    : positive :=  16;
-    N_PIXEL              : positive :=  8;
-    N_SCIFI              : positive :=  8;
+    g_LOOPUP_NAME        : string := "intRun2021";
+    g_NLINKS_SWB_TOTL    : positive :=  3;
+    N_PIXEL              : positive :=  2;
+    N_SCIFI              : positive :=  1;
     LINK_FIFO_ADDR_WIDTH : positive := 10--;
 );
 port (
@@ -35,15 +36,8 @@ port (
     o_error_scifi   : out std_logic;
     
     --! error counters 
-    --! 0: fifo sync_almost_full (pixel)
-    --! 1: fifo sync_wrfull (pixel)
-    --! 2: # of overflow event (pixel)
-    --! 3: cnt events (pixel)
-    --! 4: fifo sync_almost_full (scifi)
-    --! 5: fifo sync_wrfull (scifi)
-    --! 6: # of overflow event (scifi)
-    --! 7: cnt events (scifi)
-    o_counter       : out work.util.slv32_array_t(7 downto 0);
+    --! (g_NLINKS_DATA*5)-1 downto 0 -> link to fifo counters
+    o_counter       : out work.util.slv32_array_t((g_NLINKS_DATA*5)-1 downto 0);
     
     i_clk_250_link      : in std_logic;
     i_reset_n_250_link  : in std_logic;
@@ -55,87 +49,72 @@ end entity;
 
 architecture arch of farm_link_to_fifo is
 
-    constant check_ones   : std_logic_vector(g_NLINKS_SWB_TOTL - 1 downto 0) := (others => '1');
-    constant check_zeros  : std_logic_vector(g_NLINKS_SWB_TOTL - 1 downto 0) := (others => '0');
-   
-    type link_to_fifo_type is (idle, write_data, skip_data);
-    signal link_to_fifo_state : link_to_fifo_type;
-    signal cnt_skip_event : std_logic_vector(31 downto 0);
-
-    signal rx_data, rx_q : work.util.slv34_array_t(g_NLINKS_SWB_TOTL - 1 downto 0);
-    signal rx_wen, sync_rdempty, sync_ren, sop, eop : std_logic_vector(g_NLINKS_SWB_TOTL - 1 downto 0);
+    signal rx_q : work.util.slv35_array_t(g_NLINKS_SWB_TOTL-1 downto 0) := (others => (others => '0'));
+    signal rx_q_s : work.util.slv32_array_t(g_NLINKS_SWB_TOTL-1 downto 0) := (others => (others => '0'));
+    signal rx_ren, rx_mask_n, rx_rdempty : std_logic_vector(g_NLINKS_DATA-1 downto 0) := (others => '0');
+    signal sop, eop, shop, hit, t0, t1 : std_logic_vector(g_NLINKS_SWB_TOTL - 1 downto 0);
     
     signal rx_pixel : work.util.slv34_array_t(N_PIXEL - 1 downto 0);
     signal rx_scifi : work.util.slv34_array_t(N_SCIFI - 1 downto 0);
-
-    signal f_data, f_q : std_logic_vector(g_NLINKS_SWB_TOTL * 36 - 1 downto 0);
-    signal f_almost_full, f_wrfull, f_wen : std_logic;
-    signal f_wrusedw : std_logic_vector(LINK_FIFO_ADDR_WIDTH - 1 downto 0);
-    signal counter_pixel, counter_scifi : work.util.slv32_array_t(3 downto 0);
 
 begin
 
     --! sync link data from link to pcie clk
     gen_link_to_fifo : FOR i in 0 to g_NLINKS_SWB_TOTL - 1 GENERATE
-        
-        process(i_clk_250_link, i_reset_n_250_link)
-        begin
-            if ( i_reset_n_250_link = '0' ) then
-                rx_data(i)  <= (others => '0');
-                rx_wen(i)   <= '0';
-            elsif ( rising_edge(i_clk_250_link) ) then
-                -- idle word
-                if ( i_rx(i) = x"000000BC" and i_rx_k(i) = "0001" ) then
-                    rx_wen(i) <= '0';
-                -- header 
-                elsif ( i_rx(i)(7 downto 0) = x"7C" and i_rx_k(i) = "0001" ) then
-                    rx_data(i) <= "01" & i_rx(i);
-                    rx_wen(i) <= '1';
-                -- trailer
-                elsif ( i_rx(i)(7 downto 0) = x"9C" and i_rx_k(i) = "0001" ) then
-                    rx_data(i) <= "10" & i_rx(i);
-                    rx_wen(i) <= '1';
-                -- hits
-                else
-                    rx_data(i) <= "00" & i_rx(i);
-                    rx_wen(i) <= '1';
-                end if;
-            end if;
-        end process;
-            
-        e_sync_fifo : entity work.ip_dcfifo
-        generic map(
-            ADDR_WIDTH  => 4,
-            DATA_WIDTH  => 34--,
+    
+        -- TODO: If its halffull than send data to the next farm
+        -- TODO: different lookup for farm
+        e_link_to_fifo_32 : entity work.link_to_fifo_32
+        generic map (
+            g_LOOPUP_NAME        => g_LOOPUP_NAME,
+            is_FARM              => true,
+            SKIP_DOUBLE_SUB      => false,
+            LINK_FIFO_ADDR_WIDTH => LINK_FIFO_ADDR_WIDTH--,
         )
         port map (
-            data        => rx_data(i),
-            wrreq       => rx_wen(i),
-            rdreq       => sync_ren(i),
-            wrclk       => i_clk_250_link,
-            rdclk       => i_clk_250,
-            q           => rx_q(i),
-            rdempty     => sync_rdempty(i),
-            aclr        => not i_reset_n_250--,
+            i_rx            => i_rx(i),
+            i_rx_k          => i_rx_k(i),
+            i_linkid        => work.mudaq.link_36_to_std(i),
+
+            o_q             => rx_q(i),
+            i_ren           => rx_ren(i),
+            o_rdempty       => rx_rdempty(i),
+
+            o_counter(0)    => o_counter(0+i*5),
+            o_counter(1)    => o_counter(1+i*5),
+            o_counter(2)    => o_counter(2+i*5),
+            o_counter(3)    => o_counter(3+i*5),
+            o_counter(4)    => o_counter(4+i*5),
+
+            i_reset_n_156   => i_reset_n_156,
+            i_clk_156       => i_clk_156,
+
+            i_reset_n_250   => reset_250_n,
+            i_clk_250       => i_clk_250--,
         );
 
-        sop(i) <= '1' when rx_q(i)(33 downto 32) = "01" else '0';
-        eop(i) <= '1' when rx_q(i)(33 downto 32) = "10" else '0';
-
+        -- map outputs
+        sop(i)      <= '1' when rx_q(i)(34 downto 32) = "010" else '0';
+        shop(i)     <= '1' when rx_q(i)(34 downto 32) = "111" else '0';
+        eop(i)      <= '1' when rx_q(i)(34 downto 32) = "001" else '0';
+        hit(i)      <= '1' when rx_q(i)(34 downto 32) = "000" else '0';
+        t0(i)       <= '1' when rx_q(i)(34 downto 32) = "100" else '0';
+        t1(i)       <= '1' when rx_q(i)(34 downto 32) = "101" else '0';
+        rx_q_s(i)   <= rx_q(i)(31 downto 0);
+ 
+    END GENERATE gen_link_to_fifo;
+    
+    gen_map_pixel : FOR i in 0 to N_PIXEL - 1 GENERATE
+        rx_pixel(i) <= rx_q_s(i);
     END GENERATE;
     
-    gen_counter : FOR I in 0 to 3 GENERATE
-        o_counter(I) <= counter_pixel(I);
-        o_counter(I+4) <= counter_scifi(I);
+    gen_map_scifi : FOR i in 0 to N_SCIFI - 1 GENERATE
+        rx_scifi(i) <= rx_q_s(i+N_PIXEL);
     END GENERATE;
     
-    gen_map_pixel : FOR I in 0 to N_PIXEL - 1 GENERATE
-        rx_pixel(I) <= rx_q(I);
-    END GENERATE;
-    
-    gen_map_scifi : FOR I in 0 to N_SCIFI - 1 GENERATE
-        rx_scifi(I) <= rx_q(I+N_PIXEL);
-    END GENERATE;
+    -- TODO: add time merging tree here
+    -- TODO:
+    -- TODO:
     
     
     e_aligne_pixel : entity work.farm_aligne_link
@@ -195,6 +174,5 @@ begin
         i_reset_n_250   => i_reset_n_250,
         i_clk_250       => i_clk_250--,
     );
-
 
 end architecture;

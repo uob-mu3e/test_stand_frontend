@@ -193,10 +193,12 @@ begin
         
         -- TODO: If its halffull than write only header (no hits) and write overflow into subheader
         --       If its full stop --> tell MIDAS --> stop run --> no event mixing
+        -- TODO: different lookup for scifi
         e_link_to_fifo_32 : entity work.link_to_fifo_32
         generic map (
             g_LOOPUP_NAME        => g_LOOPUP_NAME,
-            SKIP_DOUBLE_SUB      => 2, -- 1 means skip 2 means dont skip
+            is_FARM              => false,
+            SKIP_DOUBLE_SUB      => false,
             LINK_FIFO_ADDR_WIDTH => LINK_FIFO_ADDR_WIDTH--,
         )
         port map (

@@ -13,8 +13,9 @@ use ieee.std_logic_unsigned.all;
 
 entity link_to_fifo_32 is
 generic (
-    g_LOOPUP_NAME : string := "intRun2021";
-    SKIP_DOUBLE_SUB      : positive := 0;
+    g_LOOPUP_NAME        : string := "intRun2021";
+    is_FARM              : boolean := false;
+    SKIP_DOUBLE_SUB      : boolean := false;
     LINK_FIFO_ADDR_WIDTH : positive := 10--;
 );
 port (
@@ -124,19 +125,28 @@ begin
                 if ( i_rx(7 downto 0) = x"9C" and i_rx_k = "0001" ) then
                     link_to_fifo_state <= idle;
                     rx_156_data <= "001" & i_rx; -- trailer
-                elsif ( i_rx(31 downto 26) = "111111" and i_rx_k = "0000" ) then
+                -- check for sub header on the SWB
+                elsif ( i_rx(31 downto 26) = "111111" and i_rx_k = "0000" and not is_FARM ) then
                     -- we shift the subheader around here the marker will be 1111111 for chipID = 128
                     -- on position 27 downto 21, overflow will be 15 downto 0 and the time stamp
                     -- will be shifted from ts(10-9) to 29-28 and from ts(8-4)to 20-16
                     rx_156_data <= "111" & "00" & i_rx(22 downto 21) & "1111111" & i_rx(20 downto 16) & i_rx(15 downto 0); -- sub header
                     cnt_sub     <= cnt_sub + '1';
-                else
+                -- write hit on swb
+                elsif ( not is_FARM ) then
                     rx_156_data <= "000" & i_rx(31 downto 28) & chipID & i_rx(21 downto 1); -- hit
+                -- check for sub header on the farm
+                elsif ( i_rx(27 downto 21) = "1111111" and i_rx_k = "0000" and is_FARM ) then
+                    rx_156_data <= "111" & i_rx; -- sub header, we dont replace the chipID here
+                    cnt_sub     <= cnt_sub + '1';
+                -- write hit on farm
+                elsif ( is_FARM ) then
+                    rx_156_data <= "000" & i_rx; -- hit, dont replace chipID, changing to 64bit hit later
                 end if;
 
                 hit_reg <= i_rx;
 
-                if ( SKIP_DOUBLE_SUB = 1 and i_rx = hit_reg ) then
+                if ( SKIP_DOUBLE_SUB and i_rx = hit_reg ) then
                     rx_156_wen <= '0';
                 else
                     rx_156_wen <= '1';
