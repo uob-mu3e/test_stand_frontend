@@ -10,5 +10,5 @@ export STOPTIME=500ns
 entity=$(basename "$0" .sh)
 
 ../../util/sim.sh "$entity" "$entity.vhd" \
-    *.vhd ../*.vhd ../../util/*.vhd ../../util/altera/*.vhd \
+    *.vhd ../*.vhd ../../util/*.vhd ../../util/quartus/*.vhd \
     ../../registers/*.vhd

@@ -105,7 +105,7 @@ top.qsf : $(MAKEFILE_LIST)
 	set_global_assignment -name PROJECT_OUTPUT_DIRECTORY "$(QUARTUS_OUTPUT_FILES)"
 	set_global_assignment -name SOURCE_TCL_SCRIPT_FILE "$(call find_file,settings.tcl)"
 	set_global_assignment -name QIP_FILE "$(PREFIX)/include.qip"
-	set_global_assignment -name PRE_FLOW_SCRIPT_FILE "quartus_sh:util/altera/pre_flow.tcl"
+	set_global_assignment -name PRE_FLOW_SCRIPT_FILE "quartus_sh:util/quartus/pre_flow.tcl"
 	EOF
 
 all : top.qpf top.qsf $(PREFIX)/include.qip

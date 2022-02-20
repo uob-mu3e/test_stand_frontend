@@ -4,7 +4,7 @@ CABLE?=1
 IPs = \
     nios.tcl
 
-include util/altera/makefile.mk
+include util/quartus/makefile.mk
 
 .PHONY: maxpof
 maxpof : app $(SOF)
