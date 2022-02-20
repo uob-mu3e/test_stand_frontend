@@ -113,7 +113,7 @@ begin
         
         e_aligne_link : entity work.farm_aligne_link
         generic map (
-            g_NLINKS_SWB_TOTL    => g_NLINKS_SWB_TOTL;
+            g_NLINKS_SWB_TOTL    => g_NLINKS_SWB_TOTL,
             LINK_FIFO_ADDR_WIDTH => LINK_FIFO_ADDR_WIDTH--,
         )
         port map (

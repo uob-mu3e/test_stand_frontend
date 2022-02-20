@@ -57,8 +57,6 @@ architecture arch of farm_aligne_link is
     signal f_data : std_logic_vector(35 downto 0);
     signal f_almost_full, f_wrfull, f_wen : std_logic;
     signal f_wrusedw : std_logic_vector(LINK_FIFO_ADDR_WIDTH - 1 downto 0);
-    constant check_zeros : std_logic_vector(N - 1 downto 0) := (others => '0');
-    constant check_ones : std_logic_vector(N - 1 downto 0) := (others => '1');
 
 begin
 
@@ -73,7 +71,7 @@ begin
     o_counter(2) <= cnt_skip_event;
     o_counter(3) <= cnt_event;
     
-    o_ren <= '1' when link_to_fifo_state  = idle and i_sop = check_ones and i_empty = check_zeros else
+    o_ren <= '1' when link_to_fifo_state  = idle and i_sop = check_ones and work.util.or_reduce(i_empty) = '0' else
              '1' when link_to_fifo_state /= idle and i_empty_cur = '0' else
              '0';
              
@@ -107,12 +105,12 @@ begin
 
             when idle =>
                 -- TODO: also check if all are in state idle here
-                if ( i_sop = check_ones and i_empty = check_zeros ) then
+                if ( i_sop = check_ones and work.util.or_reduce(i_empty) = '0' ) then
                     o_tx   <= i_rx;
                     o_tx_k <= i_rx_k;
                     if ( f_wrfull = '1' ) then
                         -- TODO: not good stop run state
-                    elsif ( f_almost_full = '1' or i_skip \= check_zeros ) then
+                    elsif ( f_almost_full = '1' or work.util.or_reduce(i_skip) = '1' ) then
                         -- skip hits of sub header and set overflow
                         link_to_fifo_state  <= skip_event;
                         cnt_skip_event      <= cnt_skip_event + '1';
@@ -123,10 +121,6 @@ begin
                         link_to_fifo_state  <= write_data;
                         cnt_event           <= cnt_event + '1';
                     end if;
-                -- if we come from skip_hits_of_sub_header we need to check also for eop
-                elsif ( i_eop = check_ones and i_empty = check_zeros ) then
-                    f_data(N * 32 + 1 downto N * 32) <= "10"; -- trailer
-                    f_wen <= '1';
                 end if;
 
             when write_data =>
