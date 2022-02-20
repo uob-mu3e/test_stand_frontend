@@ -147,6 +147,7 @@ begin
     generic map (
         g_ADDR_WIDTH => LINK_FIFO_ADDR_WIDTH,
         g_DATA_WIDTH => 34,
+        g_WREG_N => 1,
         g_RREG_N => 1--,
     )
     port map (

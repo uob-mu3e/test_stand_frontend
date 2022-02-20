@@ -84,7 +84,7 @@ begin
     generic map (
         g_ADDR_WIDTH => 8,
         g_DATA_WIDTH => 34,
-        g_RREG_N => 1--, -- TNS=-900
+        g_RREG_N => 1--,
     )
     port map (
         i_wdata         => wdata,

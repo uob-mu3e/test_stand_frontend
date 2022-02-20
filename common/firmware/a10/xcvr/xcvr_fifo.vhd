@@ -12,10 +12,10 @@ generic (
     g_BYTES : positive := 4;
     g_IDLE_DATA : std_logic_vector := X"000000BC";
     g_IDLE_DATAK : std_logic_vector := "0001";
-    g_FIFO_TX_WREG_N : natural := 0;
-    g_FIFO_TX_RREG_N : natural := 0;
-    g_FIFO_RX_WREG_N : natural := 0;
-    g_FIFO_RX_RREG_N : natural := 0;
+    g_FIFO_TX_WREG_N : natural := 1;
+    g_FIFO_TX_RREG_N : natural := 1;
+    g_FIFO_RX_WREG_N : natural := 1;
+    g_FIFO_RX_RREG_N : natural := 1;
     g_FIFO_ADDR_WIDTH : positive := 4--;
 );
 port (

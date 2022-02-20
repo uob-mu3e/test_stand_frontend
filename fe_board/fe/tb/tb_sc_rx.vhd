@@ -20,9 +20,8 @@ architecture arch of tb_sc_rx is
     signal ram : ram_t(0 to 15);
 
     signal ram_addr : std_logic_vector(31 downto 0);
-    signal ram_re, ram_we : std_logic;
+    signal ram_re, ram_rvalid, ram_we : std_logic;
     signal ram_rdata, ram_wdata : std_logic_vector(31 downto 0);
-    signal ram_rvalid : std_logic;
 
     signal DONE : unsigned(2 downto 0) := (others => '0');
 

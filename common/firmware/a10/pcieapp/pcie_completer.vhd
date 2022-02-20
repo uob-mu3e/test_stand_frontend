@@ -259,7 +259,7 @@ begin
     generic map (
         g_ADDR_WIDTH => 5,
         g_DATA_WIDTH => datain_rreg_fifo'length,
-        g_RREG_N => 1--, -- TNS=-4000
+        g_RREG_N => 1--,
     )
     port map (
         i_wdata         => datain_rreg_fifo,
@@ -289,7 +289,7 @@ begin
     generic map (
         g_ADDR_WIDTH => 5,
         g_DATA_WIDTH => datain_wreg_fifo'length,
-        g_RREG_N => 1--, -- TNS=-17
+        g_RREG_N => 1--,
     )
     port map (
         i_wdata         => datain_wreg_fifo,
