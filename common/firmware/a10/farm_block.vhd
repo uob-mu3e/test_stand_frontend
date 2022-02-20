@@ -286,6 +286,9 @@ begin
     port map (
         i_rx                => rx,
         i_rx_k              => rx_k,
+        
+        o_tx                => o_tx,
+        o_tx_k              => o_tx_k,
 
         -- pixel data
         o_pixel             => pixel_data,
