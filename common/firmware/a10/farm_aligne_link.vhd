@@ -37,7 +37,7 @@ port (
     --! 2: # of next farm event
     --! 3: cnt_sub_header
     o_counter       : out work.util.slv32_array_t(3 downto 0);
-    o_data          : out std_logic_vector(31 downto 0);
+    o_data          : out std_logic_vector(35 downto 0);
     o_empty         : out std_logic;
     i_ren           : in  std_logic;
     
@@ -125,11 +125,13 @@ begin
 
             when write_data =>
                 -- write the event
-                o_tx   <= i_rx;
-                o_tx_k <= i_rx_k;
-                f_wen  <= not i_empty_cur;
-                if ( i_eop = '1' ) then
-                    link_to_fifo_state <= idle;
+                if ( i_empty_cur = '0' ) then
+                    o_tx   <= i_rx;
+                    o_tx_k <= i_rx_k;
+                    f_wen  <= '1';
+                    if ( i_eop = '1' ) then
+                        link_to_fifo_state <= idle;
+                    end if;
                 end if;
 
             when skip_event =>
@@ -137,9 +139,9 @@ begin
                 if ( i_empty_cur = '0' ) then
                     o_tx   <= i_rx;
                     o_tx_k <= i_rx_k;
-                end if;
-                if ( i_eop = '1' ) then
-                    link_to_fifo_state <= idle;
+                    if ( i_eop = '1' ) then
+                        link_to_fifo_state <= idle;
+                    end if;
                 end if;
 
             when others =>

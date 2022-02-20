@@ -30,15 +30,15 @@ port (
     o_data          : out work.util.slv32_array_t(g_NLINKS_SWB_TOTL-1 downto 0);
     o_empty         : out std_logic_vector(g_NLINKS_SWB_TOTL-1 downto 0);
     i_ren           : in  std_logic_vector(g_NLINKS_SWB_TOTL-1 downto 0);
-    o_shop          : out std_logic_vector(g_NLINKS_SWB_TOTL - 1 downto 0);
-    o_sop           : out std_logic_vector(g_NLINKS_SWB_TOTL - 1 downto 0);
-    o_eop           : out std_logic_vector(g_NLINKS_SWB_TOTL - 1 downto 0);
-    o_hit           : out std_logic_vector(g_NLINKS_SWB_TOTL - 1 downto 0);
-    o_t0            : out std_logic_vector(g_NLINKS_SWB_TOTL - 1 downto 0);
-    o_t1            : out std_logic_vector(g_NLINKS_SWB_TOTL - 1 downto 0);
+    o_shop          : out std_logic_vector(g_NLINKS_SWB_TOTL-1 downto 0);
+    o_sop           : out std_logic_vector(g_NLINKS_SWB_TOTL-1 downto 0);
+    o_eop           : out std_logic_vector(g_NLINKS_SWB_TOTL-1 downto 0);
+    o_hit           : out std_logic_vector(g_NLINKS_SWB_TOTL-1 downto 0);
+    o_t0            : out std_logic_vector(g_NLINKS_SWB_TOTL-1 downto 0);
+    o_t1            : out std_logic_vector(g_NLINKS_SWB_TOTL-1 downto 0);
     o_error         : out std_logic_vector(g_NLINKS_SWB_TOTL-1 downto 0);
     
-    --! error counters 
+    --! status counters 
     --! (g_NLINKS_DATA*5)-1 downto 0 -> link to fifo counters
     --! (g_NLINKS_DATA*4)+(g_NLINKS_DATA*5)-1 downto (g_NLINKS_DATA*5) -> link align counters
     o_counter       : out work.util.slv32_array_t((g_NLINKS_SWB_TOTL*4)+(g_NLINKS_SWB_TOTL*5)-1 downto 0);
