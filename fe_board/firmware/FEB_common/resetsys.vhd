@@ -92,11 +92,12 @@ BEGIN
     end if;
     end process;
 
-    e_edge_detector : entity work.edge_detector
-    PORT MAP(
-        clk         => i_clk_125_rx,
-        signal_in   => reset_bypass_125_rx(RESET_BYPASS_BIT_REQUEST),
-        output      => reset_bypass_request--,
+    e_edge_detector : entity work.edge_det
+    generic map ( EDGE => +1 )
+    port map (
+        i_d => reset_bypass_125_rx(RESET_BYPASS_BIT_REQUEST),
+        o_q => reset_bypass_request,
+        i_clk => i_clk_125_rx--,
     );
 
     -- sync terminated to 125 clk of state controller
