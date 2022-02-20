@@ -45,7 +45,7 @@ begin
         o_rempty    => rempty,
         i_rclk      => i_rclk,
 
-        i_reset_n   => not i_rreset_n--,
+        i_reset_n   => i_rreset_n--,
     );
 
     process(i_wclk, i_wreset_n)
