@@ -355,10 +355,7 @@ begin
     port map ( o_reset_n => reset_C_n, i_reset_n => i_reset_125_n, i_clk => i_pcie0_wregs_C_clk );
 
     --! save git version to version register
-    e_version_reg : entity work.version_reg
-    port map (
-        data_out => local_pcie0_rregs_A(VERSION_REGISTER_R)(27 downto 0)--,
-    );
+    local_pcie0_rregs_A(VERSION_REGISTER_R)(27 downto 0) <= work.cmp.GIT_HEAD(27 downto 0);
 
     --! generate reset regs for 250 MHz clk for pcie0
     e_reset_logic_pcie : entity work.reset_logic
