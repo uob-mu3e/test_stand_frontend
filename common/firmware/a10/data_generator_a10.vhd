@@ -19,6 +19,7 @@ generic (
         fpga_id: std_logic_vector(15 downto 0) := x"FFFF";
         max_row: std_logic_vector (7 downto 0) := (others => '0');
         max_col: std_logic_vector (7 downto 0) := (others => '0');
+        test_error: boolean := false;
         wtot: std_logic := '0';
         go_to_sh : positive := 2;
         go_to_trailer : positive := 3;
@@ -63,6 +64,7 @@ architecture rtl of data_generator_a10 is
 	-- slow down signals
 	signal waiting:				  std_logic;
 	signal wait_counter:			  std_logic_vector(31 downto 0);
+	signal nEvent:			  std_logic_vector(31 downto 0);
 
 ----------------begin data_generator------------------------
 begin
@@ -148,6 +150,7 @@ begin
 		current_overflow 			:= "0000000000000000";
 		overflow_idx				:= 0;
 		state_out					<= (others => '0');
+		nEvent					<= (others => '0');
 		delay_cnt					<= (others => '0');
 		datak_pix_generated		<= (others => '1');
 		row <= (others => '0');
@@ -160,6 +163,7 @@ begin
 						state_out <= x"A";
 						if ( delay_cnt = delay ) then
 							data_header_state 					<= part2;
+							nEvent                              <= nEvent + '1';
 							data_pix_generated(31 downto 26) 	<= DATA_HEADER_ID;
 							data_pix_generated(25 downto 24) 	<= (others => '0');
 							data_pix_generated(23 downto 8) 	<= fpga_id;
@@ -176,7 +180,11 @@ begin
 					when part2 =>
 						state_out <= x"B";
 						delay_cnt <= (others => '0');
-						data_pix_generated(31 downto 0) 	<= global_time(47 downto 16);
+						if ( test_error and nEvent > 1 ) then
+                            data_pix_generated(31 downto 0) 	<= (others => '1');
+						else
+                            data_pix_generated(31 downto 0) 	<= global_time(47 downto 16);
+                        end if;
 						global_time 						<= global_time + '1';
 						datak_pix_generated              	<= "0000";
 						data_header_state 					<= part3;

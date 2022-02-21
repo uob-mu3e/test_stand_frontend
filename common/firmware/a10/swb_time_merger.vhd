@@ -34,6 +34,7 @@ port (
     i_ren           : in    std_logic;
     o_wsop          : out   std_logic;
     o_weop          : out   std_logic;
+    o_werp          : out   std_logic;
 
     -- output stream debug
     o_wdata_debug   : out   std_logic_vector(31 downto 0);
@@ -41,6 +42,7 @@ port (
     i_ren_debug     : in    std_logic;
     o_wsop_debug    : out   std_logic;
     o_weop_debug    : out   std_logic;
+    o_werp_debug    : out   std_logic;
 
     o_error         : out   std_logic;
 
@@ -54,13 +56,13 @@ architecture arch of swb_time_merger is
 
     -- data path farm signals
     signal wdata : std_logic_vector(31 downto 0);
-    signal wsop, weop : std_logic;
+    signal wsop, weop, werp : std_logic;
 
     -- debug path signals
     type write_debug_type is (idle, write_data, skip_data);
     signal write_debug_state : write_debug_type;
     signal wrusedw : std_logic_vector(8 - 1 downto 0);
-    signal wdata_debug, q_stream_debug : std_logic_vector(33 downto 0);
+    signal wdata_debug, q_stream_debug : std_logic_vector(34 downto 0);
     signal almost_full, we_debug : std_logic;
 
 begin
@@ -92,7 +94,7 @@ begin
         o_empty                 => o_rempty,
 
         -- counters
-        o_error                 => open,
+        o_error                 => werp,
 
         i_en                    => i_en,
         i_reset_n               => i_reset_n,
@@ -104,6 +106,7 @@ begin
     o_wdata <= wdata;
     o_wsop  <= wsop;
     o_weop  <= weop;
+    o_werp  <= werp;
 
     --! write data to debug fifo
     process(i_clk, i_reset_n)
@@ -115,7 +118,7 @@ begin
         --
     elsif ( rising_edge(i_clk) ) then
 
-        wdata_debug <= wsop & weop & wdata;
+        wdata_debug <= werp & wsop & weop & wdata;
         we_debug    <= '0';
 
         if ( i_ren = '0' ) then
@@ -159,7 +162,7 @@ begin
     e_stream_fifo_debug : entity work.ip_scfifo_v2
     generic map (
         g_ADDR_WIDTH => 8,
-        g_DATA_WIDTH => 34,
+        g_DATA_WIDTH => 35,
         g_RREG_N => 1--, -- TNS=-900
     )
     port map (
@@ -178,6 +181,7 @@ begin
 
     --! map output data debug
     o_wdata_debug   <= q_stream_debug(31 downto 0);
+    o_werp_debug    <= q_stream_debug(34);
     o_wsop_debug    <= q_stream_debug(33);
     o_weop_debug    <= q_stream_debug(32);
 

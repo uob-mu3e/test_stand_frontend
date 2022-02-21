@@ -19,6 +19,7 @@ port(
     i_rempty            : in  std_logic;
     i_header            : in  std_logic;
     i_trailer           : in  std_logic;
+    i_error             : in  std_logic;
 
     i_get_n_words       : in  std_logic_vector (31 downto 0);
     i_dmamemhalffull    : in  std_logic;
@@ -50,8 +51,9 @@ architecture arch of swb_midas_event_builder is
         event_head, event_num, event_tmp, event_size, bank_size, bank_flags, bank_name, bank_type, bank_length, bank_data, bank_set_length, event_set_size, bank_set_size, write_tagging_fifo, set_algin_word, bank_reserved, EVENT_IDLE--,
     );
     signal event_tagging_state : event_tagging_state_type;
-    signal e_size_add, b_size_add, b_length_add, w_ram_add_reg, w_ram_add, w_fifo_data, r_fifo_data, last_event_add, align_event_size : std_logic_vector(11 downto 0);
-    signal w_fifo_en, r_fifo_en, tag_fifo_empty, tag_fifo_full : std_logic;
+    signal e_size_add, b_size_add, b_length_add, w_ram_add_reg, w_ram_add, last_event_add, align_event_size : std_logic_vector(11 downto 0);
+    signal w_fifo_data, r_fifo_data : std_logic_vector(12 downto 0);
+    signal w_fifo_en, r_fifo_en, tag_fifo_empty, tag_fifo_full, is_error, is_error_q : std_logic;
 
     -- ram 
     signal w_ram_en : std_logic;
@@ -88,7 +90,7 @@ begin
     port map ( o_cnt => o_counters(3), i_ena => tag_fifo_full, i_reset_n => i_reset_n_250, i_clk => i_clk_250 );
 
     --! data out
-    o_data <= r_ram_data when event_counter_state /= write_4kb_padding else (others => '1');
+    o_data <= (others => '1') when event_counter_state = write_4kb_padding and is_error_q = '0' else r_ram_data;
 
     e_ram_32_256 : entity work.ip_ram
     generic map (
@@ -113,7 +115,7 @@ begin
     e_tagging_fifo_event : entity work.ip_scfifo
     generic map (
         ADDR_WIDTH      => 12,
-        DATA_WIDTH      => 12--,
+        DATA_WIDTH      => 13--,
     )
     port map (
         data            => w_fifo_data,
@@ -148,6 +150,7 @@ begin
         w_ram_add           <= (others => '1');
         w_fifo_en           <= '0';
         w_fifo_data         <= (others => '0');
+        is_error            <= '0';
 
         -- midas signals
         event_id            <= x"0001";
@@ -278,9 +281,12 @@ begin
 
         when bank_data =>
             -- check again if the fifo is empty
-            if ( i_rempty = '0' and i_rx /= x"FFFFFFFF" ) then
+            if ( i_rempty = '0' ) then
                 w_ram_en            <= '1';
                 w_ram_add           <= w_ram_add + 1;
+                if ( i_error = '1' ) then
+                    is_error <= '1';
+                end if;
                 if ( i_trailer = '1' ) then
                     w_ram_data(31 downto 12)    <= x"FC000";
                     w_ram_data(11 downto 8)     <= "00" & i_rx(9 downto 8);
@@ -290,7 +296,7 @@ begin
                 end if;
                 event_size_cnt      <= event_size_cnt + 4;
                 bank_size_cnt       <= bank_size_cnt + 4;
-                if ( i_trailer = '1' ) then
+                if ( i_trailer = '1' or i_error = '1' ) then
                     event_tagging_state <= set_algin_word;
                     align_event_size    <= w_ram_add + 1 - last_event_add;
                 end if;
@@ -337,7 +343,11 @@ begin
 
         when write_tagging_fifo =>
             w_fifo_en           <= '1';
-            w_fifo_data         <= w_ram_add_reg;
+            if ( is_error = '1' ) then
+                w_fifo_data     <= '1' & w_ram_add_reg;
+            else
+                w_fifo_data     <= '0' & w_ram_add_reg;
+            end if;
             last_event_add      <= w_ram_add_reg;
             w_ram_add           <= w_ram_add_reg - 1;
             event_tagging_state <= EVENT_IDLE;
@@ -364,6 +374,7 @@ begin
         cnt_skip_event_dma  <= (others => '0');
         o_done              <= '0';
         r_fifo_en           <= '0';
+        is_error_q          <= '0';
         r_ram_add           <= (others => '1');
         event_last_ram_add  <= (others => '0');
         event_counter_state <= waiting;	
@@ -397,6 +408,7 @@ begin
             elsif ( tag_fifo_empty = '0' ) then
                 r_fifo_en           <= '1';
                 event_last_ram_add  <= r_fifo_data(11 downto 3);
+                is_error_q          <= r_fifo_data(12);
                 r_ram_add           <= r_ram_add + '1';
                 event_counter_state <= get_data;
             end if;
@@ -419,7 +431,11 @@ begin
             word_counter            <= word_counter + '1';
             if(r_ram_add = event_last_ram_add - '1') then
                 o_endofevent        <= '1'; -- end of event
-                event_counter_state <= waiting;
+                if ( is_error_q = '1' ) then
+                    event_counter_state <= write_4kb_padding;
+                else
+                    event_counter_state <= waiting;
+                end if;
                 if ( word_counter + '1' <= i_get_n_words ) then
                     word_counter_endofevent <= word_counter + '1';
                 end if;
@@ -428,13 +444,17 @@ begin
             end if;
             
          when write_4kb_padding =>
-            o_state_out <= x"D";
-            o_wen       <= i_wen;
-            if ( cnt_4kb = "01111111" ) then
-                cnt_4kb_done <= '1';
-                event_counter_state <= waiting;
+            if ( is_error_q = '1' ) then
+                is_error_q <= '0';
             else
-                cnt_4kb <= cnt_4kb + '1';
+                o_state_out <= x"D";
+                o_wen       <= i_wen;
+                if ( cnt_4kb = "01111111" ) then
+                    cnt_4kb_done <= '1';
+                    event_counter_state <= waiting;
+                else
+                    cnt_4kb <= cnt_4kb + '1';
+                end if;
             end if;
 
         when skip_event =>

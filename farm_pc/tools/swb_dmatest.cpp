@@ -129,6 +129,8 @@ int main(int argc, char *argv[])
     uint32_t reset_regs = 0;
     reset_regs = SET_RESET_BIT_DATA_PATH(reset_regs);
     reset_regs = SET_RESET_BIT_DATAGEN(reset_regs);
+    reset_regs = SET_RESET_BIT_SWB_STREAM_MERGER(reset_regs);
+    reset_regs = SET_RESET_BIT_SWB_TIME_MERGER(reset_regs);
     cout << "Reset Regs: " << hex << reset_regs << endl;
     mu.write_register(RESET_REGISTER_W, reset_regs);
 
@@ -147,6 +149,7 @@ int main(int argc, char *argv[])
     if (atoi(argv[5]) == 1) set_pixel = 0;
     if (atoi(argv[5]) == 0) set_pixel = 1;
 
+    uint32_t readout_state_regs = 0;
     // use stream merger to readout links
     if ( atoi(argv[1]) == 0 ) mu.write_register(mask_n_add, strtol(argv[4], NULL, 16));
     if ( atoi(argv[1]) == 0 ) mu.write_register(SWB_READOUT_STATE_REGISTER_W, 0x42 | (set_pixel << 7));
@@ -154,8 +157,13 @@ int main(int argc, char *argv[])
     if ( atoi(argv[1]) == 2 ) mu.write_register(mask_n_add, strtol(argv[4], NULL, 16));
     if ( atoi(argv[1]) == 2 ) mu.write_register(SWB_READOUT_STATE_REGISTER_W, 0x3 | (set_pixel << 7));
     // use time merger to readout datagen
-    if ( atoi(argv[1]) == 3 ) mu.write_register(mask_n_add, strtol(argv[4], NULL, 16));
-    if ( atoi(argv[1]) == 3 ) mu.write_register(SWB_READOUT_STATE_REGISTER_W, 0x5 | (set_pixel << 7));  
+    if ( atoi(argv[1]) == 3 ) {
+        mu.write_register(mask_n_add, strtol(argv[4], NULL, 16));
+        readout_state_regs = SET_USE_BIT_GEN_LINK(readout_state_regs);
+        readout_state_regs = SET_USE_BIT_MERGER(readout_state_regs);
+        readout_state_regs = SET_USE_BIT_PIXEL_US(readout_state_regs);
+        mu.write_register(SWB_READOUT_STATE_REGISTER_W, readout_state_regs); 
+    }
     // use time merger to readout links
     if ( atoi(argv[1]) == 4 ) mu.write_register(mask_n_add, strtol(argv[4], NULL, 16));
     if ( atoi(argv[1]) == 4 ) mu.write_register(SWB_READOUT_STATE_REGISTER_W, 0x44| (set_pixel << 7));
@@ -177,7 +185,9 @@ int main(int argc, char *argv[])
         int cnt_loop = 0;
         // wait for requested data
         while ( (mu.read_register_ro(EVENT_BUILD_STATUS_REGISTER_R) & 1) == 0 ) {
-            if ( cnt_loop == 1000 ) {
+            if ( cnt_loop == 100000 ) {
+                for(int i=0; i < 8; i++) cout << hex << "0x" <<  dma_buf[i+8] << " ";
+                cout << endl;
                 cnt_loop = 0;
             }
             cnt_loop = cnt_loop + 1;

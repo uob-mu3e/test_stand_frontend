@@ -64,8 +64,8 @@ architecture arch of swb_data_path is
     signal reset_250_n : std_logic;
 
     --! data gen links
-    signal gen_link : std_logic_vector(31 downto 0);
-    signal gen_link_k : std_logic_vector(3 downto 0);
+    signal gen_link, gen_link_error : std_logic_vector(31 downto 0);
+    signal gen_link_k, gen_link_k_error : std_logic_vector(3 downto 0);
 
     --! data link signals
     signal rx : work.util.slv32_array_t(g_NLINKS_DATA-1 downto 0);
@@ -85,14 +85,14 @@ architecture arch of swb_data_path is
     --! timer merger
     signal merger_rdata : std_logic_vector(31 downto 0);
     signal merger_rdata_debug : std_logic_vector(31 downto 0);
-    signal merger_rempty, merger_ren, merger_header, merger_trailer : std_logic;
-    signal merger_rempty_debug, merger_ren_debug, merger_header_debug, merger_trailer_debug : std_logic;
+    signal merger_rempty, merger_ren, merger_header, merger_trailer, merger_error : std_logic;
+    signal merger_rempty_debug, merger_ren_debug, merger_header_debug, merger_trailer_debug, merger_error_debug : std_logic;
     signal merger_rack : std_logic_vector (g_NLINKS_DATA-1 downto 0);
     
     --! event builder
     signal builder_data : std_logic_vector(31 downto 0);
     signal builder_counters : work.util.slv32_array_t(3 downto 0);
-    signal builder_rempty, builder_rack, builder_header, builder_trailer : std_logic;
+    signal builder_rempty, builder_rack, builder_header, builder_trailer, builder_error : std_logic;
 
     --! links to farm
     signal farm_data : std_logic_vector(31 downto 0);
@@ -147,6 +147,7 @@ begin
     generic map (
         DATA_TYPE => DATA_TYPE,
         go_to_sh => 3,
+        test_error => false,
         go_to_trailer => 4--,
     )
     port map (
@@ -163,7 +164,29 @@ begin
         state_out           => open,
         clk                 => i_clk_156--,
     );
-
+    
+    e_data_gen_error_test : entity work.data_generator_a10
+    generic map (
+        DATA_TYPE => DATA_TYPE,
+        go_to_sh => 3,
+        test_error => true,
+        go_to_trailer => 4--,
+    )
+    port map (
+        i_reset_n           => i_resets_n_156(RESET_BIT_DATAGEN),
+        enable_pix          => i_writeregs_156(SWB_READOUT_STATE_REGISTER_W)(USE_BIT_GEN_LINK),
+        i_dma_half_full     => '0',
+        random_seed         => (others => '1'),
+        data_pix_generated  => gen_link_error,
+        datak_pix_generated => gen_link_k_error,
+        data_pix_ready      => open,
+        start_global_time   => (others => '0'),
+        delay               => (others => '0'),
+        slow_down           => i_writeregs_156(DATAGENERATOR_DIVIDER_REGISTER_W),
+        state_out           => open,
+        clk                 => i_clk_156--,
+    );
+    
     gen_link_data : FOR i in 0 to g_NLINKS_DATA - 1 GENERATE
     
         process(i_clk_156, i_reset_n_156)
@@ -172,9 +195,14 @@ begin
             rx(i)   <= (others => '0');
             rx_k(i) <= (others => '0');
         elsif rising_edge( i_clk_156 ) then
-            if (i_writeregs_156(SWB_READOUT_STATE_REGISTER_W)(USE_BIT_GEN_LINK) = '1') then
-                rx(i)   <= gen_link;
-                rx_k(i) <= gen_link_k;
+            if ( i_writeregs_156(SWB_READOUT_STATE_REGISTER_W)(USE_BIT_GEN_LINK) = '1' ) then
+                if ( i_writeregs_156(SWB_READOUT_STATE_REGISTER_W)(USE_BIT_TEST_ERROR) = '1' and i = 0 ) then
+                    rx(i)   <= gen_link_error;
+                    rx_k(i) <= gen_link_k_error;
+                else
+                    rx(i)   <= gen_link;
+                    rx_k(i) <= gen_link_k;
+                end if;
             else
                 rx(i)   <= i_rx(i);
                 rx_k(i) <= i_rx_k(i);
@@ -303,6 +331,7 @@ begin
         i_ren           => merger_ren,
         o_wsop          => merger_header,
         o_weop          => merger_trailer,
+        o_werp          => merger_error,
 
         -- data for debug readout
         o_wdata_debug   => merger_rdata_debug,
@@ -310,6 +339,7 @@ begin
         i_ren_debug     => merger_ren_debug,
         o_wsop_debug    => merger_header_debug,
         o_weop_debug    => merger_trailer_debug,
+        o_werp_debug    => merger_error_debug,
 
         o_error         => open,
 
@@ -338,7 +368,10 @@ begin
                         '0';
     builder_trailer <=  stream_trailer_debug when i_writeregs_250(SWB_READOUT_STATE_REGISTER_W)(USE_BIT_STREAM) = '1' else
                         merger_trailer_debug when i_writeregs_250(SWB_READOUT_STATE_REGISTER_W)(USE_BIT_MERGER) = '1' else
-                        '0';                    
+                        '0';
+    builder_error   <=  '0'                when i_writeregs_250(SWB_READOUT_STATE_REGISTER_W)(USE_BIT_STREAM) = '1' else
+                        merger_error_debug when i_writeregs_250(SWB_READOUT_STATE_REGISTER_W)(USE_BIT_MERGER) = '1' else
+                        '0';
     stream_ren_debug <= builder_rack when i_writeregs_250(SWB_READOUT_STATE_REGISTER_W)(USE_BIT_STREAM) = '1' else '0';
     merger_ren_debug <= builder_rack when i_writeregs_250(SWB_READOUT_STATE_REGISTER_W)(USE_BIT_MERGER) = '1' else '0';
 
@@ -353,7 +386,7 @@ begin
                         '0';
     farm_trailer    <=  stream_trailer when i_writeregs_250(SWB_READOUT_STATE_REGISTER_W)(USE_BIT_STREAM) = '1' else
                         merger_trailer when i_writeregs_250(SWB_READOUT_STATE_REGISTER_W)(USE_BIT_MERGER) = '1' else
-                        '0';                    
+                        '0';              
     stream_ren      <=  farm_rack when i_writeregs_250(SWB_READOUT_STATE_REGISTER_W)(USE_BIT_STREAM) = '1' else '0';
     merger_ren      <=  farm_rack when i_writeregs_250(SWB_READOUT_STATE_REGISTER_W)(USE_BIT_MERGER) = '1' else '0';
 
@@ -371,6 +404,7 @@ begin
         i_rempty            => builder_rempty,
         i_header            => builder_header,
         i_trailer           => builder_trailer,
+        i_error             => builder_error,
         
         i_get_n_words       => i_writeregs_250(GET_N_DMA_WORDS_REGISTER_W),
         i_dmamemhalffull    => i_dmamemhalffull,
@@ -399,6 +433,6 @@ begin
                     "0001"      when farm_header  = '1' else 
                     "0001"      when farm_trailer = '1' else 
                     "0000";
-    farm_rack    <= '0' when farm_rempty = '1' else '1';
+    farm_rack    <= not farm_rempty;
 
 end architecture;

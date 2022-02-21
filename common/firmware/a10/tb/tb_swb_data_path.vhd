@@ -56,9 +56,10 @@ begin
     resets_n_250(RESET_BIT_SWB_TIME_MERGER)                     <= '0', '1' after (1.0 us / CLK_MHZ);
     writeregs_156(DATAGENERATOR_DIVIDER_REGISTER_W)             <= x"00000002";
     writeregs_156(SWB_READOUT_STATE_REGISTER_W)(USE_BIT_GEN_LINK)   <= '1';
+    writeregs_156(SWB_READOUT_STATE_REGISTER_W)(USE_BIT_TEST_ERROR) <= '1'; 
     writeregs_250(SWB_READOUT_STATE_REGISTER_W)(USE_BIT_STREAM)     <= '0';
     writeregs_250(SWB_READOUT_STATE_REGISTER_W)(USE_BIT_MERGER)     <= '1';
-
+    
     writeregs_250(SWB_LINK_MASK_PIXEL_REGISTER_W)               <= x"0000001F";--x"00000048";
     writeregs_250(SWB_READOUT_LINK_REGISTER_W)                  <= x"00000001";
     writeregs_250(GET_N_DMA_WORDS_REGISTER_W)                   <= (others => '1');
