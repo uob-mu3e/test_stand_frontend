@@ -67,7 +67,7 @@ architecture arch of time_merger_tree_fifo_32_v3 is
 
     -- error signals
     signal shop_time0, shop_time1 : work.util.slv7_array_t(N_LINKS_OUT - 1 downto 0) := (others => (others => '0'));
-    signal error : work.util.slv4_array_t(N_LINKS_OUT - 1 downto 0);
+    signal error_s : work.util.slv2_array_t(N_LINKS_OUT - 1 downto 0) := (others => (others => '0'));
 
 begin
 
@@ -116,7 +116,7 @@ begin
         o_t0(i)    <= '1' when q_data(i)(34 downto 32) = "100" else '0';
         o_t1(i)    <= '1' when q_data(i)(34 downto 32) = "101" else '0';
         o_error(i) <= '1' when q_data(i)(34 downto 32) = "011" else '0';
-        o_data(i)   <= q_data(i)(31 downto 0);
+        o_data(i)  <= q_data(i)(31 downto 0);
 
         -- Tree setup
         -- x => empty, h => header, t => time header, tr => trailer, sh => sub header
@@ -174,14 +174,14 @@ begin
         -- do some error checking
         shop_time0(i) <= a_h(i)(29 downto 28) & a_h(i)(20 downto 16);
         shop_time1(i) <= b_h(i)(29 downto 28) & b_h(i)(20 downto 16);
-        error(i)      <= x"1"	when layer_state(i) = TS0 and a_h(i) /= b_h(i) else
-                         x"2"	when layer_state(i) = TS1 and a_h(i)(31 downto 27) /= b_h(i)(31 downto 27) else
-                         x"3"	when layer_state(i) = SHEADER and shop_time0(i) /= shop_time1(i) else
+        error_s(i)    <= x"1"   when layer_state(i) = TS0 and a_h(i) /= b_h(i) else
+                         x"2"   when layer_state(i) = TS1 and a_h(i)(31 downto 27) /= b_h(i)(31 downto 27) else
+                         x"3"   when layer_state(i) = SHEADER and shop_time0(i) /= shop_time1(i) else
                          (others => '0');
 
         data(i)         <=  "011" & a_h(i) when layer_state(i) = ONEERROR and i_error(i) = '1' else
                             "011" & b_h(i) when layer_state(i) = ONEERROR and i_error(i+size) = '1' else
-                            "011" & error(i) & x"FFFFF9C" when error(i) /= "0000" else
+                            "011" & error_s(i) & x"FFFFF9C" when work.util.and_reduce(error_s(i)) = '0' else
                             "010" & x"E80000BC" when layer_state(i) = HEADER else
                             "100" & a_h(i) when layer_state(i) = TS0 else
                             -- we write out the full ts1 here but we can ignore the lower bits from 10-0 later
