@@ -18,6 +18,7 @@ port (
     i_we0       : in    std_logic := '0';
     i_wdata0    : in    std_logic_vector(g_DATA0_WIDTH-1 downto 0) := (others => '0');
     i_re0       : in    std_logic := '1';
+    o_rvalid0   : out   std_logic;
     o_rdata0    : out   std_logic_vector(g_DATA0_WIDTH-1 downto 0);
     i_clk0      : in    std_logic;
 
@@ -25,6 +26,7 @@ port (
     i_we1       : in    std_logic := '0';
     i_wdata1    : in    std_logic_vector(g_DATA1_WIDTH-1 downto 0) := (others => '0');
     i_re1       : in    std_logic := '1';
+    o_rvalid1   : out   std_logic;
     o_rdata1    : out   std_logic_vector(g_DATA1_WIDTH-1 downto 0);
     i_clk1      : in    std_logic--;
 );
@@ -34,6 +36,10 @@ library altera_mf;
 use altera_mf.altera_mf_components.all;
 
 architecture arch of ip_ram_2rw is
+
+    signal rvalid0 : std_logic_vector(g_RDATA0_REG+1 downto 0) := (others => '0');
+    signal rvalid1 : std_logic_vector(g_RDATA1_REG+1 downto 0) := (others => '0');
+
 begin
 
     assert ( true
@@ -96,5 +102,25 @@ begin
         q_b => o_rdata1,
         clock1 => i_clk1--,
     );
+
+    -- generate rvalid0
+    o_rvalid0 <= rvalid0(0);
+    rvalid0(g_RDATA0_REG+1) <= i_re0;
+    process(i_clk0)
+    begin
+    if rising_edge(i_clk0) then
+        rvalid0(g_RDATA0_REG downto 0) <= rvalid0(g_RDATA0_REG+1 downto 1);
+    end if;
+    end process;
+
+    -- generate rvalid1
+    o_rvalid1 <= rvalid1(0);
+    rvalid1(g_RDATA1_REG+1) <= i_re1;
+    process(i_clk1)
+    begin
+    if rising_edge(i_clk1) then
+        rvalid1(g_RDATA1_REG downto 0) <= rvalid1(g_RDATA1_REG+1 downto 1);
+    end if;
+    end process;
 
 end architecture;
