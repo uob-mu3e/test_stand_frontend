@@ -356,47 +356,47 @@ begin
         o_dma_data       => pixel_dma_data(0)--;
     );
     
-    e_swb_data_path_pixel_ds : entity work.swb_data_path
-    generic map (
-        g_LOOPUP_NAME           => "intRun2021",
-        g_ADDR_WIDTH            => 11,
-        g_NLINKS_DATA           => g_NLINKS_DATA_PIXEL_DS,
-        LINK_FIFO_ADDR_WIDTH    => 13,
-        SWB_ID                  => SWB_ID,
-        -- Data type: x"01" = pixel, x"02" = scifi, x"03" = tiles
-        DATA_TYPE               => x"01"--;
-    )
-    port map(
-        i_clk_156        => i_clk_156,
-        i_clk_250        => i_clk_250,
-
-        i_reset_n_156    => i_resets_n_156(RESET_BIT_DATA_PATH),
-        i_reset_n_250    => i_resets_n_250(RESET_BIT_DATA_PATH),
-
-        i_resets_n_156   => i_resets_n_156,
-        i_resets_n_250   => i_resets_n_250,
-
-        i_rx             => rx_data_pixel(g_NLINKS_DATA_PIXEL-1 downto g_NLINKS_DATA_PIXEL_US),
-        i_rx_k           => rx_data_k_pixel(g_NLINKS_DATA_PIXEL-1 downto g_NLINKS_DATA_PIXEL_US),
-        i_rmask_n        => pixel_mask_n(g_NLINKS_DATA_PIXEL-1 downto g_NLINKS_DATA_PIXEL_US),
-
-        i_writeregs_156  => i_writeregs_156,
-        i_writeregs_250  => i_writeregs_250,
-
-        o_counter_156    => counter_swb_data_pixel_156(g_NLINKS_DATA_PIXEL*5-1 downto g_NLINKS_DATA_PIXEL_US*5),
-        o_counter_250    => counter_swb_data_pixel_250_ds,
-
-        i_dmamemhalffull => i_dmamemhalffull,
-        
-        o_farm_data      => pixel_farm_data(1),
-        o_farm_datak     => pixel_farm_datak(1),
-
-        o_dma_wren       => pixel_dma_wren(1),
-        o_dma_cnt_words  => pixel_dma_cnt_words(1),
-        o_dma_done       => pixel_dma_done(1),
-        o_endofevent     => pixel_dma_endofevent(1),
-        o_dma_data       => pixel_dma_data(1)--;
-    );
+--    e_swb_data_path_pixel_ds : entity work.swb_data_path
+--    generic map (
+--        g_LOOPUP_NAME           => "intRun2021",
+--        g_ADDR_WIDTH            => 11,
+--        g_NLINKS_DATA           => g_NLINKS_DATA_PIXEL_DS,
+--        LINK_FIFO_ADDR_WIDTH    => 13,
+--        SWB_ID                  => SWB_ID,
+--        -- Data type: x"01" = pixel, x"02" = scifi, x"03" = tiles
+--        DATA_TYPE               => x"01"--;
+--    )
+--    port map(
+--        i_clk_156        => i_clk_156,
+--        i_clk_250        => i_clk_250,
+--
+--        i_reset_n_156    => i_resets_n_156(RESET_BIT_DATA_PATH),
+--        i_reset_n_250    => i_resets_n_250(RESET_BIT_DATA_PATH),
+--
+--        i_resets_n_156   => i_resets_n_156,
+--        i_resets_n_250   => i_resets_n_250,
+--
+--        i_rx             => rx_data_pixel(g_NLINKS_DATA_PIXEL-1 downto g_NLINKS_DATA_PIXEL_US),
+--        i_rx_k           => rx_data_k_pixel(g_NLINKS_DATA_PIXEL-1 downto g_NLINKS_DATA_PIXEL_US),
+--        i_rmask_n        => pixel_mask_n(g_NLINKS_DATA_PIXEL-1 downto g_NLINKS_DATA_PIXEL_US),
+--
+--        i_writeregs_156  => i_writeregs_156,
+--        i_writeregs_250  => i_writeregs_250,
+--
+--        o_counter_156    => counter_swb_data_pixel_156(g_NLINKS_DATA_PIXEL*5-1 downto g_NLINKS_DATA_PIXEL_US*5),
+--        o_counter_250    => counter_swb_data_pixel_250_ds,
+--
+--        i_dmamemhalffull => i_dmamemhalffull,
+--        
+--        o_farm_data      => pixel_farm_data(1),
+--        o_farm_datak     => pixel_farm_datak(1),
+--
+--        o_dma_wren       => pixel_dma_wren(1),
+--        o_dma_cnt_words  => pixel_dma_cnt_words(1),
+--        o_dma_done       => pixel_dma_done(1),
+--        o_endofevent     => pixel_dma_endofevent(1),
+--        o_dma_data       => pixel_dma_data(1)--;
+--    );
 
 
     --! SWB data path Scifi

@@ -109,14 +109,14 @@ begin
             i_reset_n       => i_reset_n--,
         );
 
-        o_sop(i)   <= '1' when q_data(i)(34 downto 32) = "010" else '0';
-        o_shop(i)  <= '1' when q_data(i)(34 downto 32) = "111" else '0';
-        o_eop(i)   <= '1' when q_data(i)(34 downto 32) = "001" else '0';
-        o_hit(i)   <= '1' when q_data(i)(34 downto 32) = "000" else '0';
-        o_t0(i)    <= '1' when q_data(i)(34 downto 32) = "100" else '0';
-        o_t1(i)    <= '1' when q_data(i)(34 downto 32) = "101" else '0';
-        o_error(i) <= '1' when q_data(i)(34 downto 32) = "011" else '0';
-        o_data(i)  <= q_data(i)(31 downto 0);
+        o_sop(i)   <= '1' when q_data(i)(34 downto 32) = "010" and o_empty(i) = '0' else '0';
+        o_shop(i)  <= '1' when q_data(i)(34 downto 32) = "111" and o_empty(i) = '0' else '0';
+        o_eop(i)   <= '1' when q_data(i)(34 downto 32) = "001" and o_empty(i) = '0' else '0';
+        o_hit(i)   <= '1' when q_data(i)(34 downto 32) = "000" and o_empty(i) = '0' else '0';
+        o_t0(i)    <= '1' when q_data(i)(34 downto 32) = "100" and o_empty(i) = '0' else '0';
+        o_t1(i)    <= '1' when q_data(i)(34 downto 32) = "101" and o_empty(i) = '0' else '0';
+        o_error(i) <= '1' when q_data(i)(34 downto 32) = "011" and o_empty(i) = '0' else '0';
+        o_data(i)  <= q_data(i)(31 downto 0) when o_empty(i) = '0' else (others => '0');
 
         -- Tree setup
         -- x => empty, h => header, t => time header, tr => trailer, sh => sub header
@@ -157,12 +157,14 @@ begin
         o_rack(i)       <=  '1' when layer_state(i) = HEADER or layer_state(i) = TS0 or layer_state(i) = TS1 or layer_state(i) = SHEADER or layer_state(i) = TRAILER else
                             '1' when layer_state(i) = ONEHIT and i_hit(i) = '1' else
                             '1' when layer_state(i) = HIT and a(i) <= b(i) else
+                            not i_empty(i) when layer_state(i) = ONEERROR and i_error(i) = '1' else
                             not i_empty(i) when layer_state(i) = ONEMASK and i_mask_n(i) = '1' else
                             '0';
 
         o_rack(i+size)  <=  '1' when layer_state(i) = HEADER or layer_state(i) = TS0 or layer_state(i) = TS1 or layer_state(i) = SHEADER or layer_state(i) = TRAILER else
                             '1' when layer_state(i) = ONEHIT and i_hit(i+size) = '1' else
                             '1' when layer_state(i) = HIT and b(i) < a(i) else
+                            not i_empty(i+size) when layer_state(i) = ONEERROR and i_error(i+size) = '1' else
                             not i_empty(i+size) when layer_state(i) = ONEMASK and i_mask_n(i+size) = '1' else
                             '0';
 
@@ -174,14 +176,14 @@ begin
         -- do some error checking
         shop_time0(i) <= a_h(i)(29 downto 28) & a_h(i)(20 downto 16);
         shop_time1(i) <= b_h(i)(29 downto 28) & b_h(i)(20 downto 16);
-        error_s(i)    <= x"1"   when layer_state(i) = TS0 and a_h(i) /= b_h(i) else
-                         x"2"   when layer_state(i) = TS1 and a_h(i)(31 downto 27) /= b_h(i)(31 downto 27) else
-                         x"3"   when layer_state(i) = SHEADER and shop_time0(i) /= shop_time1(i) else
+        error_s(i)    <= "01"   when layer_state(i) = TS0 and a_h(i) /= b_h(i) else
+                         "10"   when layer_state(i) = TS1 and a_h(i)(31 downto 27) /= b_h(i)(31 downto 27) else
+                         "11"   when layer_state(i) = SHEADER and shop_time0(i) /= shop_time1(i) else
                          (others => '0');
 
         data(i)         <=  "011" & a_h(i) when layer_state(i) = ONEERROR and i_error(i) = '1' else
                             "011" & b_h(i) when layer_state(i) = ONEERROR and i_error(i+size) = '1' else
-                            "011" & error_s(i) & x"FFFFF9C" when work.util.and_reduce(error_s(i)) = '0' else
+                            "011" & "00" & error_s(i) & x"FFFFF9C" when work.util.or_reduce(error_s(i)) = '1' else
                             "010" & x"E80000BC" when layer_state(i) = HEADER else
                             "100" & a_h(i) when layer_state(i) = TS0 else
                             -- we write out the full ts1 here but we can ignore the lower bits from 10-0 later

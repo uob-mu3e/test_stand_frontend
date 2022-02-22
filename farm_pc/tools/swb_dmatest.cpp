@@ -162,6 +162,7 @@ int main(int argc, char *argv[])
         readout_state_regs = SET_USE_BIT_GEN_LINK(readout_state_regs);
         readout_state_regs = SET_USE_BIT_MERGER(readout_state_regs);
         readout_state_regs = SET_USE_BIT_PIXEL_US(readout_state_regs);
+        //readout_state_regs = SET_USE_BIT_TEST_ERROR(readout_state_regs);
         mu.write_register(SWB_READOUT_STATE_REGISTER_W, readout_state_regs); 
     }
     // use time merger to readout links
