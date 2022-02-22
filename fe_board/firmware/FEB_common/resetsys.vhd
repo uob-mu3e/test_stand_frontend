@@ -95,8 +95,8 @@ BEGIN
     e_edge_detector : entity work.edge_det
     generic map ( EDGE => +1 )
     port map (
-        i_d => reset_bypass_125_rx(RESET_BYPASS_BIT_REQUEST),
-        o_q => reset_bypass_request,
+        i_d(0) => reset_bypass_125_rx(RESET_BYPASS_BIT_REQUEST),
+        o_q(0) => reset_bypass_request,
         i_clk => i_clk_125_rx--,
     );
 
