@@ -19,8 +19,16 @@
         <tr>
 
             <td rowspan=22 style="text-align: right; width: 820px">
-                <div name="modb" data-odb-path="/Equipment/Links/Variables" onchange="update_boarddrawing(this.value)">
-                <div name="modb" data-odb-path="/Equipment/Links/Settings" onchange="update_masks(this.value)">
+                    <div name="modb" data-odb-path="/Equipment/Clock Reset/Settings" onchange="update_boarddrawing(this.value)">
+                    <div name="modb" data-odb-path="/Equipment/LinksCentral/Settings" onchange="update_masks(this.value, 0)">
+                    <div name="modb" data-odb-path="/Equipment/LinksUpstream/Settings" onchange="update_masks(this.value, 1)">    
+                    <div name="modb" data-odb-path="/Equipment/LinksDownstream/Settings" onchange="update_masks(this.value, 2)">
+                    <div name="modb" data-odb-path="/Equipment/LinksFibre/Settings" onchange="update_masks(this.value, 3)">   
+                    <div name="modb" data-odb-path="/Equipment/LinksCentral/Variables/LinkStatus" onchange="update_status(this.value, 0)">
+                    <div name="modb" data-odb-path="/Equipment/LinksUpstream/Variables/LinkStatus" onchange="update_status(this.value, 1)">    
+                    <div name="modb" data-odb-path="/Equipment/LinksDownstream/Variables/LinkStatus" onchange="update_status(this.value, 2)">
+                    <div name="modb" data-odb-path="/Equipment/LinksFibre/Variables/LinkStatus" onchange="update_status(this.value, 3)">   
+
                 <canvas width="1200px" height="900px"></canvas>
             </td>
         </tr>

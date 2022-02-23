@@ -31,17 +31,16 @@ void TilesFEB::on_tiles_settings_changed(odb o, void * userdata)
 
 //Read all power monitor readings from FEB/TMB, store in subtree $odb_prefix/Variables/tmb_current , tmb_voltage
 //Parameter FPGA_ID refers to global numbering, i.e. before mapping
-int TilesFEB::ReadBackTMBPower(uint16_t FPGA_ID){
-   //map to SB fiber
-   auto FEB = febs[FPGA_ID];
+int TilesFEB::ReadBackTMBPower(mappedFEB & FEB){
+
    if(!FEB.IsScEnabled()) return SUCCESS; //skip disabled fibers
    if(FEB.SB_Number()!= SB_number) return SUCCESS; //skip commands not for this SB
 
    //issue readout on TMB
-    auto rpc_ret = feb_sc.FEBsc_NiosRPC(FEB.SB_Port(), feb::CMD_TILE_POWERMONITORS_READ, {});
+    auto rpc_ret = feb_sc.FEBsc_NiosRPC(FEB, feb::CMD_TILE_POWERMONITORS_READ, {});
    //retrieve results
    vector<uint32_t> val(rpc_ret*5*3);
-   feb_sc.FEB_read(FEB.SB_Port(), FEBSlowcontrolInterface::OFFSETS::FEBsc_RPC_DATAOFFSET,
+   feb_sc.FEB_read(FEB, FEBSlowcontrolInterface::OFFSETS::FEBsc_RPC_DATAOFFSET,
                    val);
 
    return SUCCESS;
@@ -49,17 +48,16 @@ int TilesFEB::ReadBackTMBPower(uint16_t FPGA_ID){
 
 //Read all sipm matrix temperatures from FEB/TMB, store in subtree $odb_prefix/Variables/matrix_temperatures
 //Parameter FPGA_ID refers to global numbering, i.e. before mapping
-int TilesFEB::ReadBackMatrixTemperatures(uint16_t FPGA_ID){
-   //map to SB fiber
-   auto FEB = febs[FPGA_ID];
+int TilesFEB::ReadBackMatrixTemperatures(mappedFEB & FEB){
+
    if(!FEB.IsScEnabled()) return SUCCESS; //skip disabled fibers
    if(FEB.SB_Number()!= SB_number) return SUCCESS; //skip commands not for this SB
 
    //issue readout on TMB
-    auto rpc_ret = feb_sc.FEBsc_NiosRPC(FEB.SB_Port(), feb::CMD_TILE_TEMPERATURES_READ, {});
+    auto rpc_ret = feb_sc.FEBsc_NiosRPC(FEB, feb::CMD_TILE_TEMPERATURES_READ, {});
    //retrieve results
    vector<uint32_t> val(rpc_ret*5*3);
-   feb_sc.FEB_read(FEB.SB_Port(), FEBSlowcontrolInterface::OFFSETS::FEBsc_RPC_DATAOFFSET,
+   feb_sc.FEB_read(FEB, FEBSlowcontrolInterface::OFFSETS::FEBsc_RPC_DATAOFFSET,
                    val);
 
    return SUCCESS; 
