@@ -42,6 +42,7 @@ architecture RTL of tdac_memory is
 
     constant N_PAGES : integer := 8; -- TODO
 
+    constant PAGE_SIZE : integer := 4; --TODO: increase when done with simultations (calc from addr_with, page_addr_width and N_pages)
     
 
     type TDAC_page_type is record
@@ -93,6 +94,8 @@ architecture RTL of tdac_memory is
 begin
 
     ram_waddr           <= current_page_addr & addr_in_current_page;
+    ram_we              <= i_we;
+    ram_wdata           <= i_data;
 
     process (i_clk, i_reset_n) is
     begin
@@ -110,17 +113,12 @@ begin
             cycler_last_full        <= false;
             cycler_last_chip        <= 0;
             o_tdac_dpf_we           <= (others => '0');
-            ram_we                  <= '0';
-            ram_wdata               <= (others => '0');
-            ram_raddr               <= (others => '0');
-            
+
         elsif(rising_edge(i_clk)) then
 
             ---------------------------------------------
             -- write process
             ---------------------------------------------
-            ram_we          <= i_we;
-            ram_wdata       <= i_data;
 
             for I in 0 to N_PAGES-1 loop
                 if(TDAC_page_array(I).in_use = false) then
@@ -130,7 +128,7 @@ begin
             end loop;
 
             if(i_we = '1') then 
-                if(addr_in_current_page= "000100") then  -- TODO insert proper end addr (complete cols)
+                if(addr_in_current_page= std_logic_vector(to_unsigned(PAGE_SIZE-1, ADDR_WIDTH_g-PAGE_ADDR_WIDTH_g))) then  -- TODO insert proper end addr (complete cols)
                     TDAC_page_array(current_write_page).full     <= true;
                     addr_in_current_page                         <= (others => '0');
                     current_write_page                           <= next_free_page_int;
@@ -182,7 +180,8 @@ begin
                 end loop;
               when reading =>
                 -- read the page for bit_in_tdac, incr. bit_in_tdac , if bit_in_tdac = 6 --> in_use=0
-                if(TDAC_page_array(read_page).addr = "000011") then  -- end addr-1 to avoid cycler selecting the same (now empty) TDAC_page again
+
+                if(TDAC_page_array(read_page).addr = std_logic_vector(to_unsigned(PAGE_SIZE-2, ADDR_WIDTH_g-PAGE_ADDR_WIDTH_g))) then  -- end addr-1 to avoid cycler selecting the same (now empty) TDAC_page again
                     if(TDAC_page_array(read_page).bit_in_tdac = 6) then 
                         TDAC_page_array(read_page).full         <= false;
                         TDAC_page_array(read_page).in_use       <= false;
@@ -195,15 +194,15 @@ begin
                     else
                         TDAC_page_array(read_page).bit_in_tdac <= TDAC_page_array(read_page).bit_in_tdac + 1;
                     end if;
-                end if;
-
-                if(TDAC_page_array(read_page).addr = "000100") then  -- TODO: put in correct end addr
+                    TDAC_page_array(read_page).addr <= std_logic_vector(to_unsigned(to_integer(unsigned(TDAC_page_array(read_page).addr)) + 1,ADDR_WIDTH_g-PAGE_ADDR_WIDTH_g));
+                elsif(TDAC_page_array(read_page).addr = std_logic_vector(to_unsigned(PAGE_SIZE-1, ADDR_WIDTH_g-PAGE_ADDR_WIDTH_g))) then  -- TODO: put in correct end addr
                     read_state <= searching_match;
+                    TDAC_page_array(read_page).addr <= (others => '0');
+                else
+                    TDAC_page_array(read_page).addr <= std_logic_vector(to_unsigned(to_integer(unsigned(TDAC_page_array(read_page).addr)) + 1,ADDR_WIDTH_g-PAGE_ADDR_WIDTH_g));
                 end if;
 
                 o_tdac_dpf_we(read_chip) <= '1';
-
-                ram_raddr <= std_logic_vector(to_unsigned(read_page,PAGE_ADDR_WIDTH_g)) & TDAC_page_array(read_page).addr;
 
               when others =>
                 read_state <= searching_match;
@@ -217,6 +216,8 @@ begin
     genwdata: for I in 0 to 3 generate
         o_tdac_dpf_wdata(I)<= ram_rdata(7+I+TDAC_page_array(read_page).bit_in_tdac);
     end generate;
+
+    ram_raddr <= std_logic_vector(to_unsigned(read_page,PAGE_ADDR_WIDTH_g)) & TDAC_page_array(read_page).addr;
 
     ram_1r1w_inst: entity work.ram_1r1w -- better split into multiple RAM IP's each with size of 1 page ?
       generic map (

@@ -39,6 +39,8 @@ architecture RTL of mp_conf_splitter is
 
     signal data_in_all_position_32  : integer range 84 downto 0;
     signal data_in_leftovers        : reg32;
+    signal last_chip_cvb            : std_logic_vector(N_CHIPS_g-1 downto 0);
+    signal last_we                  : std_logic;
 
 begin
 
@@ -52,6 +54,8 @@ begin
             o_conf_dpf_wdata          <= (others => (others => '0'));
             o_vdac_dpf_wdata          <= (others => (others => '0'));
             o_bias_dpf_wdata          <= (others => (others => '0'));
+            last_chip_cvb             <= (others => '0');
+            last_we                   <= '0';
 
             data_in_all_position_32   <= 0;
             data_in_leftovers         <= (others => '0');
@@ -63,6 +67,8 @@ begin
             o_conf_dpf_wdata          <= (others => (others => '0'));
             o_vdac_dpf_wdata          <= (others => (others => '0'));
             o_bias_dpf_wdata          <= (others => (others => '0'));
+            last_chip_cvb             <= i_chip_cvb;
+            last_we                   <= i_data_we;
 
 
             --Bits: BIAS 210, CONF 90, VDAC 80, COL 896, TDAC 512, TEST 896
@@ -75,7 +81,7 @@ begin
 
             for I in 0 to N_CHIPS_g-1 loop
 
-                if(i_data_we='1' and i_chip_cvb(I)='1') then
+                if((i_data_we='1' and i_chip_cvb(I)='1') or (last_we = '1' and last_chip_cvb(I)='1' and data_in_all_position_32 = 12)) then
 
                     case data_in_all_position_32 is
                         when 0 to 5 =>

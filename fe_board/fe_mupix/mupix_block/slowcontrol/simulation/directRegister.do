@@ -65,6 +65,6 @@ force -freeze mupix_ctrl_tb/reg_add [examine mupix_registers/MP_CTRL_VDAC_REGIST
 force -freeze mupix_ctrl_tb/reg_wdata "x01010101"
 run 24ns 
 force -freeze mupix_ctrl_tb/reg_we 0
-run 80000 ns
+run 160000 ns
 
 WaveRestoreZoom 0ns 1000000ns

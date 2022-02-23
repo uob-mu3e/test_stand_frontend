@@ -149,9 +149,12 @@ begin
         vdac_dpf_we(I) <= (i_vdac_reg_we and i_chip_cvb(I)) or vdac_dpf_we_splitter(I);
         bias_dpf_we(I) <= (i_bias_reg_we and i_chip_cvb(I)) or bias_dpf_we_splitter(I);
 
-        conf_dpf_wdata(I) <= conf_dpf_wdata_splitter(I) when conf_dpf_we_splitter(I)='1' else i_conf_reg_data;
-        vdac_dpf_wdata(I) <= vdac_dpf_wdata_splitter(I) when vdac_dpf_we_splitter(I)='1' else i_vdac_reg_data;
-        bias_dpf_wdata(I) <= bias_dpf_wdata_splitter(I) when bias_dpf_we_splitter(I)='1' else i_bias_reg_data;
+        -- have to turn the bit order around since bit 31 of each word needs to be the first bit to go into the mupix
+        gen_invert_bit_order: for J in 0 to 31 generate
+          conf_dpf_wdata(I)(31-J) <= conf_dpf_wdata_splitter(I)(J) when conf_dpf_we_splitter(I)='1' else i_conf_reg_data(J);
+          vdac_dpf_wdata(I)(31-J) <= vdac_dpf_wdata_splitter(I)(J) when vdac_dpf_we_splitter(I)='1' else i_vdac_reg_data(J);
+          bias_dpf_wdata(I)(31-J) <= bias_dpf_wdata_splitter(I)(J) when bias_dpf_we_splitter(I)='1' else i_bias_reg_data(J);
+        end generate;
 
         conf: entity work.dual_port_fifo
           generic map (
@@ -215,10 +218,10 @@ begin
         
         tdac: entity work.dual_port_fifo
           generic map (
-            N_BITS_g       => MP_CONFIG_REGS_LENGTH(5),
+            N_BITS_g       => 8, -- decreased for simulation, put back to --MP_CONFIG_REGS_LENGTH(5),
             WDATA_WIDTH_g  => 4,
             RDATA1_WIDTH_g => 1,
-            RDATA2_WIDTH_g => 53
+            RDATA2_WIDTH_g => 2 -- same here
           )
           port map (
             i_clk     => i_clk,
@@ -226,11 +229,11 @@ begin
             o_full    => tdac_dpf_full(I),
             o_empty   => tdac_dpf_empty(I),
             i_we      => tdac_dpf_we(I),
-            i_wdata   => tdac_dpf_wdata,
+            i_wdata   => tdac_dpf_wdata, -- TODO: check the bit order
             i_re1     => i_read(I).spi_read(TDAC_BIT),
             o_rdata1  => o_data(I).spi_data(TDAC_BIT downto TDAC_BIT),
             i_re2     => i_read(I).mu3e_read(TDAC_BIT),
-            o_rdata2  => o_data(I).tdac
+            o_rdata2  => open-- o_data(I).tdac
           );
 
     end generate;
