@@ -13,20 +13,20 @@ use ieee.std_logic_unsigned.all;
 
 entity swb_sc_secondary is
 generic (
-		NLINKS : positive := 4;
-		skip_init : std_logic := '0'
+    NLINKS : positive := 4;
+    skip_init : std_logic := '0'
 );
 port (
-		clk:                in std_logic;
-		reset_n:            in std_logic;
+    clk                         : in    std_logic;
+    reset_n                     : in    std_logic;
     i_link_enable               : in    std_logic_vector(NLINKS-1 downto 0);
     link_data_in                : in    work.util.slv32_array_t(NLINKS-1 downto 0);
     link_data_in_k              : in    work.util.slv4_array_t(NLINKS-1 downto 0);
-		mem_data_out:       out std_logic_vector(31 downto 0);
-		mem_addr_out:       out std_logic_vector(15 downto 0);
-		mem_addr_finished_out:       out std_logic_vector(15 downto 0);
-		mem_wren:           out std_logic;
-		stateout:           out std_logic_vector(3 downto 0)
+    mem_data_out                : out   std_logic_vector(31 downto 0);
+    mem_addr_out                : out   std_logic_vector(15 downto 0);
+    mem_addr_finished_out       : out   std_logic_vector(15 downto 0);
+    mem_wren                    : out   std_logic;
+    stateout                    : out   std_logic_vector(3 downto 0)
 );
 end entity;
 

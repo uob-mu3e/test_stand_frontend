@@ -16,16 +16,16 @@ use work.mudaq.all;
 
 entity data_generator_a10 is
 generic (
-        fpga_id: std_logic_vector(15 downto 0) := x"FFFF";
-        max_row: std_logic_vector (7 downto 0) := (others => '0');
-        max_col: std_logic_vector (7 downto 0) := (others => '0');
-        wtot: std_logic := '0';
-        go_to_sh : positive := 2;
-        go_to_trailer : positive := 3;
-        wchip: std_logic := '0';
-        -- Data type: x"01" = pixel, x"02" = scifi, x"03" = tiles
-        DATA_TYPE : std_logic_vector(7 downto 0) := x"01"--;
-    );
+    fpga_id: std_logic_vector(15 downto 0) := x"FFFF";
+    max_row: std_logic_vector (7 downto 0) := (others => '0');
+    max_col: std_logic_vector (7 downto 0) := (others => '0');
+    wtot: std_logic := '0';
+    go_to_sh : positive := 2;
+    go_to_trailer : positive := 3;
+    wchip: std_logic := '0';
+    -- Data type: x"01" = pixel, x"02" = scifi, x"03" = tiles
+    DATA_TYPE : std_logic_vector(7 downto 0) := x"01"--;
+);
 port (
 		clk 				: in  std_logic;
 		i_reset_n    		: in  std_logic;
@@ -59,7 +59,7 @@ architecture rtl of data_generator_a10 is
 	signal row:     	  	  std_logic_vector (7 downto 0);
 	signal col:     	     std_logic_vector (7 downto 0);
 	signal lsfr_overflow, delay_cnt:        std_logic_vector (15 downto 0);
-	
+
 	-- slow down signals
 	signal waiting:				  std_logic;
 	signal wait_counter:			  std_logic_vector(31 downto 0);
@@ -79,10 +79,10 @@ begin
 		reset_n   		=> i_reset_n,
 		i_sync_reset	=> reset,--sync_reset,
 		i_seed   		=> random_seed(5 downto 0),
-		i_en 				=> enable_pix,    
+		i_en 				=> enable_pix,
 		o_lfsr 			=> lsfr_chip_id_reg
 	);
-	
+
 	pix_tot_shift : entity work.linear_shift
 	generic map(
 		g_m 	   		=> 6,
@@ -93,10 +93,10 @@ begin
 		reset_n   		=> i_reset_n,
 		i_sync_reset	=> reset,--sync_reset,
 		i_seed   		=> random_seed(15 downto 10),
-		i_en 				=> enable_pix,    
+		i_en 				=> enable_pix,
 		o_lfsr 			=> lsfr_tot_reg
 	);
-	
+
 	overflow_shift : entity work.linear_shift
 	generic map(
 		g_m 	   		=> 16,
@@ -107,7 +107,7 @@ begin
 		reset_n   		=> i_reset_n,
 		i_sync_reset	=> reset,--sync_reset,
 		i_seed   		=> random_seed,
-		i_en 				=> enable_pix,    
+		i_en 				=> enable_pix,
 		o_lfsr 			=> lsfr_overflow
 	);
 
@@ -130,9 +130,9 @@ end process;
 
 lsfr_tot <= (others => '0') when wtot = '0' else lsfr_tot_reg;
 lsfr_chip_id <= (others => '0') when wchip = '0' else lsfr_chip_id_reg;
-	
-	
-	
+
+
+
 process (clk, i_reset_n, start_global_time)
 
 variable current_overflow : std_logic_vector(15 downto 0) := "0000000000000000";
@@ -171,8 +171,8 @@ begin
 							data_pix_generated					<= x"AFFEAFFE";
 							datak_pix_generated              	<= "0000";
 						end if;
-						
-				
+
+
 					when part2 =>
 						state_out <= x"B";
 						delay_cnt <= (others => '0');
@@ -180,7 +180,7 @@ begin
 						global_time 						<= global_time + '1';
 						datak_pix_generated              	<= "0000";
 						data_header_state 					<= part3;
-					
+
 					when part3 =>
 						state_out <= x"C";
 						if ( DATA_TYPE = x"01" ) then
@@ -190,7 +190,7 @@ begin
                         end if;
 						datak_pix_generated              <= "0000";
 						data_header_state 					<= part4;
-						
+
 					when part4 =>
 						state_out <= x"D";
 						global_time <= global_time + '1';
@@ -203,7 +203,7 @@ begin
 						overflow_idx 							:= 0;
 						current_overflow						:= lsfr_overflow;
 						data_header_state 					<= part5;
-						
+
                     when part5 =>
                         global_time <= global_time + '1';
                         if ( DATA_TYPE = x"01" ) then
@@ -215,24 +215,24 @@ begin
 						overflow_idx 							:= 0;
 						current_overflow						:= lsfr_overflow;
 						data_header_state 					<= part6;
-					
+
 					when part6 =>
 						state_out <= x"E";
 						global_time <= global_time + '1';
 						time_cnt_t <= time_cnt_t + '1';
-						
+
 						if (row = max_row) then
                             row <= (others => '0');
                         else
                             row <= row + '1';
                         end if;
-                        
+
                         if (row = max_col) then
                             col <= (others => '0');
                         else
                             col <= col + '1';
                         end if;
-                        
+
                         if ( DATA_TYPE = x"01" ) then
                             data_pix_generated					<= global_time(3 downto 0) & lsfr_chip_id & row & col & lsfr_tot;
                         elsif ( DATA_TYPE = x"02" ) then
@@ -253,7 +253,7 @@ begin
 						else
 							overflow_idx 						:= overflow_idx + 1;
 						end if;
-							
+
 					when overflow =>
 						state_out <= x"9";
 						if ( DATA_TYPE = x"01" ) then
@@ -265,14 +265,14 @@ begin
                         end if;
 						datak_pix_generated              <= "0000";
 						data_header_state						<= part6;
-					
+
 					when trailer =>
 						state_out <= x"8";
 						data_pix_generated(31 downto 8)	<= (others => '0');
 						data_pix_generated(7 downto 0)	<= x"9c";
 						datak_pix_generated              <= "0001";
 						data_header_state 					<= part1;
-						
+
 					when others =>
 						state_out <= x"7";
 						data_header_state 					<= trailer;

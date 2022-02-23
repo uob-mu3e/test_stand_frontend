@@ -1,4 +1,4 @@
--- simple data generator merged data after 
+-- simple data generator merged data after
 -- SWB alignment
 
 -- Marius Koeppel, February 2021
@@ -13,24 +13,24 @@ use work.mudaq.all;
 
 entity data_generator_merged_data is
 generic (
-        max_row: std_logic_vector (7 downto 0) := (others => '0');
-        max_col: std_logic_vector (7 downto 0) := (others => '0');
-        go_to_sh: positive := 3;
-        go_to_trailer: positive := 4;
-        wtot: std_logic := '0';
-        wchip: std_logic := '0';
-        NLINKS: positive := 8--;
+    max_row: std_logic_vector (7 downto 0) := (others => '0');
+    max_col: std_logic_vector (7 downto 0) := (others => '0');
+    go_to_sh: positive := 3;
+    go_to_trailer: positive := 4;
+    wtot: std_logic := '0';
+    wchip: std_logic := '0';
+    NLINKS: positive := 8--;
 );
 port (
-		i_clk 		: in  std_logic;
-		i_reset_n   : in  std_logic;
+    i_clk       : in    std_logic;
+    i_reset_n   : in    std_logic;
 
-		i_en 		: in  std_logic;
-		i_sd 		: in  std_logic_vector(31 downto 0);
-		
-		o_data 		: out std_logic_vector(NLINKS * 38 - 1 downto 0);
-		o_data_we	: out std_logic;
-		o_state     : out std_logic_vector(3 downto 0)--;
+    i_en        : in    std_logic;
+    i_sd        : in    std_logic_vector(31 downto 0);
+
+    o_data      : out   std_logic_vector(NLINKS * 38 - 1 downto 0);
+    o_data_we   : out   std_logic;
+    o_state     : out   std_logic_vector(3 downto 0)--;
 );
 end entity;
 
@@ -42,7 +42,7 @@ architecture rtl of data_generator_merged_data is
 
 	constant time_cnt_sh_one 		: std_logic_vector(go_to_sh downto 0) := (others => '1');
 	constant time_cnt_t_one 		: std_logic_vector(go_to_trailer downto 0) := (others => '1');
-	
+
 	signal overflow_time 			: std_logic_vector(3 downto 0);
 	signal reset, waiting 			: std_logic;
 
@@ -71,10 +71,10 @@ begin
 		reset_n   		=> i_reset_n,
 		i_sync_reset	=> reset,
 		i_seed   		=> random_seed(5 downto 0),
-		i_en 			=> i_en,    
+		i_en 			=> i_en,
 		o_lfsr 			=> lsfr_chip_id_reg--,
 	);
-	
+
 	e_tot : entity work.linear_shift
 	generic map(
 		g_m 	   	=> 6,
@@ -85,10 +85,10 @@ begin
 		reset_n   		=> i_reset_n,
 		i_sync_reset	=> reset,
 		i_seed   		=> random_seed(15 downto 10),
-		i_en 			=> i_en,    
+		i_en 			=> i_en,
 		o_lfsr 			=> lsfr_tot_reg--,
 	);
-	
+
 	e_overflow : entity work.linear_shift
 	generic map(
 		g_m 	   	=> 16,
@@ -99,7 +99,7 @@ begin
 		reset_n   		=> i_reset_n,
 		i_sync_reset	=> reset,
 		i_seed   		=> random_seed,
-		i_en 			=> i_en,    
+		i_en 			=> i_en,
 		o_lfsr 			=> lsfr_overflow--,
 	);
 
@@ -125,7 +125,7 @@ end process;
 
 lsfr_tot 		<= (others => '0') when wtot = '0' else lsfr_tot_reg;
 lsfr_chip_id 	<= (others => '0') when wchip = '0' else lsfr_chip_id_reg;
-	
+
 process(i_clk, i_reset_n)
 
 	variable current_overflow : std_logic_vector(15 downto 0) := "0000000000000000";
@@ -159,19 +159,19 @@ begin
 						o_data(31 downto 26) 	<= "111010";
 						o_data(7 downto 0) 		<= x"BC";
 						data_header_state 		<= part2;
-				
+
 					when part2 =>
 						o_state 			 	<= x"B";
                     	o_data(37 downto 32) 	<= ts1_marker;
                     	o_data(31 downto 0)  	<= global_time(47 downto 16);
 						data_header_state 	 	<= part3;
-					
+
 					when part3 =>
 						o_state 				<= x"C";
                     	o_data(37 downto 32) 	<= ts2_marker;
                     	o_data(31 downto 0) 	<= global_time(15 downto 0) & x"0000";
 						data_header_state 					<= part4;
-						
+
 					when part4 =>
 						o_state 				<= x"D";
 						global_time 			<= global_time + '1';
@@ -183,24 +183,24 @@ begin
 						overflow_idx 			:= 0;
 						current_overflow		:= lsfr_overflow;
 						data_header_state 		<= part5;
-					
+
 					when part5 =>
 						o_state <= x"E";
 						global_time <= global_time + '1';
 						time_cnt_t <= time_cnt_t + '1';
-						
+
 						if (row = max_row) then
                             row <= (others => '0');
                         else
                             row <= row + '1';
                         end if;
-                        
+
                         if (row = max_col) then
                             col <= (others => '0');
                         else
                             col <= col + '1';
                         end if;
-         
+
 						o_data(37  downto   0)	<= "000000" & global_time(3 downto 0) & lsfr_chip_id & row & col & lsfr_tot;
 						o_data(75  downto  38)	<= "000001" & global_time(3 downto 0) & lsfr_chip_id & row & col & lsfr_tot;
 						o_data(113 downto  76)	<= "000010" & global_time(3 downto 0) & lsfr_chip_id & row & col & lsfr_tot;
@@ -211,7 +211,7 @@ begin
 						o_data(303 downto 266)	<= "000111" & global_time(3 downto 0) & lsfr_chip_id & row & col & lsfr_tot;
 
 						overflow_time 			<= global_time(3 downto 0);
-						
+
 						if ( time_cnt_t(go_to_trailer downto 0) = time_cnt_t_one ) then
 							data_header_state <= trailer;
 							time_cnt_t        <= (others => '0');
@@ -223,7 +223,7 @@ begin
 						else
 							overflow_idx 	  := overflow_idx + 1;
 						end if;
-							
+
 					when overflow =>
 						o_state <= x"9";
 
@@ -235,15 +235,15 @@ begin
 						o_data(227 downto 190)	<= "000101" & global_time(3 downto 0) & lsfr_chip_id & row & col & lsfr_tot;
 						o_data(265 downto 228)	<= "000110" & global_time(3 downto 0) & lsfr_chip_id & row & col & lsfr_tot;
 						o_data(303 downto 266)	<= "000111" & global_time(3 downto 0) & lsfr_chip_id & row & col & lsfr_tot;
-						
+
 						data_header_state						<= part5;
-					
+
 					when trailer =>
 						o_state 				<= x"8";
 						o_data(37 downto 32) 	<= tr_marker;
                     	o_data(7 downto 0) 		<= x"9C";
 						data_header_state 					<= part1;
-						
+
 					when others =>
 						o_state				<= x"7";
 						data_header_state 	<= trailer;
@@ -256,6 +256,5 @@ begin
 		end if;
 	end if;
 end process;
-
 
 end architecture;

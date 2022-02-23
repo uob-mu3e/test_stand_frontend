@@ -30,14 +30,14 @@ port (
     i_fpga_type                 : in  std_logic_vector( 5 downto 0) := "111100";
     i_adc_reg                   : in  work.util.slv32_array_t( 4 downto 0) := (others => x"CCCCCCCC");
     i_max10_version             : in  std_logic_vector(31 downto 0) := x"CCCCCCCC";
-    i_max10_status              : in  std_logic_vector(31 downto 0) := x"CCCCCCCC";  
+    i_max10_status              : in  std_logic_vector(31 downto 0) := x"CCCCCCCC";
     i_programming_status        : in  std_logic_vector(31 downto 0) := x"CCCCCCCC";
 
     i_ffly_pwr                  : in   std_logic_vector(127 downto 0); -- RX optical power in mW
     i_ffly_temp                 : in   std_logic_vector(15 downto 0);  -- temperature in °C
     i_ffly_alarm                : in   std_logic_vector(63 downto 0);  -- latched alarm bits
-    i_ffly_vcc                  : in   std_logic_vector(31 downto 0);  -- operating voltagein units of 100 uV 
-    
+    i_ffly_vcc                  : in   std_logic_vector(31 downto 0);  -- operating voltagein units of 100 uV
+
     i_si45_intr_n               : in   std_logic_vector(1 downto 0);
     i_si45_lol_n                : in   std_logic_vector(1 downto 0);
 
@@ -54,7 +54,7 @@ port (
     o_programming_data_ena      : out std_logic;
     o_programming_addr          : out std_logic_vector(31 downto 0);
     o_programming_addr_ena      : out std_logic;
-    
+
     i_testout                   : in  std_logic_vector(31 downto 0)--;
 );
 end entity;
@@ -94,10 +94,10 @@ begin
     begin
 
     if i_reset_n = '0' then
-        o_programming_ctrl <= (others => '0');   
+        o_programming_ctrl <= (others => '0');
         o_programming_data_ena  <= '0';
         o_programming_addr_ena  <= '0';
-        
+
     elsif rising_edge(i_clk_156) then
         o_reg_rdata         <= X"CCCCCCCC";
         regaddr             := to_integer(unsigned(i_reg_add));
@@ -105,7 +105,7 @@ begin
         o_programming_data_ena  <= '0';
         if(addr_ena_del = "000000") then -- this is here so that the 50 MHz clock does not miss the ena signal ? (M.Mueller)
             o_programming_addr_ena  <= '0';
-        else 
+        else
             o_programming_addr_ena  <= '1';
         end if;
 
@@ -229,19 +229,19 @@ begin
         -- Programming
         if ( regaddr = PROGRAMMING_STATUS_R and i_reg_re = '1' ) then
             o_reg_rdata <= i_programming_status;
-        end if;  
+        end if;
         if ( regaddr = PROGRAMMING_CTRL_W and i_reg_we = '1' ) then
             o_programming_ctrl  <= i_reg_wdata;
-        end if;      
+        end if;
         if ( regaddr = PROGRAMMING_ADDR_W and i_reg_we = '1' ) then
             o_programming_addr  <= i_reg_wdata;
             o_programming_addr_ena  <= '1';
             addr_ena_del <= "111111";
-        end if;  
+        end if;
         if ( regaddr = PROGRAMMING_DATA_W and i_reg_we = '1' ) then
             o_programming_data  <= i_reg_wdata;
             o_programming_data_ena  <= '1';
-        end if;  
+        end if;
 
         -- Fireflies
         if ( regaddr = FIREFLY1_TEMP_REGISTER_R and i_reg_re = '1' ) then
@@ -279,14 +279,14 @@ begin
         end if;
         if ( regaddr = FIREFLY2_RX4_POW_REGISTER_R and i_reg_re = '1' ) then
             o_reg_rdata <= x"0000" & i_ffly_pwr(127 downto 112);
-        end if;	
+        end if;
         if ( regaddr = FIREFLY1_ALARM_REGISTER_R and i_reg_re = '1' ) then
             o_reg_rdata <= i_ffly_alarm(31 downto 0);
         end if;
         if ( regaddr = FIREFLY2_ALARM_REGISTER_R and i_reg_re = '1' ) then
             o_reg_rdata <= i_ffly_alarm(63 downto 32);
         end if;
-        
+
         -- SI chips
         if ( regaddr = SI_STATUS_REGISTER and i_reg_re = '1' ) then
             o_reg_rdata(1 downto 0) <= i_si45_intr_n;
@@ -314,7 +314,7 @@ begin
 
     end if;
     end process;
-    
+
 --    nonincrementing_rw_test_fifo: entity work.ip_scfifo
 --    generic map(
 --        ADDR_WIDTH      => 4,
@@ -330,5 +330,5 @@ begin
 --        q               => test_read_data,
 --        rdreq           => test_read--,
 --    );
-    
+
 end architecture;

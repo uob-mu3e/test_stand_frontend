@@ -13,7 +13,6 @@ use ieee.std_logic_misc.all;
 
 use work.mudaq.all;
 
-
 entity swb_data_merger is
 generic (
     NLINKS      : positive := 8;
@@ -35,7 +34,7 @@ port (
 end entity;
 
 architecture arch of swb_data_merger is
-         
+
     type merge_state_type is (wait_for_pre, get_ts_1, get_ts_2, get_sh, hit, delay, get_tr, error_state);
     signal merge_state : merge_state_type;
 
@@ -43,7 +42,7 @@ architecture arch of swb_data_merger is
     signal hit_reg_cnt : integer;
     signal header_state : std_logic_vector(5 downto 0);
     signal TS : std_logic_vector(47 downto 0);
-    
+
 begin
 
     header_state(0) <= '1' when i_data(37 downto 32) = pre_marker and i_data(7 downto 0) = x"BC" else '0';
@@ -59,15 +58,15 @@ begin
 
     process(i_clk, i_reset_n)
     begin
-        if ( i_reset_n = '0' ) then
-            o_data      <= (others => '1');
-            o_data_valid<= (others => '0');
-            hit_reg     <= (others => '1');
-            TS          <= (others => '0');
-            merge_state <= wait_for_pre;
-            hit_reg_cnt <= 0;
-            --
-        elsif ( rising_edge(i_clk) ) then
+    if ( i_reset_n = '0' ) then
+        o_data      <= (others => '1');
+        o_data_valid<= (others => '0');
+        hit_reg     <= (others => '1');
+        TS          <= (others => '0');
+        merge_state <= wait_for_pre;
+        hit_reg_cnt <= 0;
+        --
+    elsif ( rising_edge(i_clk) ) then
 
             o_data      <= (others => '1');
             o_data_valid<= (others => '0'); -- idle
@@ -96,7 +95,7 @@ begin
                         -- TS (15:0)
                         TS(15 downto 0) <= i_data(31 downto 16);
                     end if;
-                    
+
                 when get_sh =>
                     -- send out header if sh is there
                     if ( header_state(3) = '1' ) then
@@ -121,7 +120,7 @@ begin
                         -- TS(15:0)
                         o_data(71 downto 64)     <= K28_3;
                         -- lower 4 bit of hit data are zero
-                        o_data(75 downto 72)     <= "0000"; 
+                        o_data(75 downto 72)     <= "0000";
                         -- TODO: add tiles
                         if ( DATA_TYPE = x"01" ) then
                             -- get TS(10:4)
@@ -251,7 +250,7 @@ begin
 
             end case;
 
-        end if;
+    end if;
     end process;
-    
+
 end architecture;

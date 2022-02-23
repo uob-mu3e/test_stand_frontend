@@ -6,7 +6,6 @@ use ieee.std_logic_1164.all;
 use ieee.std_logic_unsigned.all;
 use ieee.numeric_std.all;
 
-
 entity dma_counter is
 port (
 		i_clk 					:	in std_logic;
@@ -28,7 +27,7 @@ architecture arch of dma_counter is
 	signal counter 		: 	std_logic_vector(7 downto 0);
 	signal dma_halffull_cnt : std_logic_vector(63 downto 0);
 	signal dma_not_halffull_cnt : std_logic_vector(63 downto 0);
-	
+
 begin
 
 process(i_clk, i_reset_n)
@@ -56,8 +55,8 @@ elsif(rising_edge(i_clk)) then
 		if(i_halffull_mode = '0') then
 			o_cnt(31 downto 0)  <= timer;
 			o_cnt(159 downto 31) <= (others => '0');
-			if(counter <= i_fraccount) then						
-				if(timer(7 downto 0) = x"FF") then -- if 2^4*256=4kb is written 
+			if(counter <= i_fraccount) then
+				if(timer(7 downto 0) = x"FF") then -- if 2^4*256=4kb is written
 					o_dma_end_event <= '1';
 				end if;
 				o_dma_wen 	<= i_dma_wen_reg;
@@ -74,7 +73,7 @@ elsif(rising_edge(i_clk)) then
 					o_dma_wen <= '0';
 					dma_halffull_cnt <= dma_halffull_cnt + '1';
 				else
-					if(timer(7 downto 0) = x"FF") then -- if 2^4*256=4kb is written 
+					if(timer(7 downto 0) = x"FF") then -- if 2^4*256=4kb is written
 						o_dma_end_event <= '1';
 					end if;
 					timer <= timer + '1';
@@ -83,7 +82,7 @@ elsif(rising_edge(i_clk)) then
 				end if;
 			else
 					o_dma_wen <= '0';
-			end if;	
+			end if;
 		end if;
 	end if;
 end if;

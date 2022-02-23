@@ -10,11 +10,11 @@ use ieee.std_logic_unsigned.all;
 
 
 entity swb_midas_event_builder is
-generic(
+generic (
     -- Data type: x"01" = pixel, x"02" = scifi, x"03" = tiles
     DATA_TYPE : std_logic_vector(7 downto 0) := x"01"--;
 );
-port(
+port (
     i_rx                : in  std_logic_vector (31 downto 0);
     i_rempty            : in  std_logic;
     i_header            : in  std_logic;
