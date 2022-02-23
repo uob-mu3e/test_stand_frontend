@@ -5,7 +5,6 @@ library ieee;
 use ieee.std_logic_1164.all;
 use ieee.numeric_std.all;
 
-
 entity swb_data_demerger is
 port (
     i_clk:                      in  std_logic; -- receive clock (156.25 MHz)
@@ -24,7 +23,7 @@ port (
 );
 end entity;
 
-architecture arch of swb_data_demerger is	
+architecture arch of swb_data_demerger is
 
 ----------------signals---------------------
     type   data_demerge_state is (idle, receiving_data, receiving_slowcontrol);
@@ -34,18 +33,18 @@ architecture arch of swb_data_demerger is
 ----------------begin data_demerge------------------------
 begin
 
-    process (i_clk, i_reset, i_aligned)
+    process(i_clk, i_reset, i_aligned)
     begin
-        if (i_reset = '1' or i_aligned = '0') then 
-            demerge_state       <= idle;
-            o_data              <= x"000000"& work.util.K28_5;
-            o_datak             <= "0001";
-            o_sc                <= x"000000"& work.util.K28_5;
-            o_sck               <= "0001";
-            o_rc                <= x"000000"& work.util.K28_5;
-            o_rck               <= "0001";
+    if (i_reset = '1' or i_aligned = '0') then
+        demerge_state       <= idle;
+        o_data              <= x"000000"& work.util.K28_5;
+        o_datak             <= "0001";
+        o_sc                <= x"000000"& work.util.K28_5;
+        o_sck               <= "0001";
+        o_rc                <= x"000000"& work.util.K28_5;
+        o_rck               <= "0001";
 
-        elsif (rising_edge(i_clk)) then
+    elsif (rising_edge(i_clk)) then
             o_data              <= x"000000"& work.util.K28_5;
             o_datak             <= "0001";
             o_sc                <= x"000000"& work.util.K28_5;
@@ -76,7 +75,7 @@ begin
                         if (i_datak = "0001" and i_data(7 downto 0) /= work.util.K28_5 and i_data(7 downto 0) /= work.util.K28_4) then
                             o_rc                <= i_data;
                             o_rck               <= i_datak;
-                        elsif(i_data (7 downto 0) = work.util.K28_4 and i_datak = "0001") then 
+                        elsif(i_data (7 downto 0) = work.util.K28_4 and i_datak = "0001") then
                             demerge_state       <= idle;
                             o_data              <= i_data;
                             o_datak             <= i_datak;
@@ -89,7 +88,7 @@ begin
                         if (i_datak = "0001" and i_data(7 downto 0) /= work.util.K28_5 and i_data(7 downto 0) /= work.util.K28_4) then
                             o_rc                <= i_data;
                             o_rck               <= i_datak;
-                        elsif(i_data (7 downto 0) = work.util.K28_4 and i_datak = "0001") then 
+                        elsif(i_data (7 downto 0) = work.util.K28_4 and i_datak = "0001") then
                             demerge_state       <= idle;
                             o_sc                <= i_data;
                             o_sck               <= i_datak;
@@ -101,6 +100,7 @@ begin
 			demerge_state <= idle;
              end case;
 
-        end if;
+    end if;
     end process;
-END architecture;
+
+end architecture;

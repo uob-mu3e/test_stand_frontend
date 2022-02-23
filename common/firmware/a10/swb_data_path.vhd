@@ -31,13 +31,13 @@ generic (
 port(
     i_clk_156        : in  std_logic;
     i_clk_250        : in  std_logic;
-    
+
     i_reset_n_156    : in  std_logic;
     i_reset_n_250    : in  std_logic;
 
     i_resets_n_156   : in  std_logic_vector(31 downto 0);
     i_resets_n_250   : in  std_logic_vector(31 downto 0);
-    
+
     i_rx             : in  work.util.slv32_array_t(g_NLINKS_DATA-1 downto 0);
     i_rx_k           : in  work.util.slv4_array_t(g_NLINKS_DATA-1 downto 0);
     i_rmask_n        : in  std_logic_vector(g_NLINKS_DATA-1 downto 0);
@@ -49,7 +49,7 @@ port(
     o_counter_250    : out work.util.slv32_array_t(4 downto 0);
 
     i_dmamemhalffull : in  std_logic;
-    
+
     o_farm_data      : out work.util.slv32_array_t(g_NLINKS_FARM - 1  downto 0);
     o_farm_data_valid: out work.util.slv2_array_t(g_NLINKS_FARM - 1  downto 0);
 
@@ -92,7 +92,7 @@ architecture arch of swb_data_path is
     signal merger_rdata_debug : std_logic_vector(31 downto 0);
     signal merger_rempty, merger_rempty_debug, merger_ren, merger_header, merger_trailer, merger_error : std_logic;
     signal merger_rack : std_logic_vector (g_NLINKS_DATA-1 downto 0);
-    
+
     --! event builder
     signal builder_data : std_logic_vector(31 downto 0);
     signal builder_counters : work.util.slv32_array_t(3 downto 0);
@@ -121,14 +121,14 @@ begin
     -- tag_fifo_empty;
     -- dma_write_state;
     -- rx_rdempty;
-    
+
     -- 250 MHz counters
     o_counter_250(0) <= stream_counters(0);  --! e_stream_fifo full
     o_counter_250(1) <= builder_counters(0); --! bank_builder_idle_not_header
     o_counter_250(2) <= builder_counters(1); --! bank_builder_skip_event_dma
     o_counter_250(3) <= builder_counters(2); --! bank_builder_ram_full
     o_counter_250(4) <= builder_counters(3); --! bank_builder_tag_fifo_full
-    
+
     -- 156 MHz counters
     generate_rdata : for i in 0 to g_NLINKS_DATA - 1 generate
         o_counter_156(0+i*5) <= link_to_fifo_cnt(0+i*5); --! fifo almost_full
@@ -165,7 +165,7 @@ begin
     );
 
     gen_link_data : FOR i in 0 to g_NLINKS_DATA - 1 GENERATE
-    
+
         process(i_clk_156, i_reset_n_156)
         begin
         if ( i_reset_n_156 = '0' ) then
@@ -181,7 +181,7 @@ begin
             end if;
         end if;
         end process;
-        
+
     END GENERATE gen_link_data;
 
 
@@ -190,7 +190,7 @@ begin
     --! ------------------------------------------------------------------------
     --! ------------------------------------------------------------------------
     gen_link_fifos : FOR i in 0 to g_NLINKS_DATA - 1 GENERATE
-        
+
         -- TODO: If its halffull than write only header (no hits) and write overflow into subheader
         --       If its full stop --> tell MIDAS --> stop run --> no event mixing
         e_link_to_fifo_32 : entity work.link_to_fifo_32
@@ -201,7 +201,7 @@ begin
         port map (
             i_rx            => rx(i),
             i_rx_k          => rx_k(i),
-            
+
             o_q             => rx_q(i),
             i_ren           => rx_ren(i),
             o_rdempty       => rx_rdempty(i),
@@ -218,7 +218,7 @@ begin
             i_reset_n_250   => reset_250_n,
             i_clk_250       => i_clk_250--,
         );
-  
+
         sop(i)  <= '1' when rx_q(i)(33 downto 32) = "10" else '0';
         shop(i) <= '1' when rx_q(i)(33 downto 32) = "11" else '0';
         eop(i)  <= '1' when rx_q(i)(33 downto 32) = "01" else '0';
@@ -340,7 +340,7 @@ begin
         i_rempty            => builder_rempty,
         i_header            => builder_header,
         i_trailer           => builder_trailer,
-        
+
         i_get_n_words       => i_writeregs_250(GET_N_DMA_WORDS_REGISTER_W),
         i_dmamemhalffull    => i_dmamemhalffull,
         i_wen               => i_writeregs_250(DMA_REGISTER_W)(DMA_BIT_ENABLE),
