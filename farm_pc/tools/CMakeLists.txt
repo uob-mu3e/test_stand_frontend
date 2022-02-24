@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.1)
 
-project(farm_pc_tools CXX CUDA)
+project(farm_pc_tools CXX)
 
 find_package(CUDA)
 if(CUDA_FOUND)
