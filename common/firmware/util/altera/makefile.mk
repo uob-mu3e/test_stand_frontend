@@ -173,6 +173,13 @@ flow : all
 	# find and exec flow.sh
 	$(call find_file,flow.sh)
 
+.PHONY : flow_map
+flow_map : all
+	quartus_map top
+
+.PHONY : post_flow
+post_flow :
+
 update_mif :
 	quartus_cdb top --update_mif
 	quartus_asm top
