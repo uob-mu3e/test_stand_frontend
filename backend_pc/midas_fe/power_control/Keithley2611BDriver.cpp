@@ -1,25 +1,25 @@
-#include "HMP4040Driver.h"
+#include "Keithley2611BDriver.h"
 #include <thread>
 
 
-HMP4040Driver::HMP4040Driver()
+Keithley2611BDriver::Keithley2611BDriver()
 {
 
 }
 
 
-HMP4040Driver::~HMP4040Driver()
+Keithley2611BDriver::~Keithley2611BDriver()
 {
 }
 
 
-HMP4040Driver::HMP4040Driver(std::string n, EQUIPMENT_INFO* inf) : PowerDriver(n,inf) 
+Keithley2611BDriver::Keithley2611BDriver(std::string n, EQUIPMENT_INFO* inf) : PowerDriver(n,inf)
 {
-    std::cout << " HMP4040 HAMEG driver with " << instrumentID.size() << " channels instantiated " << std::endl;
+	std::cout << " HMP4040 HAMEG driver with " << instrumentID.size() << " channels instantiated " << std::endl;
 }
 
 
-INT HMP4040Driver::ConnectODB()
+INT Keithley2611BDriver::ConnectODB()
 {
 	InitODBArray();
     PowerDriver::ConnectODB();
@@ -33,14 +33,14 @@ INT HMP4040Driver::ConnectODB()
 }
 
 
-void HMP4040Driver::InitODBArray()
+void Keithley2611BDriver::InitODBArray()
 {
 	midas::odb settings_array = { {"Channel Names",std::array<std::string,4>()} };
 	settings_array.connect("/Equipment/"+name+"/Settings");
 }
 
 
-INT HMP4040Driver::Init()
+INT Keithley2611BDriver::Init()
 {
 	ip = settings["IP"];
 	std::cout << "Call init on " << ip << std::endl;
@@ -54,19 +54,19 @@ INT HMP4040Driver::Init()
 	//global reset if requested
 	if( settings["Global Reset On FE Start"] == true)
 	{
-        cmd = GenerateCommand(COMMAND_TYPE::Reset, 0);
+		cmd = "*RST\n";
 		if( !client->Write(cmd) ) cm_msg(MERROR, "Init HAMEG supply ... ", "could not global reset %s", ip.c_str());
 		else cm_msg(MINFO,"power_fe","Init global reset of %s",ip.c_str());
 	}
 	std::this_thread::sleep_for(std::chrono::milliseconds(client->GetWaitTime()));
 	
 	//beep
-    cmd=GenerateCommand(COMMAND_TYPE::Sleep, 0);
+	cmd="SYST:BEEP\n";
 	if( !client->Write(cmd) ) cm_msg(MERROR, "Init HAMEG supply ... ", "could not beep %s", ip.c_str());
 	std::this_thread::sleep_for(std::chrono::milliseconds(client->GetWaitTime()));
 	
 	//clear error an status registers
-    //cmd = GenerateCommend(COMMAND_TYPE:ClearStatus, 0);
+	//cmd = "*CLS\n";
 	//if( !client->Write(cmd) ) cm_msg(MERROR, "Init HAMEG supply ... ", "could perform global clear %s", ip.c_str());
 	//else cm_msg(MINFO,"power_fe","Global CLS of %s",ip.c_str());
 	//std::this_thread::sleep_for(std::chrono::milliseconds(client->GetWaitTime()));
@@ -145,13 +145,13 @@ INT HMP4040Driver::Init()
 
 
 
-bool HMP4040Driver::AskPermissionToTurnOn(int channel) //extra check whether it is safe to tunr on supply;
+bool Keithley2611BDriver::AskPermissionToTurnOn(int channel) //extra check whether it is safe to tunr on supply;
 {
 	return true;
 }
 
 
-INT HMP4040Driver::ReadAll()
+INT Keithley2611BDriver::ReadAll()
 {
 	INT err;
 	INT err_accumulated;
@@ -205,7 +205,7 @@ INT HMP4040Driver::ReadAll()
 }
 
 
-void HMP4040Driver::ReadESRChanged()
+void Keithley2611BDriver::ReadESRChanged()
 {
 	INT err;
 	bool value = settings["Read ESR"];
@@ -216,51 +216,13 @@ void HMP4040Driver::ReadESRChanged()
 	}
 }
 
-
-std::string HMP4040Driver::GenerateCommand(COMMAND_TYPE cmdt, float val)
+std::string Keithley2611BDriver::GenerateCommand(COMMAND_TYPE cmdt, float val)
 {
     if (cmdt == COMMAND_TYPE::SetCurrent) {
-        return "CURR "+std::to_string(val)+"\n";
-    } else if (cmdt == COMMAND_TYPE::Reset){
-        return "*RST\n";
-    } else if (cmdt == COMMAND_TYPE::Sleep){
-        return "SYST:BEEP\n";
-    } else if (cmdt == COMMAND_TYPE::CLearStatus){
-        return "*CLS\n";
-    } else if (cmdt == COMMAND_TYPE::SelectChannel){
-        int ch = (int)val;
-        return "INST:NSEL " + std::to_string(ch)+ "\n";
-    } else if (cmdt == COMMAND_TYPE::OPC){
-        return "*OPC?\n";
-    } else if (cmdt == COMMAND_TYPE::GetIdentification){
-        return "*IDN?\n";
-    } else if (cmdt == COMMAND_TYPE::ReadErrorQueue){
-        return "SYST:ERR?\n";
-    } else if (cmdt == COMMAND_TYPE::ReadESR){
-        return "*ESR?\n";
-    } else if (cmdt == COMMAND_TYPE::ReadQCGE) {
-        return "STAT:QUES?\n";
-    } else if (cmdt == COMMAND_TYPE::ReadState) {
-        return "OUTP:STAT?\n";
-    } else if (cmdt == COMMAND_TYPE::MeasureVoltage) {
-        return "MEAS:VOLT?\n";
-    } else if (cmdt == COMMAND_TYPE::ReadSetVoltage) {
-        return "VOLT?\n";
-    } else if (cmdt == COMMAND_TYPE::ReadCurrent){
-        return "MEAS:CURR?\n";
-    } else if (cmdt == COMMAND_TYPE::ReadCurrentLimit){
-        return "CURR?\n";
-    } else if(cmdt == COMMAND_TYPE::ReadOVPLevel){
-        return "VOLT:PROT:LEV?\n";
-    } else if (cmdt == COMMAND_TYPE::SetState){
-        int ch = (int)val;
-        return "OUTP:STAT " + std::to_string(ch) + "\n";
-    } else if (cmdt == COMMAND_TYPE::SetVoltage) {
-        return "VOLT "+std::to_string(val)+"\n";
-    } else if (cmdt == COMMAND_TYPE::SetOVPLevel){
-        return "VOLT:PROT:LEV "+std::to_string(val)+"\n";
+        return "smua.source.levelv="+std::to_string(val)+"\n";
     }
 }
+
 
 
 //************************************************************************************

@@ -3,11 +3,12 @@
 
 PowerDriver::PowerDriver()
 {
-	std::cout << "Warning: empty base class instantiated" << std::endl;
+    std::cout << "Warning: empty base class instantiated" << std::endl;
 }
 
 PowerDriver::PowerDriver(std::string n, EQUIPMENT_INFO* inf) : info{inf}, name{n}, read{0}, stop{0}, readstatus(FE_ERR_DISABLED), n_read_faults(0)
 {
+
 }
 
 PowerDriver::~PowerDriver()
@@ -70,6 +71,7 @@ INT PowerDriver::Connect()
     return FE_SUCCESS;
 }
 
+
 void PowerDriver::ReadLoop()
 {
     while(!stop){
@@ -98,7 +100,7 @@ bool PowerDriver::SelectChannel(int ch)
 	bool success;
 	std::string reply;
   
-	cmd = "INST:NSEL " + std::to_string(ch)+ "\n";
+    cmd = GenerateCommand(COMMAND_TYPE::SelectChannel, ch);
 	client->Write(cmd);
 	std::this_thread::sleep_for(std::chrono::milliseconds(client->GetWaitTime()));
 	success = OPC();
@@ -113,13 +115,12 @@ bool PowerDriver::SelectChannel(int ch)
 
 bool PowerDriver::OPC()
 {
-	client->Write("*OPC?\n");
+    client->Write(GenerateCommand(COMMAND_TYPE::OPC, 0));
 	std::this_thread::sleep_for(std::chrono::milliseconds(client->GetWaitTime()));
 	std::string reply;
-	bool status = client->ReadReply(&reply,min_reply_length);
+    bool status = client->ReadReply(&reply, min_reply_length);
 	return status;
 }
-
 
 
 void PowerDriver::Print()
@@ -130,10 +131,7 @@ void PowerDriver::Print()
 
 
 
-// *****************   Read functions *************** //
-
-
-
+// ****************   Read functions *************** //
 
 float PowerDriver::Read(std::string cmd, INT& error)
 {
@@ -160,7 +158,6 @@ float PowerDriver::Read(std::string cmd, INT& error)
 }
 
 
-
 std::string PowerDriver::ReadIDCode(int index, INT& error)
 {
 	std::string cmd;
@@ -173,7 +170,7 @@ std::string PowerDriver::ReadIDCode(int index, INT& error)
 
 	if(index>=0) SelectChannel(instrumentID[index]);
 
-	cmd = "*IDN?\n";
+    cmd = GenerateCommand(COMMAND_TYPE::GetIdentification, 0);
 	client->Write(cmd);
 	std::this_thread::sleep_for(std::chrono::milliseconds(client->GetWaitTime()));	
 	success = client->ReadReply(&reply,min_reply_length);
@@ -204,7 +201,7 @@ std::vector<std::string> PowerDriver::ReadErrorQueue(int index, INT& error)
 	
 	while(1)
 	{
-		cmd = "SYST:ERR?\n";
+        cmd = GenerateCommand(COMMAND_TYPE::ReadErrorQueue, 0);
 		client->Write(cmd);
 		std::this_thread::sleep_for(std::chrono::milliseconds(client->GetWaitTime()));	
 		success = client->ReadReply(&reply,min_reply_length);
@@ -234,7 +231,7 @@ int PowerDriver::ReadESR(int index, INT& error)
 
 	if(index>=0) SelectChannel(instrumentID[index]);
 
-	cmd = "*ESR?\n";
+    cmd = GenerateCommand(COMMAND_TYPE::ReadESR, 0);
 	client->Write(cmd);
 	std::this_thread::sleep_for(std::chrono::milliseconds(client->GetWaitTime()));	
 	success = client->ReadReply(&reply,min_reply_length);
@@ -260,7 +257,7 @@ WORD PowerDriver::ReadQCGE(int index, INT& error)
 
 	if(index>=0) SelectChannel(instrumentID[index]);
 	
-	cmd = "STAT:QUES?\n";
+    cmd = GenerateCommand(COMMAND_TYPE::ReadQCGE, 0); // This command not in https://scdn.rohde-schwarz.com/ur/pws/dl_downloads/dl_common_library/dl_manuals/gb_1/h/hmp_serie/HMPSeries_UserManual_en_02.pdf
 	client->Write(cmd);
 	std::this_thread::sleep_for(std::chrono::milliseconds(client->GetWaitTime()));	
 	success = client->ReadReply(&reply,min_reply_length);
@@ -288,7 +285,7 @@ bool PowerDriver::ReadState(int index,INT& error)
   
 	if(index>=0) SelectChannel(instrumentID[index]);
   
-	cmd = "OUTP:STAT?\n";
+    cmd = GenerateCommand(COMMAND_TYPE::ReadState, 0);
 	client->Write(cmd);
 	std::this_thread::sleep_for(std::chrono::milliseconds(client->GetWaitTime()));
 	success = client->ReadReply(&reply,min_reply_length);
@@ -320,7 +317,7 @@ float PowerDriver::ReadVoltage(int index,INT& error)
 
 	error = FE_SUCCESS;
 	float value = 0.0;
-	if( SelectChannel(instrumentID[index]) )  {	  value = Read("MEAS:VOLT?\n",error);	}
+    if( SelectChannel(instrumentID[index]) )  {	  value = Read(GenerateCommand(COMMAND_TYPE::MeasureVoltage, 0),error);	}
 		else error = FE_ERR_DRIVER;
 	return value; 
 }
@@ -333,7 +330,7 @@ float PowerDriver::ReadSetVoltage(int index,INT& error)
 
   error = FE_SUCCESS;
 	float value = 0.0;
-  if(SelectChannel(instrumentID[index]))  {	  value = Read("VOLT?\n",error);	}
+  if(SelectChannel(instrumentID[index]))  {	  value = Read(GenerateCommand(COMMAND_TYPE::ReadSetVoltage, 0),error);	}
 	else error = FE_ERR_DRIVER;
   return value; 
 }
@@ -346,7 +343,7 @@ float PowerDriver::ReadCurrent(int index,INT& error)
 
   error = FE_SUCCESS;
 	float value = 0.0;
-  if(SelectChannel(instrumentID[index]))  {	  value = Read("MEAS:CURR?\n",error);	}
+  if(SelectChannel(instrumentID[index]))  {	  value = Read(GenerateCommand(COMMAND_TYPE::ReadCurrent, 0),error);	}
 	else error = FE_ERR_DRIVER;
   return value; 
 }
@@ -359,10 +356,11 @@ float PowerDriver::ReadCurrentLimit(int index,INT& error)
 
   error = FE_SUCCESS;
 	float value = 0.0;
-  if(SelectChannel(instrumentID[index]))  {	  value = Read("CURR?\n",error);	}
+  if(SelectChannel(instrumentID[index]))  {	  value = Read(GenerateCommand(COMMAND_TYPE::ReadCurrentLimit, 0),error);	}
 	else error = FE_ERR_DRIVER;
   return value; 
 }
+
 
 float PowerDriver::ReadOVPLevel(int index,INT& error)
 {
@@ -371,7 +369,7 @@ float PowerDriver::ReadOVPLevel(int index,INT& error)
 
 	error = FE_SUCCESS;
 	float value = 0.0;
-	if( SelectChannel(instrumentID[index]) )  {	  value = Read("VOLT:PROT:LEV?\n",error);	}
+    if( SelectChannel(instrumentID[index]) )  {	  value = Read(GenerateCommand(COMMAND_TYPE::ReadOVPLevel, 0),error);	}
 		else error = FE_ERR_DRIVER;
 	return value; 
 }
@@ -380,7 +378,6 @@ float PowerDriver::ReadOVPLevel(int index,INT& error)
 
 
 // ****************** Set functions ********************* //
-
 
 bool PowerDriver::Set(std::string cmd, INT& error)
 {
@@ -394,7 +391,6 @@ bool PowerDriver::Set(std::string cmd, INT& error)
 	if(!success) { error=FE_ERR_DRIVER; cm_msg(MERROR, "Power supply ... ", "command %s not succesful for %s supply", cmd.c_str(),name.c_str() ); }
 	return success;
 }
-
 
 
 void PowerDriver::SetCurrentLimit(int index, float value,INT& error)
@@ -412,7 +408,7 @@ void PowerDriver::SetCurrentLimit(int index, float value,INT& error)
 
   if( SelectChannel(instrumentID[index]) ) //'channel' is already instrument channel
   {
-	bool success = Set("CURR "+std::to_string(value)+"\n",error);
+    bool success = Set(GenerateCommand(COMMAND_TYPE::SetCurrent, value),error);
   	if(!success) error=FE_ERR_DRIVER;
   	else // read changes
   	{
@@ -422,7 +418,6 @@ void PowerDriver::SetCurrentLimit(int index, float value,INT& error)
   }
   else error=FE_ERR_DRIVER;
 }
-
 
 
 void PowerDriver::SetState(int index, bool value,INT& error)
@@ -448,8 +443,8 @@ void PowerDriver::SetState(int index, bool value,INT& error)
 
 	if( SelectChannel(instrumentID[index]) )
 	{
-		if(value==true) { cmd="OUTP:STAT 1\n"; }
-		else { cmd = "OUTP:STAT 0\n"; }
+        if(value==true) { cmd=GenerateCommand(COMMAND_TYPE::SetState, 1); }
+        else { cmd = GenerateCommand(COMMAND_TYPE::SetState, 0); }
 		client->Write(cmd);
 		std::this_thread::sleep_for(std::chrono::milliseconds(client->GetWaitTime()));
 		success = OPC();
@@ -457,7 +452,6 @@ void PowerDriver::SetState(int index, bool value,INT& error)
 	}
 	else error=FE_ERR_DRIVER;
 }
-
 
 
 void PowerDriver::SetVoltage(int index, float value,INT& error)
@@ -473,7 +467,7 @@ void PowerDriver::SetVoltage(int index, float value,INT& error)
     
 	if( SelectChannel(instrumentID[index]) ) // module address in the daisy chain to select channel, or 1/2/3/4 for the HAMEG
 	{
-		bool success = Set("VOLT "+std::to_string(value)+"\n",error);
+        bool success = Set(GenerateCommand(COMMAND_TYPE::SetVoltage, value),error);
 		if(!success) error=FE_ERR_DRIVER;
 		else // read changes
 		{
@@ -502,7 +496,7 @@ void PowerDriver::SetOVPLevel(int index, float value,INT& error)
 
 	if( SelectChannel(instrumentID[index]) ) // module address in the daisy chain to select channel, or 1/2/3/4 for the HAMEG
 	{
-		bool success = Set("VOLT:PROT:LEV "+std::to_string(value)+"\n",error);
+        bool success = Set(GenerateCommand(COMMAND_TYPE::SetOVPLevel, value),error);
 		if(!success) error=FE_ERR_DRIVER;
 		else // read changes
 		{
@@ -544,7 +538,6 @@ void PowerDriver::CurrentLimitChanged()
 }
 
 
-
 void PowerDriver::SetStateChanged()
 {
 	INT err;
@@ -574,7 +567,6 @@ void PowerDriver::SetStateChanged()
 		variables["State"]=state; //push to odb
 	}
 }
-
 
 
 void PowerDriver::DemandVoltageChanged()
@@ -622,6 +614,12 @@ void PowerDriver::DemandOVPLevelChanged()
 }
 
 
+// **************** Flexiblity functions ***************** //
+std::string PowerDriver::GenerateCommand(COMMAND_TYPE, float)
+{
+    std::cout << "Warning: empty base class used, no command" << std::endl;
+    return "";
+}
 
 
 

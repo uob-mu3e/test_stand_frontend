@@ -69,9 +69,12 @@ INT end_of_run(INT run_number, char *error);
 INT pause_run(INT run_number, char *error);
 INT resume_run(INT run_number, char *error);
 INT frontend_loop();
-INT read_genesys_power(char *pevent, INT off);
+/*
+INT read_genesys_power(char *pevent, INT off);*/
 INT read_hameg_power(char *pevent, INT off, std::string eq_name, std::string lvh_num);
+
 INT read_hameg_power0(char *pevent, INT off);
+/*
 INT read_hameg_power1(char *pevent, INT off);
 INT read_hameg_power2(char *pevent, INT off);
 INT read_hameg_power3(char *pevent, INT off);
@@ -80,6 +83,7 @@ INT read_hameg_power5(char *pevent, INT off);
 INT read_hameg_power6(char *pevent, INT off);
 INT read_hameg_power7(char *pevent, INT off);
 INT read_hameg_power8(char *pevent, INT off);
+*/
 INT read_power(float* pdata, const std::string& eqn);
 
 void setup_history();
@@ -96,23 +100,6 @@ DEVICE_DRIVER mscb_driver[] = {
 };
 
 EQUIPMENT equipment[] = {
-	
-   {"Genesys0",                       /* equipment name */
-    {130, 0,                       /* event ID, trigger mask */
-     "SYSTEM",                  /* event buffer */
-     EQ_PERIODIC,                   /* equipment type */
-     0,                         /* event source */
-     "MIDAS",                   /* format */
-     TRUE,                      /* enabled */
-     RO_STOPPED | RO_RUNNING | RO_PAUSE,        /* all, but not write to odb */
-     10000,                     /* read every 10 sec */
-     0,                         /* stop run after this event limit */
-     0,                         /* number of sub events */
-     1,                         /* log history every event */
-     "", "", ""} ,                  /* device driver list */
-     read_genesys_power,
-    },
-    
     {"HAMEG0",                       /* equipment name */
     	{120, 0,                       /* event ID, trigger mask */
      	"SYSTEM",                  /* event buffer */
@@ -129,157 +116,8 @@ EQUIPMENT equipment[] = {
      	read_hameg_power0,    
     },
 
-
-	{"HAMEG1",                       /* equipment name */
-    	{121, 0,                       /* event ID, trigger mask */
-     	"SYSTEM",                  /* event buffer */
-     	EQ_PERIODIC,                   /* equipment type */
-     	0,                         /* event source */
-     	"MIDAS",                   /* format */
-     	TRUE,                      /* enabled */
-     	RO_STOPPED | RO_RUNNING | RO_PAUSE,        /* all, but not write to odb */
-     	10000,                     /* read every 10 sec */
-     	0,                         /* stop run after this event limit */
-    	0,                         /* number of sub events */
-        1,                         /* log history every event */
-     	"", "", ""} ,                  /* device driver list */
-     	read_hameg_power1,    
-    },
-    
-    {"HAMEG2",                       /* equipment name */
-    	{122, 0,                       /* event ID, trigger mask */
-     	"SYSTEM",                  /* event buffer */
-     	EQ_PERIODIC,                   /* equipment type */
-     	0,                         /* event source */
-     	"MIDAS",                   /* format */
-     	TRUE,                      /* enabled */
-     	RO_STOPPED | RO_RUNNING | RO_PAUSE,        /* all, but not write to odb */
-     	10000,                     /* read every 10 sec */
-     	0,                         /* stop run after this event limit */
-    	0,                         /* number of sub events */
-        1,                         /* log history every event */
-     	"", "", ""} ,                  /* device driver list */
-     	read_hameg_power2,    
-    },
-
-	{"HAMEG3",                       /* equipment name */
-    	{123, 0,                       /* event ID, trigger mask */
-     	"SYSTEM",                  /* event buffer */
-     	EQ_PERIODIC,                   /* equipment type */
-     	0,                         /* event source */
-     	"MIDAS",                   /* format */
-     	TRUE,                      /* enabled */
-     	RO_STOPPED | RO_RUNNING | RO_PAUSE,        /* all, but not write to odb */
-     	10000,                     /* read every 10 sec */
-     	0,                         /* stop run after this event limit */
-    	0,                         /* number of sub events */
-        1,                         /* log history every event */
-     	"", "", ""} ,                  /* device driver list */
-     	read_hameg_power3,    
-    },
-
-	{"HAMEG4",                       /* equipment name */
-    	{124, 0,                       /* event ID, trigger mask */
-     	"SYSTEM",                  /* event buffer */
-     	EQ_PERIODIC,                   /* equipment type */
-     	0,                         /* event source */
-     	"MIDAS",                   /* format */
-     	TRUE,                      /* enabled */
-     	RO_STOPPED | RO_RUNNING | RO_PAUSE,        /* all, but not write to odb */
-     	10000,                     /* read every 10 sec */
-     	0,                         /* stop run after this event limit */
-    	0,                         /* number of sub events */
-        1,                         /* log history every event */
-     	"", "", ""} ,                  /* device driver list */
-     	read_hameg_power4,    
-    },
-
-	{"HAMEG5",                       /* equipment name */
-    	{125, 0,                       /* event ID, trigger mask */
-     	"SYSTEM",                  /* event buffer */
-     	EQ_PERIODIC,                   /* equipment type */
-     	0,                         /* event source */
-     	"MIDAS",                   /* format */
-     	TRUE,                      /* enabled */
-     	RO_STOPPED | RO_RUNNING | RO_PAUSE,        /* all, but not write to odb */
-     	10000,                     /* read every 10 sec */
-     	0,                         /* stop run after this event limit */
-    	0,                         /* number of sub events */
-        1,                         /* log history every event */
-     	"", "", ""} ,                  /* device driver list */
-     	read_hameg_power5,    
-    },
-
-	{"HAMEG6",                       /* equipment name */
-    	{126, 0,                       /* event ID, trigger mask */
-     	"SYSTEM",                  /* event buffer */
-     	EQ_PERIODIC,                   /* equipment type */
-     	0,                         /* event source */
-     	"MIDAS",                   /* format */
-     	TRUE,                      /* enabled */
-     	RO_STOPPED | RO_RUNNING | RO_PAUSE,        /* all, but not write to odb */
-     	10000,                     /* read every 10 sec */
-     	0,                         /* stop run after this event limit */
-    	0,                         /* number of sub events */
-        1,                         /* log history every event */
-     	"", "", ""} ,                  /* device driver list */
-     	read_hameg_power6,    
-    },
-
-	{"HAMEG7",                       /* equipment name */
-    	{127, 0,                       /* event ID, trigger mask */
-     	"SYSTEM",                  /* event buffer */
-     	EQ_PERIODIC,                   /* equipment type */
-     	0,                         /* event source */
-     	"MIDAS",                   /* format */
-     	TRUE,                      /* enabled */
-     	RO_STOPPED | RO_RUNNING | RO_PAUSE,        /* all, but not write to odb */
-     	10000,                     /* read every 10 sec */
-     	0,                         /* stop run after this event limit */
-    	0,                         /* number of sub events */
-        1,                         /* log history every event */
-     	"", "", ""} ,                  /* device driver list */
-     	read_hameg_power7,    
-    },
-
-	{"HAMEG8",                       /* equipment name */
-    	{128, 0,                       /* event ID, trigger mask */
-     	"SYSTEM",                  /* event buffer */
-     	EQ_PERIODIC,                   /* equipment type */
-     	0,                         /* event source */
-     	"MIDAS",                   /* format */
-     	TRUE,                      /* enabled */
-     	RO_STOPPED | RO_RUNNING | RO_PAUSE,        /* all, but not write to odb */
-     	10000,                     /* read every 10 sec */
-     	0,                         /* stop run after this event limit */
-    	0,                         /* number of sub events */
-        1,                         /* log history every event */
-     	"", "", ""} ,                  /* device driver list */
-     	read_hameg_power8,    
-    },
-   
-   //declare non-power driver eq as last
-   {"PowerDistribution",            /* equipment name */
-    {205, 0,                     /* event ID, trigger mask */
-     "SYSTEM",                  /* event buffer */
-     EQ_SLOW,                   /* equipment type */
-     0,                         /* event source */
-     "MIDAS",                   /* format */
-     TRUE,                      /* enabled */
-     RO_ALWAYS,
-     60000,                     /* read full event every 60 sec */
-     1000,                       /* read one value every 1000 msec */
-     0,                         /* number of sub events */
-     1,                         /* log history every second */
-     "", "", ""} ,
-    cd_multi_read,              /* readout routine */
-    cd_multi,                   /* class driver main routine */
-    mscb_driver,                /* device driver list */
-    nullptr,                       /* init string */
-    },
-    
     {""} //why is there actually this empty one here? FW
-    
+
 };
 
 
@@ -592,21 +430,6 @@ INT read_power(float* pdata,const std::string& eq_name)
 	return error;
 }
 
-INT read_genesys_power(char *pevent, INT off [[maybe_unused]])
-{
-	//std::cout << " read genesys power called" << std::endl;
-	
-	/* init bank structure */
-	bk_init32a(pevent);
-	float *pdata;
-	
-	bk_create(pevent,"LVG0", TID_FLOAT, (void **)&pdata);
-	std::string eq_name = "Genesys0";
-    read_power(pdata,eq_name);
-	bk_close(pevent, pdata);
-  	return bk_size(pevent);
-}
-
 
 INT read_hameg_power(char *pevent, INT off [[maybe_unused]], std::string eq_name, std::string lvh_num)
 {
@@ -628,6 +451,7 @@ INT read_hameg_power0(char *pevent, INT off)
   return read_hameg_power(pevent, off, "HAMEG0", "0");
 }
 
+/*
 INT read_hameg_power1(char *pevent, INT off)
 {
   return read_hameg_power(pevent, off, "HAMEG1", "1");
@@ -667,7 +491,7 @@ INT read_hameg_power8(char *pevent, INT off)
 {
   return read_hameg_power(pevent, off, "HAMEG8", "8");
 }
-
+*/
 
 
 INT frontend_loop()

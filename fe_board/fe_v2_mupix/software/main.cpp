@@ -4,9 +4,9 @@
 
 #include "../../fe/software/si5345.h"
 #include "../../fe/software/si5345_regs1_mupix.h"
-#include "../../fe/software/si5345_regs2.h"
+#include "../../fe/software/si5345_regs2_lvds.h"
 si5345_t si5345_1 { SPI_SI_BASE, 0, si5345_regs1_mupix, sizeof(si5345_regs1_mupix) / sizeof(si5345_regs1_mupix[0]) };
-si5345_t si5345_2 { SPI_SI_BASE, 1, si5345_regs2, sizeof(si5345_regs2) / sizeof(si5345_regs2[0]) };
+si5345_t si5345_2 { SPI_SI_BASE, 1, si5345_regs2_lvds, sizeof(si5345_regs2_lvds) / sizeof(si5345_regs2_lvds[0]) };
 //si5345_t si5345 { SPI_SI_BASE, 0 };
 
 #include "../../fe/software/sc.h"

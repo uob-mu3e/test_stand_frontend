@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang="en">
+	<head>
+		<!-- Encoding -->
+	   <meta charset="UTF-8">
+
+	   <link rel="stylesheet" href="midas.css">
+	   <script src="controls.js"></script>
+	   <script src="midas.js"></script>
+	   <script src="mhttpd.js"></script>
+	   <script src="transfer/js/scripting.js"></script>
+
+	   <title>Import from GUI</title>
+	</head>
+
+	<body class="mcss" onload="load()">
+		<!-- header and side navigation will be filled in mhttpd_start -->
+		<div id="mheader"></div>
+		<div id="msidenav"></div>
+
+
+		<div id="mmain">
+
+			<input type="file" id="jsonInputConfig" accept=".json"
+				   onchange="handleFile()"></input>
+			<p class="content"></p>
+			<button type="button" id="uploadButton" onclick="uploadConfigToODB()">Upload</button>
+			<button type="button" id="configureButton" onclick="checkAndConfig()">Load configuration</button>
+
+		</div>
+
+
+	</body>
+</html>
