@@ -45,7 +45,7 @@ radix -hexadecimal
 force -freeze mupix_ctrl_tb/reg_re 0
 run 80ns
 force -freeze mupix_ctrl_tb/reg_add [examine mupix_registers/MP_CTRL_SLOW_DOWN_REGISTER_W]
-force -freeze mupix_ctrl_tb/reg_wdata "x00000004"
+force -freeze mupix_ctrl_tb/reg_wdata "x00000002"
 force -freeze mupix_ctrl_tb/reg_we 1
 run 8ns
 force -freeze mupix_ctrl_tb/reg_add [examine mupix_registers/MP_CTRL_DIRECT_SPI_ENABLE_REGISTER_W]
@@ -62,7 +62,47 @@ force -freeze mupix_ctrl_tb/reg_wdata "xACCACAC3"
 run 8ns
 force -freeze mupix_ctrl_tb/reg_we 0
 run 80ns
+
+
+
+-- wait for this first try to be processed, then test multiple chips at once
+run 1200000 ns
+force -freeze mupix_ctrl_tb/reg_we 1
+force -freeze mupix_ctrl_tb/reg_add [examine mupix_registers/MP_CTRL_TDAC_START_REGISTER_W]
+force -freeze mupix_ctrl_tb/reg_wdata "xACCACAC4"
+run 8ns
+force -freeze mupix_ctrl_tb/reg_wdata "xACCACAC5"
+run 8ns
+force -freeze mupix_ctrl_tb/reg_wdata "xACCACAC6"
+run 8ns
+force -freeze mupix_ctrl_tb/reg_wdata "xACCACAC7"
+run 8ns
 force -freeze mupix_ctrl_tb/reg_add [expr 2 + [examine mupix_registers/MP_CTRL_TDAC_START_REGISTER_W]]
-run 160000 ns
+force -freeze mupix_ctrl_tb/reg_wdata "x00020002"
+run 32ns
+force -freeze mupix_ctrl_tb/reg_add [expr 3 + [examine mupix_registers/MP_CTRL_TDAC_START_REGISTER_W]]
+force -freeze mupix_ctrl_tb/reg_wdata "x00030003"
+run 32ns
+force -freeze mupix_ctrl_tb/reg_add [expr 2 + [examine mupix_registers/MP_CTRL_TDAC_START_REGISTER_W]]
+force -freeze mupix_ctrl_tb/reg_wdata "x00120012"
+run 32ns
+force -freeze mupix_ctrl_tb/reg_add [expr 2 + [examine mupix_registers/MP_CTRL_TDAC_START_REGISTER_W]]
+force -freeze mupix_ctrl_tb/reg_wdata "x00220022"
+run 32ns
+force -freeze mupix_ctrl_tb/reg_add [expr 5 + [examine mupix_registers/MP_CTRL_TDAC_START_REGISTER_W]]
+force -freeze mupix_ctrl_tb/reg_wdata "x00050005"
+run 32ns
+force -freeze mupix_ctrl_tb/reg_add [expr 0 + [examine mupix_registers/MP_CTRL_TDAC_START_REGISTER_W]]
+force -freeze mupix_ctrl_tb/reg_wdata "xCAFECAFE"
+run 32ns
+force -freeze mupix_ctrl_tb/reg_add [expr 0 + [examine mupix_registers/MP_CTRL_TDAC_START_REGISTER_W]]
+force -freeze mupix_ctrl_tb/reg_wdata "xBEEFBEEF"
+run 32ns
+force -freeze mupix_ctrl_tb/reg_we 0
+
+-- and now we wait for ages ..
+
+run  2000000 ns
+run  2000000 ns
 
 WaveRestoreZoom 0ns 1000000ns

@@ -88,6 +88,7 @@ architecture RTL of tdac_memory is
 
     signal read_chip             : integer range 0 to N_CHIPS_g-1;
     signal read_page             : integer range 0 to N_PAGES-1;
+    signal page_finished         : boolean;
 
 
 
@@ -113,6 +114,7 @@ begin
             cycler_last_full        <= false;
             cycler_last_chip        <= 0;
             o_tdac_dpf_we           <= (others => '0');
+            page_finished           <= false;
 
         elsif(rising_edge(i_clk)) then
 
@@ -178,6 +180,12 @@ begin
                         read_page <= last_page_cycler;
                     end if;
                 end loop;
+
+                if(page_finished = true) then -- need to reset the bitpos of the prev. page if it reached the end .. needs to be done here to time the bit selection from ram correctly
+                    TDAC_page_array(read_page).bit_in_tdac  <= 0;
+                    page_finished <= false;
+                end if;
+
               when reading =>
                 -- read the page for bit_in_tdac, incr. bit_in_tdac , if bit_in_tdac = 6 --> in_use=0
 
@@ -185,6 +193,7 @@ begin
                     if(TDAC_page_array(read_page).bit_in_tdac = 6) then 
                         TDAC_page_array(read_page).full         <= false;
                         TDAC_page_array(read_page).in_use       <= false;
+                        page_finished                           <= true;
 
                         if(current_read_page_id(read_chip) = N_PAGES_PER_CHIP-1) then
                             current_read_page_id(read_chip)     <= 0;
