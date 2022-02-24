@@ -1,13 +1,13 @@
-FILE(GLOB_RECURSE INC_ALL "*.h")
+cmake_minimum_required(VERSION 3.1)
 
-set(
-    CUDA_NVCC_FLAGS
-    ${CUDA_NVCC_FLAGS};
-    -std=c++17
-)
+project(farm_pc_tools CXX)
 
-cuda_add_executable(gpu_dmatest gpu_dmatest.cu ${INC_ALL})
-target_link_libraries(gpu_dmatest -lcuda libmudaq -lutil)
+find_package(CUDA)
+if(CUDA_FOUND)
+    set(CMAKE_CUDA_ARCHITECTURES 75)
+    cuda_add_executable(gpu_dmatest gpu_dmatest.cu ${INC_ALL})
+    target_link_libraries(gpu_dmatest libmudaq)
+endif(CUDA_FOUND)
 
 include_directories(${LIBMUDAQ_DIR})
 add_executable(rw rw.cpp ${INC_ALL})

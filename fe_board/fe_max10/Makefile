@@ -2,7 +2,8 @@
 CABLE?=1
 
 IPs = \
-    nios.tcl
+    nios.tcl \
+    adc.tcl
 
 include util/quartus/makefile.mk
 

@@ -43,6 +43,20 @@
         <td name="modbvalue" data-odb-path="/Equipment/Switching/Settings/Firmware FEB ID" data-odb-editable="1"></td>
        </tr>
        <tr>
+        <td>
+        Is emergency image:
+        </td>
+        </tr>
+        <tr>
+         <td>
+          <input type="checkbox" 
+          name="modbcheckbox" 
+          data-odb-path="/Equipment/Switching/Settings/Firmware Is Emergency Image"
+          data-odb-editable="1">
+         </input>
+         </td>
+        </tr>
+       <tr>
 	       <td ><button name="programming" class="mbutton" onclick="start_programming()"> 
 			       Load Firmware </button></td>
        </tr>
@@ -51,3 +65,9 @@
 <script src="febs.js"></script>
 </body>
 </html>
+
+
+<input type="checkbox" 
+   name="modbcheckbox" 
+   data-odb-path="/Logger/Write data">
+  </input>

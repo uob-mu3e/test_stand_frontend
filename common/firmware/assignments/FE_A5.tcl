@@ -7,6 +7,10 @@ set_global_assignment -name MAX_CORE_JUNCTION_TEMP 85
 set_global_assignment -name POWER_PRESET_COOLING_SOLUTION "15 MM HEAT SINK WITH STILL AIR"
 set_global_assignment -name POWER_BOARD_THERMAL_MODEL "NONE (CONSERVATIVE)"
 
+set_global_assignment -name ON_CHIP_BITSTREAM_DECOMPRESSION ON
+set_global_assignment -name GENERATE_RBF_FILE ON
+
+
 # power rails supply voltages
 set_global_assignment -name VCCT_L_USER_VOLTAGE 1.1V
 set_global_assignment -name VCCT_R_USER_VOLTAGE 1.1V
@@ -52,8 +56,6 @@ set_global_assignment -name CONFIGURATION_VCCIO_LEVEL AUTO
 
 set_global_assignment -name CRC_ERROR_OPEN_DRAIN ON
 set_global_assignment -name RESERVE_DATA7_THROUGH_DATA5_AFTER_CONFIGURATION "AS INPUT TRI-STATED"
-
-set_global_assignment -name ON_CHIP_BITSTREAM_DECOMPRESSION OFF
 
 set_instance_assignment -name IO_STANDARD LVDS -to testout
 set_location_assignment PIN_AK4 -to testout

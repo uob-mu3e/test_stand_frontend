@@ -47,11 +47,13 @@ class MuFEB {
       int ReadBackRunState(uint16_t FPGA_ID);
       void ReadBackAllRunState(){for(size_t i=0;i<febs.size();i++) ReadBackRunState(i);};
 
-      int WriteFEBID();
+      int WriteFEBIDs();
+      int WriteFEBID(uint16_t FPGA_ID);
+      int WriteFEBID(mappedFEB &);
       int WriteSorterDelay(uint16_t FPGA_ID, uint32_t delay);
       void ReadFirmwareVersionsToODB();
 
-      void LoadFirmware(std::string filename, uint16_t FPGA_ID);
+      void LoadFirmware(std::string filename, uint16_t FPGA_ID, bool emergencyImage = false);
 
       uint32_t ReadBackMergerRate(uint16_t FPGA_ID);
       uint32_t ReadBackResetPhase(uint16_t FPGA_ID);
@@ -65,6 +67,9 @@ class MuFEB {
 
       const vector<mappedFEB> getFEBs() const {return febs;}
       const uint8_t getSB_number() const {return SB_number;}
+
+      static constexpr uint32_t EMERGENCY_IMAGE_START_ADDRESS = 0xC00000;
+      static constexpr uint32_t FLASH_MAX_ADDRESS = 0xFFFFFF;
 
 protected:
 

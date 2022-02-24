@@ -409,6 +409,7 @@ void setup_odb(){
             {"Load Firmware", false},
             {"Firmware File",""},
             {"Firmware FEB ID",0},
+            {"Firmware Is Emergency Image", false},
             {"Sorter Delay", zeroarr},
             // For this, switch_id has to be known at compile time (calls for a preprocessor macro, I guess)
             {namestr.c_str(), std::array<std::string, per_fe_SSFE_size*N_FEBS[switch_id]>()},
@@ -638,7 +639,7 @@ INT init_febs(mudaq::MudaqDevice & mu) {
                         switch_id);
 
     //init all values on FEB
-    mufeb->WriteFEBID();
+    mufeb->WriteFEBIDs();
 
     // Get all the relevant firmware versions
     mufeb->ReadFirmwareVersionsToODB();
@@ -672,7 +673,7 @@ INT init_scifi(mudaq::MudaqDevice & mu) {
     }
     //init all values on FEB
     scififeb->WriteAll();
-    scififeb->WriteFEBID();
+    scififeb->WriteFEBIDs();
 
     
     //set custom page
@@ -709,7 +710,7 @@ INT init_scitiles(mudaq::MudaqDevice & mu) {
     }
     //init all values on FEB
     tilefeb->WriteAll();
-    tilefeb->WriteFEBID();
+    tilefeb->WriteFEBIDs();
 
     set_equipment_status(equipment[EQUIPMENT_ID::SciTiles].name, "Ok", "var(--mgreen)");
 
@@ -739,7 +740,7 @@ INT init_mupix(mudaq::MudaqDevice & mu) {
         return status;
     }
     //init all values on FEB
-    mupixfeb->WriteFEBID();
+    mupixfeb->WriteFEBIDs();
     
     set_equipment_status(equipment[EQUIPMENT_ID::Mupix].name, "Ok", "var(--mgreen)");
 
@@ -1380,7 +1381,8 @@ void sc_settings_changed(odb o)
         cm_msg(MINFO, "sc_settings_changed", "Load firmware triggered");
         string fname = odb("/Equipment/Switching/Settings/Firmware File");
         uint32_t id = odb("/Equipment/Switching/Settings/Firmware FEB ID");
-        mufeb->LoadFirmware(fname,id);
+        bool emergency = odb("/Equipment/Switching/Settings/Firmware Is Emergency Image");
+        mufeb->LoadFirmware(fname,id, emergency);
         o = false;
     }
 
