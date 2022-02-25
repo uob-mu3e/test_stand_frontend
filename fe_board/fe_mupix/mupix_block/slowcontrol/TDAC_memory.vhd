@@ -30,7 +30,8 @@ entity tdac_memory is
 
         i_data              : in  std_logic_vector(31 downto 0);
         i_we                : in  std_logic;
-        i_chip              : in  integer range 0 to N_CHIPS_g-1--;
+        i_chip              : in  integer range 0 to N_CHIPS_g-1;
+        o_n_free_pages      : out std_logic_vector(31 downto 0)--;
     );
 end entity tdac_memory;
 
@@ -99,6 +100,7 @@ begin
     ram_wdata           <= i_data;
 
     process (i_clk, i_reset_n) is
+        variable n_free : integer range 0 to N_PAGES;
     begin
         if(i_reset_n = '0') then
             addr_in_current_page    <= (others => '0');
@@ -121,13 +123,15 @@ begin
             ---------------------------------------------
             -- write process
             ---------------------------------------------
-
+            n_free := 0;
             for I in 0 to N_PAGES-1 loop
                 if(TDAC_page_array(I).in_use = false) then
+                    n_free := n_free + 1;
                     next_free_page <= std_logic_vector(to_unsigned(I,PAGE_ADDR_WIDTH_g));
                     next_free_page_int <= I;
                 end if;
             end loop;
+            o_n_free_pages <= std_logic_vector(to_unsigned(n_free,32));
 
             if(i_we = '1') then 
                 if(addr_in_current_page= std_logic_vector(to_unsigned(PAGE_SIZE-1, ADDR_WIDTH_g-PAGE_ADDR_WIDTH_g))) then  -- TODO insert proper end addr (complete cols)
