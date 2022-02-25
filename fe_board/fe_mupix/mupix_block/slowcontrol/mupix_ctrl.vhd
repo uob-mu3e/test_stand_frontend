@@ -54,6 +54,7 @@ architecture RTL of mupix_ctrl is
     signal mp_direct_spi_busy           : std_logic_vector(N_SPI_g-1 downto 0) := (others => '0');
     signal mp_direct_spi_busy_n         : std_logic_vector(N_SPI_g-1 downto 0) := (others => '0');
     signal mp_ctrl_direct_spi_ena       : std_logic := '0';
+    signal mp_ctrl_spi_ena              : std_logic;
 
     signal signals_from_storage         : mp_conf_array_out(N_CHIPS_PER_SPI_g*N_SPI_g-1 downto 0) := (others => (rdy => (others => '0'), spi_data => (others => '0'), conf => (others => '0'), bias => (others => '0'), vdac => (others => '0'), tdac => (others => '0')));
     signal signals_to_storage           : mp_conf_array_in(N_CHIPS_PER_SPI_g*N_SPI_g-1 downto 0);
@@ -122,7 +123,8 @@ begin
         o_mp_direct_spi_data        => sc_to_direct_spi,
         o_mp_direct_spi_data_wr     => sc_to_direct_spi_wr,
         i_mp_direct_spi_busy        => mp_direct_spi_busy,
-        o_mp_ctrl_direct_spi_enable => mp_ctrl_direct_spi_ena--,
+        o_mp_ctrl_direct_spi_enable => mp_ctrl_direct_spi_ena,
+        o_mp_ctrl_spi_enable        => mp_ctrl_spi_ena--,
     );
 
     ------------------------------------------------------
@@ -158,17 +160,27 @@ begin
         i_read             => signals_to_storage
       );
 
+
+    gen_spi: for I in 0 to N_SPI_g-1 generate
+
     ------------------------------------------------------
     -- custom protocol (aka "mu3e slowcontrol") writing
     ------------------------------------------------------
-
-    -- TODO
-
+        mupix_slowcontrol_inst: entity work.mupix_slowcontrol
+          generic map (
+            N_CHIPS_PER_SPI_g => N_CHIPS_PER_SPI_g
+          )
+          port map (
+            i_clk     => i_clk,
+            i_reset_n => i_reset_n,
+            o_read    => open, -- connect to signals_to_storage with reg switch
+            i_data    => signals_from_storage(I*N_CHIPS_PER_SPI_g+N_CHIPS_PER_SPI_g-1 downto N_CHIPS_PER_SPI_g*I),
+            i_enable  => mp_ctrl_spi_ena,
+            o_SIN     => open--,--o_SIN
+          );
     ------------------------------------------------------
     -- SPI writing
     ------------------------------------------------------
-
-    gen_spi: for I in 0 to N_SPI_g-1 generate
 
         mp_ctrl_spi_inst: entity work.mp_ctrl_spi
         generic map (

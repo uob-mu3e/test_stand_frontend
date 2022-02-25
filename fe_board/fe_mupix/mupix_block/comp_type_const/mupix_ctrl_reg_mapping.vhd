@@ -48,7 +48,8 @@ port (
     o_mp_direct_spi_data        : out reg32array(N_SPI_g-1 downto 0);
     o_mp_direct_spi_data_wr     : out std_logic_vector(N_SPI_g-1 downto 0);
     i_mp_direct_spi_busy        : in  std_logic_vector(N_SPI_g-1 downto 0);
-    o_mp_ctrl_direct_spi_enable : out std_logic--;
+    o_mp_ctrl_direct_spi_enable : out std_logic;
+    o_mp_ctrl_spi_enable        : out std_logic--;
 );
 end entity;
 
@@ -56,6 +57,7 @@ architecture rtl of mupix_ctrl_reg_mapping is
     signal mp_ctrl_slow_down        : std_logic_vector(31 downto 0);
     signal mp_spi_busy              : std_logic;
     signal mp_ctrl_direct_spi_enable: std_logic;
+    signal mp_ctrl_spi_enable       : std_logic;
     signal conf_write_chip_select   : std_logic_vector(63 downto 0);
 
     begin
@@ -70,7 +72,9 @@ architecture rtl of mupix_ctrl_reg_mapping is
             o_mp_direct_spi_data        <= (others => (others => '0'));
             o_reg_rdata                 <= x"CCCCCCCC";
             mp_ctrl_direct_spi_enable   <= '0';
+            mp_ctrl_spi_enable          <= '0';
             o_mp_ctrl_direct_spi_enable <= '0';
+            o_mp_ctrl_spi_enable        <= '0';
             o_conf_reg_we               <= '0';
             o_combined_data_we          <= '0';
             o_tdac_we                   <= '0';
@@ -92,6 +96,7 @@ architecture rtl of mupix_ctrl_reg_mapping is
             o_mp_direct_spi_data_wr     <= (others => '0');
             mp_spi_busy                 <= i_mp_spi_busy;
             o_mp_ctrl_direct_spi_enable <= mp_ctrl_direct_spi_enable;
+            o_mp_ctrl_spi_enable        <= mp_ctrl_spi_enable;
 
             o_chip_cvb                  <= conf_write_chip_select(N_CHIPS_PER_SPI_g*N_SPI_g-1 downto 0); -- o_chip_cvb is Overwritten in case of regaddr match with MP_CTRL_COMBINED_START_REGISTER_W !!!
             o_combined_data_we          <= '0';
@@ -171,6 +176,14 @@ architecture rtl of mupix_ctrl_reg_mapping is
             end if;
             if ( regaddr = MP_CTRL_DIRECT_SPI_ENABLE_REGISTER_W and i_reg_re = '1' ) then
                 o_reg_rdata(0)  <= mp_ctrl_direct_spi_enable;
+                o_reg_rdata(31 downto 1) <= (others => '0');
+            end if;
+
+            if ( regaddr = MP_CTRL_SPI_ENABLE_REGISTER_W and i_reg_we = '1' ) then
+                mp_ctrl_spi_enable   <= i_reg_wdata(0);
+            end if;
+            if ( regaddr = MP_CTRL_SPI_ENABLE_REGISTER_W and i_reg_re = '1' ) then
+                o_reg_rdata(0)  <= mp_ctrl_spi_enable;
                 o_reg_rdata(31 downto 1) <= (others => '0');
             end if;
 
