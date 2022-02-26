@@ -61,7 +61,7 @@ INT HMP4040Driver::Init()
 	std::this_thread::sleep_for(std::chrono::milliseconds(client->GetWaitTime()));
 	
 	//beep
-    cmd=GenerateCommand(COMMAND_TYPE::Sleep, 0);
+    cmd=GenerateCommand(COMMAND_TYPE::Beep, 0);
 	if( !client->Write(cmd) ) cm_msg(MERROR, "Init HAMEG supply ... ", "could not beep %s", ip.c_str());
 	std::this_thread::sleep_for(std::chrono::milliseconds(client->GetWaitTime()));
 	
@@ -96,7 +96,7 @@ INT HMP4040Driver::Init()
 								
 	std::cout << "ID code: " << idCode << std::endl;
 								
-	//client->FlushQueu();
+    //client->FlushQueu();
 		
 	//read channels
 	for(int i = 0; i<nChannels; i++ ) 
@@ -223,7 +223,7 @@ std::string HMP4040Driver::GenerateCommand(COMMAND_TYPE cmdt, float val)
         return "CURR "+std::to_string(val)+"\n";
     } else if (cmdt == COMMAND_TYPE::Reset){
         return "*RST\n";
-    } else if (cmdt == COMMAND_TYPE::Sleep){
+    } else if (cmdt == COMMAND_TYPE::Beep){
         return "SYST:BEEP\n";
     } else if (cmdt == COMMAND_TYPE::CLearStatus){
         return "*CLS\n";
@@ -232,8 +232,6 @@ std::string HMP4040Driver::GenerateCommand(COMMAND_TYPE cmdt, float val)
         return "INST:NSEL " + std::to_string(ch)+ "\n";
     } else if (cmdt == COMMAND_TYPE::OPC){
         return "*OPC?\n";
-    } else if (cmdt == COMMAND_TYPE::GetIdentification){
-        return "*IDN?\n";
     } else if (cmdt == COMMAND_TYPE::ReadErrorQueue){
         return "SYST:ERR?\n";
     } else if (cmdt == COMMAND_TYPE::ReadESR){
@@ -242,10 +240,10 @@ std::string HMP4040Driver::GenerateCommand(COMMAND_TYPE cmdt, float val)
         return "STAT:QUES?\n";
     } else if (cmdt == COMMAND_TYPE::ReadState) {
         return "OUTP:STAT?\n";
-    } else if (cmdt == COMMAND_TYPE::MeasureVoltage) {
-        return "MEAS:VOLT?\n";
+    } else if (cmdt == COMMAND_TYPE::ReadVoltage) {
+        return "MEAS:VOLT?\n"; //What is the difference between ReadVoltage and ReadSetVoltage
     } else if (cmdt == COMMAND_TYPE::ReadSetVoltage) {
-        return "VOLT?\n";
+        return "VOLT?\n"; //What is the difference between ReadVoltage and ReadSetVoltage
     } else if (cmdt == COMMAND_TYPE::ReadCurrent){
         return "MEAS:CURR?\n";
     } else if (cmdt == COMMAND_TYPE::ReadCurrentLimit){

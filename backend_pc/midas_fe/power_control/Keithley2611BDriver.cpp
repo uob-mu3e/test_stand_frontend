@@ -15,7 +15,7 @@ Keithley2611BDriver::~Keithley2611BDriver()
 
 Keithley2611BDriver::Keithley2611BDriver(std::string n, EQUIPMENT_INFO* inf) : PowerDriver(n,inf)
 {
-	std::cout << " HMP4040 HAMEG driver with " << instrumentID.size() << " channels instantiated " << std::endl;
+    std::cout << " Keithley2611B driver with " << instrumentID.size() << " channels instantiated " << std::endl;
 }
 
 
@@ -48,38 +48,32 @@ INT Keithley2611BDriver::Init()
 	std::string reply = "";
 	INT err;
 	
-	//longer wait time for the HMP supplies
+    //longer wait time for the HMP supplies //TODO What abut Keithly?
 	client->SetDefaultWaitTime(50);
 	
 	//global reset if requested
-	if( settings["Global Reset On FE Start"] == true)
+    if(settings["Global Reset On FE Start"] == true)
 	{
 		cmd = "*RST\n";
-		if( !client->Write(cmd) ) cm_msg(MERROR, "Init HAMEG supply ... ", "could not global reset %s", ip.c_str());
+        if( !client->Write(cmd) ) cm_msg(MERROR, "Init KEITH supply ... ", "could not global reset %s", ip.c_str());
 		else cm_msg(MINFO,"power_fe","Init global reset of %s",ip.c_str());
 	}
 	std::this_thread::sleep_for(std::chrono::milliseconds(client->GetWaitTime()));
 	
-	//beep
-	cmd="SYST:BEEP\n";
-	if( !client->Write(cmd) ) cm_msg(MERROR, "Init HAMEG supply ... ", "could not beep %s", ip.c_str());
+    //beep TODO check
+    cmd=GenerateCommand(COMMAND_TYPE::Beep, 0);
+    if( !client->Write(cmd) ) cm_msg(MERROR, "Init KEITH supply ... ", "could not beep %s", ip.c_str());
 	std::this_thread::sleep_for(std::chrono::milliseconds(client->GetWaitTime()));
-	
-	//clear error an status registers
-	//cmd = "*CLS\n";
-	//if( !client->Write(cmd) ) cm_msg(MERROR, "Init HAMEG supply ... ", "could perform global clear %s", ip.c_str());
-	//else cm_msg(MINFO,"power_fe","Global CLS of %s",ip.c_str());
-	//std::this_thread::sleep_for(std::chrono::milliseconds(client->GetWaitTime()));
 	
 	std::vector<std::string> error_queue = ReadErrorQueue(-1,err);
 	for(auto& s : error_queue)
 	{
-		if(s.substr(0,1) != "0")		{	cm_msg(MERROR,"power_fe"," Error from hameg supply : %s",s.c_str());		}			
+        if(s.find("Queue Is Empty") == std::string::npos)		{	cm_msg(MERROR,"power_fe"," Error from KEITH supply : %s",s.c_str());		}
 	}
 	
 	
-	//HAMEG has fixed 4 channels
-	instrumentID = {1,2,3,4};
+    //KEITH has 1 channel
+    instrumentID = {1};
 	int nChannels = instrumentID.size();	
 	settings["NChannels"] = nChannels;
 	
@@ -89,7 +83,7 @@ INT Keithley2611BDriver::Init()
 	currentlimit.resize(nChannels);
 	state.resize(nChannels);
 	OVPlevel.resize(nChannels);
-	instrumentID = {1,2,3,4}; // The HMP4040 supply has 4 channel numbered 1,2,3, and 4.
+    //instrumentID = {1,2,3,4}; // The HMP4040 supply has 4 channel numbered 1,2,3, and 4.
 	
 	idCode=ReadIDCode(-1,err); 	//channel selection not relevant for HAMEG supply to read ID
 								// "-1" is a trick not to select a channel before the query
@@ -104,7 +98,7 @@ INT Keithley2611BDriver::Init()
 		state[i]=ReadState(i,err);
 		
 		voltage[i]=ReadVoltage(i,err);
-		demandvoltage[i]=ReadSetVoltage(i,err);
+        demandvoltage[i]=ReadSetVoltage(i,err);//T
 
 		current[i]=ReadCurrent(i,err);
 		currentlimit[i]=ReadCurrentLimit(i,err);
@@ -141,13 +135,6 @@ INT Keithley2611BDriver::Init()
     settings["Read ESR"].watch(  [&](midas::odb &arg  [[maybe_unused]]) { this->ReadESRChanged(); }  );
  	
 	return FE_SUCCESS;
-}
-
-
-
-bool Keithley2611BDriver::AskPermissionToTurnOn(int channel) //extra check whether it is safe to tunr on supply;
-{
-	return true;
 }
 
 
@@ -198,7 +185,7 @@ INT Keithley2611BDriver::ReadAll()
 	std::vector<std::string> error_queue = ReadErrorQueue(-1,err);
 	for(auto& s : error_queue)
 	{
-		if(s.substr(0,1) != "0")		{	cm_msg(MERROR,"power_fe"," Error from hameg supply : %s",s.c_str());		}			
+        if(s.find("Queue Is Empty") == std::string::npos)		{	cm_msg(MERROR,"power_fe"," Error from KEITH supply : %s",s.c_str());		}
 	}
 	
 	return FE_SUCCESS;
@@ -216,90 +203,49 @@ void Keithley2611BDriver::ReadESRChanged()
 	}
 }
 
+
+bool Keithley2611BDriver::AskPermissionToTurnOn(int channel) //extra check whether it is safe to tunr on supply;
+{
+    return true;
+}
+
 std::string Keithley2611BDriver::GenerateCommand(COMMAND_TYPE cmdt, float val)
 {
     if (cmdt == COMMAND_TYPE::SetCurrent) {
+        return "smua.source.limiti="+std::to_string(val)+"\n";
+    } else if (cmdt == COMMAND_TYPE::ReadCurrent){
+        return "print(smua.measure.i())\n";
+    } else if (cmdt == COMMAND_TYPE::ReadState) {
+        return "print(smua.source.output)\n";
+    } else if (cmdt == COMMAND_TYPE::ReadVoltage){
+        return "print(smua.measure.v())\n";
+    } else if (cmdt == COMMAND_TYPE::ReadSetVoltage){
+        return "print(smua.source.levelv)\n";// TODO Check. Cannot find commands for this in Keithly
+    } else if (cmdt == COMMAND_TYPE::ReadCurrentLimit){
+        return "print(smua.source.limiti)\n";
+    } else if (cmdt == COMMAND_TYPE::SetVoltage){
         return "smua.source.levelv="+std::to_string(val)+"\n";
+    } else if (cmdt == COMMAND_TYPE::Beep){
+        return "beeper.beep(0.5, 440)\n";//TODO try out
+    } else if (cmdt == COMMAND_TYPE::CLearStatus){
+        return "*CLS\n";
+    } else if (cmdt == COMMAND_TYPE::OPC){
+        return "*OPC?\n";
+    } else if (cmdt == COMMAND_TYPE::ReadESR){
+        return "*ESR?\n";
+    } else if (cmdt == COMMAND_TYPE::Reset){
+        return "*RST\n";
+    } else if (cmdt == COMMAND_TYPE::SetState){
+        int ch = (int)val;
+        return "smua.source.output=" + std::to_string(ch) + "\n";
+    } else if (cmdt == COMMAND_TYPE::ReadErrorQueue){
+        return "print(errorqueue.next())\n"; // TODO Check what does this return
+    } else if (cmdt == COMMAND_TYPE::ReadQCGE){
+        return "COMMAND NOT IMPLEMENTED IN KEITH: no equivalent in Keithly controls\n";
+    } else if (cmdt == COMMAND_TYPE::ReadOVPLevel){
+        return "print(smua.source.limitv)\n";
+    } else if (cmdt == COMMAND_TYPE::SetOVPLevel) {
+        return "smua.source.limitv="+std::to_string(val)+"\n";
     }
+    return "";
 }
-
-
-
-//************************************************************************************
-//** the STATE and SELECT OUTPUT on of is a bit confusion: from the manual
-
-/*
- 
-OUTPut:SELect {OFF | ON | 0 | 1}
-Activates or deactivates the previous selected channel. If the channel is activated the channel
-LED lights up green in CV (constant voltage) mode or red in CC (constant current) mode.
-Parameters:		
-ON | 1 Channel will be activated
-			 OFF | 0 Channel will be deactivated
-			 *RST: OFF | 0
-OUTPut[:STATe] {OFF | ON | 0 | 1}
-Activates or deactivates the previous selected channel and turning on the output. The selected
-channel LED lights up green. If the output will be turned of with OUTP OFF only the previous
-selected channel will be deactivated. After sending OUTP OFF command the output button is
-still activated.
-Parameters:		
-ON | 1 Channel and output will be activated
-			 OFF | 0 Channel will be deactivated
-			 *RST: OFF | 0
-Example:
-INST OUT1
-OUTP ON (= channel 1 and output will be activated; channel and output LED will light up)
-OUTPut[:STATe]?
-Queries the output state.
-Return values:		
-1
-			 0
-ON - output is activated
-OFF - output is deactivated
-26SCPI Commands HMP series
-Remote Control
-Command Reference
-OUTPut:GENeral {OFF | ON | 0 | 1}
-Turning on / off all previous selcted channels simultaneously.
-Parameters:		
-ON | 1 Channels and output will be activated
-			 OFF | 0 Channels will be deactivated
-Example:
-INST OUT1
-Volt 12
-Curr 0.1
-OUTP:SEL ON		 CH1 LED lights up green
-INST OUT2
-Volt 12
-Curr 0.2
-OUTP:SEL ON		 CH2 LED lights up green
-OUTP:GEN ON		 Channels will be activated simultaneously
-
-*/
-
-/*
-STATus:QUEStionable Registe
-
-
-Bit No. Meaning
-
-0 Voltage
-This bit is set while the instrument is in constant current mode (CC). This means that the voltage will be regulated and the current is constant.
-
-1 Current
-This bit is set while the instrument is in constant voltage mode (CV). This means that the current is variable and the voltage is constant.
-
-2 Not used
-3 Not used
-
-4 Temperature overrange
-This bit is set if an over temperature occurs
-
-5-8Not used
-
-9 OVP
-TrippedThis bit is set if the over voltage protection has tripped.
-
-10 Fuse
-TrippedThis bit is set if the fuse protection has tripped.
-*/

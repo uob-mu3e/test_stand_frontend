@@ -30,6 +30,7 @@
 #include "device/mscbhvr.h"
 #include "GenesysDriver.h"
 #include "HMP4040Driver.h"
+#include "Keithley2611BDriver.h"
 
 using midas::odb;
 
@@ -84,6 +85,7 @@ INT read_hameg_power6(char *pevent, INT off);
 INT read_hameg_power7(char *pevent, INT off);
 INT read_hameg_power8(char *pevent, INT off);
 */
+INT read_keithley_power0(char *pevent, INT off);
 INT read_power(float* pdata, const std::string& eqn);
 
 void setup_history();
@@ -114,6 +116,22 @@ EQUIPMENT equipment[] = {
         1,                         /* log history every event */
      	"", "", ""} ,                  /* device driver list */
      	read_hameg_power0,    
+    },
+
+    {"KEITHLEY0",                       /* equipment name */
+        {120, 0,                       /* event ID, trigger mask */
+        "SYSTEM",                  /* event buffer */
+        EQ_PERIODIC,                   /* equipment type */
+        0,                         /* event source */
+        "MIDAS",                   /* format */
+        TRUE,                      /* enabled */
+        RO_STOPPED | RO_RUNNING | RO_PAUSE,        /* all, but not write to odb */
+        1000,                     /* read every 1 sec */
+        0,                         /* stop run after this event limit */
+        0,                         /* number of sub events */
+        1,                         /* log history every event */
+        "", "", ""} ,                  /* device driver list */
+        read_keithley_power0,
     },
 
     {""} //why is there actually this empty one here? FW
@@ -208,7 +226,7 @@ void mscb_define(std::string eq, std::string devname, DEVICE_DRIVER *driver,
 
    // setup custom page
    odb custom("/Custom");
-   custom["LV Power"] = "lowvoltage.html";
+   custom["Pixel Test"] = "transfer/main.html";
 }
 
 /*-- Error dispatcher causing communiction alarm -------------------*/
@@ -240,7 +258,7 @@ INT frontend_init()
 
    /*---- set correct ODB device addresses ----*/
 
-   mscb_define("PowerDistribution", "Output",  mscb_driver, "mscb401.mu3e", 65535, 26, "Enable channel 1", 0.1, 1.0, 0.0);
+   /*mscb_define("PowerDistribution", "Output",  mscb_driver, "mscb401.mu3e", 65535, 26, "Enable channel 1", 0.1, 1.0, 0.0);
    mscb_define("PowerDistribution", "Output",  mscb_driver, "mscb401.mu3e", 65535, 27, "Enable channel 2", 0.1, 1.0, 0.0);
    mscb_define("PowerDistribution", "Output",  mscb_driver, "mscb401.mu3e", 65535, 28, "Enable channel 3", 0.1, 1.0, 0.0);
    mscb_define("PowerDistribution", "Output",  mscb_driver, "mscb401.mu3e", 65535, 30, "Enable channel 4", 0.1, 1.0, 0.0);
@@ -268,7 +286,7 @@ INT frontend_init()
    mscb_define("PowerDistribution", "Input",  mscb_driver, "mscb401.mu3e", 65535, 42, "Current ch5", 0.01, 5.0, 0.0);
    mscb_define("PowerDistribution", "Input",  mscb_driver, "mscb401.mu3e", 65535, 43, "Current ch6", 0.01, 5.0, 0.0);
    mscb_define("PowerDistribution", "Input",  mscb_driver, "mscb401.mu3e", 65535, 44, "Current ch7", 0.01, 5.0, 0.0);
-   mscb_define("PowerDistribution", "Input",  mscb_driver, "mscb401.mu3e", 65535, 45, "Current ch8", 0.01, 5.0, 0.0);
+   mscb_define("PowerDistribution", "Input",  mscb_driver, "mscb401.mu3e", 65535, 45, "Current ch8", 0.01, 5.0, 0.0);*/
    
    
    
@@ -281,7 +299,8 @@ INT frontend_init()
 	//  allow equipment name starts to recognize supply type 
 	std::vector<std::string> genysis_names = {"Gen","gen","tdk","TDK"};
 	std::vector<std::string> hameg_names = {"HMP","hmp","ham","HAM","Lab","lab"};
-  
+    std::vector<std::string> keithley_names = {"Kei","kei","KEI"};
+
 	for(unsigned int eqID = 0; eqID<nEq-1; eqID++)
 	{   
 		std::cout << "start init Equipment id " << eqID << std::endl;
@@ -298,6 +317,10 @@ INT frontend_init()
   		{
             drivers.emplace_back(new HMP4040Driver(equipment[eqID].name,&equipment[eqID].info));
 		}
+        else if( std::find( keithley_names.begin(), keithley_names.end(), shortname ) != keithley_names.end() )
+        {
+            drivers.emplace_back(new Keithley2611BDriver(equipment[eqID].name,&equipment[eqID].info));
+        }
         else if(name == std::string("PowerDistribution")){
             // do nothing, also no warning
             continue;
@@ -492,6 +515,11 @@ INT read_hameg_power8(char *pevent, INT off)
   return read_hameg_power(pevent, off, "HAMEG8", "8");
 }
 */
+
+INT read_keithley_power0(char *pevent, INT off)
+{
+  return read_hameg_power(pevent, off, "KEITHLEY0", "0");
+}
 
 
 INT frontend_loop()

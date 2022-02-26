@@ -101,6 +101,10 @@ bool PowerDriver::SelectChannel(int ch)
 	std::string reply;
   
     cmd = GenerateCommand(COMMAND_TYPE::SelectChannel, ch);
+    if (cmd == "")
+    {
+        return true;
+    }
 	client->Write(cmd);
 	std::this_thread::sleep_for(std::chrono::milliseconds(client->GetWaitTime()));
 	success = OPC();
@@ -170,7 +174,7 @@ std::string PowerDriver::ReadIDCode(int index, INT& error)
 
 	if(index>=0) SelectChannel(instrumentID[index]);
 
-    cmd = GenerateCommand(COMMAND_TYPE::GetIdentification, 0);
+    cmd = "*IDN?\n";
 	client->Write(cmd);
 	std::this_thread::sleep_for(std::chrono::milliseconds(client->GetWaitTime()));	
 	success = client->ReadReply(&reply,min_reply_length);
@@ -211,9 +215,9 @@ std::vector<std::string> PowerDriver::ReadErrorQueue(int index, INT& error)
 			else { cm_msg(MERROR, "Power supply read ... ", "could not read error supply ");}
 			error = FE_ERR_DRIVER;
 		}
-		//std::cout << " error queue " << reply << std::endl;
+        //std::cout << " error queue " << reply << std::endl;
 		error_queue.push_back(reply);
-		if(reply.substr(0,1)=="0") break;
+        if(reply.substr(0,1)=="0" || reply.find("Queue Is Empty") != std::string::npos) break;
 	}
 	return error_queue;
 }
@@ -257,7 +261,7 @@ WORD PowerDriver::ReadQCGE(int index, INT& error)
 
 	if(index>=0) SelectChannel(instrumentID[index]);
 	
-    cmd = GenerateCommand(COMMAND_TYPE::ReadQCGE, 0); // This command not in https://scdn.rohde-schwarz.com/ur/pws/dl_downloads/dl_common_library/dl_manuals/gb_1/h/hmp_serie/HMPSeries_UserManual_en_02.pdf
+    cmd = GenerateCommand(COMMAND_TYPE::ReadQCGE, 0);
 	client->Write(cmd);
 	std::this_thread::sleep_for(std::chrono::milliseconds(client->GetWaitTime()));	
 	success = client->ReadReply(&reply,min_reply_length);
@@ -297,8 +301,8 @@ bool PowerDriver::ReadState(int index,INT& error)
 		error = FE_ERR_DRIVER;
 	}
 
-	if(reply=="0") value=false;
-	else if(reply=="1") value=true;
+    if(reply.substr(0,1)=="0") value=false;
+    else if(reply.substr(0,1)=="1") value=true;
 	else
 	{ 
 		cm_msg(MERROR, "power supply read ... ", "could not read %s valid state of supply/channel: %d", name.c_str(),instrumentID[index]);
@@ -317,7 +321,7 @@ float PowerDriver::ReadVoltage(int index,INT& error)
 
 	error = FE_SUCCESS;
 	float value = 0.0;
-    if( SelectChannel(instrumentID[index]) )  {	  value = Read(GenerateCommand(COMMAND_TYPE::MeasureVoltage, 0),error);	}
+    if( SelectChannel(instrumentID[index]) )  {	  value = Read(GenerateCommand(COMMAND_TYPE::ReadVoltage, 0),error);	}
 		else error = FE_ERR_DRIVER;
 	return value; 
 }
@@ -457,13 +461,20 @@ void PowerDriver::SetState(int index, bool value,INT& error)
 void PowerDriver::SetVoltage(int index, float value,INT& error)
 {
 	error = FE_SUCCESS;
-	if(value<-0.1 || value > 25.) //check valid range 
+    if(GenerateCommand(COMMAND_TYPE::SelectChannel, 0) != "" && (value<-0.1 || value > 25.)) //check valid range TOFIX: find smarter wy to tell hameg from keithley
 	{
 		cm_msg(MERROR, "Power supply ... ", "voltage of %f not allowed",value );
 		variables["Demand Voltage"][index]=demandvoltage[index]; //disable request
 		error=FE_ERR_DRIVER;
 		return;  	
 	}
+    else if(GenerateCommand(COMMAND_TYPE::SelectChannel, 0) == "" && value > 0)
+    {
+        cm_msg(MERROR, "Power supply ... ", "voltage of %f not allowed",value );
+        variables["Demand Voltage"][index]=demandvoltage[index]; //disable request
+        error=FE_ERR_DRIVER;
+        return;
+    }
     
 	if( SelectChannel(instrumentID[index]) ) // module address in the daisy chain to select channel, or 1/2/3/4 for the HAMEG
 	{
