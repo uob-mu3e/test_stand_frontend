@@ -23,9 +23,9 @@ end entity;
 
 architecture rtl of run_control_link_listener is
 
-signal run_prep_acknowledge_received :          std_logic;
-signal end_of_run_received :                    std_logic;
-signal run_number :                             std_logic_vector(23 downto 0);
+    signal run_prep_acknowledge_received : std_logic;
+    signal end_of_run_received : std_logic;
+    signal run_number : std_logic_vector(23 downto 0);
 
 begin
 
@@ -37,27 +37,27 @@ begin
             o_merger_timeout <= '0';
         end if;
 
-        if (i_reset_ack_seen_n = '0' or i_aligned = '0') then
-            run_prep_acknowledge_received    <= '0';
-            run_number                       <= (others => '0');
-        elsif (i_reset_run_end_n = '0' or i_aligned = '0') then
-            end_of_run_received              <= '0';
-        elsif (rising_edge(i_clk)) then
-            o_FEB_status                    <=
-                run_prep_acknowledge_received &
-                end_of_run_received &
-                run_number;
+    if ( i_reset_ack_seen_n = '0' or i_aligned = '0' ) then
+        run_prep_acknowledge_received    <= '0';
+        run_number                       <= (others => '0');
+    elsif ( i_reset_run_end_n = '0' or i_aligned = '0' ) then
+        end_of_run_received              <= '0';
+    elsif rising_edge(i_clk) then
+        o_FEB_status <=
+            run_prep_acknowledge_received &
+            end_of_run_received &
+            run_number;
 
-            if (i_data = RUN_END and i_datak = RUN_END_DATAK) then
-                run_prep_acknowledge_received   <= '0';
-                end_of_run_received             <= '1';
+        if ( i_data = RUN_END and i_datak = RUN_END_DATAK ) then
+            run_prep_acknowledge_received   <= '0';
+            end_of_run_received             <= '1';
 
-            elsif(i_data(7 downto 0) = run_prep_acknowledge(7 downto 0) and i_datak = run_prep_acknowledge_datak) then
-                run_prep_acknowledge_received   <= '1';
-                end_of_run_received             <= '0';
-                run_number                      <= i_data(31 downto 8);
-            end if;
+        elsif ( i_data(7 downto 0) = run_prep_acknowledge(7 downto 0) and i_datak = run_prep_acknowledge_datak ) then
+            run_prep_acknowledge_received   <= '1';
+            end_of_run_received             <= '0';
+            run_number                      <= i_data(31 downto 8);
         end if;
+    end if;
     end process;
 
 end architecture;
