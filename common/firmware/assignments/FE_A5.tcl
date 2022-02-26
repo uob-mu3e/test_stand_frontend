@@ -10,7 +10,6 @@ set_global_assignment -name POWER_BOARD_THERMAL_MODEL "NONE (CONSERVATIVE)"
 set_global_assignment -name ON_CHIP_BITSTREAM_DECOMPRESSION ON
 set_global_assignment -name GENERATE_RBF_FILE ON
 
-
 # power rails supply voltages
 set_global_assignment -name VCCT_L_USER_VOLTAGE 1.1V
 set_global_assignment -name VCCT_R_USER_VOLTAGE 1.1V

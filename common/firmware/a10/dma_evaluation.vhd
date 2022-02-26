@@ -39,24 +39,24 @@ begin
 
     process(clk, reset_n)
     begin
-	if(reset_n = '0') then
-		halffull_counter_local 			<= (others => '0');
-		nothalffull_counter_local 		<= (others => '0');
-		endofevent_counter_local 		<= (others => '0');
-		notendofevent_counter_local	<= (others => '0');
-	elsif(rising_edge(clk)) then
-		if (dmamemhalffull = '1') then
-			halffull_counter_local <= halffull_counter_local + '1';
-		else
-			nothalffull_counter_local <= nothalffull_counter_local + '1';
-		end if;
+    if ( reset_n = '0' ) then
+        halffull_counter_local <= (others => '0');
+        nothalffull_counter_local <= (others => '0');
+        endofevent_counter_local <= (others => '0');
+        notendofevent_counter_local <= (others => '0');
+    elsif rising_edge(clk) then
+        if (dmamemhalffull = '1') then
+            halffull_counter_local <= halffull_counter_local + '1';
+        else
+            nothalffull_counter_local <= nothalffull_counter_local + '1';
+        end if;
 
-		if (dmamem_endofevent = '1') then
-			endofevent_counter_local 		<= endofevent_counter_local + '1';
-		else
-			notendofevent_counter_local 	<= notendofevent_counter_local + '1';
-		end if;
-	end if;
+        if (dmamem_endofevent = '1') then
+            endofevent_counter_local <= endofevent_counter_local + '1';
+        else
+            notendofevent_counter_local <= notendofevent_counter_local + '1';
+        end if;
+    end if;
     end process;
 
 end architecture;

@@ -11,21 +11,21 @@ generic (
     N_LINKS_g : positive := 4--;
 );
 port (
-    i_clk:                              in  std_logic; -- receive clock (156.25 MHz)
-    i_reset_ack_seen_n:                 in  std_logic;
-    i_reset_run_end_n:                  in  std_logic;
-    i_buffers_empty:                    in  std_logic_vector(31 downto 0);
-    i_aligned:                          in  std_logic_vector(31 downto 0); -- word alignment achieved
-    i_data:                             in  work.util.slv32_array_t(N_LINKS_g-1 downto 0); -- optical from frontend board
-    i_datak:                            in  work.util.slv4_array_t(N_LINKS_g-1 downto 0);
-    i_link_enable:                      in  std_logic_vector(31 downto 0);
-    i_addr:                             in  std_logic_vector(31 downto 0);
-    i_run_number:                       in  std_logic_vector(23 downto 0);
-    o_run_number:                       out std_logic_vector(31 downto 0);
-    o_runNr_ack:                        out std_logic_vector(31 downto 0);
-    o_run_stop_ack:                     out std_logic_vector(31 downto 0);
-    o_buffers_empty:                    out std_logic_vector(31 downto 0);
-    o_feb_merger_timeout:               out std_logic_vector(31 downto 0)--;
+    i_clk                   : in    std_logic; -- receive clock (156.25 MHz)
+    i_reset_ack_seen_n      : in    std_logic;
+    i_reset_run_end_n       : in    std_logic;
+    i_buffers_empty         : in    std_logic_vector(31 downto 0);
+    i_aligned               : in    std_logic_vector(31 downto 0); -- word alignment achieved
+    i_data                  : in    work.util.slv32_array_t(N_LINKS_g-1 downto 0); -- optical from frontend board
+    i_datak                 : in    work.util.slv4_array_t(N_LINKS_g-1 downto 0);
+    i_link_enable           : in    std_logic_vector(31 downto 0);
+    i_addr                  : in    std_logic_vector(31 downto 0);
+    i_run_number            : in    std_logic_vector(23 downto 0);
+    o_run_number            : out   std_logic_vector(31 downto 0);
+    o_runNr_ack             : out   std_logic_vector(31 downto 0);
+    o_run_stop_ack          : out   std_logic_vector(31 downto 0);
+    o_buffers_empty         : out   std_logic_vector(31 downto 0);
+    o_feb_merger_timeout    : out   std_logic_vector(31 downto 0)--;
 );
 end entity;
 
@@ -71,7 +71,7 @@ BEGIN
 
     process (i_clk)
     begin
-    if (rising_edge(i_clk)) then
+    if rising_edge(i_clk) then
         if ( i_reset_ack_seen_n = '0' ) then
             o_run_number                    <= (others => '0');
             o_runNr_ack                     <= (others => '0');
