@@ -272,7 +272,7 @@ begin
 
     ram_raddr <= std_logic_vector(to_unsigned(read_page,PAGE_ADDR_WIDTH_g)) & TDAC_page_array(read_page).addr;
 
-    ram_1r1w_inst: entity work.ram_1r1w -- better split into multiple RAM IP's each with size of 1 page ?
+    ram_1r1w_inst: entity work.ram_1r1w -- TODO: use ip
       generic map (
         g_DATA_WIDTH       => 32,
         g_ADDR_WIDTH       => ADDR_WIDTH_g--,
