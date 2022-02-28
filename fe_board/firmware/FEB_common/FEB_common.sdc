@@ -34,4 +34,4 @@ set_false_path -from {*} -to {*max10_interface|o_programming_status*}
 
 # int run emergeny REMOVE THIS AGAIN
 # no need for the nios to be able to read somehting ever (mupix feb only, do not merge !!!)
-set_false_path -from {fe_block_v2:e_fe_block|nios:e_nios*} -to {*_reg_mapping|o_reg_rdata*}
+#set_false_path -from {fe_block_v2:e_fe_block|nios:e_nios*} -to {*_reg_mapping|o_reg_rdata*}

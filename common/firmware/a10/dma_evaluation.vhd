@@ -7,7 +7,7 @@ use ieee.numeric_std.all;
 use ieee.std_logic_unsigned.all;
 
 entity dma_evaluation is
-    port(
+port (
 		clk:               		in std_logic;
 		reset_n:           		in std_logic;
 		dmamemhalffull:    		in std_logic;
@@ -17,7 +17,7 @@ entity dma_evaluation is
 		endofevent_counter:  	out std_logic_vector (31 downto 0);
 		notendofevent_counter:  out std_logic_vector (31 downto 0)
 );
-end entity dma_evaluation;
+end entity;
 
 architecture arch of dma_evaluation is
 

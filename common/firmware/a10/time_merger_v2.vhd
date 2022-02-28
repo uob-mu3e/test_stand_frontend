@@ -157,7 +157,7 @@ begin
             end if;
             end process;
             
-            data_0(i)  <=   work.util.link_36_to_std(i) & i_rdata(i)(31 downto 0)   when merger_finish(i) = '0' and merge_state = merge_hits else
+            data_0(i)  <=   work.mudaq.link_36_to_std(i) & i_rdata(i)(31 downto 0)   when merger_finish(i) = '0' and merge_state = merge_hits else
                             tree_padding                                            when merger_finish(i) = '1' and merge_state = merge_hits else 
                             (others => '0');
             wrreq_0(i) <= '1' when merge_state = merge_hits and i_rempty(i) = '0' and wrfull_0(i) = '0' else '0';
@@ -167,8 +167,7 @@ begin
                 ADDR_WIDTH_w => TREE_DEPTH_w,
                 DATA_WIDTH_w => write_width(0),
                 ADDR_WIDTH_r => TREE_DEPTH_r,
-                DATA_WIDTH_r => read_width(0),
-                DEVICE       => "Arria 10"--,
+                DATA_WIDTH_r => read_width(0)--,
             )
             port map (
                 aclr    => reset_0(i),

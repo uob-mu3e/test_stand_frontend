@@ -131,6 +131,7 @@ begin
         e_rx_rst_n : entity work.reset_sync
         port map ( o_reset_n => rx(i).rst_n, i_reset_n => i_reset_n and rx_rst_n(i), i_clk => i_rx_clkin(i) );
 
+        generate_8b10b : if ( (CHANNEL_WIDTH_g mod 8) = 0 ) generate
         e_rx_align : entity work.rx_align
         generic map (
             CHANNEL_WIDTH_g => CHANNEL_WIDTH_g,
@@ -155,6 +156,10 @@ begin
             i_reset_n   => rx(i).rst_n,
             i_clk       => i_rx_clkin(i)--,
         );
+        end generate;
+        generate_no8b10b : if ( (CHANNEL_WIDTH_g mod 8) /= 0 ) generate
+        -- ...
+        end generate;
 
         -- data counter
         e_rx_Gbit : entity work.counter

@@ -29,9 +29,9 @@ port (
     -- swb time fifo full
     -- cnt_gtime1_error;
     -- cnt_gtime2_error;
-    -- cnt_shtime_error; 
+    -- cnt_shtime_error;
     -- wait_cnt_pre;
-    -- wait_cnt_sh; 
+    -- wait_cnt_sh;
     -- wait_cnt_merger;
     o_counters      : out   work.util.slv32_array_t(6 downto 0);
 
@@ -106,7 +106,7 @@ begin
         o_rdempty_debug         => o_rempty_debug,
         i_ren                   => ren_merger,--not rempty and not wfull,
         o_empty                 => rempty,
-        
+
         -- error outputs
         o_error_pre             => open,
         o_error_sh              => open,
@@ -114,7 +114,7 @@ begin
         o_error_shtime          => open,
 
         -- counter
-        o_counters              => counters,        
+        o_counters              => counters,
 
         i_reset_n               => i_reset_n,
         i_clk                   => i_clk--,
@@ -183,12 +183,12 @@ begin
                     7 when (rdata(7)(37 downto 32) = tr_marker)
                     else 8;
 
-    ren   <= '1' when merge_state = wait_for_pre and header_idx = 8 and rempty = '0' and wfull = '0' else 
-             '1' when merge_state = get_ts_1 and ts1_idx = 8 and rempty = '0' and wfull = '0'  else 
+    ren   <= '1' when merge_state = wait_for_pre and header_idx = 8 and rempty = '0' and wfull = '0' else
+             '1' when merge_state = get_ts_1 and ts1_idx = 8 and rempty = '0' and wfull = '0'  else
              '1' when merge_state = get_ts_2 and ts2_idx = 8 and rempty = '0' and wfull = '0'  else
              '1' when merge_state = get_sh and sh_idx = 8 and rempty = '0' and wfull = '0'  else
              '1' when merge_state = delay and (trailer_idx = 8 or sh_idx = 7 or trailer_idx < sh_idx) and rempty = '0' else
-             '1' when merge_state = hit and header_idx = 8 and trailer_idx = 8 and ts1_idx = 8 and ts2_idx = 8 and sh_idx = 8 and rempty = '0' and wen_reg = '0' and wfull = '0'  else 
+             '1' when merge_state = hit and header_idx = 8 and trailer_idx = 8 and ts1_idx = 8 and ts2_idx = 8 and sh_idx = 8 and rempty = '0' and wen_reg = '0' and wfull = '0'  else
              '0';
 
     ren_merger <= ren when i_debug = '0' else i_ren;
@@ -269,7 +269,7 @@ begin
                             elsif ( sh_idx /= 8 ) then
                                 merge_state <= get_sh;
                                 for i in 0 to 7 loop
-                                    if ( i <= (sh_idx - 1) ) then 
+                                    if ( i <= (sh_idx - 1) ) then
                                         wdata(38 * i + 37 downto 38 * i) <= rdata(i);
                                     else
                                         wdata(38 * i + 37 downto 38 * i) <= tree_padding;
@@ -297,23 +297,25 @@ begin
         end process;
     END GENERATE;
 
-    e_swb_time_fifo : entity work.ip_scfifo
+    e_swb_time_fifo : entity work.ip_scfifo_v2
     generic map (
-        ADDR_WIDTH => 8,
-        DATA_WIDTH => W,
-        DEVICE => "Arria 10"--,
+        g_ADDR_WIDTH => 8,
+        g_DATA_WIDTH => W,
+        g_RREG_N => 1--, -- TNS=-1700
     )
     port map (
-        q               => fifo_q,
-        empty           => o_rempty,
-        rdreq           => i_ren,
-        data            => wdata,
-        full            => wfull,
-        wrreq           => wen,--not rempty and not wfull,
-        sclr            => not i_reset_n,
-        clock           => i_clk--,
+        i_wdata         => wdata,
+        i_we            => wen,--not rempty and not wfull,
+        o_wfull         => wfull,
+
+        o_rdata         => fifo_q,
+        o_rempty        => o_rempty,
+        i_rack          => i_ren,
+
+        i_clk           => i_clk,
+        i_reset_n       => i_reset_n--,
     );
-    
+
     -- data path
     o_header    <= '1' when fifo_q(37 downto 32) = pre_marker else '0';
     o_trailer   <= '1' when fifo_q(37 downto 32) = tr_marker else '0';
@@ -323,13 +325,14 @@ begin
     o_header_debug  <= '1' when rdata_debug_s(37 downto 32) = pre_marker else '0';
     o_trailer_debug <= '1' when rdata_debug_s(37 downto 32) = tr_marker else '0';
     link_number     <= rdata_debug_s(37 downto 32);
-    e_lookup : entity work.chip_lookup_int_2021
+    e_lookup : entity work.chip_lookup
+	generic map ( g_LOOPUP_NAME => "edmRun2021" )
     port map ( i_fpgaID => rdata_debug_s(35 downto 32), i_chipID => rdata_debug_s(25 downto 22), o_chipID => chipID );
-    o_q_debug <= rdata_debug_s(31 downto 0) when  rdata_debug_s(37 downto 32) = pre_marker or 
-                                                  rdata_debug_s(37 downto 32) = tr_marker  or 
-                                                  rdata_debug_s(37 downto 32) = ts1_marker or 
-                                                  rdata_debug_s(37 downto 32) = ts2_marker or 
-                                                  rdata_debug_s(37 downto 32) = err_marker or 
+    o_q_debug <= rdata_debug_s(31 downto 0) when  rdata_debug_s(37 downto 32) = pre_marker or
+                                                  rdata_debug_s(37 downto 32) = tr_marker  or
+                                                  rdata_debug_s(37 downto 32) = ts1_marker or
+                                                  rdata_debug_s(37 downto 32) = ts2_marker or
+                                                  rdata_debug_s(37 downto 32) = err_marker or
                                                   DATA_TYPE /= x"01" else
                  "111111" & x"FFFF" & rdata_debug_s(25 downto 16) when rdata_debug_s(37 downto 32) = sh_marker else
                  rdata_debug_s(31 downto 28) & chipID & rdata_debug_s(21 downto 1);

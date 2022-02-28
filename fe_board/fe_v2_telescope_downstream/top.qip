@@ -1,0 +1,16 @@
+#
+
+set_global_assignment -name QIP_FILE ../fe/top_FEB_v2.qip
+set_global_assignment -name SOURCE_TCL_SCRIPT_FILE ../fe/assignments/FE_v2_mupix_scsiAdapter.tcl
+
+set_global_assignment -name VHDL_FILE top.vhd
+set_global_assignment -name SDC_FILE top.sdc
+
+set_global_assignment -name QIP_FILE registers/include.qip
+
+set_global_assignment -name QIP_FILE ../firmware/FEB_common/include_FEB_v2.qip
+set_global_assignment -name QIP_FILE ../firmware/FEB_mupix/include.qip
+set_global_assignment -name QIP_FILE ../fe_mupix/mupix_block/include.qip
+
+set_global_assignment -name VHDL_FILE ../fe_mupix/dac_fifo.vhd
+set_global_assignment -name VHDL_FILE ../fe_mupix/mupix_block.vhd

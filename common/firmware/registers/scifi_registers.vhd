@@ -25,17 +25,17 @@ package scifi_registers is
     constant SCIFI_CNT_MISO_TRANSITION_REGISTER_R   :   integer := 16#4C#;
     -- TODO swap upper/lower?
 
-    constant SCIFI_CNT_DENOM_LOWER_REGISTER_R   :   integer := 16#42#;
-    constant SCIFI_CNT_DENOM_UPPER_REGISTER_R   :   integer := 16#43#;
+    constant SCIFI_CNT_DENOM_LOWER_REGISTER_R   :   integer := 16#4042#;
+    constant SCIFI_CNT_DENOM_UPPER_REGISTER_R   :   integer := 16#4043#;
 
     -- monitors
-    constant SCIFI_MON_STATUS_REGISTER_R        :   integer := 16#44#;
-    constant SCIFI_MON_RX_DPA_LOCK_REGISTER_R   :   integer := 16#45#;
-    constant SCIFI_MON_RX_READY_REGISTER_R      :   integer := 16#46#;
+    constant SCIFI_MON_STATUS_REGISTER_R        :   integer := 16#4044#;
+    constant SCIFI_MON_RX_DPA_LOCK_REGISTER_R   :   integer := 16#4045#;
+    constant SCIFI_MON_RX_READY_REGISTER_R      :   integer := 16#4046#;
 
 
     -- ctrl
-    constant SCIFI_CTRL_DUMMY_REGISTER_W         :   integer := 16#48#;
+    constant SCIFI_CTRL_DUMMY_REGISTER_W         :   integer := 16#4048#;
     -- TODO: Name single bits according to this:
     --        printf("dummyctrl_reg:    0x%08X\n", regs.ctrl.dummy);
     --        printf("    :cfgdummy_en  0x%X\n", (regs.ctrl.dummy>>0)&1);
@@ -46,7 +46,4 @@ package scifi_registers is
     constant SCIFI_CTRL_RESET_REGISTER_W         :   integer := 16#4A#;
     constant SCIFI_CTRL_RESETDELAY_REGISTER_W    :   integer := 16#4B#;
 
-
-    
-
-end package scifi_registers;
+end package;

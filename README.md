@@ -31,4 +31,3 @@
 - [setup #1](docs/setup1.md)
 - [code style](docs/style.md)
 - [git faq](docs/git.md)
-

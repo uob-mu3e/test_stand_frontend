@@ -4,7 +4,7 @@ use ieee.std_logic_unsigned.all;
 
 
 entity merging_demerging_tb is 
-end entity merging_demerging_tb;
+end entity;
 
 
 architecture TB of merging_demerging_tb is
@@ -115,9 +115,8 @@ begin
     e_merger_fifo : entity work.ip_scfifo
     generic map (
         ADDR_WIDTH      => 10,
-        DATA_WIDTH      => NLINKS * 38,
+        DATA_WIDTH      => NLINKS * 38--,
         --SHOWAHEAD       => "OFF",
-        DEVICE          => "Arria 10"--,
     )
     port map (
         data            => w_fifo_data,
@@ -127,9 +126,6 @@ begin
         q               => r_fifo_data,
         full            => fifo_full,
         empty           => fifo_empty,
-        almost_empty    => open,
-        almost_full     => open,
-        usedw           => open,
         sclr            => reset--,
     );
 
@@ -170,6 +166,4 @@ begin
     FEB_num_in(6) <= r_fifo_data(265 downto 260);
     FEB_num_in(7) <= r_fifo_data(303 downto 298);
 
-end TB;
-
-
+end architecture;

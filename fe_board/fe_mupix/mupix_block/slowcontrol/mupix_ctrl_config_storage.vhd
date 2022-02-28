@@ -205,7 +205,6 @@ begin
             ADDR_WIDTH      => integer(ceil(log2(real(MP_CONFIG_REGS_LENGTH(I))))),
             DATA_WIDTH      => 32,
             SHOWAHEAD       => "ON",
-            REGOUT          => 0,
             DEVICE          => "ARRIA V"--,
         )
         port map (

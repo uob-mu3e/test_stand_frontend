@@ -1,6 +1,6 @@
-library IEEE;
-use IEEE.std_logic_1164.all;
-use IEEE.numeric_std.all;
+library ieee;
+use ieee.std_logic_1164.all;
+use ieee.numeric_std.all;
 
 entity tb_stream_merger is
 end entity;
@@ -34,24 +34,7 @@ architecture arch of tb_stream_merger is
           XXXX ,   XXXX ,   XXXX ,   XXXX ,
           XXXX ,   XXXX ,   XXXX , X"009C",
           XXXX ,   XXXX ,   XXXX ,   XXXX ,
-          XXXX ,   XXXX ,   XXXX ,   XXXX ,
-          XXXX ,   XXXX ,   XXXX ,   XXXX ,
-          XXXX ,   XXXX ,   XXXX ,   XXXX ,
-          XXXX ,   XXXX ,   XXXX ,   XXXX ,
-          XXXX ,   XXXX ,   XXXX ,   XXXX ,
-          XXXX ,   XXXX ,   XXXX ,   XXXX ,
-          XXXX ,   XXXX ,   XXXX ,   XXXX ,
-          XXXX ,   XXXX ,   XXXX ,   XXXX ,
-          XXXX ,   XXXX ,   XXXX ,   XXXX ,
-          XXXX ,   XXXX ,   XXXX ,   XXXX ,
-          XXXX ,   XXXX ,   XXXX ,   XXXX ,
-          XXXX ,   XXXX ,   XXXX ,   XXXX ,
-          XXXX ,   XXXX ,   XXXX ,   XXXX ,
-          XXXX ,   XXXX ,   XXXX ,   XXXX ,
-          XXXX ,   XXXX ,   XXXX ,   XXXX ,
-          XXXX ,   XXXX ,   XXXX ,   XXXX ,
-          XXXX ,   XXXX ,   XXXX ,   XXXX ,
-          XXXX ,   XXXX ,   XXXX ,   XXXX 
+        others => XXXX
     );
 
     type offsets_array_t is array ( natural range <> ) of integer;

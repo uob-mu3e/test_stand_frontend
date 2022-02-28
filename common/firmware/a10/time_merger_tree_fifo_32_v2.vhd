@@ -27,7 +27,7 @@ port (
     i_rdreq         : in  std_logic_vector(gen_fifos - 1 downto 0);
     i_merge_state   : in  std_logic;
     i_mask_n        : in  std_logic_vector(compare_fifos - 1 downto 0);
-    -- "10" = header / "01" = sh padding 
+    -- "10" = header / "01" = sh padding
     i_wen_h_t       : in  std_logic_vector(1 downto 0);
     i_data_h_t      : in  std_logic_vector(37 downto 0);
 
@@ -116,12 +116,12 @@ begin
         t_q_last(11 downto  8) <= last(107 downto 104);
         t_q_last( 7 downto  4) <= last(69 downto 66);
         t_q_last( 3 downto  0) <= last(31 downto 28);
-        o_wrfull               <= wrfull_last2; --(wrfull_last0 and wrfull_last1) or 
-        wrfull_s               <= wrfull_last2; --(wrfull_last0 and wrfull_last1) or 
-        o_rdempty              <= rdempty_last2;--(rdempty_last0 and rdempty_last1) or 
+        o_wrfull               <= wrfull_last2; --(wrfull_last0 and wrfull_last1) or
+        wrfull_s               <= wrfull_last2; --(wrfull_last0 and wrfull_last1) or
+        o_rdempty              <= rdempty_last2;--(rdempty_last0 and rdempty_last1) or
         o_rdempty_debug        <= rdempty_last2;
-    end generate gen_last_layer;
-    
+    end generate;
+
     gen_not_last_layer : if last_layer = '0' generate
         o_wrfull    <= wrfull;
         wrfull_s    <= wrfull;
@@ -131,7 +131,7 @@ begin
     o_layer_state   <= layer_state;
     o_q             <= q;
     o_last          <= last;
-    
+
 
     gen_tree:
     FOR i in 0 to gen_fifos - 1 GENERATE
@@ -157,8 +157,7 @@ begin
 --                ADDR_WIDTH_w    => 11,
 --                DATA_WIDTH_w    => 32,
 --                ADDR_WIDTH_r    => 8,
---                DATA_WIDTH_r    => 32*8,
---                DEVICE          => "Arria 10"--,
+--                DATA_WIDTH_r    => 32*8--,
 --            )
 --            port map (
 --                aclr    => reset_fifo(i),
@@ -177,8 +176,7 @@ begin
 --                ADDR_WIDTH_w    => 11,
 --                DATA_WIDTH_w    => 6,
 --                ADDR_WIDTH_r    => 8,
---                DATA_WIDTH_r    => 6*8,
---                DEVICE          => "Arria 10"--,
+--                DATA_WIDTH_r    => 6*8--,
 --            )
 --            port map (
 --                aclr    => reset_fifo(i),
@@ -192,46 +190,47 @@ begin
 --                wrfull  => wrfull_last1(i)--,
 --            );
 
-            e_last_fifo_link_debug : entity work.ip_scfifo
-            generic map(
-                ADDR_WIDTH    => 11,
-                DATA_WIDTH    => 38,
-                RAM_OUT_REG   => "ON",
-                DEVICE        => "Arria 10"--,
+            e_last_fifo_link_debug : entity work.ip_scfifo_v2
+            generic map (
+                g_ADDR_WIDTH => 11,
+                g_DATA_WIDTH => 38,
+                g_WREG_N => 1, -- TNS=...
+                g_RREG_N => 1--, -- TNS=-2300
             )
             port map (
-                
-                data    => data(i),
-                wrreq   => wrreq(i),
-                rdreq   => i_rdreq(i),
-                clock   => i_clk,
-                q       => o_last_link_debug,
-                full    => wrfull_last2(i),
-                empty   => rdempty_last2(i),
-                sclr    => reset_fifo(i)--,
-            );
+                i_wdata         => data(i),
+                i_we            => wrreq(i),
+                o_wfull         => wrfull_last2(i),
 
+                o_rdata         => o_last_link_debug,
+                o_rempty        => rdempty_last2(i),
+                i_rack          => i_rdreq(i),
+
+                i_clk           => i_clk,
+                i_reset_n       => not reset_fifo(i)--,
+            );
         END GENERATE;
 
         gen_layer : IF last_layer = '0' and i < g_NLINKS_DATA GENERATE
-            e_link_fifo : entity work.ip_scfifo
-            generic map(
-                ADDR_WIDTH      => TREE_w,
-                DATA_WIDTH      => w_width,
-                RAM_OUT_REG     => "ON",
-                DEVICE          => "Arria 10"--,
+            e_link_fifo : entity work.ip_scfifo_v2
+            generic map (
+                g_ADDR_WIDTH => TREE_w,
+                g_DATA_WIDTH => w_width,
+                g_WREG_N => 1, -- TNS=-8800
+                g_RREG_N => 1--, -- TNS=-...
             )
             port map (
-                sclr    => reset_fifo(i),
-                data    => data(i),
-                clock   => i_clk,
-                rdreq   => i_rdreq(i),
-                wrreq   => wrreq(i),
-                q       => q(i),
-                empty   => rdempty(i),
-                full    => wrfull(i)--,
-            );
+                i_wdata         => data(i),
+                i_we            => wrreq(i),
+                o_wfull         => wrfull(i),
 
+                o_rdata         => q(i),
+                o_rempty        => rdempty(i),
+                i_rack          => i_rdreq(i),
+
+                i_clk           => i_clk,
+                i_reset_n       => not reset_fifo(i)--,
+            );
         END GENERATE;
 
 
@@ -258,7 +257,7 @@ begin
 
         -- TODO: include sub-header, check backpres., counters etc.
         layer_state(i) <= last_layer_state when i_merge_state = '0' and last_layer = '1' else
-        
+
                           end_state when a_b_padding(i) = '1' else
 
                           second_input_not_mask_n when wrfull_and_merge_state_and_first_input_not_rdempty(i) = '1' and first_input_mask_n_second_input_not_mask_n(i) = '1' else
@@ -284,7 +283,7 @@ begin
                             '0';
 
         data(i)         <= i_data_h_t when layer_state(i) = last_layer_state and i_wen_h_t = "10" else
-                           tree_padding when layer_state(i) = last_layer_state and i_wen_h_t = "01" else 
+                           tree_padding when layer_state(i) = last_layer_state and i_wen_h_t = "01" else
                            tree_padding when layer_state(i) = end_state else
                            a_h(i) when layer_state(i) = second_input_not_mask_n or layer_state(i) = a_no_b_padding_state or layer_state(i) = a_smaller_b else
                            b_h(i) when layer_state(i) = first_input_not_mask_n or layer_state(i) = b_no_a_padding_state or layer_state(i) = b_smaller_a else

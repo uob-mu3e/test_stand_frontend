@@ -1,6 +1,6 @@
 -------------------------------------------------------
 --! @link_to_fifo_32.vhd
---! @brief the link_to_fifo_32 sorts out the data from the 
+--! @brief the link_to_fifo_32 sorts out the data from the
 --! link and provides it as a fifo (32b package)
 --! Author: mkoeppel@uni-mainz.de
 -------------------------------------------------------
@@ -19,18 +19,18 @@ generic (
 port (
     i_rx            : in std_logic_vector(31 downto 0);
     i_rx_k          : in std_logic_vector(3 downto 0);
-    
+
     o_q             : out std_logic_vector(33 downto 0);
     i_ren           : in std_logic;
     o_rdempty       : out std_logic;
 
-    --! error counters 
+    --! error counters
     --! 0: fifo almost_full
     --! 1: fifo wrfull
     --! 2: # of skip event
     --! 3: # of events
     --! 4: # of sub header
-    o_counter     : out work.util.slv32_array_t(4 downto 0);
+    o_counter       : out work.util.slv32_array_t(4 downto 0);
 
     i_reset_n_156   : in std_logic;
     i_clk_156       : in std_logic;
@@ -41,7 +41,7 @@ port (
 end entity;
 
 architecture arch of link_to_fifo_32 is
-   
+
     type link_to_fifo_type is (idle, write_ts_0, write_ts_1, write_data, skip_data);
     signal link_to_fifo_state : link_to_fifo_type;
     signal cnt_skip_data, cnt_sub, cnt_events : std_logic_vector(31 downto 0);
@@ -49,7 +49,7 @@ architecture arch of link_to_fifo_32 is
     signal rx_156_data : std_logic_vector(33 downto 0);
     signal rx_156_wen, almost_full, wrfull : std_logic;
     signal wrusedw : std_logic_vector(LINK_FIFO_ADDR_WIDTH - 1 downto 0);
-    
+
     signal hit_reg : std_logic_vector(31 downto 0);
 
 begin
@@ -120,9 +120,9 @@ begin
                     rx_156_data(33 downto 32) <= "11"; -- sub header
                     cnt_sub <= cnt_sub + '1';
                 end if;
-                
+
                 hit_reg <= i_rx;
-                
+
                 if ( SKIP_DOUBLE_SUB = 1 and i_rx = hit_reg ) then
                     rx_156_wen <= '0';
                 else
@@ -143,36 +143,38 @@ begin
     end if;
     end process;
 
-    e_fifo : entity work.ip_dcfifo
-    generic map(
-        ADDR_WIDTH  => LINK_FIFO_ADDR_WIDTH,
-        DATA_WIDTH  => 34,
-        DEVICE      => "Arria 10"--,
+    e_fifo : entity work.ip_dcfifo_v2
+    generic map (
+        g_ADDR_WIDTH => LINK_FIFO_ADDR_WIDTH,
+        g_DATA_WIDTH => 34,
+        g_RREG_N => 1--,
     )
     port map (
-        data        => rx_156_data,
-        wrreq       => rx_156_wen,
-        rdreq       => i_ren,
-        wrclk       => i_clk_156,
-        rdclk       => i_clk_250,
-        q           => o_q,
-        rdempty     => o_rdempty,
-        wrfull      => wrfull,
-        wrusedw     => wrusedw,
-        aclr        => not i_reset_n_250--,
+        i_wdata     => rx_156_data,
+        i_we        => rx_156_wen,
+        o_wfull     => wrfull,
+        o_wusedw    => wrusedw,
+        i_wclk      => i_clk_156,
+
+        o_rdata     => o_q,
+        i_rack      => i_ren,
+        o_rempty    => o_rdempty,
+        i_rclk      => i_clk_250,
+
+        i_reset_n   => i_reset_n_250--;
     );
 
     process(i_clk_156, i_reset_n_156)
     begin
-        if ( i_reset_n_156 = '0' ) then
-            almost_full       <= '0';
-        elsif ( rising_edge(i_clk_156) ) then
-            if(wrusedw(LINK_FIFO_ADDR_WIDTH - 1) = '1') then
-                almost_full <= '1';
-            else 
-                almost_full <= '0';
-            end if;
+    if ( i_reset_n_156 = '0' ) then
+        almost_full <= '0';
+    elsif rising_edge(i_clk_156) then
+        if(wrusedw(LINK_FIFO_ADDR_WIDTH - 1) = '1') then
+            almost_full <= '1';
+        else
+            almost_full <= '0';
         end if;
+    end if;
     end process;
 
 end architecture;

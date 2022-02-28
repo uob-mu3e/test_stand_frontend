@@ -16,7 +16,7 @@ generic (
 );
 port (
     -- read latency - 1
-    i_reg_addr      : in    std_logic_vector(3 downto 0);
+    i_reg_addr      : in    std_logic_vector(15 downto 0);
     i_reg_re        : in    std_logic;
     o_reg_rdata     : out   std_logic_vector(31 downto 0);
     i_reg_we        : in    std_logic;
@@ -56,6 +56,7 @@ end entity;
 architecture arch of tile_path is
 
     signal s_testpulse : std_logic;
+    signal s_receivers_usrclk : std_logic;
 
     signal rx_pll_lock : std_logic;
     signal rx_dpa_lock, rx_dpa_lock_reg : std_logic_vector(i_data'range);
@@ -88,6 +89,9 @@ architecture arch of tile_path is
     signal s_en_lapse_counter : std_logic;
     signal s_upper_bnd, s_lower_bnd : std_logic_vector(N_CC - 1 downto 0);
 
+    signal iram         : work.util.rw_t;
+    signal scitile_regs : work.util.rw_t;
+
 begin
 
     -- 100 kHz
@@ -98,100 +102,92 @@ begin
 
     s_cntreg_denom_b <= work.util.gray2bin(s_cntreg_denom_g_156);
 
+
     ---- REGISTER MAPPING ----
-    process(i_clk_core, i_reset)
-    begin
-    if ( i_reset = '1' ) then
-        s_dummyctrl_reg <= (others=>'0');
-        s_dpctrl_reg <= (others=>'0');
-        s_subdet_reset_reg <= (others=>'0');
-        s_subdet_resetdly_reg <= (others=>'0');
-        --
-    elsif rising_edge(i_clk_core) then
-        o_reg_rdata <= X"CCCCCCCC";
 
-        s_subdet_resetdly_reg_written <= '0';
-        -- synchronizers for monitoring flags / counters (false path at transition)
-        s_cntreg_denom_g_156 <= s_cntreg_denom_g;
-        s_cntreg_num <= s_cntreg_num_g;
-        rx_dpa_lock_reg <= rx_dpa_lock;
+    e_lvl1_sc_node: entity work.sc_node
+      generic map (
+        SLAVE1_ADDR_MATCH_g => "00--------------"--,
+      )
+      port map (
+        i_clk          => i_clk_core,
+        i_reset_n      => not i_reset,
 
-        -- counters
-        if ( i_reg_re = '1' and i_reg_addr = X"0" ) then
-            o_reg_rdata <= s_cntreg_ctrl;
-        end if;
-        if ( i_reg_we = '1' and i_reg_addr = X"0" ) then
-            s_cntreg_ctrl <= i_reg_wdata;
-        end if;
-        if ( i_reg_re = '1' and i_reg_addr = X"1" ) then
-            o_reg_rdata <= work.util.gray2bin(s_cntreg_num);
-        end if;
-        if ( i_reg_re = '1' and i_reg_addr = X"2" ) then
-            o_reg_rdata <= s_cntreg_denom_b(31 downto 0);
-        end if;
-        if ( i_reg_re = '1' and i_reg_addr = X"3" ) then
-            o_reg_rdata <= s_cntreg_denom_b(63 downto 32);
-        end if;
+        i_master_addr  => i_reg_addr,
+        i_master_re    => i_reg_re,
+        o_master_rdata => o_reg_rdata,
+        i_master_we    => i_reg_we,
+        i_master_wdata => i_reg_wdata,
 
-        -- monitors
-        if ( i_reg_re = '1' and i_reg_addr = X"4" ) then
-            o_reg_rdata <= (others => '0');
-            o_reg_rdata(0) <= rx_pll_lock;
-            o_reg_rdata(5 downto 4) <= frame_desync;
-            o_reg_rdata(9 downto 8) <= "00";
-        end if;
-        if ( i_reg_re = '1' and i_reg_addr = X"5" ) then
-            o_reg_rdata <= (others => '0');
-            o_reg_rdata(rx_dpa_lock'range) <= rx_dpa_lock_reg;
-        end if;
-        if ( i_reg_re = '1' and i_reg_addr = X"6" ) then
-            o_reg_rdata <= (others => '0');
-            o_reg_rdata(rx_ready'range) <= rx_ready;
-        end if;
+        o_slave0_addr  => scitile_regs.addr(15 downto 0),
+        o_slave0_re    => scitile_regs.re,
+        i_slave0_rdata => scitile_regs.rdata,
+        o_slave0_we    => scitile_regs.we,
+        o_slave0_wdata => scitile_regs.wdata,
 
-        -- output write
-        if ( i_reg_we = '1' and i_reg_addr = X"8" ) then
-            s_dummyctrl_reg <= i_reg_wdata;
-        end if;
-        if ( i_reg_we = '1' and i_reg_addr = X"9" ) then
-            s_dpctrl_reg <= i_reg_wdata;
-        end if;
-        if ( i_reg_we = '1' and i_reg_addr = X"A" ) then
-            s_subdet_reset_reg <= i_reg_wdata;
-        end if;
-        if ( i_reg_we = '1' and i_reg_addr = X"B" ) then
-            s_subdet_resetdly_reg <= i_reg_wdata;
-            s_subdet_resetdly_reg_written <= '1';
-        end if;
-        -- output read
-        if ( i_reg_re = '1' and i_reg_addr = X"8" ) then
-            o_reg_rdata <= s_dummyctrl_reg;
-        end if;
-        if ( i_reg_re = '1' and i_reg_addr = X"9" ) then
-            o_reg_rdata <= s_dpctrl_reg;
-        end if;
-        if ( i_reg_re = '1' and i_reg_addr = X"A" ) then
-            o_reg_rdata <= s_subdet_reset_reg;
-        end if;
-        if ( i_reg_re = '1' and i_reg_addr = X"B" ) then
-            o_reg_rdata <= s_subdet_resetdly_reg;
-        end if;
+        o_slave1_addr  => iram.addr(15 downto 0),
+        o_slave1_re    => open,
+        i_slave1_rdata => iram.rdata,
+        o_slave1_we    => iram.we,
+        o_slave1_wdata => iram.wdata--,
+      );
 
-        -- lapse counter
-        if ( i_reg_we = '1' and i_reg_addr = X"C" ) then
-            s_en_lapse_counter <= i_reg_wdata(31);
-            s_lower_bnd <= i_reg_wdata(N_CC - 1 downto 0);
-            s_upper_bnd <= i_reg_wdata(2*N_CC - 1 downto N_CC);
-        end if;
-        if ( i_reg_re = '1' and i_reg_addr = X"C" ) then
-            o_reg_rdata(31) <= s_en_lapse_counter;
-            o_reg_rdata(N_CC - 1 downto 0) <= s_lower_bnd;
-            o_reg_rdata(2*N_CC - 1 downto N_CC) <= s_upper_bnd;
-        end if;
+    e_scitile_reg_mapping : work.scitile_reg_mapping
+    generic map (
+        N_MODULES => N_MODULES,
+        N_ASICS   => N_ASICS,
+        N_CC      => N_CC--,
+    )
+    port map (
+        i_clk                       => i_clk_core,
+        i_reset_n                   => not i_reset,
+        
+        i_receivers_usrclk          => s_receivers_usrclk,
 
-        --
-    end if;
-    end process;
+        i_reg_add                   => scitile_regs.addr(15 downto 0),
+        i_reg_re                    => scitile_regs.re,
+        o_reg_rdata                 => scitile_regs.rdata,
+        i_reg_we                    => scitile_regs.we,
+        i_reg_wdata                 => scitile_regs.wdata,
+
+        -- inputs  156--------------------------------------------
+        i_cntreg_num                => work.util.gray2bin(s_cntreg_num_g), -- on receivers_usrclk domain
+        i_cntreg_denom_b            => work.util.gray2bin(s_cntreg_denom_g), -- on receivers_usrclk domain
+        i_rx_pll_lock               => rx_pll_lock,
+        i_frame_desync              => frame_desync,
+        i_rx_dpa_lock_reg           => rx_dpa_lock, -- on receivers_usrclk domain
+        i_rx_ready                  => rx_ready,
+
+        -- outputs  156-------------------------------------------
+        o_cntreg_ctrl               => s_cntreg_ctrl,
+        o_dummyctrl_reg             => s_dummyctrl_reg,
+        o_dpctrl_reg                => s_dpctrl_reg,
+        o_subdet_reset_reg          => s_subdet_reset_reg,
+        o_subdet_resetdly_reg_written => s_subdet_resetdly_reg_written,
+        o_subdet_resetdly_reg       => s_subdet_resetdly_reg,
+
+        o_en_lapse_counter          => s_en_lapse_counter,
+        o_upper_bnd                 => s_upper_bnd,
+        o_lower_bnd                 => s_lower_bnd--,
+
+    );
+
+    e_iram : entity work.ram_1r1w
+    generic map (
+        g_DATA_WIDTH => 32,
+        g_ADDR_WIDTH => 14--,
+    )
+    port map (
+        i_raddr => iram.addr(13 downto 0),
+        o_rdata => iram.rdata,
+        i_rclk  => i_clk_core,
+
+        i_waddr => iram.addr(13 downto 0),
+        i_wdata => iram.wdata,
+        i_we    => iram.we,
+        i_wclk  => i_clk_core--,
+    );
+
 
     s_chip_rst <= s_subdet_reset_reg(0) or i_run_state(RUN_STATE_BITPOS_SYNC);
     s_datapath_rst <= i_reset or s_subdet_reset_reg(1) or i_run_state(RUN_STATE_BITPOS_PREP);
@@ -269,7 +265,7 @@ begin
         i_upper_bnd => s_upper_bnd,
 
         -- monitors
-        o_receivers_usrclk => open,
+        o_receivers_usrclk => s_receivers_usrclk,
         o_receivers_pll_lock => rx_pll_lock,
         o_receivers_dpa_lock => rx_dpa_lock,
         o_receivers_ready => rx_ready,

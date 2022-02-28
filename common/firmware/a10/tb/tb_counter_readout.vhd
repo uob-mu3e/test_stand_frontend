@@ -6,7 +6,7 @@ use work.a10_counters.all;
 use work.a10_pcie_registers.all;
 
 entity tb_counter_readout is
-end entity tb_counter_readout;
+end entity;
 
 
 architecture TB of tb_counter_readout is
@@ -62,7 +62,7 @@ begin
             counter_swb_data_pixel_156(i) <= counter_swb_data_pixel_156(i) + '1';
         end if;
         end process;
-    END GENERATE gen_counter_156;
+    END GENERATE;
 
     gen_counter_250 : FOR i in 0 to 5 - 1 GENERATE
         process(clk, reset_n)
@@ -73,7 +73,7 @@ begin
             counter_swb_data_pixel_250(i) <= counter_swb_data_pixel_250(i) + '1';
         end if;
         end process;
-    END GENERATE gen_counter_250;
+    END GENERATE;
 
     -- clk
     process begin
@@ -119,6 +119,4 @@ begin
         wait;
     end process;
 
-end TB;
-
-
+end architecture;

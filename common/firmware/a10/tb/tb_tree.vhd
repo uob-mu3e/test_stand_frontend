@@ -37,12 +37,12 @@ architecture behav of tree_tb is
 		
 begin
   --  Component instantiation.
-  
+
 reset <= not reset_n;
 i_mask_n <= x"F";
   
   -- generate the clock
-ckProc: process
+process
 begin
    clk <= '0';
    wait for ckTime/2;
@@ -50,13 +50,13 @@ begin
    wait for ckTime/2;
 end process;
 
-inita : process
+process
 begin
-	   reset_n	 <= '0';
-	   wait for 8 ns;
-	   reset_n	 <= '1';
-	   wait;
-end process inita;
+    reset_n	 <= '0';
+    wait for 8 ns;
+    reset_n	 <= '1';
+    wait;
+end process;
 
 tree_layer_first:
 FOR i in 0 to 3 GENERATE
@@ -88,8 +88,7 @@ generic map(
     ADDR_WIDTH_w => 7,
     DATA_WIDTH_w => 32+6,
     ADDR_WIDTH_r => 7,
-    DATA_WIDTH_r => 64+12,
-    DEVICE     => "Arria 10"--,
+    DATA_WIDTH_r => 64+12--,
 )
 port map (
     aclr    => not reset_n or reset_fifo_0(i),
@@ -130,7 +129,7 @@ elsif rising_edge(clk) then
                 --
             else
                 if ( fifo_full_0(i) = '0' and i_rdata(i)(37 downto 36) = "00" ) then
-                    fifo_data_0(i) <= link_36_to_std(i) & i_rdata(i)(35 downto 4);
+                    fifo_data_0(i) <= work.mudaq.link_36_to_std(i) & i_rdata(i)(35 downto 4);
                     fifo_wen_0(i) <= '1';
                     saw_header_0(i) <= '0';
                     saw_trailer_0(i) <= '0';
@@ -165,8 +164,8 @@ elsif rising_edge(clk) then
     fifo_empty_0(i) <= fifo_empty_0_reg(i);
 end if;
 end process;
-END GENERATE tree_layer_first;
- 
+END GENERATE;
+
 layer_1 : entity work.time_merger_tree_fifo_64
 generic map (  
     TREE_w => 7, TREE_r => 7,

@@ -21,7 +21,7 @@ odbedit -c 'set "WebServer/insecure port host list" "n"'
 odbedit -c 'set "WebServer/Enable insecure port" "y"'
 odbedit -c 'set "Experiment/Security/Enable non-localhost RPC" "y"'
 odbedit -c 'set "Experiment/Security/Disable RPC hosts check" "y"'
-odbedit -c 'set "Experiment/Security/Enable IPv6" "n"'
+odbedit -c 'set "WebServer/Enable IPv6" "n"'
 
 odbedit -c 'set Logger/History/FILE/Active y'
 odbedit -c 'set Logger/History/MIDAS/Active n'

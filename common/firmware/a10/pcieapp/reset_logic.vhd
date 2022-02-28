@@ -4,7 +4,7 @@
 -- Niklaus Berger, Heidelberg University
 -- nberger@physi.uni-heidelberg.de
 --
--- 
+--
 --
 -----------------------------------------------------------------------------
 
@@ -16,7 +16,7 @@ use work.a10_pcie_registers.all;
 
 entity reset_logic is
 port (
-    reset_register      : in    std_logic_vector(31 downto 0); 
+    reset_register      : in    std_logic_vector(31 downto 0);
 --    reset_reg_written   : in    std_logic;
 
     resets              : out   std_logic_vector(31 downto 0);
@@ -39,7 +39,7 @@ begin
     process(clk, rst_n)
     begin
     if ( rst_n = '0' ) then
-        resets_reg <= (others => '1');
+        resets_reg  <= (others => '1');
         resets_del0 <= (others => '0');
         resets_del1 <= (others => '0');
         resets_del2 <= (others => '0');

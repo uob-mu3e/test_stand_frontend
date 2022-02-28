@@ -16,7 +16,7 @@ generic (
 );
 port (
     -- read latency - 1
-    i_reg_addr      : in    std_logic_vector(7 downto 0);
+    i_reg_addr      : in    std_logic_vector(15 downto 0);
     i_reg_re        : in    std_logic;
     o_reg_rdata     : out   std_logic_vector(31 downto 0);
     i_reg_we        : in    std_logic;
@@ -109,6 +109,8 @@ architecture arch of scifi_path is
     signal miso_transition_count : integer;
     signal miso_156: std_logic;
     signal miso_156_last : std_logic;
+    signal iram         : work.util.rw_t;
+    signal scifi_regs   : work.util.rw_t;
 
 begin
 --------------------------------------------------------------------
@@ -201,6 +203,34 @@ begin
     o_test_led(1) <= s_cntreg_ctrl(0);
 
     ---- REGISTER MAPPING ----
+
+    e_lvl1_sc_node: entity work.sc_node
+      generic map (
+        SLAVE1_ADDR_MATCH_g => "00--------------"--,
+      )
+      port map (
+        i_clk          => i_clk_core,
+        i_reset_n      => not i_reset,
+
+        i_master_addr  => i_reg_addr,
+        i_master_re    => i_reg_re,
+        o_master_rdata => o_reg_rdata,
+        i_master_we    => i_reg_we,
+        i_master_wdata => i_reg_wdata,
+
+        o_slave0_addr  => scifi_regs.addr(15 downto 0),
+        o_slave0_re    => scifi_regs.re,
+        i_slave0_rdata => scifi_regs.rdata,
+        o_slave0_we    => scifi_regs.we,
+        o_slave0_wdata => scifi_regs.wdata,
+
+        o_slave1_addr  => iram.addr(15 downto 0),
+        o_slave1_re    => open,
+        i_slave1_rdata => iram.rdata,
+        o_slave1_we    => iram.we,
+        o_slave1_wdata => iram.wdata--,
+      );
+
     e_scifi_reg_mapping : work.scifi_reg_mapping
     generic map (
         N_MODULES => N_MODULES,
@@ -212,11 +242,11 @@ begin
         
         i_receivers_usrclk          => s_receivers_usrclk,
 
-        i_reg_add                   => i_reg_addr,
-        i_reg_re                    => i_reg_re,
-        o_reg_rdata                 => o_reg_rdata,
-        i_reg_we                    => i_reg_we,
-        i_reg_wdata                 => i_reg_wdata,
+        i_reg_add                   => scifi_regs.addr(15 downto 0),
+        i_reg_re                    => scifi_regs.re,
+        o_reg_rdata                 => scifi_regs.rdata,
+        i_reg_we                    => scifi_regs.we,
+        i_reg_wdata                 => scifi_regs.wdata,
 
         -- inputs  156--------------------------------------------
         i_cntreg_num                => work.util.gray2bin(s_cntreg_num_g), -- on receivers_usrclk domain
@@ -234,6 +264,22 @@ begin
         o_subdet_reset_reg          => s_subdet_reset_reg,
         o_subdet_resetdly_reg_written => s_subdet_resetdly_reg_written,
         o_subdet_resetdly_reg       => s_subdet_resetdly_reg--,
+    );
+
+    e_iram : entity work.ram_1r1w
+    generic map (
+        g_DATA_WIDTH => 32,
+        g_ADDR_WIDTH => 14--,
+    )
+    port map (
+        i_raddr => iram.addr(13 downto 0),
+        o_rdata => iram.rdata,
+        i_rclk  => i_clk_core,
+
+        i_waddr => iram.addr(13 downto 0),
+        i_wdata => iram.wdata,
+        i_we    => iram.we,
+        i_wclk  => i_clk_core--,
     );
 
     process(i_clk_ref_A)

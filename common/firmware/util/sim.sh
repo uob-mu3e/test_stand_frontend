@@ -1,12 +1,17 @@
 #!/bin/bash
-set -eux
+set -euf
+
+if [ $# -eq 0 ] ; then
+    echo "Usage: $0 tb [entity.vhd]..."
+    exit
+fi
 
 TB="$1"
 shift
 
 SRC=()
 for arg in "$@" ; do
-    arg=$(readlink -f -- "$arg")
+    arg=$(realpath -s --relative-to=.cache -- "$arg")
     SRC+=("$arg")
 done
 

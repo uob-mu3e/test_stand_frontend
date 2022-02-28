@@ -15,7 +15,7 @@ port (
     i_clk_156                   : in  std_logic;
     i_reset_n                   : in  std_logic;
 
-    i_reg_add                   : in  std_logic_vector(7 downto 0);
+    i_reg_add                   : in  std_logic_vector(15 downto 0);
     i_reg_re                    : in  std_logic;
     o_reg_rdata                 : out std_logic_vector(31 downto 0);
     i_reg_we                    : in  std_logic;
@@ -53,7 +53,9 @@ port (
     o_programming_data          : out std_logic_vector(31 downto 0);
     o_programming_data_ena      : out std_logic;
     o_programming_addr          : out std_logic_vector(31 downto 0);
-    o_programming_addr_ena      : out std_logic--;
+    o_programming_addr_ena      : out std_logic;
+    
+    i_testout                   : in  std_logic_vector(31 downto 0)--;
 );
 end entity;
 
@@ -80,8 +82,9 @@ architecture rtl of feb_reg_mapping is
     signal test_write_data          : std_logic_vector(31 downto 0);
 
 -- Prolong enable
-    signal addr_ena_del					: std_logic_vector(5 downto 0);
+    signal addr_ena_del             : std_logic_vector(5 downto 0);
 
+    signal testout                  : std_logic_vector(31 downto 0);
 begin
 
     process(i_clk_156)
@@ -97,7 +100,7 @@ begin
         
     elsif rising_edge(i_clk_156) then
         o_reg_rdata         <= X"CCCCCCCC";
-        regaddr             := to_integer(unsigned(i_reg_add(7 downto 0)));
+        regaddr             := to_integer(unsigned(i_reg_add));
 
         o_programming_data_ena  <= '0';
         if(addr_ena_del = "000000") then -- this is here so that the 50 MHz clock does not miss the ena signal ? (M.Mueller)
@@ -116,6 +119,8 @@ begin
         o_reg_reset_bypass          <= reg_reset_bypass;
         o_reg_reset_bypass_payload  <= reg_reset_bypass_payload;
         o_fpga_id_reg               <= fpga_id_reg;
+        --o_testout                   <= testout;
+        testout                     <=i_testout;
 
         run_state_156               <= i_run_state_156;
         merger_rate_count           <= i_merger_rate_count;
@@ -222,18 +227,18 @@ begin
             o_reg_rdata <= i_max10_status;
         end if;
         -- Programming
-        if ( regaddr = PROGRAMMING_STATUS_R and i_reg_re = '1' ) then
+        if ( regaddr = PROGRAMMING_STATUS_REGISTER_R and i_reg_re = '1' ) then
             o_reg_rdata <= i_programming_status;
         end if;  
-        if ( regaddr = PROGRAMMING_CTRL_W and i_reg_we = '1' ) then
+        if ( regaddr = PROGRAMMING_CTRL_REGISTER_W and i_reg_we = '1' ) then
             o_programming_ctrl  <= i_reg_wdata;
         end if;      
-        if ( regaddr = PROGRAMMING_ADDR_W and i_reg_we = '1' ) then
+        if ( regaddr = PROGRAMMING_ADDR_REGISTER_W and i_reg_we = '1' ) then
             o_programming_addr  <= i_reg_wdata;
             o_programming_addr_ena  <= '1';
             addr_ena_del <= "111111";
         end if;  
-        if ( regaddr = PROGRAMMING_DATA_W and i_reg_we = '1' ) then
+        if ( regaddr = PROGRAMMING_DATA_REGISTER_W and i_reg_we = '1' ) then
             o_programming_data  <= i_reg_wdata;
             o_programming_data_ena  <= '1';
         end if;  
@@ -287,6 +292,14 @@ begin
             o_reg_rdata(1 downto 0) <= i_si45_intr_n;
             o_reg_rdata(3 downto 2) <= i_si45_lol_n;
             o_reg_rdata(31 downto 4) <= (others => '0');
+        end if;
+
+        -- testout
+        if ( regaddr = TEST_OUT_REGISTER and i_reg_re = '1' ) then
+            o_reg_rdata <= testout;
+        end if;
+        if ( regaddr = TEST_OUT_REGISTER and i_reg_we = '1' ) then
+            --testout <= i_reg_wdata;
         end if;
 
         -- NON-incrementing reads/writes TEST

@@ -211,7 +211,7 @@ begin
         o_csn                   => mp_ctrl_csn,
 
         -- mupix dac regs
-        i_reg_add               => mupix_reg.addr(7 downto 0),
+        i_reg_add               => mupix_reg.addr(15 downto 0),
         i_reg_re                => mupix_reg.re,
         o_reg_rdata             => mupix_reg.rdata,
         i_reg_we                => mupix_reg.we,
@@ -341,7 +341,7 @@ begin
         io_max10_spi_D3     => max10_spi_D3,
         o_max10_spi_csn     => max10_spi_csn,
 
-        o_subdet_reg_addr   => mupix_reg.addr(7 downto 0),
+        o_subdet_reg_addr   => mupix_reg.addr(15 downto 0),
         o_subdet_reg_re     => mupix_reg.re,
         i_subdet_reg_rdata  => mupix_reg.rdata,
         o_subdet_reg_we     => mupix_reg.we,
@@ -360,7 +360,7 @@ begin
         i_clk_125           => lvds_firefly_clk,
 
         i_areset_n          => pb_db(0),
-        
+
         i_testin            => pb_db(1)--,
     );
 

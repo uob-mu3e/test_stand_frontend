@@ -2,9 +2,11 @@
 #include "include/base.h"
 #include "include/xcvr.h"
 
-#include "../../fe/software/si5345_fe_v2_mupix.h"
-si5345_t si5345_1 { SPI_SI_BASE, 0 };
-si5345_t si5345_2 { SPI_SI_BASE, 1 };
+#include "../../fe/software/si5345.h"
+#include "../../fe/software/si5345_regs1_mupix.h"
+#include "../../fe/software/si5345_regs2.h"
+si5345_t si5345_1 { SPI_SI_BASE, 0, si5345_regs1_mupix, sizeof(si5345_regs1_mupix) / sizeof(si5345_regs1_mupix[0]) };
+si5345_t si5345_2 { SPI_SI_BASE, 1, si5345_regs2, sizeof(si5345_regs2) / sizeof(si5345_regs2[0]) };
 //si5345_t si5345 { SPI_SI_BASE, 0 };
 
 #include "../../fe/software/sc.h"
@@ -17,6 +19,9 @@ mscb_t mscb;
 
 #include "mupix.h"
 #include "mp_datapath.h"
+#include "include/feb_sc_registers.h"
+#include "../../fe/software/tmpDisplay.h"
+
 mupix_t mupix(&sc);
 mupix_datapath_t mupix_datapath(&sc);
 //definition of callback function for slow control packets
@@ -34,11 +39,12 @@ int main() {
     //mscb.init();
     sc.init();
     volatile sc_ram_t* ram = (sc_ram_t*) AVM_SC_BASE;
+    ram->data[FPGA_ID_REGISTER_RW] = 0;
 
     while (1) {
         printf("\n");
         printf("[fe_mupix] -------- menu --------\n");
-	printf("ID: 0x%08x\n", ram->data[0xFFFB]);
+	printf("ID: 0x%08x\n", ram->data[FPGA_ID_REGISTER_RW]);
 
         printf("\n");
         printf("  [1] => Firefly channels\n");
@@ -49,12 +55,14 @@ int main() {
         printf("  [6] => mscb\n");
         printf("  [7] => reset system\n");
         printf("  [8] => datapath\n");
+        printf("  [9] => temperature Display\n");
+        printf("  [f] => toggleFEBID\n");
 
         printf("Select entry ...\n");
         char cmd = wait_key();
         switch(cmd) {
         case '1':
-            menu_xcvr((alt_u32*)(AVM_QSFP_BASE | ALT_CPU_DCACHE_BYPASS_MASK));
+            menu_xcvr((alt_u32*)((AVM_SC_BASE + 4*0xFF00) | ALT_CPU_DCACHE_BYPASS_MASK));
             break;
         case '2':
             mupix.menu();
@@ -77,6 +85,12 @@ int main() {
         case '8':
             mupix_datapath.menu();
             break;
+        case '9':
+            menu_tmpDisplay((alt_u32*)(AVM_QSFP_BASE | ALT_CPU_DCACHE_BYPASS_MASK));
+            break;
+        case 'f':
+            ram->data[FPGA_ID_REGISTER_RW] ^= 1UL << 0;
+        break;
         default:
             printf("invalid command: '%c'\n", cmd);
         }

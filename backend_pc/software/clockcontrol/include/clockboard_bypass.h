@@ -12,11 +12,14 @@ using midas::odb;
 class clockboard_bypass:public clockboard
 {
 public:
-    clockboard_bypass(std::string addr, int port):clockboard(addr,port){}
+    clockboard_bypass(std::string addr [[maybe_unused]], int port [[maybe_unused]]):clockboard(){}
     bool isConnected(){return true;}
 
-    int init_clockboard(uint16_t clkinvert = 0x0A00, uint16_t rstinvert= 0x0008, uint16_t clkdisable = 0x0AA, uint16_t rstdisable = 0xAA0){return 1;}
-    int map_daughter_fibre(uint8_t daughter_num, uint16_t fibre_num){return 1;}
+    int init_clockboard(uint16_t clkinvert [[maybe_unused]] = 0x0A00, 
+                        uint16_t rstinvert [[maybe_unused]] = 0x0008, 
+                        uint16_t clkdisable [[maybe_unused]]= 0x0AA , 
+                        uint16_t rstdisable [[maybe_unused]]= 0xAA0){return 1;}
+    int map_daughter_fibre(uint8_t daughter_num [[maybe_unused]], uint16_t fibre_num [[maybe_unused]]){return 1;}
     // Write "reset" commands
     int write_command(uint8_t command, uint32_t payload =0, bool has_payload = false){
         odb o("/Equipment/Switching/Settings");
@@ -65,36 +68,24 @@ public:
         return -1;
     };
 
-    // I2C interface
-//    int init_i2c();
-//    int read_i2c(uint8_t dev_addr, uint8_t &data);
-//    int read_i2c_reg(uint8_t dev_addr, uint8_t reg_addr, uint8_t &data);
-//    int read_i2c_reg(uint8_t dev_addr, uint8_t reg_addr, uint8_t byte_num, uint8_t data[]);
 
-//    int write_i2c(uint8_t dev_addr, uint8_t data);
-//    int write_i2c_reg(uint8_t dev_addr, uint8_t reg_addr, uint8_t data);
-//    int write_i2c_reg(uint8_t dev_addr, uint8_t reg_addr, uint8_t byte_num, uint8_t data[]);
-
-    // SI3545 programming - note that this uses the register map
-    // generated with the clock builder tool
-//    int load_SI3545_reg_map();
     // Firefly interface
-    bool firefly_present(uint8_t daughter, uint8_t index){return false;};
+    bool firefly_present(uint8_t daughter  [[maybe_unused]], uint8_t index  [[maybe_unused]]){return false;};
     uint16_t read_disabled_tx_clk_channels(){return 0;}
-    int disable_tx_clk_channels(uint16_t channels){return 1;}
+    int disable_tx_clk_channels(uint16_t channels  [[maybe_unused]]){return 1;}
     uint16_t read_inverted_tx_clk_channels(){return 0;}
-    int invert_tx_clk_channels(uint16_t channels){return 1;}
+    int invert_tx_clk_channels(uint16_t channels  [[maybe_unused]]){return 1;}
 
     uint16_t read_disabled_tx_rst_channels(){return 0;}
-    int disable_tx_rst_channels(uint16_t channels){return 1;}
+    int disable_tx_rst_channels(uint16_t channels [[maybe_unused]]){return 1;}
     uint16_t read_inverted_tx_rst_channels(){return 0;}
-    int invert_tx_rst_channels(uint16_t channels){return 1;}
+    int invert_tx_rst_channels(uint16_t channels [[maybe_unused]]){return 1;}
 
-    int disable_rx_channels(uint16_t channelmask){return 1;}
+    int disable_rx_channels(uint16_t channelmask [[maybe_unused]]){return 1;}
     uint16_t read_disabled_rx_channels(){return 0;}
 
-    int set_rx_amplitude(uint8_t amplitude){return 1;}
-    int set_rx_emphasis(uint8_t emphasis){return 1;}
+    int set_rx_amplitude(uint8_t amplitude [[maybe_unused]]){return 1;}
+    int set_rx_emphasis(uint8_t emphasis  [[maybe_unused]]){return 1;}
 
 //    vector<uint8_t> read_rx_amplitude();
 //    vector<uint8_t> read_rx_emphasis();
@@ -113,30 +104,27 @@ public:
     uint16_t read_tx_rst_firefly_lf(){return 0;}
     uint16_t read_tx_rst_firefly_alarms(){return 0;}
 
-    float read_tx_firefly_temp(uint8_t daughter, uint8_t index){return 0;}
-    float read_tx_firefly_voltage(uint8_t daughter, uint8_t index){return 0;}
+    float read_tx_firefly_temp(uint8_t daughter [[maybe_unused]], uint8_t index [[maybe_unused]]){return 0;}
+    float read_tx_firefly_voltage(uint8_t daughter [[maybe_unused]], uint8_t index [[maybe_unused]]){return 0;}
 
-    int disable_tx_channels(uint8_t daughter, uint8_t firefly, uint16_t channelmask){return 1;}
+    int disable_tx_channels(uint8_t daughter [[maybe_unused]], uint8_t firefly [[maybe_unused]], uint16_t channelmask [[maybe_unused]]){return 1;}
 
-    uint16_t read_tx_firefly_lf(uint8_t daughter, uint8_t index){return 0;}
-    uint16_t read_tx_firefly_alarms(uint8_t daughter, uint8_t index){return 0;}
+    uint16_t read_tx_firefly_lf(uint8_t daughter [[maybe_unused]], uint8_t index [[maybe_unused]]){return 0;}
+    uint16_t read_tx_firefly_alarms(uint8_t daughter [[maybe_unused]], uint8_t index [[maybe_unused]]){return 0;}
     // Mother and daughter card monitoring
-    bool daughter_present(uint8_t daughter){return false;}
+    bool daughter_present(uint8_t daughter [[maybe_unused]]){return false;}
     uint8_t daughters_present(){return 0;}
 //    int enable_daughter_12c(uint8_t dev_addr, uint8_t i2c_bus_num);
 //    int disable_daughter_12c(uint8_t dev_addr);
 
-    float read_daughter_board_current(uint8_t daughter){return 0;};
+    float read_daughter_board_current(uint8_t daughter [[maybe_unused]]){return 0;};
     float read_mother_board_current(){return 0;}
 
-    float read_daughter_board_voltage(uint8_t daughter){return 0;}
+    float read_daughter_board_voltage(uint8_t daughter [[maybe_unused]]){return 0;}
     float read_mother_board_voltage(){return 0;}
     
     float read_fan_current(){return 0;}
-
-//    int configure_daughter_current_monitor(uint8_t daughter, uint16_t config);
-//    int configure_mother_current_monitor(uint16_t config);
-
+    
 public:
     reset reset_protocol;
 };

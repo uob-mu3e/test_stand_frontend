@@ -3,7 +3,8 @@
 #include "include/xcvr.h"
 
 #include "../../fe/software/si5345.h"
-si5345_t si5345 { SPI_SI_BASE, 0 };
+#include "../../fe/software/si5345_regs_v1.h"
+si5345_t si5345 { SPI_SI_BASE, 0, si5345_regs_v1, sizeof(si5345_regs_v1) / sizeof(si5345_regs_v1[0]) };
 
 #include "../../fe/software/sc.h"
 #include "../../fe/software/sc_ram.h"

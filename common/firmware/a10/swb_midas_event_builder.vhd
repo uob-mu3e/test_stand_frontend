@@ -94,8 +94,7 @@ begin
         ADDR_WIDTH_A    => 12,
         ADDR_WIDTH_B    => 9,
         DATA_WIDTH_A    => 32,
-        DATA_WIDTH_B    => 256,
-        DEVICE          => "Arria 10"--,
+        DATA_WIDTH_B    => 256--,
     )
     port map (
         address_a       => w_ram_add,
@@ -113,8 +112,7 @@ begin
     e_tagging_fifo_event : entity work.ip_scfifo
     generic map (
         ADDR_WIDTH      => 12,
-        DATA_WIDTH      => 12,
-        DEVICE          => "Arria 10"--,
+        DATA_WIDTH      => 12--,
     )
     port map (
         data            => w_fifo_data,

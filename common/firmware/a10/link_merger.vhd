@@ -12,7 +12,7 @@ use ieee.std_logic_unsigned.all;
 
 
 entity link_merger is
-generic(
+generic (
     W : integer := 66;
     NLINKS_TOTL : integer := 3;
     TREE_DEPTH_w : positive := 8;
@@ -35,7 +35,7 @@ port (
     i_stream_rack : in std_logic--;
 
 );
-end entity link_merger;
+end entity;
 
 architecture arch of link_merger is
          
@@ -80,8 +80,7 @@ end process;
 e_sync_fifo : entity work.ip_dcfifo
 generic map(
     ADDR_WIDTH  => 6,
-    DATA_WIDTH  => 36,
-    DEVICE      => "Arria 10"--,
+    DATA_WIDTH  => 36--,
 )
 port map (
     data        => sync_fifo_data(i),
@@ -118,9 +117,7 @@ link_data(i)(37) <= '1' when ( link_data(i)(3 downto 0) = "0001" and link_data(i
 e_fifo : entity work.ip_dcfifo
 generic map(
     ADDR_WIDTH  => LINK_FIFO_ADDR_WIDTH,
-    DATA_WIDTH  => 38,
-    SHOWAHEAD   => "ON",
-    DEVICE      => "Arria 10"--,
+    DATA_WIDTH  => 38--,
 )
 port map (
     data        => link_data(i),

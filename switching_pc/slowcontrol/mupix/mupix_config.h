@@ -19,6 +19,8 @@
 #include "asic_config_base.h"
 #include "mupix_MIDAS_config.h"
 
+class odb;
+
 namespace mupix{
 
 class MupixConfig: public mudaq::ASICConfigBase{
@@ -28,6 +30,10 @@ public:
     void Parse_BiasDACs_from_struct(MUPIX_BIASDACS mt);
     void Parse_ConfDACs_from_struct(MUPIX_CONFDACS mt);
     void Parse_VDACs_from_struct(MUPIX_VDACS mt);
+
+    void Parse_BiasDACs_from_odb(odb & mt);
+    void Parse_ConfDACs_from_odb(odb & mt);
+    void Parse_VDACs_from_odb(odb & mt);
 private:
     static paras_t parameters_bias;                             ///< parameters for bias dacs
     static paras_t parameters_conf;                             ///< parameters for conf dacs

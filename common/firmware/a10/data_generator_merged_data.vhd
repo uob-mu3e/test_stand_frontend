@@ -12,7 +12,7 @@ use work.mudaq.all;
 
 
 entity data_generator_merged_data is
-    generic (
+generic (
         max_row: std_logic_vector (7 downto 0) := (others => '0');
         max_col: std_logic_vector (7 downto 0) := (others => '0');
         go_to_sh: positive := 3;
@@ -20,8 +20,8 @@ entity data_generator_merged_data is
         wtot: std_logic := '0';
         wchip: std_logic := '0';
         NLINKS: positive := 8--;
-    );
-    port(
+);
+port (
 		i_clk 		: in  std_logic;
 		i_reset_n   : in  std_logic;
 
@@ -32,7 +32,7 @@ entity data_generator_merged_data is
 		o_data_we	: out std_logic;
 		o_state     : out std_logic_vector(3 downto 0)--;
 );
-end entity data_generator_merged_data;
+end entity;
 
 architecture rtl of data_generator_merged_data is
 
@@ -258,4 +258,4 @@ begin
 end process;
 
 
-end rtl;
+end architecture;

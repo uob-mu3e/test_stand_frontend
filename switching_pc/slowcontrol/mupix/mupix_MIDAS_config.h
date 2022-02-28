@@ -35,10 +35,10 @@ typedef struct {
 } MUPIX_GLOBAL;
 
 static odb MUPIX_GLOBAL_SETTINGS = {
-        {"Num asics", 0},
-        {"Num boards", 0},
-        {"Num rows", 200},
-        {"Num cols", 128},
+        {"Num asics", 6},   // This is for the EDM 122021 run
+        {"Num boards", 2},  // This is for the EDM 122021 run
+        {"Num rows", 250},
+        {"Num cols", 256},
 };
 
 #endif
@@ -149,40 +149,40 @@ typedef struct {
 } MUPIX_BIASDACS;
 
 static odb MUPIX_BIASDACS_SETTINGS = {
-    {"VNTimerDel", 20},
+    {"VNTimerDel", 40}, // 20
     {"VPTimerDel", 1},
     {"VNDAC", 0},
-    {"VPFoll", 20},
+    {"VPFoll", 0}, // 20
     {"VNComp", 0},
-    {"VNHB", 63},
-    {"VPComp2", 5},
-    {"VPPump", 63},
+    {"VNHB", 0}, // 63
+    {"VPComp2", 10}, // 5
+    {"VPPump", 40}, // 63
     {"VNLVDSDel", 0},
-    {"VNLVDS", 16},
-    {"VNDcl", 15},
+    {"VNLVDS", 10}, // 16
+    {"VNDcl", 9}, // martin: 10 david: 15
     {"VPDcl", 30},
-    {"VNDelPreEmp", 32},
-    {"VPDelPreEmp", 32},
-    {"VNDelDcl", 32},
-    {"VPDelDcl", 32},
-    {"VNDelDclMux", 32},
-    {"VPDelDclMux", 32},
-    {"VNVCO", 23},
-    {"VPVCO", 22},
-    {"VNOutPix", 10},
-    {"VPLoadPix", 10},
+    {"VNDelPreEmp", 15}, // 32
+    {"VPDelPreEmp", 15}, // 32
+    {"VNDelDcl", 15}, // 32
+    {"VPDelDcl", 15}, // 32
+    {"VNDelDclMux", 10}, // 32
+    {"VPDelDclMux", 10},  // 32
+    {"VNVCO", 13}, // 39
+    {"VPVCO", 12}, // 38
+    {"VNOutPix", 5}, // 10
+    {"VPLoadPix", 2}, // 10
     {"VNBiasPix", 0},
-    {"BLResDig", 5},
+    {"BLResDig", 2}, // 5
     {"VNPix2", 0},
     {"VPDAC", 0},
-    {"VPComp1", 0},
+    {"VPComp1", 10}, // 0
     {"VNDel", 10},
     {"VNRegC", 0},
-    {"VNFollPix", 12},
-    {"VNFBPix", 4},
-    {"VNPix", 20},
+    {"VNFollPix", 2}, // 12
+    {"VNFBPix", 5}, // 4
+    {"VNPix", 10}, // 20
     {"ThRes", 0},
-    {"BLResPix", 5},
+    {"BLResPix", 2}, // 5
     {"BiasBlock_on", 5},
     {"Bandgap_on", 0}
 };
@@ -238,9 +238,9 @@ static odb MUPIX_CONFDACS_SETTINGS = {
     {"NC3", 0},
     {"Tune_Reg_R", 0},
     {"AlwaysEnable", 1},
-    {"En2thre", 0},
+    {"En2thre", 1},
     {"NC4", 0},
-    {"EnPLL", 0},
+    {"EnPLL", 0}, // NOTE: This is inverted 0 is on
     {"SelSlow", 0},
     {"SelEx", 0},
     {"invert", 0},
@@ -254,7 +254,7 @@ static odb MUPIX_CONFDACS_SETTINGS = {
     {"NC6", 0},
     {"maxcycend", 63},
     {"slowdownend", 0},
-    {"timerend", 2},
+    {"timerend", 1},
     {"ckdivend2", 31},
     {"ckdivend", 0}
 };
@@ -274,15 +274,56 @@ typedef struct {
 
 static odb MUPIX_VDACS_SETTINGS = {
     {"VCAL", 0},
-    {"BLPix", 114},
+    {"BLPix", 141},
     {"ThPix", 0},
-    {"ThHigh", 0},
-    {"ThLow", 82},
+    {"ThHigh", 173},
+    {"ThLow", 166},
     {"ThHigh2", 0},
     {"ThLow2", 0},
-    {"Baseline", 70},
+    {"Baseline", 164},
     {"VDAC1", 0},
-    {"ref_Vss", 184}
+    {"ref_Vss", 195}
+};
+
+#endif
+
+#ifndef MUPIX_TDACS_DEFINED
+#define MUPIX_TDACS_DEFINED
+
+typedef struct {
+    std::string TDACFILE;
+} MUPIX_TDACS;
+
+static odb MUPIX_TDACS_SETTINGS = {
+    {"TDACFILE", "default_tdacs_mupix.csv"}
+};
+
+#endif
+
+#ifndef MUPIX_FEBS_DEFINED
+#define MUPIX_FEBS_DEFINED
+
+typedef struct {
+    INT MP_LVDS_LINK_MASK;
+    INT MP_LVDS_LINK_MASK2;
+} MUPIX_FEBS;
+
+static odb MUPIX_FEB_SETTINGS = {
+    {"MP_LVDS_LINK_MASK", 0x0},
+    {"MP_LVDS_LINK_MASK2", 0x0},
+};
+
+#endif
+
+#ifndef MUPIX_GLOBAL_FEBS_DEFINED
+#define MUPIX_GLOBAL_FEBS_DEFINED
+
+typedef struct {
+    INT ASICsPerFEB;
+} MUPIX_GLOBAL_FEBS;
+
+static odb MUPIX_GLOBAL_FEBS_SETTINGS = {
+    {"ASICsPerFEB", 3}  // This is for the EDM 122021 run
 };
 
 #endif

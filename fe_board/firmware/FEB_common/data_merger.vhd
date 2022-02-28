@@ -28,7 +28,7 @@ ENTITY data_merger is
 GENERIC (
     FIFO_ADDR_WIDTH             : positive := 10;
     N_LINKS                     : positive := 1;
-    feb_mapping                 : work.util.natural_array_t(3 downto 0)--;
+    feb_mapping                 : integer_vector(3 downto 0)--;
 );
 PORT (
     clk                         : in    std_logic; -- 156.25 clk input
@@ -168,7 +168,6 @@ begin
         ADDR_WIDTH      => FIFO_ADDR_WIDTH,
         DATA_WIDTH      => 36,
         SHOWAHEAD       => "ON",
-        REGOUT          => 0,
         DEVICE          => "Stratix IV"--,
     )
     port map (
@@ -176,12 +175,10 @@ begin
         sclr            => data_fifo_reset,
         data            => i_data_in_checked,
         wrreq           => data_write_req_checked,
-        full            => open,
         almost_full     => o_fifos_almost_full(i),
         empty           => data_fifo_empty,
         q               => data_in,
         rdreq           => data_read_req,
-        almost_empty    => open,
         usedw           => usedw_data_fifo--,
     );
     
@@ -190,7 +187,6 @@ begin
         ADDR_WIDTH      => FIFO_ADDR_WIDTH,
         DATA_WIDTH      => 36,
         SHOWAHEAD       => "ON",
-        REGOUT          => 0,
         DEVICE          => "Stratix IV"--,
     )
     port map (
@@ -199,11 +195,9 @@ begin
         data            => i_data_in_slowcontrol_checked,
         wrreq           => slowcontrol_write_req_checked,
         full            => open,
-        almost_full     => open,
         empty           => slowcontrol_fifo_empty,
         q               => data_in_slowcontrol,
         rdreq           => slowcontrol_read_req,
-        almost_empty    => open,
         usedw           => usedw_slowcontrol_fifo--,
     );
 

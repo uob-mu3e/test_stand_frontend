@@ -22,7 +22,7 @@ struct si5340_t {
     void set_N0(alt_u64 n) {
         set_page(0x03);
 
-        // 
+        //
         i2c.set(dev, 0x02, (n >> 0) & 0xFF);
         i2c.set(dev, 0x03, (n >> 8) & 0xFF);
         i2c.set(dev, 0x04, (n >> 16) & 0xFF);

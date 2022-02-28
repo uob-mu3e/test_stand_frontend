@@ -124,7 +124,7 @@ architecture rtl of top is
     signal clk_156 : std_logic;
     signal reset_156_n : std_logic;
 
-    -- 250 MHz pcie clock 
+    -- 250 MHz pcie clock
     signal reset_pcie0_n : std_logic;
 
     -- flash
@@ -137,7 +137,6 @@ architecture rtl of top is
     signal pcie0_writeregs_B  : work.util.slv32_array_t(63 downto 0);
     signal pcie0_readregs_A   : work.util.slv32_array_t(63 downto 0);
     signal pcie0_readregs_B   : work.util.slv32_array_t(63 downto 0);
-    
 
     signal pcie_fastclk_out     : std_logic;
 
@@ -154,6 +153,9 @@ architecture rtl of top is
 
     signal rx_data_raw, rx_data, tx_data : work.util.slv32_array_t(15 downto 0) := (others => X"000000BC");
     signal rx_datak_raw, rx_datak, tx_datak : work.util.slv4_array_t(15 downto 0) := (others => "0001");
+
+    -- pll locked signal top
+    signal locked_50to125 : std_logic;
 
 begin
 
@@ -172,6 +174,7 @@ begin
     --! (can be connected to SMA input as global clock)
     e_pll_50to125 : component work.cmp.ip_pll_50to125
     port map (
+        locked => locked_50to125,
         outclk_0 => SMA_CLKOUT,
         refclk => clk_50,
         rst => not reset_50_n
@@ -191,10 +194,12 @@ begin
     --! ------------------------------------------------------------------------
     a10_block : entity work.a10_block
     generic map (
-        g_XCVR0_CHANNELS => 16,
-        g_XCVR0_N => 4,
+        g_XCVR0_CHANNELS => 8,
+        g_XCVR0_N => 2,
         g_XCVR1_CHANNELS => 0,
         g_XCVR1_N => 0,
+        g_XCVR2_CHANNELS => 4,
+        g_XCVR3_CHANNELS => 4,
         g_PCIE0_X => 8,
         g_PCIE1_X => 0,
         g_FARM    => 0,
@@ -231,19 +236,27 @@ begin
         -- XCVR0 (6250 Mbps @ 156.25 MHz)
         i_xcvr0_rx( 3 downto  0)        => QSFPA_RX_p,
         i_xcvr0_rx( 7 downto  4)        => QSFPB_RX_p,
-        i_xcvr0_rx(11 downto  8)        => QSFPC_RX_p,
-        i_xcvr0_rx(15 downto 12)        => QSFPD_RX_p,
         o_xcvr0_tx( 3 downto  0)        => QSFPA_TX_p,
         o_xcvr0_tx( 7 downto  4)        => QSFPB_TX_p,
-        o_xcvr0_tx(11 downto  8)        => QSFPC_TX_p,
-        o_xcvr0_tx(15 downto 12)        => QSFPD_TX_p,
         i_xcvr0_refclk                  => (others => clk_125),
 
-        o_xcvr0_rx_data                 => rx_data_raw,
-        o_xcvr0_rx_datak                => rx_datak_raw,
-        i_xcvr0_tx_data                 => tx_data,
-        i_xcvr0_tx_datak                => tx_datak,
+        o_xcvr0_rx_data                 => rx_data_raw(7 downto 0),
+        o_xcvr0_rx_datak                => rx_datak_raw(7 downto 0),
+        i_xcvr0_tx_data                 => tx_data(7 downto 0),
+        i_xcvr0_tx_datak                => tx_datak(7 downto 0),
         i_xcvr0_clk                     => clk_156,
+
+        -- XCVR2 (1250 Mbps @ 125 MHz)
+        i_xcvr2_rx( 3 downto  0)        => QSFPD_RX_p,
+        o_xcvr2_tx( 3 downto  0)        => QSFPD_TX_p,
+        i_xcvr2_refclk                  => clk_125,
+        i_xcvr2_clk                     => clk_125,
+
+        -- XCVR3 (125 MHz clk)
+        i_xcvr3_rx( 3 downto  0)        => QSFPC_RX_p,
+        o_xcvr3_tx( 3 downto  0)        => QSFPC_TX_p,
+        i_xcvr3_refclk                  => clk_125,
+        i_xcvr3_clk                     => clk_125,
 
         -- PCIe0
         i_pcie0_rx                      => PCIE_RX_p,
@@ -281,13 +294,15 @@ begin
         o_pcie0_wregs_B                 => pcie0_writeregs_B,
         i_pcie0_wregs_B_clk             => clk_156,
         o_pcie0_wregs_C                 => open,
-        i_pcie0_wregs_C_clk             => clk_156,
+        i_pcie0_wregs_C_clk             => clk_125,
         o_pcie0_resets_n_A              => pcie0_resets_n_A,
         o_pcie0_resets_n_B              => pcie0_resets_n_B,
 
         -- resets clk
+        top_pll_locked                  => locked_50to125,
+
         o_reset_pcie0_n                 => reset_pcie0_n,
-        
+
         o_reset_156_n                   => reset_156_n,
         o_clk_156                       => clk_156,
         o_clk_156_hz                    => LED(2),
@@ -347,7 +362,7 @@ begin
 
         i_writeregs_250 => pcie0_writeregs_A,
         i_writeregs_156 => pcie0_writeregs_B,
-    
+
         o_readregs_250  => pcie0_readregs_A,
         o_readregs_156  => pcie0_readregs_B,
 
@@ -379,4 +394,3 @@ begin
     );
 
 end architecture;
-

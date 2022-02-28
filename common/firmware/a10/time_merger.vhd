@@ -134,8 +134,7 @@ begin
             ADDR_WIDTH_w => TREE_DEPTH_w,
             DATA_WIDTH_w => write_width(0),
             ADDR_WIDTH_r => TREE_DEPTH_r,
-            DATA_WIDTH_r => read_width(0),
-            DEVICE 		 => "Arria 10"--,
+            DATA_WIDTH_r => read_width(0)--,
         )
         port map (
             aclr 	=> not i_reset_n or reset_fifo_0(j),
@@ -159,8 +158,7 @@ begin
             ADDR_WIDTH_w => TREE_DEPTH_w,
             DATA_WIDTH_w => write_width(6),
             ADDR_WIDTH_r => TREE_DEPTH_r,
-            DATA_WIDTH_r => read_width(6),
-            DEVICE 		 => "Arria 10"--,
+            DATA_WIDTH_r => read_width(6)--,
         )
         port map (
             aclr    => not i_reset_n,
@@ -306,7 +304,7 @@ begin
                         --
                     else
                         if ( fifo_full_0(i) = '0' and link_good(i) = '1' and i_rempty(i) = '0' and rack_hit(i) = '0' and i_rdata(i)(31 downto 26) /= "111111" and i_rdata(i)(37 downto 36) = "00" ) then
-                            fifo_data_0(i) <= work.util.link_36_to_std(i) & i_rdata(i)(35 downto 4);
+                            fifo_data_0(i) <= work.mudaq.link_36_to_std(i) & i_rdata(i)(35 downto 4);
                             fifo_wen_0(i) <= '1';
                             rack_hit(i) <= '1';
                             layer_0_cnt(i) <= layer_0_cnt(i) + '1';
