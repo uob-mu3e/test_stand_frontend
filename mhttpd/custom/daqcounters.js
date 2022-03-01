@@ -259,7 +259,7 @@ function generateSorterTable(table, counters, fractions, inside){
 
     let cell92 = row9.insertCell();
     cell92.setAttribute("name","modbvalue");
-    cell92.setAttribute("data-odb-path","/Equipment/Switching/Settings/Sorter Delay[0]");
+    cell92.setAttribute("data-odb-path","/Equipment/SwitchingCentral/Settings/Sorter Delay[0]");
     cell92.setAttribute("data-odb-editable","1");
 
     let cell93 = row9.insertCell();
@@ -361,19 +361,19 @@ function init(){
     }
 
 
-    mjsonrpc_db_get_values(["/Equipment/Switching/Variables/SCSO"]).then(function(rpc) {
+    mjsonrpc_db_get_values(["/Equipment/SwitchingCentral/Variables/SCSO"]).then(function(rpc) {
         update_scso(rpc.result.data[0]);
      }).catch(function(error) {
         mjsonrpc_error_alert(error);
      });
 
-    mjsonrpc_db_get_values(["/Equipment/Switching/Variables/SCCN"]).then(function(rpc) {
+    mjsonrpc_db_get_values(["/Equipment/SwitchingCentral/Variables/SCCN"]).then(function(rpc) {
         update_sccn(rpc.result.data[0]);
      }).catch(function(error) {
         mjsonrpc_error_alert(error);
      });
 
-    mjsonrpc_db_get_values(["/Equipment/Mupix/Variables/PSLL"]).then(function(rpc) {
+    mjsonrpc_db_get_values(["/Equipment/PixelsCentral/Variables/PSLL"]).then(function(rpc) {
         update_psll(rpc.result.data[0]);
      }).catch(function(error) {
         mjsonrpc_error_alert(error);

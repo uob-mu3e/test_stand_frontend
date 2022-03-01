@@ -29,13 +29,13 @@
              if(x!=""){
                 x = x * 16383/1900;
                 x = x << 2;
-                modbset("/Equipment/MuPix/Settings/Boarddacs/0/Threshold_Low", x);
+                modbset("/Equipment/PixelsCentral/Settings/Boarddacs/0/Threshold_Low", x);
              }
              x = document.getElementById("thhigh0").value;
              if(x!=""){
                 x = x * 16383/1900;
                 x = x << 2;
-                modbset("/Equipment/MuPix/Settings/Boarddacs/0/Threshold_High", x);
+                modbset("/Equipment/PixelsCentral/Settings/Boarddacs/0/Threshold_High", x);
              }
         }
         function convert1(){
@@ -43,13 +43,13 @@
              if(x!=""){
                 x = x * 16383/1900;
                 x = x << 2;
-                modbset("/Equipment/MuPix/Settings/Boarddacs/1/Threshold_Low", x);
+                modbset("/Equipment/PixelsCentral/Settings/Boarddacs/1/Threshold_Low", x);
              }
              x = document.getElementById("thhigh1").value;
              if(x!=""){
                 x = x * 16383/1900;
                 x = x << 2;
-                modbset("/Equipment/MuPix/Settings/Boarddacs/1/Threshold_High", x);
+                modbset("/Equipment/PixelsCentral/Settings/Boarddacs/1/Threshold_High", x);
              }
         }
         function convert2(){
@@ -57,13 +57,13 @@
              if(x!=""){
                 x = x * 16383/1900;
                 x = x << 2;
-                modbset("/Equipment/MuPix/Settings/Boarddacs/2/Threshold_Low", x);
+                modbset("/Equipment/PixelsCentral/Settings/Boarddacs/2/Threshold_Low", x);
              }
              x = document.getElementById("thhigh2").value;
              if(x!=""){
                 x = x * 16383/1900;
                 x = x << 2;
-                modbset("/Equipment/MuPix/Settings/Boarddacs/2/Threshold_High", x);
+                modbset("/Equipment/PixelsCentral/Settings/Boarddacs/2/Threshold_High", x);
              }
         }
         function convert3(){
@@ -71,13 +71,13 @@
              if(x!=""){
                 x = x * 16383/1900;
                 x = x << 2;
-                modbset("/Equipment/MuPix/Settings/Boarddacs/3/Threshold_Low", x);
+                modbset("/Equipment/PixelsCentral/Settings/Boarddacs/3/Threshold_Low", x);
              }
              x = document.getElementById("thhigh3").value;
              if(x!=""){
                 x = x * 16383/1900;
                 x = x << 2;
-                modbset("/Equipment/MuPix/Settings/Boarddacs/3/Threshold_High", x);
+                modbset("/Equipment/PixelsCentral/Settings/Boarddacs/3/Threshold_High", x);
              }
         }
     </script>
@@ -90,7 +90,7 @@
 <div id="mheader"></div>
 <div id="msidenav"></div>
 <div id="mmain">
-<div name="modb" data-odb-path="/Equipment/MuPix/Settings/Boarddacs/0" onchange="reloadMuPixSettings(this.value)"> </div >
+<div name="modb" data-odb-path="/Equipment/PixelsCentral/Settings/Boarddacs/0" onchange="reloadMuPixSettings(this.value)"> </div >
 
       <table class="mtable" width="100%" id="unknown">
            <tr>
@@ -134,13 +134,13 @@
         <td> TH_LOW </td>
         <td><input type="text" id="thlow0" value="560" oninput="convert0()">mV</td>
         <td><div name="modbvalue"
-                data-odb-path="/Equipment/MuPix/Settings/Boarddacs/0/Threshold_Low" data-format="x" id="thlow0odb"></div></td>
+                data-odb-path="/Equipment/PixelsCentral/Settings/Boarddacs/0/Threshold_Low" data-format="x" id="thlow0odb"></div></td>
     </tr>
     <tr>
         <td> TH_HIGH </td>
         <td><input type="text" id="thhigh0" value="560" oninput="convert0()">mV</td>
         <td><div name="modbvalue"
-                data-odb-path="/Equipment/MuPix/Settings/Boarddacs/0/Threshold_High" data-format="x" id="thhigh0odb"></div></td>
+                data-odb-path="/Equipment/PixelsCentral/Settings/Boarddacs/0/Threshold_High" data-format="x" id="thhigh0odb"></div></td>
     </tr>
     </table>
     
@@ -158,13 +158,13 @@
         <td> TH_LOW </td>
         <td><input type="text" id="thlow1" value="560" oninput="convert1()">mV</td>
         <td><div name="modbvalue"
-                data-odb-path="/Equipment/MuPix/Settings/Boarddacs/1/Threshold_Low" data-format="x" id="thlow1odb"></div></td>
+                data-odb-path="/Equipment/PixelsCentral/Settings/Boarddacs/1/Threshold_Low" data-format="x" id="thlow1odb"></div></td>
     </tr>
     <tr>
         <td> TH_HIGH </td>
         <td><input type="text" id="thhigh1" value="560" oninput="convert1()">mV</td>
         <td><div name="modbvalue"
-                data-odb-path="/Equipment/MuPix/Settings/Boarddacs/1/Threshold_High" data-format="x" id="thhigh1odb"></div></td>
+                data-odb-path="/Equipment/PixelsCentral/Settings/Boarddacs/1/Threshold_High" data-format="x" id="thhigh1odb"></div></td>
     </tr>
     </table>
     
@@ -182,13 +182,13 @@
         <td> TH_LOW </td>
         <td><input type="text" id="thlow2" value="560" oninput="convert2()">mV</td>
         <td><div name="modbvalue"
-                data-odb-path="/Equipment/MuPix/Settings/Boarddacs/2/Threshold_Low" data-format="x" id="thlow2odb"></div></td>
+                data-odb-path="/Equipment/PixelsCentral/Settings/Boarddacs/2/Threshold_Low" data-format="x" id="thlow2odb"></div></td>
     </tr>
     <tr>
         <td> TH_HIGH </td>
         <td><input type="text" id="thhigh2" value="560" oninput="convert2()">mV</td>
         <td><div name="modbvalue"
-                data-odb-path="/Equipment/MuPix/Settings/Boarddacs/2/Threshold_High" data-format="x" id="thhigh2odb"></div></td>
+                data-odb-path="/Equipment/PixelsCentral/Settings/Boarddacs/2/Threshold_High" data-format="x" id="thhigh2odb"></div></td>
     </tr>
     </table>
     
@@ -207,13 +207,13 @@
         <td> TH_LOW </td>
         <td><input type="text" id="thlow3" value="560" oninput="convert3()">mV</td>
         <td><div name="modbvalue"
-                data-odb-path="/Equipment/MuPix/Settings/Boarddacs/3/Threshold_Low" data-format="x" id="thlow3odb"></div></td>
+                data-odb-path="/Equipment/PixelsCentral/Settings/Boarddacs/3/Threshold_Low" data-format="x" id="thlow3odb"></div></td>
     </tr>
     <tr>
         <td> TH_HIGH </td>
         <td><input type="text" id="thhigh3" value="560" oninput="convert3()">mV</td>
         <td><div name="modbvalue"
-                data-odb-path="/Equipment/MuPix/Settings/Boarddacs/3/Threshold_High" data-format="x" id="thhigh3odb"></div></td>
+                data-odb-path="/Equipment/PixelsCentral/Settings/Boarddacs/3/Threshold_High" data-format="x" id="thhigh3odb"></div></td>
     </tr>
     </table>
     

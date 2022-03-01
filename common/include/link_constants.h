@@ -13,7 +13,7 @@ const uint32_t MAX_LINKS_PER_SWITCHINGBOARD = 48;
 const uint32_t MAX_FEBS_PER_SWITCHINGBOARD = 34;
 
 /* Maximum number of frontenboards */
-const uint32_t MAX_N_FRONTENDBOARDS = MAX_N_SWITCHINGBOARDS*MAX_LINKS_PER_SWITCHINGBOARD;
+const uint32_t MAX_N_FRONTENDBOARDS = 128;
 
 /* Number of FEBs in final system */
 constexpr uint32_t N_FEBS[MAX_N_SWITCHINGBOARDS] = {34, 33, 33, 12};
