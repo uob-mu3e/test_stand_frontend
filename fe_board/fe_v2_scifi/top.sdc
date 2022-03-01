@@ -63,3 +63,5 @@ set_output_delay -clock { spare_clk_osc } -max 0 [get_ports {max10_spi_csn}]
 
 # false paths
 set_false_path -from {scifi_path:e_tile_path|mutrig_datapath:e_mutrig_datapath|receiver_block:u_rxdeser|data_decoder:\gen_channels:*:datadec|ready_buf} -to {*}
+set_false_path -from {*} -to {scifi_path:e_tile_path|doNotCompileAwayMux:dnca|o_led}
+set_false_path -from {*} -to {scifi_path:e_tile_path|miso_156}

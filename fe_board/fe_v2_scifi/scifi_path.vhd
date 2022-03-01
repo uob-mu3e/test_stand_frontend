@@ -79,7 +79,7 @@ architecture arch of scifi_path is
 
     -- registers controlled from midas
     signal s_dummyctrl_reg : std_logic_vector(31 downto 0);
-    signal s_dpctrl_reg : std_logic_vector(31 downto 0);
+    signal s_dpctrl_reg, s_dpctrl_rx_reg : std_logic_vector(31 downto 0);
     signal s_subdet_reset_reg : std_logic_vector(31 downto 0);
     signal s_subdet_resetdly_reg : std_logic_vector(31 downto 0);
     signal s_subdet_resetdly_reg_written : std_logic;
@@ -254,16 +254,17 @@ begin
         i_rx_pll_lock               => rx_pll_lock,
         i_frame_desync              => frame_desync,
         i_rx_dpa_lock_reg           => rx_dpa_lock, -- on receivers_usrclk domain
-        i_rx_ready                  => rx_ready,
+        i_rx_ready                  => rx_ready, -- on receivers_usrclk domain
         i_miso_transition_count     => std_logic_vector(to_unsigned(miso_transition_count,32)),
 
         -- outputs  156-------------------------------------------
-        o_cntreg_ctrl               => s_cntreg_ctrl,
-        o_dummyctrl_reg             => s_dummyctrl_reg,
-        o_dpctrl_reg                => s_dpctrl_reg,
-        o_subdet_reset_reg          => s_subdet_reset_reg,
-        o_subdet_resetdly_reg_written => s_subdet_resetdly_reg_written,
-        o_subdet_resetdly_reg       => s_subdet_resetdly_reg--,
+        o_cntreg_ctrl               	=> s_cntreg_ctrl,
+        o_dummyctrl_reg             	=> s_dummyctrl_reg,
+        o_dpctrl_reg            			=> s_dpctrl_reg,
+		  o_dpctrl_rx_reg 					=> s_dpctrl_rx_reg, -- on receivers_usrclk domain
+        o_subdet_reset_reg          	=> s_subdet_reset_reg,
+        o_subdet_resetdly_reg_written 	=> s_subdet_resetdly_reg_written,
+        o_subdet_resetdly_reg       	=> s_subdet_resetdly_reg--,
     );
 
     e_iram : entity work.ram_1r1w
@@ -351,9 +352,10 @@ begin
 
         -- slow control
         i_SC_disable_dec => s_dpctrl_reg(31),
-        i_SC_rx_wait_for_all => s_dpctrl_reg(30),
-        i_SC_rx_wait_for_all_sticky => s_dpctrl_reg(29),
-        i_SC_mask => s_dpctrl_reg(N_MODULES*N_ASICS-1 downto 0),
+        i_SC_rx_wait_for_all => s_dpctrl_rx_reg(30),
+        i_SC_rx_wait_for_all_sticky => s_dpctrl_rx_reg(29),
+        i_SC_mask => x"FC", --s_dpctrl_reg(N_MODULES*N_ASICS-1 downto 0),
+		  i_SC_mask_rx => x"FC", --s_dpctrl_rx_reg(N_MODULES*N_ASICS-1 downto 0),
         i_SC_datagen_enable => s_dummyctrl_reg(1),
         i_SC_datagen_shortmode => s_dummyctrl_reg(2),
         i_SC_datagen_count => s_dummyctrl_reg(12 downto 3),

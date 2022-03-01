@@ -38,6 +38,7 @@ port (
     o_cntreg_ctrl               : out std_logic_vector(31 downto 0);
     o_dummyctrl_reg             : out std_logic_vector(31 downto 0);
     o_dpctrl_reg                : out std_logic_vector(31 downto 0);
+	 o_dpctrl_rx_reg             : out std_logic_vector(31 downto 0); -- on receivers_usrclk domai
     o_subdet_reset_reg          : out std_logic_vector(31 downto 0);
     o_subdet_resetdly_reg_written : out std_logic;
     o_subdet_resetdly_reg       : out std_logic_vector(31 downto 0)--;
@@ -61,7 +62,7 @@ architecture rtl of scifi_reg_mapping is
     signal q_sync, data_sync    : std_logic_vector(32 + 64 + N_MODULES*N_ASICS + N_MODULES*N_ASICS - 1 downto 0);
     signal empty                : std_logic;
     
-    signal q_sync_out, data_sync_out : std_logic_vector(63 downto 0);
+    signal q_sync_out, data_sync_out : std_logic_vector(95 downto 0);
     signal empty_out            : std_logic;
 
 begin
@@ -85,15 +86,16 @@ begin
 	 rx_ready					 <= q_sync(          						  N_MODULES*N_ASICS - 1 downto                      	  	               0);
 
     --! output sync
-    data_sync_out <= cntreg_ctrl & dummyctrl_reg;
+    data_sync_out <= cntreg_ctrl & dummyctrl_reg & dpctrl_reg;
     e_sync_out : entity work.fifo_sync
     generic map(
         g_RDATA_RESET => (data_sync_out'range => '0')--,
     ) port map ( 	i_wdata => data_sync_out, i_wclk => i_clk, i_wreset_n => '1',
 						o_rdata => q_sync_out, i_rclk => i_receivers_usrclk, i_rreset_n => '1'--,
     );
-    o_cntreg_ctrl   <= q_sync_out(63 downto 32);
-    o_dummyctrl_reg <= q_sync_out(31 downto  0);
+    o_cntreg_ctrl   <= q_sync_out(95 downto 64);
+    o_dummyctrl_reg <= q_sync_out(63 downto 32);
+	 o_dpctrl_rx_reg <= q_sync_out(31 downto  0);
 
 
     process(i_clk, i_reset_n)

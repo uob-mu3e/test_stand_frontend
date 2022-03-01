@@ -46,6 +46,7 @@ port (
     --slow control
     i_SC_disable_dec            : in std_logic;
     i_SC_mask                   : in std_logic_vector(N_MODULES*N_ASICS-1 downto 0);
+	 i_SC_mask_rx                : in std_logic_vector(N_MODULES*N_ASICS-1 downto 0);
     i_SC_datagen_enable         : in std_logic;
     i_SC_datagen_shortmode      : in std_logic;
     i_SC_datagen_count          : in std_logic_vector(9 downto 0);
@@ -158,26 +159,26 @@ port map( i_reset_n => not i_SC_reset_counters, o_reset_n => s_SC_reset_counters
 
 u_rxdeser: entity work.receiver_block
 generic map(
-	IS_SCITILE => IS_SCITILE,
-	NINPUT => N_ASICS_TOTAL,
-	LVDS_PLL_FREQ => LVDS_PLL_FREQ,
+	IS_SCITILE 		=> IS_SCITILE,
+	NINPUT 			=> N_ASICS_TOTAL,
+	LVDS_PLL_FREQ 	=> LVDS_PLL_FREQ,
 	LVDS_DATA_RATE => LVDS_DATA_RATE,
 	INPUT_SIGNFLIP => INPUT_SIGNFLIP--,
 )
 port map(
 	reset_n			=> not i_rst_rx,
-	reset_n_errcnt		=> s_SC_reset_counters_125_n,
-	rx_in			=> i_stic_txd,
+	reset_n_errcnt	=> s_SC_reset_counters_125_n,
+	rx_in				=> i_stic_txd,
 	rx_inclock_A	=> i_refclk_125_A,
 	rx_inclock_B	=> i_refclk_125_B,
-	rx_state		=> s_receivers_state,
-	rx_ready		=> s_receivers_ready,
+	rx_state			=> s_receivers_state,
+	rx_ready			=> s_receivers_ready,
 	rx_data			=> s_receivers_data,
-	rx_k			=> s_receivers_data_isk,
+	rx_k				=> s_receivers_data_isk,
 	rx_clkout		=> s_receivers_usrclk,
 	pll_locked		=> o_receivers_pll_lock,
-	rx_dpa_locked_out	=> o_receivers_dpa_lock,
-	rx_runcounter		=> s_receivers_runcounter,
+	rx_dpa_locked_out		=> o_receivers_dpa_lock,
+	rx_runcounter			=> s_receivers_runcounter,
 	rx_errorcounter		=> s_receivers_errorcounter,
 	rx_synclosscounter	=> s_receivers_synclosscounter
 );
@@ -187,14 +188,14 @@ o_receivers_usrclk <= s_receivers_usrclk;
 
 --generate a pll-synchronous all-ready signal for the data receivers.
 --this assures all start dumping data into the fifos at the same time, and we do not enter a deadlock scenario from the start
-gen_ready_all : process (s_receivers_usrclk,i_rst_rx,s_receivers_ready, i_SC_mask)
+gen_ready_all : process (s_receivers_usrclk, i_rst_rx, s_receivers_ready, i_SC_mask_rx)
 variable v_ready : std_logic_vector(N_ASICS_TOTAL-1 downto 0);
 begin
 if ( i_rst_rx='1' ) then
     s_receivers_all_ready<='0';
     --
 elsif ( rising_edge(s_receivers_usrclk) ) then
-    v_ready := s_receivers_ready or i_SC_mask;
+    v_ready := s_receivers_ready or i_SC_mask_rx;
     if ( v_ready = ((v_ready'range)=>'1') ) then
         s_receivers_all_ready<='1';
     end if;
@@ -339,7 +340,7 @@ port map(
     o_prbs_wrd_cnt      => s_prbs_wrd_cnt(i),
     o_prbs_err_cnt      => s_prbs_err_cnt(i),
 
-    i_SC_mask           => i_SC_mask(i)
+    i_SC_mask           => i_SC_mask_rx(i)
 );
 end generate;
 
@@ -413,7 +414,7 @@ u_mux_A : entity work.framebuilder_mux
         o_busy              => s_A_mux_busy,
         o_sync_error        => o_frame_desync(0),
         i_SC_mask           => i_SC_mask(N_ASICS-1 downto 0),
-        i_SC_nomerge        => '0'
+        i_SC_nomerge        => '0'--,
     );
 
 gen_dual_mux : if( N_MODULES > 1 ) generate
@@ -440,7 +441,7 @@ u_mux_B : entity work.framebuilder_mux
         o_busy          => s_B_mux_busy,
         o_sync_error    => o_frame_desync(1),
         i_SC_mask       => i_SC_mask(N_ASICS_TOTAL-1 downto N_ASICS),
-        i_SC_nomerge    => '0'
+        i_SC_nomerge    => '0'--,
     );
 
 end generate;

@@ -163,18 +163,40 @@ end process;
 rst_sync_clear : entity work.reset_sync
 port map( i_reset_n => not i_aclear, o_reset_n => s_clear_rxclk_n, i_clk => i_clk_deser);
 
-u_channel_data_fifo : entity work.channeldata_fifo   
-port map(
-    aclr     => i_reset or (not s_clear_rxclk_n),
-    data	   => s_full_event_data,
-    rdclk	   => i_clk_rd,
-    rdreq	   => i_fifo_rd,
-    wrclk	   => i_clk_deser,
-    wrreq	   => s_event_ready,
-    q	      => o_fifo_data,
-    rdempty	=> o_fifo_empty,
-    wrfull	=> s_fifofull,
-    rdusedw   => s_fifoused
+--u_channel_data_fifo : entity work.channeldata_fifo   
+--port map(
+--    aclr     => i_reset or (not s_clear_rxclk_n),
+--    data	   => s_full_event_data,
+--    rdclk	   => i_clk_rd,
+--    rdreq	   => i_fifo_rd,
+--    wrclk	   => i_clk_deser,
+--    wrreq	   => s_event_ready,
+--    q	      => o_fifo_data,
+--    rdempty	=> o_fifo_empty,
+--    wrfull	=> s_fifofull,
+--    rdusedw   => s_fifoused
+--);
+
+u_channel_data_fifo : entity work.ip_dcfifo_v2
+generic map (
+	g_ADDR_WIDTH => 8,
+	g_DATA_WIDTH => 56,
+	g_WREG_N => 1,
+	g_RREG_N => 1--,
+)
+port map (
+	i_wdata     => s_full_event_data,
+	i_we        => s_event_ready,
+	o_wfull     => s_fifofull,
+	o_wusedw    => s_fifoused,
+	i_wclk      => i_clk_deser,
+
+	o_rdata     => o_fifo_data,
+	i_rack      => i_fifo_rd,
+	o_rempty    => o_fifo_empty,
+	i_rclk      => i_clk_rd,
+
+	i_reset_n   => (not i_reset) or s_clear_rxclk_n--,
 );
 
 o_fifo_full     <= s_fifofull;

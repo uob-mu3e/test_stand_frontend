@@ -89,8 +89,7 @@ end component; --data_decoder;
     signal rx_fifo_reset		: STD_LOGIC_VECTOR (NINPUT-1 DOWNTO 0);
     signal rx_reset			: STD_LOGIC_VECTOR (NINPUT-1 DOWNTO 0);
 
-    signal rx_ready_reg		: STD_LOGIC_VECTOR (NINPUT-1 DOWNTO 0);	
-    signal rx_pll_locked		: STD_LOGIC;
+    signal rx_ready_reg		: STD_LOGIC_VECTOR (NINPUT-1 DOWNTO 0);
     signal rx_disperr		: std_logic_vector(NINPUT-1 downto 0);
 
     signal rx_inclock_A_ctrl    : std_logic;
@@ -109,7 +108,7 @@ end component; --data_decoder;
 
 begin
     rx_dpa_locked_out   <= rx_dpa_locked;
-    pll_locked          <= rx_pll_locked;
+    pll_locked          <= rx_locked_A and rx_locked_B;
     rx_clkout           <= rx_clk;
 
 -----------------------------------------------------------

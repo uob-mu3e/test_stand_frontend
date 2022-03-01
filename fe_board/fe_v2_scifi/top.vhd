@@ -35,8 +35,8 @@ entity top is
         scifi_spi_sclk              : out   std_logic;
         scifi_spi_miso              : in    std_logic;
         scifi_spi_mosi              : out   std_logic;
-        scifi_temp_mutrig         : in    std_logic;
-        scifi_temp_sipm           : in    std_logic;
+        scifi_temp_mutrig         	: in    std_logic;
+        scifi_temp_sipm           	: in    std_logic;
 
         scifi_spi_sclk2             : out   std_logic;
         scifi_spi_miso2             : in    std_logic;
@@ -49,8 +49,8 @@ entity top is
         scifi_cec_miso2             : in    std_logic;
         scifi_fifo_ext2             : out   std_logic;
         scifi_inject2               : out   std_logic;
-        scifi_temp_mutrig2        : in    std_logic;
-        scifi_temp_sipm2          : in    std_logic;
+        scifi_temp_mutrig2        	: in    std_logic;
+        scifi_temp_sipm2          	: in    std_logic;
 
         -- Fireflies
         firefly1_tx_data            : out   std_logic_vector(3 downto 0); -- transceiver
@@ -159,6 +159,7 @@ architecture rtl of top is
     signal chip_reset : std_logic := '0';
     signal counter_vec : std_logic_vector(31 downto 0);
     signal counter : integer;
+	 signal chip_reset_v : std_logic_vector(N_MODULES-1 downto 0);
     
     signal pll_test : std_logic;
 
@@ -175,12 +176,12 @@ begin
     -- stuff which is not used at the moment but PINs need to be tested
     lcd_data(2) <= scifi_temp_mutrig or scifi_temp_mutrig2 or scifi_temp_sipm or scifi_temp_sipm2 or scifi_cec_miso or scifi_cec_miso2;
 
--- assignments of DAB pins: special IOBUF, constant and polarity flips here
-    scifi_fifo_ext              <= '0';
-    scifi_inject                <= pll_test;
-    scifi_fifo_ext2             <= '0';
-    scifi_inject2               <= pll_test;
-    scifi_cec_csn               <= (others => '1');
+    -- assignments of DAB pins: special IOBUF, constant and polarity flips here
+    scifi_fifo_ext   <= '0';
+    scifi_inject     <= pll_test;
+    scifi_fifo_ext2  <= '0';
+    scifi_inject2    <= pll_test;
+    scifi_cec_csn    <= (others => '1');
 
     scifi_csn_buf(0) <= not scifi_int_csn(0);
     scifi_csn_buf(1) <= not scifi_int_csn(1);
@@ -191,26 +192,26 @@ begin
     scifi_csn_buf(6) <= not scifi_int_csn(6);
     scifi_csn_buf(7) <=     scifi_int_csn(7);
 
-    scifi_syncres   <= not scifi_int_syncres;
-    scifi_syncres2  <= not scifi_int_syncres2;
+    scifi_syncres   	<= not scifi_int_syncres;
+    scifi_syncres2  	<= not scifi_int_syncres2;
     
-    scifi_spi_sclk      <= not scifi_int_spi_sclk;
-    scifi_spi_mosi      <= not scifi_int_spi_mosi;
-    scifi_spi_sclk2     <= not scifi_int_spi_sclk;
-    scifi_spi_mosi2     <= not scifi_int_spi_mosi;
+    scifi_spi_sclk   <= not scifi_int_spi_sclk; -- check google doc
+    scifi_spi_mosi   <= not scifi_int_spi_mosi;
+    scifi_spi_sclk2  <= not scifi_int_spi_sclk; -- check google doc
+    scifi_spi_mosi2  <= not scifi_int_spi_mosi;
 
-    scifi_int_spi_miso <=  (not scifi_spi_miso2) when (scifi_csn_buf(7 downto 4) /= x"F") else (not scifi_spi_miso);
-
+    scifi_int_spi_miso <=  (not scifi_spi_miso2) when (scifi_csn_buf(7 downto 4) /= x"F") else scifi_spi_miso;
+	 
     -- LVDS inputs signflip in receiver block generic
      
--- scifi detector firmware
+	 -- scifi detector firmware
     e_tile_path : entity work.scifi_path
     generic map (
         IS_SCITILE      => '0',
         N_MODULES       => N_MODULES,
         N_ASICS         => N_ASICS,
         N_LINKS         => N_LINKS,
-        INPUT_SIGNFLIP  => x"FFFFFFFF",
+        INPUT_SIGNFLIP  => x"FFFFFFFF", -- swap input 0 of con2 and 0 of con3 x"FFFFFFEE"
         LVDS_PLL_FREQ   => 125.0,
         LVDS_DATA_RATE  => 1250.0--,
     )
@@ -221,11 +222,10 @@ begin
         i_reg_we                    => scifi_reg.we,
         i_reg_wdata                 => scifi_reg.wdata,
 
-        o_chip_reset(0)             => open,
-        o_chip_reset(1)             => open,
+        o_chip_reset		            => chip_reset_v,
 
         o_pll_test                  => pll_test,
-        i_data                      => scifi_din,
+        i_data                      => scifi_din(N_MODULES*N_ASICS-1 downto 0),
 
         io_i2c_sda                  => open,
         io_i2c_scl                  => open,

@@ -242,6 +242,9 @@ void SMB_t::menu_SMB_main() {
                 //    break;
             case 'r':
                 menu_reset();
+            case 'm':
+                sc.ram->data[SCIFI_CTRL_DP_REGISTER_W] = 0x4000FFFC;
+                break;
             case 'q':
                 return;
             default:
@@ -314,6 +317,7 @@ void SMB_t::menu_reset() {
         printf("  [2] => reset datapath\n");
         printf("  [3] => reset lvds_rx\n");
         printf("  [4] => reset skew settings\n");
+        printf("  [5] => read reset reg\n");
 
 
         printf("Select entry ...\n");
@@ -336,6 +340,9 @@ void SMB_t::menu_reset() {
                 break;
             case '4':
                 menu_reg_resetskew();
+                break;
+            case '5':
+                printf("Reset red %x\n", sc.ram->data[SCIFI_CTRL_RESET_REGISTER_W]);
                 break;
             case 'q':
                 return;
