@@ -20,7 +20,7 @@ generic (
     g_PARITY : integer := 0;
     g_STOP_BITS : positive := 1;
     g_BAUD_RATE : positive := 115200; -- bps
-    g_FIFO_ADDR_WIDTH : positive := 4;
+    g_FIFO_ADDR_WIDTH : positive := 2;
     g_CLK_MHZ : real--;
 );
 port (
@@ -107,7 +107,7 @@ begin
 
     process(i_clk, i_reset_n)
     begin
-    if ( i_reset_n = '0' ) then
+    if ( i_reset_n /= '1' ) then
         rack <= '0';
         cnt <= 0;
         state <= STATE_IDLE;

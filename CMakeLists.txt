@@ -44,15 +44,6 @@ message("here we set GLVND to default (https://cmake.org/cmake/help/git-stage/po
 set(OpenGL_GL_PREFERENCE GLVND)
 find_package(OpenGL)
 
-find_package(CUDA)
-
-if (CUDA_FOUND)
-    message("-- CUDA ${CUDA_VERSION_MAJOR}.${CUDA_VERSION_MINOR} was found at ${CUDA_TOOLKIT_ROOT_DIR}")
-    list(APPEND CUDA_NVCC_FLAGS "-DVERBOSE;-g")
-    #list(APPEND CUDA_NVCC_FLAGS "-arch=compute_30;-DVERBOSE;-g")
-    include_directories(${CUDA_TOOLKIT_ROOT_DIR}/include)
-endif(CUDA_FOUND)
-
 set(LIBMUDAQ_DIR ${PROJECT_SOURCE_DIR}/common/libmudaq)
 set(LIBMUPIX_DIR ${PROJECT_SOURCE_DIR}/common/libmupix)
 set(LIBMUTRIG_DIR ${PROJECT_SOURCE_DIR}/common/libmutrig)

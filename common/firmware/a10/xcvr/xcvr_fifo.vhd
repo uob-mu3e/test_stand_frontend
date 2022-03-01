@@ -12,10 +12,10 @@ generic (
     g_BYTES : positive := 4;
     g_IDLE_DATA : std_logic_vector := X"000000BC";
     g_IDLE_DATAK : std_logic_vector := "0001";
-    g_FIFO_TX_WREG_N : natural := 0;
-    g_FIFO_TX_RREG_N : natural := 0;
-    g_FIFO_RX_WREG_N : natural := 0;
-    g_FIFO_RX_RREG_N : natural := 0;
+    g_FIFO_TX_WREG_N : natural := 1;
+    g_FIFO_TX_RREG_N : natural := 1;
+    g_FIFO_RX_WREG_N : natural := 1;
+    g_FIFO_RX_RREG_N : natural := 1;
     g_FIFO_ADDR_WIDTH : positive := 4--;
 );
 port (
@@ -63,15 +63,15 @@ begin
         g_RREG_N => g_FIFO_RX_RREG_N--,
     )
     port map (
-        i_wdata         => i_xcvr_rx_datak & i_xcvr_rx_data,
         -- write non IDLE data/k
         i_we            => not work.util.to_std_logic(i_xcvr_rx_data = g_IDLE_DATA and i_xcvr_rx_datak = g_IDLE_DATAK),
+        i_wdata         => i_xcvr_rx_datak & i_xcvr_rx_data,
         o_wfull         => o_xcvr_rx_wfull,
         i_wclk          => i_xcvr_clk,
 
-        o_rdata         => rx_fifo_rdata,
         -- always read
         i_rack          => not rx_fifo_rempty,
+        o_rdata         => rx_fifo_rdata,
         o_rempty        => rx_fifo_rempty,
         i_rclk          => i_clk,
 
@@ -90,15 +90,15 @@ begin
         g_RREG_N => g_FIFO_TX_RREG_N--,
     )
     port map (
-        i_wdata         => i_tx_datak & i_tx_data,
         -- write non IDLE data/k
         i_we            => not work.util.to_std_logic(i_tx_data = g_IDLE_DATA and i_tx_datak = g_IDLE_DATAK),
+        i_wdata         => i_tx_datak & i_tx_data,
         o_wfull         => o_tx_wfull,
         i_wclk          => i_clk,
 
-        o_rdata         => tx_fifo_rdata,
         -- always read
         i_rack          => not tx_fifo_rempty,
+        o_rdata         => tx_fifo_rdata,
         o_rempty        => tx_fifo_rempty,
         i_rclk          => i_xcvr_clk,
 

@@ -87,7 +87,7 @@ begin
     link_id <= to_integer(unsigned(i_wregs_add_A(SWB_LINK_RANGE)));
     link_counter_addr <= swb_counter_addr + link_id * 5;
 
-        --! map counters pixel
+    --! map counters pixel
     process(i_clk_A, i_reset_n_A)
     begin
     if ( i_reset_n_A = '0' ) then

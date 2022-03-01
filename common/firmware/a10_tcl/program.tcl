@@ -6,7 +6,7 @@
 source [ file join [ file dirname [ info script ] ] "cfi1616.tcl" ]
 source [ file join [ file dirname [ info script ] ] "quartus.tcl" ]
 
-source [ file join [ file dirname [ info script ] ] "../util/altera/mm.tcl" ]
+source [ file join [ file dirname [ info script ] ] "../util/quartus/mm.tcl" ]
 
 package require fileutil
 

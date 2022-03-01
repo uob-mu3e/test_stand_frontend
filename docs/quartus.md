@@ -65,6 +65,8 @@ cd $HOME/.local/share/ghdl/vendors
 
 ## Troubleshooting
 
+- Quartus 18.1 / libpng12.so.0
+
 - Quartus 19.1 / Perl Getopt::Long
 
 ```

@@ -186,7 +186,7 @@ begin
         -- git head hash
         if ( regaddr = GIT_HASH_REGISTER_R and i_reg_re = '1' ) then
             o_reg_rdata <= (others => '0');
-            o_reg_rdata <= work.cmp.GIT_HEAD(0 to 31);
+            o_reg_rdata <= work.cmp.GIT_HEAD(31 downto 0);
         end if;
         -- fpga id
         if ( regaddr = FPGA_ID_REGISTER_RW and i_reg_re = '1' ) then
