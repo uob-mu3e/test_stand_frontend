@@ -31,7 +31,7 @@ port (
     i_rx_pll_lock               : in  std_logic;
     i_frame_desync              : in  std_logic_vector(1 downto 0);
     i_rx_dpa_lock_reg           : in  std_logic_vector(N_MODULES*N_ASICS - 1 downto 0); -- on receivers_usrclk domain
-    i_rx_ready                  : in  std_logic_vector(N_MODULES*N_ASICS - 1 downto 0);
+    i_rx_ready                  : in  std_logic_vector(N_MODULES*N_ASICS - 1 downto 0); -- on receivers_usrclk domain
     i_miso_transition_count     : in  std_logic_vector(31 downto 0);
 
     -- outputs
@@ -56,8 +56,9 @@ architecture rtl of scifi_reg_mapping is
     signal sync_cntreg_num      : std_logic_vector(31 downto 0);
     signal sync_cntreg_denom_b  : std_logic_vector(63 downto 0);
     signal sync_rx_dpa_lock_reg : std_logic_vector(N_MODULES*N_ASICS - 1 downto 0);
+	 signal rx_ready 				  : std_logic_vector(N_MODULES*N_ASICS - 1 downto 0);
     
-    signal q_sync, data_sync    : std_logic_vector(32 + 64 + N_MODULES*N_ASICS - 1 downto 0);
+    signal q_sync, data_sync    : std_logic_vector(32 + 64 + N_MODULES*N_ASICS + N_MODULES*N_ASICS - 1 downto 0);
     signal empty                : std_logic;
     
     signal q_sync_out, data_sync_out : std_logic_vector(63 downto 0);
@@ -71,27 +72,25 @@ begin
 
 
     --! input sync
-    data_sync <= i_cntreg_num & i_cntreg_denom_b & i_rx_dpa_lock_reg;
-    e_sync_in : entity work.ip_dcfifo
+    data_sync <= i_cntreg_num & i_cntreg_denom_b & i_rx_dpa_lock_reg & i_rx_ready;
+    e_sync_in : entity work.fifo_sync
     generic map(
-        ADDR_WIDTH  => 4, DATA_WIDTH  => 32 + 64 + N_MODULES*N_ASICS--,
-    ) port map ( data => data_sync, wrreq => '1',
-             rdreq => not empty, wrclk => i_receivers_usrclk, rdclk => i_clk,
-             q => q_sync, rdempty => empty, aclr => '0'--,
+        g_RDATA_RESET => (data_sync'range => '0')--,
+    ) port map ( 	i_wdata => data_sync, i_wclk => i_receivers_usrclk, i_wreset_n => '1',
+						o_rdata => q_sync, i_rclk => i_clk, i_rreset_n => '1'--,
     );
-    sync_cntreg_num         <= q_sync(32 + 64 + N_MODULES*N_ASICS - 1 downto 64 + N_MODULES*N_ASICS);
-    sync_cntreg_denom_b     <= q_sync(     64 + N_MODULES*N_ASICS - 1 downto      N_MODULES*N_ASICS);
-    sync_rx_dpa_lock_reg    <= q_sync(          N_MODULES*N_ASICS - 1 downto                      0);
-
+    sync_cntreg_num         <= q_sync(32 + 64 + N_MODULES*N_ASICS + N_MODULES*N_ASICS - 1 downto 64 + N_MODULES*N_ASICS + N_MODULES*N_ASICS);
+    sync_cntreg_denom_b     <= q_sync(     64 + N_MODULES*N_ASICS + N_MODULES*N_ASICS - 1 downto      N_MODULES*N_ASICS + N_MODULES*N_ASICS);
+    sync_rx_dpa_lock_reg    <= q_sync(          N_MODULES*N_ASICS + N_MODULES*N_ASICS - 1 downto                      	  N_MODULES*N_ASICS);
+	 rx_ready					 <= q_sync(          						  N_MODULES*N_ASICS - 1 downto                      	  	               0);
 
     --! output sync
     data_sync_out <= cntreg_ctrl & dummyctrl_reg;
-    e_sync_out : entity work.ip_dcfifo
+    e_sync_out : entity work.fifo_sync
     generic map(
-        ADDR_WIDTH  => 4, DATA_WIDTH  => 64--,
-    ) port map ( data => data_sync_out, wrreq => '1',
-             rdreq => not empty_out, wrclk => i_clk, rdclk => i_receivers_usrclk,
-             q => q_sync_out, rdempty => empty_out, aclr => '0'--,
+        g_RDATA_RESET => (data_sync_out'range => '0')--,
+    ) port map ( 	i_wdata => data_sync_out, i_wclk => i_clk, i_wreset_n => '1',
+						o_rdata => q_sync_out, i_rclk => i_receivers_usrclk, i_rreset_n => '1'--,
     );
     o_cntreg_ctrl   <= q_sync_out(63 downto 32);
     o_dummyctrl_reg <= q_sync_out(31 downto  0);
@@ -143,7 +142,7 @@ begin
 
             if ( i_reg_re = '1' and regaddr = SCIFI_MON_RX_READY_REGISTER_R ) then
                 o_reg_rdata <= (others => '0');
-                o_reg_rdata(N_MODULES*N_ASICS - 1 downto 0) <= i_rx_ready;
+                o_reg_rdata(N_MODULES*N_ASICS - 1 downto 0) <= rx_ready;
             end if;
 
             if ( i_reg_we = '1' and regaddr = SCIFI_CTRL_DUMMY_REGISTER_W ) then
