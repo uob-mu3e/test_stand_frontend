@@ -25,22 +25,22 @@ architecture behav of tree_tb is
       signal layer_0_state            : fifo_array_4(3 downto 0);
       signal layer_0_cnt              : fifo_array_32(3 downto 0);
       signal fifo_ren_0, fifo_ren_0_reg, i_mask_n, fifo_wen_0, fifo_full_0, fifo_empty_0, fifo_empty_0_reg, saw_header_0, saw_trailer_0, reset_fifo_0 : std_logic_vector(3 downto 0);
-      
+
       signal fifo_q_1 : fifo_array_76(1 downto 0);
       signal fifo_ren_1, fifo_full_1, fifo_empty_1 : std_logic_vector(1 downto 0);
       signal o_fifo_empty_1 : std_logic_vector(0 downto 0);
 
       signal o_fifo_q_2 : std_logic_vector(75 downto 0);
       signal fifo_q_2 : std_logic_vector(63 downto 0);
-  		  		
+
   		constant ckTime: 		time	:= 10 ns;
-		
+
 begin
   --  Component instantiation.
 
 reset <= not reset_n;
 i_mask_n <= x"F";
-  
+
   -- generate the clock
 process
 begin
@@ -79,30 +79,30 @@ elsif rising_edge(clk) then
   else
     i_rdata(i) <= (others => '0');
     rdata(i) <= (others => '0');
-  end if;  
+  end if;
 end if;
 end process;
 
-e_link_fifo : entity work.ip_dcfifo_mixed_widths
-generic map(
-    ADDR_WIDTH_w => 7,
-    DATA_WIDTH_w => 32+6,
-    ADDR_WIDTH_r => 7,
-    DATA_WIDTH_r => 64+12--,
-)
-port map (
-    aclr    => not reset_n or reset_fifo_0(i),
-    data    => fifo_data_0(i),
-    rdclk   => clk,
-    rdreq   => fifo_ren_0(i),
-    wrclk   => clk,
-    wrreq   => fifo_wen_0(i),
-    q       => fifo_q_0_reg(i),
-    rdempty => fifo_empty_0_reg(i),
-    rdusedw => open,
-    wrfull  => fifo_full_0(i),
-    wrusedw => open--,
-);
+    e_link_fifo : entity work.ip_dcfifo_v2
+    generic map (
+        g_WADDR_WIDTH => 7,
+        g_WDATA_WIDTH => 32+6,
+        g_RADDR_WIDTH => 7,
+        g_RDATA_WIDTH => 64+12--,
+    )
+    port map (
+        i_we        => fifo_wen_0(i),
+        i_wdata     => fifo_data_0(i),
+        o_wfull     => fifo_full_0(i),
+        i_wclk      => clk,
+
+        i_rack      => fifo_ren_0(i),
+        o_rdata     => fifo_q_0_reg(i),
+        o_rempty    => fifo_empty_0_reg(i),
+        i_rclk      => clk,
+
+        i_reset_n   => reset_n and (not reset_fifo_0(i))--,
+    );
 
 process(clk, reset_n)
 begin
@@ -115,9 +115,9 @@ if ( reset_n /= '1' ) then
 elsif rising_edge(clk) then
     fifo_wen_0(i) <= '0';
     reset_fifo_0(i) <= '0';
-  
+
     case layer_0_state(i) is
-        
+
         when "0000" =>
             if ( i_mask_n(i) = '0' ) then
                 saw_header_0(i) <= '1';
@@ -167,7 +167,7 @@ end process;
 END GENERATE;
 
 layer_1 : entity work.time_merger_tree_fifo_64
-generic map (  
+generic map (
     TREE_w => 7, TREE_r => 7,
     r_width => 64+12, w_width => 64+12,
     compare_fifos => 4, gen_fifos => 2--,
@@ -189,7 +189,7 @@ port map (
 );
 
 layer_2 : entity work.time_merger_tree_fifo_64
-generic map (  
+generic map (
     TREE_w => 7, TREE_r => 7,
     r_width => 64+12, w_width => 64+12,
     compare_fifos => 2, gen_fifos => 1--,

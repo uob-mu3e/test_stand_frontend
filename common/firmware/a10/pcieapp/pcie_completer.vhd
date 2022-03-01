@@ -238,16 +238,16 @@ architecture RTL of pcie_completer is
     signal ndmasopcount         : std_logic_vector(7 downto 0);
     signal ndmaeopcount         : std_logic_vector(7 downto 0);
 
+    signal tx_st_valid0_r       : STD_LOGIC;
     signal tx_st_eop0_r         : STD_LOGIC;
     signal tx_st_sop0_r         : STD_LOGIC;
-    signal tx_st_valid0_r       : STD_LOGIC;
     signal tx_st_empty0_r       : STD_LOGIC_VECTOR(1 downto 0);
 
 begin
 
+    tx_st_valid0 <= tx_st_valid0_r;
     tx_st_eop0 <= tx_st_eop0_r;
     tx_st_sop0 <= tx_st_sop0_r;
-    tx_st_valid0 <= tx_st_valid0_r;
 
     dummydata <= (others => '0');
 
@@ -259,7 +259,7 @@ begin
     generic map (
         g_ADDR_WIDTH => 5,
         g_DATA_WIDTH => datain_rreg_fifo'length,
-        g_RREG_N => 1--, -- TNS=-4000
+        g_RREG_N => 1--,
     )
     port map (
         i_wdata         => datain_rreg_fifo,
@@ -289,7 +289,7 @@ begin
     generic map (
         g_ADDR_WIDTH => 5,
         g_DATA_WIDTH => datain_wreg_fifo'length,
-        g_RREG_N => 1--, -- TNS=-17
+        g_RREG_N => 1--,
     )
     port map (
         i_wdata         => datain_wreg_fifo,
@@ -509,7 +509,7 @@ begin
 
             dma_granted_r <= '0';
             dma2_granted_r <= '0';
-
+            --
         when waiting =>
             testout_r(7 downto 0) <= "00000001";
             tx_st_valid0_r <= '0';
@@ -559,7 +559,7 @@ begin
             else
                 state <= waiting;
             end if;
-
+            --
         when readrreg =>
             testout_r(7 downto 0) <= "00000010";
             tx_st_empty0_r <= "00";
@@ -603,17 +603,16 @@ begin
             else
                 state <= readrreg;
             end if;
-
+            --
         when readrreg1 =>
             testout_r(7 downto 0) <= "00000011";
             tx_st_data0 <= data7_rr & data6_rr & data5_rr & data4_rr & data3_rr & header2_rr & header1_rr & header0_rr;
-
 
             if(tx_st_ready0 = '1') then
                 tx_st_sop0_r <= '1';
                 tx_st_valid0_r <= '1';
                 tx_st_eop0_r <= '1';
-            read_rreg_fifo <= '1';
+                read_rreg_fifo <= '1';
                 state <= waiting;
                 tx_st_empty0_r <= "00";
             else
@@ -624,7 +623,7 @@ begin
                 tx_st_empty0_r <= tx_st_empty0_r;
                 state <= readrreg1;
             end if;
-        -------------------------------------------------------------------------------
+            --
         when readwreg =>
             testout_r(7 downto 0) <= "00000100";
             tx_st_empty0_r <= "00";
@@ -731,7 +730,7 @@ begin
                 tx_st_sop0_r <= '1';
                 tx_st_valid0_r <= '1';
                 tx_st_eop0_r <= '1';
-            read_wmem_fifo <= '1';
+                read_wmem_fifo <= '1';
                 state <= waiting;
                 tx_st_empty0_r <= "00";
             else

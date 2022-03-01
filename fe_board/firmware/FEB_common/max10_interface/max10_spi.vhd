@@ -2,9 +2,8 @@ library ieee;
 use ieee.std_logic_1164.all;
 use ieee.numeric_std.all;
 
-
 entity max10_spi is
-    port(
+port (
     -- Max10 SPI
     o_SPI_csn    : out std_logic;
     o_SPI_clk   : out std_logic;
@@ -28,9 +27,8 @@ entity max10_spi is
     byte_from_max : out std_logic_vector(7 downto 0);
     byte_en       : out std_logic;
     busy          : out std_logic    
-    );
-end max10_spi;      
-
+);
+end max10_spi;
 
 architecture RTL of max10_spi is
 
@@ -191,10 +189,8 @@ elsif(clk50'event and clk50 = '1')then
         io_SPI_D2       <= 'Z';
         io_SPI_D3       <= 'Z';
         spistate        <= idle;
-    end case;    
+    end case;
 end if;
-end process;    
-
-
+end process;
 
 end architecture;

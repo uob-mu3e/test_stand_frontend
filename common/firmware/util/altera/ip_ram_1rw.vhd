@@ -12,10 +12,10 @@ generic (
 );
 port (
     i_addr      : in    std_logic_vector(g_ADDR_WIDTH-1 downto 0);
-    i_wdata     : in    std_logic_vector(g_DATA_WIDTH-1 downto 0) := (others => '0');
     i_we        : in    std_logic := '0';
-    o_rdata     : out   std_logic_vector(g_DATA_WIDTH-1 downto 0);
+    i_wdata     : in    std_logic_vector(g_DATA_WIDTH-1 downto 0) := (others => '0');
     i_re        : in    std_logic := '1';
+    o_rdata     : out   std_logic_vector(g_DATA_WIDTH-1 downto 0);
     i_clk       : in    std_logic--;
 );
 end entity;
@@ -52,10 +52,10 @@ begin
     )
     port map (
         address_a => i_addr,
-        data_a => i_wdata,
         wren_a => i_we,
-        q_a => o_rdata,
+        data_a => i_wdata,
         rden_a => i_re,
+        q_a => o_rdata,
         clock0 => i_clk--,
     );
 

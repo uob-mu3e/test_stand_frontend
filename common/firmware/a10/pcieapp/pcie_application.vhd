@@ -35,12 +35,12 @@ port (
     refclk                  : in    std_logic;
 
     -- to IF
-    tx_st_data0             : out   STD_LOGIC_VECTOR (255 DOWNTO 0);
-    tx_st_eop0              : out   STD_LOGIC;
-    tx_st_sop0              : out   STD_LOGIC;
-    tx_st_ready0            : in    STD_LOGIC;
-    tx_st_valid0            : out   STD_LOGIC;
-    tx_st_empty0            : out   STD_LOGIC_VECTOR(1 downto 0);
+    o_tx_st_data0           : out   std_logic_vector(255 DOWNTO 0);
+    o_tx_st_eop0            : out   std_logic;
+    o_tx_st_sop0            : out   std_logic;
+    i_tx_st_ready0          : in    std_logic;
+    o_tx_st_valid0          : out   std_logic;
+    o_tx_st_empty0          : out   std_logic_vector(1 downto 0);
 
     -- from Config
     completer_id            : in    STD_LOGIC_VECTOR(12 downto 0);
@@ -342,12 +342,12 @@ begin
         refclk              => refclk,
 
         -- to IF
-        tx_st_data0         => tx_st_data0,
-        tx_st_eop0          => tx_st_eop0,
-        tx_st_sop0          => tx_st_sop0,
-        tx_st_ready0_next   => tx_st_ready0,
-        tx_st_valid0        => tx_st_valid0,
-        tx_st_empty0        => tx_st_empty0,
+        tx_st_data0         => o_tx_st_data0,
+        tx_st_eop0          => o_tx_st_eop0,
+        tx_st_sop0          => o_tx_st_sop0,
+        tx_st_ready0_next   => i_tx_st_ready0,
+        tx_st_valid0        => o_tx_st_valid0,
+        tx_st_empty0        => o_tx_st_empty0,
 
         -- from Config
         completer_id        => completer_id,
@@ -485,7 +485,7 @@ begin
         dma_request                 => dma_request,
         dma_granted                 => dma_granted,
         dma_done                    => dma_done,
-        tx_ready                    => tx_st_ready0,
+        tx_ready                    => i_tx_st_ready0,
         tx_data                     => dma_tx_data,
         tx_valid                    => dma_tx_valid,
         tx_sop                      => dma_tx_sop,
@@ -542,7 +542,7 @@ begin
         dma_request                 => dma2_request,
         dma_granted                 => dma2_granted,
         dma_done                    => dma2_done,
-        tx_ready                    => tx_st_ready0,
+        tx_ready                    => i_tx_st_ready0,
         tx_data                     => dma2_tx_data,
         tx_valid                    => dma2_tx_valid,
         tx_sop                      => dma2_tx_sop,

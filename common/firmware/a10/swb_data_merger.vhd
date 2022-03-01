@@ -15,22 +15,22 @@ use work.mudaq.all;
 
 
 entity swb_data_merger is
-    generic (
-        NLINKS      : positive := 8;
-        SWB_ID      : std_logic_vector(7 downto 0) := x"01";
-        -- Data type: x"01" = pixel, x"02" = scifi, x"03" = tiles
-        DATA_TYPE   : std_logic_vector(7 downto 0) := x"01"--;
-    );
-    port (
-        i_reset_n   : in std_logic;
-        i_clk       : in std_logic;
+generic (
+    NLINKS      : positive := 8;
+    SWB_ID      : std_logic_vector(7 downto 0) := x"01";
+    -- Data type: x"01" = pixel, x"02" = scifi, x"03" = tiles
+    DATA_TYPE   : std_logic_vector(7 downto 0) := x"01"--;
+);
+port (
+    i_reset_n   : in std_logic;
+    i_clk       : in std_logic;
 
-        i_data      : in std_logic_vector(NLINKS * 38 - 1 downto 0);
-        i_empty     : in std_logic;
+    i_data      : in std_logic_vector(NLINKS * 38 - 1 downto 0);
+    i_empty     : in std_logic;
 
-        o_ren       : out std_logic;
-        o_data      : out std_logic_vector(NLINKS * 32 - 1  downto 0);
-        o_data_valid: out std_logic_vector(NLINKS * 2 - 1  downto 0)--;
+    o_ren       : out std_logic;
+    o_data      : out std_logic_vector(NLINKS * 32 - 1  downto 0);
+    o_data_valid: out std_logic_vector(NLINKS * 2 - 1  downto 0)--;
 );
 end entity;
 
