@@ -11,9 +11,6 @@ use ieee.std_logic_misc.all;
 use work.mupix.all;
 use work.mudaq.all;
 
-use IEEE.math_real."ceil";
-use IEEE.math_real."log2";
-
 entity tdac_memory is
     generic( 
         N_CHIPS_g                 : positive := 4;

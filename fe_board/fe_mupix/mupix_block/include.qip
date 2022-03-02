@@ -13,6 +13,8 @@ set_global_assignment -name VHDL_FILE [file join $::quartus(qip_path) "slowcontr
 set_global_assignment -name VHDL_FILE [file join $::quartus(qip_path) "slowcontrol/mp_ctrl_direct_spi.vhd"]
 set_global_assignment -name VHDL_FILE [file join $::quartus(qip_path) "slowcontrol/mp_ctrl_spi.vhd"]
 set_global_assignment -name VHDL_FILE [file join $::quartus(qip_path) "slowcontrol/TDAC_memory.vhd"]
+set_global_assignment -name VHDL_FILE [file join $::quartus(qip_path) "slowcontrol/mupix_slowcontrol.vhd"]
+
 
 set_global_assignment -name QIP_FILE [file join $::quartus(qip_path) "receiver_block/receiver_block.qip"]
 
