@@ -78,7 +78,7 @@ int main(int argc, char *argv[]) {
     }
 
     // initialize to zero
-    for(int i = 0; i < size/sizeof(uint32_t); i++) {
+    for(size_t i = 0; i < size/sizeof(uint32_t); i++) {
         dma_buf[i] = 0;
     }
 
@@ -182,8 +182,8 @@ int main(int argc, char *argv[]) {
 
     // output data
     auto fout = fopen("memory_content.txt", "w");
-    for(int j = 0; j < size/sizeof(uint32_t); j++) {
-        fprintf(fout, "%d\t%08X\n", j, dma_buf[j]);
+    for(size_t j = 0; j < size/sizeof(uint32_t); j++) {
+        fprintf(fout, "%ld\t%08X\n", j, dma_buf[j]);
     }
     fclose(fout);
 

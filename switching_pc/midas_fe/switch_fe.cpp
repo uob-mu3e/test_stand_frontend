@@ -117,10 +117,10 @@ void setup_history();
 void setup_alarms();
 
 INT init_mudaq(mudaq::MudaqDevice&  mu);
-INT init_febs(mudaq::MudaqDevice&  mu);
-INT init_scifi(mudaq::MudaqDevice&  mu);
-INT init_scitiles(mudaq::MudaqDevice& mu);
-INT init_mupix(mudaq::MudaqDevice& mu);
+INT init_febs();
+INT init_scifi();
+INT init_scitiles();
+INT init_mupix();
 
 // Here we choose which switching board we are
 #include "OneSwitchingBoard.inc"
@@ -133,12 +133,12 @@ std::array<uint32_t, N_FEBS[switch_id]> sorterdelays{};
 
 /*-- Dummy routines ------------------------------------------------*/
 
-INT poll_event(INT source, INT count, BOOL test)
+INT poll_event(INT, INT, BOOL)
 {
     return 1;
 }
 
-INT interrupt_configure(INT cmd, INT source, POINTER_T adr)
+INT interrupt_configure(INT, INT, POINTER_T)
 {
     return 1;
 }
@@ -169,14 +169,14 @@ INT frontend_init()
         return FE_ERR_DRIVER;
 
     //init febs (general)
-    status = init_febs(*mup);
+    status = init_febs();
     if (status != SUCCESS)
         return FE_ERR_DRIVER;
 
 
     //init scifi
     if constexpr(has_scifi){
-        status = init_scifi(*mup);
+        status = init_scifi();
         if (status != SUCCESS)
             return FE_ERR_DRIVER;
     }
@@ -184,14 +184,14 @@ INT frontend_init()
     
     //init scitiles
     if constexpr(has_tiles){
-        status = init_scitiles(*mup);
+        status = init_scitiles();
         if (status != SUCCESS)
             return FE_ERR_DRIVER;
     }
 
     //init mupix
     if constexpr(has_pixels){
-        status = init_mupix(*mup);
+        status = init_mupix();
         if (status != SUCCESS)
             return FE_ERR_DRIVER;
     }
@@ -461,7 +461,7 @@ void switching_board_mask_changed(odb o) {
     mufeb->ReadFirmwareVersionsToODB();
 }
 
-void frontend_board_mask_changed(odb o) {
+void frontend_board_mask_changed(odb) {
     cm_msg(MINFO, "frontend_board_mask_changed", "Frontend board masking changed");
     feblist->RebuildFEBList();
     mufeb->ReadFirmwareVersionsToODB();
@@ -487,7 +487,7 @@ INT init_mudaq(mudaq::MudaqDevice &mu) {
     return SUCCESS;
 }
 
-INT init_febs(mudaq::MudaqDevice & mu) {
+INT init_febs() {
 
     //set link enables so slow control can pass
     string path_l = "/Equipment/" + link_eq_name + "/Settings/LinkMask";
@@ -524,7 +524,7 @@ INT init_febs(mudaq::MudaqDevice & mu) {
 }
 
 
-INT init_scifi(mudaq::MudaqDevice & mu) {
+INT init_scifi() {
 
     // SciFi setup part
     set_equipment_status(equipment[EQUIPMENT_ID::SciFi].name, "Initializing...", "var(--myellow)");
@@ -563,7 +563,7 @@ INT init_scifi(mudaq::MudaqDevice & mu) {
     return SUCCESS;
 }
 
-INT init_scitiles(mudaq::MudaqDevice & mu) {
+INT init_scitiles() {
 
     
     //SciTiles setup part
@@ -594,7 +594,7 @@ INT init_scitiles(mudaq::MudaqDevice & mu) {
 }
 
 
-INT init_mupix(mudaq::MudaqDevice & mu) {
+INT init_mupix() {
 
 
     //Mupix setup part
@@ -641,7 +641,7 @@ INT frontend_loop()
 
 /*-- Begin of Run --------------------------------------------------*/
 
-INT begin_of_run(INT run_number, char *error)
+INT begin_of_run(INT run_number, char *)
 {
     for(int i = 0; i < NEQUIPMENT; i++) 
         set_equipment_status(equipment[i].name, "Starting Run", "var(--morange)");
@@ -728,7 +728,7 @@ try{ // TODO: What can throw here?? Why?? Is there another way to handle this??
 
 /*-- End of Run ----------------------------------------------------*/
 
-INT end_of_run(INT run_number, char *error)
+INT end_of_run(INT, char *)
 {
 
 try{
@@ -786,14 +786,14 @@ try{
 
 /*-- Pause Run -----------------------------------------------------*/
 
-INT pause_run(INT run_number, char *error)
+INT pause_run(INT, char *)
 {
    return CM_SUCCESS;
 }
 
 /*-- Resume Run ----------------------------------------------------*/
 
-INT resume_run(INT run_number, char *error)
+INT resume_run(INT, char *)
 {
    return CM_SUCCESS;
 }
@@ -801,7 +801,7 @@ INT resume_run(INT run_number, char *error)
 
 
 /*--- Read Slow Control Event from FEBs to be put into data stream --------*/
-INT read_sc_event(char *pevent, INT off)
+INT read_sc_event(char *pevent, INT)
 {    
     auto vec = mufeb->CheckLinks(N_FEBS[switch_id]);
     string path_l = "/Equipment/" + std::string(link_eq_name) + "/Variables/LinkStatus";
@@ -877,7 +877,7 @@ DWORD * fill_SSCN(DWORD * pdata)
 
 /*--- Read Slow Control Event from SciFi to be put into data stream --------*/
 
-INT read_scifi_sc_event(char *pevent, INT off){
+INT read_scifi_sc_event(char *pevent, INT){
 
     //TODO: Make this more proper: move this to class driver routine and make functions not writing to ODB all the time (only on update).
     //Add readout function for this one that gets data from class variables and writes midas banks
@@ -889,7 +889,7 @@ INT read_scifi_sc_event(char *pevent, INT off){
 
 /*--- Read Slow Control Event from SciTiles to be put into data stream --------*/
 
-INT read_scitiles_sc_event(char *pevent, INT off){
+INT read_scitiles_sc_event(char *pevent, INT){
     
     //TODO: Make this more proper: move this to class driver routine and make functions not writing to ODB all the time (only on update).
     //Add readout function for this one that gets data from class variables and writes midas banks
@@ -901,7 +901,7 @@ INT read_scitiles_sc_event(char *pevent, INT off){
 
 /*--- Read Slow Control Event from Mupix to be put into data stream --------*/
 
-INT read_mupix_sc_event(char *pevent, INT off){
+INT read_mupix_sc_event(char *pevent, INT){
     //cm_msg(MINFO, "Mupix::read_mupix_sc_event()" , "Reading MuPix FEB SC");
     
     // create banks with LVDS counters & status
