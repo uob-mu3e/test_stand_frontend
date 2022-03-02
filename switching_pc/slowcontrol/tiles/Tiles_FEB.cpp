@@ -22,9 +22,9 @@ uint16_t TilesFEB::ASICid_from_ID(int asic) const {return asic%GetASICSPerModule
 
 
 //MIDAS callback function for FEB register Setter functions
-void TilesFEB::on_tiles_settings_changed(odb o, void * userdata)
+void TilesFEB::on_tiles_settings_changed(odb o, void *)
 {
-   TilesFEB* _this=static_cast<TilesFEB*>(userdata);
+   //TilesFEB* _this=static_cast<TilesFEB*>(userdata);
    std::string name = o.get_name();
    cm_msg(MINFO, "TilesFEB::on_settings_changed", "Setting changed (%s)", name.c_str());
 }
