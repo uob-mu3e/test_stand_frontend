@@ -208,11 +208,11 @@ int clockboard::read_i2c_reg_allbus(uint8_t dev_addr, uint8_t reg_addr, uint8_t 
 
     uint32_t reg;
 
-    for(uint8_t byte_count =byte_num -1; byte_count >= 0 ; byte_count--){
+    for(int16_t byte_count =byte_num -1; byte_count >= 0 ; byte_count--){
         bus.write(ADDR_I2C_CMD_STAT, I2C_CMD_READ);
         checkTIP();
         reg = bus.read(ADDR_I2C_DATA);
-        data[byte_count] = reg;
+        data[static_cast<uint8_t>(byte_count)] = reg;
     }
 
     bus.write(ADDR_I2C_CMD_STAT, I2C_CMD_READPLUSNACK);
@@ -841,7 +841,7 @@ int clockboard::enable_daughter_12c(int daughter, uint8_t i2c_bus_num)
     return 1;
 }
 
-int clockboard::disable_daughter_12c(int daughter)
+int clockboard::disable_daughter_12c()
 {
 
     if(currentdaughter >= 0 && currentdaughter < 8)
@@ -878,6 +878,7 @@ float clockboard::read_daughter_board_current(uint8_t daughter)
     // Current is now in mA
     float current = (((data[1] << 8)&0xFF00)|(data[0]&0xFF))*2.0;
     //disable_daughter_12c(DAUGHTERS[daughter]);
+    //cout << (int)daughter << ": " << hex << (int)data[0] << " " << (int)data[1] << endl;
     return current;
 }
 
@@ -921,7 +922,7 @@ float clockboard::read_fan_current()
     reg = bus.read(ADDR_DATA_CALIBRATED);
     reg = reg >> 16;
     float current = (1000/89.95)*(((int)reg)-2058);
-    //cout << hex << reg << endl;
+    cout << hex << reg << endl;
     return current;
 }
 

@@ -87,7 +87,7 @@ public:
     virtual uint8_t daughters_present();
 
     virtual int enable_daughter_12c(int daughter, uint8_t i2c_bus_num);
-    virtual int disable_daughter_12c(int daughter);
+    virtual int disable_daughter_12c();
     virtual int disable_all_daughter_12c();
 
     virtual float read_daughter_board_current(uint8_t daughter);
