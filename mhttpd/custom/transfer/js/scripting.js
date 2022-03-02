@@ -33,7 +33,7 @@ function load(){
 		   				  'CONFDACS': result.data[1],
 						  'VDACS':result.data[2]};
 
-		   console.log(dac_library);
+		   //console.log(dac_library);
 
 	   }).catch(function(error) {
 		   console.log("Error getting info on DACs avaliable for change in ODB:", error);
@@ -44,7 +44,21 @@ function load(){
   	   }).catch(function(error) {
   		   console.log("Error getting info on DACs avaliable for change in ODB:", error);
   	   });
+
+
+	//  Setup event listeners	
 }
+
+console.log("Before listeenr")
+document.addEventListener('DOMContentLoaded', function(event) {
+	console.log("Executed");
+	document.getElementById("keithley_curr").addEventListener("DOMSubtreeModified", function () {
+		console.log("Executed 21:"+event)
+		value = parseFloat(document.getElementById("keithley_curr").innerHTML);
+		document.getElementById("keithley_curr_display").innerHTML = value*1000000;
+		});
+})
+console.log("After listener")
 
 /**
 * Function that handles the load-file request coming from user. It will dump all
@@ -134,4 +148,12 @@ function checkAndConfig(){
 	}
 
 	modbset("/Equipment/Switching/Settings/MupixConfig", "y")
+}
+
+
+function uA_listeners() {
+	document.getElementById("keithley_curr").addEventListener("DOMSubtreeModified", function () {
+		value = parseFloat(document.getElementById("keithley_curr").innerHTML);
+		document.getElementById("keithley_curr_display").innerHTML = value*1000000;
+	});
 }

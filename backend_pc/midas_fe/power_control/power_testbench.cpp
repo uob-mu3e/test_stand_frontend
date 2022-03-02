@@ -31,6 +31,7 @@
 #include "GenesysDriver.h"
 #include "HMP4040Driver.h"
 #include "Keithley2611BDriver.h"
+#include "Keithley2450Driver.h"
 
 using midas::odb;
 
@@ -110,7 +111,7 @@ EQUIPMENT equipment[] = {
      	"MIDAS",                   /* format */
      	TRUE,                      /* enabled */
      	RO_STOPPED | RO_RUNNING | RO_PAUSE,        /* all, but not write to odb */
-     	10000,                     /* read every 10 sec */
+        1000,                     /* read every 1 sec */
      	0,                         /* stop run after this event limit */
     	0,                         /* number of sub events */
         1,                         /* log history every event */
@@ -119,14 +120,14 @@ EQUIPMENT equipment[] = {
     },
 
     {"KEITHLEY0",                       /* equipment name */
-        {120, 0,                       /* event ID, trigger mask */
+        {121, 0,                       /* event ID, trigger mask */
         "SYSTEM",                  /* event buffer */
         EQ_PERIODIC,                   /* equipment type */
         0,                         /* event source */
         "MIDAS",                   /* format */
         TRUE,                      /* enabled */
         RO_STOPPED | RO_RUNNING | RO_PAUSE,        /* all, but not write to odb */
-        1000,                     /* read every 1 sec */
+        1000,                     /* read every 0.5 sec */
         0,                         /* stop run after this event limit */
         0,                         /* number of sub events */
         1,                         /* log history every event */
@@ -229,7 +230,7 @@ void mscb_define(std::string eq, std::string devname, DEVICE_DRIVER *driver,
    custom["Pixel Test"] = "transfer/main.html";
 }
 
-/*-- Error dispatcher causing communiction alarm -------------------*/
+/*-- Error dispatcher causing communication alarm -------------------*/
 
 void scfe_error(const char *error)
 {
@@ -319,7 +320,7 @@ INT frontend_init()
 		}
         else if( std::find( keithley_names.begin(), keithley_names.end(), shortname ) != keithley_names.end() )
         {
-            drivers.emplace_back(new Keithley2611BDriver(equipment[eqID].name,&equipment[eqID].info));
+            drivers.emplace_back(new Keithley2450Driver(equipment[eqID].name,&equipment[eqID].info));
         }
         else if(name == std::string("PowerDistribution")){
             // do nothing, also no warning

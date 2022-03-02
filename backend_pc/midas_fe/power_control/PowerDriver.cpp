@@ -152,6 +152,15 @@ float PowerDriver::Read(std::string cmd, INT& error)
 		error = FE_ERR_DRIVER;		
 	}
     try {
+        if (reply.find("smu") != std::string::npos)
+        {
+            reply = reply.substr(12,14);
+        }
+        /*else if (reply.find("e-") != std::string::npos)
+        {
+            int pos = reply.find("e");
+            reply = reply.substr(0, pos);
+        }*/
 	    value = std::stof(reply);
     }
     catch (const std::exception& e) {
@@ -217,7 +226,7 @@ std::vector<std::string> PowerDriver::ReadErrorQueue(int index, INT& error)
 		}
         //std::cout << " error queue " << reply << std::endl;
 		error_queue.push_back(reply);
-        if(reply.substr(0,1)=="0" || reply.find("Queue Is Empty") != std::string::npos) break;
+        if(reply.substr(0,1)=="0" || reply.find("Queue Is Empty") != std::string::npos || reply.find("No error") != std::string::npos) break;
 	}
 	return error_queue;
 }
@@ -301,8 +310,8 @@ bool PowerDriver::ReadState(int index,INT& error)
 		error = FE_ERR_DRIVER;
 	}
 
-    if(reply.substr(0,1)=="0") value=false;
-    else if(reply.substr(0,1)=="1") value=true;
+    if(reply.substr(0,1)=="0" || reply.find("OFF") != std::string::npos) value=false;
+    else if(reply.substr(0,1)=="1" || reply.find("ON") != std::string::npos) value=true;
 	else
 	{ 
 		cm_msg(MERROR, "power supply read ... ", "could not read %s valid state of supply/channel: %d", name.c_str(),instrumentID[index]);

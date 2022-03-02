@@ -1,25 +1,25 @@
-#include "Keithley2611BDriver.h"
+#include "Keithley2450Driver.h"
 #include <thread>
 
 
-Keithley2611BDriver::Keithley2611BDriver()
+Keithley2450Driver::Keithley2450Driver()
 {
 
 }
 
 
-Keithley2611BDriver::~Keithley2611BDriver()
+Keithley2450Driver::~Keithley2450Driver()
 {
 }
 
 
-Keithley2611BDriver::Keithley2611BDriver(std::string n, EQUIPMENT_INFO* inf) : PowerDriver(n,inf)
+Keithley2450Driver::Keithley2450Driver(std::string n, EQUIPMENT_INFO* inf) : PowerDriver(n,inf)
 {
     std::cout << " Keithley2611B driver with " << instrumentID.size() << " channels instantiated " << std::endl;
 }
 
 
-INT Keithley2611BDriver::ConnectODB()
+INT Keithley2450Driver::ConnectODB()
 {
 	InitODBArray();
     PowerDriver::ConnectODB();
@@ -33,23 +33,23 @@ INT Keithley2611BDriver::ConnectODB()
 }
 
 
-void Keithley2611BDriver::InitODBArray()
+void Keithley2450Driver::InitODBArray()
 {
 	midas::odb settings_array = { {"Channel Names",std::array<std::string,4>()} };
 	settings_array.connect("/Equipment/"+name+"/Settings");
 }
 
 
-INT Keithley2611BDriver::Init()
+INT Keithley2450Driver::Init()
 {
 	ip = settings["IP"];
-	std::cout << "Call init on " << ip << std::endl;
+    std::cout << "Call init on " << ip << std::endl;
 	std::string cmd = "";
 	std::string reply = "";
 	INT err;
 	
     //longer wait time for the HMP supplies //TODO What abut Keithly?
-	client->SetDefaultWaitTime(50);
+    client->SetDefaultWaitTime(200);
 	
 	//global reset if requested
     if(settings["Global Reset On FE Start"] == true)
@@ -65,11 +65,11 @@ INT Keithley2611BDriver::Init()
     if( !client->Write(cmd) ) cm_msg(MERROR, "Init KEITH supply ... ", "could not beep %s", ip.c_str());
 	std::this_thread::sleep_for(std::chrono::milliseconds(client->GetWaitTime()));
 	
-	std::vector<std::string> error_queue = ReadErrorQueue(-1,err);
+    std::vector<std::string> error_queue = ReadErrorQueue(-1,err);
 	for(auto& s : error_queue)
 	{
-        if(s.find("Queue Is Empty") == std::string::npos)		{	cm_msg(MERROR,"power_fe"," Error from KEITH supply : %s",s.c_str());		}
-	}
+        if(s.find("No error") == std::string::npos)		{	cm_msg(MERROR,"power_fe"," Error from KEITH supply : %s",s.c_str());		}
+    } //TOFIX: what's wrong???
 	
 	
     //KEITH has 1 channel
@@ -96,15 +96,14 @@ INT Keithley2611BDriver::Init()
 	for(int i = 0; i<nChannels; i++ ) 
 	{ 	
 		state[i]=ReadState(i,err);
-		
 		voltage[i]=ReadVoltage(i,err);
         demandvoltage[i]=ReadSetVoltage(i,err);//T
 
 		current[i]=ReadCurrent(i,err);
 		currentlimit[i]=ReadCurrentLimit(i,err);
 		
-		OVPlevel[i]=ReadOVPLevel(i,err);
-		
+        //OVPlevel[i]=ReadOVPLevel(i,err);
+        OVPlevel[i]=20;
   	
 	 	if(err!=FE_SUCCESS) return err;  	
 	}
@@ -138,7 +137,7 @@ INT Keithley2611BDriver::Init()
 }
 
 
-INT Keithley2611BDriver::ReadAll()
+INT Keithley2450Driver::ReadAll()
 {
 	INT err;
 	INT err_accumulated;
@@ -182,17 +181,17 @@ INT Keithley2611BDriver::ReadAll()
 	 	if(err_accumulated!=FE_SUCCESS) return err_accumulated & 0xFFFE; //remove the success bit if there is any		
 	}
 	
-	std::vector<std::string> error_queue = ReadErrorQueue(-1,err);
+    std::vector<std::string> error_queue = ReadErrorQueue(-1,err);
 	for(auto& s : error_queue)
 	{
-        if(s.find("Queue Is Empty") == std::string::npos)		{	cm_msg(MERROR,"power_fe"," Error from KEITH supply : %s",s.c_str());		}
-	}
+        if(s.find("No error") == std::string::npos)		{	cm_msg(MERROR,"power_fe"," Error from KEITH supply : %s",s.c_str());		}
+    } //TOFIX: what's wrong???
 	
 	return FE_SUCCESS;
 }
 
 
-void Keithley2611BDriver::ReadESRChanged()
+void Keithley2450Driver::ReadESRChanged()
 {
 	INT err;
 	bool value = settings["Read ESR"];
@@ -204,29 +203,29 @@ void Keithley2611BDriver::ReadESRChanged()
 }
 
 
-bool Keithley2611BDriver::AskPermissionToTurnOn(int channel) //extra check whether it is safe to tunr on supply;
+bool Keithley2450Driver::AskPermissionToTurnOn(int channel) //extra check whether it is safe to tunr on supply;
 {
     return true;
 }
 
-std::string Keithley2611BDriver::GenerateCommand(COMMAND_TYPE cmdt, float val)
+std::string Keithley2450Driver::GenerateCommand(COMMAND_TYPE cmdt, float val)
 {
     if (cmdt == COMMAND_TYPE::SetCurrent) {
-        return "smua.source.limiti="+std::to_string(val)+"\n";
+        return "smu.source.ilimit.level="+std::to_string(val)+"\n";
     } else if (cmdt == COMMAND_TYPE::ReadCurrent){
-        return "print(smua.measure.i())\n";
+        return "smu.measure.read(defbuffer1);printbuffer(defbuffer1.n, defbuffer1.n, defbuffer1)\n";
     } else if (cmdt == COMMAND_TYPE::ReadState) {
-        return "print(smua.source.output)\n";
+        return "print(smu.source.output)\n";
     } else if (cmdt == COMMAND_TYPE::ReadVoltage){
-        return "print(smua.measure.v())\n";
+        return "print(smu.source.level)\n";
     } else if (cmdt == COMMAND_TYPE::ReadSetVoltage){
-        return "print(smua.source.levelv)\n";
+        return "print(smu.source.level)\n";
     } else if (cmdt == COMMAND_TYPE::ReadCurrentLimit){
-        return "print(smua.source.limiti)\n";
+        return "print(smu.source.ilimit.level)\n";
     } else if (cmdt == COMMAND_TYPE::SetVoltage){
-        return "smua.source.levelv="+std::to_string(val)+"\n";
+        return "smu.source.level="+std::to_string(val)+"\n";
     } else if (cmdt == COMMAND_TYPE::Beep){
-        return "beeper.beep(0.5, 4400)\n";//TODO try out
+        return "beeper.beep(0.5, 4400);\n";
     } else if (cmdt == COMMAND_TYPE::CLearStatus){
         return "*CLS\n";
     } else if (cmdt == COMMAND_TYPE::OPC){
@@ -237,13 +236,22 @@ std::string Keithley2611BDriver::GenerateCommand(COMMAND_TYPE cmdt, float val)
         return "*RST\n";
     } else if (cmdt == COMMAND_TYPE::SetState){
         int ch = (int)val;
-        return "smua.source.output=" + std::to_string(ch) + "\n";
+        if (ch == 1) {
+            return "smu.source.output=smu.ON\n";
+        }
+        else if (ch == 0) {
+            return "smu.source.output=smu.OFF\n";
+        }
+        else {
+            std::cout << "Error: set state can be onlz 1 or 0\n";//TODO: message in midas
+            return "\n";
+        }
     } else if (cmdt == COMMAND_TYPE::ReadErrorQueue){
         return "print(errorqueue.next())\n";
     } else if (cmdt == COMMAND_TYPE::ReadOVPLevel){
-        return "print(smua.source.limitv)\n";
+        return "print(smu.source.protect.level)\n";
     } else if (cmdt == COMMAND_TYPE::SetOVPLevel) {
-        return "smua.source.limitv="+std::to_string(val)+"\n";
+        return "smu.source.protect.level=smu.PROTECT_"+std::to_string((int)(val))+"V\n";
     }
     return "";
 }
