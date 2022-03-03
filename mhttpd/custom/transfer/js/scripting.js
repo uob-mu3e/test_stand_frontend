@@ -1,24 +1,26 @@
-/*
-javascript content:
-
-Difference between const, let and var in JS:
-	- var: can be redeclared and updated
-	- let: can be updated but not redeclared
-	- const: cannot be updated nor redeclared
-*/
-
-
 //TODO Add error handling
 //TODO add comments
 
 var full_config = {};
 var dac_library = {};
-var _temp = 0;
-var _mupixChipToConfigureValue;
+var temp = 0;
+
+
+
+
+/*// Setup listeners TODO TRY OUT
+window.addEventListener('DOMContentLoaded', function(e){
+	document.getElementById("keithley_curr").addEventListener('DOMSubtreeModified', function(e){
+		value = parseFloat(document.getElementById("keithley_curr").innerHTML);
+	})
+});*/
+
 
 /**
 * Function called on loading of page. It loads mhttpd and populates dac_library
 * with list of DACs avaliable for change with mjsonrpc_db_ls.
+*
+* @author Pepe
 */
 function load(){
 	mhttpd_init('Import from GUI')
@@ -32,46 +34,31 @@ function load(){
 		   dac_library = {'BIASDACS': result.data[0],
 		   				  'CONFDACS': result.data[1],
 						  'VDACS':result.data[2]};
-
-		   //console.log(dac_library);
-
 	   }).catch(function(error) {
 		   console.log("Error getting info on DACs avaliable for change in ODB:", error);
 	   });
-
-   mjsonrpc_db_get_values(["/Equipment/Switching/Settings/MupixChipToConfigure"]).then(function(rpc) {
-  		   _mupixChipToConfigureValue = rpc.result.data[0];
-  	   }).catch(function(error) {
-  		   console.log("Error getting info on DACs avaliable for change in ODB:", error);
-  	   });
-
-
-	//  Setup event listeners	
 }
 
-console.log("Before listeenr")
-document.addEventListener('DOMContentLoaded', function(event) {
-	console.log("Executed");
-	document.getElementById("keithley_curr").addEventListener("DOMSubtreeModified", function () {
-		console.log("Executed 21:"+event)
-		value = parseFloat(document.getElementById("keithley_curr").innerHTML);
-		document.getElementById("keithley_curr_display").innerHTML = value*1000000;
-		});
-})
-console.log("After listener")
+
 
 /**
 * Function that handles the load-file request coming from user. It will dump all
-* content of JSON file into an object: full_config (TODO What's the name of this
-* GUI? )
+* content of JSON file into an object: full_config
+*
+* @author Pepe
 */
 function handleFile() {
 	const [file] = document.querySelector('input[type=file]').files;
 	const reader = new FileReader();
 
-	reader.addEventListener("load", () => {
+	reader.addEventListener("load", async function() {
 		// TODO implement async json parsing
-		 full_config = JSON.parse(reader.result);
+		try {
+			full_config = await JSON.parse(reader.result); //TODO TRY OUT
+		} catch (err) {
+			console.log("Could not read input config file:", err)
+		}
+
 	}, false);
 
 	if (file) {
@@ -82,54 +69,64 @@ function handleFile() {
 }
 
 
-function uploadConfigToODB(){
-	// Algo: (preprocess) filter out empty dacs from full_config. Iterate
-	// over each dac defined in full_config to check if it is in dac_library.
-	// If it is, set order to ODB. TODO check performance
+/**
+ * Function that will upload the input config in JSON format into the ODB. It will preprocess 
+ * and filter out empty dacs from the inputted list. It will iterate over each remaining dac 
+ * defined in the input config to check if it is in the current ODB library. If it is, the DAC 
+ * will be selected to later on update the ODB value with the new one. 
+ * 
+ * @author Pepe
+ */
+async function uploadConfigToODB(){ //TODO TRY OUT
 	// Filter out empty named dacs for full_config:
 	if (full_config != {}){
 		const content = document.querySelector(".content");
 
-		if (_temp == 0){
-			_temp = {};
+		if (temp == 0){
+			temp = {};
 			for (var i in full_config.zdacs){
-				let _name = full_config.zdacs[i].name;
-				let _value = full_config.zdacs[i].value;
+				let name = full_config.zdacs[i].name;
+				let value = full_config.zdacs[i].value;
 
-				if (_name != ''){
-					_temp[_name] = _value;
+				if (name != ''){
+					temp[name] = value;
 				}
 			}
 			// Copy result to full_config
-			full_config = _temp;
+			full_config = temp;
 		} else {
 			console.log("Not first time")
 		}
 
 		// Iterate over each full_config dac, check if its in dac_library and
 		// set order to ODB
-		var _paths = []
-		var _values = []
+		var paths = []
+		var values = []
 
 		for (var dac in full_config){
 			if (Object.keys(dac_library.BIASDACS).includes(dac)){
-				_paths[_paths.length] = "/Equipment/Mupix/Settings/BIASDACS/1/"+dac
-				_values[_values.length] = full_config[dac]
+				paths[paths.length] = "/Equipment/Mupix/Settings/BIASDACS/1/"+dac
+				values[values.length] = full_config[dac]
 				console.log("Entered BIAS")
 			} else if (Object.keys(dac_library.CONFDACS).includes(dac)){
-				_paths[_paths.length] = "/Equipment/Mupix/Settings/CONFDACS/1/"+dac
-				_values[_values.length] = full_config[dac]
+				paths[paths.length] = "/Equipment/Mupix/Settings/CONFDACS/1/"+dac
+				values[values.length] = full_config[dac]
 				console.log("Entered CONF")
 			} else if (Object.keys(dac_library.VDACS).includes(dac)){
-				_paths[_paths.length] = "/Equipment/Mupix/Settings/VDACS/1/"+dac
-				_values[_values.length] = full_config[dac]
+				paths[paths.length] = "/Equipment/Mupix/Settings/VDACS/1/"+dac
+				values[values.length] = full_config[dac]
 				console.log("Entered VDACS")
 			} else {
 				console.log('DAC', dac ,' in input JSON file not present in ODB');
 			}
 		}
 
-		modbset(_paths, _values);
+		try{
+			await mjsonrpc_db_paste(paths, values);
+		} catch (err) {
+			dlgAlert("Error while uploading config to ODB:", err)
+		}
+		
 
 
 		var now = new Date();
@@ -140,20 +137,3 @@ function uploadConfigToODB(){
 }
 
 
-function checkAndConfig(){
-	if (_mupixChipToConfigureValue != 1){
-	   modbset("/Equipment/Switching/Settings/MupixChipToConfigure", 1)
-	   _mupixChipToConfigureValue = 1
-	   console.log("MupxChipToConfigureValue set to 1") //TODO add error handling
-	}
-
-	modbset("/Equipment/Switching/Settings/MupixConfig", "y")
-}
-
-
-function uA_listeners() {
-	document.getElementById("keithley_curr").addEventListener("DOMSubtreeModified", function () {
-		value = parseFloat(document.getElementById("keithley_curr").innerHTML);
-		document.getElementById("keithley_curr_display").innerHTML = value*1000000;
-	});
-}
