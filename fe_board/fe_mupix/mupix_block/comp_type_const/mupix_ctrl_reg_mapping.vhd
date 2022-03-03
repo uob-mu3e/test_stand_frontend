@@ -11,7 +11,6 @@ use ieee.numeric_std.all;
 use work.mupix_registers.all;
 use work.mupix.all;
 
-
 entity mupix_ctrl_reg_mapping is
 port (
     i_clk156                    : in  std_logic;
@@ -57,7 +56,7 @@ architecture rtl of mupix_ctrl_reg_mapping is
     process (i_clk156, i_reset_n)
         variable regaddr : integer;
     begin
-        if (i_reset_n = '0') then 
+        if (i_reset_n = '0') then
             o_mp_ctrl_enable          <= (others => '0');
             mp_ctrl_invert_csn        <= '0';
             o_mp_ctrl_data_all_we     <= '0';
@@ -158,6 +157,5 @@ architecture rtl of mupix_ctrl_reg_mapping is
 
         end if;
     end process;
-
 
 end architecture;

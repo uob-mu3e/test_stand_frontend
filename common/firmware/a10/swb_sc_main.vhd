@@ -37,7 +37,7 @@ architecture arch of swb_sc_main is
 
     signal addr_reg    : std_logic_vector(15 downto 0) := (others => '0');
     signal wren_reg    : std_logic_vector(15 downto 0);--)(NLINKS-1 downto 0);
-    
+
     type state_type is (idle, read_fpga_id, read_data);
     signal state : state_type;
 
@@ -52,7 +52,7 @@ architecture arch of swb_sc_main is
 begin
 
     o_mem_addr <= addr_reg;
-    
+
     process(i_clk, i_reset_n)
     begin
         if ( i_reset_n = '0' ) then

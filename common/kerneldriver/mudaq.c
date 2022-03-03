@@ -55,7 +55,7 @@ static DEFINE_IDA(mudaq_ida);
 //
 
 struct mudaq {
-    struct pci_dev *pci_dev;
+    struct pci_dev* pci_dev;
     u32 to_user[2];
     long irq;
     atomic_t event;
