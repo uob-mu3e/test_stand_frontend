@@ -325,9 +325,11 @@ begin
     o_header_debug  <= '1' when rdata_debug_s(37 downto 32) = pre_marker else '0';
     o_trailer_debug <= '1' when rdata_debug_s(37 downto 32) = tr_marker else '0';
     link_number     <= rdata_debug_s(37 downto 32);
+
     e_lookup : entity work.chip_lookup
-	generic map ( g_LOOPUP_NAME => "edmRun2021" )
+    generic map ( g_LOOPUP_NAME => "edmRun2021" )
     port map ( i_fpgaID => rdata_debug_s(35 downto 32), i_chipID => rdata_debug_s(25 downto 22), o_chipID => chipID );
+
     o_q_debug <= rdata_debug_s(31 downto 0) when  rdata_debug_s(37 downto 32) = pre_marker or
                                                   rdata_debug_s(37 downto 32) = tr_marker  or
                                                   rdata_debug_s(37 downto 32) = ts1_marker or

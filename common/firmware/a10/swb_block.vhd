@@ -169,19 +169,21 @@ begin
     g_demerge: FOR i in g_NLINKS_FEB_TOTL-1 downto 0 GENERATE
         e_data_demerge : entity work.swb_data_demerger
         port map(
-            i_clk               => i_clk_156,
-            i_reset             => not i_resets_n_156(RESET_BIT_EVENT_COUNTER),
             i_aligned           => '1',
             i_data              => i_rx(i),
             i_datak             => i_rx_k(i),
             i_fifo_almost_full  => '0',--link_fifo_almost_full(i),
+
             o_data              => rx_data(i),
             o_datak             => rx_data_k(i),
             o_sc                => rx_sc(i),
             o_sck               => rx_sc_k(i),
             o_rc                => rx_rc(i),
             o_rck               => rx_rc_k(i),
-            o_fpga_id           => open--,
+            o_fpga_id           => open,
+
+            i_reset             => not i_resets_n_156(RESET_BIT_EVENT_COUNTER),
+            i_clk               => i_clk_156--,
         );
     end generate;
 
@@ -241,7 +243,6 @@ begin
         NLINKS => g_NLINKS_FEB_TOTL--,
     )
     port map (
-        reset_n                 => i_resets_n_156(RESET_BIT_SC_SECONDARY),
         i_link_enable           => i_writeregs_156(FEB_ENABLE_REGISTER_W)(g_NLINKS_FEB_TOTL-1 downto 0),
         link_data_in            => rx_sc,
         link_data_in_k          => rx_sc_k,
@@ -250,7 +251,9 @@ begin
         mem_data_out            => o_rmem_wdata,
         mem_wren                => o_rmem_we,
         stateout                => o_readregs_156(SC_STATE_REGISTER_R)(31 downto 28),
-        clk                     => i_clk_156--,
+
+        i_reset_n               => i_resets_n_156(RESET_BIT_SC_SECONDARY),
+        i_clk                   => i_clk_156--,
     );
 
 

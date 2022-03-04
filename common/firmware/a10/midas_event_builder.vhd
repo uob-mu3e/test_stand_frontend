@@ -559,7 +559,7 @@ begin
         -- state machine singals
         event_tagging_state <= EVENT_IDLE;
 
-    --
+        --
     elsif rising_edge(i_clk_dma) then
         flags           <= x"00000011";
         trigger_mask    <= (others => '0');

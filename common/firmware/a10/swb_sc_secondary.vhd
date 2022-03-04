@@ -16,8 +16,6 @@ generic (
     skip_init : std_logic := '0'
 );
 port (
-    clk                         : in    std_logic;
-    reset_n                     : in    std_logic;
     i_link_enable               : in    std_logic_vector(NLINKS-1 downto 0);
     link_data_in                : in    work.util.slv32_array_t(NLINKS-1 downto 0);
     link_data_in_k              : in    work.util.slv4_array_t(NLINKS-1 downto 0);
@@ -25,7 +23,10 @@ port (
     mem_addr_out                : out   std_logic_vector(15 downto 0);
     mem_addr_finished_out       : out   std_logic_vector(15 downto 0);
     mem_wren                    : out   std_logic;
-    stateout                    : out   std_logic_vector(3 downto 0)
+    stateout                    : out   std_logic_vector(3 downto 0);
+
+    i_reset_n                   : in    std_logic;
+    i_clk                       : in    std_logic--;
 );
 end entity;
 
@@ -45,22 +46,22 @@ begin
     mem_addr_out <= mem_addr_o;
     mem_wren     <= mem_wren_o;
 
-    process(reset_n, clk)
+    process(i_reset_n, i_clk)
     begin
-    if ( reset_n = '0' ) then
+    if ( i_reset_n = '0' ) then
         mem_data_o <= (others => '0');
         mem_addr_o <= (others => '1');
         mem_addr_finished_out <= (others => '1');
         stateout <= (others => '0');
         mem_wren_o <= '0';
         current_link <= 0;
-        if (skip_init = '0') then
+        if ( skip_init = '0' ) then
             state <= init;
         else
             state <= waiting;
         end if;
 
-    elsif rising_edge(clk) then
+    elsif rising_edge(i_clk) then
         stateout <= (others => '0');
         mem_data_o <= (others => '0');
         mem_wren_o <= '0';
@@ -69,14 +70,14 @@ begin
         case state is
         when init =>
             stateout(3 downto 0) <= x"1";
-            mem_addr_o 	<= mem_addr_o + '1';
-            mem_data_o	<= (others => '0');
-            mem_wren_o  <= '1';
+            mem_addr_o <= mem_addr_o + '1';
+            mem_data_o <= (others => '0');
+            mem_wren_o <= '1';
             if ( mem_addr_o = x"FFFE" ) then
                 mem_addr_finished_out <= (others => '1');
                 state <= waiting;
             end if;
-
+            --
         when waiting =>
             stateout(3 downto 0) <= x"2";
             --LOOP link mux take the last one for prio
@@ -108,13 +109,13 @@ begin
                 mem_wren_o <= '1';
                 state <= waiting;
             end if;
-
+            --
         when others =>
             stateout(3 downto 0) <= x"E";
             mem_data_o <= (others => '0');
             mem_wren_o <= '0';
             state <= waiting;
-
+            --
         end case;
 
     end if;

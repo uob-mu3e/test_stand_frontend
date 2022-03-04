@@ -421,5 +421,4 @@ begin
         o_farm_data_valid(i)    <= "00" when all_padding = '1' else merged_farm_data_valid(2 * i + 1 downto 2 * i);
     END GENERATE gen_farm_out;
 
-
 end architecture;

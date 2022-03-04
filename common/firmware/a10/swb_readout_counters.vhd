@@ -5,7 +5,6 @@ use ieee.numeric_std.all;
 use work.a10_counters.all;
 use work.a10_pcie_registers.all;
 
-
 entity swb_readout_counters is
 generic (
     g_A_CNT             : positive := 4;

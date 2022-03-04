@@ -78,7 +78,7 @@ begin
         hit_reg             <= (others => '0');
         link_to_fifo_state  <= idle;
         --
-    elsif ( rising_edge(i_clk_156) ) then
+    elsif rising_edge(i_clk_156) then
 
         rx_156_wen  <= '0';
         rx_156_data(31 downto 0)  <= i_rx;
