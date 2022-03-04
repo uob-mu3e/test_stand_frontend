@@ -8,14 +8,6 @@ var temp = 0;
 
 
 
-/*// Setup listeners TODO TRY OUT
-window.addEventListener('DOMContentLoaded', function(e){
-	document.getElementById("keithley_curr").addEventListener('DOMSubtreeModified', function(e){
-		value = parseFloat(document.getElementById("keithley_curr").innerHTML);
-	})
-});*/
-
-
 /**
 * Function called on loading of page. It loads mhttpd and populates dac_library
 * with list of DACs avaliable for change with mjsonrpc_db_ls.
@@ -23,7 +15,7 @@ window.addEventListener('DOMContentLoaded', function(e){
 * @author Pepe
 */
 function load(){
-	mhttpd_init('Import from GUI')
+	mhttpd_init('Import from GUI', 100)
 
 	mjsonrpc_db_ls(["/Equipment/Mupix/Settings/BIASDACS/1",
 				   "/Equipment/Mupix/Settings/CONFDACS/1",
