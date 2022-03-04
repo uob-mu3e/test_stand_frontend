@@ -5,7 +5,6 @@ use ieee.numeric_std.all;
 use work.mudaq.all;
 use work.a10_pcie_registers.all;
 
-
 entity a10_block is
 generic (
     g_XCVR0_CHANNELS    : integer := 16;

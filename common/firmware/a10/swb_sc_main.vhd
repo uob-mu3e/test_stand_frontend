@@ -43,9 +43,9 @@ architecture arch of swb_sc_main is
 
     signal length_we, length_we_reg : std_logic;
     signal wait_cnt : std_logic_vector(1 downto 0);
-    signal mem_datak : std_logic_vector(3 downto 0); 
-    signal mem_data  : std_logic_vector(31 downto 0); 
-    signal mask_addr : std_logic_vector(15 downto 0); 
+    signal mem_data  : std_logic_vector(31 downto 0);
+    signal mem_datak : std_logic_vector(3 downto 0);
+    signal mask_addr : std_logic_vector(15 downto 0);
     signal length_s : std_logic_vector(15 downto 0);
     signal cur_length : std_logic_vector(15 downto 0);
 
@@ -94,16 +94,16 @@ begin
         state       <= idle;
         o_done      <= '0';
         o_state     <= (others => '0');
-        wait_cnt    <= "00";
-        mem_datak   <= (others => '0');
+        wait_cnt    <= (others => '0');
         mem_data    <= (others => '0');
+        mem_datak   <= (others => '0');
         length_s    <= (others => '0');
         cur_length  <= (others => '0');
         --
-    elsif ( rising_edge(i_clk) ) then
+    elsif rising_edge(i_clk) then
         wait_cnt    <= wait_cnt + '1';
-        mem_datak   <= (others => '0');
         mem_data    <= i_mem_data;
+        mem_datak   <= (others => '0');
         wren_reg    <= (others => '0');
 
         if (addr_reg = x"FFFF") then
@@ -118,12 +118,12 @@ begin
                     state       <= read_fpga_id;
                     length_s    <= i_length;
                     o_done      <= '0';
-                    wait_cnt    <= "00";
+                    wait_cnt    <= (others => '0');
                 end if;
-
+                --
             when read_fpga_id =>
                 o_state <= x"0000002";
-                if(wait_cnt = "11" )then
+                if ( wait_cnt = "11" ) then
                     if (i_mem_data(7 downto 0) = x"BC") then
                         state           <= read_data;
                         addr_reg        <= addr_reg + '1';
@@ -137,10 +137,10 @@ begin
                         end if;
                     end if;
                 end if;
-
+                --
             when read_data =>
                 o_state <= x"0000003";
-                if(wait_cnt = "11" )then
+                if ( wait_cnt = "11" ) then
                     if(mask_addr(15 downto 0) = x"FFFF") then
                         wren_reg    <= (others => '1');
                     else
@@ -149,7 +149,7 @@ begin
                     if (length_s + '1' = cur_length ) then
                         mem_datak   <= "0001";
                         state       <= idle;
-                        wait_cnt    <= "00";
+                        wait_cnt    <= (others => '0');
                         addr_reg    <= (others => '0');
                         length_s    <= (others => '0');
                         cur_length  <= (others => '0');
@@ -158,13 +158,14 @@ begin
                         addr_reg    <= addr_reg + '1';
                     end if;
                 end if;
-
+                --
             when others =>
                 state       <= idle;
                 addr_reg    <= (others => '0');
                 wren_reg    <= (others => '0');
                 cur_length  <= (others => '0');
                 length_s    <= (others => '0');
+                --
         end case;
 
     end if;
