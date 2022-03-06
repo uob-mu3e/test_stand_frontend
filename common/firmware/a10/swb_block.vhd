@@ -170,8 +170,7 @@ begin
         e_data_demerge : entity work.swb_data_demerger
         port map(
             i_aligned           => '1',
-            i_data              => i_rx(i),
-            i_datak             => i_rx_k(i),
+            i_data              => work.mu3e.to_link(i_rx(i), i_rx_k(i)),
             i_fifo_almost_full  => '0',--link_fifo_almost_full(i),
 
             o_data              => rx_data(i),

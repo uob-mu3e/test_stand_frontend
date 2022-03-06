@@ -8,8 +8,7 @@ use ieee.numeric_std.all;
 entity swb_data_demerger is
 port (
     i_aligned:                  in  std_logic; -- word alignment achieved
-    i_data:                     in  std_logic_vector(31 downto 0); -- optical from frontend board
-    i_datak:                    in  std_logic_vector(3 downto 0);
+    i_data                      : in    work.mu3e.link_t; -- optical from frontend board
     i_fifo_almost_full:         in  std_logic;
 
     o_data:                     out std_logic_vector(31 downto 0); -- to sorting fifos
@@ -57,46 +56,46 @@ begin
         case demerge_state is
 
         when idle =>
-            if (i_datak = "0001" and i_data(7 downto 0) /= work.util.K28_5 and i_data(7 downto 0) /= work.util.K28_4) then
-                o_rc                    <= i_data;
-                o_rck                   <= i_datak;
-            elsif (i_datak(3 downto 0) = "0001" and i_data(7 downto 0) = work.util.K28_5 and i_data(31 downto 29)="111" and i_fifo_almost_full='0') then -- Mupix or MuTrig preamble
-                o_fpga_id               <= i_data(23 downto 8);
+            if ( i_data.datak = "0001" and i_data.data(7 downto 0) /= work.util.K28_5 and i_data.data(7 downto 0) /= work.util.K28_4 ) then
+                o_rc <= i_data.data;
+                o_rck <= i_data.datak;
+            elsif ( i_data.datak(3 downto 0) = "0001" and i_data.data(7 downto 0) = work.util.K28_5 and i_data.data(31 downto 29) = "111" and i_fifo_almost_full='0' ) then -- Mupix or MuTrig preamble
+                o_fpga_id <= i_data.data(23 downto 8);
                 demerge_state           <= receiving_data;
-                o_data                  <= i_data;
-                o_datak                 <= i_datak;
-            elsif (i_datak(3 downto 0) = "0001" and i_data(7 downto 0) = work.util.K28_5 and i_data(31 downto 26)="000111") then -- SC preamble
-                o_fpga_id                 <= i_data(23 downto 8);
+                o_data <= i_data.data;
+                o_datak <= i_data.datak;
+            elsif ( i_data.datak(3 downto 0) = "0001" and i_data.data(7 downto 0) = work.util.K28_5 and i_data.data(31 downto 26) = "000111" ) then -- SC preamble
+                o_fpga_id                 <= i_data.data(23 downto 8);
                 demerge_state           <= receiving_slowcontrol;
-                slowcontrol_type        <= i_data(25 downto 24);
-                o_sc                    <= i_data;
-                o_sck                   <= i_datak;
+                slowcontrol_type <= i_data.data(25 downto 24);
+                o_sc <= i_data.data;
+                o_sck <= i_data.datak;
             end if;
 
         when receiving_data =>
-            if (i_datak = "0001" and i_data(7 downto 0) /= work.util.K28_5 and i_data(7 downto 0) /= work.util.K28_4) then
-                o_rc                <= i_data;
-                o_rck               <= i_datak;
-            elsif(i_data (7 downto 0) = work.util.K28_4 and i_datak = "0001") then
+            if ( i_data.datak = "0001" and i_data.data(7 downto 0) /= work.util.K28_5 and i_data.data(7 downto 0) /= work.util.K28_4 ) then
+                o_rc <= i_data.data;
+                o_rck <= i_data.datak;
+            elsif ( i_data.data(7 downto 0) = work.util.K28_4 and i_data.datak = "0001" ) then
                 demerge_state       <= idle;
-                o_data              <= i_data;
-                o_datak             <= i_datak;
+                o_data <= i_data.data;
+                o_datak <= i_data.datak;
             else
-                 o_data             <= i_data;
-                 o_datak            <= i_datak;
+                 o_data <= i_data.data;
+                 o_datak <= i_data.datak;
             end if;
 
         when receiving_slowcontrol =>
-            if (i_datak = "0001" and i_data(7 downto 0) /= work.util.K28_5 and i_data(7 downto 0) /= work.util.K28_4) then
-                o_rc                <= i_data;
-                o_rck               <= i_datak;
-            elsif(i_data (7 downto 0) = work.util.K28_4 and i_datak = "0001") then
+            if ( i_data.datak = "0001" and i_data.data(7 downto 0) /= work.util.K28_5 and i_data.data(7 downto 0) /= work.util.K28_4 ) then
+                o_rc <= i_data.data;
+                o_rck <= i_data.datak;
+            elsif ( i_data.data(7 downto 0) = work.util.K28_4 and i_data.datak = "0001" ) then
                 demerge_state       <= idle;
-                o_sc                <= i_data;
-                o_sck               <= i_datak;
+                o_sc <= i_data.data;
+                o_sck <= i_data.datak;
             else
-                o_sc                <= i_data;
-                o_sck               <= i_datak;
+                o_sc <= i_data.data;
+                o_sck <= i_data.datak;
             end if;
 
         when others =>
