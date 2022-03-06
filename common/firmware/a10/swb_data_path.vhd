@@ -38,8 +38,7 @@ port(
     i_resets_n_156   : in  std_logic_vector(31 downto 0);
     i_resets_n_250   : in  std_logic_vector(31 downto 0);
 
-    i_rx             : in  work.util.slv32_array_t(g_NLINKS_DATA-1 downto 0);
-    i_rx_k           : in  work.util.slv4_array_t(g_NLINKS_DATA-1 downto 0);
+    i_rx             : in  work.mu3e.link_array_t(g_NLINKS_DATA-1 downto 0);
     i_rmask_n        : in  std_logic_vector(g_NLINKS_DATA-1 downto 0);
 
     i_writeregs_156  : in  work.util.slv32_array_t(63 downto 0);
@@ -176,8 +175,8 @@ begin
                 rx(i)   <= gen_link;
                 rx_k(i) <= gen_link_k;
             else
-                rx(i)   <= i_rx(i);
-                rx_k(i) <= i_rx_k(i);
+                rx(i)   <= i_rx(i).data;
+                rx_k(i) <= i_rx(i).datak;
             end if;
         end if;
         end process;

@@ -99,16 +99,11 @@ architecture arch of swb_block is
     signal pixel_dma_wren, pixel_dma_endofevent, pixel_dma_done, scifi_dma_wren, scifi_dma_endofevent, scifi_dma_done : std_logic;
 
     --! demerged FEB links
-    signal rx_data         : work.util.slv32_array_t(g_NLINKS_FEB_TOTL-1 downto 0);
-    signal rx_data_k       : work.util.slv4_array_t(g_NLINKS_FEB_TOTL-1 downto 0);
-    signal rx_sc           : work.util.slv32_array_t(g_NLINKS_FEB_TOTL-1 downto 0);
-    signal rx_sc_k         : work.util.slv4_array_t(g_NLINKS_FEB_TOTL-1 downto 0);
-    signal rx_rc           : work.util.slv32_array_t(g_NLINKS_FEB_TOTL-1 downto 0);
-    signal rx_rc_k         : work.util.slv4_array_t(g_NLINKS_FEB_TOTL-1 downto 0);
-    signal rx_data_pixel   : work.util.slv32_array_t(g_NLINKS_DATA_PIXEL-1 downto 0);
-    signal rx_data_k_pixel : work.util.slv4_array_t(g_NLINKS_DATA_PIXEL-1 downto 0);
-    signal rx_data_scifi   : work.util.slv32_array_t(g_NLINKS_DATA_SCIFI-1 downto 0);
-    signal rx_data_k_scifi : work.util.slv4_array_t(g_NLINKS_DATA_SCIFI-1 downto 0);
+    signal rx_data         : work.mu3e.link_array_t(g_NLINKS_FEB_TOTL-1 downto 0);
+    signal rx_sc           : work.mu3e.link_array_t(g_NLINKS_FEB_TOTL-1 downto 0);
+    signal rx_rc           : work.mu3e.link_array_t(g_NLINKS_FEB_TOTL-1 downto 0);
+    signal rx_data_pixel   : work.mu3e.link_array_t(g_NLINKS_DATA_PIXEL-1 downto 0);
+    signal rx_data_scifi   : work.mu3e.link_array_t(g_NLINKS_DATA_SCIFI-1 downto 0);
 
     --! counters
     signal counter_swb_data_pixel_156 : work.util.slv32_array_t(g_NLINKS_DATA_PIXEL*5-1 downto 0);
@@ -174,11 +169,8 @@ begin
             i_fifo_almost_full  => '0',--link_fifo_almost_full(i),
 
             o_data              => rx_data(i),
-            o_datak             => rx_data_k(i),
             o_sc                => rx_sc(i),
-            o_sck               => rx_sc_k(i),
             o_rc                => rx_rc(i),
-            o_rck               => rx_rc_k(i),
             o_fpga_id           => open,
 
             i_reset             => not i_resets_n_156(RESET_BIT_EVENT_COUNTER),
@@ -205,7 +197,6 @@ begin
         o_feb_merger_timeout   => o_readregs_156(CNT_FEB_MERGE_TIMEOUT_R),
         i_aligned              => (others => '1'),
         i_data                 => rx_rc,
-        i_datak                => rx_rc_k,
         i_link_enable          => i_writeregs_156(FEB_ENABLE_REGISTER_W),
         i_addr                 => i_writeregs_156(RUN_NR_ADDR_REGISTER_W), -- ask for run number of FEB with this addr.
         i_run_number           => i_writeregs_156(RUN_NR_REGISTER_W)(23 downto 0),
@@ -243,8 +234,8 @@ begin
     )
     port map (
         i_link_enable           => i_writeregs_156(FEB_ENABLE_REGISTER_W)(g_NLINKS_FEB_TOTL-1 downto 0),
-        link_data_in            => rx_sc,
-        link_data_in_k          => rx_sc_k,
+        i_link_data             => rx_sc,
+
         mem_addr_out            => o_rmem_addr,
         mem_addr_finished_out   => o_readregs_156(MEM_WRITEADDR_LOW_REGISTER_R)(15 downto 0),
         mem_data_out            => o_rmem_wdata,
@@ -289,14 +280,8 @@ begin
     end process;
 
     -- link mapping
-    gen_pixel_data_mapping : FOR i in 0 to g_NLINKS_DATA_PIXEL - 1 GENERATE
-        rx_data_pixel(i)   <= rx_data(i);
-        rx_data_k_pixel(i) <= rx_data_k(i);
-    END GENERATE gen_pixel_data_mapping;
-    gen_scifi_data_mapping : FOR i in g_NLINKS_DATA_PIXEL to g_NLINKS_DATA_PIXEL + g_NLINKS_DATA_SCIFI - 1 GENERATE
-        rx_data_scifi(i-g_NLINKS_DATA_PIXEL)   <= rx_data(i);
-        rx_data_k_scifi(i-g_NLINKS_DATA_PIXEL) <= rx_data_k(i);
-    END GENERATE gen_scifi_data_mapping;
+    rx_data_scifi <= rx_data(g_NLINKS_DATA_PIXEL + g_NLINKS_DATA_SCIFI-1 downto 0 + g_NLINKS_DATA_PIXEL);
+    rx_data_pixel <= rx_data(g_NLINKS_DATA_PIXEL-1 downto 0);
 
     -- counter mapping
     counter_swb_250(4 downto 0) <= counter_swb_data_pixel_250;
@@ -336,7 +321,6 @@ begin
         i_resets_n_250   => i_resets_n_250,
 
         i_rx             => rx_data_pixel,
-        i_rx_k           => rx_data_k_pixel,
         i_rmask_n        => pixel_mask_n(g_NLINKS_DATA_PIXEL-1 downto 0),
 
         i_writeregs_156  => i_writeregs_156,
