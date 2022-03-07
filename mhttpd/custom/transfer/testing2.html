@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="en">
+	<head>
+		<!-- Encoding -->
+	   <meta charset="UTF-8">
+
+	   <link rel="stylesheet" href="midas.css">
+	   
+       <script src="controls.js"></script>
+	   <script src="midas.js"></script>
+	   <script src="mhttpd.js"></script>
+
+	   <title>Testing</title>
+
+       <script>
+           function load() {
+            mhttpd_init('Testing')
+           }
+       </script>
+	</head>
+
+	<body class="mcss" onload="load()">
+		<!-- header and side navigation will be filled in mhttpd_start -->
+		<div id="mheader"></div>
+		<div id="msidenav"></div>
+
+
+		<div id="mmain">
+            <h1>Hola mundo</h1>
+            <button onclick="hola()">Press me</button>
+
+            <script>
+                let heading = document.querySelector('h1');
+
+                // Goal: execute settimeout until counter reaches 10
+
+                function hola(){
+                    //heading.innerHTML = await get_lv_current(1);
+                    console.log('Hola')
+                }
+
+                async function get_lv_current(channel) {
+                    let result_rpc = {
+                        result = [999]
+                    };
+
+                    try {
+                        let result_rpc = await mjsonrpc_db_get_values(["/Equipment/HAMEG0/Variables/Current[" + channel.toString() + "]"]);
+                    }catch (err){
+                        mjsonrpc_error_alert(err);
+                        console.log("Could not get lv current from ODB:", err)
+                        return 0;
+                    }
+
+                    return result_rpc.result.data[0];
+                    
+                }
+
+                
+                
+                function iv_curve2(){
+                    let b, g = [8, 1, 2, 3 ,4, 5, 6, 7, 6, -1], i = 0; // control through this variable --> control through config?
+
+                    //Variables taken from GUI
+                    start_voltage = 0;
+                    final_voltage = 20; // Needs to be device specific. Can be changed, but should be set as default option after changing between devices
+                    step = 5; // this will result in final_voltage/step+1 iterations, unless stopped by current limit or user
+                    final_step = 1; // step for final round
+                    time_step = 0.3; // seconds between operation
+
+
+                    /* 
+                    * Helper function to make arrays between start and stop values with a separation of step between its elements. 
+                    * If the step is not chosen so that it ends on stopValue, it will output until the last possible value. Example:
+                    * makeArr(0, 10, 7) --: [0, 7]
+                    */
+                    function makeArr(startValue, stopValue, step) {
+                        let arr = [startValue]
+                        for (let i = 0; arr[i]+step <= stopValue; i++){
+                            arr.push(startValue+step*(i+1))
+                        }
+
+                        return arr
+                    }
+
+                    /** 
+                    * Function that inputs the interval at which you want to decrease the step and returns all volts of the test, included the step 
+                    * @param {int} whenToIncrementRate is interval at which you want to decrease the step in voltage supplied to chip with HV supplier
+                    */
+                    function getRun(whenToIncrementRate = 1) { 
+                        let runs = makeArr(start_voltage, final_voltage, step);
+                        let fin_int = runs.slice(-(whenToIncrementRate+1));
+                        runs = runs.slice(0, -(whenToIncrementRate+1));
+                        fin_int = makeArr(fin_int[0], fin_int[1], final_step)
+                        runs.push(fin_int)
+                        runs = runs.flat()
+
+                        return runs;
+                    }
+
+
+                    voltage_run = getRun();
+                    console.log(voltage_run);
+
+                    setTimeout(function run(){
+                        ///////////
+                        /// The block below will run every 2 seconds + operation time for 5 times
+                        ///////////
+
+                        /*
+                        * During each operation we need to:
+                        * - set_hv_voltage
+                        * - read_hv_current
+                        * - store values
+                        * - this has to be done in steps of 5 V until last steps where we will go every 1 V
+                        * - process will stop if we exceed the current limit
+                        * - needs to be chip specific: 20 \ohm \cdot cm --> 70V
+                        * 							   200 \ohm \cdot cm --> 25V
+                        * - conigurable so that we can choose what type of test we want: test the limit, standard procedure => make it fully flexible in GUI but also make different default settings
+                        */
+                        ///////////
+                        /*
+                        console.log();
+
+                        try{
+                            heading.innerText = voltage_run[i].toString();
+                        } catch (err){
+                            console.log(err)
+                        }
+                        
+                        let b = setTimeout(run, time_step*1e3);
+
+                        i++;
+
+                        if (i === voltage_run.length){
+                            clearTimeout(b)
+                            ////////
+                            /// This will be executed after all runs are completed
+                            ////////
+                            heading.innerText = 'Done';
+                            ////////
+                        }
+                        */
+                        b = setTimeout(run, time_step*1e3);
+                        heading.innerText = voltage_run[i];
+                        i++;
+                        if(i === voltage_run.length+1) {
+                            ////////
+                            /// This will be executed after all runs are completed
+                            ////////
+                            clearTimeout(b);
+                            heading.innerText = 'Done';
+                            ////////
+                        }
+
+/*
+                        b = setTimeout(run, time_step*1e3);
+                        heading.innerText = g[i];
+                        i++;                        
+                        if (i === g.length+1) {
+                            clearTimeout(b);
+                            heading.innerText = 'Done:' + g.slice(-1);
+                        }
+*/
+                        
+                    }, time_step*1e3);
+                }
+
+            </script>
+		</div>
+
+
+	</body>
+</html>

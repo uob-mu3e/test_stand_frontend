@@ -48,6 +48,23 @@ async function set_hv_voltage(volt) {
 
 
 /**
+ * Function to get the actual voltage output in HV supplier (Keithley 2611B)
+ * @author Pepe
+ * @returns {float} Returns actual voltage of HV supplier in Amps
+ */
+ async function get_hv_voltage(){
+	try{
+		let result_rpc = await mjsonrpc_db_get_values(["/Equipment/KEITHLEY0/Variables/Voltage[0]]"]);
+		return result_rpc.result.data[0];
+	}catch (err){
+		mjsonrpc_error_alert(err);
+		console.log("Could not get hv voltage from ODB:", err)
+		return 0;
+	}
+}
+
+
+/**
  * Function to get actual current output in HV supplier (Keithley 2611B)
  * @author Luigi, Pepe
  * @returns {float} Returns actual current of HV supplier in Amps
@@ -408,14 +425,14 @@ async function lv_iv_curve(){
  * 					whereas second element corresponds to measured current. Output array will be of 
  * 					desired length unless current limit is reached
  */
- async function iv_curve3(start_voltage, final_voltage, step, final_step, time_step, current_limit){
+ async function iv_curve4(){//start_voltage, final_voltage, step, final_step, time_step, current_limit
 	//Variables taken from GUI
-	//let start_voltage = 0; // BEWARE OF THE SIGNS. Input will be negative --> work will be done with positive values --> final voltage input in keithley will be negative
-	//let final_voltage = 20; // Needs to be device specific. Can be changed, but should be set as default option after changing between devices
-	//let step = 5; // this will result in final_voltage/step+1 iterations, unless stopped by current limit or user
-	//let final_step = 1; // step for final round
-	//let time_step = 0.5; // seconds between operation
-	//let current_limit = 10e-6; //in amperes
+	let start_voltage = 0; // BEWARE OF THE SIGNS. Input will be negative --> work will be done with positive values --> final voltage input in keithley will be negative
+	let final_voltage = 20; // Needs to be device specific. Can be changed, but should be set as default option after changing between devices
+	let step = 5; // this will result in final_voltage/step+1 iterations, unless stopped by current limit or user
+	let final_step = 1; // step for final round
+	let time_step = 2; // seconds between operation
+	let current_limit = 0.00001; //in amperes. The current limit in the Keithley needs to be set as well!!!!! But this current limit from should be slightly lower to operate as expected
 
 	/* 
 	* Helper function to make arrays between start and stop values with a separation of step between its elements. 
@@ -435,7 +452,7 @@ async function lv_iv_curve(){
 	* Function that inputs the interval at which you want to decrease the step and returns all volts of the test, included the step 
 	* @param {int} whenToIncrementRate is interval at which you want to decrease the step in voltage supplied to chip with HV supplier
 	*/
-	function getRun(whenToIncrementRate = 1) { 
+	function getRun(whenToIncrementRate = 4) { 
 		// Generate initial run
 		let runs = makeArr(start_voltage, final_voltage, step);
 		// Extract info of desired last interval
@@ -450,15 +467,13 @@ async function lv_iv_curve(){
 		// Change sign
 		runs.forEach(function(e, index){
 			runs[index] *= -1;
-		}, array);
+		}, []);
 
 		return runs;
 	}
 
 
 	voltage_run = getRun();
-	console.log(voltage_run);
-
 	let curr, curve = [];
 
 	for (let j = 0; j < voltage_run.length; j++){
@@ -472,12 +487,17 @@ async function lv_iv_curve(){
 
 		// Get current read from power supple
 		curr = await get_hv_current();
-		// Save result
-		curve.push([voltage_run[j], curr]);
+
+		console.log('j='+j+'; volt='+voltage_run[j]+'; curr='+curr);
+
 		// Check current limit
-		if (curr >= current_limit){ //TODO check units
+		if (Math.abs(curr) >= current_limit){ //TODO CURRENT
+			curve.push([await get_hv_voltage(), curr]);
 			dlgAlert('Current limit exceeded')
-			return curve;
+			await set_hv_voltage(0);
+			break;
+		} else {
+			curve.push([voltage_run[j], curr]);
 		}		
 	}
 

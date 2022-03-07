@@ -320,7 +320,7 @@ INT frontend_init()
 		}
         else if( std::find( keithley_names.begin(), keithley_names.end(), shortname ) != keithley_names.end() )
         {
-            drivers.emplace_back(new Keithley2450Driver(equipment[eqID].name,&equipment[eqID].info));
+            drivers.emplace_back(new Keithley2611BDriver(equipment[eqID].name,&equipment[eqID].info));
         }
         else if(name == std::string("PowerDistribution")){
             // do nothing, also no warning
