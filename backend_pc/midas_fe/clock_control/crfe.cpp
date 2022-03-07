@@ -136,12 +136,12 @@ EQUIPMENT equipment[] = {
 
 /*-- Dummy routines ------------------------------------------------*/
 
-INT poll_event(INT source, INT count, BOOL test)
+INT poll_event(INT , INT , BOOL )
 {
    return 1;
 }
 
-INT interrupt_configure(INT cmd, INT source, POINTER_T adr)
+INT interrupt_configure(INT , INT , POINTER_T )
 {
    return 1;
 }
@@ -235,7 +235,7 @@ INT frontend_loop()
 
 /*-- Begin of Run --------------------------------------------------*/
 
-INT begin_of_run(INT run_number, char *error)
+INT begin_of_run(INT, char *)
 {
     // set equipment status for status web page
     set_equipment_status("Clock Reset", "Starting run", "yellowLight");
@@ -247,9 +247,10 @@ INT begin_of_run(INT run_number, char *error)
    return CM_SUCCESS;
 }
 
+
 /*-- End of Run ----------------------------------------------------*/
 
-INT end_of_run(INT run_number, char *error)
+INT end_of_run(INT, char *)
 {
 
    cb->write_command("End Run");
@@ -259,21 +260,21 @@ INT end_of_run(INT run_number, char *error)
 
 /*-- Pause Run -----------------------------------------------------*/
 
-INT pause_run(INT run_number, char *error)
+INT pause_run(INT, char *)
 {
    return CM_SUCCESS;
 }
 
 /*-- Resume Run ----------------------------------------------------*/
 
-INT resume_run(INT run_number, char *error)
+INT resume_run(INT, char *)
 {
    return CM_SUCCESS;
 }
 
 /*--- Read Clock and Reset Event to be put into data stream --------*/
 
-INT read_cr_event(char *pevent, INT off [[maybe_unused]])
+INT read_cr_event(char *pevent, INT)
 {
 #ifdef NO_CLOCK_BOX
         return 0;

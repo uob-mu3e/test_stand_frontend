@@ -34,9 +34,8 @@ INT GenesysDriver::ConnectODB()
 	INT status = PowerDriver::ConnectODB();
 	settings["port"](8003);
 	settings["reply timout"](50);
-	settings["min reply"](3); //minimum reply , a char + "\n"
-	if(false) return FE_ERR_ODB;  
-	return FE_SUCCESS;  
+	settings["min reply"](3); //minimum reply , a char + "\n" 
+	return status;  
 }
 
 
@@ -65,12 +64,6 @@ INT GenesysDriver::Init()
     else cm_msg(MINFO,"power_fe","Init global reset of %s",ip.c_str());
   }
   std::this_thread::sleep_for(std::chrono::milliseconds(client->GetWaitTime()));
-  
-  //clear error an status registers
-  //cmd = "GLOB:*CLS\n";
-  //if( !client->Write(cmd) ) cm_msg(MERROR, "Init genesys supply ... ", "could perform global clear %s", ip.c_str());
-  //else cm_msg(MINFO,"power_fe","Global CLS of %s",ip.c_str());
-  //std::this_thread::sleep_for(std::chrono::milliseconds(20));
   
   //figure out the number of supplies connected
   for(int i = 0; i < 12; i++)
@@ -155,7 +148,6 @@ INT GenesysDriver::Init()
  	variables["Current Limit"]=currentlimit;
  	
  	variables["OVP Level"]=OVPlevel;
- 	//variables["Demand OVP Level"]=OVPlevel;
  	
  	variables["Interlock"]= InterlockStatus(QCGEreg);
 
@@ -169,13 +161,12 @@ INT GenesysDriver::Init()
  	
   
 	// ***** set up watch ***** //
-	variables["Set State"].watch(  [&](midas::odb &arg) { this->SetStateChanged(); }  );
-	variables["Demand Voltage"].watch(  [&](midas::odb &arg) { this->DemandVoltageChanged(); }  );
-	variables["Current Limit"].watch(  [&](midas::odb &arg) { this->CurrentLimitChanged(); }  );
-	//variables["Demand OVP Level"].watch(  [&](midas::odb &arg) { this->DemandOVPLevelChanged(); }  );
+	variables["Set State"].watch(  [&](midas::odb &) { this->SetStateChanged(); }  );
+	variables["Demand Voltage"].watch(  [&](midas::odb &) { this->DemandVoltageChanged(); }  );
+	variables["Current Limit"].watch(  [&](midas::odb &) { this->CurrentLimitChanged(); }  );
 	
-	settings["Blink"].watch(  [&](midas::odb &arg) { this->BlinkChanged(); }  );
-	settings["Read ESR"].watch(  [&](midas::odb &arg) { this->ReadESRChanged(); }  );
+	settings["Blink"].watch(  [&](midas::odb &) { this->BlinkChanged(); }  );
+	settings["Read ESR"].watch(  [&](midas::odb &) { this->ReadESRChanged(); }  );
 
  
 
@@ -188,7 +179,7 @@ INT GenesysDriver::Init()
 
 
 
-bool GenesysDriver::AskPermissionToTurnOn(int channel) //extra check whether it is safe to tunr on supply;
+bool GenesysDriver::AskPermissionToTurnOn(int) //extra check whether it is safe to tunr on supply;
 {
 	return true;
 }
@@ -201,7 +192,6 @@ bool GenesysDriver::AskPermissionToTurnOn(int channel) //extra check whether it 
 void GenesysDriver::BlinkChanged()
 {
 	INT err;
-	int nChannelsChanged = 0;
 	
 	for(unsigned int i=0; i< instrumentID.size(); i++)
 	{

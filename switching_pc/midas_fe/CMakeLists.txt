@@ -1,9 +1,4 @@
 add_executable(switch_fe switch_fe.cpp)
-#KB: disable most annoying compiler warnings that will not go away
-target_compile_options(switch_fe PRIVATE
-	-Wno-missing-field-initializers
-	-Wno-unused-parameter
-)
 
 target_include_directories(switch_fe
         PRIVATE 
