@@ -220,13 +220,13 @@ begin
                 -- 0 col register of all chips, put a single 1 into start of col register for all chips
                 o_spi_chip_selct_mask <= (others => '0');
                 
-                if(init_counter = 600) then -- todo increase to 892 ?
+                if(init_counter = 900) then
                     col <= '1';
                 end if;
 
                 case mp_spi_clk_state is
                   when zero1 =>
-                    if(init_counter = 601) then -- init done, go to idle
+                    if(init_counter = 901) then
                         o_data_to_direct_spi_we <= '1';
                         Load_Col <= '1';
                         mp_spi_state <= idle;

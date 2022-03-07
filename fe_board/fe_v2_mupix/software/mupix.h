@@ -17,11 +17,26 @@ struct mupix_t {
 
     void test_mupix_write() {
         printf("running mupix test write function ..\n");
-        printf("Chip mask     was set to : 0x%08x\n", sc->ram->data[MP_CTRL_CHIP_MASK_REGISTER_W]);
+        //printf("Chip mask     was set to : 0x%08x\n", sc->ram->data[MP_CTRL_CHIP_MASK_REGISTER_W]);
         printf("SPI slow down was set to : 0x%08x  (do not use 0 !)\n", sc->ram->data[MP_CTRL_SLOW_DOWN_REGISTER_W]);
         
-        // example: writing to BIAS shift reg
-        
+
+        for(int i = 0; i<36; i++){
+            sc->ram->data[MP_CTRL_COMBINED_START_REGISTER_W+i]=0x2A000A03;
+            sc->ram->data[MP_CTRL_COMBINED_START_REGISTER_W+i]=0xFA3F0025;
+            sc->ram->data[MP_CTRL_COMBINED_START_REGISTER_W+i]=0x1E041041;
+            sc->ram->data[MP_CTRL_COMBINED_START_REGISTER_W+i]=0x041E5951;
+            sc->ram->data[MP_CTRL_COMBINED_START_REGISTER_W+i]=0x40280000;
+            sc->ram->data[MP_CTRL_COMBINED_START_REGISTER_W+i]=0x1400C20A;
+            sc->ram->data[MP_CTRL_COMBINED_START_REGISTER_W+i]=0x0280001F;
+            sc->ram->data[MP_CTRL_COMBINED_START_REGISTER_W+i]=0x00020038;
+            sc->ram->data[MP_CTRL_COMBINED_START_REGISTER_W+i]=0x0000FC05;
+            sc->ram->data[MP_CTRL_COMBINED_START_REGISTER_W+i]=0xF0002340;
+            sc->ram->data[MP_CTRL_COMBINED_START_REGISTER_W+i]=0x2B698000;
+            sc->ram->data[MP_CTRL_COMBINED_START_REGISTER_W+i]=0x29003030;
+        }
+
+        /*        
         // clear config fifos
         sc->ram->data[MP_CTRL_ENABLE_REGISTER_W]=0x00000FC0;
         sc->ram->data[MP_CTRL_ENABLE_REGISTER_W]=0x00000000;
@@ -62,95 +77,63 @@ struct mupix_t {
 
         sc->ram->data[MP_CTRL_ENABLE_REGISTER_W]=63;
         sc->ram->data[MP_CTRL_ENABLE_REGISTER_W]=0;
+        */
         return;
     }
 
     void mupix_write_all_off(){
         
-        sc->ram->data[MP_CTRL_ENABLE_REGISTER_W]=0x0000000F; // set spi slow down
-        sc->ram->data[MP_CTRL_ENABLE_REGISTER_W]=0x00000FC0;// clear fifos
-        sc->ram->data[MP_CTRL_ENABLE_REGISTER_W]=0x00000000;
-        sc->ram->data[MP_CTRL_INVERT_REGISTER_W]=0x00000003;
-        sc->ram->data[MP_CTRL_CHIP_MASK_REGISTER_W]=0x00000000; // config mask write to all
+        sc->ram->data[MP_CTRL_SLOW_DOWN_REGISTER_W]=0x0000000F; // set spi slow down
+        //sc->ram->data[MP_CTRL_ENABLE_REGISTER_W]=0x00000FC0;// clear fifos
+        //sc->ram->data[MP_CTRL_ENABLE_REGISTER_W]=0x00000000;
+        //sc->ram->data[MP_CTRL_INVERT_REGISTER_W]=0x00000003;
+        sc->ram->data[MP_CTRL_RESET_REGISTER_W]=0x00000001;
         
-        sc->ram->data[MP_CTRL_ALL_REGISTER_W]=0x2A000A03;
-        sc->ram->data[MP_CTRL_ALL_REGISTER_W]=0xFA3F002F;
-        sc->ram->data[MP_CTRL_ALL_REGISTER_W]=0x1E041041;
-        sc->ram->data[MP_CTRL_ALL_REGISTER_W]=0x041E9A51;
-        sc->ram->data[MP_CTRL_ALL_REGISTER_W]=0x40280000;
-        sc->ram->data[MP_CTRL_ALL_REGISTER_W]=0x1400C20A;
-        sc->ram->data[MP_CTRL_ALL_REGISTER_W]=0x0280001F;
-        sc->ram->data[MP_CTRL_ALL_REGISTER_W]=0x00020038;
-        sc->ram->data[MP_CTRL_ALL_REGISTER_W]=0x0000FC09;
-        sc->ram->data[MP_CTRL_ALL_REGISTER_W]=0xF0001C80;
-        sc->ram->data[MP_CTRL_ALL_REGISTER_W]=0x00148000;
-        sc->ram->data[MP_CTRL_ALL_REGISTER_W]=0x11802E00;
-        for(int i = 0; i<85; i++){
-        sc->ram->data[MP_CTRL_ALL_REGISTER_W]=0x00000000;}
+        for(int i = 0; i<36; i++){
+            sc->ram->data[MP_CTRL_COMBINED_START_REGISTER_W+i]=0x2A000A03;
+            sc->ram->data[MP_CTRL_COMBINED_START_REGISTER_W+i]=0xFA3F002F;
+            sc->ram->data[MP_CTRL_COMBINED_START_REGISTER_W+i]=0x1E041041;
+            sc->ram->data[MP_CTRL_COMBINED_START_REGISTER_W+i]=0x041E9A51;
+            sc->ram->data[MP_CTRL_COMBINED_START_REGISTER_W+i]=0x40280000;
+            sc->ram->data[MP_CTRL_COMBINED_START_REGISTER_W+i]=0x1400C20A;
+            sc->ram->data[MP_CTRL_COMBINED_START_REGISTER_W+i]=0x0280001F;
+            sc->ram->data[MP_CTRL_COMBINED_START_REGISTER_W+i]=0x00020038;
+            sc->ram->data[MP_CTRL_COMBINED_START_REGISTER_W+i]=0x0000FC09;
+            sc->ram->data[MP_CTRL_COMBINED_START_REGISTER_W+i]=0xF0001C80;
+            sc->ram->data[MP_CTRL_COMBINED_START_REGISTER_W+i]=0x00148000;
+            sc->ram->data[MP_CTRL_COMBINED_START_REGISTER_W+i]=0x11802E00;
+        }
+        //for(int i = 0; i<85; i++){
+        //sc->ram->data[MP_CTRL_ALL_REGISTER_W]=0x00000000;}
     }
     
     void test_write_all(bool maskPixel) {
         
-        sc->ram->data[MP_CTRL_ENABLE_REGISTER_W]=0x00000FC0;
-        sc->ram->data[MP_CTRL_ENABLE_REGISTER_W]=0x00000000;
-        sc->ram->data[MP_CTRL_INVERT_REGISTER_W]=0x00000003;
+        //sc->ram->data[MP_CTRL_ENABLE_REGISTER_W]=0x00000FC0;
+        //sc->ram->data[MP_CTRL_ENABLE_REGISTER_W]=0x00000000;
+        //sc->ram->data[MP_CTRL_INVERT_REGISTER_W]=0x00000003;
+        sc->ram->data[MP_CTRL_SPI_ENABLE_REGISTER_W]=0x00000001;
+        sc->ram->data[MP_CTRL_RESET_REGISTER_W]=0x00000001;
         
-        sc->ram->data[MP_CTRL_ALL_REGISTER_W]=0x16000000;
-        sc->ram->data[MP_CTRL_ALL_REGISTER_W]=0x00050149;
-        sc->ram->data[MP_CTRL_ALL_REGISTER_W]=0x1EF3CF3C;
-        sc->ram->data[MP_CTRL_ALL_REGISTER_W]=0x514B0CA1;
-        sc->ram->data[MP_CTRL_ALL_REGISTER_W]=0x00100005;
-        sc->ram->data[MP_CTRL_ALL_REGISTER_W]=0x14010A14;
-        sc->ram->data[MP_CTRL_ALL_REGISTER_W]=0x010A001F;
-	if (maskPixel) {
-	        sc->ram->data[MP_CTRL_ALL_REGISTER_W]=0x00010038;
-	} else {
-	        sc->ram->data[MP_CTRL_ALL_REGISTER_W]=0x00030038;
-	}
-        sc->ram->data[MP_CTRL_ALL_REGISTER_W]=0x0000FC05;
-        sc->ram->data[MP_CTRL_ALL_REGISTER_W]=0xF0002340;
-        sc->ram->data[MP_CTRL_ALL_REGISTER_W]=0x2B698000;
-        sc->ram->data[MP_CTRL_ALL_REGISTER_W]=0x29003030;
+
+        sc->ram->data[MP_CTRL_COMBINED_START_REGISTER_W]=0x2A000A03;
+        sc->ram->data[MP_CTRL_COMBINED_START_REGISTER_W]=0xFA3F0025;
+        sc->ram->data[MP_CTRL_COMBINED_START_REGISTER_W]=0x1E041041;
+        sc->ram->data[MP_CTRL_COMBINED_START_REGISTER_W]=0x041E5951;
+        sc->ram->data[MP_CTRL_COMBINED_START_REGISTER_W]=0x40280000;
+        sc->ram->data[MP_CTRL_COMBINED_START_REGISTER_W]=0x1400C20A;
+        sc->ram->data[MP_CTRL_COMBINED_START_REGISTER_W]=0x028A001F;
+        sc->ram->data[MP_CTRL_COMBINED_START_REGISTER_W]=0x00020038;
+        sc->ram->data[MP_CTRL_COMBINED_START_REGISTER_W]=0x0000FC09;
+        sc->ram->data[MP_CTRL_COMBINED_START_REGISTER_W]=0xF0001C80;
+        sc->ram->data[MP_CTRL_COMBINED_START_REGISTER_W]=0x00148000;
+        sc->ram->data[MP_CTRL_COMBINED_START_REGISTER_W]=0x11802E00;
+        
    	
-	if (maskPixel) {
-
-		for ( int col = 0; col < 128; col++ ) {
-			for ( int row = 0; row < 16; row++ ) {
-				if ( col == 0 ) {
-					sc->ram->data[MP_CTRL_TDAC_REGISTER_W] = 0xFFFFFFFF;
-				} else {
-					sc->ram->data[MP_CTRL_TDAC_REGISTER_W] = 0x0;
-				}
-			}
-			// send TDAC
-			sc->ram->data[MP_CTRL_ENABLE_REGISTER_W] = 0x20;
-			sc->ram->data[MP_CTRL_ENABLE_REGISTER_W] = 0x0;
-			int curBit = 0;
-			int curWord = 0;
-			for ( int j = 0; j < 128; j++ ) {
-				for ( int b = 0; b < 7; b++ ) {
-					if ( b == 6 && col == 0 ) {
-						 curWord |= (1 << curBit);
-					}
-					if ( curBit == 31 ) {
-						sc->ram->data[MP_CTRL_COL_REGISTER_W] = curWord;
-						curBit = 0;
-						curWord = 0;
-					}
-					curBit++;
-				}
-			}
-			sc->ram->data[MP_CTRL_ENABLE_REGISTER_W] = 0x8;
-			sc->ram->data[MP_CTRL_ENABLE_REGISTER_W] = 0x0;
-			usleep(8*10);
-		}
-
-	} else { 
-        	for(int i = 0; i<85; i++) {
-        		sc->ram->data[MP_CTRL_ALL_REGISTER_W]=0x00000000;
-		}
-	}
-
+        //for(int i = 0; i<85; i++) {
+         //   sc->ram->data[MP_CTRL_ALL_REGISTER_W]=0x00000000;
+		//}
+        
     }
 
     void menu_lvds() {
@@ -247,7 +230,7 @@ struct mupix_t {
                 }
 
                 printf("setting mask to 0x%08x\n",value);
-                sc->ram->data[MP_CTRL_CHIP_MASK_REGISTER_W]=value;
+                //sc->ram->data[MP_CTRL_CHIP_MASK_REGISTER_W]=value;
                 break;
             case '2':
                 value = 0x0;

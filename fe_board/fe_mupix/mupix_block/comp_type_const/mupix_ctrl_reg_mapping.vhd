@@ -17,6 +17,7 @@ generic(
 port (
     i_clk156                    : in  std_logic;
     i_reset_n                   : in  std_logic;
+    o_reset_n                   : out std_logic;
 
     i_reg_add                   : in  std_logic_vector(15 downto 0);
     i_reg_re                    : in  std_logic;
@@ -65,7 +66,8 @@ architecture rtl of mupix_ctrl_reg_mapping is
     process (i_clk156, i_reset_n)
         variable regaddr : integer;
     begin
-        if (i_reset_n = '0') then 
+        if (i_reset_n = '0') then
+            o_reset_n                   <= '0';
             o_mp_ctrl_slow_down         <= (others => '0');
             mp_ctrl_slow_down           <= (others => '0');
             o_mp_direct_spi_data_wr     <= (others => '0');
@@ -90,6 +92,7 @@ architecture rtl of mupix_ctrl_reg_mapping is
 
         elsif(rising_edge(i_clk156)) then
 
+            o_reset_n                   <= '1';
             o_mp_ctrl_slow_down         <= mp_ctrl_slow_down;
             regaddr                     := to_integer(unsigned(i_reg_add));
             o_reg_rdata                 <= x"CCCCCCCC";
@@ -190,6 +193,10 @@ architecture rtl of mupix_ctrl_reg_mapping is
             if ( regaddr = MP_CTRL_DIRECT_SPI_BUSY_REGISTER_R and i_reg_re = '1' ) then
                 o_reg_rdata(N_SPI_g-1 downto 0) <= i_mp_direct_spi_busy;
                 o_reg_rdata(31 downto N_SPI_g) <= (others => '0');
+            end if;
+
+            if ( regaddr = MP_CTRL_RESET_REGISTER_W and i_reg_we = '1' ) then
+                o_reset_n <= '0';
             end if;
         end if;
     end process;

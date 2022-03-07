@@ -41,6 +41,8 @@ end entity mupix_ctrl;
 
 architecture RTL of mupix_ctrl is
 
+    signal reset_n                      : std_logic;
+
     signal slow_down                    : std_logic_vector(15 downto 0) := (others => '0');
     signal slow_down_buf                : std_logic_vector(31 downto 0) := (others => '0');
     signal spi_chip_select_mask         : std_logic_vector(N_CHIPS_PER_SPI_g*N_SPI_g-1 downto 0) := (others => '0'); -- SPI chip select mask
@@ -94,6 +96,7 @@ begin
     port map (
         i_clk156                    => i_clk,
         i_reset_n                   => i_reset_n,
+        o_reset_n                   => reset_n,
 
         i_reg_add                   => i_reg_add,
         i_reg_re                    => i_reg_re,
@@ -137,7 +140,7 @@ begin
       )
       port map (
         i_clk              => i_clk,
-        i_reset_n          => i_reset_n,
+        i_reset_n          => reset_n,
 
         --inputs to write storage data
         i_chip_cvb         => chip_select_cvb,
@@ -172,7 +175,7 @@ begin
           )
           port map (
             i_clk     => i_clk,
-            i_reset_n => i_reset_n,
+            i_reset_n => reset_n,
             o_read    => open, -- connect to signals_to_storage with reg switch
             i_data    => signals_from_storage(I*N_CHIPS_PER_SPI_g+N_CHIPS_PER_SPI_g-1 downto N_CHIPS_PER_SPI_g*I),
             i_enable  => mp_ctrl_spi_ena,
@@ -188,7 +191,7 @@ begin
         )
         port map (
             i_clk                   => i_clk,
-            i_reset_n               => i_reset_n,
+            i_reset_n               => reset_n,
             
             o_read                  => signals_to_storage(I*N_CHIPS_PER_SPI_g+N_CHIPS_PER_SPI_g-1 downto N_CHIPS_PER_SPI_g*I),
             i_data                  => signals_from_storage(I*N_CHIPS_PER_SPI_g+N_CHIPS_PER_SPI_g-1 downto N_CHIPS_PER_SPI_g*I),
@@ -206,7 +209,7 @@ begin
         )
         port map (
             i_clk                => i_clk,
-            i_reset_n            => i_reset_n,
+            i_reset_n            => reset_n,
 
             i_fifo_write_mp_ctrl => mp_ctrl_to_direct_spi_wr(I),
             i_fifo_data_mp_ctrl  => mp_ctrl_to_direct_spi(I),

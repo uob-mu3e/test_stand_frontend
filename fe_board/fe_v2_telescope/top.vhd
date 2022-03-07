@@ -267,26 +267,26 @@ begin
     threshold_trigger <= gate_in ;
     time_over_th      <= pulse_train_in;
 
-    clock_A <= mp_ctrl_clock(3);
-    clock_B <= mp_ctrl_clock(2);
-    clock_C <= mp_ctrl_clock(1);
+    clock_A <= mp_ctrl_clock(0);
+    clock_B <= mp_ctrl_clock(0);
+    clock_C <= mp_ctrl_clock(0);
     clock_D <= mp_ctrl_clock(0);
 
-    SIN_A <= mp_ctrl_SIN(3);
-    SIN_B <= mp_ctrl_SIN(2);
-    SIN_C <= mp_ctrl_SIN(1);
+    SIN_A <= mp_ctrl_SIN(0);
+    SIN_B <= mp_ctrl_SIN(0);
+    SIN_C <= mp_ctrl_SIN(0);
     SIN_D <= mp_ctrl_SIN(0);
 
-    mosi_A <= mp_ctrl_mosi(3);
-    mosi_B <= mp_ctrl_mosi(2);
-    mosi_C <= mp_ctrl_mosi(1);
+    mosi_A <= mp_ctrl_mosi(0);
+    mosi_B <= mp_ctrl_mosi(0);
+    mosi_C <= mp_ctrl_mosi(0);
     mosi_D <= mp_ctrl_mosi(0);
 
 	-- TODO: reverse this again (cabling mistake in muEDM run hotfix)
-    csn_A <= (others => (not mp_ctrl_csn(2)));
-    csn_B <= (others => (not mp_ctrl_csn(1)));
-    csn_C <= (others => mp_ctrl_csn(3));
-    csn_D <= (others => mp_ctrl_csn(0));
+    csn_A <= (others => (mp_ctrl_csn(3)));
+    csn_B <= (others => (mp_ctrl_csn(0)));
+    csn_C <= (others => mp_ctrl_csn(1));
+    csn_D <= (others => mp_ctrl_csn(2));
 	
 --    csn_A <= (others => (not mp_ctrl_csn(0)));
 --    csn_B <= (others => (not mp_ctrl_csn(1)));
