@@ -333,7 +333,7 @@ INT read_cr_event(char *pevent, INT off [[maybe_unused]])
                    *pdata++ = -1.0;
                }
            }
-       } else {
+       } else { 
            *pdata++ = -1.0;
            *pdata++ = -1.0;
            for(uint8_t j=0;j < clockboard::MAXFIREFLYPERDAUGTHER; j++){
