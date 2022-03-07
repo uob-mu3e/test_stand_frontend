@@ -23,7 +23,7 @@ enum EQUIPMENT_ID {Switching=0,Links, SciFi,Tiles,Pixels};
 constexpr int NEQUIPMENT = 5;
 EQUIPMENT equipment[NEQUIPMENT+1] = {
    {"SwitchingCentral",     /* equipment name */
-    {110, 0,                    /* event ID, trigger mask */
+    {103, 0,                    /* event ID, trigger mask */
      "SYSTEM",                  /* event buffer */
      EQ_PERIODIC,               /* equipment type */
      0,                         /* event source */
@@ -38,7 +38,7 @@ EQUIPMENT equipment[NEQUIPMENT+1] = {
      read_sc_event,             /* readout routine */
    },
    {"LinksCentral",         /* equipment name */
-    {110, 0,                    /* event ID, trigger mask */
+    {107, 0,                    /* event ID, trigger mask */
      "SYSTEM",                  /* event buffer */
      EQ_PERIODIC,               /* equipment type */
      0,                         /* event source */
@@ -53,7 +53,7 @@ EQUIPMENT equipment[NEQUIPMENT+1] = {
      read_sc_event,             /* readout routine */
    },
    {"SciFiCentral",         /* equipment name */
-    {111, 0,                    /* event ID, trigger mask */
+    {112, 0,                    /* event ID, trigger mask */
      "SYSTEM",                  /* event buffer */
      EQ_PERIODIC,                 /* equipment type */
      0,                         /* event source crate 0, all stations */
@@ -68,7 +68,7 @@ EQUIPMENT equipment[NEQUIPMENT+1] = {
      read_scifi_sc_event,          /* readout routine */
     },
    {"TilesCentral",       /* equipment name */
-    {112, 0,                      /* event ID, trigger mask */
+    {113, 0,                      /* event ID, trigger mask */
      "SYSTEM",                  /* event buffer */
      EQ_PERIODIC,                 /* equipment type */
      0,                         /* event source crate 0, all stations */
@@ -83,7 +83,7 @@ EQUIPMENT equipment[NEQUIPMENT+1] = {
      read_scitiles_sc_event,          /* readout routine */
     },
     {"PixelsCentral",         /* equipment name */
-    {113, 0,                      /* event ID, trigger mask */
+    {111, 0,                      /* event ID, trigger mask */
      "SYSTEM",                  /* event buffer */
      EQ_PERIODIC,                 /* equipment type */
      0,                         /* event source crate 0, all stations */

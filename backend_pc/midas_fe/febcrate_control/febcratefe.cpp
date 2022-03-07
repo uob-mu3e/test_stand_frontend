@@ -80,7 +80,7 @@ INT init_crates();
 /*-- Equipment list ------------------------------------------------*/
 EQUIPMENT equipment[] = {
     {"FEBCrates",                    /* equipment name */
-    {114, 0,                      /* event ID, trigger mask */
+    {152, 0,                      /* event ID, trigger mask */
      "SYSTEM",                  /* event buffer */
      EQ_PERIODIC,                 /* equipment type */
      0,                         /* event source crate 0, all stations */
