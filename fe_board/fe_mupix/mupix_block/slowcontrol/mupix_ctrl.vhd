@@ -228,5 +228,6 @@ begin
             o_csn                => o_csn(I*N_CHIPS_PER_SPI_g+N_CHIPS_PER_SPI_g-1 downto I*N_CHIPS_PER_SPI_g)
         );
     end generate;
+    
 
 end RTL;

@@ -144,8 +144,7 @@ struct mupix_t {
         sc->ram->data[MP_CTRL_COMBINED_START_REGISTER_W]=0xF0001C80;
         sc->ram->data[MP_CTRL_COMBINED_START_REGISTER_W]=0x00148000;
         sc->ram->data[MP_CTRL_COMBINED_START_REGISTER_W]=0x11802E00;
-        
-   	
+
         //for(int i = 0; i<85; i++) {
          //   sc->ram->data[MP_CTRL_ALL_REGISTER_W]=0x00000000;
 		//}
@@ -225,6 +224,9 @@ struct mupix_t {
             printf("Select entry ...\n");
             char cmd = wait_key();
             switch(cmd) {
+            case 'r':
+                sc->ram->data[MP_CTRL_RESET_REGISTER_W]=0x00000001;
+                break;
             case 'a':
                 mupix_write_all_off();
                 break;

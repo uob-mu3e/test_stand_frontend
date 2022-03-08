@@ -112,8 +112,6 @@ begin
     -- do not expect things to be fast if you do that
 
     Sin_Test  <= '0';
-    Ck1_Test  <= '0';
-    Ck2_Test  <= '0';
     Load_Test <= '0';
     Readback  <= '0';
     PCH       <= '0';
@@ -180,7 +178,8 @@ begin
             Load_VDAC   <= '0';
             Load_Bias   <= '0';
             Load_Conf   <= '0';
-
+            Ck1_Test  <= '0';
+            Ck2_Test  <= '0';
             
 
         elsif(rising_edge(i_clk)) then
@@ -213,6 +212,8 @@ begin
             Load_VDAC   <= '0';
             Load_Bias   <= '0';
             Load_Conf   <= '0';
+            Ck1_Test  <= '0';
+            Ck2_Test  <= '0';
 
             case mp_spi_state is
               when init =>
@@ -228,6 +229,7 @@ begin
                     if(init_counter = 901) then
                         o_data_to_direct_spi_we <= '1';
                         Load_Col <= '1';
+                        Load_Test <= '1';
                         mp_spi_state <= idle;
                         mp_spi_clk_state <= zero1;
 
@@ -241,6 +243,7 @@ begin
                     o_data_to_direct_spi_we <= '1';
                     mp_spi_clk_state <= zero2;
                     Ck1_Col <= '1';
+                    Ck1_Test <= '1';
                     -- others to default
                   when zero2 =>
                     o_data_to_direct_spi_we <= '1';
@@ -250,6 +253,7 @@ begin
                     o_data_to_direct_spi_we <= '1';
                     mp_spi_clk_state <= zero3;
                     Ck2_Col <= '1'; 
+                    Ck2_Test <= '1';
                     -- others to default
                   when zero3 => -- is this one needed ?
                     mp_spi_clk_state <= zero1;
@@ -277,7 +281,7 @@ begin
 
               when idle =>
                     for I in 0 to N_CHIPS_PER_SPI_g-1 loop -- decide on the chip that is supposed to write this round (could also write more than 1 chip if bits are identical but i dont want to right now)
-                      if(((vdac_rdy(I)='1' and bias_rdy(I)='1' and conf_rdy(I)='1') or tdac_rdy(I)='1') and i_direct_spi_fifo_empty = '1') then
+                      if((bias_rdy(I)='1'or tdac_rdy(I)='1') and i_direct_spi_fifo_empty = '1') then
                         mp_spi_state    <= load_bits;
                         chip_is_writing     <= (I => '1', others => '0');
                         o_read              <= (I => (spi_read => i_data(I).rdy, mu3e_read => (others => 'Z')), others =>(spi_read => (others => '0'), mu3e_read => (others => 'Z')));

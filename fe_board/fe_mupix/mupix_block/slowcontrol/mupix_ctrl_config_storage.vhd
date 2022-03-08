@@ -131,7 +131,7 @@ begin
                 conf_rdy(I) <= '0';
             end if;
 
-            if(bias_dpf_full(I) = '1') then 
+            if(bias_dpf_full(I) = '1' and conf_rdy(I)='1' and vdac_rdy(I)='1') then  -- mupix 10 bug, remove for mupix 11
                 bias_rdy(I) <= '1';
             elsif(bias_dpf_empty(I) = '1') then
                 bias_rdy(I) <= '0';
@@ -159,6 +159,7 @@ begin
         conf: entity work.dual_port_fifo
           generic map (
             N_BITS_g       => 96, --MP_CONFIG_REGS_LENGTH(CONF_BIT), TODO: same as bias
+            N_BITS_ACTUAL_g => MP_CONFIG_REGS_LENGTH(CONF_BIT),
             WDATA_WIDTH_g  => 32,
             RDATA1_WIDTH_g => 1,
             RDATA2_WIDTH_g => 53
@@ -179,6 +180,7 @@ begin
         vdac: entity work.dual_port_fifo
           generic map (
             N_BITS_g       => 96,--MP_CONFIG_REGS_LENGTH(VDAC_BIT), TODO: same as bias
+            N_BITS_ACTUAL_g => MP_CONFIG_REGS_LENGTH(VDAC_BIT),
             WDATA_WIDTH_g  => 32,
             RDATA1_WIDTH_g => 1,
             RDATA2_WIDTH_g => 53
@@ -199,6 +201,7 @@ begin
         bias: entity work.dual_port_fifo
           generic map (
             N_BITS_g       => 224, --MP_CONFIG_REGS_LENGTH(BIAS_BIT), -- 224 is a waste of bits, but otherwise the overflow happens at the beginning of the shift reg and not at the end. TODO: fix this ?
+            N_BITS_ACTUAL_g => MP_CONFIG_REGS_LENGTH(BIAS_BIT),
             WDATA_WIDTH_g  => 32,
             RDATA1_WIDTH_g => 1,
             RDATA2_WIDTH_g => 53
@@ -219,6 +222,7 @@ begin
         tdac: entity work.dual_port_fifo
           generic map (
             N_BITS_g       => 8, -- decreased for simulation, put back to --MP_CONFIG_REGS_LENGTH(5),
+            N_BITS_ACTUAL_g => 8,
             WDATA_WIDTH_g  => 4,
             RDATA1_WIDTH_g => 1,
             RDATA2_WIDTH_g => 2 -- same here
