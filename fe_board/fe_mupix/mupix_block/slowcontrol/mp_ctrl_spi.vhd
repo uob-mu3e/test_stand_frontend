@@ -50,7 +50,7 @@ architecture RTL of mp_ctrl_spi is
     signal chip_is_writing_int  : integer range 0 to N_CHIPS_PER_SPI_g-1;
     signal reg_is_writing       : std_logic_vector(3 downto 0);
 
-    type mp_spi_state_type      is (init,idle, waiting, load_bits, writing, shift_col_by_one, load);
+    type mp_spi_state_type      is (init,idle, waiting, load_bits, writing, shift_col_by_one, load, pre_load, rem_load);
     signal mp_spi_state         : mp_spi_state_type;
     type mp_spi_clk_state_type  is (zero1, clk1, zero2, clk2, zero3);
     signal mp_spi_clk_state     : mp_spi_clk_state_type;
@@ -119,9 +119,6 @@ begin
     PCH       <= '0';
     Injection <= '0';
 
-    -- bug in mupix 10 (to be removed)
-    Load_Conf <= '1';
-
     -- hardwire bits
     Sin_Bias <= bias;
     Sin_Conf <= conf;
@@ -182,6 +179,7 @@ begin
             Load_Col    <= '0';
             Load_VDAC   <= '0';
             Load_Bias   <= '0';
+            Load_Conf   <= '0';
 
             
 
@@ -214,6 +212,7 @@ begin
             Load_Col    <= '0';
             Load_VDAC   <= '0';
             Load_Bias   <= '0';
+            Load_Conf   <= '0';
 
             case mp_spi_state is
               when init =>
@@ -261,19 +260,33 @@ begin
                     o_data_to_direct_spi_we <= '0';
                 end case;
 
+              -- mupix 10 load conf bug does not allow for this .. put in again for mp 11
+              -- when idle =>
+              --   if(or_reduce(vdac_rdy & bias_rdy & conf_rdy & tdac_rdy)='1' and i_direct_spi_fifo_empty = '1') then 
+              --       mp_spi_state    <= load_bits;
+              --       for I in 0 to N_CHIPS_PER_SPI_g-1 loop -- decide on the chip that is supposed to write this round (could also write more than 1 chip if bits are identical but i dont want to right now)
+              --           if(or_reduce(i_data(I).rdy) = '1') then
+              --               chip_is_writing     <= (I => '1', others => '0');
+              --               o_read              <= (I => (spi_read => i_data(I).rdy, mu3e_read => (others => 'Z')), others =>(spi_read => (others => '0'), mu3e_read => (others => 'Z')));
+              --               reg_is_writing      <= i_data(I).rdy;
+              --               chip_is_writing_int <= I;
+              --           end if;
+              --       end loop;
+              --       -- now we know the chip (chip_is_writing, chip is writing int) and the regs of that chip (reg_is_writing) that we want to write this round
+              --   end if;
+
               when idle =>
-                if(or_reduce(vdac_rdy & bias_rdy & conf_rdy & tdac_rdy)='1' and i_direct_spi_fifo_empty = '1') then 
-                    mp_spi_state    <= load_bits;
                     for I in 0 to N_CHIPS_PER_SPI_g-1 loop -- decide on the chip that is supposed to write this round (could also write more than 1 chip if bits are identical but i dont want to right now)
-                        if(or_reduce(i_data(I).rdy) = '1') then
-                            chip_is_writing     <= (I => '1', others => '0');
-                            o_read              <= (I => (spi_read => i_data(I).rdy, mu3e_read => (others => 'Z')), others =>(spi_read => (others => '0'), mu3e_read => (others => 'Z')));
-                            reg_is_writing      <= i_data(I).rdy;
-                            chip_is_writing_int <= I;
-                        end if;
+                      if(((vdac_rdy(I)='1' and bias_rdy(I)='1' and conf_rdy(I)='1') or tdac_rdy(I)='1') and i_direct_spi_fifo_empty = '1') then
+                        mp_spi_state    <= load_bits;
+                        chip_is_writing     <= (I => '1', others => '0');
+                        o_read              <= (I => (spi_read => i_data(I).rdy, mu3e_read => (others => 'Z')), others =>(spi_read => (others => '0'), mu3e_read => (others => 'Z')));
+                        reg_is_writing      <= i_data(I).rdy;
+                        chip_is_writing_int <= I;
+                      end if;
                     end loop;
                     -- now we know the chip (chip_is_writing, chip is writing int) and the regs of that chip (reg_is_writing) that we want to write this round
-                end if;
+
 
               when load_bits =>
                 mp_spi_state <= waiting;
@@ -347,30 +360,66 @@ begin
                     mp_spi_state <= idle;
 
                     -- if this was the last round of bits for any of the 4 regs we need to load the reg
-                    if(or_reduce(dpf_empty_this_round) = '1') then 
-                        mp_spi_state <= load;
+
+                    --if(or_reduce(dpf_empty_this_round) = '1') then -- mupix 10 bug does not allow for this, put in again for mp 11
+                    if(dpf_empty_this_round(BIAS_BIT)='1' or dpf_empty_this_round(TDAC_BIT)='1') then
+                        --mp_spi_state <= load; -- mupix 10 bug does not allow for this, put in again for mp 11
+                        mp_spi_state <= pre_load;
                     end if;
                   when others =>
                     mp_spi_clk_state <= zero1;
                     o_data_to_direct_spi_we <= '0';
                 end case;
 
+                when pre_load =>
+                    o_data_to_direct_spi_we <= '1';
+                    Load_Conf <= '1';
+                    mp_spi_state <= load;
+
+                -- mupix 10 load conf bug does not allow for this .. put in again for mp 11
+                -- when load =>
+                --     o_data_to_direct_spi_we <= '1';
+
+                --     -- load only the regs that are writing and for which dpf went empty this round
+                --     Load_Bias <= reg_is_writing(BIAS_BIT) and dpf_empty_this_round(BIAS_BIT);
+                --     --Load_conf <= reg_is_writing(CONF_BIT) and dpf_empty_this_round(CONF_BIT); -- is always 1, mupix10 bug
+                --     Load_VDAC <= reg_is_writing(VDAC_BIT) and dpf_empty_this_round(VDAC_BIT);
+                --     Load_TDAC <= reg_is_writing(TDAC_BIT) and dpf_empty_this_round(TDAC_BIT);
+                --     Load_Conf <= '1';
+
+                --     -- when TDACs have to be loaded this round we need to do the shift by one shenanigans (we could continue clocking in bias, conf and vdac data while doing shift by one shenanigans but seems not worth the effort)
+                --     if((reg_is_writing(TDAC_BIT) and dpf_empty_this_round(TDAC_BIT)) = '1') then 
+                --         mp_spi_state <= shift_col_by_one;
+                --         col_shift_state <= zero1;
+                --     else
+                --         mp_spi_state <= idle;
+                --     end if;
+
                 when load =>
                     o_data_to_direct_spi_we <= '1';
+                    Load_Conf <= '1';
 
-                    -- load only the regs that are writing and for which dpf went empty this round
-                    Load_Bias <= reg_is_writing(BIAS_BIT) and dpf_empty_this_round(BIAS_BIT);
-                    --Load_conf <= reg_is_writing(CONF_BIT) and dpf_empty_this_round(CONF_BIT); -- is always 1, mupix10 bug
-                    Load_VDAC <= reg_is_writing(VDAC_BIT) and dpf_empty_this_round(VDAC_BIT);
-                    Load_TDAC <= reg_is_writing(TDAC_BIT) and dpf_empty_this_round(TDAC_BIT);
+                    if(dpf_empty_this_round(BIAS_BIT)='1') then 
+                      Load_Bias <= '1';
+                      Load_VDAC <= '1';
+                    end if;
 
-                    -- when TDACs have to be loaded this round we need to do the shift by one shenanigans (we could continue clocking in bias, conf and vdac data while doing shift by one shenanigans but seems not worth the effort)
-                    if((reg_is_writing(TDAC_BIT) and dpf_empty_this_round(TDAC_BIT)) = '1') then 
+                    if(reg_is_writing(TDAC_BIT)='1' and dpf_empty_this_round(TDAC_BIT) = '1') then 
+                      Load_TDAC <= '1';
+                    end if;
+
+                    mp_spi_state <= rem_load;
+
+                when rem_load =>
+                    Load_Conf <= '1';
+                    o_data_to_direct_spi_we <= '1';
+                    if((reg_is_writing(TDAC_BIT)='1' and dpf_empty_this_round(TDAC_BIT) = '1')) then 
                         mp_spi_state <= shift_col_by_one;
                         col_shift_state <= zero1;
                     else
                         mp_spi_state <= idle;
                     end if;
+
 
                 when shift_col_by_one =>
                     o_data_to_direct_spi_we <= '1';

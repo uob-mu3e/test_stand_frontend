@@ -17,7 +17,7 @@ use work.mudaq.all;
 
 entity mupix_ctrl is
     generic( 
-        DIRECT_SPI_FIFO_SIZE_g  : positive := 4;
+        DIRECT_SPI_FIFO_SIZE_g  : positive := 5;
         N_CHIPS_PER_SPI_g       : positive := 3;
         N_SPI_g                 : positive := 4 
     );
