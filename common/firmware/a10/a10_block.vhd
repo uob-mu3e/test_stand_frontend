@@ -370,11 +370,11 @@ begin
         --! generate reset regs for 250 MHz link clk for pcie0
         e_reset_logic_farm : entity work.reset_logic
         port map (
-            rst_n          => reset_250_n,
+            rst_n          => pcie0_reset_n,
             reset_register => pcie0_wregs_B(RESET_REGISTER_W),
             resets         => open,
             resets_n       => pcie0_resets_n_B,
-            clk            => clk_250--,
+            clk            => pcie0_clk--,
         );
     END GENERATE gen_FARM;
 
@@ -382,11 +382,11 @@ begin
         --! generate reset regs for 156 MHz link clk for pcie0
         e_reset_logic_swb : entity work.reset_logic
         port map (
-            rst_n          => reset_156_n,
+            rst_n          => pcie0_reset_n,
             reset_register => pcie0_wregs_B(RESET_REGISTER_W),
             resets         => open,
             resets_n       => pcie0_resets_n_B,
-            clk            => clk_156--,
+            clk            => pcie0_clk--,
         );
      END GENERATE gen_SWB;
 

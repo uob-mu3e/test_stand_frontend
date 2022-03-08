@@ -262,7 +262,7 @@ begin
         o_xcvr0_rx_datak                => rx_datak_raw,
         i_xcvr0_tx_data                 => tx_data,
         i_xcvr0_tx_datak                => tx_datak,
-        i_xcvr0_clk                     => clk_156,
+        i_xcvr0_clk                     => pcie0_clk,
 
         -- XCVR1 (10000 Mbps @ 250 MHz)
         i_xcvr1_rx                      => rx_gbt(47 downto 24),
@@ -303,13 +303,13 @@ begin
         -- PCIe0 read interface to writable memory
         i_pcie0_wmem_addr               => writememreadaddr,
         o_pcie0_wmem_rdata              => writememreaddata,
-        i_pcie0_wmem_clk                => clk_156,
+        i_pcie0_wmem_clk                => pcie0_clk,
 
         -- PCIe0 write interface to readable memory
         i_pcie0_rmem_addr               => readmem_writeaddr,
         i_pcie0_rmem_wdata              => readmem_writedata,
         i_pcie0_rmem_we                 => readmem_wren,
-        i_pcie0_rmem_clk                => clk_156,
+        i_pcie0_rmem_clk                => pcie0_clk,
 
         -- PCIe0 update interface for readable registers
         i_pcie0_rregs_A                 => pcie0_readregs_A,
@@ -319,9 +319,9 @@ begin
         o_pcie0_wregs_A                 => pcie0_writeregs_A,
         i_pcie0_wregs_A_clk             => pcie0_clk,
         o_pcie0_wregs_B                 => pcie0_writeregs_B,
-        i_pcie0_wregs_B_clk             => clk_156,
+        i_pcie0_wregs_B_clk             => pcie0_clk,
         o_pcie0_wregs_C                 => open,
-        i_pcie0_wregs_C_clk             => clk_156,
+        i_pcie0_wregs_C_clk             => pcie0_clk,
         o_pcie0_resets_n_A              => pcie0_resets_n_A,
         o_pcie0_resets_n_B              => pcie0_resets_n_B,
 
@@ -392,8 +392,8 @@ begin
         i_clk_250       => pcie0_clk,
 
         --! 156 MHz clock / reset_n
-        i_reset_n_156   => reset_156_n,
-        i_clk_156       => clk_156--,
+        i_reset_n_156   => pcie0_reset_n,
+        i_clk_156       => pcie0_clk--,
     );
 
 end architecture;
