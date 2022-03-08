@@ -106,6 +106,22 @@ struct mupix_t {
         //for(int i = 0; i<85; i++){
         //sc->ram->data[MP_CTRL_ALL_REGISTER_W]=0x00000000;}
     }
+
+    void test_tdacs() {
+        sc->ram->data[MP_CTRL_SPI_ENABLE_REGISTER_W]=0x00000001;
+        sc->ram->data[MP_CTRL_RESET_REGISTER_W]=0x00000001;
+        
+        for(int i = 0; i<120; i++) {
+            sc->ram->data[MP_CTRL_TDAC_START_REGISTER_W]=0x0;
+		}
+        for(int i = 120; i<130; i++) {
+            sc->ram->data[MP_CTRL_TDAC_START_REGISTER_W]=0xFFFFFFFF;
+		}
+        for(int i = 130; i<513; i++) {
+            sc->ram->data[MP_CTRL_TDAC_START_REGISTER_W]=0x0;
+		}
+
+    }
     
     void test_write_all(bool maskPixel) {
         
@@ -191,7 +207,7 @@ struct mupix_t {
         while(1) {
             printf("  [a] => write all OFF\n");
             printf("  [0] => write mupix default conf (All)\n");
-            printf("  [m] => mask pixels\n");
+            printf("  [t] => test tdacs\n");
             printf("  [1] => set mupix config mask\n");
             printf("  [2] => set spi clk slow down reg\n");
             printf("  [3] => print lvds status\n");
@@ -215,10 +231,9 @@ struct mupix_t {
             case '0':
                 test_mupix_write();
                 break;
-	    case 'm':
-		//test_mupix_write(true);
-                test_write_all(true);
-		break;
+	        case 't':
+                test_tdacs();
+		        break;
             case '1':
                 value = 0x0;
                 printf("Enter Chip Mask in hex: ");
@@ -283,10 +298,10 @@ struct mupix_t {
 					sc->ram->data[MP_SORTER_ZERO_SUPPRESSION_REGISTER_W]=0x1;
 				}
 				break;
-        case '9': 
-		sc->ram->data[MP_SORTER_DELAY_REGISTER_W]=0x5FC;
-		break;    
-	case 'q':
+            case '9': 
+		        sc->ram->data[MP_SORTER_DELAY_REGISTER_W]=0x5FC;
+		        break;    
+	        case 'q':
                 return;
             default:
                 printf("invalid command: '%c'\n", cmd);
