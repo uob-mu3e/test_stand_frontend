@@ -158,9 +158,6 @@ architecture rtl of top is
     -- 250 MHz pcie clock 
     signal reset_pcie0_n    : std_logic;
     signal pcie_fastclk_out : std_logic;
-    
-    -- DDR clk
-    signal A_mem_clk, B_mem_clk : std_logic;
 
     -- flash
     signal flash_cs_n : std_logic;
@@ -324,8 +321,6 @@ begin
         o_pcie0_wregs_B                 => pcie0_writeregs_B,
         i_pcie0_wregs_B_clk             => clk_250,
         o_pcie0_regwritten_B            => pcie0_regwritten_B,
-        o_pcie0_wregs_C                 => pcie0_writeregs_C,
-        i_pcie0_wregs_C_clk             => A_mem_clk,
         o_pcie0_regwritten_C            => pcie0_regwritten_C,
         o_pcie0_resets_n_A              => pcie0_resets_n_A,
         o_pcie0_resets_n_B              => pcie0_resets_n_B,
@@ -376,7 +371,6 @@ begin
     --! ------------------------------------------------------------------------
     --! ------------------------------------------------------------------------
     --! ------------------------------------------------------------------------
-
     farm_block : entity work.farm_block
     generic map (
         g_DDR4         => true,
@@ -410,7 +404,6 @@ begin
 
         -- TODO: write status readout entity with ADDR to PCIe REGS and mapping to one counter REG
         o_counter       => open,
-        o_status        => open,
 
         i_dmamemhalffull=> pcie0_dma0_hfull,
         o_dma_wren      => dma_data_wren,
@@ -426,7 +419,6 @@ begin
         i_clk_250_link     => pcie_fastclk_out,
 
         -- Interface to memory bank A
-        o_A_mem_clk        => A_mem_clk,
         A_mem_ck           => DDR4A_CK,
         A_mem_ck_n         => DDR4A_CK_n,
         A_mem_a            => DDR4A_A,
@@ -446,7 +438,6 @@ begin
         A_pll_ref_clk      => DDR4A_REFCLK_p,
 
         -- Interface to memory bank B
-        o_B_mem_clk        => B_mem_clk,
         B_mem_ck           => DDR4B_CK,
         B_mem_ck_n         => DDR4B_CK_n,
         B_mem_a            => DDR4B_A,

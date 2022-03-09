@@ -32,6 +32,8 @@ port (
     o_wdata         : out   std_logic_vector(31 downto 0); -- output is hit
     o_wsop          : out   std_logic; -- SOP
     o_weop          : out   std_logic; -- EOP
+    o_t0            : out   std_logic;
+    o_t1            : out   std_logic;
     i_rack          : in    std_logic;
     o_empty         : out   std_logic;
 
@@ -170,8 +172,8 @@ begin
         o_sop(0)        => o_wsop,
         o_eop(0)        => o_weop,
         o_hit           => open,
-        o_t0            => open,
-        o_t1            => open,
+        o_t0(0)         => o_t0,
+        o_t1(0)         => o_t1,
         o_empty(0)      => o_empty,
         o_mask_n        => open,
         i_rack(0)       => i_rack,

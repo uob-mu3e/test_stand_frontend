@@ -17,6 +17,7 @@ use work.a10_pcie_registers.all;
 
 entity ddr_block is
 generic (
+    g_simulation            : boolean   := false;
     g_DDR4                  : boolean   := false--;
 );
 port (
@@ -128,7 +129,7 @@ architecture rtl of ddr_block is
 begin
 
     --! generate ddr3 for ddr3 boards
-    ddr3 : IF not g_DDR4 GENERATE
+    ddr3 : IF not g_DDR4 and not g_simulation GENERATE
         ddr3_A : component work.cmp.ddr3_if
         port map(
             amm_ready_0         => A_ready,
@@ -143,23 +144,23 @@ begin
             emif_usr_clk        => A_clk,
             emif_usr_reset_n    => A_reset_n,
             global_reset_n      => i_reset_n,
-            mem_ck              => A_mem_ck,
-            mem_ck_n            => A_mem_ck_n,
-            mem_a               => A_mem_a,
-            mem_ba              => A_mem_ba,
-            mem_cke             => A_mem_cke,
-            mem_cs_n            => A_mem_cs_n,
-            mem_odt             => A_mem_odt,
-            mem_reset_n         => A_mem_reset_n,
-            mem_we_n            => A_mem_we_n,
-            mem_ras_n           => A_mem_ras_n,
-            mem_cas_n           => A_mem_cas_n,
-            mem_dqs             => A_mem_dqs,
-            mem_dqs_n           => A_mem_dqs_n,
-            mem_dq              => A_mem_dq,
-            mem_dm              => A_mem_dm,
-            oct_rzqin           => A_oct_rzqin,
-            pll_ref_clk         => A_pll_ref_clk,
+            mem_ck              => o_A_mem_ck,
+            mem_ck_n            => o_A_mem_ck_n,
+            mem_a               => o_A_mem_a,
+            mem_ba              => o_A_mem_ba,
+            mem_cke             => o_A_mem_cke,
+            mem_cs_n            => o_A_mem_cs_n,
+            mem_odt             => o_A_mem_odt,
+            mem_reset_n         => o_A_mem_reset_n,
+            mem_we_n            => o_A_mem_we_n,
+            mem_ras_n           => o_A_mem_ras_n,
+            mem_cas_n           => o_A_mem_cas_n,
+            mem_dqs             => io_A_mem_dqs,
+            mem_dqs_n           => io_A_mem_dqs_n,
+            mem_dq              => io_A_mem_dq,
+            mem_dm              => o_A_mem_dm,
+            oct_rzqin           => i_A_oct_rzqin,
+            pll_ref_clk         => i_A_pll_ref_clk,
             local_cal_success   => A_cal_success,
             local_cal_fail      => A_cal_fail
         );
@@ -178,30 +179,30 @@ begin
             emif_usr_clk        => B_clk,
             emif_usr_reset_n    => B_reset_n,
             global_reset_n      => i_reset_n,
-            mem_ck              => B_mem_ck,
-            mem_ck_n            => B_mem_ck_n,
-            mem_a               => B_mem_a,
-            mem_ba              => B_mem_ba,
-            mem_cke             => B_mem_cke,
-            mem_cs_n            => B_mem_cs_n,
-            mem_odt             => B_mem_odt,
-            mem_reset_n         => B_mem_reset_n,
-            mem_we_n            => B_mem_we_n,
-            mem_ras_n           => B_mem_ras_n,
-            mem_cas_n           => B_mem_cas_n,
-            mem_dqs             => B_mem_dqs,
-            mem_dqs_n           => B_mem_dqs_n,
-            mem_dq              => B_mem_dq,
-            mem_dm              => B_mem_dm,
-            oct_rzqin           => B_oct_rzqin,
-            pll_ref_clk         => B_pll_ref_clk,
+            mem_ck              => o_B_mem_ck,
+            mem_ck_n            => o_B_mem_ck_n,
+            mem_a               => o_B_mem_a,
+            mem_ba              => o_B_mem_ba,
+            mem_cke             => o_B_mem_cke,
+            mem_cs_n            => o_B_mem_cs_n,
+            mem_odt             => o_B_mem_odt,
+            mem_reset_n         => o_B_mem_reset_n,
+            mem_we_n            => o_B_mem_we_n,
+            mem_ras_n           => o_B_mem_ras_n,
+            mem_cas_n           => o_B_mem_cas_n,
+            mem_dqs             => io_B_mem_dqs,
+            mem_dqs_n           => io_B_mem_dqs_n,
+            mem_dq              => io_B_mem_dq,
+            mem_dm              => o_B_mem_dm,
+            oct_rzqin           => i_B_oct_rzqin,
+            pll_ref_clk         => i_B_pll_ref_clk,
             local_cal_success   => B_cal_success,
             local_cal_fail      => B_cal_fail
         );
     END GENERATE;
 
     --! generate ddr4 for ddr4 boards
-    ddr4 : IF g_DDR4 GENERATE
+    ddr4 : IF g_DDR4 and not g_simulation GENERATE
         ddr4_A : component work.cmp.ddr4_if
         port map(
             amm_ready_0         => A_ready,
@@ -216,23 +217,23 @@ begin
             emif_usr_clk        => A_clk,
             emif_usr_reset_n    => A_reset_n,
             global_reset_n      => i_reset_n,
-            mem_ck              => A_mem_ck,
-            mem_ck_n            => A_mem_ck_n,
-            mem_a               => A_mem_a,
-            mem_ba              => A_mem_ba,
-            mem_cke             => A_mem_cke,
-            mem_cs_n            => A_mem_cs_n,
-            mem_odt             => A_mem_odt,
-            mem_reset_n         => A_mem_reset_n,
-            mem_we_n            => A_mem_we_n,
-            mem_ras_n           => A_mem_ras_n,
-            mem_cas_n           => A_mem_cas_n,
-            mem_dqs             => A_mem_dqs,
-            mem_dqs_n           => A_mem_dqs_n,
-            mem_dq              => A_mem_dq,
-            mem_dm              => A_mem_dm,
-            oct_rzqin           => A_oct_rzqin,
-            pll_ref_clk         => A_pll_ref_clk,
+            mem_ck              => o_A_mem_ck,
+            mem_ck_n            => o_A_mem_ck_n,
+            mem_a               => o_A_mem_a,
+            mem_ba              => o_A_mem_ba,
+            mem_cke             => o_A_mem_cke,
+            mem_cs_n            => o_A_mem_cs_n,
+            mem_odt             => o_A_mem_odt,
+            mem_reset_n         => o_A_mem_reset_n,
+            mem_we_n            => o_A_mem_we_n,
+            mem_ras_n           => o_A_mem_ras_n,
+            mem_cas_n           => o_A_mem_cas_n,
+            mem_dqs             => io_A_mem_dqs,
+            mem_dqs_n           => io_A_mem_dqs_n,
+            mem_dq              => io_A_mem_dq,
+            mem_dm              => o_A_mem_dm,
+            oct_rzqin           => i_A_oct_rzqin,
+            pll_ref_clk         => i_A_pll_ref_clk,
             local_cal_success   => A_cal_success,
             local_cal_fail      => A_cal_fail
         );
@@ -251,23 +252,23 @@ begin
             emif_usr_clk        => B_clk,
             emif_usr_reset_n    => B_reset_n,
             global_reset_n      => i_reset_n,
-            mem_ck              => B_mem_ck,
-            mem_ck_n            => B_mem_ck_n,
-            mem_a               => B_mem_a,
-            mem_ba              => B_mem_ba,
-            mem_cke             => B_mem_cke,
-            mem_cs_n            => B_mem_cs_n,
-            mem_odt             => B_mem_odt,
-            mem_reset_n         => B_mem_reset_n,
-            mem_we_n            => B_mem_we_n,
-            mem_ras_n           => B_mem_ras_n,
-            mem_cas_n           => B_mem_cas_n,
-            mem_dqs             => B_mem_dqs,
-            mem_dqs_n           => B_mem_dqs_n,
-            mem_dq              => B_mem_dq,
-            mem_dm              => B_mem_dm,
-            oct_rzqin           => B_oct_rzqin,
-            pll_ref_clk         => B_pll_ref_clk,
+            mem_ck              => o_B_mem_ck,
+            mem_ck_n            => o_B_mem_ck_n,
+            mem_a               => o_B_mem_a,
+            mem_ba              => o_B_mem_ba,
+            mem_cke             => o_B_mem_cke,
+            mem_cs_n            => o_B_mem_cs_n,
+            mem_odt             => o_B_mem_odt,
+            mem_reset_n         => o_B_mem_reset_n,
+            mem_we_n            => o_B_mem_we_n,
+            mem_ras_n           => o_B_mem_ras_n,
+            mem_cas_n           => o_B_mem_cas_n,
+            mem_dqs             => io_B_mem_dqs,
+            mem_dqs_n           => io_B_mem_dqs_n,
+            mem_dq              => io_B_mem_dq,
+            mem_dm              => o_B_mem_dm,
+            oct_rzqin           => i_B_oct_rzqin,
+            pll_ref_clk         => i_B_pll_ref_clk,
             local_cal_success   => B_cal_success,
             local_cal_fail      => B_cal_fail
         );
@@ -275,7 +276,7 @@ begin
 
 
     --! we output counting errors when we performe the counter test
-    o_error <= B_errout when i_ddr_control(DDR3_BIT_COUNTERTEST_B) = '1' else A_errout;
+    o_error <= B_errout when i_ddr_control(DDR_BIT_COUNTERTEST_B) = '1' else A_errout;
 
 
     --! setup memory controller
@@ -286,15 +287,15 @@ begin
         
         -- Control and status registers
         i_ddr_control       => i_ddr_control(DDR_RANGE_A),
-        i_ddr_status        => o_ddr_status(15 downto 0),
+        o_ddr_status        => o_ddr_status(DDR_RANGE_A),
 
         o_ddr_calibrated    => o_A_ddr_calibrated,
         o_ddr_ready         => o_A_ddr_ready,
         
         i_ddr_addr          => i_A_ddr_addr,
-        i_ddr_datain        => i_A_ddr_datain,
-        o_ddr_dataout       => o_A_ddr_dataout,
-        o_ddr_write         => o_A_ddr_write,
+        i_ddr_data          => i_A_ddr_datain,
+        o_ddr_data          => o_A_ddr_dataout,
+        i_ddr_write         => i_A_ddr_write,
         i_ddr_read          => i_A_ddr_read,
         o_ddr_read_valid    => o_A_ddr_read_valid,
         
@@ -323,15 +324,15 @@ begin
         
         -- Control and status registers
         i_ddr_control       => i_ddr_control(DDR_RANGE_B),
-        i_ddr_status        => o_ddr_status(15 downto 0),
+        o_ddr_status        => o_ddr_status(DDR_RANGE_B),
 
         o_ddr_calibrated    => o_B_ddr_calibrated,
         o_ddr_ready         => o_B_ddr_ready,
         
         i_ddr_addr          => i_B_ddr_addr,
-        i_ddr_datain        => i_B_ddr_datain,
-        o_ddr_dataout       => o_B_ddr_dataout,
-        o_ddr_write         => o_B_ddr_write,
+        i_ddr_data          => i_B_ddr_datain,
+        o_ddr_data          => o_B_ddr_dataout,
+        i_ddr_write         => i_B_ddr_write,
         i_ddr_read          => i_B_ddr_read,
         o_ddr_read_valid    => o_B_ddr_read_valid,
         

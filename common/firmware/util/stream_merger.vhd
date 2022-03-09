@@ -13,6 +13,8 @@ port (
     i_rdata     : in    std_logic_vector(N*W-1 downto 0);
     i_rsop      : in    std_logic_vector(N-1 downto 0); -- start of packet (SOP)
     i_reop      : in    std_logic_vector(N-1 downto 0); -- end of packet (EOP)
+    i_t0        : in    std_logic_vector(N-1 downto 0) := (others => '0');
+    i_t1        : in    std_logic_vector(N-1 downto 0) := (others => '0');
     i_rempty    : in    std_logic_vector(N-1 downto 0);
     o_rack      : out   std_logic_vector(N-1 downto 0); -- read ACK
 
@@ -20,6 +22,8 @@ port (
     o_wdata     : out   std_logic_vector(W-1 downto 0);
     o_wsop      : out   std_logic; -- SOP
     o_weop      : out   std_logic; -- EOP
+    o_t0        : out   std_logic;
+    o_t1        : out   std_logic;
     i_wfull     : in    std_logic;
     o_we        : out   std_logic; -- write enable
 
@@ -61,6 +65,8 @@ begin
         end loop;
         o_wsop <= work.util.or_reduce(i_rsop and index);
         o_weop <= work.util.or_reduce(i_reop and index);
+        o_t0 <= work.util.or_reduce(i_t0 and index);
+        o_t1 <= work.util.or_reduce(i_t1 and index);
         o_we <= '0';
 
         if ( work.util.or_reduce(i_rempty and index) = '0' and i_wfull = '0' ) then

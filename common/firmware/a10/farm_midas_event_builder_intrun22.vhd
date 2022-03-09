@@ -17,6 +17,7 @@ use work.a10_pcie_registers.all;
 entity farm_midas_event_builder_intrun22 is
 port(
     i_rx                : in  std_logic_vector (31 downto 0);
+    o_ren               : out std_logic;
     i_rempty            : in  std_logic;
     i_header            : in  std_logic;
     i_trailer           : in  std_logic;
@@ -35,6 +36,7 @@ port(
     o_error             : out std_logic;
     o_sop               : out std_logic;
     o_eop               : out std_logic;
+    o_state_out         : out std_logic_vector(3 downto 0);
     
     --! status counters 
     --! 0: bank_builder_idle_not_header
@@ -80,7 +82,7 @@ architecture arch of farm_midas_event_builder_intrun22 is
     -- error cnt
     signal cnt_tag_fifo_full : std_logic_vector(31 downto 0);
     signal cnt_ram_full : std_logic_vector(31 downto 0);
-    signal cnt_skip_event_dma : std_logic_vector(31 downto 0);
+    signal cnt_skip_event, cnt_event : std_logic_vector(31 downto 0);
     signal cnt_idle_not_header : std_logic_vector(31 downto 0);
 
 begin
@@ -379,7 +381,7 @@ begin
     if ( i_reset_n_250 = '0' ) then
         o_data              <= (others => '0');
         o_sop               <= '0';
-        o_eop               <= x"0";
+        o_eop               <= '0';
         o_wen               <= '0';
         o_event_ts          <= (others => '0');
         o_error             <= '0';

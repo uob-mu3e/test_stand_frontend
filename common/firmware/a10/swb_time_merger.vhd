@@ -34,6 +34,8 @@ port (
     i_ren           : in    std_logic;
     o_wsop          : out   std_logic;
     o_weop          : out   std_logic;
+    o_t0            : out   std_logic;
+    o_t1            : out   std_logic;
     o_werp          : out   std_logic;
 
     -- output stream debug
@@ -90,6 +92,8 @@ begin
         o_wdata                 => wdata,
         o_wsop                  => wsop,
         o_weop                  => weop,
+        o_t0                    => o_t0,
+        o_t1                    => o_t1,
         i_rack                  => i_ren,
         o_empty                 => o_rempty,
 

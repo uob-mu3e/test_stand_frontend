@@ -16,10 +16,15 @@ use work.a10_pcie_registers.all;
 
 entity farm_block is
 generic (
+    g_LOOPUP_NAME           : string    := "intRun2021";
     g_NLINKS_TOTL           : positive  := 3;
     g_NLINKS_PIXEL          : positive  := 2;
     g_NLINKS_SCIFI          : positive  := 1;
+    g_ADDR_WIDTH            : positive  := 11;
     g_DDR4                  : boolean   := false;
+    g_simulation            : boolean   := false;
+    -- Data type: x"00" = pixel, x"01" = scifi, "10" = tiles
+    DATA_TYPE : std_logic_vector(1 downto 0) := "00";
     LINK_FIFO_ADDR_WIDTH    : positive  := 10--;
 );
 port (
@@ -38,8 +43,7 @@ port (
     i_resets_n          : in  std_logic_vector(31 downto 0);
 
     -- TODO: write status readout entity with ADDR to PCIe REGS and mapping to one counter REG
-    o_counter           : out work.util.slv32_array_t(19 downto 0);
-    o_status            : out std_logic_vector(31 downto 0);
+    o_counter           : out work.util.slv32_array_t(4 + 4 + 4 + (g_NLINKS_TOTL*4) + (g_NLINKS_TOTL*5) - 1 downto 0);
 
     i_dmamemhalffull    : in  std_logic;
     o_dma_wren          : out std_logic;
@@ -51,7 +55,6 @@ port (
     i_clk               : in  std_logic;   
 
     -- Interface to memory bank A
-    o_A_mem_clk         : out   std_logic;
     o_A_mem_ck          : out   std_logic_vector(0 downto 0);                      -- mem_ck
     o_A_mem_ck_n        : out   std_logic_vector(0 downto 0);                      -- mem_ck_n
     o_A_mem_a           : out   std_logic_vector(15 downto 0);                     -- mem_a
@@ -71,7 +74,6 @@ port (
     i_A_pll_ref_clk     : in    std_logic                      := 'X';             -- clk
 
     -- Interface to memory bank B
-    o_B_mem_clk         : out   std_logic;
     o_B_mem_ck          : out   std_logic_vector(0 downto 0);                      -- mem_ck
     o_B_mem_ck_n        : out   std_logic_vector(0 downto 0);                      -- mem_ck_n
     o_B_mem_a           : out   std_logic_vector(15 downto 0);                     -- mem_a
@@ -104,30 +106,39 @@ architecture arch of farm_block is
     --! mapping signals
     signal rx : work.util.slv32_array_t(g_NLINKS_TOTL-1 downto 0);
     signal rx_k : work.util.slv4_array_t(g_NLINKS_TOTL-1 downto 0);
-    
+
     --! data gen links
     signal gen_link : std_logic_vector(31 downto 0);
     signal gen_link_k : std_logic_vector(3 downto 0);
-    
-    --! link to fifo
-    signal pixel_data, scifi_data : std_logic_vector(257 downto 0);
-    signal pixel_empty, pixel_ren, scifi_empty, scifi_ren, pixel_error_link_to_fifo, scifi_error_link_to_fifo : std_logic;
-    
-    --! midas event builder
-    signal data_in : std_logic_vector(511 downto 0);
-    signal data_wen : std_logic;
-    signal event_ts : std_logic_vector(47 downto 0);
-    signal pixel_next_farm : std_logic_vector(g_NLINKS_PIXEL * 32 + 1 downto 0);
-    signal scifi_next_farm : std_logic_vector(g_NLINKS_SCIFI * 32 + 1 downto 0);
-    signal pixel_next_farm_wen, scifi_next_farm_wen : std_logic;
-    
-    --! link to next farm
-    signal tx_wen, tx_empty_pixel, tx_empty_scifi : std_logic;
-    signal tx_data_pixel, tx_data_scifi, tx_q_pixel, tx_q_scifi : std_logic_vector(257 downto 0);
-        
+
+    --! aligned data
+    signal aligned_data : work.util.slv32_array_t(g_NLINKS_TOTL-1 downto 0);
+    signal aligned_empty, aligned_ren, aligned_shop, aligned_sop, aligned_eop, aligned_hit, aligned_t0, aligned_t1, aligned_error : std_logic_vector(g_NLINKS_TOTL-1 downto 0);
+
+    --! stream signal
+    signal stream_rdata : std_logic_vector(31 downto 0);
+    signal stream_counters : work.util.slv32_array_t(0 downto 0);
+    signal stream_rempty, stream_ren, stream_header, stream_trailer, stream_t0, stream_t1 : std_logic;
+    signal stream_rack : std_logic_vector(g_NLINKS_TOTL - 1 downto 0);
+
+    --! merger signal
+    signal merger_rdata : std_logic_vector(31 downto 0);
+    signal merger_rempty, merger_ren, merger_header, merger_trailer, merger_t0, merger_t1, merger_error : std_logic;
+    signal merger_rack : std_logic_vector(g_NLINKS_TOTL - 1 downto 0);
+
+    --! ddr event builder
+    signal ddr_rack, ddr_dma_wren, ddr_endofevent, ddr_dma_done : std_logic;
+    signal ddr_dma_data : std_logic_vector(255 downto 0);
+    signal ddr_data : std_logic_vector(511 downto 0);
+    signal ddr_ts : std_logic_vector(47 downto 0);
+    signal ddr_wen, ddr_ready, ddr_error, ddr_sop, ddr_eop : std_logic;
+
+    --! debug event builder
+    signal builder_data : std_logic_vector(31 downto 0);
+    signal builder_rempty, builder_header, builder_trailer, builder_error, builder_rack, builder_t0, builder_t1, builder_dma_wren, builder_endofevent, builder_dma_done : std_logic;
+    signal builder_dma_data : std_logic_vector(255 downto 0);
+
     --! farm data path
-    signal ddr_ready        : std_logic;
-    signal A_mem_clk        : std_logic;
     signal A_mem_ready      : std_logic;
     signal A_mem_calibrated : std_logic;
     signal A_mem_addr       : std_logic_vector(25 downto 0);
@@ -136,7 +147,6 @@ architecture arch of farm_block is
     signal A_mem_read       : std_logic;
     signal A_mem_q          : std_logic_vector(511 downto 0);
     signal A_mem_q_valid    : std_logic;
-    signal B_mem_clk        : std_logic;
     signal B_mem_ready      : std_logic;
     signal B_mem_calibrated : std_logic;
     signal B_mem_addr       : std_logic_vector(25 downto 0);
@@ -145,33 +155,26 @@ architecture arch of farm_block is
     signal B_mem_read       : std_logic;
     signal B_mem_q          : std_logic_vector(511 downto 0);
     signal B_mem_q_valid    : std_logic;
-    
+
     --! counters
-    --! 0: fifo sync_almost_full (pixel)
-    --! 1: fifo sync_wrfull (pixel)
-    --! 2: # of overflow event (pixel)
-    --! 3: cnt events (pixel)
-    --! 4: fifo sync_almost_full (scifi)
-    --! 5: fifo sync_wrfull (scifi)
-    --! 6: # of overflow event (scifi)
-    --! 7: cnt events (scifi)
-    signal counter_link_to_fifo : work.util.slv32_array_t(7 downto 0);
-    --! 0: cnt_idle_not_header_pixel
-    --! 1: cnt_idle_not_header_scifi
-    --! 2: bank_builder_ram_full
+    --! (g_NLINKS_TOTL*5)-1 downto 0 -> link to fifo counters
+    --! (g_NLINKS_TOTL*4)+(g_NLINKS_TOTL*5)-1 downto (g_NLINKS_TOTL*5) -> link align counters
+    signal counter_link_to_fifo : work.util.slv32_array_t((g_NLINKS_TOTL*4) + (g_NLINKS_TOTL*5) - 1 downto 0);
+    --! 0: bank_builder_idle_not_header
+    --! 1: bank_builder_skip_event
+    --! 2: bank_builder_cnt_event
     --! 3: bank_builder_tag_fifo_full
-    --! 4: # events written to RAM (one subheader of Pixel and Scifi)
-    --! 5: # 256b pixel x"FFF"
-    --! 6: # 256b scifi x"FFF"
-    --! 7: # 256b pixel written to link
-    --! 8: # 256b scifi written to link
-    signal counter_midas_event_builder : work.util.slv32_array_t(8 downto 0);
+    signal counter_midas_event_builder : work.util.slv32_array_t(3 downto 0);
     --! 0: cnt_skip_event_dma
     --! 1: A_almost_full
     --! 2: B_almost_full
     --! 3: i_dmamemhalffull
     signal counter_ddr : work.util.slv32_array_t(3 downto 0);
-
+    --! bank_builder_idle_not_header
+    --! bank_builder_skip_event_dma
+    --! bank_builder_ram_full
+    --! bank_builder_tag_fifo_full
+    signal builder_counters : work.util.slv32_array_t(3 downto 0);
 
 begin
 
@@ -187,22 +190,18 @@ begin
     --! ------------------------------------------------------------------------
     --! ------------------------------------------------------------------------
     --! ------------------------------------------------------------------------
-    gen_link_to_fifo_cnt : FOR I in 0 to 7 GENERATE
+    gen_link_to_fifo_cnt : FOR I in 0 to (g_NLINKS_TOTL*4) + (g_NLINKS_TOTL*5) - 1 GENERATE
         o_counter(I) <= counter_link_to_fifo(I);
     END GENERATE;
-    gen_midas_event_cnt : FOR I in 8 to 16 GENERATE
-        o_counter(I) <= counter_midas_event_builder(I-8);
+    gen_midas_event_cnt : FOR I in (g_NLINKS_TOTL*4) + (g_NLINKS_TOTL*5) to (g_NLINKS_TOTL*4) + (g_NLINKS_TOTL*5) + 3 GENERATE
+        o_counter(I) <= counter_midas_event_builder(I);
     END GENERATE;
-    gen_ddr_cnt : FOR I in 16 to 19 GENERATE
-        o_counter(I) <= counter_ddr(I-16);
+    gen_ddr_cnt : FOR I in (g_NLINKS_TOTL*4) + (g_NLINKS_TOTL*5) + 4 to (g_NLINKS_TOTL*4) + (g_NLINKS_TOTL*5) + 7 GENERATE
+        o_counter(I) <= counter_ddr(I);
     END GENERATE;
-    
-    o_status(0) <= pixel_error_link_to_fifo;
-    o_status(1) <= scifi_error_link_to_fifo;
-    
-    o_A_mem_clk <= A_mem_clk;
-    o_B_mem_clk <= B_mem_clk;
-
+    gen_builder_cnt : FOR I in (g_NLINKS_TOTL*4) + (g_NLINKS_TOTL*5) + 8 to (g_NLINKS_TOTL*4) + (g_NLINKS_TOTL*5) + 11 GENERATE
+        o_counter(I) <= builder_counters(I);
+    END GENERATE;
 
     --! SWB Data Generation
     --! generate data in the format from the SWB
@@ -219,7 +218,7 @@ begin
     )
     port map (
         i_reset_n           => i_resets_n(RESET_BIT_DATAGEN),
-        enable_pix          => i_writeregs(FARM_READOUT_STATE_REGISTER_W)(USE_BIT_GEN_LINK_FARM),
+        enable_pix          => i_writeregs(FARM_READOUT_STATE_REGISTER_W)(USE_BIT_GEN_LINK),
         i_dma_half_full     => '0',
         random_seed         => (others => '1'),
         data_pix_generated  => gen_link,
@@ -241,7 +240,7 @@ begin
             rx(I)   <= (others => '0');
             rx_k(I) <= (others => '0');
         elsif ( rising_edge( i_clk ) ) then
-            if ( i_writeregs(FARM_READOUT_STATE_REGISTER_W)(USE_BIT_GEN_LINK_FARM) = '1' ) then
+            if ( i_writeregs(FARM_READOUT_STATE_REGISTER_W)(USE_BIT_GEN_LINK) = '1' ) then
                 rx(I)   <= gen_link;
                 rx_k(I) <= gen_link_k;
             else
@@ -291,8 +290,8 @@ begin
         o_error             => aligned_error,
 
         --! status counters
-        --! (g_NLINKS_DATA*5)-1 downto 0 -> link to fifo counters
-        --! (g_NLINKS_DATA*4)+(g_NLINKS_DATA*5)-1 downto (g_NLINKS_DATA*5) -> link align counters
+        --! (g_NLINKS_TOTL*5)-1 downto 0 -> link to fifo counters
+        --! (g_NLINKS_TOTL*4)+(g_NLINKS_TOTL*5)-1 downto (g_NLINKS_TOTL*5) -> link align counters
         o_counter           => counter_link_to_fifo,
         
         i_clk               => i_clk,
@@ -314,6 +313,8 @@ begin
         i_rdata     => aligned_data,
         i_rsop      => aligned_sop,
         i_reop      => aligned_eop,
+        i_t0        => aligned_t0,
+        i_t1        => aligned_t1,
         i_rempty    => aligned_empty,
         i_rmask_n   => i_writeregs(FARM_LINK_MASK_REGISTER_W),
         o_rack      => stream_rack,
@@ -349,7 +350,7 @@ begin
     e_time_merger : entity work.swb_time_merger
     generic map (
         g_ADDR_WIDTH    => g_ADDR_WIDTH,
-        g_NLINKS_DATA   => g_NLINKS_DATA,
+        g_NLINKS_DATA   => g_NLINKS_TOTL,
         DATA_TYPE       => DATA_TYPE--,
     )
     port map (
@@ -394,7 +395,7 @@ begin
     --! ------------------------------------------------------------------------
     --! ------------------------------------------------------------------------
     --! ------------------------------------------------------------------------
-    rx_ren          <=  stream_rack     when i_writeregs(FARM_READOUT_STATE_REGISTER_W)(USE_BIT_STREAM) = '1' else
+    aligned_ren     <=  stream_rack     when i_writeregs(FARM_READOUT_STATE_REGISTER_W)(USE_BIT_STREAM) = '1' else
                         merger_rack     when i_writeregs(FARM_READOUT_STATE_REGISTER_W)(USE_BIT_MERGER) = '1' else
                         (others => '0');
     builder_data    <=  stream_rdata    when i_writeregs(FARM_READOUT_STATE_REGISTER_W)(USE_BIT_STREAM) = '1' else
@@ -458,7 +459,11 @@ begin
         o_endofevent        => builder_endofevent,
         o_dma_cnt_words     => o_readregs(DMA_CNT_WORDS_REGISTER_R),
         o_done              => builder_dma_done,
-
+        
+        --! bank_builder_idle_not_header
+        --! bank_builder_skip_event_dma
+        --! bank_builder_ram_full
+        --! bank_builder_tag_fifo_full
         o_counters          => builder_counters,
 
         i_reset_n_250       => i_reset_n,
@@ -471,12 +476,6 @@ begin
     --! ------------------------------------------------------------------------
     --! ------------------------------------------------------------------------
     e_farm_midas_event_builder : entity work.farm_midas_event_builder_intrun22
-    generic map (
-        g_NLINKS_SWB_TOTL => g_NLINKS_TOTL,
-        N_PIXEL           => g_NLINKS_PIXEL,
-        N_SCIFI           => g_NLINKS_SCIFI,
-        RAM_ADDR          => 12--,
-    )
     port map (
         --! data in
         i_rx            => builder_data,
@@ -583,7 +582,8 @@ begin
     --! ------------------------------------------------------------------------
     e_ddr_block : entity work.ddr_block
     generic map (
-        g_DDR4 => g_DDR4--,
+        g_simulation    => g_simulation,
+        g_DDR4          => g_DDR4--,
     )
     port map(
         i_reset_n             => i_resets_n(RESET_BIT_DDR),
@@ -591,7 +591,6 @@ begin
         
         --! control and status registers
         i_ddr_control         => i_writeregs(DDR_CONTROL_W),
-        i_ddr_status          => o_readregs(DDR_STATUS_R),
 
         --! A interface
         o_A_ddr_calibrated    => A_mem_calibrated,
@@ -614,45 +613,45 @@ begin
         o_B_ddr_read_valid    => B_mem_q_valid,
         
         --! error counters
-        o_error               => o_readregs(DDR3_ERR_R),
+        o_error               => o_readregs(DDR_ERR_R),
 
         --! interface to memory bank A
-        o_A_mem_ck            => A_mem_ck,
-        o_A_mem_ck_n          => A_mem_ck_n,
-        o_A_mem_a             => A_mem_a,
-        o_A_mem_ba            => A_mem_ba,
-        o_A_mem_cke           => A_mem_cke,
-        o_A_mem_cs_n          => A_mem_cs_n,
-        o_A_mem_odt           => A_mem_odt,
-        o_A_mem_reset_n(0)    => A_mem_reset_n(0),
-        o_A_mem_we_n(0)       => A_mem_we_n(0),
-        o_A_mem_ras_n(0)      => A_mem_ras_n(0),
-        o_A_mem_cas_n(0)      => A_mem_cas_n(0),
-        io_A_mem_dqs          => A_mem_dqs,
-        io_A_mem_dqs_n        => A_mem_dqs_n,
-        io_A_mem_dq           => A_mem_dq,
-        o_A_mem_dm            => A_mem_dm,
-        i_A_oct_rzqin         => A_oct_rzqin,
-        i_A_pll_ref_clk       => A_pll_ref_clk,
+        o_A_mem_ck            => o_A_mem_ck,
+        o_A_mem_ck_n          => o_A_mem_ck_n,
+        o_A_mem_a             => o_A_mem_a,
+        o_A_mem_ba            => o_A_mem_ba,
+        o_A_mem_cke           => o_A_mem_cke,
+        o_A_mem_cs_n          => o_A_mem_cs_n,
+        o_A_mem_odt           => o_A_mem_odt,
+        o_A_mem_reset_n(0)    => o_A_mem_reset_n(0),
+        o_A_mem_we_n(0)       => o_A_mem_we_n(0),
+        o_A_mem_ras_n(0)      => o_A_mem_ras_n(0),
+        o_A_mem_cas_n(0)      => o_A_mem_cas_n(0),
+        io_A_mem_dqs          => io_A_mem_dqs,
+        io_A_mem_dqs_n        => io_A_mem_dqs_n,
+        io_A_mem_dq           => io_A_mem_dq,
+        o_A_mem_dm            => o_A_mem_dm,
+        i_A_oct_rzqin         => i_A_oct_rzqin,
+        i_A_pll_ref_clk       => i_A_pll_ref_clk,
         
         --! interface to memory bank B
-        o_B_mem_ck            => B_mem_ck,
-        o_B_mem_ck_n          => B_mem_ck_n,
-        o_B_mem_a             => B_mem_a,
-        o_B_mem_ba            => B_mem_ba,
-        o_B_mem_cke           => B_mem_cke,
-        o_B_mem_cs_n          => B_mem_cs_n,
-        o_B_mem_odt           => B_mem_odt,
-        o_B_mem_reset_n(0)    => B_mem_reset_n(0),
-        o_B_mem_we_n(0)       => B_mem_we_n(0),
-        o_B_mem_ras_n(0)      => B_mem_ras_n(0),
-        o_B_mem_cas_n(0)      => B_mem_cas_n(0),
-        io_B_mem_dqs          => B_mem_dqs,
-        io_B_mem_dqs_n        => B_mem_dqs_n,
-        io_B_mem_dq           => B_mem_dq,
-        o_B_mem_dm            => B_mem_dm,
-        i_B_oct_rzqin         => B_oct_rzqin,
-        i_B_pll_ref_clk       => B_pll_ref_clk--,
+        o_B_mem_ck            => o_B_mem_ck,
+        o_B_mem_ck_n          => o_B_mem_ck_n,
+        o_B_mem_a             => o_B_mem_a,
+        o_B_mem_ba            => o_B_mem_ba,
+        o_B_mem_cke           => o_B_mem_cke,
+        o_B_mem_cs_n          => o_B_mem_cs_n,
+        o_B_mem_odt           => o_B_mem_odt,
+        o_B_mem_reset_n(0)    => o_B_mem_reset_n(0),
+        o_B_mem_we_n(0)       => o_B_mem_we_n(0),
+        o_B_mem_ras_n(0)      => o_B_mem_ras_n(0),
+        o_B_mem_cas_n(0)      => o_B_mem_cas_n(0),
+        io_B_mem_dqs          => io_B_mem_dqs,
+        io_B_mem_dqs_n        => io_B_mem_dqs_n,
+        io_B_mem_dq           => io_B_mem_dq,
+        o_B_mem_dm            => o_B_mem_dm,
+        i_B_oct_rzqin         => i_B_oct_rzqin,
+        i_B_pll_ref_clk       => i_B_pll_ref_clk--,
      );
 
 end architecture;

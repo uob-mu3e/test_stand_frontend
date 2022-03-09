@@ -15,6 +15,8 @@ port (
     i_rdata     : in    work.util.slv32_array_t(N - 1 downto 0);
     i_rsop      : in    std_logic_vector(N-1 downto 0);
     i_reop      : in    std_logic_vector(N-1 downto 0);
+    i_t0        : in    std_logic_vector(N-1 downto 0) := (others => '0');
+    i_t1        : in    std_logic_vector(N-1 downto 0) := (others => '0');
     i_rempty    : in    std_logic_vector(N-1 downto 0);
     i_rmask_n   : in    std_logic_vector(N-1 downto 0);
     i_en        : in    std_logic;
@@ -26,6 +28,8 @@ port (
     i_ren       : in    std_logic;
     o_wsop      : out   std_logic;
     o_weop      : out   std_logic;
+    o_t0        : out   std_logic;
+    o_t1        : out   std_logic;
     
     -- output stream debug
     o_wdata_debug     : out   std_logic_vector(W-1 downto 0);
@@ -83,6 +87,8 @@ begin
         i_rdata     => rdata,
         i_rsop      => i_rsop,
         i_reop      => i_reop,
+        i_t0        => i_t0,
+        i_t1        => i_t1,
         i_rempty    => rempty,
         o_rack      => o_rack,
 
@@ -90,6 +96,8 @@ begin
         o_wdata     => wdata,
         o_wsop      => wsop,
         o_weop      => weop,
+        o_t0        => o_t0,
+        o_t1        => o_t1,
         i_wfull     => wfull,
         o_we        => we,
 
