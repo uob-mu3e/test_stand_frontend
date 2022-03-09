@@ -230,23 +230,24 @@ begin
         (others => '0');
 
     -- sync writeregs writes to i_clk_B clock domain
-    e_writeregs_B_fifo : entity work.ip_dcfifo
+    e_writeregs_B_fifo : entity work.ip_dcfifo_v2
     generic map (
-        ADDR_WIDTH => 4,
-        DATA_WIDTH => writeregs_B_fifo_wdata'length--,
+        g_ADDR_WIDTH => 4,
+        g_DATA_WIDTH => writeregs_B_fifo_wdata'length,
+        g_RREG_N => 1--,
     )
     port map (
-        data        => writeregs_B_fifo_wdata,
-        wrreq       => be3_prev or be4_prev,
-        wrfull      => open,
-        wrclk       => refclk,
+        i_we        => be3_prev or be4_prev,
+        i_wdata     => writeregs_B_fifo_wdata,
+        o_wfull     => open,
+        i_wclk      => refclk,
 
-        q           => writeregs_B_fifo_rdata,
-        rdreq       => not writeregs_B_fifo_rempty,
-        rdempty     => writeregs_B_fifo_rempty,
-        rdclk       => i_clk_B,
+        i_rack      => not writeregs_B_fifo_rempty,
+        o_rdata     => writeregs_B_fifo_rdata,
+        o_rempty    => writeregs_B_fifo_rempty,
+        i_rclk      => i_clk_B,
 
-        aclr        => not local_rstn--,
+        i_reset_n   => local_rstn--,
     );
 
     -- writeregs_B_reset_n is several clock cycles longer than local_rstn,
@@ -279,23 +280,24 @@ begin
         (others => '0');
 
     -- sync writeregs writes to i_clk_C clock domain
-    e_writeregs_C_fifo : entity work.ip_dcfifo
+    e_writeregs_C_fifo : entity work.ip_dcfifo_v2
     generic map (
-        ADDR_WIDTH => 4,
-        DATA_WIDTH => writeregs_C_fifo_wdata'length--,
+        g_ADDR_WIDTH => 4,
+        g_DATA_WIDTH => writeregs_C_fifo_wdata'length,
+        g_RREG_N => 1--,
     )
     port map (
-        data        => writeregs_C_fifo_wdata,
-        wrreq       => be3_prev or be4_prev,
-        wrfull      => open,
-        wrclk       => refclk,
+        i_wdata     => writeregs_C_fifo_wdata,
+        i_we        => be3_prev or be4_prev,
+        o_wfull     => open,
+        i_wclk      => refclk,
 
-        q           => writeregs_C_fifo_rdata,
-        rdreq       => not writeregs_C_fifo_rempty,
-        rdempty     => writeregs_C_fifo_rempty,
-        rdclk       => i_clk_C,
+        o_rdata     => writeregs_C_fifo_rdata,
+        i_rack      => not writeregs_C_fifo_rempty,
+        o_rempty    => writeregs_C_fifo_rempty,
+        i_rclk      => i_clk_C,
 
-        aclr        => not local_rstn--,
+        i_reset_n   => local_rstn--,
     );
 
     -- writeregs_C_reset_n is several clock cycles longer than local_rstn,

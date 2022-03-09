@@ -89,40 +89,40 @@ begin
     --! data out
     o_data <= r_ram_data;
 
-    e_ram_32_256 : entity work.ip_ram
+    e_ram_32_256 : entity work.ip_ram_2rw
     generic map (
-        ADDR_WIDTH_A    => 12,
-        ADDR_WIDTH_B    => 9,
-        DATA_WIDTH_A    => 32,
-        DATA_WIDTH_B    => 256--,
+        g_ADDR0_WIDTH   => 12,
+        g_DATA0_WIDTH   => 32,
+        g_ADDR1_WIDTH   => 9,
+        g_DATA1_WIDTH   => 256--,
     )
     port map (
-        address_a       => w_ram_add,
-        address_b       => r_ram_add,
-        clock_a         => i_clk_250,
-        clock_b         => i_clk_250,
-        data_a          => w_ram_data,
-        data_b          => (others => '0'),
-        wren_a          => w_ram_en,
-        wren_b          => '0',
-        q_a             => open,
-        q_b             => r_ram_data--,
+        i_addr0         => w_ram_add,
+        i_we0           => w_ram_en,
+        i_wdata0        => w_ram_data,
+        i_clk0          => i_clk_250,
+
+        i_addr1         => r_ram_add,
+        o_rdata1        => r_ram_data,
+        i_clk1          => i_clk_250--,
     );
 
-    e_tagging_fifo_event : entity work.ip_scfifo
+    e_tagging_fifo_event : entity work.ip_scfifo_v2
     generic map (
-        ADDR_WIDTH      => 12,
-        DATA_WIDTH      => 12--,
+        g_ADDR_WIDTH => 12,
+        g_DATA_WIDTH => w_fifo_data'length--,
     )
     port map (
-        data            => w_fifo_data,
-        wrreq           => w_fifo_en,
-        rdreq           => r_fifo_en,
-        clock           => i_clk_250,
-        q               => r_fifo_data,
-        full            => tag_fifo_full,
-        empty           => tag_fifo_empty,
-        sclr            => not i_reset_n_250--,
+        i_we            => w_fifo_en,
+        i_wdata         => w_fifo_data,
+        o_wfull         => tag_fifo_full,
+
+        i_rack          => r_fifo_en,
+        o_rdata         => r_fifo_data,
+        o_rempty        => tag_fifo_empty,
+
+        i_clk           => i_clk_250,
+        i_reset_n       => i_reset_n_250--,
     );
 
     o_ren <=
