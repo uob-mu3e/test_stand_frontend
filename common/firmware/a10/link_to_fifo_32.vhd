@@ -101,13 +101,12 @@ begin
                 if ( i_rx(7 downto 0) = x"BC" and i_rx_k = "0001" ) then
                     cnt_events <= cnt_events + '1';
                     if ( almost_full = '1' ) then
-                        link_to_fifo_state <= skip_data;
-                        cnt_skip_data <= cnt_skip_data + '1';
+                        link_to_fifo_state  <= skip_data;
+                        cnt_skip_data       <= cnt_skip_data + '1';
                     else
-                        link_to_fifo_state <= write_ts_0;
-                        rx_156_data <= "010" & i_rx; -- header
-                        
-                        rx_156_wen <= '1';
+                        link_to_fifo_state  <= write_ts_0;
+                        rx_156_data         <= "010" & i_rx; -- header
+                        rx_156_wen          <= '1';
                     end if;
                 end if;
 
@@ -141,7 +140,7 @@ begin
                     cnt_sub     <= cnt_sub + '1';
                 -- write hit on farm
                 elsif ( is_FARM ) then
-                    rx_156_data <= "000" & i_rx; -- hit, dont replace chipID, changing to 64bit hit later
+                    rx_156_data <= "000" & i_rx; -- hit, dont replace chipID, TODO: changing to 64bit hit later
                 end if;
 
                 hit_reg <= i_rx;
@@ -152,6 +151,7 @@ begin
                     rx_156_wen <= '1';
                 end if;
 
+                -- TODO: throw away subheader hits if the tree is not merging
             when skip_data =>
                 if ( i_rx(7 downto 0) = x"9C" and i_rx_k = "0001" ) then
                     link_to_fifo_state <= idle;

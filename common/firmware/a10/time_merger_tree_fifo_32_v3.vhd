@@ -125,7 +125,7 @@ begin
         -- [2]               [tr,2]                [3,sh,2]
         -- [b]               [b]                   [b]
         layer_state(i) <=             -- check if both are mask or if we are in enabled or in reset
-                            IDEL      when (i_mask_n(i) = '0' and i_mask_n(i+size) = '0') or i_en = '0' or i_reset_n /= '1' else
+                            IDLE      when (i_mask_n(i) = '0' and i_mask_n(i+size) = '0') or i_en = '0' or i_reset_n /= '1' else
                                       -- we forword the error the chain
                             ONEERROR  when (i_error(i) = '1' or i_error(i+size) = '1') and wrfull(i) = '0' else
                                       -- simple case on of the links is mask so we just send the other throw the tree
@@ -134,7 +134,7 @@ begin
                             WAITING   when i_empty(i) = '1' or i_empty(i+size) = '1' or wrfull(i) = '1' else
                                       -- since we check in before that we should have two links not masked and both are not empty we 
                                       -- want to see from both a header
-                            HEADER    when i_sop(i) = '1' and i_sop(i+size) = '1' and (last_state(i) = IDEL or last_state(i) = TRAILER) else
+                            HEADER    when i_sop(i) = '1' and i_sop(i+size) = '1' and (last_state(i) = IDLE or last_state(i) = TRAILER) else
                                       -- we now want that both hits have ts0
                             TS0       when i_t0(i) = '1' and i_t0(i+size) = '1' and last_state(i) = HEADER else
                                       -- we now want that both hits have ts1
@@ -148,6 +148,9 @@ begin
                                       -- we check if both hits have a trailer
                             TRAILER   when i_eop(i) = '1' and i_eop(i+size) = '1' and (last_state(i) = SHEADER or last_state(i) = HIT or last_state(i) = ONEHIT) else
                             WAITING;
+                            
+        -- TODO: simplifiy same when cases
+        -- NOTE: if timing problem maybe add reg for writing
 
         wrreq(i)        <=  '1' when layer_state(i) = HEADER or layer_state(i) = TS0 or layer_state(i) = TS1 or layer_state(i) = SHEADER or layer_state(i) = HIT or layer_state(i) = ONEHIT or layer_state(i) = TRAILER or layer_state(i) = ONEERROR else
                             not i_empty(i) when layer_state(i) = ONEMASK and i_mask_n(i) = '1' else

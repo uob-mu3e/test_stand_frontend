@@ -16,10 +16,11 @@ use work.a10_pcie_registers.all;
 
 entity farm_block is
 generic (
-    g_NLINKS_TOTL  : positive := 3;
-    g_NLINKS_PIXEL : positive := 2;
-    g_NLINKS_SCIFI : positive := 1;
-    LINK_FIFO_ADDR_WIDTH : positive := 10--;
+    g_NLINKS_TOTL           : positive  := 3;
+    g_NLINKS_PIXEL          : positive  := 2;
+    g_NLINKS_SCIFI          : positive  := 1;
+    g_ddr4                  : boolean   := false;
+    LINK_FIFO_ADDR_WIDTH    : positive  := 10--;
 );
 port (
 
