@@ -7,7 +7,7 @@ entity fifo_sync is
 generic (
     g_DATA_WIDTH : natural := 0;
     g_RDATA_RESET : std_logic_vector;
-    g_FIFO_ADDR_WIDTH : positive := 2--;
+    g_FIFO_ADDR_WIDTH : positive := 3--;
 );
 port (
     -- write domain

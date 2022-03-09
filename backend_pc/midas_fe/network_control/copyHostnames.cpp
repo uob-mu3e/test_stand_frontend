@@ -43,7 +43,7 @@ void write_dns_table(string path, vector <string> ips, vector <string> requested
   if (dnstable.is_open())
   {
     dnstable << "$TTL 2D\n@\t\tIN SOA\t\tDHCP-214.mu3e.kph.\troot.DHCP-214.mu3e.kph. (\n\t\t\t\t2019062601\t; serial\n\t\t\t\t3H\t\t; refresh\n\t\t\t\t1H\t\t; retry\n\t\t\t\t1W\t\t; expiry\n\t\t\t\t1D )\t\t; minimum\n\nmu3e.\t\tIN NS\t\tDHCP-214.mu3e.kph.\n";
-    for(int i = 0; i<ips.size(); i++){
+    for(size_t i = 0; i<ips.size(); i++){
         if(requestedHostnames[i]!="-")
             dnstable<<requestedHostnames[i]<<"              IN      A       "<<ips[i]<<"\n";
     }
@@ -78,9 +78,9 @@ vector <string> find_active_ips(string subnet){
 vector <string> find_unknown(vector <string> ips, vector <string> active_ips){
     vector <string> unknown_ips;
     int known;
-    for(int i=0; i<active_ips.size();i++){
+    for(size_t i=0; i<active_ips.size();i++){
         known = 0;
-        for(int j=0; j<ips.size();j++){
+        for(size_t j=0; j<ips.size();j++){
             if(ips[j]==active_ips[i])
                 known = 1;
         }
@@ -121,7 +121,7 @@ void read_reserved(string path, vector <string> *ips, vector <string> *hostnames
 
 
 
-int main(int argc, char * argv[])
+int main(int, char **)
 {
     vector <string> ips;
     vector <string> requestedHostnames;
@@ -166,21 +166,21 @@ int main(int argc, char * argv[])
 
             cout<<"-----------------------------------------"<<endl;
             cout<<"reserved ips:"<<endl;
-            for(int i=0; i<reserved_ips.size(); i++){
+            for(size_t i=0; i<reserved_ips.size(); i++){
                 cout<<reserved_ips[i]<<" \t"<< reserved_hostnames[i]<<" \t"<< reserved_mac_addr[i]<<endl;
             }
 
             cout<<"-----------------------------------------"<<endl;
             cout<<"previous leased ips:"<<endl;
             cout<<"leased ip \t"<<"requested Hostname"<< endl;
-            for(int i=0; i<prev_ips.size(); i++){
+            for(size_t i=0; i<prev_ips.size(); i++){
                 cout<<prev_ips[i]<<" \t"<< prev_requestedHostnames[i]<<endl;
             }
 
             cout<<"-----------------------------------------"<<endl;
             cout<<"new leased ips:"<<endl;
             cout<<"leased ip \t"<<"requested Hostname"<< endl;
-            for(int i=0; i<ips.size(); i++){
+            for(size_t i=0; i<ips.size(); i++){
                 cout<<ips[i]<<" \t"<< requestedHostnames[i]<<endl;
             }
 
@@ -205,7 +205,7 @@ int main(int argc, char * argv[])
             cout<<"WARNING: found unknown fixed IPs ------"<<endl;
             cout<<"---------------------------------------"<<endl;
             cout<<"remove them or give them a name in dhcpd.conf:"<<endl;
-            for(int i=0; i<unknown_ips.size(); i++){
+            for(size_t i=0; i<unknown_ips.size(); i++){
                 cout<<unknown_ips[i]<<endl;
             }
         }

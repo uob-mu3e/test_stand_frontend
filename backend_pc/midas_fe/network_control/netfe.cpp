@@ -154,7 +154,7 @@ void write_dns_table(string path, vector <string> ips, vector <string> requested
     //TODO: this needs to be changed for a different gateway server  --> read on frontend init ??
     dnstable << "$TTL 2D\n@\t\tIN SOA\t\tDHCP-214.mu3e.kph.\troot.DHCP-214.mu3e.kph. (\n\t\t\t\t2019062601\t; serial\n\t\t\t\t3H\t\t; refresh\n\t\t\t\t1H\t\t; retry\n\t\t\t\t1W\t\t; expiry\n\t\t\t\t1D )\t\t; minimum\n\nmu3e.\t\tIN NS\t\tDHCP-214.mu3e.kph.\n";
 
-    for(int i = 0; i<ips.size(); i++){
+    for(size_t i = 0; i<ips.size(); i++){
         if(requestedHostnames[i]!="-"){
             dnstable<<requestedHostnames[i]<<"              IN      A       "<<ips[i]<<"\n";
             db_set_value_index(hDB, 0, "Equipment/DHCP DNS/Settings/DNSips", ips[i].c_str(), sizeof(reserved_ips[i]), nDNS, TID_STRING, FALSE);
@@ -196,9 +196,9 @@ vector <string> find_active_ips(string subnet){
 vector <string> find_unknown(vector <string> ips, vector <string> active_ips){
     vector <string> unknown_ips;
     int known;
-    for(int i=0; i<active_ips.size();i++){
+    for(size_t i=0; i<active_ips.size();i++){
         known = 0;
-        for(int j=0; j<ips.size();j++){
+        for(size_t j=0; j<ips.size();j++){
             if(ips[j]==active_ips[i])
                 known = 1;
         }
@@ -285,15 +285,15 @@ void rm_reserve_ip(){
 
 /*-- Dummy routines ------------------------------------------------*/
 
-INT poll_event(INT source, INT count, BOOL test)
+INT poll_event(INT, INT, BOOL)
 {
    return 1;
-};
+}
 
-INT interrupt_configure(INT cmd, INT source, POINTER_T adr)
+INT interrupt_configure(INT, INT, POINTER_T)
 {
    return 1;
-};
+}
 
 /*-- Frontend Init -------------------------------------------------*/
 
@@ -348,35 +348,35 @@ INT frontend_loop()
 
 /*-- Begin of Run --------------------------------------------------*/
 
-INT begin_of_run(INT run_number, char *error)
+INT begin_of_run(INT, char *)
 {
    return CM_SUCCESS;
 }
 
 /*-- End of Run ----------------------------------------------------*/
 
-INT end_of_run(INT run_number, char *error)
+INT end_of_run(INT, char *)
 {
    return CM_SUCCESS;
 }
 
 /*-- Pause Run -----------------------------------------------------*/
 
-INT pause_run(INT run_number, char *error)
+INT pause_run(INT, char *)
 {
    return CM_SUCCESS;
 }
 
 /*-- Resume Run ----------------------------------------------------*/
 
-INT resume_run(INT run_number, char *error)
+INT resume_run(INT, char *)
 {
    return CM_SUCCESS;
 }
 
 /*--- Read Clock and Reset Event to be put into data stream --------*/
 
-INT read_cr_event(char *pevent, INT off)
+INT read_cr_event(char *, INT)
 {
     // slow down
     //sleep(10);
@@ -423,14 +423,14 @@ INT read_cr_event(char *pevent, INT off)
     ips.insert(ips.end(), reserved_ips.begin(), reserved_ips.end());
     requestedHostnames.insert(requestedHostnames.end(), reserved_hostnames.begin(), reserved_hostnames.end());
     macs.insert(macs.end(),reserved_mac_addr.begin(),reserved_mac_addr.end());
-    for(int i = 0; i< reserved_ips.size();i++)
+    for(size_t i = 0; i< reserved_ips.size();i++)
         expiration.push_back("inf");
 
     // if new dhcp request:   --> update dns table
 
     if(prev_ips!=ips){
         if(ips.size()!=0 && prev_ips.size()!=0 ){
-            for (int i = 0; i < ips.size(); i++){
+            for (size_t i = 0; i < ips.size(); i++){
                 if(ips.at(i)!=prev_ips.at(i)){
                     cm_msg(MINFO, "netfe_settings_changed", "new or updated dhcp lease of %s to %s",ips.at(i).c_str(),requestedHostnames.at(i).c_str());
                     break;
@@ -443,7 +443,7 @@ INT read_cr_event(char *pevent, INT off)
 
         //update odb only if there was a change (prev_ips!=ips). Rewrite everything if something changed
         db_set_value(hDB,0,"Equipment/DHCP DNS/Settings/leasedIPs", ips[0].c_str(), sizeof(ips[0]), 1, TID_STRING);
-        for (int i = 0; i < ips.size(); i++) {
+        for (size_t i = 0; i < ips.size(); i++) {
             //TODO: find a way to do this in a single command !!! (without loop of db_set_value)
             db_set_value_index(hDB, 0, "Equipment/DHCP DNS/Settings/leasedIPs", ips[i].c_str(), sizeof(ips[i]), i, TID_STRING, FALSE);
             db_set_value_index(hDB, 0, "Equipment/DHCP DNS/Settings/leasedHostnames", requestedHostnames[i].c_str(), sizeof(requestedHostnames[i]), i, TID_STRING, FALSE);
@@ -452,7 +452,7 @@ INT read_cr_event(char *pevent, INT off)
         }
         db_set_value(hDB,0,"Equipment/DHCP DNS/Settings/nLeased", to_string(ips.size()).c_str(), sizeof(to_string(ips.size()).c_str()), 1,TID_STRING);
 
-        for (int i = 0; i < reserved_ips.size(); i++) {
+        for (size_t i = 0; i < reserved_ips.size(); i++) {
             db_set_value_index(hDB, 0, "Equipment/DHCP DNS/Settings/reservedIPs", reserved_ips[i].c_str(), sizeof(reserved_ips[i]), i, TID_STRING, FALSE);
             db_set_value_index(hDB, 0, "Equipment/DHCP DNS/Settings/reservedHostnames", reserved_hostnames[i].c_str(), sizeof(reserved_hostnames[i]), i, TID_STRING, FALSE);
             db_set_value_index(hDB, 0, "Equipment/DHCP DNS/Settings/reservedMACs", reserved_mac_addr[i].c_str(), sizeof(reserved_mac_addr[i]), i, TID_STRING, FALSE);

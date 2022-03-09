@@ -16,7 +16,7 @@ class TCPClient{
 		~TCPClient();
 		bool Connect();
 		bool Write(std::string str);
-		bool ReadReply(std::string *str,int = 3);
+		bool ReadReply(std::string *str,size_t = 3);
 		bool FlushQueu();
 		int GetWaitTime() { return default_wait; }
 		void SetDefaultWaitTime(int value){ default_wait = value; }
