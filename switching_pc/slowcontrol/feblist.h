@@ -2,10 +2,13 @@
 #define FEBLIST_H
 
 #include <vector>
+#include <array>
 #include <string>
+#include <optional>
 #include <stdint.h>
 
 #include "mappedfeb.h"
+#include "linkstatus.h"
 
 namespace midas{
     class odb;
@@ -23,18 +26,27 @@ namespace midas{
 class FEBList
 {
 public:
-    FEBList(uint16_t SB_index_):SB_index(SB_index_){RebuildFEBList();};
+    FEBList(uint16_t SB_index_, std::string eq_name_);
+    FEBList(const FEBList &) = delete; // Do not copy!
+    FEBList& operator=(FEBList const &) = delete; // Do not assign
     size_t nFEBS() const {return mFEBs.size();}
+    size_t nPrimaryFEBS() const {return mPrimaryFEBs.size();}
+    size_t nActiveFEBS() const {return mActiveFEBs.size();}
     size_t nPixelFEBS() const {return mPixelFEBs.size();}
     size_t nSciFiFEBS() const {return mSciFiFEBs.size();}
     size_t nTileFEBS() const {return mTileFEBs.size();}
 
-    const mappedFEB getFEB(size_t i) const {return mFEBs.at(i);}
-    const mappedFEB getPixelFEB(size_t i) const {return mPixelFEBs.at(i);}
-    const mappedFEB getSciFiFEB(size_t i) const {return mSciFiFEBs.at(i);}
-    const mappedFEB getTileFEB(size_t i) const {return mTileFEBs.at(i);}
+    //const mappedFEB getFEB(size_t i) const {return mFEBs.at(i);}
+    const mappedFEB & getPrimaryFEB(size_t i) const {return mPrimaryFEBs.at(i);}
+    const mappedFEB & getActiveFEB(size_t i) const {return mActiveFEBs.at(i);}
+    const mappedFEB & getPixelFEB(size_t i) const {return mPixelFEBs.at(i);}
+    const mappedFEB & getSciFiFEB(size_t i) const {return mSciFiFEBs.at(i);}
+    const mappedFEB & getTileFEB(size_t i) const {return mTileFEBs.at(i);}
 
-    const std::vector<mappedFEB> & getFEBs(){return mpFEBs;}
+    std::optional<const mappedFEB> getFEBatPort(uint8_t SB_Port);
+
+    const std::vector<mappedFEB> & getPrimaryFEBs(){return mPrimaryFEBs;}
+    const std::vector<mappedFEB> & getActiveFEBs(){return mActiveFEBs;}
     const std::vector<mappedFEB> & getPixelFEBs(){return mPixelFEBs;}
     const std::vector<mappedFEB> & getSciFiFEBs(){return mSciFiFEBs;}
     const std::vector<mappedFEB> & getTileFEBs(){return mTileFEBs;}
@@ -49,13 +61,16 @@ public:
 
 protected:
     const uint16_t SB_index;
+    std::string eq_name;
+    std::array<LinkStatus, MAX_LINKS_PER_SWITCHINGBOARD> linkstats;
     uint64_t mFEBMask;
     uint64_t mLinkMask;
     uint64_t mPixelFEBMask;
     uint64_t mSciFiFEBMask;
     uint64_t mTileFEBMask;
     std::vector<mappedFEB> mFEBs;
-    std::vector<mappedFEB> mpFEBs;
+    std::vector<mappedFEB> mPrimaryFEBs;
+    std::vector<mappedFEB> mActiveFEBs;   
     std::vector<mappedFEB> mPixelFEBs;
     std::vector<mappedFEB> mSciFiFEBs;
     std::vector<mappedFEB> mTileFEBs;

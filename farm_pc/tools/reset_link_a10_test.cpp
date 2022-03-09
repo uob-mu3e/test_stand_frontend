@@ -94,7 +94,7 @@ int main()
             mu.write_register(CLK_LINK_1_REGISTER_W, 0x000FFFFF);
             mu.write_register(CLK_LINK_2_REGISTER_W, 0xFFF00000);
             mu.write_register(CLK_LINK_3_REGISTER_W, 0xFFF00000);
-            mu.write_register(CLK_LINK_REST_REGISTER_W, 0xFFFFF00FF);
+            mu.write_register(CLK_LINK_REST_REGISTER_W, 0xFFFF00FF);
             mu.write_register(RESET_REGISTER_W, reset_regs);
             mu.write_register(RESET_REGISTER_W, 0x0);
             break;
@@ -103,7 +103,7 @@ int main()
             mu.write_register(CLK_LINK_1_REGISTER_W, 0xFFF00000);
             mu.write_register(CLK_LINK_2_REGISTER_W, 0xFFF00000);
             mu.write_register(CLK_LINK_3_REGISTER_W, 0xFFF00000);
-            mu.write_register(CLK_LINK_REST_REGISTER_W, 0xFFFFFFFFF);
+            mu.write_register(CLK_LINK_REST_REGISTER_W, 0xFFFFFFFF);
             mu.write_register(RESET_REGISTER_W, reset_regs);
             mu.write_register(RESET_REGISTER_W, 0x0);
             break;    

@@ -7,32 +7,31 @@ LIBRARY altera_mf;
 USE altera_mf.altera_mf_components.all;
 
 entity max10_interface is 
-    port (
-        i_reset_n           : in    std_logic;
-        i_clk               : in    std_logic;
-        i_clk_156           : in    std_logic;
+port (
+    i_reset_n           : in    std_logic;
+    i_clk               : in    std_logic;
+    i_clk_156           : in    std_logic;
 
-        o_SPI_csn           : out   std_logic;
-        o_SPI_clk           : out   std_logic;
-        io_SPI_mosi         : inout std_logic;
-        io_SPI_miso         : inout std_logic;
-        io_SPI_D1           : inout std_logic;
-        io_SPI_D2           : inout std_logic;
-        io_SPI_D3           : inout std_logic;
+    o_SPI_csn           : out   std_logic;
+    o_SPI_clk           : out   std_logic;
+    io_SPI_mosi         : inout std_logic;
+    io_SPI_miso         : inout std_logic;
+    io_SPI_D1           : inout std_logic;
+    io_SPI_D2           : inout std_logic;
+    io_SPI_D3           : inout std_logic;
 
-        adc_reg             : out   work.util.slv32_array_t( 4 downto 0);
-        o_max10_version     : out   std_logic_vector(31 downto 0);
-        o_max10_status      : out   std_logic_vector(31 downto 0);
-        o_programming_status: out   std_logic_vector(31 downto 0);
+    adc_reg             : out   work.util.slv32_array_t( 4 downto 0);
+    o_max10_version     : out   std_logic_vector(31 downto 0);
+    o_max10_status      : out   std_logic_vector(31 downto 0);
+    o_programming_status: out   std_logic_vector(31 downto 0);
 
-        programming_ctrl    : in    std_logic_vector(31 downto 0);
-        programming_data    : in    std_logic_vector(31 downto 0);
-        programming_data_ena: in    std_logic;
-        programming_addr    : in    std_logic_vector(31 downto 0);
-        programming_addr_ena: in    std_logic--;
-
-    );
-end max10_interface;
+    programming_ctrl    : in    std_logic_vector(31 downto 0);
+    programming_data    : in    std_logic_vector(31 downto 0);
+    programming_data_ena: in    std_logic;
+    programming_addr    : in    std_logic_vector(31 downto 0);
+    programming_addr_ena: in    std_logic--;
+);
+end entity;
 
 architecture rtl of max10_interface is
 

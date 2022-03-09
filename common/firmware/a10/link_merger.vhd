@@ -10,7 +10,6 @@ library ieee;
 use ieee.std_logic_1164.all;
 use ieee.std_logic_unsigned.all;
 
-
 entity link_merger is
 generic (
     W : integer := 66;
@@ -38,9 +37,9 @@ port (
 end entity;
 
 architecture arch of link_merger is
-         
+
     signal reset_data, reset_mem : std_logic;
-    
+
     signal link_data, link_dataq : work.util.slv38_array_t(NLINKS_TOTL - 1 downto 0);
     signal link_empty, link_wren, link_full, link_afull, link_wrfull, sop, eop, shop, link_ren : std_logic_vector(NLINKS_TOTL - 1 downto 0);
     signal link_usedw : std_logic_vector(LINK_FIFO_ADDR_WIDTH * NLINKS_TOTL - 1 downto 0);
@@ -49,12 +48,12 @@ architecture arch of link_merger is
     type sync_fifo_t is array (NLINKS_TOTL - 1 downto 0) of std_logic_vector(35 downto 0);
     signal sync_fifo_q : sync_fifo_t;
     signal sync_fifo_data : sync_fifo_t;
-    
+
     signal stream_wdata, stream_rdata : std_logic_vector(W-1 downto 0);
     signal we_counter : std_logic_vector(63 downto 0);
     signal stream_rempty, stream_rack, stream_wfull, stream_we : std_logic;
     signal hit_a : work.util.slv32_array_t(7 downto 0);
-    
+
 begin
 
 reset_data <= not i_reset_data_n;
@@ -62,8 +61,8 @@ reset_mem <= not i_reset_mem_n;
 
 buffer_link_fifos: FOR i in 0 to NLINKS_TOTL - 1 GENERATE
 
-process(i_dataclk, i_reset_data_n)
-begin
+    process(i_dataclk, i_reset_data_n)
+    begin
     if ( i_reset_data_n = '0' ) then
         sync_fifo_data(i) <= (others => '0');
         sync_fifo_i_wrreq(i) <= '0';
@@ -75,7 +74,7 @@ begin
             sync_fifo_i_wrreq(i) <= '1';
         end if;
     end if;
-end process;
+    end process;
 
 e_sync_fifo : entity work.ip_dcfifo
 generic map(
@@ -133,18 +132,18 @@ port map (
     aclr        => reset_data--,
 );
 
-process(i_dataclk, i_reset_data_n)
-begin
+    process(i_dataclk, i_reset_data_n)
+    begin
     if(i_reset_data_n = '0') then
         link_afull(i)       <= '0';
     elsif(rising_edge(i_dataclk)) then
         if(link_usedw(i * LINK_FIFO_ADDR_WIDTH + LINK_FIFO_ADDR_WIDTH - 1) = '1') then
             link_afull(i)   <= '1';
-        else 
+        else
             link_afull(i)   <= '0';
         end if;
     end if;
-end process;
+    end process;
 
 sop(i) <= link_dataq(i)(36);
 shop(i) <= '1' when link_dataq(i)(37 downto 36) = "00" and link_dataq(I)(31 downto 26) = "111111" else '0';
@@ -169,20 +168,20 @@ port map (
     i_link                  => i_link_valid,
     i_mask_n                => i_link_mask_n,
     o_rack                  => link_ren,
-    
+
     -- output stream
     o_rdata                 => stream_rdata,
     i_ren                   => stream_rack,
     o_empty                 => stream_rempty,
-    
+
     -- error outputs
-    
+
     i_reset_n               => i_reset_mem_n,
     i_clk                   => i_memclk--,
 );
 
-process(i_memclk, i_reset_mem_n)
-begin   
+    process(i_memclk, i_reset_mem_n)
+    begin
     if ( i_reset_mem_n /= '1' ) then
         we_counter <= (others => '0');
     elsif rising_edge(i_memclk) then
@@ -190,10 +189,10 @@ begin
             we_counter <= we_counter + '1';
         end if;
     end if;
-end process;
-    
-o_stream_rdata <= stream_rdata;
-o_stream_rempty <= stream_rempty;
-stream_rack <= i_stream_rack;
+    end process;
+
+    o_stream_rdata <= stream_rdata;
+    o_stream_rempty <= stream_rempty;
+    stream_rack <= i_stream_rack;
 
 end architecture;

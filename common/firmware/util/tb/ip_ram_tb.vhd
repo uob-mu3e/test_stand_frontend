@@ -39,41 +39,29 @@ begin
         wait until rising_edge(clk);
     end process;
 
-    --e_ram : entity work.ip_ram_2rw
-    --generic map (
-    --    g_ADDR0_WIDTH => 4,
-    --    g_DATA0_WIDTH => 4,
-    --    g_ADDR1_WIDTH => 4,
-    --    g_DATA1_WIDTH => 4--,
-    --)
-    --port map (
-    --    i_addr0     => random(3 downto 0),
-    --    o_rdata0    => rdata,
-    --    i_wdata0    => random(7 downto 4),
-    --    i_we0       => random(8),
-    --    i_clk0      => clk,
-
-    --    i_addr1     => random(19 downto 16),
-    --    o_rdata1    => rdata,
-    --    i_wdata1    => random(23 downto 20),
-    --    i_we1       => random(24),
-    --    i_clk1      => clk--,
-    --);
-
     addr <= random(3 downto 0);
-    we <= random(7);
+    we <= random(8);
+    re <= random(9);
 
-    e_ram : entity work.ip_ram_1rw
+    e_ram : entity work.ip_ram_2rw
     generic map (
-        g_ADDR_WIDTH => addr'length,
-        g_DATA_WIDTH => wdata'length--,
+        g_ADDR0_WIDTH => 4,
+        g_DATA0_WIDTH => 4,
+        g_ADDR1_WIDTH => 4,
+        g_DATA1_WIDTH => 4--,
     )
     port map (
-        i_addr      => addr,
-        o_rdata     => rdata,
-        i_wdata     => addr,
-        i_we        => we,
-        i_clk       => clk--,
+        i_addr0     => addr,
+        i_we0       => we,
+        i_wdata0    => addr,
+        o_rdata0    => rdata,
+        i_clk0      => clk,
+
+        i_addr1     => addr,
+        i_we1       => '0',
+        i_wdata1    => (others => '-'),
+        o_rdata1    => open,
+        i_clk1      => clk--,
     );
 
     process

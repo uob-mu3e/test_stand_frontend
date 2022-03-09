@@ -209,11 +209,12 @@ begin
 --                empty   => rdempty_0(i),
 --                full    => wrfull_0(i)--,
 --            );
-            
+
             e_link_fifo : entity work.ip_dcfifo_v2
             generic map(
                 g_ADDR_WIDTH => TREE_DEPTH_w,
-                g_DATA_WIDTH => write_width(0)--,
+                g_DATA_WIDTH => write_width(0),
+                g_RREG_N => 1--,
             )
             port map (
                 i_wdata     => data_0(i),
@@ -578,7 +579,7 @@ begin
                 end if;
 
             -- TODO: Change this to one cycle
-            -- NOTE: at the moment we wait here a view cycles to write the 
+            -- NOTE: at the moment we wait here a view cycles to write the
             -- SubHeader to the 256 bit out
             when wait_for_sh_written =>
                 header_trailer_we <= "01";

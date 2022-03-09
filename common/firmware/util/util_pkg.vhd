@@ -213,8 +213,8 @@ package util is
     ) return std_logic_vector;
 
     function lfsr (
-        data : std_logic_vector;
-        taps : integer_vector--;
+        data : in std_logic_vector;
+        taps : in integer_vector--;
     ) return std_logic_vector;
 
     -- CRC-32C (Castagnoli) 0x1.1EDC6F41
@@ -611,8 +611,8 @@ package body util is
     end function;
 
     function lfsr (
-        data : std_logic_vector;
-        taps : integer_vector--;
+        data : in std_logic_vector;
+        taps : in integer_vector--;
     ) return std_logic_vector is
         variable data_v : std_logic_vector(data'range);
     begin

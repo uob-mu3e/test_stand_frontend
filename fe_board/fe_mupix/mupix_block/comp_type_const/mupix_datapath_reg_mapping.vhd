@@ -11,11 +11,10 @@ use ieee.numeric_std.all;
 use work.mupix_registers.all;
 use work.mupix.all;
 
-
 entity mupix_datapath_reg_mapping is
-    generic(
-        LINK_ORDER_g : mp_link_order_t--;
-    );
+generic (
+    LINK_ORDER_g : mp_link_order_t--;
+);
 port (
     i_clk156                    : in  std_logic;
     i_clk125                    : in  std_logic := '0';
@@ -86,11 +85,11 @@ begin
     process (i_clk156, i_reset_n)
         variable regaddr : integer;
     begin
-        if (i_reset_n = '0') then 
+        if (i_reset_n = '0') then
             mp_datagen_control        <= (others => '0');
             mp_lvds_link_mask         <= (others => '0');
             mp_sorter_inject          <= (others => '0');
-            
+
         elsif(rising_edge(i_clk156)) then
 
             --regs for long paths
@@ -215,7 +214,7 @@ begin
 --    delta_ts_histo : work.histogram_generic
 --    generic map(
 --        DATA_WIDTH   => ,
---        ADDR_WIDTH   => 
+--        ADDR_WIDTH   =>
 --    )
 --    port map(
 --        rclk:         in std_logic;

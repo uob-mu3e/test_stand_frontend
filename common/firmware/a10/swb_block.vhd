@@ -3,9 +3,9 @@
 --! @brief the swb_block can be used
 --! for the LCHb Board and the development board
 --! mainly it includes the datapath which includes
---! merging hits from multiple FEBs. There will be 
+--! merging hits from multiple FEBs. There will be
 --! four types of SWB which differe accordingly to
---! the detector data they receive (inner pixel, 
+--! the detector data they receive (inner pixel,
 --! scifi, down and up stream pixel/tiles)
 --! Author: mkoeppel@uni-mainz.de
 -------------------------------------------------------
@@ -65,7 +65,7 @@ port (
 
     --! 250 MHz clock / reset_n
     i_reset_n_250        : in  std_logic;
-    i_clk_250            : in  std_logic;    
+    i_clk_250            : in  std_logic;
 
     --! 156 MHz clock / reset_n
     i_reset_n_156        : in  std_logic;
@@ -77,15 +77,15 @@ end entity;
 --! @details The arch of the swb_block can be used
 --! for the LCHb Board and the development board
 --! mainly it includes the datapath which includes
---! merging hits from multiple FEBs. There will be 
+--! merging hits from multiple FEBs. There will be
 --! four types of SWB which differe accordingly to
---! the detector data they receive (inner pixel, 
+--! the detector data they receive (inner pixel,
 --! scifi, down and up stream pixel/tiles)
 architecture arch of swb_block is
 
     --! masking signals
     signal pixel_mask_n, scifi_mask_n : std_logic_vector(63 downto 0);
-    
+
     --! farm links
     signal farm_data       : work.util.slv32_array_t(g_NLINKS_FARM_TOTL-1 downto 0);
     signal farm_data_valid : work.util.slv2_array_t(g_NLINKS_FARM_TOTL-1 downto 0);
@@ -114,7 +114,7 @@ architecture arch of swb_block is
     signal rx_data_k_pixel : work.util.slv4_array_t(g_NLINKS_DATA_PIXEL-1 downto 0);
     signal rx_data_scifi   : work.util.slv32_array_t(g_NLINKS_DATA_SCIFI-1 downto 0);
     signal rx_data_k_scifi : work.util.slv4_array_t(g_NLINKS_DATA_SCIFI-1 downto 0);
-    
+
     --! counters
     signal counter_swb_data_pixel_156 : work.util.slv32_array_t(g_NLINKS_DATA_PIXEL*5-1 downto 0);
     signal counter_swb_data_scifi_156 : work.util.slv32_array_t(g_NLINKS_DATA_SCIFI*5-1 downto 0);
@@ -124,13 +124,13 @@ architecture arch of swb_block is
 begin
 
     --! @brief data path of the SWB board
-    --! @details the data path of the SWB board is first splitting the 
+    --! @details the data path of the SWB board is first splitting the
     --! data from the FEBs into data, slow control and run control packages.
     --! The different paths are than assigned to the corresponding entities.
     --! The data is merged in time over all incoming FEBs. After this packages
     --! are build and the data is send of to the farm boars. The slow control
-    --! data is saved in the PCIe memory and can be further used in the MIDAS 
-    --! system. The run control packages are used to control the run and give 
+    --! data is saved in the PCIe memory and can be further used in the MIDAS
+    --! system. The run control packages are used to control the run and give
     --! feedback to MIDAS if all FEBs started the run.
 
     --! counter readout
@@ -180,6 +180,7 @@ begin
             i_data              => i_rx(i),
             i_datak             => i_rx_k(i),
             i_fifo_almost_full  => '0',--link_fifo_almost_full(i),
+
             o_data              => rx_data(i),
             o_datak             => rx_data_k(i),
             o_sc                => rx_sc(i),
@@ -240,7 +241,7 @@ begin
         o_done          => o_readregs_156(SC_MAIN_STATUS_REGISTER_R)(SC_MAIN_DONE),
         o_state         => o_readregs_156(SC_STATE_REGISTER_R)(27 downto 0)--,
     );
-    
+
     e_sc_secondary : entity work.swb_sc_secondary
     generic map (
         NLINKS => g_NLINKS_FEB_TOTL--,
@@ -324,7 +325,7 @@ begin
         -- Data type: "00" = pixel, "01" = scifi, "10" = tiles
         DATA_TYPE               => "00"--,
     )
-    port map(
+    port map (
         i_clk_156        => i_clk_156,
         i_clk_250        => i_clk_250,
 
@@ -345,7 +346,7 @@ begin
         o_counter_250    => counter_swb_data_pixel_250_us,
         
         i_dmamemhalffull => i_dmamemhalffull,
-        
+
         o_farm_data      => pixel_farm_data(0),
         o_farm_datak     => pixel_farm_datak(0),
 
@@ -466,13 +467,13 @@ begin
 --    port map(
 --        i_clk_156        => i_clk_156,
 --        i_clk_250        => i_clk_250,
---        
+--
 --        i_reset_n_156    => i_resets_n_156(RESET_BIT_DATA_PATH),
 --        i_reset_n_250    => i_resets_n_250(RESET_BIT_DATA_PATH),
 --
 --        i_resets_n_156   => i_resets_n_156,
 --        i_resets_n_250   => i_resets_n_250,
---        
+--
 --        i_rx             => i_rx(15 downto 14),
 --        i_rx_k           => i_rx_k(15 downto 14),
 --        i_rmask_n        => x"0000000000" & i_writeregs_250(SWB_LINK_MASK_TILE_REGISTER_W),
@@ -483,7 +484,7 @@ begin
 --        o_counter        => counter_swb_data_tile,
 --
 --        i_dmamemhalffull => i_dmamemhalffull,
---        
+--
 --        o_farm_data      => o_tile_data,
 --        o_farm_datak     => o_tile_datak,
 --        o_fram_wen       => o_tile_wen,

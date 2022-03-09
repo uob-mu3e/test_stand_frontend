@@ -155,9 +155,9 @@ architecture rtl of top is
     signal clk_250      : std_logic;
     signal reset_250_n  : std_logic;
 
-    -- 250 MHz pcie clock 
-    signal reset_pcie0_n    : std_logic;
-    signal pcie_fastclk_out : std_logic;
+    -- 250 MHz pcie clock
+    signal pcie0_clk        : std_logic;
+    signal pcie0_reset_n    : std_logic;
     
     -- DDR clk
     signal A_mem_clk, B_mem_clk : std_logic;
@@ -192,9 +192,9 @@ architecture rtl of top is
 
     signal rx_data_raw, rx_data, tx_data    : work.util.slv32_array_t(15 downto 0);
     signal rx_datak_raw, rx_datak, tx_datak : work.util.slv4_array_t(15 downto 0);
-	 
-	 -- pll locked signal top
-	 signal locked_50to125 : std_logic;
+
+    -- pll locked signal top
+    signal locked_50to125 : std_logic;
 
 begin
 
@@ -213,7 +213,7 @@ begin
     --! (can be connected to SMA input as global clock)
     e_pll_50to125 : component work.cmp.ip_pll_50to125
     port map (
-		  locked => locked_50to125,
+        locked => locked_50to125,
         outclk_0 => SMA_CLKOUT,
         refclk => clk_50,
         rst => not reset_50_n
@@ -237,7 +237,6 @@ begin
         g_XCVR1_CHANNELS => 16,
         g_XCVR1_N => 4,
         g_PCIE0_X => 8,
-        g_PCIE1_X => 0,
         g_FARM    => 1,
         g_CLK_MHZ => 50.0--,
     )
@@ -267,7 +266,6 @@ begin
         -- LED / BUTTONS
         o_LED(1)                        => LED(0),
         o_LED_BRACKET                   => LED_BRACKET,
-        i_BUTTON                        => BUTTON,
 
         -- XCVR1 (10000 Mbps @ 250 MHz)
         i_xcvr1_rx( 3 downto  0)        => QSFPA_RX_p,
@@ -284,14 +282,15 @@ begin
         o_xcvr1_rx_datak                => rx_datak_raw,
         i_xcvr1_tx_data                 => tx_data,
         i_xcvr1_tx_datak                => tx_datak,
-        i_xcvr1_clk                     => pcie_fastclk_out,
+        i_xcvr1_clk                     => pcie0_clk,
 
         -- PCIe0
         i_pcie0_rx                      => PCIE_RX_p,
         o_pcie0_tx                      => PCIE_TX_p,
         i_pcie0_perst_n                 => PCIE_PERST_n,
         i_pcie0_refclk                  => PCIE_REFCLK_p,
-        o_pcie0_clk                     => pcie_fastclk_out,
+        o_pcie0_reset_n                 => pcie0_reset_n,
+        o_pcie0_clk                     => pcie0_clk,
         o_pcie0_clk_hz                  => LED(3),
 
         -- PCIe0 read interface to writable memory
@@ -310,7 +309,7 @@ begin
         i_pcie0_dma0_we                 => dma_data_wren,
         i_pcie0_dma0_eoe                => dmamem_endofevent,
         o_pcie0_dma0_hfull              => pcie0_dma0_hfull,
-        i_pcie0_dma0_clk                => pcie_fastclk_out,
+        i_pcie0_dma0_clk                => pcie0_clk,
 
         -- PCIe0 update interface for readable registers
         i_pcie0_rregs_A                 => pcie0_readregs_A,
@@ -319,7 +318,7 @@ begin
 
         -- PCIe0 read interface for writable registers
         o_pcie0_wregs_A                 => pcie0_writeregs_A,
-        i_pcie0_wregs_A_clk             => pcie_fastclk_out,
+        i_pcie0_wregs_A_clk             => pcie0_clk,
         o_pcie0_regwritten_A            => pcie0_regwritten_A,
         o_pcie0_wregs_B                 => pcie0_writeregs_B,
         i_pcie0_wregs_B_clk             => clk_250,
@@ -332,10 +331,8 @@ begin
         o_pcie0_resets_n_C              => pcie0_resets_n_C,
 
         -- resets clk
-		  top_pll_locked						 => locked_50to125,
-		  
-        o_reset_pcie0_n                 => reset_pcie0_n,
-        
+        top_pll_locked                  => locked_50to125,
+
         o_reset_250_n                   => reset_250_n,
         o_clk_250                       => clk_250,
         o_clk_250_hz                    => LED(2),
@@ -417,12 +414,12 @@ begin
         o_dma_data      => dma_data,
 
         --! 250 MHz clock pice / reset_n
-        i_reset_n_250_pcie => reset_pcie0_n,
-        i_clk_250_pcie     => pcie_fastclk_out,
+        i_reset_n_250_pcie => pcie0_reset_n,
+        i_clk_250_pcie     => pcie0_clk,
 
         --! 250 MHz clock link / reset_n
-        i_reset_n_250_link => reset_pcie0_n,
-        i_clk_250_link     => pcie_fastclk_out,
+        i_reset_n_250_link => pcie0_reset_n,
+        i_clk_250_link     => pcie0_clk,
 
         -- Interface to memory bank A
         o_A_mem_clk        => A_mem_clk,

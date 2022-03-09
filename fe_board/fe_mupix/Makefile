@@ -5,4 +5,4 @@ IPs = \
     $(wildcard ../fe/ip/*.tcl) \
     nios.tcl
 
-include util/altera/makefile.mk
+include util/quartus/makefile.mk

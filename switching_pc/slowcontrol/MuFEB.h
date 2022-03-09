@@ -22,20 +22,20 @@ class MuFEB {
       MuFEB(FEBSlowcontrolInterface & feb_sc_,
             const vector<mappedFEB> & febs_,
             const uint64_t & febmask_,
-            const char* equipment_name_,
-            const char* odb_prefix_,
+            std::string equipment_name_,
+            std::string link_equipment_name_,
             const uint8_t SB_number_):
               feb_sc(feb_sc_),
               febs(febs_),
               febmask(febmask_),
               equipment_name(equipment_name_),
-              odb_prefix(odb_prefix_),
+              link_equipment_name(link_equipment_name_),
               SB_number(SB_number_)
         {}
       virtual ~MuFEB(){}
 
-      const char* GetName(){return equipment_name;}
-      const char* GetPrefix(){return odb_prefix;}
+      const std::string GetName(){return equipment_name;}
+      const std::string GetLinkEquipmentName(){return link_equipment_name;}
 
       virtual uint16_t GetNumASICs() const {return 0;}
       virtual uint16_t GetNumFPGAs() const {return febs.size();}
@@ -43,30 +43,33 @@ class MuFEB {
       virtual uint16_t GetASICSPerModule() const {return 0;}
       virtual uint16_t GetASICSPerFEB() const {return GetASICSPerModule() * GetModulesPerFEB();}
 
-      //Parameter FPGA_ID refers to global numbering, i.e. before mapping
-      int ReadBackRunState(uint16_t FPGA_ID);
-      void ReadBackAllRunState(){for(size_t i=0;i<febs.size();i++) ReadBackRunState(i);};
+      virtual void ResetAllCounters(){};
+      int ReadBackRunState(const mappedFEB & FEB);
+      void ReadBackAllRunState(){for(auto feb : febs) ReadBackRunState(feb);};
+
+      vector<uint32_t> CheckLinks(uint32_t nlinks);
 
       int WriteFEBIDs();
-      int WriteFEBID(uint16_t FPGA_ID);
-      int WriteFEBID(mappedFEB &);
-      int WriteSorterDelay(uint16_t FPGA_ID, uint32_t delay);
+      //int WriteFEBID(uint16_t FPGA_ID);
+      int WriteFEBID(const mappedFEB & FEB);
+      int WriteSorterDelay(const mappedFEB & FEB, uint32_t delay);
       void ReadFirmwareVersionsToODB();
 
-      void LoadFirmware(std::string filename, uint16_t FPGA_ID, bool emergencyImage = false);
+      void LoadFirmware(std::string filename, const mappedFEB & FEB, bool emergencyImage = false);
 
-      uint32_t ReadBackMergerRate(uint16_t FPGA_ID);
-      uint32_t ReadBackResetPhase(uint16_t FPGA_ID);
-      uint32_t ReadBackTXReset(uint16_t FPGA_ID);
+      uint32_t ReadRegister(const mappedFEB & FEB, const uint32_t reg, const uint32_t mask =0xFFFFFFFF);
+      uint32_t ReadBackMergerRate(const mappedFEB & FEB);
+      uint32_t ReadBackResetPhase(const mappedFEB & FEB);
+      uint32_t ReadBackTXReset(const mappedFEB & FEB);
 
       DWORD *fill_SSFE(DWORD * pdata);
-      DWORD *read_SSFE_OneFEB(DWORD * pdata, uint32_t index, uint32_t version);
+      DWORD *read_SSFE_OneFEB(DWORD * pdata, const mappedFEB & FEB);
 
       DWORD *fill_SSSO(DWORD * pdata);
-      DWORD *read_SSSO_OneFEB(DWORD * pdata, uint32_t index);
+      DWORD *read_SSSO_OneFEB(DWORD * pdata, const mappedFEB & FEB);
 
       const vector<mappedFEB> getFEBs() const {return febs;}
-      const uint8_t getSB_number() const {return SB_number;}
+      uint8_t getSB_number() const {return SB_number;}
 
       static constexpr uint32_t EMERGENCY_IMAGE_START_ADDRESS = 0xC00000;
       static constexpr uint32_t FLASH_MAX_ADDRESS = 0xFFFFFF;
@@ -76,8 +79,9 @@ protected:
       FEBSlowcontrolInterface & feb_sc;
       const vector<mappedFEB> & febs;
       const uint64_t & febmask;
-      const char* equipment_name;
-      const char* odb_prefix;
+      std::string equipment_name;
+      std::string link_equipment_name;
+      //const char* odb_prefix;
       const uint8_t SB_number;
 
       //Mapping from ASIC number to FPGA_ID and ASIC_ID
@@ -103,8 +107,6 @@ protected:
       bool reg_getBit(uint32_t reg_in, uint8_t bit);
       uint32_t reg_getRange(uint32_t reg_in, uint8_t length, uint8_t offset);
       uint32_t reg_setRange(uint32_t reg_in, uint8_t length, uint8_t offset, uint32_t value);
-
-
 
 
 };//class MuFEB

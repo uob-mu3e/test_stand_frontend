@@ -4,7 +4,7 @@
 --! next farm (farm aligne link). We align by the event #.
 --! 
 --! @farm_link_to_fifo.vhd
---! @brief the farm_link_to_fifo sorts out the data from the 
+--! @brief the farm_link_to_fifo sorts out the data from the
 --! link and provides it as a fifo output
 --! Author: mkoeppel@uni-mainz.de
 -------------------------------------------------------

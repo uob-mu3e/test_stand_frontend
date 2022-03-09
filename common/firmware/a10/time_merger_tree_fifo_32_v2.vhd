@@ -152,50 +152,54 @@ begin
         o_mask_n(i) <= i_mask_n(i) or i_mask_n(i + size);
 
         gen_last_layer : IF last_layer = '1' and i < g_NLINKS_DATA GENERATE
---            e_last_fifo_data : entity work.ip_dcfifo_mixed_widths
+--            e_last_fifo_data : entity work.ip_dcfifo_v2
 --            generic map(
---                ADDR_WIDTH_w    => 11,
---                DATA_WIDTH_w    => 32,
---                ADDR_WIDTH_r    => 8,
---                DATA_WIDTH_r    => 32*8--,
+--                g_WADDR_WIDTH => 11,
+--                g_WDATA_WIDTH => 32,
+--                g_RADDR_WIDTH => 8,
+--                g_RDATA_WIDTH => 32*8--,
 --            )
 --            port map (
---                aclr    => reset_fifo(i),
---                data    => data(i)(31 downto 0),
---                rdclk   => i_clk,
---                rdreq   => i_rdreq(i),
---                wrclk   => i_clk,
---                wrreq   => wrreq(i),
---                q       => last_data,
---                rdempty => rdempty_last0(i),
---                wrfull  => wrfull_last0(i)--,
+--                i_we        => wrreq(i),
+--                i_wdata     => data(i)(31 downto 0),
+--                o_wfull     => wrfull_last0(i),
+--                i_wclk      => i_clk,
+--
+--                i_rack      => i_rdreq(i),
+--                o_rdata     => last_data,
+--                o_rempty    => rdempty_last0(i),
+--                i_rclk      => i_clk,
+--
+--                i_reset_n   => not reset_fifo(i)--,
 --            );
 --
---            e_last_fifo_link : entity work.ip_dcfifo_mixed_widths
+--            e_last_fifo_link : entity work.ip_dcfifo_v2
 --            generic map(
---                ADDR_WIDTH_w    => 11,
---                DATA_WIDTH_w    => 6,
---                ADDR_WIDTH_r    => 8,
---                DATA_WIDTH_r    => 6*8--,
+--                g_WADDR_WIDTH => 11,
+--                g_WDATA_WIDTH => 6,
+--                g_RADDR_WIDTH => 8,
+--                g_RDATA_WIDTH => 6*8--,
 --            )
 --            port map (
---                aclr    => reset_fifo(i),
---                data    => data(i)(37 downto 32),
---                rdclk   => i_clk,
---                rdreq   => i_rdreq(i),
---                wrclk   => i_clk,
---                wrreq   => wrreq(i),
---                q       => last_link,
---                rdempty => rdempty_last1(i),
---                wrfull  => wrfull_last1(i)--,
+--                i_we        => wrreq(i),
+--                i_wdata     => data(i)(37 downto 32),
+--                o_wfull     => wrfull_last1(i),
+--                i_wclk      => i_clk,
+--
+--                i_rack      => i_rdreq(i),
+--                o_rdata     => last_link,
+--                o_rempty    => rdempty_last1(i),
+--                i_rclk      => i_clk,
+--
+--                i_reset_n   => not reset_fifo(i)--,
 --            );
 
             e_last_fifo_link_debug : entity work.ip_scfifo_v2
             generic map (
                 g_ADDR_WIDTH => 11,
                 g_DATA_WIDTH => 38,
-                g_WREG_N => 1, -- TNS=...
-                g_RREG_N => 1--, -- TNS=-2300
+                g_WREG_N => 1,
+                g_RREG_N => 1--,
             )
             port map (
                 i_wdata         => data(i),
@@ -216,8 +220,8 @@ begin
             generic map (
                 g_ADDR_WIDTH => TREE_w,
                 g_DATA_WIDTH => w_width,
-                g_WREG_N => 1, -- TNS=-8800
-                g_RREG_N => 1--, -- TNS=-...
+                g_WREG_N => 1,
+                g_RREG_N => 1--,
             )
             port map (
                 i_wdata         => data(i),

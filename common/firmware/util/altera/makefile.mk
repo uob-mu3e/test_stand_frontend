@@ -84,6 +84,13 @@ define find_file
 $(lastword $(wildcard $(addsuffix $(1),$(dir $(MAKEFILE_LIST)))))
 endef
 
+.PHONY : clean
+clean :
+	rm -rf -- \
+	    ./.qsys_edit ./top.qws \
+	    ./db ./incremental_db ./output_files \
+	    ./top.qsf ./top.qpf "./$(PREFIX)"
+
 # default qpf file
 top.qpf :
 	cat << EOF > "$@"
@@ -98,7 +105,7 @@ top.qsf : $(MAKEFILE_LIST)
 	set_global_assignment -name PROJECT_OUTPUT_DIRECTORY "$(QUARTUS_OUTPUT_FILES)"
 	set_global_assignment -name SOURCE_TCL_SCRIPT_FILE "$(call find_file,settings.tcl)"
 	set_global_assignment -name QIP_FILE "$(PREFIX)/include.qip"
-	set_global_assignment -name PRE_FLOW_SCRIPT_FILE "quartus_sh:util/altera/pre_flow.tcl"
+	set_global_assignment -name PRE_FLOW_SCRIPT_FILE "quartus_sh:util/quartus/pre_flow.tcl"
 	EOF
 
 all : top.qpf top.qsf $(PREFIX)/include.qip
@@ -177,7 +184,7 @@ pgm : $(SOF)
 .PRECIOUS : $(BSP_DIR)/settings.bsp
 $(BSP_DIR)/settings.bsp : $(BSP_SCRIPT) $(NIOS_SOPCINFO)
 	mkdir -pv -- "$(BSP_DIR)"
-	export LD_LIBRARY_PATH="$(LD_LIBRARY_PATH):$(QUARTUS_ROOTDIR)/linux64"
+	LD_LIBRARY_PATH="$(QUARTUS_ROOTDIR)/linux64:$(LD_LIBRARY_PATH)" \
 	nios2-bsp-create-settings \
 	    --type hal --script "$(SOPC_KIT_NIOS2)/sdk2/bin/bsp-set-defaults.tcl" \
 	    --sopc $(NIOS_SOPCINFO) --cpu-name cpu \

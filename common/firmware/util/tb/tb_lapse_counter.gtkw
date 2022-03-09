@@ -1,22 +1,15 @@
 [*]
-[*] GTKWave Analyzer v3.3.109 (w)1999-2020 BSI
-[*] Tue Oct 19 07:41:02 2021
-[*]
-[dumpfile] "/home/makoeppel/mu3e/online/common/firmware/util/tb/.cache/tb_lapse_counter.ghw"
-[dumpfile_mtime] "Tue Oct 19 07:40:47 2021"
-[dumpfile_size] 7880064
-[savefile] "/home/makoeppel/mu3e/online/common/firmware/util/tb/tb_lapse_counter.gtkw"
 [timestart] 0
-[size] 1366 768
-[pos] -684 -1
-*-38.000000 13157371000 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
+[size] 1600 1200
+[pos] -1 -1
 [treeopen] top.
 [treeopen] top.tb_lapse_counter.
 [treeopen] top.tb_lapse_counter.e_lapse_counter.
-[sst_width] 247
-[signals_width] 259
 [sst_expanded] 1
-[sst_vpaned_height] 389
+[sst_width] 300
+[signals_width] 150
+[sst_expanded] 1
+[sst_vpaned_height] 600
 @24
 #{top.tb_lapse_counter.e_lapse_counter.o_cc[14:0]} top.tb_lapse_counter.e_lapse_counter.o_cc[14] top.tb_lapse_counter.e_lapse_counter.o_cc[13] top.tb_lapse_counter.e_lapse_counter.o_cc[12] top.tb_lapse_counter.e_lapse_counter.o_cc[11] top.tb_lapse_counter.e_lapse_counter.o_cc[10] top.tb_lapse_counter.e_lapse_counter.o_cc[9] top.tb_lapse_counter.e_lapse_counter.o_cc[8] top.tb_lapse_counter.e_lapse_counter.o_cc[7] top.tb_lapse_counter.e_lapse_counter.o_cc[6] top.tb_lapse_counter.e_lapse_counter.o_cc[5] top.tb_lapse_counter.e_lapse_counter.o_cc[4] top.tb_lapse_counter.e_lapse_counter.o_cc[3] top.tb_lapse_counter.e_lapse_counter.o_cc[2] top.tb_lapse_counter.e_lapse_counter.o_cc[1] top.tb_lapse_counter.e_lapse_counter.o_cc[0]
 #{top.tb_lapse_counter.e_lapse_counter.i_cc[14:0]} top.tb_lapse_counter.e_lapse_counter.i_cc[14] top.tb_lapse_counter.e_lapse_counter.i_cc[13] top.tb_lapse_counter.e_lapse_counter.i_cc[12] top.tb_lapse_counter.e_lapse_counter.i_cc[11] top.tb_lapse_counter.e_lapse_counter.i_cc[10] top.tb_lapse_counter.e_lapse_counter.i_cc[9] top.tb_lapse_counter.e_lapse_counter.i_cc[8] top.tb_lapse_counter.e_lapse_counter.i_cc[7] top.tb_lapse_counter.e_lapse_counter.i_cc[6] top.tb_lapse_counter.e_lapse_counter.i_cc[5] top.tb_lapse_counter.e_lapse_counter.i_cc[4] top.tb_lapse_counter.e_lapse_counter.i_cc[3] top.tb_lapse_counter.e_lapse_counter.i_cc[2] top.tb_lapse_counter.e_lapse_counter.i_cc[1] top.tb_lapse_counter.e_lapse_counter.i_cc[0]

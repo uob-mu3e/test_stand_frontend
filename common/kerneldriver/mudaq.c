@@ -55,7 +55,7 @@ static DEFINE_IDA(mudaq_ida);
 //
 
 struct mudaq {
-    struct pci_dev *pci_dev;
+    struct pci_dev* pci_dev;
     u32 to_user[2];
     long irq;
     atomic_t event;
@@ -180,17 +180,18 @@ irqreturn_t mudaq_interrupt(int irq, void *dev_id) {
 
 /* Access registers */
 inline
-__iomem u32 *mudaq_register_rw(struct mudaq *mu, unsigned index) {
-    __iomem u32 *base = mu->mem->internal_addr[0];
+__iomem u32* mudaq_register_rw(struct mudaq* mu, unsigned index) {
+    __iomem u32* base = mu->mem->internal_addr[0];
     return base + index;
 }
 
 inline
-__iomem u32 *mudaq_register_ro(struct mudaq *mu, unsigned index) {
-    __iomem u32 *base = mu->mem->internal_addr[1];
+__iomem u32* mudaq_register_ro(struct mudaq* mu, unsigned index) {
+    __iomem u32* base = mu->mem->internal_addr[1];
     return base + index;
 }
 
+// write to register then read back and check
 #define mudaq_write32_test(mu, value, index) ({ \
     void __iomem* addr = mudaq_register_rw((mu), index); \
     u32 a = (value), b; \
@@ -202,7 +203,8 @@ __iomem u32 *mudaq_register_ro(struct mudaq *mu, unsigned index) {
 })
 
 static
-void mudaq_deactivate(struct mudaq *mu) {
+void mudaq_deactivate(struct mudaq* mu) {
+    if(mu == NULL || mu->mem == NULL) return;
     mudaq_write32_test(mu, 0, DATAGENERATOR_REGISTER_W);
     mudaq_write32_test(mu, 0, DMA_REGISTER_W);
 }
@@ -215,10 +217,12 @@ void mudaq_set_dma_ctrl_addr(struct mudaq *mu, dma_addr_t ctrl_handle) {
 }
 
 static
-int mudaq_set_dma_data_addr(struct mudaq* mu,
-                                    dma_addr_t data_handle,
-                                    u32 mem_location,
-                                    u32 n_pages) {
+int mudaq_set_dma_data_addr(
+    struct mudaq* mu,
+    dma_addr_t data_handle,
+    u32 mem_location,
+    u32 n_pages
+) {
     u32 regcontent;
     regcontent = SET_DMA_NUM_PAGES_RANGE(0x0, n_pages);
     regcontent = SET_DMA_RAM_LOCATION_RANGE(regcontent, mem_location);
@@ -251,8 +255,8 @@ void mudaq_clear_mmio(struct pci_dev *dev, struct mudaq *mu) {
 
 static
 int mudaq_setup_mmio(struct pci_dev *pdev, struct mudaq *mu) {
-    const int bars[] = {0, 1, 2, 3};
-    const char *names[] = {"registers_rw", "registers_ro", "memory_rw", "memory_ro"};
+    const int bars[] = { 0, 1, 2, 3 };
+    const char* names[] = { "registers_rw", "registers_ro", "memory_rw", "memory_ro" };
     int rv = 0;
 
     /* request access to pci BARs */
@@ -524,7 +528,7 @@ void mudaq_pci_remove(struct pci_dev *pdev) {
 }
 
 static
-int mudaq_pci_probe(struct pci_dev *pdev, const struct pci_device_id *pid) {
+int mudaq_pci_probe(struct pci_dev* pdev, const struct pci_device_id* pid) {
     int rv;
 
     struct mudaq* mu = mudaq_alloc();
@@ -536,6 +540,7 @@ int mudaq_pci_probe(struct pci_dev *pdev, const struct pci_device_id *pid) {
     DEBUG("Allocated mudaq\n");
 
     mu->pci_dev = pdev;
+
     if ((rv = pci_enable_device(pdev)) < 0) goto out_free;
     DEBUG("Enabled device\n");
     if ((rv = mudaq_setup_mmio(pdev, mu)) < 0) goto out_disable;

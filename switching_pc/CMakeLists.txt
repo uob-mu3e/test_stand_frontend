@@ -1,5 +1,4 @@
 add_subdirectory(slowcontrol)
 add_subdirectory(midas_fe)
-#add_subdirectory(midas_fe_scifi)
-#add_subdirectory(midas_fe_Tile)
-#add_subdirectory(midas_fe_pixels)
+add_subdirectory(tools)
+

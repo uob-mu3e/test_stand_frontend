@@ -1,6 +1,6 @@
 -------------------------------------------------------
 --! farm_aligne_link.vhd
---! @brief the @farm_aligne_link syncs the link data 
+--! @brief the @farm_aligne_link syncs the link data
 --! to the pcie clk
 --! Author: mkoeppel@uni-mainz.de
 -------------------------------------------------------
@@ -31,10 +31,10 @@ port (
     o_tx            : out std_logic_vector(31 downto 0);
     o_tx_k          : out std_logic_vector(3 downto 0);
 
-    --! error counters 
+    --! error counters
     --! 0: fifo sync_almost_full
     --! 1: fifo sync_wrfull
-    --! 2: # of next farm event
+    --! 2: cnt_skip_sub_header
     --! 3: cnt_sub_header
     o_counter       : out work.util.slv32_array_t(3 downto 0);
     o_data          : out std_logic_vector(35 downto 0);

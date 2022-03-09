@@ -184,10 +184,7 @@ begin
         locked      => pll_locked--,
     );
 
-    e_vreg: entity work.version_reg
-    port map(
-        data_out => version(27 downto 0)
-    );
+    version(27 downto 0) <= work.cmp.GIT_HEAD(27 downto 0);
     version(31 downto 28) <= (others => '0');
 
     status(MAX10_STATUS_BIT_PLL_LOCKED)  <= pll_locked;

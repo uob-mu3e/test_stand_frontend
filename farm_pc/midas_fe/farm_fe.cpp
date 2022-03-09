@@ -59,6 +59,8 @@ uint32_t lastRunWritten;
 bool moreevents;
 bool firstevent;
 
+
+
 /* maximum event size produced by this frontend */
 INT max_event_size = dma_buf_size; // we fix this for now to 32MB
 
@@ -327,12 +329,12 @@ INT init_mudaq(){
     }
     dma_buf = (uint32_t*)mmap(nullptr, MUDAQ_DMABUF_DATA_LEN, PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0);
     if(dma_buf == MAP_FAILED) {
-        cm_msg(MERROR, "frontend_init" , "mmap failed: dmabuf = %x\n", dma_buf);
+        cm_msg(MERROR, "frontend_init" , "mmap failed: dmabuf = %x\n", MAP_FAILED);
         return FE_ERR_DRIVER;
     }
     
     // initialize to zero
-    for (int i = 0; i < dma_buf_nwords ; i++) {
+    for (uint32_t i = 0; i < dma_buf_nwords ; i++) {
         (dma_buf)[i] = 0;
     }
     
@@ -415,7 +417,7 @@ INT begin_of_run(INT run_number, char *error)
    mu.write_register_wait(RESET_REGISTER_W, reset_reg, 100);
 
    // empty dma buffer
-   for (int i = 0; i < dma_buf_nwords ; i++) {
+   for (uint32_t i = 0; i < dma_buf_nwords ; i++) {
       (dma_buf)[i] = 0;
    }
 
@@ -665,9 +667,10 @@ uint32_t check_event(T* buffer, uint32_t idx, uint32_t* pdata) {
         printf("Data: %8.8x\n", buffer[idx+4+eventDataSize/4-2]);
         return -1;
     }
-
+    // TODO: Variable size buffers are not legal C/C++
+    // Can't we copy dircetly from buffer to pdata?
     uint32_t dma_buf[4+eventDataSize/4];
-    for ( int i = 0; i<4+eventDataSize/4; i++ ) {
+    for (uint32_t i = 0; i<4+eventDataSize/4; i++ ) {
       dma_buf[i] = buffer[idx + i];
       //printf("%8.8x %8.8x\n", i, buffer[idx + i]);
     }
@@ -785,7 +788,7 @@ INT read_stream_thread(void *param) {
 
         // check cnt loop
         if (cnt_loop == 100000) { printf("ERROR: cnt_loop == 100000\n"); break; }
-        
+
         // walk events to find end of last event
         uint32_t offset = 0;
         uint32_t cnt = 0;

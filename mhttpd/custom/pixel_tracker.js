@@ -344,7 +344,7 @@ function openChipDacs(evt, dacName) {
         odb_dacName = "CONFDACS"
     else if (dacName === "VDAC")
         odb_dacName = "VDACS"
-    document.getElementById(dacName + "_head").textContent = "Change values in " + "/Equipment/Mupix/Settings/" + odb_dacName + "/" + (parseInt(lads[current_selected]["json_node"]["FEB_ID"])*12 + parseInt(current_lad_chips[current_chip_selected]["json_node"]["MIDAS_ID"]))
+    document.getElementById(dacName + "_head").textContent = "Change values in " + "/Equipment/PixelsCentral/Settings/" + odb_dacName + "/" + (parseInt(lads[current_selected]["json_node"]["FEB_ID"])*12 + parseInt(current_lad_chips[current_chip_selected]["json_node"]["MIDAS_ID"]))
     reset_table(dacName + "_tab", 0)
     var table = document.getElementById(dacName + "_tab");
     table.style["visibility"] = "visible"
@@ -368,7 +368,7 @@ function openChipDacs(evt, dacName) {
         var cell2 = row1.insertCell(1);
         cell1.innerHTML = dac;
         cell2.classList.add("modbvalue")
-        var link = "/Equipment/Mupix/Settings/" + odb_dacName + "/" + (parseInt(lads[current_selected]["json_node"]["FEB_ID"])*12 + parseInt(current_lad_chips[current_chip_selected]["json_node"]["MIDAS_ID"])) + "/" + dac
+        var link = "/Equipment/PixelsCentral/Settings/" + odb_dacName + "/" + (parseInt(lads[current_selected]["json_node"]["FEB_ID"])*12 + parseInt(current_lad_chips[current_chip_selected]["json_node"]["MIDAS_ID"])) + "/" + dac
         cell2.setAttribute("data-odb-path", link)
         cell2.setAttribute("data-odb-editable", "1")
         cell2.id = "DAC_tab_" + dac
@@ -392,7 +392,7 @@ function configureChip(evt) {
     var px_mask = []
     var num = (parseInt(lads[current_selected]["json_node"]["FEB_ID"])*12 + parseInt(current_lad_chips[current_chip_selected]["json_node"]["MIDAS_ID"]))
     for (var i = 0; i < 128; ++i) {
-        mask_names.push("/Equipment/Mupix/Settings/Daq/mask[" + i + "]")
+        mask_names.push("/Equipment/PixelsCentral/Settings/Daq/mask[" + i + "]")
         if (i === num)
             px_mask.push(false);
         else
@@ -401,7 +401,7 @@ function configureChip(evt) {
     document.getElementById("pixel_configure_update").style["visibility"] = "visible"
     document.getElementById("pixel_configure_update_content").textContent = "Configuring chip number " + num
     mjsonrpc_db_paste(mask_names, px_mask).then(function () {
-        mjsonrpc_db_paste(["/Equipment/Switching/Settings/MupixConfig"], [true])
+        mjsonrpc_db_paste(["/Equipment/SwitchingCentral/Commands/MupixConfig"], [true])
     }).catch(function(error) {
         mjsonrpc_error_alert(error);
     });
@@ -426,7 +426,7 @@ function resetDACs(evt) {
         else if (dacName === "VDAC")
             odb_dacName = "VDACS"
         for (var dac in mupix_dacs[dacName]) {
-            daclist.push("/Equipment/Mupix/Settings/" + odb_dacName + "/" + num + "/" + dac)
+            daclist.push("/Equipment/PixelsCentral/Settings/" + odb_dacName + "/" + num + "/" + dac)
             dacvalues.push(mupix_dacs[dacName][dac])
         }
         document.getElementById("pixel_configure_update").style["visibility"] = "visible"
@@ -455,7 +455,7 @@ function configureMultipleChip(evt) {
                         return
                     lad_name += "_L" +ladder
                     num = (parseInt(lads[lad_name]["json_node"]["FEB_ID"])*12 + parseInt(lads[lad_name]["json_node"]["Chips"][chip]["MIDAS_ID"]))
-                    mask_names.push("/Equipment/Mupix/Settings/Daq/mask[" + num + "]")
+                    mask_names.push("/Equipment/PixelsCentral/Settings/Daq/mask[" + num + "]")
                     if (multiple_chip_boxes[direction][layer][ladder][chip].checked == true) {
                         document.getElementById("debug").textContent += lad_name + " : " + num + " - "
                         px_mask.push(false);
@@ -468,7 +468,7 @@ function configureMultipleChip(evt) {
     }
 
     mjsonrpc_db_paste(mask_names, px_mask).then(function () {
-        mjsonrpc_db_paste(["/Equipment/Switching/Settings/MupixConfig"], [true])
+        mjsonrpc_db_paste(["/Equipment/SwitchingCentral/Commands/MupixConfig"], [true])
     }).catch(function(error) {
         mjsonrpc_error_alert(error);
      });
