@@ -68,14 +68,12 @@ architecture arch of swb_data_path is
     constant W : positive := g_NLINKS_FARM*32+g_NLINKS_FARM*6;
 
     --! data gen links
-    signal gen_link : std_logic_vector(31 downto 0);
-    signal gen_link_k : std_logic_vector(3 downto 0);
+    signal gen_link : work.mu3e.link_t;
     signal gen_data, gen_q : std_logic_vector(W-1 downto 0);
     signal gen_rempty, gen_re, gen_we, gen_full : std_logic;
 
     --! data link signals
-    signal rx : work.util.slv32_array_t(g_NLINKS_DATA-1 downto 0);
-    signal rx_k : work.util.slv4_array_t(g_NLINKS_DATA-1 downto 0);
+    signal rx : work.mu3e.link_array_t(g_NLINKS_DATA-1 downto 0);
     signal rx_ren, rx_mask_n, rx_rdempty : std_logic_vector(g_NLINKS_DATA-1 downto 0) := (others => '0');
     signal rx_q : work.util.slv34_array_t(g_NLINKS_DATA-1 downto 0) := (others => (others => '0'));
     signal sop, eop, shop : std_logic_vector(g_NLINKS_DATA-1 downto 0) := (others => '0');
@@ -154,7 +152,6 @@ begin
         i_dma_half_full     => '0',
         random_seed         => (others => '1'),
         data_pix_generated  => gen_link,
-        datak_pix_generated => gen_link_k,
         data_pix_ready      => open,
         start_global_time   => (others => '0'),
         delay               => (others => '0'),
@@ -168,15 +165,12 @@ begin
         process(i_clk_156, i_reset_n_156)
         begin
         if ( i_reset_n_156 = '0' ) then
-            rx(i)   <= (others => '0');
-            rx_k(i) <= (others => '0');
+            rx(i) <= work.mu3e.LINK_IDLE;
         elsif rising_edge( i_clk_156 ) then
-            if (i_writeregs_156(SWB_READOUT_STATE_REGISTER_W)(USE_BIT_GEN_LINK) = '1') then
-                rx(i)   <= gen_link;
-                rx_k(i) <= gen_link_k;
+            if ( i_writeregs_156(SWB_READOUT_STATE_REGISTER_W)(USE_BIT_GEN_LINK) = '1' ) then
+                rx(i) <= gen_link;
             else
-                rx(i)   <= i_rx(i).data;
-                rx_k(i) <= i_rx(i).datak;
+                rx(i) <= i_rx(i);
             end if;
         end if;
         end process;
@@ -198,8 +192,8 @@ begin
             LINK_FIFO_ADDR_WIDTH => LINK_FIFO_ADDR_WIDTH--,
         )
         port map (
-            i_rx            => rx(i),
-            i_rx_k          => rx_k(i),
+            i_rx            => rx(i).data,
+            i_rx_k          => rx(i).datak,
 
             o_q             => rx_q(i),
             i_ren           => rx_ren(i),

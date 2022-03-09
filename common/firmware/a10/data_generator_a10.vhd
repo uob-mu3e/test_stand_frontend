@@ -34,8 +34,7 @@ port (
     delay               : in    std_logic_vector (15 downto 0);
     random_seed         : in    std_logic_vector (15 downto 0);
     start_global_time   : in    std_logic_vector(47 downto 0);
-    data_pix_generated  : out   std_logic_vector(31 downto 0);
-    datak_pix_generated : out   std_logic_vector(3 downto 0);
+    data_pix_generated  : out   work.mu3e.link_t;
     data_pix_ready      : out   std_logic;
     slow_down           : in    std_logic_vector(31 downto 0);
     state_out           : out   std_logic_vector(3 downto 0)
@@ -141,7 +140,7 @@ lsfr_chip_id <= (others => '0') when wchip = '0' else lsfr_chip_id_reg;
     begin
 	if (i_reset_n = '0') then
 		data_pix_ready          <= '0';
-		data_pix_generated      <= (others => '0');
+        data_pix_generated <= work.mu3e.LINK_IDLE;
 		global_time       		<= start_global_time;
 		time_cnt_t       		<= (others => '0');
 		data_header_state			<= part1;
@@ -149,7 +148,6 @@ lsfr_chip_id <= (others => '0') when wchip = '0' else lsfr_chip_id_reg;
 		overflow_idx				:= 0;
 		state_out					<= (others => '0');
 		delay_cnt					<= (others => '0');
-		datak_pix_generated		<= (others => '1');
 		row <= (others => '0');
 		col <= (others => '0');
 	elsif rising_edge(clk) then
@@ -160,46 +158,46 @@ lsfr_chip_id <= (others => '0') when wchip = '0' else lsfr_chip_id_reg;
             	state_out <= x"A";
             	if ( delay_cnt = delay ) then
             		data_header_state 					<= part2;
-            		data_pix_generated(31 downto 26) 	<= DATA_HEADER_ID;
-            		data_pix_generated(25 downto 24) 	<= (others => '0');
-            		data_pix_generated(23 downto 8) 	<= fpga_id;
-            		data_pix_generated(7 downto 0) 		<= x"bc";
-            		datak_pix_generated              	<= "0001";
+                    data_pix_generated.data(31 downto 26) <= DATA_HEADER_ID;
+                    data_pix_generated.data(25 downto 24) <= (others => '0');
+                    data_pix_generated.data(23 downto 8) <= fpga_id;
+                    data_pix_generated.data(7 downto 0) <= x"bc";
+                    data_pix_generated.datak <= "0001";
             	else
             		-- send not valid data out of the data package
             		delay_cnt 							<= delay_cnt + '1';
-            		data_pix_generated					<= x"AFFEAFFE";
-            		datak_pix_generated              	<= "0000";
+                    data_pix_generated.data <= x"AFFEAFFE";
+                    data_pix_generated.datak <= "0000";
             	end if;
 
 
             when part2 =>
             	state_out <= x"B";
             	delay_cnt <= (others => '0');
-            	data_pix_generated(31 downto 0) 	<= global_time(47 downto 16);
+                data_pix_generated.data <= global_time(47 downto 16);
+                data_pix_generated.datak <= "0000";
             	global_time 						<= global_time + '1';
-            	datak_pix_generated              	<= "0000";
             	data_header_state 					<= part3;
 
             when part3 =>
             	state_out <= x"C";
             	if ( DATA_TYPE = x"01" ) then
-                    data_pix_generated					<= global_time(15 downto 0) & x"0000";
+                    data_pix_generated.data <= global_time(15 downto 0) & x"0000";
                 elsif ( DATA_TYPE = x"02" ) then
-                    data_pix_generated					<= global_time(15 downto 0) & x"AFFE";
+                    data_pix_generated.data <= global_time(15 downto 0) & x"AFFE";
                 end if;
-            	datak_pix_generated              <= "0000";
+                data_pix_generated.datak <= "0000";
             	data_header_state 					<= part4;
 
             when part4 =>
             	state_out <= x"D";
             	global_time <= global_time + '1';
             	if ( DATA_TYPE = x"01" ) then
-                    data_pix_generated 					<= DATA_SUB_HEADER_ID & "000" & global_time(10 downto 4) & lsfr_overflow;
+                    data_pix_generated.data <= DATA_SUB_HEADER_ID & "000" & global_time(10 downto 4) & lsfr_overflow;
                 elsif ( DATA_TYPE = x"02" ) then
-                    data_pix_generated 					<= DATA_SUB_HEADER_ID & global_time(13 downto 4) & lsfr_overflow;
+                    data_pix_generated.data <= DATA_SUB_HEADER_ID & global_time(13 downto 4) & lsfr_overflow;
                 end if;
-            	datak_pix_generated              <= "0000";
+                data_pix_generated.datak <= "0000";
             	overflow_idx 							:= 0;
             	current_overflow						:= lsfr_overflow;
             	data_header_state 					<= part5;
@@ -207,11 +205,11 @@ lsfr_chip_id <= (others => '0') when wchip = '0' else lsfr_chip_id_reg;
             when part5 =>
                 global_time <= global_time + '1';
                 if ( DATA_TYPE = x"01" ) then
-                    data_pix_generated 					<= DATA_SUB_HEADER_ID & "000" & global_time(10 downto 4) & lsfr_overflow;
+                    data_pix_generated.data <= DATA_SUB_HEADER_ID & "000" & global_time(10 downto 4) & lsfr_overflow;
                 elsif ( DATA_TYPE = x"02" ) then
-                    data_pix_generated 					<= DATA_SUB_HEADER_ID & global_time(13 downto 4) & lsfr_overflow;
+                    data_pix_generated.data <= DATA_SUB_HEADER_ID & global_time(13 downto 4) & lsfr_overflow;
                 end if;
-            	datak_pix_generated              <= "0000";
+                data_pix_generated.datak <= "0000";
             	overflow_idx 							:= 0;
             	current_overflow						:= lsfr_overflow;
             	data_header_state 					<= part6;
@@ -234,14 +232,14 @@ lsfr_chip_id <= (others => '0') when wchip = '0' else lsfr_chip_id_reg;
                 end if;
 
                 if ( DATA_TYPE = x"01" ) then
-                    data_pix_generated					<= global_time(3 downto 0) & lsfr_chip_id & row & col & lsfr_tot;
+                    data_pix_generated.data <= global_time(3 downto 0) & lsfr_chip_id & row & col & lsfr_tot;
                 elsif ( DATA_TYPE = x"02" ) then
-                    data_pix_generated(31 downto 21)    <= (others => '0');
-                    data_pix_generated(20 downto 6)     <= global_time(14 downto 0);
-                    data_pix_generated(5 downto 0)    <= (others => '0');
+                    data_pix_generated.data(31 downto 21) <= (others => '0');
+                    data_pix_generated.data(20 downto 6) <= global_time(14 downto 0);
+                    data_pix_generated.data(5 downto 0) <= (others => '0');
                 end if;
             	overflow_time <= global_time(14 downto 0);
-            	datak_pix_generated              <= "0000";
+                data_pix_generated.datak <= "0000";
             	if ( work.util.and_reduce(global_time(go_to_trailer downto 0)) = '1' ) then
             		data_header_state					<= trailer;
             		time_cnt_t       		<= (others => '0');
@@ -257,20 +255,20 @@ lsfr_chip_id <= (others => '0') when wchip = '0' else lsfr_chip_id_reg;
             when overflow =>
             	state_out <= x"9";
             	if ( DATA_TYPE = x"01" ) then
-                    data_pix_generated				  <= overflow_time(3 downto 0) & lsfr_chip_id & row & col & lsfr_tot;
+                    data_pix_generated.data <= overflow_time(3 downto 0) & lsfr_chip_id & row & col & lsfr_tot;
                 elsif ( DATA_TYPE = x"02" ) then
-                    data_pix_generated(31 downto 21)  <= (others => '0');
-                    data_pix_generated(20 downto 6)   <= overflow_time(14 downto 0);
-                    data_pix_generated(5 downto 0)    <= (others => '0');
+                    data_pix_generated.data(31 downto 21) <= (others => '0');
+                    data_pix_generated.data(20 downto 6) <= overflow_time(14 downto 0);
+                    data_pix_generated.data(5 downto 0) <= (others => '0');
                 end if;
-            	datak_pix_generated              <= "0000";
+            	data_pix_generated.datak              <= "0000";
             	data_header_state						<= part6;
 
             when trailer =>
             	state_out <= x"8";
-            	data_pix_generated(31 downto 8)	<= (others => '0');
-            	data_pix_generated(7 downto 0)	<= x"9c";
-            	datak_pix_generated              <= "0001";
+            	data_pix_generated.data(31 downto 8) <= (others => '0');
+            	data_pix_generated.data(7 downto 0) <= x"9c";
+            	data_pix_generated.datak <= "0001";
             	data_header_state 					<= part1;
 
             when others =>
@@ -280,8 +278,7 @@ lsfr_chip_id <= (others => '0') when wchip = '0' else lsfr_chip_id_reg;
             end case;
 		else
 			state_out <= x"F";
-			data_pix_generated					<= x"000000BC";
-			datak_pix_generated              <= "0001";
+            data_pix_generated <= work.mu3e.LINK_IDLE;
 			data_pix_ready <= '0';
 		end if;
 	end if;
