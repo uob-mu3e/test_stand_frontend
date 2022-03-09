@@ -112,7 +112,6 @@ begin
     -- do not expect things to be fast if you do that
 
     Sin_Test  <= '0';
-    Load_Test <= '0';
     Readback  <= '0';
     PCH       <= '0';
     Injection <= '0';
@@ -178,6 +177,7 @@ begin
             Load_VDAC   <= '0';
             Load_Bias   <= '0';
             Load_Conf   <= '0';
+            Load_Test <= '0';
             Ck1_Test  <= '0';
             Ck2_Test  <= '0';
             
@@ -212,6 +212,7 @@ begin
             Load_VDAC   <= '0';
             Load_Bias   <= '0';
             Load_Conf   <= '0';
+            Load_Test <= '0';
             Ck1_Test  <= '0';
             Ck2_Test  <= '0';
 

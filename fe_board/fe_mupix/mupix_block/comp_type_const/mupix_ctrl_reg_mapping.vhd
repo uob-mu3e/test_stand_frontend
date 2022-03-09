@@ -155,10 +155,10 @@ architecture rtl of mupix_ctrl_reg_mapping is
                 o_bias_reg_we   <= '1';
             end if;
 
-            if ( regaddr = MP_CTRL_SLOW_DOWN_REGISTER_W and i_reg_we = '1' ) then
+            if ( regaddr = MP_CTRL_SLOW_DOWN_NEW_REGISTER_W and i_reg_we = '1' ) then
                 mp_ctrl_slow_down <= i_reg_wdata;
             end if;
-            if ( regaddr = MP_CTRL_SLOW_DOWN_REGISTER_W and i_reg_re = '1' ) then
+            if ( regaddr = MP_CTRL_SLOW_DOWN_NEW_REGISTER_W and i_reg_re = '1' ) then
                 o_reg_rdata <= mp_ctrl_slow_down;
             end if;
 

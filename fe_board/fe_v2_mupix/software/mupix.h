@@ -122,6 +122,32 @@ struct mupix_t {
 		}
 
     }
+
+    void test_write_old() {
+        
+        sc->ram->data[MP_CTRL_ENABLE_REGISTER_W]=0x00000FC0;
+        sc->ram->data[MP_CTRL_ENABLE_REGISTER_W]=0x00000000;
+        sc->ram->data[MP_CTRL_INVERT_REGISTER_W]=0x00000003;
+        sc->ram->data[MP_CTRL_USE_OLD_REGISTER_W]=0x1;
+        
+        sc->ram->data[MP_CTRL_ALL_REGISTER_W]=0x2A000A03;
+        sc->ram->data[MP_CTRL_ALL_REGISTER_W]=0xFA3F0025;
+        sc->ram->data[MP_CTRL_ALL_REGISTER_W]=0x1E041041;
+        sc->ram->data[MP_CTRL_ALL_REGISTER_W]=0x041E5951;
+        sc->ram->data[MP_CTRL_ALL_REGISTER_W]=0x40280000;
+        sc->ram->data[MP_CTRL_ALL_REGISTER_W]=0x1400C20A;
+        sc->ram->data[MP_CTRL_ALL_REGISTER_W]=0x028A001F;
+        sc->ram->data[MP_CTRL_ALL_REGISTER_W]=0x00020038;
+        sc->ram->data[MP_CTRL_ALL_REGISTER_W]=0x0000FC09;
+        sc->ram->data[MP_CTRL_ALL_REGISTER_W]=0xF0001C80;
+        sc->ram->data[MP_CTRL_ALL_REGISTER_W]=0x00148000;
+        sc->ram->data[MP_CTRL_ALL_REGISTER_W]=0x11802E00;
+   	
+        for(int i = 0; i<85; i++) {
+            sc->ram->data[MP_CTRL_ALL_REGISTER_W]=0x00000000;
+		}
+        
+    }
     
     void test_write_all(bool maskPixel) {
         
@@ -130,6 +156,7 @@ struct mupix_t {
         //sc->ram->data[MP_CTRL_INVERT_REGISTER_W]=0x00000003;
         sc->ram->data[MP_CTRL_SPI_ENABLE_REGISTER_W]=0x00000001;
         sc->ram->data[MP_CTRL_RESET_REGISTER_W]=0x00000001;
+        sc->ram->data[MP_CTRL_USE_OLD_REGISTER_W]=0x0;
         
 
         sc->ram->data[MP_CTRL_COMBINED_START_REGISTER_W]=0x2A000A03;
@@ -236,6 +263,9 @@ struct mupix_t {
 	        case 't':
                 test_tdacs();
 		        break;
+	        case 'o':
+                test_write_old();
+		        break;
             case '1':
                 value = 0x0;
                 printf("Enter Chip Mask in hex: ");
@@ -261,6 +291,7 @@ struct mupix_t {
 
                 printf("setting spi slow down to 0x%08x\n",value);
                 sc->ram->data[MP_CTRL_SLOW_DOWN_REGISTER_W]=value;
+                sc->ram->data[MP_CTRL_SLOW_DOWN_NEW_REGISTER_W]=value;
                 break;
             case '3':
                 menu_lvds();

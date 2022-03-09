@@ -64,6 +64,7 @@ architecture arch of mupix_block is
     signal datapath_reset_n             : std_logic;
 
     signal mp_ctrl_reg      : work.util.rw_t;
+    signal mp_ctrl_reg2     : work.util.rw_t;
     signal mp_datapath_reg  : work.util.rw_t;
 
     signal spi_clock        : std_logic;
@@ -74,6 +75,18 @@ architecture arch of mupix_block is
     signal iram_we      : std_logic := '0';
     signal iram_rdata   : std_logic_vector(31 downto 0) := (others => '0'); 
     signal iram_wdata   : std_logic_vector(31 downto 0) := (others => '0');
+
+
+
+   signal mosi_old                     : std_logic_vector(4-1 downto 0);
+    signal mosi_new                     : std_logic_vector(4-1 downto 0);
+    signal sin_new                      : std_logic_vector(3 downto 0);
+    signal sin_old                      : std_logic_vector(3 downto 0);
+    signal clock_old                    : std_logic_vector(4-1 downto 0);
+    signal clock_new                    : std_logic_vector(4-1 downto 0);
+    signal csn_old                      : std_logic_vector(3*4-1 downto 0);
+    signal csn_new                      : std_logic_vector(3*4-1 downto 0);
+    signal use_old                      : std_logic;
 
 begin
 
@@ -90,10 +103,10 @@ begin
         i_reg_we                    => mp_ctrl_reg.we,
         i_reg_wdata                 => mp_ctrl_reg.wdata,
 
-        o_clock                     => o_clock,
-        o_SIN                       => o_SIN,
-        o_mosi                      => o_mosi,
-        o_csn                       => o_csn--,
+        o_clock                     => clock_new,
+        o_SIN                       => sin_new,
+        o_mosi                      => mosi_new,
+        o_csn                       => csn_new--,
     );
 
     e_mupix_datapath : work.mupix_datapath
@@ -139,7 +152,8 @@ begin
     e_lvl1_sc_node: entity work.sc_node
     generic map (
         SLAVE1_ADDR_MATCH_g => "000000----------",
-        SLAVE2_ADDR_MATCH_g => "0000------------",
+        SLAVE2_ADDR_MATCH_g => "000001----------",
+        SLAVE3_ADDR_MATCH_g => "000010----------",
         ADD_SLAVE1_DELAY_g  => 3,
         ADD_SLAVE2_DELAY_g  => 3,
         N_REPLY_CYCLES_g    => 4--,
@@ -170,7 +184,15 @@ begin
         o_slave2_re    => mp_ctrl_reg.re,
         i_slave2_rdata => mp_ctrl_reg.rdata,
         o_slave2_we    => mp_ctrl_reg.we,
-        o_slave2_wdata => mp_ctrl_reg.wdata--,
+        o_slave2_wdata => mp_ctrl_reg.wdata,
+
+        -- remove this
+        o_slave3_addr  => mp_ctrl_reg2.addr(15 downto 0),
+        o_slave3_re    => mp_ctrl_reg2.re,
+        i_slave3_rdata => mp_ctrl_reg2.rdata,
+        o_slave3_we    => mp_ctrl_reg2.we,
+        o_slave3_wdata => mp_ctrl_reg2.wdata--,
+        
     );
 
     e_iram : entity work.ram_1r1w
@@ -188,5 +210,30 @@ begin
         i_we    => iram_we,
         i_wclk  => i_clk156--,
     );
+
+
+    e_mupix_ctrl_old : work.mupix_ctrl_old
+    port map (
+        i_clk                       => i_clk156,
+        i_reset_n                   => not i_reset,
+
+        i_reg_add                   => mp_ctrl_reg2.addr(15 downto 0),
+        i_reg_re                    => mp_ctrl_reg2.re,
+        o_reg_rdata                 => mp_ctrl_reg2.rdata,
+        i_reg_we                    => mp_ctrl_reg2.we,
+        i_reg_wdata                 => mp_ctrl_reg2.wdata,
+
+        o_clock                     => clock_old,
+        o_SIN                       => sin_old,
+        o_mosi                      => mosi_old,
+        o_csn                       => csn_old,
+        o_use_old                   => use_old
+    );
+
+    o_clock <= clock_old when use_old='1' else clock_new;
+    o_mosi <= mosi_old when use_old='1' else mosi_new;
+    o_csn <= csn_old when use_old = '1' else csn_new;
+    o_sin <= sin_old when use_old = '1' else sin_new;
+
 
 end architecture;
