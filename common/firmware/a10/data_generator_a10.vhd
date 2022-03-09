@@ -24,8 +24,8 @@ generic (
         go_to_sh : positive := 2;
         go_to_trailer : positive := 3;
         wchip: std_logic := '0';
-        -- Data type: x"01" = pixel, x"02" = scifi, x"03" = tiles
-        DATA_TYPE : std_logic_vector(7 downto 0) := x"01"--;
+        -- Data type: x"00" = pixel, x"01" = scifi, "10" = tiles
+        DATA_TYPE : std_logic_vector(1 downto 0) := "00"--;
     );
 port (
     clk                 : in    std_logic;
@@ -190,9 +190,9 @@ lsfr_chip_id <= (others => '0') when wchip = '0' else lsfr_chip_id_reg;
 					
 					when part3 =>
 						state_out <= x"C";
-						if ( DATA_TYPE = x"01" ) then
+						if ( DATA_TYPE = "00" ) then
                             data_pix_generated					<= global_time(15 downto 0) & x"0000";
-                        elsif ( DATA_TYPE = x"02" ) then
+                        elsif ( DATA_TYPE = "01" ) then
                             data_pix_generated					<= global_time(15 downto 0) & x"AFFE";
                         end if;
 						datak_pix_generated              <= "0000";
@@ -201,9 +201,9 @@ lsfr_chip_id <= (others => '0') when wchip = '0' else lsfr_chip_id_reg;
 					when part4 =>
 						state_out <= x"D";
 						global_time <= global_time + '1';
-						if ( DATA_TYPE = x"01" ) then
+						if ( DATA_TYPE = "00" ) then
                             data_pix_generated 					<= DATA_SUB_HEADER_ID & "000" & global_time(10 downto 4) & lsfr_overflow;
-                        elsif ( DATA_TYPE = x"02" ) then
+                        elsif ( DATA_TYPE = "01" ) then
                             data_pix_generated 					<= DATA_SUB_HEADER_ID & global_time(13 downto 4) & lsfr_overflow;
                         end if;
 						datak_pix_generated              <= "0000";
@@ -213,9 +213,9 @@ lsfr_chip_id <= (others => '0') when wchip = '0' else lsfr_chip_id_reg;
 						
                     when part5 =>
                         global_time <= global_time + '1';
-                        if ( DATA_TYPE = x"01" ) then
+                        if ( DATA_TYPE = "00" ) then
                             data_pix_generated 					<= DATA_SUB_HEADER_ID & "000" & global_time(10 downto 4) & lsfr_overflow;
-                        elsif ( DATA_TYPE = x"02" ) then
+                        elsif ( DATA_TYPE = "01" ) then
                             data_pix_generated 					<= DATA_SUB_HEADER_ID & global_time(13 downto 4) & lsfr_overflow;
                         end if;
 						datak_pix_generated              <= "0000";
@@ -240,9 +240,9 @@ lsfr_chip_id <= (others => '0') when wchip = '0' else lsfr_chip_id_reg;
                             col <= col + '1';
                         end if;
                         
-                        if ( DATA_TYPE = x"01" ) then
+                        if ( DATA_TYPE = "00" ) then
                             data_pix_generated					<= global_time(3 downto 0) & lsfr_chip_id & row & col & lsfr_tot;
-                        elsif ( DATA_TYPE = x"02" ) then
+                        elsif ( DATA_TYPE = "01" ) then
                             data_pix_generated(31 downto 21)    <= (others => '0');
                             data_pix_generated(20 downto 6)     <= global_time(14 downto 0);
                             data_pix_generated(5 downto 0)    <= (others => '0');
@@ -263,9 +263,9 @@ lsfr_chip_id <= (others => '0') when wchip = '0' else lsfr_chip_id_reg;
 							
 					when overflow =>
 						state_out <= x"9";
-						if ( DATA_TYPE = x"01" ) then
+						if ( DATA_TYPE = "00" ) then
                             data_pix_generated				  <= overflow_time(3 downto 0) & lsfr_chip_id & row & col & lsfr_tot;
-                        elsif ( DATA_TYPE = x"02" ) then
+                        elsif ( DATA_TYPE = "01" ) then
                             data_pix_generated(31 downto 21)  <= (others => '0');
                             data_pix_generated(20 downto 6)   <= overflow_time(14 downto 0);
                             data_pix_generated(5 downto 0)    <= (others => '0');

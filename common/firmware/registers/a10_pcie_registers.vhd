@@ -92,16 +92,15 @@ package a10_pcie_registers is
             constant DDR_BIT_ENABLE_A                              : integer := 0;  -- DOC: Enable statemachine of DDR-A | FARM
             constant DDR_BIT_COUNTERTEST_A                         : integer := 1;  -- DOC: Enable counter test (1) or dataflow (0) of DDR-A | FARM
             subtype  DDR_COUNTERSEL_RANGE_A                        is integer range 15 downto 14; -- DOC: "01" -> get poserr_reg, "10" -> get counterr_reg else cur time counter written to DDR | FARM
-            subtype  DDR_RANGE_A
+            subtype  DDR_RANGE_A                                   is integer range 15 downto 0; -- DOC: range for ddr a | FARM
             constant DDR_BIT_ENABLE_B                              : integer := 16;  -- DOC: Enable statemachine of DDR-B | FARM
             constant DDR_BIT_COUNTERTEST_B                         : integer := 17;  -- DOC: Enable counter test (1) or dataflow (0) of DDR-B | FARM
             subtype  DDR_COUNTERSEL_RANGE_B                        is integer range 31 downto 30; -- DOC: "01" -> get poserr_reg, "10" -> get counterr_reg else cur time counter written to DDR | FARM
+            subtype  DDR_RANGE_B                                   is integer range 31 downto 16; -- DOC: range for ddr b | FARM
         
-        constant DATA_REQ_A_W                                   : integer := 16#21#; -- DOC: Register for requesting subheaders from DDR, for SUBTS in GPU_SUBTS_SEL DO writereg(SUBTS) | FARM
-        constant DATA_REQ_B_W                                   : integer := 16#22#; -- DOC: Register for requesting subheaders from DDR, for SUBTS in GPU_SUBTS_SEL DO writereg(SUBTS) | FARM
-        constant DATA_TSBLOCK_DONE_W                            : integer := 16#23#; -- DOC: dynamic limit when we change from writing to reading (15 downto 8 from 35 downto 4 of the 48b TS) | FARM
-        constant FARM_READOUT_STATE_REGISTER_W                  : integer := 16#24#; -- DOC: Readout state | FARM
-            constant USE_BIT_GEN_LINK_FARM                          : integer := 0;  -- DOC: Generate SWB data (for dubugging) | FARM
+        constant DATA_REQ_A_W                                   : integer := 16#22#; -- DOC: Register for requesting subheaders from DDR, for SUBTS in GPU_SUBTS_SEL DO writereg(SUBTS) | FARM
+        constant DATA_REQ_B_W                                   : integer := 16#23#; -- DOC: Register for requesting subheaders from DDR, for SUBTS in GPU_SUBTS_SEL DO writereg(SUBTS) | FARM
+        constant DATA_TSBLOCK_DONE_W                            : integer := 16#24#; -- DOC: dynamic limit when we change from writing to reading (15 downto 8 from 35 downto 4 of the 48b TS) | FARM
         constant FARM_ID_REGISTER_W                             : integer := 16#25#; -- DOC: Farm ID written to the reserved filed of the MIDAS bank | FARM
         constant FARM_REQ_EVENTS_W                              : integer := 16#26#; -- DOC: total number of requested events (should match to len(DATA_REQ_A/B_W) from GPU selection | FARM
         constant FARM_CTL_REGISTER_W                            : integer := 16#27#;

@@ -9,8 +9,8 @@ entity swb_time_merger is
 generic (
     g_ADDR_WIDTH : positive := 11;
     g_NLINKS_DATA : positive := 8;
-    -- Data type: x"01" = pixel, x"02" = scifi, x"03" = tiles
-    DATA_TYPE: std_logic_vector(7 downto 0) := x"01"--;
+    -- Data type: x"00" = pixel, x"01" = scifi, "10" = tiles
+    DATA_TYPE : std_logic_vector(1 downto 0) := "00"--;
 );
 port (
     -- input streams

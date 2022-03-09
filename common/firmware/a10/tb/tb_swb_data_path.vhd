@@ -78,8 +78,8 @@ begin
         g_NLINKS_DATA           => g_NLINKS_DATA,
         LINK_FIFO_ADDR_WIDTH    => 8,
         SWB_ID                  => x"01",
-        -- Data type: x"01" = pixel, x"02" = scifi, x"03" = tiles
-        DATA_TYPE               => x"01"--;
+        -- Data type: "00" = pixel, "01" = scifi, "10" = tiles
+        DATA_TYPE               => "00"--;
     )
     port map(
         i_clk_156        => clk,

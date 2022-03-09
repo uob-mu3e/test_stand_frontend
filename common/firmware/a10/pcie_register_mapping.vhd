@@ -107,10 +107,10 @@ begin
             i_pcie0_rregs_A(SWB_COUNTER_REGISTER_R)             when i = SWB_COUNTER_REGISTER_R else
             i_pcie0_rregs_A(SWB_COUNTER_REGISTER_ADDR_R)        when i = SWB_COUNTER_REGISTER_ADDR_R else
             q_rregs_C_reg(i * 32 + 31 downto i * 32)            when i = RESET_LINK_STATUS_REGISTER_R else -- for SWB reset link, does not work for the farm
-            q_rregs_C_reg(i * 32 + 31 downto i * 32)            when i = DDR3_STATUS_R else
-            q_rregs_C_reg(i * 32 + 31 downto i * 32)            when i = DDR3_ERR_R else
+            q_rregs_C_reg(i * 32 + 31 downto i * 32)            when i = DDR_STATUS_R else
+            q_rregs_C_reg(i * 32 + 31 downto i * 32)            when i = DDR_ERR_R else
             q_rregs_C_reg(i * 32 + 31 downto i * 32)            when i = DATA_TSBLOCKS_R else
-            q_rregs_C_reg(i * 32 + 31 downto i * 32)            when i = DDR3_CLK_CNT_R else
+            q_rregs_C_reg(i * 32 + 31 downto i * 32)            when i = DDR_CLK_CNT_R else
             q_rregs_B_reg(i * 32 + 31 downto i * 32);
     END GENERATE gen_map;
 

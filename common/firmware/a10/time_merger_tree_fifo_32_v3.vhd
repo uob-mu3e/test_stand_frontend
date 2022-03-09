@@ -12,8 +12,8 @@ generic (
     g_ADDR_WIDTH : positive  := 11;
     N_LINKS_IN   : positive  := 8;
     N_LINKS_OUT  : positive  := 4;
-    -- Data type: x"01" = pixel, x"02" = scifi, x"03" = tiles
-    DATA_TYPE : std_logic_vector(7 downto 0) := x"01"--;
+    -- Data type: x"00" = pixel, x"01" = scifi, "10" = tiles
+    DATA_TYPE : std_logic_vector(1 downto 0) := "00"--;
 );
 port (
     -- input data stream
@@ -74,12 +74,12 @@ begin
     gen_hits:
     FOR i in 0 to N_LINKS_OUT - 1 GENERATE
     
-        mupix_data : IF DATA_TYPE = x"01" GENERATE
+        mupix_data : IF DATA_TYPE = "00" GENERATE
             a(i)    <= i_data(i)(31 downto 28) when i_mask_n(i) = '1' else (others => '1');
             b(i)    <= i_data(i+size)(31 downto 28) when i_mask_n(i+size) = '1' else (others => '1');
         END GENERATE;
         
-        scifi_data : IF DATA_TYPE = x"02" GENERATE
+        scifi_data : IF DATA_TYPE = "01" GENERATE
             a(i)    <= i_data(i)(9 downto 6) when i_mask_n(i) = '1' else (others => '1');
             b(i)    <= i_data(i+size)(9 downto 6) when i_mask_n(i+size) = '1' else (others => '1');
         END GENERATE;
@@ -125,7 +125,7 @@ begin
         -- [2]               [tr,2]                [3,sh,2]
         -- [b]               [b]                   [b]
         layer_state(i) <=             -- check if both are mask or if we are in enabled or in reset
-                            IDLE      when (i_mask_n(i) = '0' and i_mask_n(i+size) = '0') or i_en = '0' or i_reset_n /= '1' else
+                            SWB_IDLE  when (i_mask_n(i) = '0' and i_mask_n(i+size) = '0') or i_en = '0' or i_reset_n /= '1' else
                                       -- we forword the error the chain
                             ONEERROR  when (i_error(i) = '1' or i_error(i+size) = '1') and wrfull(i) = '0' else
                                       -- simple case on of the links is mask so we just send the other throw the tree
@@ -134,7 +134,7 @@ begin
                             WAITING   when i_empty(i) = '1' or i_empty(i+size) = '1' or wrfull(i) = '1' else
                                       -- since we check in before that we should have two links not masked and both are not empty we 
                                       -- want to see from both a header
-                            HEADER    when i_sop(i) = '1' and i_sop(i+size) = '1' and (last_state(i) = IDLE or last_state(i) = TRAILER) else
+                            HEADER    when i_sop(i) = '1' and i_sop(i+size) = '1' and (last_state(i) = SWB_IDLE or last_state(i) = TRAILER) else
                                       -- we now want that both hits have ts0
                             TS0       when i_t0(i) = '1' and i_t0(i+size) = '1' and last_state(i) = HEADER else
                                       -- we now want that both hits have ts1
@@ -215,7 +215,7 @@ begin
         process(i_clk, i_reset_n)
         begin
         if ( i_reset_n /= '1' ) then
-            last_state(i) <= IDEL;
+            last_state(i) <= SWB_IDLE;
             --
         elsif ( rising_edge(i_clk) ) then
             -- TODO: should we do a counter here -> leading to an error?

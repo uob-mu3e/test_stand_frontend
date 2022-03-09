@@ -285,7 +285,7 @@ begin
         i_clk               => i_clk,
         
         -- Control and status registers
-        i_ddr_control       => i_ddr_control(15 downto 0),
+        i_ddr_control       => i_ddr_control(DDR_RANGE_A),
         i_ddr_status        => o_ddr_status(15 downto 0),
 
         o_ddr_calibrated    => o_A_ddr_calibrated,
@@ -322,8 +322,8 @@ begin
         i_clk               => i_clk,
         
         -- Control and status registers
-        ddr3control         => i_ddr_control(15 downto 0),
-        ddr3status          => ddr3status(15 downto 0),
+        i_ddr_control       => i_ddr_control(DDR_RANGE_B),
+        i_ddr_status        => o_ddr_status(15 downto 0),
 
         o_ddr_calibrated    => o_B_ddr_calibrated,
         o_ddr_ready         => o_B_ddr_ready,

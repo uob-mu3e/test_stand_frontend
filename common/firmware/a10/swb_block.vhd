@@ -247,7 +247,7 @@ begin
         NLINKS => g_NLINKS_FEB_TOTL--,
     )
     port map (
-        reset_n                 => i_resets_n_156(RESET_BIT_SC_SECONDARY),
+        i_reset_n               => i_resets_n_156(RESET_BIT_SC_SECONDARY),
         i_link_enable           => i_writeregs_156(FEB_ENABLE_REGISTER_W)(g_NLINKS_FEB_TOTL-1 downto 0),
         link_data_in            => rx_sc,
         link_data_in_k          => rx_sc_k,
@@ -256,7 +256,7 @@ begin
         mem_data_out            => o_rmem_wdata,
         mem_wren                => o_rmem_we,
         stateout                => o_readregs_156(SC_STATE_REGISTER_R)(31 downto 28),
-        clk                     => i_clk_156--,
+        i_clk                     => i_clk_156--,
     );
 
 
