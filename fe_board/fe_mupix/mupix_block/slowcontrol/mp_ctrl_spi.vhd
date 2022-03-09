@@ -200,10 +200,6 @@ begin
             Ck2_TDAC    <= '0';
             Ck1_Col     <= '0';
             Ck2_Col     <= '0';
-            bias        <= '0';
-            conf        <= '0';
-            vdac        <= '0';
-            tdac        <= '0';
             col         <= '0';
             WrEnable    <= '0';
             WR          <= '0';
