@@ -23,8 +23,8 @@ generic (
     g_NLINKS_DATA : positive := 8;
     LINK_FIFO_ADDR_WIDTH : positive := 10;
     SWB_ID : std_logic_vector(7 downto 0) := x"01";
-    -- Data type: x"01" = pixel, x"02" = scifi, x"03" = tiles
-    DATA_TYPE : std_logic_vector(7 downto 0) := x"01"--;
+    -- Data type: "00" = pixel, "01" = scifi, "10" = tiles
+    DATA_TYPE : std_logic_vector(1 downto 0) := "00"--;
 );
 port(
     i_clk_156        : in  std_logic;
@@ -386,7 +386,7 @@ begin
                         '0';
     farm_trailer    <=  stream_trailer when i_writeregs_250(SWB_READOUT_STATE_REGISTER_W)(USE_BIT_STREAM) = '1' else
                         merger_trailer when i_writeregs_250(SWB_READOUT_STATE_REGISTER_W)(USE_BIT_MERGER) = '1' else
-                        '0';              
+                        '0';
     stream_ren      <=  farm_rack when i_writeregs_250(SWB_READOUT_STATE_REGISTER_W)(USE_BIT_STREAM) = '1' else '0';
     merger_ren      <=  farm_rack when i_writeregs_250(SWB_READOUT_STATE_REGISTER_W)(USE_BIT_MERGER) = '1' else '0';
 
@@ -396,9 +396,6 @@ begin
     --! ------------------------------------------------------------------------
     --! ------------------------------------------------------------------------
     e_event_builder : entity work.swb_midas_event_builder
-    generic map(
-        DATA_TYPE           => DATA_TYPE--,
-    )
     port map (
         i_rx                => builder_data,
         i_rempty            => builder_rempty,
@@ -409,6 +406,7 @@ begin
         i_get_n_words       => i_writeregs_250(GET_N_DMA_WORDS_REGISTER_W),
         i_dmamemhalffull    => i_dmamemhalffull,
         i_wen               => i_writeregs_250(DMA_REGISTER_W)(DMA_BIT_ENABLE),
+        i_data_type         => DATA_TYPE,
 
         o_data              => o_dma_data,
         o_wen               => o_dma_wren,

@@ -20,7 +20,7 @@ set_global_assignment -name VHDL_FILE a10/link_to_fifo_32.vhd
 set_global_assignment -name QIP_FILE ../../common/firmware/registers/include.qip
 
 set_global_assignment -name QIP_FILE a10/include.qip
-set_global_assignment -name QIP_FILE a10/ddr4/include.qip
+set_global_assignment -name QIP_FILE a10/ddr/include.qip
 set_global_assignment -name QIP_FILE a10/pcieapp/include.qip
 set_global_assignment -name QIP_FILE a10/xcvr/include.qip
 

@@ -25,11 +25,13 @@ package a10_pcie_registers is
             constant RESET_BIT_RUN_START_ACK                        :  integer := 16; -- DOC: Rest bit for seeing the run ack in run_control | SWB
             constant RESET_BIT_RUN_END_ACK                          :  integer := 17; -- DOC: Rest bit for seeing the run end in run_control | SWB
             constant RESET_BIT_NIOS                                 :  integer := 18; -- DOC: Not used at the moment | ALL
-            constant RESET_BIT_DDR3                                 :  integer := 19; -- DOC: Reset bit for DDR3 control entitie | FARM
+            constant RESET_BIT_DDR                                  :  integer := 19; -- DOC: Reset bit for DDR control entitie | FARM
             constant RESET_BIT_DATAFLOW                             :  integer := 20; -- DOC: Not used at the moment | ALL
             constant RESET_BIT_LINK_MERGER                          :  integer := 21; -- DOC: Not used at the moment | ALL
             constant RESET_BIT_DATA_PATH                            :  integer := 22; -- DOC: Reset bit for the data path | SWB
             constant RESET_BIT_FARM_DATA_PATH                       :  integer := 23; -- DOC: Reset bit for the data path | FARM
+            constant RESET_BIT_FARM_STREAM_MERGER                   :  integer := 24; -- DOC: Reset bit for farm stream merger | FARM
+            constant RESET_BIT_FARM_TIME_MERGER                     :  integer := 25; -- DOC: Reset bit for farm time merger | FARM
             constant RESET_BIT_PCIE                                 :  integer := 31; -- DOC: Not used at the moment | ALL
 
         constant DATAGENERATOR_REGISTER_W                       : integer := 16#02#; -- DOC: Register to control the datagenerator which is generating the link data from FEBs | SWB
@@ -65,32 +67,38 @@ package a10_pcie_registers is
         constant SWB_LINK_MASK_SCIFI_REGISTER_W                 : integer := 16#11#; -- DOC: Mask Scifi links | SWB
         constant SWB_LINK_MASK_TILES_REGISTER_W                 : integer := 16#12#; -- DOC: Mask Tile links | SWB
         constant SWB_READOUT_STATE_REGISTER_W                   : integer := 16#13#; -- DOC: Readout state | SWB
-            constant USE_BIT_GEN_LINK                               : integer := 0;  -- DOC: Readout state where link data is generated (for debugging) | SWB
-            constant USE_BIT_STREAM                                 : integer := 1;  -- DOC: Readout state where link data is read out in round-robin | SWB
-            constant USE_BIT_MERGER                                 : integer := 2;  -- DOC: Readout state where link data is time aligned (tree) | SWB
-            constant USE_BIT_GEN_MERGER                             : integer := 4;  -- DOC: Readout state where the time aligned data is generated (for debugging) | SWB
-            constant USE_BIT_FARM                                   : integer := 5;  -- DOC: Readout state where the data is send to the farm (1) else (0) it is readout via DMA on the SWB | SWB
-            constant USE_BIT_TEST                                   : integer := 6;  -- DOC: Not used at the moment | SWB
-            constant USE_BIT_PIXEL_US                               : integer := 7;  -- DOC: Readout state to only readout US pixel data via DMA (for debugging) | SWB
-            constant USE_BIT_PIXEL_DS                               : integer := 8;  -- DOC: Readout state to only readout DS pixel data via DMA (for debugging) | SWB
-            constant USE_BIT_SCIFI                                  : integer := 9;  -- DOC: Readout state to only readout scifi data via DMA (for debugging) | SWB
-            constant USE_BIT_TEST_ERROR                             : integer := 10; -- DOC: Readout state for testing an error handling in the time merger using generated data | SWB
-        constant SWB_READOUT_LINK_REGISTER_W                    : integer := 16#14#; -- DOC: Not used at the moment | SWB
+            constant USE_BIT_GEN_LINK                               : integer := 0;  -- DOC: Readout state where link data is generated (for debugging) | SWB & FARM
+            constant USE_BIT_STREAM                                 : integer := 1;  -- DOC: Readout state where link data is read out in round-robin | SWB & FARM
+            constant USE_BIT_MERGER                                 : integer := 2;  -- DOC: Readout state where link data is time aligned (tree) |  SWB & FARM
+            constant USE_BIT_GEN_MERGER                             : integer := 4;  -- DOC: Readout state where the time aligned data is generated (for debugging) |  SWB & FARM
+            constant USE_BIT_FARM                                   : integer := 5;  -- DOC: Readout state where the data is send to the farm (1) else (0) it is readout via DMA on the SWB |  SWB & FARM
+            constant USE_BIT_TEST                                   : integer := 6;  -- DOC: Not used at the moment |  SWB & FARM
+            constant USE_BIT_PIXEL_US                               : integer := 7;  -- DOC: Readout state to only readout US pixel data via DMA (for debugging) |  SWB & FARM
+            constant USE_BIT_PIXEL_DS                               : integer := 8;  -- DOC: Readout state to only readout DS pixel data via DMA (for debugging) |  SWB & FARM
+            constant USE_BIT_SCIFI                                  : integer := 9;  -- DOC: Readout state to only readout scifi data via DMA (for debugging) |  SWB & FARM
+            constant USE_BIT_TEST_ERROR                             : integer := 10; -- DOC: Readout state for testing an error handling in the time merger using generated data |  SWB & FARM
+        constant SWB_READOUT_LINK_REGISTER_W                    : integer := 16#14#; -- DOC: Not used at the moment |  SWB & FARM
         
         constant SWB_COUNTER_REGISTER_W                         : integer := 16#15#; -- DOC: Register to readout counter values from the SWB, to have more information about the counter look at a10_counter.md | SWB
             subtype SWB_COUNTER_ADDR_RANGE                          is integer range 7 downto 0;    -- DOC: Addr of the counter which should be read out | SWB
             subtype SWB_LINK_RANGE                                  is integer range 15 downto 8;   -- DOC: Link addrs for link specific counters (#events, #subheaders, etc.) | SWB
+            
+        constant FARM_READOUT_STATE_REGISTER_W                  : integer := 16#16#; -- DOC: Readout state | FARM
+        constant FARM_DATA_TYPE_REGISTER_W                      : integer := 16#17#; -- DOC: Data type for readout | FARM
+            subtype FARM_DATA_TYPE_ADDR_RANGE                       is integer range 1 downto 0;    -- DOC: Data type: "00" = pixel, "01" = scifi, "10" = tiles | FARM
+            subtype FARM_EVENT_ID_ADDR_RANGE                        is integer range 17 downto 2;    -- DOC: midas event id | FARM
 
-        constant DDR3_CONTROL_W                                 : integer := 16#20#; -- DOC: Control register for the ddr3_memory_controller | FARM
-            constant DDR3_BIT_ENABLE_A                              : integer := 0;  -- DOC: Enable statemachine of DDR-A | FARM
-            constant DDR3_BIT_COUNTERTEST_A                         : integer := 1;  -- DOC: Enable counter test (1) or dataflow (0) of DDR-A | FARM
-            subtype  DDR3_COUNTERSEL_RANGE_A                        is integer range 15 downto 14; -- DOC: "01" -> get poserr_reg, "10" -> get counterr_reg else cur time counter written to DDR3 | FARM
-            constant DDR3_BIT_ENABLE_B                              : integer := 16;  -- DOC: Enable statemachine of DDR-B | FARM
-            constant DDR3_BIT_COUNTERTEST_B                         : integer := 17;  -- DOC: Enable counter test (1) or dataflow (0) of DDR-B | FARM
-            subtype  DDR3_COUNTERSEL_RANGE_B                        is integer range 31 downto 30; -- DOC: "01" -> get poserr_reg, "10" -> get counterr_reg else cur time counter written to DDR3 | FARM
+        constant DDR_CONTROL_W                                 : integer := 16#20#; -- DOC: Control register for the ddr_memory_controller | FARM
+            constant DDR_BIT_ENABLE_A                              : integer := 0;  -- DOC: Enable statemachine of DDR-A | FARM
+            constant DDR_BIT_COUNTERTEST_A                         : integer := 1;  -- DOC: Enable counter test (1) or dataflow (0) of DDR-A | FARM
+            subtype  DDR_COUNTERSEL_RANGE_A                        is integer range 15 downto 14; -- DOC: "01" -> get poserr_reg, "10" -> get counterr_reg else cur time counter written to DDR | FARM
+            subtype  DDR_RANGE_A
+            constant DDR_BIT_ENABLE_B                              : integer := 16;  -- DOC: Enable statemachine of DDR-B | FARM
+            constant DDR_BIT_COUNTERTEST_B                         : integer := 17;  -- DOC: Enable counter test (1) or dataflow (0) of DDR-B | FARM
+            subtype  DDR_COUNTERSEL_RANGE_B                        is integer range 31 downto 30; -- DOC: "01" -> get poserr_reg, "10" -> get counterr_reg else cur time counter written to DDR | FARM
         
-        constant DATA_REQ_A_W                                   : integer := 16#21#; -- DOC: Register for requesting subheaders from DDR3, for SUBTS in GPU_SUBTS_SEL DO writereg(SUBTS) | FARM
-        constant DATA_REQ_B_W                                   : integer := 16#22#; -- DOC: Register for requesting subheaders from DDR3, for SUBTS in GPU_SUBTS_SEL DO writereg(SUBTS) | FARM
+        constant DATA_REQ_A_W                                   : integer := 16#21#; -- DOC: Register for requesting subheaders from DDR, for SUBTS in GPU_SUBTS_SEL DO writereg(SUBTS) | FARM
+        constant DATA_REQ_B_W                                   : integer := 16#22#; -- DOC: Register for requesting subheaders from DDR, for SUBTS in GPU_SUBTS_SEL DO writereg(SUBTS) | FARM
         constant DATA_TSBLOCK_DONE_W                            : integer := 16#23#; -- DOC: dynamic limit when we change from writing to reading (15 downto 8 from 35 downto 4 of the 48b TS) | FARM
         constant FARM_READOUT_STATE_REGISTER_W                  : integer := 16#24#; -- DOC: Readout state | FARM
             constant USE_BIT_GEN_LINK_FARM                          : integer := 0;  -- DOC: Generate SWB data (for dubugging) | FARM
@@ -179,19 +187,19 @@ package a10_pcie_registers is
         constant CNT_SKIP_EVENT_DMA_RAM_R                       : integer := 16#23#;
         constant CNT_IDLE_NOT_HEADER_R                          : integer := 16#24#;
         constant CNT_FEB_MERGE_TIMEOUT_R                        : integer := 16#25#;
-        constant DDR3_STATUS_R                                  : integer := 16#26#;
-            constant DDR3_BIT_CAL_SUCCESS                           : integer := 0;
-            constant DDR3_BIT_CAL_FAIL                              : integer := 1;
-            constant DDR3_BIT_RESET_N                               : integer := 2;
-            constant DDR3_BIT_READY                                 : integer := 3;
-            constant DDR3_BIT_TEST_WRITING                          : integer := 4;
-            constant DDR3_BIT_TEST_READING                          : integer := 5;
-            constant DDR3_BIT_TEST_DONE                             : integer := 6;
-        constant DDR3_ERR_R                                     : integer := 16#27#;
+        constant DDR_STATUS_R                                   : integer := 16#26#;
+            constant DDR_BIT_CAL_SUCCESS                            : integer := 0;
+            constant DDR_BIT_CAL_FAIL                               : integer := 1;
+            constant DDR_BIT_RESET_N                                : integer := 2;
+            constant DDR_BIT_READY                                  : integer := 3;
+            constant DDR_BIT_TEST_WRITING                           : integer := 4;
+            constant DDR_BIT_TEST_READING                           : integer := 5;
+            constant DDR_BIT_TEST_DONE                              : integer := 6;
+        constant DDR_ERR_R                                      : integer := 16#27#;
         constant DATA_TSBLOCKS_R                                : integer := 16#28#;
         constant SC_MAIN_STATUS_REGISTER_R                      : integer := 16#29#;
             constant SC_MAIN_DONE                                   : integer := 0;
-        constant DDR3_CLK_CNT_R                                 : integer := 16#30#;
+        constant DDR_CLK_CNT_R                                 : integer := 16#30#;
         constant SC_STATE_REGISTER_R                            : integer := 16#31#;
         constant DMA_CNT_WORDS_REGISTER_R                       : integer := 16#32#;
         constant SWB_COUNTER_REGISTER_R                         : integer := 16#33#;

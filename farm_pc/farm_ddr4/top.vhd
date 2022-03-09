@@ -95,49 +95,49 @@ port (
     CPU_RESET_n         : in    std_logic;
     CLK_50_B2J          : in    std_logic;
 
-    --//// DDR3 A /////////////
-    DDR3A_A             : out   std_logic_vector(15 downto 0);
-    DDR3A_BA            : out   std_logic_vector(2 downto 0);
-    DDR3A_CAS_n         : out   std_logic;
-    DDR3A_CK            : out   std_logic_vector(0 downto 0);
-    DDR3A_CKE           : out   std_logic_vector(0 downto 0);
-    DDR3A_CK_n          : out   std_logic_vector(0 downto 0);
-    DDR3A_CS_n          : out   std_logic_vector(0 downto 0);
-    DDR3A_DM            : out   std_logic_vector(7 downto 0);
-    DDR3A_DQ            : inout std_logic_vector(63 downto 0);
-    DDR3A_DQS           : inout std_logic_vector(7 downto 0);
-    DDR3A_DQS_n         : inout std_logic_vector(7 downto 0);
-    DDR3A_EVENT_n       : in    std_logic;
-    DDR3A_ODT           : out   std_logic_vector(0 downto 0);
-    DDR3A_RAS_n         : out   std_logic;
-    DDR3A_REFCLK_p      : in    std_logic;
-    DDR3A_RESET_n       : out   std_logic;
-    DDR3A_SCL           : out   std_logic;
-    DDR3A_SDA           : inout std_logic;
-    DDR3A_WE_n          : out   std_logic;
-    RZQ_DDR3_A          : in    std_logic;
+    --//// DDR4 A /////////////
+    DDR4A_A             : out   std_logic_vector(15 downto 0);
+    DDR4A_BA            : out   std_logic_vector(2 downto 0);
+    DDR4A_CAS_n         : out   std_logic;
+    DDR4A_CK            : out   std_logic_vector(0 downto 0);
+    DDR4A_CKE           : out   std_logic_vector(0 downto 0);
+    DDR4A_CK_n          : out   std_logic_vector(0 downto 0);
+    DDR4A_CS_n          : out   std_logic_vector(0 downto 0);
+    DDR4A_DM            : out   std_logic_vector(7 downto 0);
+    DDR4A_DQ            : inout std_logic_vector(63 downto 0);
+    DDR4A_DQS           : inout std_logic_vector(7 downto 0);
+    DDR4A_DQS_n         : inout std_logic_vector(7 downto 0);
+    DDR4A_EVENT_n       : in    std_logic;
+    DDR4A_ODT           : out   std_logic_vector(0 downto 0);
+    DDR4A_RAS_n         : out   std_logic;
+    DDR4A_REFCLK_p      : in    std_logic;
+    DDR4A_RESET_n       : out   std_logic;
+    DDR4A_SCL           : out   std_logic;
+    DDR4A_SDA           : inout std_logic;
+    DDR4A_WE_n          : out   std_logic;
+    RZQ_DDR4_A          : in    std_logic;
 
-    --//// DDR3 B/////////////
-    DDR3B_A             : out   std_logic_vector(15 downto 0);
-    DDR3B_BA            : out   std_logic_vector(2 downto 0);
-    DDR3B_CAS_n         : out   std_logic;
-    DDR3B_CK            : out   std_logic_vector(0 downto 0);
-    DDR3B_CKE           : out   std_logic_vector(0 downto 0);
-    DDR3B_CK_n          : out   std_logic_vector(0 downto 0);
-    DDR3B_CS_n          : out   std_logic_vector(0 downto 0);
-    DDR3B_DM            : out   std_logic_vector(7 downto 0);
-    DDR3B_DQ            : inout std_logic_vector(63 downto 0);
-    DDR3B_DQS           : inout std_logic_vector(7 downto 0);
-    DDR3B_DQS_n         : inout std_logic_vector(7 downto 0);
-    DDR3B_EVENT_n       : in    std_logic;
-    DDR3B_ODT           : out   std_logic_vector(0 downto 0);
-    DDR3B_RAS_n         : out   std_logic;
-    DDR3B_REFCLK_p      : in    std_logic;
-    DDR3B_RESET_n       : out   std_logic;
-    DDR3B_SCL           : out   std_logic;
-    DDR3B_SDA           : inout std_logic;
-    DDR3B_WE_n          : out   std_logic;
-    RZQ_DDR3_B          : in    std_logic--;
+    --//// DDR4 B/////////////
+    DDR4B_A             : out   std_logic_vector(15 downto 0);
+    DDR4B_BA            : out   std_logic_vector(2 downto 0);
+    DDR4B_CAS_n         : out   std_logic;
+    DDR4B_CK            : out   std_logic_vector(0 downto 0);
+    DDR4B_CKE           : out   std_logic_vector(0 downto 0);
+    DDR4B_CK_n          : out   std_logic_vector(0 downto 0);
+    DDR4B_CS_n          : out   std_logic_vector(0 downto 0);
+    DDR4B_DM            : out   std_logic_vector(7 downto 0);
+    DDR4B_DQ            : inout std_logic_vector(63 downto 0);
+    DDR4B_DQS           : inout std_logic_vector(7 downto 0);
+    DDR4B_DQS_n         : inout std_logic_vector(7 downto 0);
+    DDR4B_EVENT_n       : in    std_logic;
+    DDR4B_ODT           : out   std_logic_vector(0 downto 0);
+    DDR4B_RAS_n         : out   std_logic;
+    DDR4B_REFCLK_p      : in    std_logic;
+    DDR4B_RESET_n       : out   std_logic;
+    DDR4B_SCL           : out   std_logic;
+    DDR4B_SDA           : inout std_logic;
+    DDR4B_WE_n          : out   std_logic;
+    RZQ_DDR4_B          : in    std_logic--;
 );
 end entity;
 
@@ -192,9 +192,9 @@ architecture rtl of top is
 
     signal rx_data_raw, rx_data, tx_data    : work.util.slv32_array_t(15 downto 0);
     signal rx_datak_raw, rx_datak, tx_datak : work.util.slv4_array_t(15 downto 0);
-	 
-	 -- pll locked signal top
-	 signal locked_50to125 : std_logic;
+    
+    -- pll locked signal top
+    signal locked_50to125 : std_logic;
 
 begin
 
@@ -213,7 +213,7 @@ begin
     --! (can be connected to SMA input as global clock)
     e_pll_50to125 : component work.cmp.ip_pll_50to125
     port map (
-		  locked => locked_50to125,
+        locked => locked_50to125,
         outclk_0 => SMA_CLKOUT,
         refclk => clk_50,
         rst => not reset_50_n
@@ -332,8 +332,8 @@ begin
         o_pcie0_resets_n_C              => pcie0_resets_n_C,
 
         -- resets clk
-		  top_pll_locked						 => locked_50to125,
-		  
+        top_pll_locked                  => locked_50to125,
+
         o_reset_pcie0_n                 => reset_pcie0_n,
         
         o_reset_250_n                   => reset_250_n,
@@ -379,6 +379,7 @@ begin
 
     farm_block : entity work.farm_block
     generic map (
+        g_DDR4         => true,
         g_NLINKS_TOTL  => 16,
         g_NLINKS_PIXEL => 8,
         g_NLINKS_SCIFI => 8--,
@@ -426,43 +427,43 @@ begin
 
         -- Interface to memory bank A
         o_A_mem_clk        => A_mem_clk,
-        A_mem_ck           => DDR3A_CK,
-        A_mem_ck_n         => DDR3A_CK_n,
-        A_mem_a            => DDR3A_A,
-        A_mem_ba           => DDR3A_BA,
-        A_mem_cke          => DDR3A_CKE,
-        A_mem_cs_n         => DDR3A_CS_n,
-        A_mem_odt          => DDR3A_ODT,
-        A_mem_reset_n(0)   => DDR3A_RESET_n,
-        A_mem_we_n(0)      => DDR3A_WE_n,
-        A_mem_ras_n(0)     => DDR3A_RAS_n,
-        A_mem_cas_n(0)     => DDR3A_CAS_n,
-        A_mem_dqs          => DDR3A_DQS,
-        A_mem_dqs_n        => DDR3A_DQS_n,
-        A_mem_dq           => DDR3A_DQ,
-        A_mem_dm           => DDR3A_DM,
-        A_oct_rzqin        => RZQ_DDR3_A,
-        A_pll_ref_clk      => DDR3A_REFCLK_p,
+        A_mem_ck           => DDR4A_CK,
+        A_mem_ck_n         => DDR4A_CK_n,
+        A_mem_a            => DDR4A_A,
+        A_mem_ba           => DDR4A_BA,
+        A_mem_cke          => DDR4A_CKE,
+        A_mem_cs_n         => DDR4A_CS_n,
+        A_mem_odt          => DDR4A_ODT,
+        A_mem_reset_n(0)   => DDR4A_RESET_n,
+        A_mem_we_n(0)      => DDR4A_WE_n,
+        A_mem_ras_n(0)     => DDR4A_RAS_n,
+        A_mem_cas_n(0)     => DDR4A_CAS_n,
+        A_mem_dqs          => DDR4A_DQS,
+        A_mem_dqs_n        => DDR4A_DQS_n,
+        A_mem_dq           => DDR4A_DQ,
+        A_mem_dm           => DDR4A_DM,
+        A_oct_rzqin        => RZQ_DDR4_A,
+        A_pll_ref_clk      => DDR4A_REFCLK_p,
 
         -- Interface to memory bank B
         o_B_mem_clk        => B_mem_clk,
-        B_mem_ck           => DDR3B_CK,
-        B_mem_ck_n         => DDR3B_CK_n,
-        B_mem_a            => DDR3B_A,
-        B_mem_ba           => DDR3B_BA,
-        B_mem_cke          => DDR3B_CKE,
-        B_mem_cs_n         => DDR3B_CS_n,
-        B_mem_odt          => DDR3B_ODT,
-        B_mem_reset_n(0)   => DDR3B_RESET_n,
-        B_mem_we_n(0)      => DDR3B_WE_n,
-        B_mem_ras_n(0)     => DDR3B_RAS_n,
-        B_mem_cas_n(0)     => DDR3B_CAS_n,
-        B_mem_dqs          => DDR3B_DQS,
-        B_mem_dqs_n        => DDR3B_DQS_n,
-        B_mem_dq           => DDR3B_DQ,
-        B_mem_dm           => DDR3B_DM,
-        B_oct_rzqin        => RZQ_DDR3_B,
-        B_pll_ref_clk      => DDR3B_REFCLK_p--,
+        B_mem_ck           => DDR4B_CK,
+        B_mem_ck_n         => DDR4B_CK_n,
+        B_mem_a            => DDR4B_A,
+        B_mem_ba           => DDR4B_BA,
+        B_mem_cke          => DDR4B_CKE,
+        B_mem_cs_n         => DDR4B_CS_n,
+        B_mem_odt          => DDR4B_ODT,
+        B_mem_reset_n(0)   => DDR4B_RESET_n,
+        B_mem_we_n(0)      => DDR4B_WE_n,
+        B_mem_ras_n(0)     => DDR4B_RAS_n,
+        B_mem_cas_n(0)     => DDR4B_CAS_n,
+        B_mem_dqs          => DDR4B_DQS,
+        B_mem_dqs_n        => DDR4B_DQS_n,
+        B_mem_dq           => DDR4B_DQ,
+        B_mem_dm           => DDR4B_DM,
+        B_oct_rzqin        => RZQ_DDR4_B,
+        B_pll_ref_clk      => DDR4B_REFCLK_p--,
     );
 
     DDR3A_SDA   <= 'Z';

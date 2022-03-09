@@ -46,12 +46,9 @@ port (
     --! (g_NLINKS_DATA*5)-1 downto 0 -> link to fifo counters
     --! (g_NLINKS_DATA*4)+(g_NLINKS_DATA*5)-1 downto (g_NLINKS_DATA*5) -> link align counters
     o_counter       : out work.util.slv32_array_t((g_NLINKS_SWB_TOTL*4)+(g_NLINKS_SWB_TOTL*5)-1 downto 0);
-    
-    i_clk_250_link      : in std_logic;
-    i_reset_n_250_link  : in std_logic;
 
-    i_clk_250       : in std_logic;
-    i_reset_n_250   : in std_logic--;
+    i_clk           : in std_logic;
+    i_reset_n       : in std_logic--;
 );
 end entity;
 
@@ -83,8 +80,8 @@ begin
             i_linkid        => work.mudaq.link_36_to_std(i),
 
             o_q             => rx_q(i),
-            i_ren           => rx_ren(i),
-            o_rdempty       => rx_rdempty(i),
+            i_ren           => i_ren(i),
+            o_rdempty       => o_empty(i),
 
             o_counter(0)    => o_counter(0+i*5),
             o_counter(1)    => o_counter(1+i*5),
@@ -92,132 +89,71 @@ begin
             o_counter(3)    => o_counter(3+i*5),
             o_counter(4)    => o_counter(4+i*5),
 
-            i_reset_n_156   => i_reset_n_250_link,
-            i_clk_156       => i_clk_250_link,
+            i_reset_n_156   => i_reset_n,
+            i_clk_156       => i_clk,
 
-            i_reset_n_250   => reset_250_n,
-            i_clk_250       => i_clk_250--,
+            i_reset_n_250   => i_reset_n,
+            i_clk_250       => i_clk--,
         );
 
         -- map outputs
-        sop(i)      <= '1' when rx_q(i)(34 downto 32) = "010" else '0';
-        shop(i)     <= '1' when rx_q(i)(34 downto 32) = "111" else '0';
-        eop(i)      <= '1' when rx_q(i)(34 downto 32) = "001" else '0';
-        hit(i)      <= '1' when rx_q(i)(34 downto 32) = "000" else '0';
-        t0(i)       <= '1' when rx_q(i)(34 downto 32) = "100" else '0';
-        t1(i)       <= '1' when rx_q(i)(34 downto 32) = "101" else '0';
- 
-        --! second buffer to always read from link to fifo and tag events
-        --! CosmicRun22: read 1 pixel event and n scifi events than read the next pixel event
-        mupix_data : IF i < N_PIXEL GENERATE
-        
-            buffer_state(i) <= 
-        
-            o_tx(i)     <=  x"000000BC" when rx_rdempty(i) = '1' else
-                            rx_q(i)(34 downto 26) & '1' & rx_q(i)(24 downto 0) when sop(i) = '1' and work.util.or_reduce(almost_full(i)) /= '0' else
-                            
-            o_tx_k(i)   <=  x"0001" when rx_rdempty(i) = '1' else
-                            x"0001" when sop(i) = '1' and buffer_full(i) /= '0' else
-            
-        END GENERATE;
-        
-        scifi_data : IF i >= N_PIXEL GENERATE
-            process(i_clk_250, reset_250_n)
-            begin
-            if ( reset_250_n /= '1' ) then
-                o_tx(i)             <= x"000000BC";
-                o_tx_k(i)           <= x"0001";
-                link_to_fifo_state  <= idle;
-                --
-            elsif ( rising_edge(i_clk_250) ) then
-                
-                --
-            end if;
-            end process;
-        END GENERATE;
-        
-        e_align_buffer : entity work.ip_scfifo_v2
-        generic map (
-            g_ADDR_WIDTH => LINK_FIFO_ADDR_WIDTH,
-            g_DATA_WIDTH => 35,
-            g_RREG_N => 1--,
-        )
-        port map (
-            i_wdata         => rx_q(i),
-            i_we            => buffer_we(i),
-            o_wfull         => buffer_full(i),
-            o_wusedw        => wrusedw(i),
+        o_sop(i)      <= '1' when rx_q(i)(34 downto 32) = "010" else '0';
+        o_shop(i)     <= '1' when rx_q(i)(34 downto 32) = "111" else '0';
+        o_eop(i)      <= '1' when rx_q(i)(34 downto 32) = "001" else '0';
+        o_hit(i)      <= '1' when rx_q(i)(34 downto 32) = "000" else '0';
+        o_t0(i)       <= '1' when rx_q(i)(34 downto 32) = "100" else '0';
+        o_t1(i)       <= '1' when rx_q(i)(34 downto 32) = "101" else '0';
+        o_data(i)     <= rx_q(i)(31 downto 0);
 
-            o_rdata         => buffer_q(i),
-            o_rempty        => buffer_empty(i),
-            i_rack          => buffer_rack(i),
-
-            i_clk           => i_clk_250,
-            i_reset_n       => reset_250_n--,
-        );
-        
-        process(i_clk_250, reset_250_n)
-        begin
-        if ( reset_250_n = '0' ) then
-            almost_full(i) <= '0';
-        elsif rising_edge(i_clk_250) then
-            if(wrusedw(i)(LINK_FIFO_ADDR_WIDTH - 1) = '1') then
-                almost_full(i) <= '1';
-            else
-                almost_full(i) <= '0';
-            end if;
-        end if;
-        end process;
-    
-    
-        --! align links and send data to the next farm
-        e_aligne_link : entity work.farm_aligne_link
-        generic map (
-            g_NLINKS_SWB_TOTL    => g_NLINKS_SWB_TOTL,
-            LINK_FIFO_ADDR_WIDTH => LINK_FIFO_ADDR_WIDTH--,
-        )
-        port map (
-            i_rx        => rx_q(i),
-            i_sop       => sop,
-            i_sop_cur   => sop(i),
-            i_eop       => eop(i),
-            o_skip      => skip(i),
-            i_skip      => skip,
-            
-            i_empty     => rx_rdempty,
-            i_empty_cur => rx_rdempty(i),
-            o_ren       => rx_ren(i),
-            
-            o_tx        => o_tx(i),
-            o_tx_k      => o_tx_k(i),
-
-            --! error counters 
-            --! 0: fifo sync_almost_full
-            --! 1: fifo sync_wrfull
-            --! 2: # of next farm event
-            --! 3: cnt events
-            o_counter(0)    => o_counter(0+i*4+g_NLINKS_SWB_TOTL*5),
-            o_counter(1)    => o_counter(1+i*4+g_NLINKS_SWB_TOTL*5),
-            o_counter(2)    => o_counter(2+i*4+g_NLINKS_SWB_TOTL*5),
-            o_counter(3)    => o_counter(3+i*4+g_NLINKS_SWB_TOTL*5),
-            o_data          => data(i),
-            o_empty         => o_empty(i),
-            i_ren           => i_ren(i),
-            
-            o_error         => o_error(i),
-
-            i_reset_n_250   => i_reset_n_250,
-            i_clk_250       => i_clk_250--,
-        );
-        
-        -- map outputs
-        o_sop(i)      <= '1' when data(i)(34 downto 32) = "010" else '0';
-        o_shop(i)     <= '1' when data(i)(34 downto 32) = "111" else '0';
-        o_eop(i)      <= '1' when data(i)(34 downto 32) = "001" else '0';
-        o_hit(i)      <= '1' when data(i)(34 downto 32) = "000" else '0';
-        o_t0(i)       <= '1' when data(i)(34 downto 32) = "100" else '0';
-        o_t1(i)       <= '1' when data(i)(34 downto 32) = "101" else '0';
-        o_data(i)     <= data(i)(31 downto 0);
+-- Spring IntRun22 we dont align since we have on farm for pixel and one for scifi
+--        --! align links and send data to the next farm
+--        e_aligne_link : entity work.farm_aligne_link
+--        generic map (
+--            g_NLINKS_SWB_TOTL    => g_NLINKS_SWB_TOTL,
+--            LINK_FIFO_ADDR_WIDTH => LINK_FIFO_ADDR_WIDTH--,
+--        )
+--        port map (
+--            i_rx        => rx_q(i),
+--            i_sop       => sop,
+--            i_sop_cur   => sop(i),
+--            i_eop       => eop(i),
+--            o_skip      => skip(i),
+--            i_skip      => skip,
+--            
+--            i_empty     => rx_rdempty,
+--            i_empty_cur => rx_rdempty(i),
+--            o_ren       => rx_ren(i),
+--            
+--            o_tx        => o_tx(i),
+--            o_tx_k      => o_tx_k(i),
+--
+--            --! error counters 
+--            --! 0: fifo sync_almost_full
+--            --! 1: fifo sync_wrfull
+--            --! 2: # of next farm event
+--            --! 3: cnt events
+--            o_counter(0)    => o_counter(0+i*4+g_NLINKS_SWB_TOTL*5),
+--            o_counter(1)    => o_counter(1+i*4+g_NLINKS_SWB_TOTL*5),
+--            o_counter(2)    => o_counter(2+i*4+g_NLINKS_SWB_TOTL*5),
+--            o_counter(3)    => o_counter(3+i*4+g_NLINKS_SWB_TOTL*5),
+--            o_data          => data(i),
+--            o_empty         => o_empty(i),
+--            i_ren           => i_ren(i),
+--            
+--            o_error         => o_error(i),
+--
+--            i_reset_n_250   => i_reset_n_250,
+--            i_clk_250       => i_clk_250--,
+--        );
+--        
+--        -- map outputs
+--        o_sop(i)      <= '1' when data(i)(34 downto 32) = "010" else '0';
+--        o_shop(i)     <= '1' when data(i)(34 downto 32) = "111" else '0';
+--        o_eop(i)      <= '1' when data(i)(34 downto 32) = "001" else '0';
+--        o_hit(i)      <= '1' when data(i)(34 downto 32) = "000" else '0';
+--        o_t0(i)       <= '1' when data(i)(34 downto 32) = "100" else '0';
+--        o_t1(i)       <= '1' when data(i)(34 downto 32) = "101" else '0';
+--        o_data(i)     <= data(i)(31 downto 0);
     
     END GENERATE;
 

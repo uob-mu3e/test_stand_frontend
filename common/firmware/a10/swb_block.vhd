@@ -321,8 +321,8 @@ begin
         g_NLINKS_DATA           => g_NLINKS_DATA_PIXEL_US,
         LINK_FIFO_ADDR_WIDTH    => 13,
         SWB_ID                  => SWB_ID,
-        -- Data type: x"01" = pixel, x"02" = scifi, x"03" = tiles
-        DATA_TYPE               => x"01"--;
+        -- Data type: "00" = pixel, "01" = scifi, "10" = tiles
+        DATA_TYPE               => "00"--,
     )
     port map(
         i_clk_156        => i_clk_156,
@@ -363,8 +363,8 @@ begin
 --        g_NLINKS_DATA           => g_NLINKS_DATA_PIXEL_DS,
 --        LINK_FIFO_ADDR_WIDTH    => 13,
 --        SWB_ID                  => SWB_ID,
---        -- Data type: x"01" = pixel, x"02" = scifi, x"03" = tiles
---        DATA_TYPE               => x"01"--;
+--        -- Data type: "00" = pixel, "01" = scifi, "10" = tiles
+--        DATA_TYPE               => "00"--,
 --    )
 --    port map(
 --        i_clk_156        => i_clk_156,
@@ -412,8 +412,8 @@ begin
 --       TREE_w                  => 10,
 --       TREE_r                  => 10,
 --       SWB_ID                  => SWB_ID,
---       -- Data type: x"01" = pixel, x"02" = scifi, x"03" = tiles
---       DATA_TYPE               => x"02"--;
+--       Data type: "00" = pixel, "01" = scifi, "10" = tiles
+--       DATA_TYPE               => "01"--,
 --   )
 --   port map(
 --        i_clk_156        => i_clk_156,
@@ -460,8 +460,8 @@ begin
 --        TREE_w                  => 10,
 --        TREE_r                  => 10,
 --        SWB_ID                  => SWB_ID,
---        -- Data type: x"01" = pixel, x"02" = scifi, x"03" = tiles
---        DATA_TYPE               => x"03"--;
+--        Data type: "00" = pixel, "01" = scifi, "10" = tiles
+--        DATA_TYPE               => "10"--,
 --    )
 --    port map(
 --        i_clk_156        => i_clk_156,
