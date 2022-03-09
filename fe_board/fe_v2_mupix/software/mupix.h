@@ -15,78 +15,9 @@ struct mupix_t {
 
     const uint8_t  n_ASICS=1;
 
-    void test_mupix_write() {
-        printf("running mupix test write function ..\n");
-        //printf("Chip mask     was set to : 0x%08x\n", sc->ram->data[MP_CTRL_CHIP_MASK_REGISTER_W]);
-        printf("SPI slow down was set to : 0x%08x  (do not use 0 !)\n", sc->ram->data[MP_CTRL_SLOW_DOWN_REGISTER_W]);
-        
-
-        for(int i = 0; i<36; i++){
-            sc->ram->data[MP_CTRL_COMBINED_START_REGISTER_W+i]=0x2A000A03;
-            sc->ram->data[MP_CTRL_COMBINED_START_REGISTER_W+i]=0xFA3F0025;
-            sc->ram->data[MP_CTRL_COMBINED_START_REGISTER_W+i]=0x1E041041;
-            sc->ram->data[MP_CTRL_COMBINED_START_REGISTER_W+i]=0x041E5951;
-            sc->ram->data[MP_CTRL_COMBINED_START_REGISTER_W+i]=0x40280000;
-            sc->ram->data[MP_CTRL_COMBINED_START_REGISTER_W+i]=0x1400C20A;
-            sc->ram->data[MP_CTRL_COMBINED_START_REGISTER_W+i]=0x0280001F;
-            sc->ram->data[MP_CTRL_COMBINED_START_REGISTER_W+i]=0x00020038;
-            sc->ram->data[MP_CTRL_COMBINED_START_REGISTER_W+i]=0x0000FC05;
-            sc->ram->data[MP_CTRL_COMBINED_START_REGISTER_W+i]=0xF0002340;
-            sc->ram->data[MP_CTRL_COMBINED_START_REGISTER_W+i]=0x2B698000;
-            sc->ram->data[MP_CTRL_COMBINED_START_REGISTER_W+i]=0x29003030;
-        }
-
-        /*        
-        // clear config fifos
-        sc->ram->data[MP_CTRL_ENABLE_REGISTER_W]=0x00000FC0;
-        sc->ram->data[MP_CTRL_ENABLE_REGISTER_W]=0x00000000;
-        
-        // invert 29 bit shift reg order ? (no sure if i took the correct one in firmware) --> set bit 0 to 1
-        // invert csn ? --> set bit 1 to 1
-        sc->ram->data[MP_CTRL_INVERT_REGISTER_W]=0x00000003;
-        
-        // write data for the  complete BIAS reg into FEB storage
-        sc->ram->data[MP_CTRL_BIAS_REGISTER_W]=0x2A000A03;
-        sc->ram->data[MP_CTRL_BIAS_REGISTER_W]=0xFA3F0025;
-        sc->ram->data[MP_CTRL_BIAS_REGISTER_W]=0x1E041041;
-        sc->ram->data[MP_CTRL_BIAS_REGISTER_W]=0x041E5951;
-        sc->ram->data[MP_CTRL_BIAS_REGISTER_W]=0x40280000;
-        sc->ram->data[MP_CTRL_BIAS_REGISTER_W]=0x1400C20A;
-        sc->ram->data[MP_CTRL_BIAS_REGISTER_W]=0x028A0000;
-        
-        //write conf defaults
-        sc->ram->data[MP_CTRL_CONF_REGISTER_W]=0x001F0002;
-        sc->ram->data[MP_CTRL_CONF_REGISTER_W]=0x00380000;
-        sc->ram->data[MP_CTRL_CONF_REGISTER_W]=0xFC09F000;
-
-        
-        // write vdac defaults
-        sc->ram->data[MP_CTRL_VDAC_REGISTER_W]=0x007200DC;
-        sc->ram->data[MP_CTRL_VDAC_REGISTER_W]=0xC8000046;
-        sc->ram->data[MP_CTRL_VDAC_REGISTER_W]=0x00B80000;
-        
-        // zero the rest
-        for(int i = 0; i<30; i++){
-        sc->ram->data[MP_CTRL_COL_REGISTER_W]=0x00000000;}
-        
-        for(int i = 0; i<30; i++){
-        sc->ram->data[MP_CTRL_TEST_REGISTER_W]=0x00000000;}
-        
-        for(int i = 0; i<30; i++){
-        sc->ram->data[MP_CTRL_TDAC_REGISTER_W]=0x00000000;}
-
-        sc->ram->data[MP_CTRL_ENABLE_REGISTER_W]=63;
-        sc->ram->data[MP_CTRL_ENABLE_REGISTER_W]=0;
-        */
-        return;
-    }
-
     void mupix_write_all_off(){
         
         sc->ram->data[MP_CTRL_SLOW_DOWN_REGISTER_W]=0x0000000F; // set spi slow down
-        //sc->ram->data[MP_CTRL_ENABLE_REGISTER_W]=0x00000FC0;// clear fifos
-        //sc->ram->data[MP_CTRL_ENABLE_REGISTER_W]=0x00000000;
-        //sc->ram->data[MP_CTRL_INVERT_REGISTER_W]=0x00000003;
         sc->ram->data[MP_CTRL_RESET_REGISTER_W]=0x00000001;
         
         for(int i = 0; i<36; i++){
@@ -103,8 +34,6 @@ struct mupix_t {
             sc->ram->data[MP_CTRL_COMBINED_START_REGISTER_W+i]=0x00148000;
             sc->ram->data[MP_CTRL_COMBINED_START_REGISTER_W+i]=0x11802E00;
         }
-        //for(int i = 0; i<85; i++){
-        //sc->ram->data[MP_CTRL_ALL_REGISTER_W]=0x00000000;}
     }
 
     void test_tdacs() {
@@ -122,43 +51,11 @@ struct mupix_t {
 		}
 
     }
-
-    void test_write_old() {
-        
-        sc->ram->data[MP_CTRL_ENABLE_REGISTER_W]=0x00000FC0;
-        sc->ram->data[MP_CTRL_ENABLE_REGISTER_W]=0x00000000;
-        sc->ram->data[MP_CTRL_INVERT_REGISTER_W]=0x00000003;
-        sc->ram->data[MP_CTRL_USE_OLD_REGISTER_W]=0x1;
-        
-        sc->ram->data[MP_CTRL_ALL_REGISTER_W]=0x2A000A03;
-        sc->ram->data[MP_CTRL_ALL_REGISTER_W]=0xFA3F0025;
-        sc->ram->data[MP_CTRL_ALL_REGISTER_W]=0x1E041041;
-        sc->ram->data[MP_CTRL_ALL_REGISTER_W]=0x041E5951;
-        sc->ram->data[MP_CTRL_ALL_REGISTER_W]=0x40280000;
-        sc->ram->data[MP_CTRL_ALL_REGISTER_W]=0x1400C20A;
-        sc->ram->data[MP_CTRL_ALL_REGISTER_W]=0x028A001F;
-        sc->ram->data[MP_CTRL_ALL_REGISTER_W]=0x00020038;
-        sc->ram->data[MP_CTRL_ALL_REGISTER_W]=0x0000FC09;
-        sc->ram->data[MP_CTRL_ALL_REGISTER_W]=0xF0001C80;
-        sc->ram->data[MP_CTRL_ALL_REGISTER_W]=0x00148000;
-        sc->ram->data[MP_CTRL_ALL_REGISTER_W]=0x11802E00;
-   	
-        for(int i = 0; i<85; i++) {
-            sc->ram->data[MP_CTRL_ALL_REGISTER_W]=0x00000000;
-		}
-        
-    }
     
     void test_write_all(bool maskPixel) {
-        
-        //sc->ram->data[MP_CTRL_ENABLE_REGISTER_W]=0x00000FC0;
-        //sc->ram->data[MP_CTRL_ENABLE_REGISTER_W]=0x00000000;
-        //sc->ram->data[MP_CTRL_INVERT_REGISTER_W]=0x00000003;
         sc->ram->data[MP_CTRL_SPI_ENABLE_REGISTER_W]=0x00000001;
         sc->ram->data[MP_CTRL_RESET_REGISTER_W]=0x00000001;
-        sc->ram->data[MP_CTRL_USE_OLD_REGISTER_W]=0x0;
         
-
         sc->ram->data[MP_CTRL_COMBINED_START_REGISTER_W]=0x2A000A03;
         sc->ram->data[MP_CTRL_COMBINED_START_REGISTER_W]=0xFA3F0025;
         sc->ram->data[MP_CTRL_COMBINED_START_REGISTER_W]=0x1E041041;
@@ -171,10 +68,6 @@ struct mupix_t {
         sc->ram->data[MP_CTRL_COMBINED_START_REGISTER_W]=0xF0001C80;
         sc->ram->data[MP_CTRL_COMBINED_START_REGISTER_W]=0x00148000;
         sc->ram->data[MP_CTRL_COMBINED_START_REGISTER_W]=0x11802E00;
-
-        //for(int i = 0; i<85; i++) {
-         //   sc->ram->data[MP_CTRL_ALL_REGISTER_W]=0x00000000;
-		//}
         
     }
 
@@ -232,7 +125,6 @@ struct mupix_t {
         
         while(1) {
             printf("  [a] => write all OFF\n");
-            printf("  [0] => write mupix default conf (All)\n");
             printf("  [t] => test tdacs\n");
             printf("  [1] => set mupix config mask\n");
             printf("  [2] => set spi clk slow down reg\n");
@@ -257,14 +149,8 @@ struct mupix_t {
             case 'a':
                 mupix_write_all_off();
                 break;
-            case '0':
-                test_mupix_write();
-                break;
 	        case 't':
                 test_tdacs();
-		        break;
-	        case 'o':
-                test_write_old();
 		        break;
             case '1':
                 value = 0x0;
@@ -291,7 +177,6 @@ struct mupix_t {
 
                 printf("setting spi slow down to 0x%08x\n",value);
                 sc->ram->data[MP_CTRL_SLOW_DOWN_REGISTER_W]=value;
-                sc->ram->data[MP_CTRL_SLOW_DOWN_NEW_REGISTER_W]=value;
                 break;
             case '3':
                 menu_lvds();
