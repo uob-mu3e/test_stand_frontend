@@ -57,12 +57,15 @@ port (
     -- Interface to memory bank A
     o_A_mem_ck          : out   std_logic_vector(0 downto 0);                      -- mem_ck
     o_A_mem_ck_n        : out   std_logic_vector(0 downto 0);                      -- mem_ck_n
-    o_A_mem_a           : out   std_logic_vector(15 downto 0);                     -- mem_a
+    o_A_mem_a           : out   std_logic_vector(16 downto 0);                     -- mem_a
+    o_A_mem_act_n       : out   std_logic;                                         -- mem_act_n
     o_A_mem_ba          : out   std_logic_vector(2 downto 0);                      -- mem_ba
+    o_A_mem_bg          : out   std_logic_vector(1 downto 0);                      -- mem_bg
     o_A_mem_cke         : out   std_logic_vector(0 downto 0);                      -- mem_cke
     o_A_mem_cs_n        : out   std_logic_vector(0 downto 0);                      -- mem_cs_n
     o_A_mem_odt         : out   std_logic_vector(0 downto 0);                      -- mem_odt
     o_A_mem_reset_n     : out   std_logic_vector(0 downto 0);                      -- mem_reset_n
+    i_A_mem_alert_n     : in    std_logic;                                         -- mem_alert_n
     o_A_mem_we_n        : out   std_logic_vector(0 downto 0);                      -- mem_we_n
     o_A_mem_ras_n       : out   std_logic_vector(0 downto 0);                      -- mem_ras_n
     o_A_mem_cas_n       : out   std_logic_vector(0 downto 0);                      -- mem_cas_n
@@ -70,18 +73,22 @@ port (
     io_A_mem_dqs_n      : inout std_logic_vector(7 downto 0)   := (others => 'X'); -- mem_dqs_n
     io_A_mem_dq         : inout std_logic_vector(63 downto 0)  := (others => 'X'); -- mem_dq
     o_A_mem_dm          : out   std_logic_vector(7 downto 0);                      -- mem_dm
+    io_A_mem_dbi_n      : inout std_logic_vector(7 downto 0)   := (others => 'X'); -- mem_dbi_n
     i_A_oct_rzqin       : in    std_logic                      := 'X';             -- oct_rzqin
     i_A_pll_ref_clk     : in    std_logic                      := 'X';             -- clk
 
     -- Interface to memory bank B
     o_B_mem_ck          : out   std_logic_vector(0 downto 0);                      -- mem_ck
     o_B_mem_ck_n        : out   std_logic_vector(0 downto 0);                      -- mem_ck_n
-    o_B_mem_a           : out   std_logic_vector(15 downto 0);                     -- mem_a
+    o_B_mem_a           : out   std_logic_vector(16 downto 0);                     -- mem_a
+    o_B_mem_act_n       : out   std_logic;                                         -- mem_act_n
     o_B_mem_ba          : out   std_logic_vector(2 downto 0);                      -- mem_ba
+    o_B_mem_bg          : out   std_logic_vector(1 downto 0);                      -- mem_bg
     o_B_mem_cke         : out   std_logic_vector(0 downto 0);                      -- mem_cke
     o_B_mem_cs_n        : out   std_logic_vector(0 downto 0);                      -- mem_cs_n
     o_B_mem_odt         : out   std_logic_vector(0 downto 0);                      -- mem_odt
     o_B_mem_reset_n     : out   std_logic_vector(0 downto 0);                      -- mem_reset_n
+    i_B_mem_alert_n     : in    std_logic;                                         -- mem_alert_n
     o_B_mem_we_n        : out   std_logic_vector(0 downto 0);                      -- mem_we_n
     o_B_mem_ras_n       : out   std_logic_vector(0 downto 0);                      -- mem_ras_n
     o_B_mem_cas_n       : out   std_logic_vector(0 downto 0);                      -- mem_cas_n
@@ -89,6 +96,7 @@ port (
     io_B_mem_dqs_n      : inout std_logic_vector(7 downto 0)   := (others => 'X'); -- mem_dqs_n
     io_B_mem_dq         : inout std_logic_vector(63 downto 0)  := (others => 'X'); -- mem_dq
     o_B_mem_dm          : out   std_logic_vector(7 downto 0);                      -- mem_dm
+    io_B_mem_dbi_n      : inout std_logic_vector(7 downto 0)   := (others => 'X'); -- mem_dbi_n
     i_B_oct_rzqin       : in    std_logic                      := 'X';             -- oct_rzqin
     i_B_pll_ref_clk     : in    std_logic                      := 'X'              -- clk
     
@@ -619,11 +627,14 @@ begin
         o_A_mem_ck            => o_A_mem_ck,
         o_A_mem_ck_n          => o_A_mem_ck_n,
         o_A_mem_a             => o_A_mem_a,
+        o_A_mem_act_n         => o_A_mem_act_n,
         o_A_mem_ba            => o_A_mem_ba,
+        o_A_mem_bg            => o_A_mem_bg,
         o_A_mem_cke           => o_A_mem_cke,
         o_A_mem_cs_n          => o_A_mem_cs_n,
         o_A_mem_odt           => o_A_mem_odt,
         o_A_mem_reset_n(0)    => o_A_mem_reset_n(0),
+        i_A_mem_alert_n       => i_A_mem_alert_n,
         o_A_mem_we_n(0)       => o_A_mem_we_n(0),
         o_A_mem_ras_n(0)      => o_A_mem_ras_n(0),
         o_A_mem_cas_n(0)      => o_A_mem_cas_n(0),
@@ -631,6 +642,7 @@ begin
         io_A_mem_dqs_n        => io_A_mem_dqs_n,
         io_A_mem_dq           => io_A_mem_dq,
         o_A_mem_dm            => o_A_mem_dm,
+        io_A_mem_dbi_n        => io_A_mem_dbi_n,
         i_A_oct_rzqin         => i_A_oct_rzqin,
         i_A_pll_ref_clk       => i_A_pll_ref_clk,
         
@@ -638,11 +650,14 @@ begin
         o_B_mem_ck            => o_B_mem_ck,
         o_B_mem_ck_n          => o_B_mem_ck_n,
         o_B_mem_a             => o_B_mem_a,
+        o_B_mem_act_n         => o_B_mem_act_n,
         o_B_mem_ba            => o_B_mem_ba,
+        o_B_mem_bg            => o_B_mem_bg,
         o_B_mem_cke           => o_B_mem_cke,
         o_B_mem_cs_n          => o_B_mem_cs_n,
         o_B_mem_odt           => o_B_mem_odt,
         o_B_mem_reset_n(0)    => o_B_mem_reset_n(0),
+        i_B_mem_alert_n       => i_B_mem_alert_n,
         o_B_mem_we_n(0)       => o_B_mem_we_n(0),
         o_B_mem_ras_n(0)      => o_B_mem_ras_n(0),
         o_B_mem_cas_n(0)      => o_B_mem_cas_n(0),
@@ -650,6 +665,7 @@ begin
         io_B_mem_dqs_n        => io_B_mem_dqs_n,
         io_B_mem_dq           => io_B_mem_dq,
         o_B_mem_dm            => o_B_mem_dm,
+        io_B_mem_dbi_n        => io_B_mem_dbi_n,
         i_B_oct_rzqin         => i_B_oct_rzqin,
         i_B_pll_ref_clk       => i_B_pll_ref_clk--,
      );

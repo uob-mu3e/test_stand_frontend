@@ -535,10 +535,10 @@ set_instance_parameter_value emif_0 {MEM_DDR4_DISCRETE_MIRROR_ADDRESSING_EN} {0}
 set_instance_parameter_value emif_0 {MEM_DDR4_DLL_EN} {1}
 set_instance_parameter_value emif_0 {MEM_DDR4_DM_EN} {1}
 set_instance_parameter_value emif_0 {MEM_DDR4_DQ_PER_DQS} {8}
-set_instance_parameter_value emif_0 {MEM_DDR4_DQ_WIDTH} {72}
+set_instance_parameter_value emif_0 {MEM_DDR4_DQ_WIDTH} {64}
 set_instance_parameter_value emif_0 {MEM_DDR4_DRV_STR_ENUM} {DDR4_DRV_STR_RZQ_7}
 set_instance_parameter_value emif_0 {MEM_DDR4_FINE_GRANULARITY_REFRESH} {DDR4_FINE_REFRESH_FIXED_1X}
-set_instance_parameter_value emif_0 {MEM_DDR4_FORMAT_ENUM} {MEM_FORMAT_UDIMM}
+set_instance_parameter_value emif_0 {MEM_DDR4_FORMAT_ENUM} {MEM_FORMAT_SODIMM}
 set_instance_parameter_value emif_0 {MEM_DDR4_GEARDOWN} {DDR4_GEARDOWN_HR}
 set_instance_parameter_value emif_0 {MEM_DDR4_HIDE_ADV_MR_SETTINGS} {1}
 set_instance_parameter_value emif_0 {MEM_DDR4_INTERNAL_VREFDQ_MONITOR} {0}

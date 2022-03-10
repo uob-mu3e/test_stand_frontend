@@ -96,48 +96,56 @@ port (
     CLK_50_B2J          : in    std_logic;
 
     --//// DDR4 A /////////////
-    DDR4A_A             : out   std_logic_vector(15 downto 0);
-    DDR4A_BA            : out   std_logic_vector(2 downto 0);
-    DDR4A_CAS_n         : out   std_logic;
     DDR4A_CK            : out   std_logic_vector(0 downto 0);
-    DDR4A_CKE           : out   std_logic_vector(0 downto 0);
     DDR4A_CK_n          : out   std_logic_vector(0 downto 0);
+    DDR4A_A             : out   std_logic_vector(16 downto 0);
+    DDR4A_ACT_n         : out   std_logic;
+    DDR4A_BA            : out   std_logic_vector(1 downto 0);
+    DDR4A_BG            : out   std_logic_vector(1 downto 0);
+    DDR4A_CKE           : out   std_logic_vector(0 downto 0);
     DDR4A_CS_n          : out   std_logic_vector(0 downto 0);
-    DDR4A_DM            : out   std_logic_vector(7 downto 0);
-    DDR4A_DQ            : inout std_logic_vector(63 downto 0);
+    DDR4A_ODT           : out   std_logic_vector(0 downto 0);
+    DDR4A_RESET_n       : out   std_logic;
+    DDR4A_ALERT_n       : in    std_logic;
+    DDR4A_WE_n          : out   std_logic;
+    DDR4A_RAS_n         : out   std_logic;
+    DDR4A_CAS_n         : out   std_logic;
     DDR4A_DQS           : inout std_logic_vector(7 downto 0);
     DDR4A_DQS_n         : inout std_logic_vector(7 downto 0);
-    DDR4A_EVENT_n       : in    std_logic;
-    DDR4A_ODT           : out   std_logic_vector(0 downto 0);
-    DDR4A_RAS_n         : out   std_logic;
+    DDR4A_DQ            : inout std_logic_vector(63 downto 0);
+    DDR4A_DM            : out   std_logic_vector(7 downto 0);
+    DDR4A_DBI_n         : inout std_logic_vector(7 downto 0);
+    RZQ_DDR4_A          : in    std_logic;
     DDR4A_REFCLK_p      : in    std_logic;
-    DDR4A_RESET_n       : out   std_logic;
+    DDR4A_EVENT_n       : in    std_logic;
     DDR4A_SCL           : out   std_logic;
     DDR4A_SDA           : inout std_logic;
-    DDR4A_WE_n          : out   std_logic;
-    RZQ_DDR4_A          : in    std_logic;
-
+    
     --//// DDR4 B/////////////
-    DDR4B_A             : out   std_logic_vector(15 downto 0);
-    DDR4B_BA            : out   std_logic_vector(2 downto 0);
-    DDR4B_CAS_n         : out   std_logic;
     DDR4B_CK            : out   std_logic_vector(0 downto 0);
-    DDR4B_CKE           : out   std_logic_vector(0 downto 0);
     DDR4B_CK_n          : out   std_logic_vector(0 downto 0);
+    DDR4B_A             : out   std_logic_vector(16 downto 0);
+    DDR4B_ACT_n         : out   std_logic;
+    DDR4B_BA            : out   std_logic_vector(1 downto 0);
+    DDR4B_BG            : out   std_logic_vector(1 downto 0);
+    DDR4B_CKE           : out   std_logic_vector(0 downto 0);
     DDR4B_CS_n          : out   std_logic_vector(0 downto 0);
-    DDR4B_DM            : out   std_logic_vector(7 downto 0);
-    DDR4B_DQ            : inout std_logic_vector(63 downto 0);
+    DDR4B_ODT           : out   std_logic_vector(0 downto 0);
+    DDR4B_RESET_n       : out   std_logic;
+    DDR4B_ALERT_n       : in    std_logic;
+    DDR4B_WE_n          : out   std_logic;
+    DDR4B_RAS_n         : out   std_logic;
+    DDR4B_CAS_n         : out   std_logic;
     DDR4B_DQS           : inout std_logic_vector(7 downto 0);
     DDR4B_DQS_n         : inout std_logic_vector(7 downto 0);
-    DDR4B_EVENT_n       : in    std_logic;
-    DDR4B_ODT           : out   std_logic_vector(0 downto 0);
-    DDR4B_RAS_n         : out   std_logic;
+    DDR4B_DQ            : inout std_logic_vector(63 downto 0);
+    DDR4B_DM            : out   std_logic_vector(7 downto 0);
+    DDR4B_DBI_n         : inout std_logic_vector(7 downto 0);
+    RZQ_DDR4_B          : in    std_logic;
     DDR4B_REFCLK_p      : in    std_logic;
-    DDR4B_RESET_n       : out   std_logic;
+    DDR4B_EVENT_n       : in    std_logic;
     DDR4B_SCL           : out   std_logic;
-    DDR4B_SDA           : inout std_logic;
-    DDR4B_WE_n          : out   std_logic;
-    RZQ_DDR4_B          : in    std_logic--;
+    DDR4B_SDA           : inout std_logic--;
 );
 end entity;
 
@@ -409,11 +417,14 @@ begin
         o_A_mem_ck           => DDR4A_CK,
         o_A_mem_ck_n         => DDR4A_CK_n,
         o_A_mem_a            => DDR4A_A,
+        o_A_mem_act_n        => DDR4A_ACT_n,
         o_A_mem_ba           => DDR4A_BA,
+        o_A_mem_bg           => DDR4A_BG,
         o_A_mem_cke          => DDR4A_CKE,
         o_A_mem_cs_n         => DDR4A_CS_n,
         o_A_mem_odt          => DDR4A_ODT,
         o_A_mem_reset_n(0)   => DDR4A_RESET_n,
+        i_A_mem_alert_n      => DDR4A_ALERT_n,
         o_A_mem_we_n(0)      => DDR4A_WE_n,
         o_A_mem_ras_n(0)     => DDR4A_RAS_n,
         o_A_mem_cas_n(0)     => DDR4A_CAS_n,
@@ -421,6 +432,7 @@ begin
         io_A_mem_dqs_n       => DDR4A_DQS_n,
         io_A_mem_dq          => DDR4A_DQ,
         o_A_mem_dm           => DDR4A_DM,
+        io_A_mem_dbi_n       => DDR4A_DBI_n,
         i_A_oct_rzqin        => RZQ_DDR4_A,
         i_A_pll_ref_clk      => DDR4A_REFCLK_p,
 
@@ -428,11 +440,14 @@ begin
         o_B_mem_ck           => DDR4B_CK,
         o_B_mem_ck_n         => DDR4B_CK_n,
         o_B_mem_a            => DDR4B_A,
+        o_B_mem_act_n        => DDR4B_ACT_n,
         o_B_mem_ba           => DDR4B_BA,
+        o_B_mem_bg           => DDR4B_BG,
         o_B_mem_cke          => DDR4B_CKE,
         o_B_mem_cs_n         => DDR4B_CS_n,
         o_B_mem_odt          => DDR4B_ODT,
         o_B_mem_reset_n(0)   => DDR4B_RESET_n,
+        i_B_mem_alert_n      => DDR4A_ALERT_n,
         o_B_mem_we_n(0)      => DDR4B_WE_n,
         o_B_mem_ras_n(0)     => DDR4B_RAS_n,
         o_B_mem_cas_n(0)     => DDR4B_CAS_n,
@@ -440,6 +455,7 @@ begin
         io_B_mem_dqs_n       => DDR4B_DQS_n,
         io_B_mem_dq          => DDR4B_DQ,
         o_B_mem_dm           => DDR4B_DM,
+        io_B_mem_dbi_n       => DDR4B_DBI_n,
         i_B_oct_rzqin        => RZQ_DDR4_B,
         i_B_pll_ref_clk      => DDR4B_REFCLK_p--,
     );
