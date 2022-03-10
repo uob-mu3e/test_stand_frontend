@@ -718,19 +718,16 @@ begin
     )
     port map(
         i_pcie0_rregs_A     => i_pcie0_rregs_A,
-        i_pcie0_rregs_B     => i_pcie0_rregs_B,
-        i_pcie0_rregs_C     => i_pcie0_rregs_C,
 
         i_local_pcie0_rregs_A   => local_pcie0_rregs_A,
-        i_local_pcie0_rregs_C   => local_pcie0_rregs_C,
+        i_local_pcie0_rregs_B   => local_pcie0_rregs_B,
 
         o_pcie0_rregs       => pcie0_rregs,
 
         i_reset_n           => pcie0_reset_n,
 
         i_clk_A             => i_pcie0_wregs_A_clk,
-        i_clk_B             => i_pcie0_wregs_B_clk,
-        i_clk_C             => i_pcie0_wregs_C_clk--,
+        i_clk_B             => i_clk_125--,
     );
 
     -- PCIe0
@@ -757,11 +754,11 @@ begin
         writeregs               => pcie0_wregs_A,
         regwritten              => o_pcie0_regwritten_A,
 
-        i_clk_B                 => i_pcie0_wregs_B_clk,
+        i_clk_B                 => i_clk_125,
         o_writeregs_B           => pcie0_wregs_B,
         o_regwritten_B          => o_pcie0_regwritten_B,
 
-        i_clk_C                 => i_pcie0_wregs_C_clk,
+        i_clk_C                 => i_clk_125,
         o_writeregs_C           => pcie0_wregs_C,
         o_regwritten_C          => o_pcie0_regwritten_C,
 
