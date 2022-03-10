@@ -216,12 +216,14 @@ begin
         rst => not reset_50_n
     );
 
+
     --! 125 MHz global clock (from SMA input)
     e_clk_125 : work.cmp.ip_clkctrl
     port map (
         inclk => SMA_CLKIN,
         outclk => clk_125--,
     );
+
 
     --! A10 block
     --! ------------------------------------------------------------------------
@@ -234,7 +236,6 @@ begin
         g_XCVR1_CHANNELS => 16,
         g_XCVR1_N => 4,
         g_PCIE0_X => 8,
-        g_PCIE1_X => 0,
         g_FARM    => 1,
         g_CLK_MHZ => 50.0--,
     )
@@ -264,7 +265,6 @@ begin
         -- LED / BUTTONS
         o_LED(1)                        => LED(0),
         o_LED_BRACKET                   => LED_BRACKET,
-        i_BUTTON                        => BUTTON,
 
         -- XCVR1 (10000 Mbps @ 250 MHz)
         i_xcvr1_rx( 3 downto  0)        => QSFPA_RX_p,
@@ -329,8 +329,6 @@ begin
         -- resets clk
         top_pll_locked                  => locked_50to125,
 
-        o_reset_pcie0_n                 => reset_pcie0_n,
-        
         o_reset_250_n                   => reset_250_n,
         o_clk_250                       => clk_250,
         o_clk_250_hz                    => LED(2),
@@ -367,6 +365,7 @@ begin
     QSFPC_RST_n <= '1';
     QSFPD_RST_n <= '1';
 
+
     --! Farm Block
     --! ------------------------------------------------------------------------
     --! ------------------------------------------------------------------------
@@ -387,20 +386,12 @@ begin
         o_tx_k          => tx_datak,
 
         --! PCIe registers / memory
-        i_writeregs_pcie    => pcie0_writeregs_A,
-        i_regwritten_pcie   => pcie0_regwritten_A,
-        i_writeregs_link    => pcie0_writeregs_B,
-        i_regwritten_link   => pcie0_regwritten_B,
-        i_writeregs_ddr     => pcie0_writeregs_C,
-        i_regwritten_ddr    => pcie0_regwritten_C,
+        i_writeregs     => pcie0_writeregs_A,
+        i_regwritten    => pcie0_regwritten_A,
 
-        o_readregs_pcie => pcie0_readregs_A,
-        o_readregs_link => pcie0_readregs_B,
-        o_readregs_ddr  => pcie0_readregs_C,
+        o_readregs      => pcie0_readregs_A,
 
-        i_resets_n_pcie => pcie0_resets_n_A,
-        i_resets_n_link => pcie0_resets_n_B,
-        i_resets_n_ddr  => pcie0_resets_n_C,
+        i_resets_n      => pcie0_resets_n_A,
 
         -- TODO: write status readout entity with ADDR to PCIe REGS and mapping to one counter REG
         o_counter       => open,
@@ -411,53 +402,49 @@ begin
         o_dma_data      => dma_data,
 
         --! 250 MHz clock pice / reset_n
-        i_reset_n_250_pcie => reset_pcie0_n,
-        i_clk_250_pcie     => pcie_fastclk_out,
-
-        --! 250 MHz clock link / reset_n
-        i_reset_n_250_link => reset_pcie0_n,
-        i_clk_250_link     => pcie_fastclk_out,
+        i_reset_n       => reset_pcie0_n,
+        i_clk           => pcie_fastclk_out,
 
         -- Interface to memory bank A
-        A_mem_ck           => DDR4A_CK,
-        A_mem_ck_n         => DDR4A_CK_n,
-        A_mem_a            => DDR4A_A,
-        A_mem_ba           => DDR4A_BA,
-        A_mem_cke          => DDR4A_CKE,
-        A_mem_cs_n         => DDR4A_CS_n,
-        A_mem_odt          => DDR4A_ODT,
-        A_mem_reset_n(0)   => DDR4A_RESET_n,
-        A_mem_we_n(0)      => DDR4A_WE_n,
-        A_mem_ras_n(0)     => DDR4A_RAS_n,
-        A_mem_cas_n(0)     => DDR4A_CAS_n,
-        A_mem_dqs          => DDR4A_DQS,
-        A_mem_dqs_n        => DDR4A_DQS_n,
-        A_mem_dq           => DDR4A_DQ,
-        A_mem_dm           => DDR4A_DM,
-        A_oct_rzqin        => RZQ_DDR4_A,
-        A_pll_ref_clk      => DDR4A_REFCLK_p,
+        o_A_mem_ck           => DDR4A_CK,
+        o_A_mem_ck_n         => DDR4A_CK_n,
+        o_A_mem_a            => DDR4A_A,
+        o_A_mem_ba           => DDR4A_BA,
+        o_A_mem_cke          => DDR4A_CKE,
+        o_A_mem_cs_n         => DDR4A_CS_n,
+        o_A_mem_odt          => DDR4A_ODT,
+        o_A_mem_reset_n(0)   => DDR4A_RESET_n,
+        o_A_mem_we_n(0)      => DDR4A_WE_n,
+        o_A_mem_ras_n(0)     => DDR4A_RAS_n,
+        o_A_mem_cas_n(0)     => DDR4A_CAS_n,
+        io_A_mem_dqs         => DDR4A_DQS,
+        io_A_mem_dqs_n       => DDR4A_DQS_n,
+        io_A_mem_dq          => DDR4A_DQ,
+        o_A_mem_dm           => DDR4A_DM,
+        i_A_oct_rzqin        => RZQ_DDR4_A,
+        i_A_pll_ref_clk      => DDR4A_REFCLK_p,
 
         -- Interface to memory bank B
-        B_mem_ck           => DDR4B_CK,
-        B_mem_ck_n         => DDR4B_CK_n,
-        B_mem_a            => DDR4B_A,
-        B_mem_ba           => DDR4B_BA,
-        B_mem_cke          => DDR4B_CKE,
-        B_mem_cs_n         => DDR4B_CS_n,
-        B_mem_odt          => DDR4B_ODT,
-        B_mem_reset_n(0)   => DDR4B_RESET_n,
-        B_mem_we_n(0)      => DDR4B_WE_n,
-        B_mem_ras_n(0)     => DDR4B_RAS_n,
-        B_mem_cas_n(0)     => DDR4B_CAS_n,
-        B_mem_dqs          => DDR4B_DQS,
-        B_mem_dqs_n        => DDR4B_DQS_n,
-        B_mem_dq           => DDR4B_DQ,
-        B_mem_dm           => DDR4B_DM,
-        B_oct_rzqin        => RZQ_DDR4_B,
-        B_pll_ref_clk      => DDR4B_REFCLK_p--,
+        o_B_mem_ck           => DDR4B_CK,
+        o_B_mem_ck_n         => DDR4B_CK_n,
+        o_B_mem_a            => DDR4B_A,
+        o_B_mem_ba           => DDR4B_BA,
+        o_B_mem_cke          => DDR4B_CKE,
+        o_B_mem_cs_n         => DDR4B_CS_n,
+        o_B_mem_odt          => DDR4B_ODT,
+        o_B_mem_reset_n(0)   => DDR4B_RESET_n,
+        o_B_mem_we_n(0)      => DDR4B_WE_n,
+        o_B_mem_ras_n(0)     => DDR4B_RAS_n,
+        o_B_mem_cas_n(0)     => DDR4B_CAS_n,
+        io_B_mem_dqs         => DDR4B_DQS,
+        io_B_mem_dqs_n       => DDR4B_DQS_n,
+        io_B_mem_dq          => DDR4B_DQ,
+        o_B_mem_dm           => DDR4B_DM,
+        i_B_oct_rzqin        => RZQ_DDR4_B,
+        i_B_pll_ref_clk      => DDR4B_REFCLK_p--,
     );
 
-    DDR3A_SDA   <= 'Z';
-    DDR3B_SDA   <= 'Z';
+    DDR4A_SDA   <= 'Z';
+    DDR4B_SDA   <= 'Z';
 
 end architecture;

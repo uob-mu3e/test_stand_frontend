@@ -91,14 +91,14 @@ port (
 );
 end entity;
 
-architecture rtl of ddr_block is
-    
+architecture arch of ddr_block is
+
     signal A_cal_success:   std_logic;
     signal A_cal_fail:      std_logic;
-    
+
     signal A_clk:           std_logic;
     signal A_reset_n:       std_logic;
-    
+
     signal A_ready:         std_logic;
     signal A_read:          std_logic;
     signal A_write:         std_logic;
@@ -107,13 +107,13 @@ architecture rtl of ddr_block is
     signal A_writedata:     std_logic_vector(511 downto 0);
     signal A_burstcount:    std_logic_vector(6 downto 0);
     signal A_readdatavalid: std_logic;
-    
+
     signal B_cal_success:   std_logic;
     signal B_cal_fail:      std_logic;
-    
+
     signal B_clk:           std_logic;
     signal B_reset_n:       std_logic;
-    
+
     signal B_ready:         std_logic;
     signal B_read:          std_logic;
     signal B_write:         std_logic;
@@ -122,10 +122,10 @@ architecture rtl of ddr_block is
     signal B_writedata:     std_logic_vector(511 downto 0);
     signal B_burstcount:    std_logic_vector(6 downto 0);
     signal B_readdatavalid: std_logic;
-    
+
     signal A_errout :       std_logic_vector(31 downto 0);
     signal B_errout :       std_logic_vector(31 downto 0);
-    
+
 begin
 
     --! generate ddr3 for ddr3 boards

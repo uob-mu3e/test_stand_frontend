@@ -10,4 +10,4 @@ entity=$(basename "$0" .sh)
 
 ../../util/sim.sh "$entity" "$entity.vhd" \
     *.vhd ../*.vhd ../../util/*.vhd ../../util/quartus/*.vhd \
-    ../../registers/*.vhd ../ddr/*.vhd
+    ../../util/altera/*.vhd ../../registers/*.vhd ../ddr/*.vhd

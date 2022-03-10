@@ -71,13 +71,13 @@ begin
     o_counter(2) <= cnt_skip_event;
     o_counter(3) <= cnt_event;
     
-    o_ren <= '1' when link_to_fifo_state  = idle and i_sop = check_ones and work.util.or_reduce(i_empty) = '0' else
+    o_ren <= '1' when link_to_fifo_state  = idle and work.util.and_reduce(i_sop) = '1' and work.util.or_reduce(i_empty) = '0' else
              '1' when link_to_fifo_state /= idle and i_empty_cur = '0' else
              '0';
              
     -- we skip the events which are already tagged and if fifo is almost_full = '1'
     o_skip <= '1' when link_to_fifo_state = idle and f_almost_full = '1' else
-              '1' when link_to_fifo_state = idle and i_sop_cur(i) = '1' and i_rx(25) = '1' else
+              '1' when link_to_fifo_state = idle and i_sop_cur = '1' and i_rx(25) = '1' else
               '0';
     
     --! sync link data to pcie clk and buffer events
@@ -91,7 +91,7 @@ begin
         cnt_event           <= (others => '0');
         link_to_fifo_state  <= idle;
         o_tx                <= x"000000BC";
-        o_tx_k              <= x"0001";
+        o_tx_k              <= "0001";
         --
     elsif ( rising_edge(i_clk_250) ) then
     
@@ -99,15 +99,14 @@ begin
         f_data  <= i_rx;
         
         o_tx    <= x"000000BC";
-        o_tx_k  <= x"0001";
+        o_tx_k  <= "0001";
 
         case link_to_fifo_state is 
 
             when idle =>
                 -- TODO: also check if all are in state idle here
-                if ( i_sop = check_ones and work.util.or_reduce(i_empty) = '0' ) then
+                if ( work.util.and_reduce(i_sop) = '1' and work.util.or_reduce(i_empty) = '0' ) then
                     o_tx   <= i_rx;
-                    o_tx_k <= i_rx_k;
                     if ( f_wrfull = '1' ) then
                         -- TODO: not good stop run state
                     elsif ( f_almost_full = '1' or work.util.or_reduce(i_skip) = '1' ) then
@@ -127,9 +126,10 @@ begin
                 -- write the event
                 if ( i_empty_cur = '0' ) then
                     o_tx   <= i_rx;
-                    o_tx_k <= i_rx_k;
+                    o_tx_k  <= "0000";
                     f_wen  <= '1';
                     if ( i_eop = '1' ) then
+                        o_tx_k  <= "0001";
                         link_to_fifo_state <= idle;
                     end if;
                 end if;
@@ -138,8 +138,9 @@ begin
                 -- skip the event
                 if ( i_empty_cur = '0' ) then
                     o_tx   <= i_rx;
-                    o_tx_k <= i_rx_k;
+                    o_tx_k  <= "0000";
                     if ( i_eop = '1' ) then
+                        o_tx_k  <= "0001";
                         link_to_fifo_state <= idle;
                     end if;
                 end if;

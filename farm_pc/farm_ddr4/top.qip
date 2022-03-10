@@ -16,6 +16,12 @@ set_global_assignment -name VHDL_FILE a10/chip_lookup.vhd
 set_global_assignment -name VHDL_FILE a10/chip_lookup_int_2021.vhd
 set_global_assignment -name VHDL_FILE a10/chip_lookup_edm_2021.vhd
 set_global_assignment -name VHDL_FILE a10/link_to_fifo_32.vhd
+set_global_assignment -name VHDL_FILE a10/swb_stream_merger.vhd
+set_global_assignment -name VHDL_FILE a10/swb_time_merger.vhd
+set_global_assignment -name VHDL_FILE a10/swb_midas_event_builder.vhd
+set_global_assignment -name VHDL_FILE a10/farm_midas_event_builder_intrun22.vhd
+set_global_assignment -name VHDL_FILE a10/time_merger_v4.vhd
+set_global_assignment -name VHDL_FILE a10/time_merger_tree_fifo_32_v3.vhd
 
 set_global_assignment -name QIP_FILE ../../common/firmware/registers/include.qip
 

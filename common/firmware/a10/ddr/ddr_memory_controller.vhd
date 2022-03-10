@@ -93,14 +93,14 @@ architecture rtl of ddr_memory_controller is
     signal ddr_calibrated, ddr_ready, ddr_read_valid : std_logic;
     signal error : std_logic_vector(31 downto 0);
     signal ddr_data_out : std_logic_vector(511 downto 0);
-    signal ddr_sync_out : std_logic_vector(512 + 32 + 3 + 16 - 1 downto 0);
+    signal ddr_sync_out, wdata_sync_out : std_logic_vector(512 + 32 + 3 + 16 - 1 downto 0);
 
     --! internal input signals
     signal ddr_control : std_logic_vector(15 downto 0);
     signal ddr_write, ddr_read : std_logic;
     signal ddr_addr : std_logic_vector(25 downto 0);
     signal ddr_data_in : std_logic_vector(511 downto 0);
-    signal ddr_sync_in : std_logic_vector(512 + 26 + 2 + 16 - 1 downto 0);
+    signal ddr_sync_in, wdata_sync_in : std_logic_vector(512 + 26 + 2 + 16 - 1 downto 0);
 
 begin
 
@@ -120,10 +120,11 @@ begin
 
 
     --! sync signals
+    wdata_sync_out <= ddr_data_out & error & ddr_calibrated & ddr_ready & ddr_read_valid & ddr_status;
     e_sync_out : entity work.fifo_sync
     generic map(
         g_RDATA_RESET => (ddr_sync_out'range => '0')--,
-    ) port map (    i_wdata => ddr_data_out & error & ddr_calibrated & ddr_ready & ddr_read_valid & ddr_status, 
+    ) port map (    i_wdata => wdata_sync_out, 
                     i_wclk => M_clk, i_wreset_n => '1', o_rdata => ddr_sync_out, i_rclk => i_clk, i_rreset_n => '1'--,
     );
     o_ddr_status        <= ddr_sync_out(15 downto 0);
@@ -133,10 +134,11 @@ begin
     o_error             <= ddr_sync_out(50 downto 19);
     o_ddr_data          <= ddr_sync_out(512 + 32 + 3 + 16 - 1 downto 51);
 
+    wdata_sync_in <= i_ddr_data & i_ddr_addr & i_ddr_write & i_ddr_read & i_ddr_control;
     e_sync_in : entity work.fifo_sync
     generic map(
         g_RDATA_RESET => (ddr_sync_in'range => '0')--,
-    ) port map (    i_wdata => i_ddr_data & i_ddr_addr & i_ddr_write & i_ddr_read & i_ddr_control, 
+    ) port map (    i_wdata => wdata_sync_in, 
                     i_wclk => i_clk, i_wreset_n => '1', o_rdata => ddr_sync_in, i_rclk => M_clk, i_rreset_n => '1'--,
     );
     ddr_control <= ddr_sync_in(15 downto 0);
