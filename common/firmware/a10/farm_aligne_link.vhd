@@ -10,7 +10,6 @@ use ieee.std_logic_1164.all;
 use ieee.numeric_std.all;
 use ieee.std_logic_unsigned.all;
 
-
 entity farm_aligne_link is
 generic (
     N : positive :=  8;
@@ -36,8 +35,8 @@ port (
 
     o_error         : out   std_logic;
 
-    i_reset_n_250   : in    std_logic;
-    i_clk_250       : in    std_logic--;
+    i_reset_n       : in    std_logic;
+    i_clk           : in    std_logic--;
 );
 end entity;
 
@@ -73,9 +72,9 @@ begin
     END GENERATE;
 
     --! sync link data to pcie clk and buffer events
-    process(i_clk_250, i_reset_n_250)
+    process(i_clk, i_reset_n)
     begin
-    if ( i_reset_n_250 /= '1' ) then
+    if ( i_reset_n /= '1' ) then
         f_data              <= (others => '0');
         f_wen               <= '0';
         o_error             <= '0';
@@ -83,7 +82,7 @@ begin
         cnt_sub_header      <= (others => '0');
         link_to_fifo_state  <= idle;
         --
-    elsif ( rising_edge(i_clk_250) ) then
+    elsif rising_edge(i_clk) then
 
         f_wen <= '0';
 
@@ -164,8 +163,8 @@ begin
         data        => f_data,
         wrreq       => f_wen,
         rdreq       => i_ren,
-        wrclk       => i_clk_250,
-        rdclk       => i_clk_250,
+        wrclk       => i_clk,
+        rdclk       => i_clk,
         q           => o_data,
         rdempty     => o_empty,
         rdusedw     => open,
@@ -174,11 +173,11 @@ begin
         aclr        => not i_reset_n_250--,
     );
 
-    process(i_clk_250, i_reset_n_250)
+    process(i_clk_250, i_reset_n)
     begin
         if ( i_reset_n_250 = '0' ) then
             f_almost_full       <= '0';
-        elsif ( rising_edge(i_clk_250) ) then
+        elsif rising_edge(i_clk) then
             if ( f_wrusedw(LINK_FIFO_ADDR_WIDTH - 1) = '1' ) then
                 f_almost_full <= '1';
             else

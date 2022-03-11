@@ -22,15 +22,15 @@ generic (
     NLINKS: positive := 8--;
 );
 port (
-    i_clk       : in    std_logic;
-    i_reset_n   : in    std_logic;
-
     i_en        : in    std_logic;
     i_sd        : in    std_logic_vector(31 downto 0);
 
     o_data      : out   std_logic_vector(NLINKS * 38 - 1 downto 0);
     o_data_we   : out   std_logic;
-    o_state     : out   std_logic_vector(3 downto 0)--;
+    o_state     : out   std_logic_vector(3 downto 0);
+
+    i_reset_n   : in    std_logic;
+    i_clk       : in    std_logic--;
 );
 end entity;
 

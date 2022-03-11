@@ -27,8 +27,6 @@ generic (
     DATA_TYPE : std_logic_vector(7 downto 0) := x"01"--;
 );
 port (
-    clk                 : in    std_logic;
-    i_reset_n           : in    std_logic;
     enable_pix          : in    std_logic;
     i_dma_half_full     : in    std_logic;
     delay               : in    std_logic_vector (15 downto 0);
@@ -38,7 +36,10 @@ port (
     datak_pix_generated : out   std_logic_vector(3 downto 0);
     data_pix_ready      : out   std_logic;
     slow_down           : in    std_logic_vector(31 downto 0);
-    state_out           : out   std_logic_vector(3 downto 0)
+    state_out           : out   std_logic_vector(3 downto 0);
+
+    i_reset_n           : in    std_logic;
+    i_clk               : in    std_logic--;
 );
 end entity;
 
@@ -75,7 +76,7 @@ begin
 		g_poly 	   	=> "110000"
 	)
 	port map(
-		i_clk    		=> clk,
+		i_clk    		=> i_clk,
 		reset_n   		=> i_reset_n,
 		i_sync_reset	=> reset,--sync_reset,
 		i_seed   		=> random_seed(5 downto 0),
@@ -89,7 +90,7 @@ begin
 		g_poly 	   	=> "110000"
 	)
 	port map(
-		i_clk    		=> clk,
+		i_clk    		=> i_clk,
 		reset_n   		=> i_reset_n,
 		i_sync_reset	=> reset,--sync_reset,
 		i_seed   		=> random_seed(15 downto 10),
@@ -103,7 +104,7 @@ begin
 		g_poly 	   	=> "1101000000001000"
 	)
 	port map(
-		i_clk    		=> clk,
+		i_clk    		=> i_clk,
 		reset_n   		=> i_reset_n,
 		i_sync_reset	=> reset,--sync_reset,
 		i_seed   		=> random_seed,
@@ -112,12 +113,12 @@ begin
 	);
 
     -- slow down process
-    process(clk, i_reset_n)
+    process(i_clk, i_reset_n)
     begin
 	if(i_reset_n = '0') then
 		waiting 			<= '0';
 		wait_counter	<= (others => '0');
-	elsif(rising_edge(clk)) then
+    elsif rising_edge(i_clk) then
 		if(wait_counter >= slow_down) then
 			wait_counter 	<= (others => '0');
 			waiting 			<= '0';
@@ -133,7 +134,7 @@ lsfr_chip_id <= (others => '0') when wchip = '0' else lsfr_chip_id_reg;
 
 
 
-    process (clk, i_reset_n, start_global_time)
+    process(i_clk, i_reset_n, start_global_time)
 
         variable current_overflow : std_logic_vector(15 downto 0) := "0000000000000000";
         variable overflow_idx	  : integer range 0 to 15 := 0;
@@ -152,7 +153,7 @@ lsfr_chip_id <= (others => '0') when wchip = '0' else lsfr_chip_id_reg;
 		datak_pix_generated		<= (others => '1');
 		row <= (others => '0');
 		col <= (others => '0');
-	elsif rising_edge(clk) then
+    elsif rising_edge(i_clk) then
 		if(enable_pix = '1' and waiting = '0' and i_dma_half_full = '0') then
             data_pix_ready <= '1';
             case data_header_state is

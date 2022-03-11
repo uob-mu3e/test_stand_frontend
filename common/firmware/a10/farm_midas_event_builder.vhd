@@ -15,13 +15,13 @@ use work.a10_pcie_registers.all;
 
 
 entity farm_midas_event_builder is
-generic(
+generic (
     g_NLINKS_SWB_TOTL    : positive :=  16;
     N_PIXEL              : positive :=  8;
     N_SCIFI              : positive :=  8;
     RAM_ADDR             : positive :=  12--;
 );
-port(
+port (
     i_pixel             : in  std_logic_vector(N_PIXEL * 32 + 1 downto 0);
     i_empty_pixel       : in  std_logic;
     o_ren_pixel         : out std_logic;
@@ -58,8 +58,8 @@ port(
     --! 8: # 256b scifi written to link
     o_counters          : out work.util.slv32_array_t(8 downto 0);
 
-    i_reset_n_250       : in  std_logic;
-    i_clk_250           : in  std_logic--;
+    i_reset_n           : in    std_logic;
+    i_clk               : in    std_logic--;
 );
 end entity;
 
@@ -208,8 +208,8 @@ begin
     port map (
         address_a       => w_ram_add,
         address_b       => r_ram_add,
-        clock_a         => i_clk_250,
-        clock_b         => i_clk_250,
+        clock_a         => i_clk,
+        clock_b         => i_clk,
         data_a          => w_ram_data,
         data_b          => (others => '0'),
         wren_a          => w_ram_en,
@@ -227,11 +227,11 @@ begin
         data            => w_fifo_data,
         wrreq           => w_fifo_en,
         rdreq           => r_fifo_en,
-        clock           => i_clk_250,
+        clock           => i_clk,
         q               => r_fifo_data,
         full            => tag_fifo_full,
         empty           => tag_fifo_empty,
-        sclr            => not i_reset_n_250--,
+        sclr            => not i_reset_n--,
     );
 
     -- TODO: check full status
@@ -241,9 +241,9 @@ begin
         DATA_WIDTH => 384--,
     )
     port map (
-        sclr            => not i_reset_n_250,
+        sclr            => not i_reset_n,
         data            => r_ram_data,
-        clock           => i_clk_250,
+        clock           => i_clk,
         rdreq           => rdreq_convert_fifo,
         wrreq           => wen_convert_fifo,
         q               => q_convert_fifo,
@@ -285,9 +285,9 @@ begin
     o_wen_scifi <= not i_empty_scifi;
 
     -- write link data to event ram
-    process(i_clk_250, i_reset_n_250)
+    process(i_clk, i_reset_n)
     begin
-    if ( i_reset_n_250 = '0' ) then
+    if ( i_reset_n = '0' ) then
         -- ram and tagging fifo write signals
         w_ram_en            <= '0';
         w_ram_data          <= (others => '0');
@@ -322,7 +322,7 @@ begin
         event_tagging_state <= EVENT_IDLE;
 
         --
-    elsif ( rising_edge(i_clk_250) ) then
+    elsif rising_edge(i_clk) then
         flags           <= x"00000031";
         trigger_mask    <= (others => '0');
         event_id        <= x"0001";
@@ -426,7 +426,7 @@ begin
 
             when bank_data_pixel_header =>
                 w_ram_data(31 downto 0)         <= i_farm_id; -- reserved
-                if ( i_builder_ctl(USE_BIT_SCIFI_ONLY) = '1' ) then 
+                if ( i_builder_ctl(USE_BIT_SCIFI_ONLY) = '1' ) then
                     w_ram_data(63 downto 32)    <= header_scifi(31 downto 16) & header_scifi(87 downto 72); --reserved (TS(31:0))
                     event_tagging_state         <= bank_data_scifi_one;
                 else
@@ -451,7 +451,7 @@ begin
                     bank_size_pixel           <= bank_size_pixel + 14*4;
                     w_ram_add                 <= w_ram_add + 1;
                     w_ram_en                  <= '1';
-                    if ( i_builder_ctl(USE_BIT_PIXEL_ONLY) /= '1' ) then 
+                    if ( i_builder_ctl(USE_BIT_PIXEL_ONLY) /= '1' ) then
                         event_tagging_state   <= bank_data_scifi_header;
                     else
                         event_tagging_state   <= align_event_size;
@@ -477,7 +477,7 @@ begin
                     w_ram_en                  <= '1';
                     if ( i_builder_ctl(USE_BIT_PIXEL_ONLY) = '1' ) then
                         event_tagging_state   <= align_event_size;
-                    else 
+                    else
                         event_tagging_state   <= bank_data_scifi_header;
                     end if;
                 end if;
@@ -586,7 +586,7 @@ begin
                 bank_size_pixel <= (others => '0');
                 event_size_cnt  <= (others => '0');
                 event_tagging_state <= bank_set_length_scifi;
-            
+
             when bank_set_length_scifi =>
                 w_ram_en        <= '1';
                 w_ram_add       <= scifi_header_add;
@@ -613,16 +613,16 @@ begin
     end process;
 
     -- readout MIDAS Bank Builder RAM
-    process(i_clk_250, i_reset_n_250)
+    process(i_clk, i_reset_n)
     begin
-    if ( i_reset_n_250 = '0' ) then
+    if ( i_reset_n = '0' ) then
         r_fifo_en               <= '0';
         wen_convert_fifo        <= '0';
         event_last_ram_add      <= (others => '0');
         r_ram_add               <= (others => '1');
         event_counter_state     <= waiting;
         --
-    elsif rising_edge(i_clk_250) then
+    elsif rising_edge(i_clk) then
 
         r_fifo_en        <= '0';
         wen_convert_fifo <= '0';
@@ -664,9 +664,9 @@ begin
     end process;
 
     -- convert data width from 384 to 512
-    process(i_clk_250, i_reset_n_250)
+    process(i_clk, i_reset_n)
     begin
-    if ( i_reset_n_250 = '0' ) then
+    if ( i_reset_n = '0' ) then
         o_data          <= (others => '0');
         data_reg        <= (others => '0');
         o_wen           <= '0';
@@ -674,7 +674,7 @@ begin
         o_event_ts      <= (others => '0');
         rdreq_convert_fifo <= '1';
         --
-    elsif ( rising_edge(i_clk_250) ) then
+    elsif rising_edge(i_clk) then
         o_wen <= '0';
         case convert_data is
         when idle =>
