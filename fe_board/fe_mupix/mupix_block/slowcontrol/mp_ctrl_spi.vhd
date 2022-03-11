@@ -214,6 +214,7 @@ begin
 
             case mp_spi_state is
               when init =>
+                Load_Conf   <= '1';
                 -- 0 col register of all chips, put a single 1 into start of col register for all chips
                 o_spi_chip_selct_mask <= (others => '0');
                 
@@ -223,12 +224,12 @@ begin
 
                 case mp_spi_clk_state is
                   when zero1 =>
-                    if(init_counter = 901) then
+                    if(init_counter = 901 and i_direct_spi_fifo_empty = '1') then
                         o_data_to_direct_spi_we <= '1';
                         Load_Col <= '1';
                         Load_Test <= '1';
                         init_counter <= init_counter + 1;
-                    elsif(init_counter = 902) then
+                    elsif(init_counter = 902 and i_direct_spi_fifo_empty = '1') then
                         o_data_to_direct_spi_we <= '1';
                         Load_Col <= '0';
                         Load_Test <= '0';
