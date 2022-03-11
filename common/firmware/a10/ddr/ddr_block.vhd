@@ -137,6 +137,7 @@ architecture arch of ddr_block is
 begin
 
    --! generate ddr3 for ddr3 boards
+	-- synthesis read_comments_as_HDL on
    --ddr3 : IF not g_DDR4 GENERATE
        --ddr3_A : component work.cmp.ddr3_if
        --port map(
@@ -208,6 +209,7 @@ begin
            --local_cal_fail      => B_cal_fail
        --);
     --END GENERATE;
+	 -- synthesis read_comments_as_HDL off
 
     --! generate ddr4 for ddr4 boards
     -- synthesis read_comments_as_HDL on
