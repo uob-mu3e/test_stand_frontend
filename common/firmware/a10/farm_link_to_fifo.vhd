@@ -80,27 +80,27 @@ begin
 
         process(i_clk_250_link, i_reset_n_250_link)
         begin
-            if ( i_reset_n_250_link = '0' ) then
-                rx_data(i)  <= (others => '0');
-                rx_wen(i)   <= '0';
-            elsif ( rising_edge(i_clk_250_link) ) then
-                -- idle word
-                if ( i_rx(i) = x"000000BC" and i_rx_k(i) = "0001" ) then
-                    rx_wen(i) <= '0';
-                -- header
-                elsif ( i_rx(i)(7 downto 0) = x"7C" and i_rx_k(i) = "0001" ) then
-                    rx_data(i) <= "01" & i_rx(i);
-                    rx_wen(i) <= '1';
-                -- trailer
-                elsif ( i_rx(i)(7 downto 0) = x"9C" and i_rx_k(i) = "0001" ) then
-                    rx_data(i) <= "10" & i_rx(i);
-                    rx_wen(i) <= '1';
-                -- hits
-                else
-                    rx_data(i) <= "00" & i_rx(i);
-                    rx_wen(i) <= '1';
-                end if;
+        if ( i_reset_n_250_link = '0' ) then
+            rx_data(i)  <= (others => '0');
+            rx_wen(i)   <= '0';
+        elsif rising_edge(i_clk_250_link) then
+            -- idle word
+            if ( i_rx(i) = x"000000BC" and i_rx_k(i) = "0001" ) then
+                rx_wen(i) <= '0';
+            -- header
+            elsif ( i_rx(i)(7 downto 0) = x"7C" and i_rx_k(i) = "0001" ) then
+                rx_data(i) <= "01" & i_rx(i);
+                rx_wen(i) <= '1';
+            -- trailer
+            elsif ( i_rx(i)(7 downto 0) = x"9C" and i_rx_k(i) = "0001" ) then
+                rx_data(i) <= "10" & i_rx(i);
+                rx_wen(i) <= '1';
+            -- hits
+            else
+                rx_data(i) <= "00" & i_rx(i);
+                rx_wen(i) <= '1';
             end if;
+        end if;
         end process;
 
         e_sync_fifo : entity work.ip_dcfifo

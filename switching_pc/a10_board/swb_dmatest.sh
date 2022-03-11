@@ -4,7 +4,7 @@
 SHA=$(git rev-parse HEAD | cut -c 1-8)
 echo "GIT_SHA: $SHA"
 
-echo "copy top_$SHA.sof"
+echo "copy: top.sof -> top_$SHA.sof"
 cp "output_files/top.sof" "output_files/top_$SHA.sof"
 
 echo "pcie: remove"

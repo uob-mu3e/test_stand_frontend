@@ -820,48 +820,48 @@ begin
 
         case event_counter_state is
         when waiting =>
-                o_state_out             <= x"A";
-                if (tag_fifo_empty = '0') then
-                    r_fifo_en           <= '1';
-                    event_last_ram_add  <= r_fifo_data(11 downto 3);
-                    r_ram_add           <= r_ram_add + '1';
-                    event_counter_state <= get_data;
-                end if;
+            o_state_out             <= x"A";
+            if (tag_fifo_empty = '0') then
+                r_fifo_en           <= '1';
+                event_last_ram_add  <= r_fifo_data(11 downto 3);
+                r_ram_add           <= r_ram_add + '1';
+                event_counter_state <= get_data;
+            end if;
 
         when get_data =>
-                o_state_out             <= x"B";
-                if ( i_dmamemhalffull = '1' or ( i_get_n_words /= (i_get_n_words'range => '0') and word_counter >= i_get_n_words ) ) then
-                    event_counter_state <= skip_event;
-                    cnt_skip_event_dma  <= cnt_skip_event_dma + '1';
-                else
-                    o_event_wren        <= wen_reg;
-                    o_endofevent        <= '1'; -- begin of event
-                    word_counter        <= word_counter + '1';
-                    event_counter_state <= runing;
-                end if;
-                r_ram_add       <= r_ram_add + '1';
+            o_state_out             <= x"B";
+            if ( i_dmamemhalffull = '1' or ( i_get_n_words /= (i_get_n_words'range => '0') and word_counter >= i_get_n_words ) ) then
+                event_counter_state <= skip_event;
+                cnt_skip_event_dma  <= cnt_skip_event_dma + '1';
+            else
+                o_event_wren        <= wen_reg;
+                o_endofevent        <= '1'; -- begin of event
+                word_counter        <= word_counter + '1';
+                event_counter_state <= runing;
+            end if;
+            r_ram_add       <= r_ram_add + '1';
 
         when runing =>
-                o_state_out     <= x"C";
-                o_event_wren    <= wen_reg;
-                word_counter    <= word_counter + '1';
-                if(r_ram_add = event_last_ram_add - '1') then
-                    event_counter_state	<= waiting;
-                else
-                    r_ram_add <= r_ram_add + '1';
-                end if;
+            o_state_out     <= x"C";
+            o_event_wren    <= wen_reg;
+            word_counter    <= word_counter + '1';
+            if(r_ram_add = event_last_ram_add - '1') then
+                event_counter_state	<= waiting;
+            else
+                r_ram_add <= r_ram_add + '1';
+            end if;
 
         when skip_event =>
-                o_state_out <= x"E";
-                if(r_ram_add = event_last_ram_add - '1') then
-                    event_counter_state	<= waiting;
-                else
-                    r_ram_add <= r_ram_add + '1';
-                end if;
+            o_state_out <= x"E";
+            if(r_ram_add = event_last_ram_add - '1') then
+                event_counter_state	<= waiting;
+            else
+                r_ram_add <= r_ram_add + '1';
+            end if;
 
         when others =>
-                o_state_out <= x"D";
-                event_counter_state	<= waiting;
+            o_state_out <= x"D";
+            event_counter_state	<= waiting;
 
         end case;
 
