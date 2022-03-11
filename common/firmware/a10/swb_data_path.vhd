@@ -147,7 +147,6 @@ begin
         go_to_trailer => 4--,
     )
     port map (
-        i_reset_n           => i_resets_n_156(RESET_BIT_DATAGEN),
         enable_pix          => i_writeregs_156(SWB_READOUT_STATE_REGISTER_W)(USE_BIT_GEN_LINK),
         i_dma_half_full     => '0',
         random_seed         => (others => '1'),
@@ -157,7 +156,9 @@ begin
         delay               => (others => '0'),
         slow_down           => i_writeregs_156(DATAGENERATOR_DIVIDER_REGISTER_W),
         state_out           => open,
-        clk                 => i_clk_156--,
+
+        i_reset_n           => i_resets_n_156(RESET_BIT_DATAGEN),
+        i_clk               => i_clk_156--,
     );
 
     gen_link_data : FOR i in 0 to g_NLINKS_DATA - 1 GENERATE

@@ -20,11 +20,11 @@ port (
 
     i_reset_run_number  : in    std_logic_vector(31 downto 0);
     i_reset_ctl         : in    std_logic_vector(31 downto 0);
-    i_clk               : in    std_logic;
 
     o_state_out         : out   std_logic_vector(31 downto 0);
 
-    i_reset_n           : in    std_logic--;
+    i_reset_n           : in    std_logic;
+    i_clk               : in    std_logic--;
 );
 end entity;
 

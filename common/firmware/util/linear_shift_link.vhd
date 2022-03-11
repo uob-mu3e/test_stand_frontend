@@ -1,22 +1,23 @@
 -- simple linear shiftregister
 -- linear_shift.vhd
 
-library ieee; 
+library ieee;
 use ieee.std_logic_1164.all;
 
-entity linear_shift_link is 
+entity linear_shift_link is
 generic (
 	g_m             : integer           := 7;
 	g_poly          : std_logic_vector  := "1100000" -- x^7+x^6+1
 );
 port (
-	i_clk           : in    std_logic;
-	reset_n         : in    std_logic;
 	i_sync_reset    : in    std_logic;
 	i_seed          : in    std_logic_vector (g_m-1 downto 0);
 	i_en            : in    std_logic;
 	o_lsfr          : out   std_logic_vector (g_m-1 downto 0);
-	o_datak         : out   std_logic_vector (3 downto 0)--;
+	o_datak         : out   std_logic_vector (3 downto 0);
+
+    i_reset_n       : in    std_logic;
+    i_clk           : in    std_logic--;
 );
 end entity;
 
@@ -35,9 +36,9 @@ begin
 		w_mask(k) <= w_poly(k) and r_lfsr(1);
 	end generate;
 
-	p_lfsr : process (i_clk, reset_n)
+    process(i_clk, i_reset_n)
 	begin
-		if ( reset_n = '0' ) then
+    if ( i_reset_n = '0' ) then
 			r_lfsr <= x"000000BC";
 			o_datak <= "0001";
 		elsif rising_edge(i_clk) then

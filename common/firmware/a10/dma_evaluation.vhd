@@ -8,14 +8,15 @@ use ieee.std_logic_unsigned.all;
 
 entity dma_evaluation is
 port (
-    clk                     : in    std_logic;
-    reset_n                 : in    std_logic;
     dmamemhalffull          : in    std_logic;
     dmamem_endofevent       : in    std_logic;
     halffull_counter        : out   std_logic_vector(31 downto 0);
     nothalffull_counter     : out   std_logic_vector(31 downto 0);
     endofevent_counter      : out   std_logic_vector(31 downto 0);
-    notendofevent_counter   : out   std_logic_vector(31 downto 0)
+    notendofevent_counter   : out   std_logic_vector(31 downto 0);
+
+    i_reset_n               : in    std_logic;
+    i_clk                   : in    std_logic--;
 );
 end entity;
 
@@ -37,14 +38,14 @@ begin
     endofevent_counter <= endofevent_counter_local;
     notendofevent_counter <= notendofevent_counter_local;
 
-    process(clk, reset_n)
+    process(i_clk, i_reset_n)
     begin
-    if ( reset_n = '0' ) then
+    if ( i_reset_n = '0' ) then
         halffull_counter_local <= (others => '0');
         nothalffull_counter_local <= (others => '0');
         endofevent_counter_local <= (others => '0');
         notendofevent_counter_local <= (others => '0');
-    elsif rising_edge(clk) then
+    elsif rising_edge(i_clk) then
         if (dmamemhalffull = '1') then
             halffull_counter_local <= halffull_counter_local + '1';
         else

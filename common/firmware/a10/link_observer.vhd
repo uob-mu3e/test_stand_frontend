@@ -12,13 +12,14 @@ generic (
     g_poly : std_logic_vector := "1100000" -- x^7+x^6+1
 );
 port (
-    clk         : in    std_logic;
-    reset_n     : in    std_logic;
     rx_data     : in    std_logic_vector (g_m - 1 downto 0);
     rx_datak    : in    std_logic_vector (3 downto 0);
     mem_add     : out   std_logic_vector (2 downto 0);
     mem_data    : out   std_logic_vector (31 downto 0);
-    mem_wen     : out   std_logic--;
+    mem_wen     : out   std_logic;
+
+    i_reset_n   : in    std_logic;
+    i_clk       : in    std_logic--;
 );
 end entity;
 
@@ -37,14 +38,14 @@ architecture rtl of link_observer is
 
 begin
 
-    process(clk, reset_n)
+    process(i_clk, i_reset_n)
     begin
-    if reset_n = '0' then
+    if ( i_reset_n = '0' ) then
         mem_add <= (others => '0');
         mem_data <= (others => '0');
         mem_wen <= '0';
         state <= err_low;
-    elsif rising_edge(clk) then
+    elsif rising_edge(i_clk) then
         case state is
         when err_low =>
             mem_add <= "001";
@@ -81,24 +82,25 @@ begin
         g_poly => g_poly
     )
     port map (
-        i_clk => clk,
-        reset_n => reset_n,
         i_sync_reset => sync_reset,
         i_seed => rx_data,
         i_en => enable,
         o_lsfr => next_rx_data,
-        o_datak => open--,
+        o_datak => open,
+
+        i_reset_n => i_reset_n,
+        i_clk => i_clk--,
     );
 
-    process(clk, reset_n)
+    process(i_clk, i_reset_n)
     begin
-    if(reset_n = '0') then
+    if ( i_reset_n = '0' ) then
         error_counter <= (others => '0');
         bit_counter <= (others => '0');
         tmp_rx_data <=  x"000000BC";
         enable <= '0';
         sync_reset <= '1';
-    elsif(rising_edge(clk)) then
+    elsif rising_edge(i_clk) then
         tmp_rx_data <= rx_data;
         if (rx_data = x"000000BC" and rx_datak = "0001") then
             -- idle
@@ -116,6 +118,5 @@ begin
         end if;
     end if;
     end process;
-
 
 end architecture;
