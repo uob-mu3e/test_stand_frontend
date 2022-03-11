@@ -37,9 +37,9 @@ struct mupix_t {
     }
 
     void test_tdacs() {
-        sc->ram->data[MP_CTRL_SPI_ENABLE_REGISTER_W]=0x00000001;
-        sc->ram->data[MP_CTRL_RESET_REGISTER_W]=0x00000001;
-        
+
+        printf("test tdacs mask");
+
         for(int i = 0; i<120; i++) {
             sc->ram->data[MP_CTRL_TDAC_START_REGISTER_W]=0x0;
 		}
@@ -47,6 +47,16 @@ struct mupix_t {
             sc->ram->data[MP_CTRL_TDAC_START_REGISTER_W]=0xFFFFFFFF;
 		}
         for(int i = 130; i<513; i++) {
+            sc->ram->data[MP_CTRL_TDAC_START_REGISTER_W]=0x0;
+		}
+
+    }
+
+    void test_tdacs2() {
+
+        printf("test tdacs no mask");
+
+        for(int i = 0; i<513; i++) {
             sc->ram->data[MP_CTRL_TDAC_START_REGISTER_W]=0x0;
 		}
 
@@ -63,7 +73,7 @@ struct mupix_t {
         sc->ram->data[MP_CTRL_COMBINED_START_REGISTER_W]=0x40280000;
         sc->ram->data[MP_CTRL_COMBINED_START_REGISTER_W]=0x1400C20A;
         sc->ram->data[MP_CTRL_COMBINED_START_REGISTER_W]=0x028A001F;
-        sc->ram->data[MP_CTRL_COMBINED_START_REGISTER_W]=0x00020038;
+        sc->ram->data[MP_CTRL_COMBINED_START_REGISTER_W]=0x00000038;
         sc->ram->data[MP_CTRL_COMBINED_START_REGISTER_W]=0x0000FC09;
         sc->ram->data[MP_CTRL_COMBINED_START_REGISTER_W]=0xF0001C80;
         sc->ram->data[MP_CTRL_COMBINED_START_REGISTER_W]=0x00148000;
@@ -151,6 +161,9 @@ struct mupix_t {
                 break;
 	        case 't':
                 test_tdacs();
+		        break;
+	        case 'z':
+                test_tdacs2();
 		        break;
             case '1':
                 value = 0x0;

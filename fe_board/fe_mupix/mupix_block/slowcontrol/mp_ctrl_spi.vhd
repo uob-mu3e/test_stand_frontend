@@ -145,8 +145,8 @@ begin
             chip_is_writing         <= (others => '0');
 
             -- IMPORTANT: needs to go into init case, use idle only for simulation here !!!
-            --mp_spi_state            <= init;
-            mp_spi_state            <= idle;
+            mp_spi_state            <= init;
+            --mp_spi_state            <= idle;
             
             init_counter            <= 0;
             col_shift_state         <= zero1;
@@ -227,6 +227,11 @@ begin
                         o_data_to_direct_spi_we <= '1';
                         Load_Col <= '1';
                         Load_Test <= '1';
+                        init_counter <= init_counter + 1;
+                    elsif(init_counter = 902) then
+                        o_data_to_direct_spi_we <= '1';
+                        Load_Col <= '0';
+                        Load_Test <= '0';
                         mp_spi_state <= idle;
                         mp_spi_clk_state <= zero1;
 

@@ -14,8 +14,8 @@ use work.mudaq.all;
 entity tdac_memory is
     generic( 
         N_CHIPS_g                 : positive := 4;
-        PAGE_ADDR_WIDTH_g         : positive := 2;
-        ADDR_WIDTH_g              : positive := 8--;
+        PAGE_ADDR_WIDTH_g         : positive := 3;
+        ADDR_WIDTH_g              : positive := 12--;
     );
     port(
         i_clk               : in  std_logic;
@@ -40,7 +40,7 @@ architecture RTL of tdac_memory is
 
     constant N_PAGES : integer := 8; -- TODO -- N_PAGES: how many blocks can we store with the memory that we have 
 
-    constant PAGE_SIZE : integer := 4; --TODO: increase when done with simultations (calc from N_PAGES_PER_CHIP)
+    constant PAGE_SIZE : integer := 512; --TODO: increase when done with simultations (calc from N_PAGES_PER_CHIP)
     
 
     type TDAC_page_type is record

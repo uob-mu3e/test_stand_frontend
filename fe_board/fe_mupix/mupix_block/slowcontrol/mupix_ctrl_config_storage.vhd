@@ -221,8 +221,8 @@ begin
         
         tdac: entity work.dual_port_fifo
           generic map (
-            N_BITS_g       => 8, -- decreased for simulation, put back to --MP_CONFIG_REGS_LENGTH(5),
-            N_BITS_ACTUAL_g => 8,
+            N_BITS_g       => MP_CONFIG_REGS_LENGTH(5),
+            N_BITS_ACTUAL_g => MP_CONFIG_REGS_LENGTH(5),
             WDATA_WIDTH_g  => 4,
             RDATA1_WIDTH_g => 1,
             RDATA2_WIDTH_g => 2 -- same here

@@ -208,14 +208,14 @@ int MupixFEB::ConfigureASICs(){
                 cm_msg(MERROR, "setup_mupix", "FEB Mupix SPI timeout");
             } else { // do the SPI writing 
                 // TODO: make this correct
-                feb_sc.FEB_write(SP_ID, MP_CTRL_CHIP_MASK_REGISTER_W, 0x0);//chip_select_mask); //
+                //feb_sc.FEB_write(SP_ID, MP_CTRL_CHIP_MASK_REGISTER_W, 0x0);//chip_select_mask); //
                 // TODO: include headers for addr.
-                feb_sc.FEB_write(SP_ID, MP_CTRL_SLOW_DOWN_REGISTER_W, 0x0000000F); // SPI slow down reg
-                feb_sc.FEB_write(SP_ID, MP_CTRL_ENABLE_REGISTER_W, 0x00000FC0); // reset Mupix config fifos
-                feb_sc.FEB_write(SP_ID, MP_CTRL_ENABLE_REGISTER_W, 0x00000000);
-                feb_sc.FEB_write(SP_ID, MP_CTRL_INVERT_REGISTER_W, 0x00000003); // idk, have to look it up
+                //feb_sc.FEB_write(SP_ID, MP_CTRL_SLOW_DOWN_REGISTER_W, 0x0000000F); // SPI slow down reg
+                //feb_sc.FEB_write(SP_ID, MP_CTRL_ENABLE_REGISTER_W, 0x00000FC0); // reset Mupix config fifos
+                //feb_sc.FEB_write(SP_ID, MP_CTRL_ENABLE_REGISTER_W, 0x00000000);
+                //feb_sc.FEB_write(SP_ID, MP_CTRL_INVERT_REGISTER_W, 0x00000003); // idk, have to look it up
                 // We now only write the default configuration for testing
-                rpc_status = feb_sc.FEB_write(SP_ID, MP_CTRL_ALL_REGISTER_W, payload,true);
+                //rpc_status = feb_sc.FEB_write(SP_ID, MP_CTRL_ALL_REGISTER_W, payload,true);
             }
         } catch(std::exception& e) {
             cm_msg(MERROR, "setup_mupix", "Communication error while configuring MuPix %d: %s", asic, e.what());
@@ -260,10 +260,10 @@ int MupixFEB::ConfigureASICs(){
                     // first we write the row values from the value
                     for ( uint32_t v : it->second ) {
                         std::cout << "VALUE: " << v << "\n";
-                        feb_sc.FEB_register_write(SP_ID, MP_CTRL_TDAC_REGISTER_W, v);
+                        //feb_sc.FEB_register_write(SP_ID, MP_CTRL_TDAC_REGISTER_W, v);
                     }
-                    feb_sc.FEB_register_write(SP_ID, MP_CTRL_ENABLE_REGISTER_W, reg_setBit(0x0,WR_TDAC_BIT,true));
-                    feb_sc.FEB_register_write(SP_ID,MP_CTRL_ENABLE_REGISTER_W,0x0);
+                    //feb_sc.FEB_register_write(SP_ID, MP_CTRL_ENABLE_REGISTER_W, reg_setBit(0x0,WR_TDAC_BIT,true));
+                    //feb_sc.FEB_register_write(SP_ID,MP_CTRL_ENABLE_REGISTER_W,0x0);
                     
                     // now we write the 128*7b col values where we write on col (key) at the time
                     curWord = 0;
@@ -275,14 +275,14 @@ int MupixFEB::ConfigureASICs(){
                                 curWord = curWord | (1 << curNBits);
                             }
                             if (curNBits == 32) {
-                                feb_sc.FEB_register_write(SP_ID, MP_CTRL_COL_REGISTER_W, curWord);
+                                //feb_sc.FEB_register_write(SP_ID, MP_CTRL_COL_REGISTER_W, curWord);
                                 curWord = 0;
                                 curNBits = 0;
                             }
                         }
                     }
-                    feb_sc.FEB_register_write(SP_ID, MP_CTRL_ENABLE_REGISTER_W, reg_setBit(0x0,WR_COL_BIT,true));
-                    feb_sc.FEB_register_write(SP_ID,MP_CTRL_ENABLE_REGISTER_W,0x0);
+                    //feb_sc.FEB_register_write(SP_ID, MP_CTRL_ENABLE_REGISTER_W, reg_setBit(0x0,WR_COL_BIT,true));
+                    //feb_sc.FEB_register_write(SP_ID,MP_CTRL_ENABLE_REGISTER_W,0x0);
                 }
             }
         }
