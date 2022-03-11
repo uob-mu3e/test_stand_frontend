@@ -20,7 +20,6 @@ generic (
     g_NLINKS_TOTL           : positive  := 3;
     g_ADDR_WIDTH            : positive  := 11;
     g_DDR4                  : boolean   := false;
-    g_simulation            : boolean   := false;
     -- Data type: x"00" = pixel, x"01" = scifi, "10" = tiles
     DATA_TYPE : std_logic_vector(1 downto 0) := "00";
     LINK_FIFO_ADDR_WIDTH    : positive  := 10--;
@@ -591,7 +590,6 @@ begin
     --! ------------------------------------------------------------------------
     e_ddr_block : entity work.ddr_block
     generic map (
-        g_simulation    => g_simulation,
         g_DDR4          => g_DDR4--,
     )
     port map(

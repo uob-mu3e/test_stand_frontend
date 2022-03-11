@@ -199,9 +199,15 @@ architecture TB of tb_data_path_farm is
     signal B_mem_addr_del4  : std_logic_vector(25 downto 0);
 
     signal midas_data_511 : work.util.slv32_array_t(15 downto 0);
+    
+    signal test : std_logic := '0';
 
 
 begin
+
+-- synthesis read_comments_as_HDL on
+    --test <= '1';
+-- synthesis read_comments_as_HDL off
 
     clk         <= not clk after (0.5 us / CLK_MHZ);
     A_mem_clk   <= not A_mem_clk after (0.1 us / CLK_MHZ);
@@ -239,7 +245,6 @@ begin
     farm_block : entity work.farm_block
     generic map (
         g_DDR4         => true,
-        g_simulation   => true,
         g_NLINKS_TOTL  => 8--,
     )
     port map (
