@@ -58,13 +58,13 @@ architecture arch of farm_midas_event_builder_intrun22 is
     );
     signal event_tagging_state : event_tagging_state_type;
     signal e_size_add, b_size_add, b_length_add, w_ram_add_reg, w_ram_add, last_event_add, align_event_size : std_logic_vector(11 downto 0);
-    signal w_fifo_data, r_fifo_data : std_logic_vector(12 downto 0);
+    signal w_fifo_data, r_fifo_data : std_logic_vector(13 + 48 - 1 downto 0);
     signal w_fifo_en, r_fifo_en, tag_fifo_empty, tag_fifo_full, is_error, is_error_q : std_logic;
     signal ts_tagging : std_logic_vector(47 downto 0);
 
     -- ram 
     signal w_ram_en : std_logic;
-    signal r_ram_add : std_logic_vector(8 downto 0);
+    signal r_ram_add : std_logic_vector(7 downto 0);
     signal w_ram_data : std_logic_vector(31 downto 0);
     signal r_ram_data : std_logic_vector(511 downto 0);
 
@@ -76,7 +76,7 @@ architecture arch of farm_midas_event_builder_intrun22 is
     type event_counter_state_type is (waiting, get_data, runing, skip_event);
     signal event_counter_state : event_counter_state_type;
     signal cnt_4kb_done : std_logic;
-    signal event_last_ram_add : std_logic_vector(8 downto 0);
+    signal event_last_ram_add : std_logic_vector(7 downto 0);
     signal word_counter, word_counter_endofevent, cnt_4kb : std_logic_vector(31 downto 0);
 
     -- error cnt
@@ -120,8 +120,8 @@ begin
 
     e_tagging_fifo_event : entity work.ip_scfifo
     generic map (
-        ADDR_WIDTH      => 12+48,
-        DATA_WIDTH      => 13--,
+        ADDR_WIDTH      => 12,
+        DATA_WIDTH      => 13+48--,
     )
     port map (
         data            => w_fifo_data,
@@ -300,7 +300,7 @@ begin
                     w_ram_data      <= i_rx;
                 end if;
                 if ( i_t0 = '1' ) then
-                    ts_tagging(48 downto 16) <= i_rx;
+                    ts_tagging(47 downto 16) <= i_rx;
                 end if;
                 if ( i_t1 = '1' ) then
                     ts_tagging(15 downto 0) <= i_rx(31 downto 16);
@@ -379,7 +379,6 @@ begin
     process(i_clk_250, i_reset_n_250)
     begin
     if ( i_reset_n_250 = '0' ) then
-        o_data              <= (others => '0');
         o_sop               <= '0';
         o_eop               <= '0';
         o_wen               <= '0';
@@ -407,7 +406,7 @@ begin
                 r_fifo_en           <= '1';
                 event_last_ram_add  <= r_fifo_data(11 downto 4);
                 o_error             <= r_fifo_data(12);
-                o_event_ts          <= r_fifo_data(59 downto 13);
+                o_event_ts          <= r_fifo_data(60 downto 13);
                 r_ram_add           <= r_ram_add + '1';
                 event_counter_state <= get_data;
             end if;

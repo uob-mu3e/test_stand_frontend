@@ -20,6 +20,7 @@ generic (
         max_row: std_logic_vector (7 downto 0) := (others => '0');
         max_col: std_logic_vector (7 downto 0) := (others => '0');
         test_error: boolean := false;
+        is_farm: boolean := false;
         wtot: std_logic := '0';
         go_to_sh : positive := 2;
         go_to_trailer : positive := 3;
@@ -201,10 +202,14 @@ lsfr_chip_id <= (others => '0') when wchip = '0' else lsfr_chip_id_reg;
 					when part4 =>
 						state_out <= x"D";
 						global_time <= global_time + '1';
-						if ( DATA_TYPE = "00" ) then
-                            data_pix_generated 					<= DATA_SUB_HEADER_ID & "000" & global_time(10 downto 4) & lsfr_overflow;
-                        elsif ( DATA_TYPE = "01" ) then
-                            data_pix_generated 					<= DATA_SUB_HEADER_ID & global_time(13 downto 4) & lsfr_overflow;
+                        if ( not is_farm ) then
+                            if ( DATA_TYPE = "00" ) then
+                                data_pix_generated 					<= DATA_SUB_HEADER_ID & "000" & global_time(10 downto 4) & lsfr_overflow;
+                            elsif ( DATA_TYPE = "01" ) then
+                                data_pix_generated 					<= DATA_SUB_HEADER_ID & global_time(13 downto 4) & lsfr_overflow;
+                            end if;
+                        else
+                            data_pix_generated  <= "00" & global_time(10 downto 9) & "1111111" & global_time(8 downto 4) & lsfr_overflow;
                         end if;
 						datak_pix_generated              <= "0000";
 						overflow_idx 							:= 0;

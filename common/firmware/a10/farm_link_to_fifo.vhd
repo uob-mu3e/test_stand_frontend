@@ -19,8 +19,6 @@ entity farm_link_to_fifo is
 generic (
     g_LOOPUP_NAME        : string   := "intRun2021";
     g_NLINKS_SWB_TOTL    : positive :=  3;
-    N_PIXEL              : positive :=  2;
-    N_SCIFI              : positive :=  1;
     LINK_FIFO_ADDR_WIDTH : positive := 10--;
 );
 port (
@@ -57,9 +55,6 @@ architecture arch of farm_link_to_fifo is
     signal rx_q, data : work.util.slv35_array_t(g_NLINKS_SWB_TOTL-1 downto 0) := (others => (others => '0'));
     signal rx_ren, rx_mask_n, rx_rdempty : std_logic_vector(g_NLINKS_SWB_TOTL-1 downto 0) := (others => '0');
     signal sop, eop, skip : std_logic_vector(g_NLINKS_SWB_TOTL - 1 downto 0);
-    
-    signal rx_pixel : work.util.slv34_array_t(N_PIXEL - 1 downto 0);
-    signal rx_scifi : work.util.slv34_array_t(N_SCIFI - 1 downto 0);
 
 begin
 

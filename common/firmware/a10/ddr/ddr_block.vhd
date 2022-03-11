@@ -55,14 +55,14 @@ port (
     o_A_mem_ck              : out   std_logic_vector(0 downto 0);                      -- mem_ck
     o_A_mem_ck_n            : out   std_logic_vector(0 downto 0);                      -- mem_ck_n
     o_A_mem_a               : out   std_logic_vector(16 downto 0);                     -- mem_a
-    o_A_mem_act_n           : out   std_logic;                                         -- mem_act_n
+    o_A_mem_act_n           : out   std_logic_vector(0 downto 0);                      -- mem_act_n
     o_A_mem_ba              : out   std_logic_vector(2 downto 0);                      -- mem_ba
     o_A_mem_bg              : out   std_logic_vector(1 downto 0);                      -- mem_bg
     o_A_mem_cke             : out   std_logic_vector(0 downto 0);                      -- mem_cke
     o_A_mem_cs_n            : out   std_logic_vector(0 downto 0);                      -- mem_cs_n
     o_A_mem_odt             : out   std_logic_vector(0 downto 0);                      -- mem_odt
     o_A_mem_reset_n         : out   std_logic_vector(0 downto 0);                      -- mem_reset_n
-    i_A_mem_alert_n         : in    std_logic;                                         -- mem_alert_n
+    i_A_mem_alert_n         : in    std_logic_vector(0 downto 0);                      -- mem_alert_n
     o_A_mem_we_n            : out   std_logic_vector(0 downto 0);                      -- mem_we_n
     o_A_mem_ras_n           : out   std_logic_vector(0 downto 0);                      -- mem_ras_n
     o_A_mem_cas_n           : out   std_logic_vector(0 downto 0);                      -- mem_cas_n
@@ -78,14 +78,14 @@ port (
     o_B_mem_ck              : out   std_logic_vector(0 downto 0);                      -- mem_ck
     o_B_mem_ck_n            : out   std_logic_vector(0 downto 0);                      -- mem_ck_n
     o_B_mem_a               : out   std_logic_vector(16 downto 0);                     -- mem_a
-    o_B_mem_act_n           : out   std_logic;                                         -- mem_act_n
+    o_B_mem_act_n           : out   std_logic_vector(0 downto 0);                      -- mem_act_n
     o_B_mem_ba              : out   std_logic_vector(2 downto 0);                      -- mem_ba
     o_B_mem_bg              : out   std_logic_vector(1 downto 0);                      -- mem_bg
     o_B_mem_cke             : out   std_logic_vector(0 downto 0);                      -- mem_cke
     o_B_mem_cs_n            : out   std_logic_vector(0 downto 0);                      -- mem_cs_n
     o_B_mem_odt             : out   std_logic_vector(0 downto 0);                      -- mem_odt
     o_B_mem_reset_n         : out   std_logic_vector(0 downto 0);                      -- mem_reset_n
-    i_B_mem_alert_n         : in    std_logic;                                         -- mem_alert_n
+    i_B_mem_alert_n         : in    std_logic_vector(0 downto 0);                      -- mem_alert_n
     o_B_mem_we_n            : out   std_logic_vector(0 downto 0);                      -- mem_we_n
     o_B_mem_ras_n           : out   std_logic_vector(0 downto 0);                      -- mem_ras_n
     o_B_mem_cas_n           : out   std_logic_vector(0 downto 0);                      -- mem_cas_n
@@ -93,7 +93,7 @@ port (
     io_B_mem_dqs_n          : inout std_logic_vector(7 downto 0)   := (others => 'X'); -- mem_dqs_n
     io_B_mem_dq             : inout std_logic_vector(63 downto 0)  := (others => 'X'); -- mem_dq
     o_B_mem_dm              : out   std_logic_vector(7 downto 0);                      -- mem_dm
-    io_A_mem_dbi_n          : inout std_logic_vector(7 downto 0)   := (others => 'X'); -- mem_dbi_n
+    io_B_mem_dbi_n          : inout std_logic_vector(7 downto 0)   := (others => 'X'); -- mem_dbi_n
     i_B_oct_rzqin           : in    std_logic                      := 'X';             -- oct_rzqin
     i_B_pll_ref_clk         : in    std_logic                      := 'X'              -- clk
 );
@@ -136,80 +136,80 @@ architecture arch of ddr_block is
 
 begin
 
-    --! generate ddr3 for ddr3 boards
-    ddr3 : IF not g_DDR4 and not g_simulation GENERATE
-        ddr3_A : component work.cmp.ddr3_if
-        port map(
-            amm_ready_0         => A_ready,
-            amm_read_0          => A_read,
-            amm_write_0         => A_write,
-            amm_address_0       => A_address,
-            amm_readdata_0      => A_readdata,
-            amm_writedata_0     => A_writedata,
-            amm_burstcount_0    => A_burstcount,
-            amm_byteenable_0    => (others => '1'), 
-            amm_readdatavalid_0 => A_readdatavalid,  
-            emif_usr_clk        => A_clk,
-            emif_usr_reset_n    => A_reset_n,
-            global_reset_n      => i_reset_n,
-            mem_ck              => o_A_mem_ck,
-            mem_ck_n            => o_A_mem_ck_n,
-            mem_a               => o_A_mem_a(15 downto 0),
-            mem_ba              => o_A_mem_ba,
-            mem_cke             => o_A_mem_cke,
-            mem_cs_n            => o_A_mem_cs_n,
-            mem_odt             => o_A_mem_odt,
-            mem_reset_n         => o_A_mem_reset_n,
-            mem_we_n            => o_A_mem_we_n,
-            mem_ras_n           => o_A_mem_ras_n,
-            mem_cas_n           => o_A_mem_cas_n,
-            mem_dqs             => io_A_mem_dqs,
-            mem_dqs_n           => io_A_mem_dqs_n,
-            mem_dq              => io_A_mem_dq,
-            mem_dm              => o_A_mem_dm,
-            oct_rzqin           => i_A_oct_rzqin,
-            pll_ref_clk         => i_A_pll_ref_clk,
-            local_cal_success   => A_cal_success,
-            local_cal_fail      => A_cal_fail
-        );
-
-        ddr3_B : component work.cmp.ddr3_if
-        port map(
-            amm_ready_0         => B_ready,
-            amm_read_0          => B_read,
-            amm_write_0         => B_write,
-            amm_address_0       => B_address,
-            amm_readdata_0      => B_readdata,
-            amm_writedata_0     => B_writedata,
-            amm_burstcount_0    => B_burstcount,
-            amm_byteenable_0    => (others => '1'), 
-            amm_readdatavalid_0 => B_readdatavalid,  
-            emif_usr_clk        => B_clk,
-            emif_usr_reset_n    => B_reset_n,
-            global_reset_n      => i_reset_n,
-            mem_ck              => o_B_mem_ck,
-            mem_ck_n            => o_B_mem_ck_n,
-            mem_a               => o_B_mem_a(15 downto 0),
-            mem_ba              => o_B_mem_ba,
-            mem_cke             => o_B_mem_cke,
-            mem_cs_n            => o_B_mem_cs_n,
-            mem_odt             => o_B_mem_odt,
-            mem_reset_n         => o_B_mem_reset_n,
-            mem_we_n            => o_B_mem_we_n,
-            mem_ras_n           => o_B_mem_ras_n,
-            mem_cas_n           => o_B_mem_cas_n,
-            mem_dqs             => io_B_mem_dqs,
-            mem_dqs_n           => io_B_mem_dqs_n,
-            mem_dq              => io_B_mem_dq,
-            mem_dm              => o_B_mem_dm,
-            oct_rzqin           => i_B_oct_rzqin,
-            pll_ref_clk         => i_B_pll_ref_clk,
-            local_cal_success   => B_cal_success,
-            local_cal_fail      => B_cal_fail
-        );
-    END GENERATE;
-
-    --! generate ddr4 for ddr4 boards
+--    --! generate ddr3 for ddr3 boards
+--    ddr3 : IF not g_DDR4 and not g_simulation GENERATE
+--        ddr3_A : component work.cmp.ddr3_if
+--        port map(
+--            amm_ready_0         => A_ready,
+--            amm_read_0          => A_read,
+--            amm_write_0         => A_write,
+--            amm_address_0       => A_address,
+--            amm_readdata_0      => A_readdata,
+--            amm_writedata_0     => A_writedata,
+--            amm_burstcount_0    => A_burstcount,
+--            amm_byteenable_0    => (others => '1'), 
+--            amm_readdatavalid_0 => A_readdatavalid,  
+--            emif_usr_clk        => A_clk,
+--            emif_usr_reset_n    => A_reset_n,
+--            global_reset_n      => i_reset_n,
+--            mem_ck              => o_A_mem_ck,
+--            mem_ck_n            => o_A_mem_ck_n,
+--            mem_a               => o_A_mem_a(15 downto 0),
+--            mem_ba              => o_A_mem_ba,
+--            mem_cke             => o_A_mem_cke,
+--            mem_cs_n            => o_A_mem_cs_n,
+--            mem_odt             => o_A_mem_odt,
+--            mem_reset_n         => o_A_mem_reset_n,
+--            mem_we_n            => o_A_mem_we_n,
+--            mem_ras_n           => o_A_mem_ras_n,
+--            mem_cas_n           => o_A_mem_cas_n,
+--            mem_dqs             => io_A_mem_dqs,
+--            mem_dqs_n           => io_A_mem_dqs_n,
+--            mem_dq              => io_A_mem_dq,
+--            mem_dm              => o_A_mem_dm,
+--            oct_rzqin           => i_A_oct_rzqin,
+--            pll_ref_clk         => i_A_pll_ref_clk,
+--            local_cal_success   => A_cal_success,
+--            local_cal_fail      => A_cal_fail
+--        );
+--
+--        ddr3_B : component work.cmp.ddr3_if
+--        port map(
+--            amm_ready_0         => B_ready,
+--            amm_read_0          => B_read,
+--            amm_write_0         => B_write,
+--            amm_address_0       => B_address,
+--            amm_readdata_0      => B_readdata,
+--            amm_writedata_0     => B_writedata,
+--            amm_burstcount_0    => B_burstcount,
+--            amm_byteenable_0    => (others => '1'), 
+--            amm_readdatavalid_0 => B_readdatavalid,  
+--            emif_usr_clk        => B_clk,
+--            emif_usr_reset_n    => B_reset_n,
+--            global_reset_n      => i_reset_n,
+--            mem_ck              => o_B_mem_ck,
+--            mem_ck_n            => o_B_mem_ck_n,
+--            mem_a               => o_B_mem_a(15 downto 0),
+--            mem_ba              => o_B_mem_ba,
+--            mem_cke             => o_B_mem_cke,
+--            mem_cs_n            => o_B_mem_cs_n,
+--            mem_odt             => o_B_mem_odt,
+--            mem_reset_n         => o_B_mem_reset_n,
+--            mem_we_n            => o_B_mem_we_n,
+--            mem_ras_n           => o_B_mem_ras_n,
+--            mem_cas_n           => o_B_mem_cas_n,
+--            mem_dqs             => io_B_mem_dqs,
+--            mem_dqs_n           => io_B_mem_dqs_n,
+--            mem_dq              => io_B_mem_dq,
+--            mem_dm              => o_B_mem_dm,
+--            oct_rzqin           => i_B_oct_rzqin,
+--            pll_ref_clk         => i_B_pll_ref_clk,
+--            local_cal_success   => B_cal_success,
+--            local_cal_fail      => B_cal_fail
+--        );
+--    END GENERATE;
+--
+--    --! generate ddr4 for ddr4 boards
     ddr4 : IF g_DDR4 and not g_simulation GENERATE
         ddr4_A : component work.cmp.ddr4_if
         port map(
@@ -220,8 +220,8 @@ begin
             amm_readdata_0      => A_readdata,
             amm_writedata_0     => A_writedata,
             amm_burstcount_0    => A_burstcount,
-            amm_byteenable_0    => (others => '1'), 
-            amm_readdatavalid_0 => A_readdatavalid,  
+            amm_byteenable_0    => (others => '1'),
+            amm_readdatavalid_0 => A_readdatavalid,
             emif_usr_clk        => A_clk,
             emif_usr_reset_n    => A_reset_n,
             global_reset_n      => i_reset_n,
@@ -239,8 +239,7 @@ begin
             mem_dqs             => io_A_mem_dqs,
             mem_dqs_n           => io_A_mem_dqs_n,
             mem_dq              => io_A_mem_dq,
-            mem_dbi_n           => io_A_mem_dbi_n, --
-            mem_dm              => o_A_mem_dm,
+            mem_dbi_n           => io_A_mem_dbi_n,
             oct_rzqin           => i_A_oct_rzqin,
             pll_ref_clk         => i_A_pll_ref_clk,
             local_cal_success   => A_cal_success,
@@ -256,8 +255,8 @@ begin
             amm_readdata_0      => B_readdata,
             amm_writedata_0     => B_writedata,
             amm_burstcount_0    => B_burstcount,
-            amm_byteenable_0    => (others => '1'), 
-            amm_readdatavalid_0 => B_readdatavalid,  
+            amm_byteenable_0    => (others => '1'),
+            amm_readdatavalid_0 => B_readdatavalid,
             emif_usr_clk        => B_clk,
             emif_usr_reset_n    => B_reset_n,
             global_reset_n      => i_reset_n,
@@ -275,8 +274,7 @@ begin
             mem_dqs             => io_B_mem_dqs,
             mem_dqs_n           => io_B_mem_dqs_n,
             mem_dq              => io_B_mem_dq,
-            mem_dbi_n           => io_B_mem_dbi_n, --
-            mem_dm              => o_B_mem_dm,
+            mem_dbi_n           => io_B_mem_dbi_n,
             oct_rzqin           => i_B_oct_rzqin,
             pll_ref_clk         => i_B_pll_ref_clk,
             local_cal_success   => B_cal_success,
@@ -347,7 +345,7 @@ begin
         o_ddr_read_valid    => o_B_ddr_read_valid,
         
         -- Error counters
-        o_error             => A_errout,
+        o_error             => B_errout,
 
         -- IF to DDR
         M_cal_success       => B_cal_success,

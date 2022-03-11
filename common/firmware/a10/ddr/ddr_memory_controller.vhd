@@ -90,9 +90,8 @@ architecture rtl of ddr_memory_controller is
 
     --! internal output signals
     signal ddr_status : std_logic_vector(15 downto 0);
-    signal ddr_calibrated, ddr_ready, ddr_read_valid : std_logic;
+    signal ddr_read_valid : std_logic;
     signal error : std_logic_vector(31 downto 0);
-    signal ddr_data_out : std_logic_vector(511 downto 0);
     signal ddr_sync_out, wdata_sync_out : std_logic_vector(512 + 32 + 3 + 16 - 1 downto 0);
 
     --! internal input signals
@@ -105,8 +104,8 @@ architecture rtl of ddr_memory_controller is
 begin
 
     --! Counter forwarding
-    error   <=  poserr_reg      when i_ddr_control(DDR_COUNTERSEL_RANGE_A) = "01" else   
-                counterr_reg    when i_ddr_control(DDR_COUNTERSEL_RANGE_A) = "10" else
+    error   <=  poserr_reg      when ddr_control(DDR_COUNTERSEL_RANGE_A) = "01" else   
+                counterr_reg    when ddr_control(DDR_COUNTERSEL_RANGE_A) = "10" else
                 timecount_reg;
 
     --! Status register
@@ -120,7 +119,7 @@ begin
 
 
     --! sync signals
-    wdata_sync_out <= ddr_data_out & error & ddr_calibrated & ddr_ready & ddr_read_valid & ddr_status;
+    wdata_sync_out <= M_readdata & error & M_cal_success & M_ready & ddr_read_valid & ddr_status;
     e_sync_out : entity work.fifo_sync
     generic map(
         g_RDATA_RESET => (ddr_sync_out'range => '0')--,
@@ -169,7 +168,6 @@ begin
                     (others => '0');
 
     ddr_read_valid  <= M_readdatavalid when mode = dataflow else '0';
-    ddr_data_out    <= M_readdata;
 
     --! This is the HW burst size
     M_burstcount <= "0000001";

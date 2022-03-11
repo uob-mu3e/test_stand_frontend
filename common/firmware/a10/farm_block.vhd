@@ -18,8 +18,6 @@ entity farm_block is
 generic (
     g_LOOPUP_NAME           : string    := "intRun2021";
     g_NLINKS_TOTL           : positive  := 3;
-    g_NLINKS_PIXEL          : positive  := 2;
-    g_NLINKS_SCIFI          : positive  := 1;
     g_ADDR_WIDTH            : positive  := 11;
     g_DDR4                  : boolean   := false;
     g_simulation            : boolean   := false;
@@ -58,14 +56,14 @@ port (
     o_A_mem_ck          : out   std_logic_vector(0 downto 0);                      -- mem_ck
     o_A_mem_ck_n        : out   std_logic_vector(0 downto 0);                      -- mem_ck_n
     o_A_mem_a           : out   std_logic_vector(16 downto 0);                     -- mem_a
-    o_A_mem_act_n       : out   std_logic;                                         -- mem_act_n
+    o_A_mem_act_n       : out   std_logic_vector(0 downto 0);                      -- mem_act_n
     o_A_mem_ba          : out   std_logic_vector(2 downto 0);                      -- mem_ba
     o_A_mem_bg          : out   std_logic_vector(1 downto 0);                      -- mem_bg
     o_A_mem_cke         : out   std_logic_vector(0 downto 0);                      -- mem_cke
     o_A_mem_cs_n        : out   std_logic_vector(0 downto 0);                      -- mem_cs_n
     o_A_mem_odt         : out   std_logic_vector(0 downto 0);                      -- mem_odt
     o_A_mem_reset_n     : out   std_logic_vector(0 downto 0);                      -- mem_reset_n
-    i_A_mem_alert_n     : in    std_logic;                                         -- mem_alert_n
+    i_A_mem_alert_n     : in    std_logic_vector(0 downto 0)   := (others => 'X'); -- mem_alert_n
     o_A_mem_we_n        : out   std_logic_vector(0 downto 0);                      -- mem_we_n
     o_A_mem_ras_n       : out   std_logic_vector(0 downto 0);                      -- mem_ras_n
     o_A_mem_cas_n       : out   std_logic_vector(0 downto 0);                      -- mem_cas_n
@@ -81,14 +79,14 @@ port (
     o_B_mem_ck          : out   std_logic_vector(0 downto 0);                      -- mem_ck
     o_B_mem_ck_n        : out   std_logic_vector(0 downto 0);                      -- mem_ck_n
     o_B_mem_a           : out   std_logic_vector(16 downto 0);                     -- mem_a
-    o_B_mem_act_n       : out   std_logic;                                         -- mem_act_n
+    o_B_mem_act_n       : out   std_logic_vector(0 downto 0);                      -- mem_act_n
     o_B_mem_ba          : out   std_logic_vector(2 downto 0);                      -- mem_ba
     o_B_mem_bg          : out   std_logic_vector(1 downto 0);                      -- mem_bg
     o_B_mem_cke         : out   std_logic_vector(0 downto 0);                      -- mem_cke
     o_B_mem_cs_n        : out   std_logic_vector(0 downto 0);                      -- mem_cs_n
     o_B_mem_odt         : out   std_logic_vector(0 downto 0);                      -- mem_odt
     o_B_mem_reset_n     : out   std_logic_vector(0 downto 0);                      -- mem_reset_n
-    i_B_mem_alert_n     : in    std_logic;                                         -- mem_alert_n
+    i_B_mem_alert_n     : in    std_logic_vector(0 downto 0)   := (others => 'X'); -- mem_alert_n
     o_B_mem_we_n        : out   std_logic_vector(0 downto 0);                      -- mem_we_n
     o_B_mem_ras_n       : out   std_logic_vector(0 downto 0);                      -- mem_ras_n
     o_B_mem_cas_n       : out   std_logic_vector(0 downto 0);                      -- mem_cas_n
@@ -202,13 +200,13 @@ begin
         o_counter(I) <= counter_link_to_fifo(I);
     END GENERATE;
     gen_midas_event_cnt : FOR I in (g_NLINKS_TOTL*4) + (g_NLINKS_TOTL*5) to (g_NLINKS_TOTL*4) + (g_NLINKS_TOTL*5) + 3 GENERATE
-        o_counter(I) <= counter_midas_event_builder(I);
+        o_counter(I) <= counter_midas_event_builder(I-((g_NLINKS_TOTL*4) + (g_NLINKS_TOTL*5)));
     END GENERATE;
     gen_ddr_cnt : FOR I in (g_NLINKS_TOTL*4) + (g_NLINKS_TOTL*5) + 4 to (g_NLINKS_TOTL*4) + (g_NLINKS_TOTL*5) + 7 GENERATE
-        o_counter(I) <= counter_ddr(I);
+        o_counter(I) <= counter_ddr(I-((g_NLINKS_TOTL*4) + (g_NLINKS_TOTL*5) + 4));
     END GENERATE;
     gen_builder_cnt : FOR I in (g_NLINKS_TOTL*4) + (g_NLINKS_TOTL*5) + 8 to (g_NLINKS_TOTL*4) + (g_NLINKS_TOTL*5) + 11 GENERATE
-        o_counter(I) <= builder_counters(I);
+        o_counter(I) <= builder_counters(I-((g_NLINKS_TOTL*4) + (g_NLINKS_TOTL*5) + 8));
     END GENERATE;
 
     --! SWB Data Generation
@@ -222,6 +220,7 @@ begin
     generic map (
         DATA_TYPE => DATA_TYPE,
         go_to_sh => 3,
+        is_farm => true,
         go_to_trailer => 4--,
     )
     port map (
@@ -272,8 +271,6 @@ begin
     generic map (
         g_LOOPUP_NAME       => g_LOOPUP_NAME,
         g_NLINKS_SWB_TOTL   => g_NLINKS_TOTL,
-        N_PIXEL             => g_NLINKS_PIXEL,
-        N_SCIFI             => g_NLINKS_SCIFI,
         LINK_FIFO_ADDR_WIDTH=> LINK_FIFO_ADDR_WIDTH--,
     )
     port map (
@@ -324,7 +321,7 @@ begin
         i_t0        => aligned_t0,
         i_t1        => aligned_t1,
         i_rempty    => aligned_empty,
-        i_rmask_n   => i_writeregs(FARM_LINK_MASK_REGISTER_W),
+        i_rmask_n   => i_writeregs(FARM_LINK_MASK_REGISTER_W)(g_NLINKS_TOTL - 1 downto 0),
         o_rack      => stream_rack,
 
         -- farm data
@@ -370,7 +367,7 @@ begin
         i_t0            => aligned_t0,
         i_t1            => aligned_t1,
         i_rempty        => aligned_empty,
-        i_rmask_n       => i_writeregs(FARM_LINK_MASK_REGISTER_W),
+        i_rmask_n       => i_writeregs(FARM_LINK_MASK_REGISTER_W)(g_NLINKS_TOTL - 1 downto 0),
         o_rack          => merger_rack,
 
         -- farm data
@@ -434,13 +431,17 @@ begin
                         builder_rack    when i_writeregs(FARM_READOUT_STATE_REGISTER_W)(USE_BIT_MERGER) = '1' and i_writeregs(FARM_READOUT_STATE_REGISTER_W)(USE_BIT_DDR) = '0' else
                         '0';
     o_dma_data      <=  ddr_dma_data        when i_writeregs(FARM_READOUT_STATE_REGISTER_W)(USE_BIT_DDR) = '1' else
-                        builder_dma_data    when i_writeregs(FARM_READOUT_STATE_REGISTER_W)(USE_BIT_DDR) = '0';
+                        builder_dma_data    when i_writeregs(FARM_READOUT_STATE_REGISTER_W)(USE_BIT_DDR) = '0' else
+                        (others => '0');
     o_dma_wren      <=  ddr_dma_wren        when i_writeregs(FARM_READOUT_STATE_REGISTER_W)(USE_BIT_DDR) = '1' else
-                        builder_dma_wren    when i_writeregs(FARM_READOUT_STATE_REGISTER_W)(USE_BIT_DDR) = '0';
+                        builder_dma_wren    when i_writeregs(FARM_READOUT_STATE_REGISTER_W)(USE_BIT_DDR) = '0' else
+                        '0';
     o_endofevent    <=  ddr_endofevent      when i_writeregs(FARM_READOUT_STATE_REGISTER_W)(USE_BIT_DDR) = '1' else
-                        builder_endofevent  when i_writeregs(FARM_READOUT_STATE_REGISTER_W)(USE_BIT_DDR) = '0';
+                        builder_endofevent  when i_writeregs(FARM_READOUT_STATE_REGISTER_W)(USE_BIT_DDR) = '0' else
+                        '0';
     o_readregs(EVENT_BUILD_STATUS_REGISTER_R)(EVENT_BUILD_DONE) <=  ddr_dma_done        when i_writeregs(FARM_READOUT_STATE_REGISTER_W)(USE_BIT_DDR) = '1' else
-                                                                    builder_dma_done    when i_writeregs(FARM_READOUT_STATE_REGISTER_W)(USE_BIT_DDR) = '0';
+                                                                    builder_dma_done    when i_writeregs(FARM_READOUT_STATE_REGISTER_W)(USE_BIT_DDR) = '0' else
+                                                                    '0';
 
 
     --! event builder used for the debug readout on the SWB
@@ -634,7 +635,7 @@ begin
         o_A_mem_cs_n          => o_A_mem_cs_n,
         o_A_mem_odt           => o_A_mem_odt,
         o_A_mem_reset_n(0)    => o_A_mem_reset_n(0),
-        i_A_mem_alert_n       => i_A_mem_alert_n,
+        i_A_mem_alert_n(0)    => i_A_mem_alert_n(0),
         o_A_mem_we_n(0)       => o_A_mem_we_n(0),
         o_A_mem_ras_n(0)      => o_A_mem_ras_n(0),
         o_A_mem_cas_n(0)      => o_A_mem_cas_n(0),
@@ -657,7 +658,7 @@ begin
         o_B_mem_cs_n          => o_B_mem_cs_n,
         o_B_mem_odt           => o_B_mem_odt,
         o_B_mem_reset_n(0)    => o_B_mem_reset_n(0),
-        i_B_mem_alert_n       => i_B_mem_alert_n,
+        i_B_mem_alert_n(0)    => i_B_mem_alert_n(0),
         o_B_mem_we_n(0)       => o_B_mem_we_n(0),
         o_B_mem_ras_n(0)      => o_B_mem_ras_n(0),
         o_B_mem_cas_n(0)      => o_B_mem_cas_n(0),

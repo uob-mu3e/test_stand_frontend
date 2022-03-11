@@ -120,7 +120,7 @@ port (
     DDR4A_EVENT_n       : in    std_logic;
     DDR4A_SCL           : out   std_logic;
     DDR4A_SDA           : inout std_logic;
-    
+
     --//// DDR4 B/////////////
     DDR4B_CK            : out   std_logic_vector(0 downto 0);
     DDR4B_CK_n          : out   std_logic_vector(0 downto 0);
@@ -151,6 +151,10 @@ end entity;
 
 architecture rtl of top is
 
+    -- TODO: IntRun22 we only take in total 8 links since we use two farm pcs
+    -- one pixel and one scifi. Also the time merger can only handle 8 inputs
+    constant g_NLINKS_TOTL : positive := 8;
+
     -- free running clock (used as nios clock)
     signal clk_50       : std_logic;
     signal reset_50_n   : std_logic;
@@ -172,31 +176,16 @@ architecture rtl of top is
 
     -- pcie read / write registers
     signal pcie0_resets_n_A   : std_logic_vector(31 downto 0);
-    signal pcie0_resets_n_B   : std_logic_vector(31 downto 0);
-    signal pcie0_resets_n_C   : std_logic_vector(31 downto 0);
     signal pcie0_writeregs_A  : work.util.slv32_array_t(63 downto 0);
-    signal pcie0_writeregs_B  : work.util.slv32_array_t(63 downto 0);
-    signal pcie0_writeregs_C  : work.util.slv32_array_t(63 downto 0);
     signal pcie0_regwritten_A : std_logic_vector(63 downto 0);
-    signal pcie0_regwritten_B : std_logic_vector(63 downto 0);
-    signal pcie0_regwritten_C : std_logic_vector(63 downto 0);
     signal pcie0_readregs_A   : work.util.slv32_array_t(63 downto 0);
-    signal pcie0_readregs_B   : work.util.slv32_array_t(63 downto 0);
-    signal pcie0_readregs_C   : work.util.slv32_array_t(63 downto 0);
-
-    -- pcie read / write memory
-    signal readmem_writedata    : std_logic_vector(31 downto 0);
-    signal readmem_writeaddr    : std_logic_vector(15 downto 0);
-    signal readmem_wren         : std_logic;
-    signal writememreadaddr     : std_logic_vector(15 downto 0);
-    signal writememreaddata     : std_logic_vector(31 downto 0);
 
     -- pcie dma
     signal dma_data_wren, dmamem_endofevent, pcie0_dma0_hfull : std_logic;
     signal dma_data : std_logic_vector(255 downto 0);
 
-    signal rx_data_raw, rx_data, tx_data    : work.util.slv32_array_t(15 downto 0);
-    signal rx_datak_raw, rx_datak, tx_datak : work.util.slv4_array_t(15 downto 0);
+    signal rx_data_raw, rx_data, tx_data    : work.util.slv32_array_t(15 downto 0) := (others => (others => '0'));
+    signal rx_datak_raw, rx_datak, tx_datak : work.util.slv4_array_t(15 downto 0) := (others => (others => '0'));
     
     -- pll locked signal top
     signal locked_50to125 : std_logic;
@@ -290,6 +279,12 @@ begin
         i_xcvr1_tx_data                 => tx_data,
         i_xcvr1_tx_datak                => tx_datak,
         i_xcvr1_clk                     => pcie_fastclk_out,
+        
+        -- PCIe0 read interface to writable memory
+        i_pcie0_wmem_clk                => pcie_fastclk_out,
+
+        -- PCIe0 write interface to readable memory
+        i_pcie0_rmem_clk                => pcie_fastclk_out,
 
         -- PCIe0
         i_pcie0_rx                      => PCIE_RX_p,
@@ -299,40 +294,22 @@ begin
         o_pcie0_clk                     => pcie_fastclk_out,
         o_pcie0_clk_hz                  => LED(3),
 
-        -- PCIe0 read interface to writable memory
-        i_pcie0_wmem_addr               => writememreadaddr,
-        o_pcie0_wmem_rdata              => writememreaddata,
-        i_pcie0_wmem_clk                => clk_250,
-
-        -- PCIe0 write interface to readable memory
-        i_pcie0_rmem_addr               => readmem_writeaddr,
-        i_pcie0_rmem_wdata              => readmem_writedata,
-        i_pcie0_rmem_we                 => readmem_wren,
-        i_pcie0_rmem_clk                => clk_250,
-
         -- PCIe0 DMA0
         i_pcie0_dma0_wdata              => dma_data,
         i_pcie0_dma0_we                 => dma_data_wren,
         i_pcie0_dma0_eoe                => dmamem_endofevent,
         o_pcie0_dma0_hfull              => pcie0_dma0_hfull,
         i_pcie0_dma0_clk                => pcie_fastclk_out,
+        o_pcie0_reset_n                 => reset_pcie0_n,
 
         -- PCIe0 update interface for readable registers
         i_pcie0_rregs_A                 => pcie0_readregs_A,
-        i_pcie0_rregs_B                 => pcie0_readregs_B,
-        i_pcie0_rregs_C                 => pcie0_readregs_C,
 
         -- PCIe0 read interface for writable registers
         o_pcie0_wregs_A                 => pcie0_writeregs_A,
         i_pcie0_wregs_A_clk             => pcie_fastclk_out,
         o_pcie0_regwritten_A            => pcie0_regwritten_A,
-        o_pcie0_wregs_B                 => pcie0_writeregs_B,
-        i_pcie0_wregs_B_clk             => clk_250,
-        o_pcie0_regwritten_B            => pcie0_regwritten_B,
-        o_pcie0_regwritten_C            => pcie0_regwritten_C,
         o_pcie0_resets_n_A              => pcie0_resets_n_A,
-        o_pcie0_resets_n_B              => pcie0_resets_n_B,
-        o_pcie0_resets_n_C              => pcie0_resets_n_C,
 
         -- resets clk
         top_pll_locked                  => locked_50to125,
@@ -381,17 +358,15 @@ begin
     farm_block : entity work.farm_block
     generic map (
         g_DDR4         => true,
-        g_NLINKS_TOTL  => 16,
-        g_NLINKS_PIXEL => 8,
-        g_NLINKS_SCIFI => 8--,
+        g_NLINKS_TOTL  => g_NLINKS_TOTL--,
     )
     port map (
 
         --! links to/from FEBs
-        i_rx            => rx_data_raw,
-        i_rx_k          => rx_datak_raw,
-        o_tx            => tx_data,
-        o_tx_k          => tx_datak,
+        i_rx            => rx_data_raw(g_NLINKS_TOTL - 1 downto 0),
+        i_rx_k          => rx_datak_raw(g_NLINKS_TOTL - 1 downto 0),
+        o_tx            => tx_data(g_NLINKS_TOTL - 1 downto 0),
+        o_tx_k          => tx_datak(g_NLINKS_TOTL - 1 downto 0),
 
         --! PCIe registers / memory
         i_writeregs     => pcie0_writeregs_A,
@@ -417,14 +392,14 @@ begin
         o_A_mem_ck           => DDR4A_CK,
         o_A_mem_ck_n         => DDR4A_CK_n,
         o_A_mem_a            => DDR4A_A,
-        o_A_mem_act_n        => DDR4A_ACT_n,
-        o_A_mem_ba           => DDR4A_BA,
+        o_A_mem_act_n(0)     => DDR4A_ACT_n,
+        o_A_mem_ba(1 downto 0) => DDR4A_BA,
         o_A_mem_bg           => DDR4A_BG,
         o_A_mem_cke          => DDR4A_CKE,
         o_A_mem_cs_n         => DDR4A_CS_n,
         o_A_mem_odt          => DDR4A_ODT,
         o_A_mem_reset_n(0)   => DDR4A_RESET_n,
-        i_A_mem_alert_n      => DDR4A_ALERT_n,
+        i_A_mem_alert_n(0)   => DDR4A_ALERT_n,
         o_A_mem_we_n(0)      => DDR4A_WE_n,
         o_A_mem_ras_n(0)     => DDR4A_RAS_n,
         o_A_mem_cas_n(0)     => DDR4A_CAS_n,
@@ -440,14 +415,14 @@ begin
         o_B_mem_ck           => DDR4B_CK,
         o_B_mem_ck_n         => DDR4B_CK_n,
         o_B_mem_a            => DDR4B_A,
-        o_B_mem_act_n        => DDR4B_ACT_n,
-        o_B_mem_ba           => DDR4B_BA,
+        o_B_mem_act_n(0)     => DDR4B_ACT_n,
+        o_B_mem_ba(1 downto 0) => DDR4B_BA,
         o_B_mem_bg           => DDR4B_BG,
         o_B_mem_cke          => DDR4B_CKE,
         o_B_mem_cs_n         => DDR4B_CS_n,
         o_B_mem_odt          => DDR4B_ODT,
         o_B_mem_reset_n(0)   => DDR4B_RESET_n,
-        i_B_mem_alert_n      => DDR4A_ALERT_n,
+        i_B_mem_alert_n(0)   => DDR4B_ALERT_n,
         o_B_mem_we_n(0)      => DDR4B_WE_n,
         o_B_mem_ras_n(0)     => DDR4B_RAS_n,
         o_B_mem_cas_n(0)     => DDR4B_CAS_n,

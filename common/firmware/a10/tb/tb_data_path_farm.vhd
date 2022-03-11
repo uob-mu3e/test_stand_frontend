@@ -54,19 +54,20 @@ component ddr4_if is
         global_reset_n      : in    std_logic                      := 'X';             -- reset_n
         mem_ck              : out   std_logic_vector(0 downto 0);                      -- mem_ck
         mem_ck_n            : out   std_logic_vector(0 downto 0);                      -- mem_ck_n
-        mem_a               : out   std_logic_vector(15 downto 0);                     -- mem_a
-        mem_ba              : out   std_logic_vector(2 downto 0);                      -- mem_ba
+        mem_a               : out   std_logic_vector(16 downto 0);                     -- mem_a
+        mem_act_n           : out   std_logic_vector(0 downto 0);                      -- mem_act_n
+        mem_ba              : out   std_logic_vector(1 downto 0);                      -- mem_ba
+        mem_bg              : out   std_logic_vector(1 downto 0);                      -- mem_bg
         mem_cke             : out   std_logic_vector(0 downto 0);                      -- mem_cke
         mem_cs_n            : out   std_logic_vector(0 downto 0);                      -- mem_cs_n
         mem_odt             : out   std_logic_vector(0 downto 0);                      -- mem_odt
         mem_reset_n         : out   std_logic_vector(0 downto 0);                      -- mem_reset_n
-        mem_we_n            : out   std_logic_vector(0 downto 0);                      -- mem_we_n
-        mem_ras_n           : out   std_logic_vector(0 downto 0);                      -- mem_ras_n
-        mem_cas_n           : out   std_logic_vector(0 downto 0);                      -- mem_cas_n
+        mem_par             : out   std_logic_vector(0 downto 0);                      -- mem_par
+        mem_alert_n         : in    std_logic_vector(0 downto 0)   := (others => 'X'); -- mem_alert_n
         mem_dqs             : inout std_logic_vector(7 downto 0)   := (others => 'X'); -- mem_dqs
         mem_dqs_n           : inout std_logic_vector(7 downto 0)   := (others => 'X'); -- mem_dqs_n
         mem_dq              : inout std_logic_vector(63 downto 0)  := (others => 'X'); -- mem_dq
-        mem_dm              : out   std_logic_vector(7 downto 0);                      -- mem_dm
+        mem_dbi_n           : inout std_logic_vector(7 downto 0)   := (others => 'X'); -- mem_dbi_n
         oct_rzqin           : in    std_logic                      := 'X';             -- oct_rzqin
         pll_ref_clk         : in    std_logic                      := 'X';             -- clk
         local_cal_success   : out   std_logic;                                         -- local_cal_success
@@ -227,6 +228,7 @@ begin
     writeregs(FARM_READOUT_STATE_REGISTER_W)(USE_BIT_STREAM)    <= '0';
     writeregs(FARM_READOUT_STATE_REGISTER_W)(USE_BIT_MERGER)    <= '1';
     writeregs(GET_N_DMA_WORDS_REGISTER_W)                       <= (others => '1');
+    writeregs(FARM_LINK_MASK_REGISTER_W)                        <= x"0000000F";--x"00000048";
     writeregs(DMA_REGISTER_W)(DMA_BIT_ENABLE)                   <= '1';
 
     
@@ -238,9 +240,7 @@ begin
     generic map (
         g_DDR4         => true,
         g_simulation   => true,
-        g_NLINKS_TOTL  => 16,
-        g_NLINKS_PIXEL => 8,
-        g_NLINKS_SCIFI => 8--,
+        g_NLINKS_TOTL  => 8--,
     )
     port map (
 
@@ -267,39 +267,7 @@ begin
 
         --! 250 MHz clock pice / reset_n
         i_reset_n       => reset_n,
-        i_clk           => clk,
-
-        -- Interface to memory bank A
-        o_A_mem_ck           => open,
-        o_A_mem_ck_n         => open,
-        o_A_mem_a            => open,
-        o_A_mem_ba           => open,
-        o_A_mem_cke          => open,
-        o_A_mem_cs_n         => open,
-        o_A_mem_odt          => open,
-        o_A_mem_reset_n      => open,
-        o_A_mem_we_n         => open,
-        o_A_mem_ras_n        => open,
-        o_A_mem_cas_n        => open,
-        o_A_mem_dm           => open,
-        i_A_oct_rzqin        => '0',
-        i_A_pll_ref_clk      => '0',
-
-        -- Interface to memory bank B
-        o_B_mem_ck           => open,
-        o_B_mem_ck_n         => open,
-        o_B_mem_a            => open,
-        o_B_mem_ba           => open,
-        o_B_mem_cke          => open,
-        o_B_mem_cs_n         => open,
-        o_B_mem_odt          => open,
-        o_B_mem_reset_n      => open,
-        o_B_mem_we_n         => open,
-        o_B_mem_ras_n        => open,
-        o_B_mem_cas_n        => open,
-        o_B_mem_dm           => open,
-        i_B_oct_rzqin        => '0',
-        i_B_pll_ref_clk      => '0'--,
+        i_clk           => clk--,
     );
 
     e_ddr3_a : entity work.ip_ram
