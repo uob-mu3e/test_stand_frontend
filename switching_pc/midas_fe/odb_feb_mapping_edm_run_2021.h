@@ -4,11 +4,11 @@ links["SwitchingBoardMask"][1] = 0;
 links["SwitchingBoardMask"][2] = 0;
 links["SwitchingBoardMask"][3] = 0;
 
-for(uint32_t i=0; i < 2; i++){
+for(uint32_t i=0; i < 1; i++){
     links["LinkMask"][i] = FEBLINKMASK::ON;
 }
 
-for(uint32_t i=2; i < 192; i++){
+for(uint32_t i=1; i < 192; i++){
     links["LinkMask"][i] = FEBLINKMASK::OFF;
 }
 

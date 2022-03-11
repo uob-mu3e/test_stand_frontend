@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="ISO-8859-1"?>
+<RunSequence xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="">
+<ODBLoad l="3">qctesting_odb_setup.odb</ODBLoad>
+<ODBSubdir l="5" path="/Equipment/Mupix/QCTests/Ladder/IVCurve/Parameters">
+<ODBGet l="6" path="start_voltage">start_voltage</ODBGet>
+<ODBGet l="7" path="final_voltage">final_voltage</ODBGet>
+<ODBGet l="8" path="step">step</ODBGet>
+<ODBGet l="9" path="final_step">fstep</ODBGet>
+<ODBSet l="10" path="step">$fstep-2*$fstep</ODBSet>
+</ODBSubdir>
+</RunSequence>

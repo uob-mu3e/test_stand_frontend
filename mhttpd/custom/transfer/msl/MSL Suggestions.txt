@@ -1,0 +1,13 @@
+- Multiline comments
+
+
+
+Bugs in documentation:
+- In example code in MIDAS page, it's written WAIT Seconds 60. And in reference keyword is seconds
+- "Parameters can be defined either centrally for all scripts in the ODB under /Experiment/Edit on sequence. " The sentence is incomplete
+
+
+
+Questions
+- SCRIPT name, value --> can we run scripts at server side?
+- ODBSET path, value --> boolean values? "true", true, 1, t... ???

@@ -1,0 +1,80 @@
+COMMENT "XEC LED run"
+INCLUDE /home/meg/online/sequencer/lib/WDAQPMT
+INCLUDE /home/meg/online/sequencer/lib/WDAQMPPC
+INCLUDE /home/meg/online/sequencer/lib/WDAQTC
+INCLUDE /home/meg/online/sequencer/lib/WDAQCDCH
+INCLUDE /home/meg/online/sequencer/lib/WDAQSystem
+INCLUDE /home/meg/online/sequencer/eng21/xec/ledcontrol
+INCLUDE /home/meg/online/sequencer/eng21/setswzerosuppression
+
+# Run parameters
+SET Nevent 1000
+#SET Nrun 1
+
+SET Nrun 22
+SET Ampl 0.90
+SET Ampl_step -0.02
+
+SET PMTHVConfig, 210815
+SET MPPCOV 7
+
+# ADC/DRS ON/OFF.
+SET ReadDRS 0x3FFFF
+SET ReadADC 0
+
+# Turn off LED
+#CALL led_off
+
+# Set ConfID
+#SET MEGConfID 17
+#SET XECConfID, 301
+#ODBSET "/Experiment/Run Parameters/SQL/MEG/MEGConfId", $MEGConfID, 1
+#ODBSET "/Experiment/Run Parameters/SQL/XEC/XECConfId", $XECConfID, 1
+
+# Set ADC/DRS ON/OFF.
+CALL SetMPPCDRSChannelTxEnable, $ReadDRS
+CALL SetPMTDRSChannelTxEnable, $ReadDRS
+
+CALL SetMPPCADCChannelTxEnable, $ReadADC
+CALL SetPMTADCChannelTxEnable, $ReadADC
+
+CALL ResetMPPCZeroSuppressionEnable
+CALL ResetPMTZeroSuppressionEnable
+
+#set TXEnable off for TC, CDCH
+CALL SetTCDRSChannelTxEnable, 0
+CALL SetCDCHDRSChannelTxEnable, 0
+
+CALL SetZeroSuppression
+
+# Trigger setting
+CALL DisableAllTriggers
+#CALL EnableTrigger 13, 20, 21
+CALL EnableTrigger 13, 3, 21
+
+# Reload and wait for configuration
+CALL ApplySettings
+
+
+
+# Loop for runs
+LOOP $Nrun
+
+   # Set Run description
+   CAT config, "HV :OV ",$MPPCOV,"V & hvlist_", $PMTHVConfig, ", "
+   CAT description, "LED run, ", $config, "LED 25-29+31-35, ampl ", $Ampl, " "
+   CAT description, $description, "ADC ",$ReadADC,", DRS ",$ReadDRS,", "
+   ODBSET "/Experiment/Run Parameters/Run Description", $description, 1
+
+   CALL SetLEDAmpl $Ampl, 7
+   WAIT seconds, 20
+   TRANSITION start
+   WAIT events, $Nevent
+   TRANSITION stop
+   WAIT seconds, 2
+   ODBINC "/Sequencer/Variables/Ampl", $Ampl_step
+ENDLOOP
+
+#reload settings
+CALL ReloadAll
+CALL led_off
