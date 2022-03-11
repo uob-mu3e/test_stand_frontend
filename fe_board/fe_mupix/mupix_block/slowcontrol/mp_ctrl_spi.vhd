@@ -207,14 +207,13 @@ begin
             Load_Col    <= '0';
             Load_VDAC   <= '0';
             Load_Bias   <= '0';
-            Load_Conf   <= '0';
+            Load_Conf   <= '1';
             Load_Test <= '0';
             Ck1_Test  <= '0';
             Ck2_Test  <= '0';
 
             case mp_spi_state is
               when init =>
-                Load_Conf   <= '1';
                 -- 0 col register of all chips, put a single 1 into start of col register for all chips
                 o_spi_chip_selct_mask <= (others => '0');
                 
@@ -340,6 +339,7 @@ begin
 
                   when zero1 =>
                     mp_spi_clk_state <= clk1;
+                    Load_Conf <= not reg_is_writing(CONF_BIT);
                     -- default all
                   when clk1 =>
                     mp_spi_clk_state <= zero2;
@@ -347,9 +347,11 @@ begin
                     Ck1_VDAC <= reg_is_writing(VDAC_BIT);
                     Ck1_Conf <= reg_is_writing(CONF_BIT);
                     Ck1_TDAC <= reg_is_writing(TDAC_BIT);
+                    Load_Conf <= not reg_is_writing(CONF_BIT);
                     -- others to default
                   when zero2 =>
                     mp_spi_clk_state <= clk2;
+                    Load_Conf <= not reg_is_writing(CONF_BIT);
                     -- default all
                   when clk2 =>
                     mp_spi_clk_state <= zero3;
@@ -357,8 +359,10 @@ begin
                     Ck2_VDAC <= reg_is_writing(VDAC_BIT);
                     Ck2_Conf <= reg_is_writing(CONF_BIT);
                     Ck2_TDAC <= reg_is_writing(TDAC_BIT);
+                    Load_Conf <= not reg_is_writing(CONF_BIT);
                     -- others to default
                   when zero3 => -- is this one needed ?
+                    Load_Conf <= not reg_is_writing(CONF_BIT);
                     mp_spi_clk_state <= zero1;
                     -- default all
 
@@ -380,7 +384,6 @@ begin
 
                 when pre_load =>
                     o_data_to_direct_spi_we <= '1';
-                    Load_Conf <= '1';
                     mp_spi_state <= load;
 
                 -- mupix 10 load conf bug does not allow for this .. put in again for mp 11
@@ -404,7 +407,6 @@ begin
 
                 when load =>
                     o_data_to_direct_spi_we <= '1';
-                    Load_Conf <= '1';
 
                     if(dpf_empty_this_round(BIAS_BIT)='1') then 
                       Load_Bias <= '1';
@@ -418,7 +420,6 @@ begin
                     mp_spi_state <= rem_load;
 
                 when rem_load =>
-                    Load_Conf <= '1';
                     o_data_to_direct_spi_we <= '1';
                     if((reg_is_writing(TDAC_BIT)='1' and dpf_empty_this_round(TDAC_BIT) = '1')) then 
                         mp_spi_state <= shift_col_by_one;
