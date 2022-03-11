@@ -67,141 +67,139 @@ architecture rtl of data_generator_a10 is
 ----------------begin data_generator------------------------
 begin
 
-	reset <= not i_reset_n;
+    reset <= not i_reset_n;
 
-	chip_id_shift : entity work.linear_shift
-	generic map(
-		g_m 	   		=> 6,
-		g_poly 	   	=> "110000"
-	)
-	port map(
-		i_clk    		=> i_clk,
-		reset_n   		=> i_reset_n,
-		i_sync_reset	=> reset,--sync_reset,
-		i_seed   		=> random_seed(5 downto 0),
-		i_en 				=> enable_pix,
-		o_lfsr 			=> lsfr_chip_id_reg
-	);
+    chip_id_shift : entity work.linear_shift
+    generic map (
+        g_m => 6,
+        g_poly => "110000"
+    )
+    port map (
+        i_clk           => i_clk,
+        reset_n         => i_reset_n,
+        i_sync_reset    => reset,--sync_reset,
+        i_seed          => random_seed(5 downto 0),
+        i_en            => enable_pix,
+        o_lfsr          => lsfr_chip_id_reg
+    );
 
-	pix_tot_shift : entity work.linear_shift
-	generic map(
-		g_m 	   		=> 6,
-		g_poly 	   	=> "110000"
-	)
-	port map(
-		i_clk    		=> i_clk,
-		reset_n   		=> i_reset_n,
-		i_sync_reset	=> reset,--sync_reset,
-		i_seed   		=> random_seed(15 downto 10),
-		i_en 				=> enable_pix,
-		o_lfsr 			=> lsfr_tot_reg
-	);
+    pix_tot_shift : entity work.linear_shift
+    generic map (
+        g_m => 6,
+        g_poly => "110000"
+    )
+    port map (
+        i_clk           => i_clk,
+        reset_n         => i_reset_n,
+        i_sync_reset    => reset,--sync_reset,
+        i_seed          => random_seed(15 downto 10),
+        i_en            => enable_pix,
+        o_lfsr          => lsfr_tot_reg
+    );
 
-	overflow_shift : entity work.linear_shift
-	generic map(
-		g_m 	   		=> 16,
-		g_poly 	   	=> "1101000000001000"
-	)
-	port map(
-		i_clk    		=> i_clk,
-		reset_n   		=> i_reset_n,
-		i_sync_reset	=> reset,--sync_reset,
-		i_seed   		=> random_seed,
-		i_en 				=> enable_pix,
-		o_lfsr 			=> lsfr_overflow
-	);
+    overflow_shift : entity work.linear_shift
+    generic map (
+        g_m => 16,
+        g_poly => "1101000000001000"
+    )
+    port map (
+        i_clk           => i_clk,
+        reset_n         => i_reset_n,
+        i_sync_reset    => reset,--sync_reset,
+        i_seed          => random_seed,
+        i_en            => enable_pix,
+        o_lfsr          => lsfr_overflow
+    );
 
     -- slow down process
     process(i_clk, i_reset_n)
     begin
-	if(i_reset_n = '0') then
-		waiting 			<= '0';
-		wait_counter	<= (others => '0');
+    if(i_reset_n = '0') then
+        waiting <= '0';
+        wait_counter <= (others => '0');
     elsif rising_edge(i_clk) then
-		if(wait_counter >= slow_down) then
-			wait_counter 	<= (others => '0');
-			waiting 			<= '0';
-		else
-			wait_counter		<= wait_counter + '1';
-			waiting			<= '1';
-		end if;
-	end if;
+        if(wait_counter >= slow_down) then
+            wait_counter   	<= (others => '0');
+            waiting <= '0';
+        else
+            wait_counter <= wait_counter + '1';
+            waiting <= '1';
+        end if;
+    end if;
     end process;
 
-lsfr_tot <= (others => '0') when wtot = '0' else lsfr_tot_reg;
-lsfr_chip_id <= (others => '0') when wchip = '0' else lsfr_chip_id_reg;
+    lsfr_tot <= (others => '0') when wtot = '0' else lsfr_tot_reg;
+    lsfr_chip_id <= (others => '0') when wchip = '0' else lsfr_chip_id_reg;
 
 
 
     process(i_clk, i_reset_n, start_global_time)
-
         variable current_overflow : std_logic_vector(15 downto 0) := "0000000000000000";
         variable overflow_idx	  : integer range 0 to 15 := 0;
-
     begin
-	if (i_reset_n = '0') then
-		data_pix_ready          <= '0';
+    if (i_reset_n = '0') then
+        data_pix_ready          <= '0';
         data_pix_generated <= work.mu3e.LINK_IDLE;
-		global_time       		<= start_global_time;
-		time_cnt_t       		<= (others => '0');
-		data_header_state			<= part1;
-		current_overflow 			:= "0000000000000000";
-		overflow_idx				:= 0;
-		state_out					<= (others => '0');
-		delay_cnt					<= (others => '0');
-		row <= (others => '0');
-		col <= (others => '0');
+        global_time <= start_global_time;
+        time_cnt_t <= (others => '0');
+        data_header_state <= part1;
+        current_overflow := "0000000000000000";
+        overflow_idx := 0;
+        state_out <= (others => '0');
+        delay_cnt <= (others => '0');
+        row <= (others => '0');
+        col <= (others => '0');
     elsif rising_edge(i_clk) then
-		if(enable_pix = '1' and waiting = '0' and i_dma_half_full = '0') then
+        if(enable_pix = '1' and waiting = '0' and i_dma_half_full = '0') then
             data_pix_ready <= '1';
             case data_header_state is
             when part1 =>
-            	state_out <= x"A";
-            	if ( delay_cnt = delay ) then
-            		data_header_state 					<= part2;
+                state_out <= x"A";
+                if ( delay_cnt = delay ) then
+                	data_header_state <= part2;
                     data_pix_generated.data(31 downto 26) <= DATA_HEADER_ID;
                     data_pix_generated.data(25 downto 24) <= (others => '0');
                     data_pix_generated.data(23 downto 8) <= fpga_id;
                     data_pix_generated.data(7 downto 0) <= x"bc";
                     data_pix_generated.datak <= "0001";
-            	else
-            		-- send not valid data out of the data package
-            		delay_cnt 							<= delay_cnt + '1';
+                else
+                    -- send not valid data out of the data package
+                    delay_cnt <= delay_cnt + '1';
                     data_pix_generated.data <= x"AFFEAFFE";
                     data_pix_generated.datak <= "0000";
-            	end if;
+                end if;
 
 
             when part2 =>
-            	state_out <= x"B";
-            	delay_cnt <= (others => '0');
+                state_out <= x"B";
+                delay_cnt <= (others => '0');
                 data_pix_generated.data <= global_time(47 downto 16);
                 data_pix_generated.datak <= "0000";
-            	global_time 						<= global_time + '1';
-            	data_header_state 					<= part3;
+                global_time <= global_time + '1';
+                data_header_state <= part3;
 
             when part3 =>
-            	state_out <= x"C";
-            	if ( DATA_TYPE = x"01" ) then
+                state_out <= x"C";
+                if ( DATA_TYPE = x"01" ) then
                     data_pix_generated.data <= global_time(15 downto 0) & x"0000";
                 elsif ( DATA_TYPE = x"02" ) then
                     data_pix_generated.data <= global_time(15 downto 0) & x"AFFE";
                 end if;
                 data_pix_generated.datak <= "0000";
-            	data_header_state 					<= part4;
+                data_header_state <= part4;
 
             when part4 =>
-            	state_out <= x"D";
-            	global_time <= global_time + '1';
-            	if ( DATA_TYPE = x"01" ) then
+                state_out <= x"D";
+                global_time <= global_time + '1';
+                if ( DATA_TYPE = x"01" ) then
                     data_pix_generated.data <= DATA_SUB_HEADER_ID & "000" & global_time(10 downto 4) & lsfr_overflow;
                 elsif ( DATA_TYPE = x"02" ) then
                     data_pix_generated.data <= DATA_SUB_HEADER_ID & global_time(13 downto 4) & lsfr_overflow;
                 end if;
                 data_pix_generated.datak <= "0000";
-            	overflow_idx 							:= 0;
-            	current_overflow						:= lsfr_overflow;
-            	data_header_state 					<= part5;
+                overflow_idx := 0;
+                current_overflow := lsfr_overflow;
+                data_header_state <= part5;
 
             when part5 =>
                 global_time <= global_time + '1';
@@ -211,16 +209,16 @@ lsfr_chip_id <= (others => '0') when wchip = '0' else lsfr_chip_id_reg;
                     data_pix_generated.data <= DATA_SUB_HEADER_ID & global_time(13 downto 4) & lsfr_overflow;
                 end if;
                 data_pix_generated.datak <= "0000";
-            	overflow_idx 							:= 0;
-            	current_overflow						:= lsfr_overflow;
-            	data_header_state 					<= part6;
+                overflow_idx := 0;
+                current_overflow := lsfr_overflow;
+                data_header_state <= part6;
 
             when part6 =>
-            	state_out <= x"E";
-            	global_time <= global_time + '1';
-            	time_cnt_t <= time_cnt_t + '1';
+                state_out <= x"E";
+                global_time <= global_time + '1';
+                time_cnt_t <= time_cnt_t + '1';
 
-            	if (row = max_row) then
+                if (row = max_row) then
                     row <= (others => '0');
                 else
                     row <= row + '1';
@@ -239,50 +237,50 @@ lsfr_chip_id <= (others => '0') when wchip = '0' else lsfr_chip_id_reg;
                     data_pix_generated.data(20 downto 6) <= global_time(14 downto 0);
                     data_pix_generated.data(5 downto 0) <= (others => '0');
                 end if;
-            	overflow_time <= global_time(14 downto 0);
+                overflow_time <= global_time(14 downto 0);
                 data_pix_generated.datak <= "0000";
-            	if ( work.util.and_reduce(global_time(go_to_trailer downto 0)) = '1' ) then
-            		data_header_state					<= trailer;
-            		time_cnt_t       		<= (others => '0');
-            	elsif ( work.util.and_reduce(global_time(go_to_sh downto 0)) = '1' ) then
-            		data_header_state					<= part4;
-            	elsif (current_overflow(overflow_idx) = '1') then
-            		overflow_idx 						:= overflow_idx + 1;
-            		data_header_state					<= overflow;
-            	else
-            		overflow_idx 						:= overflow_idx + 1;
-            	end if;
+                if ( work.util.and_reduce(global_time(go_to_trailer downto 0)) = '1' ) then
+                    data_header_state <= trailer;
+                    time_cnt_t <= (others => '0');
+                elsif ( work.util.and_reduce(global_time(go_to_sh downto 0)) = '1' ) then
+                    data_header_state <= part4;
+                elsif (current_overflow(overflow_idx) = '1') then
+                    overflow_idx := overflow_idx + 1;
+                    data_header_state <= overflow;
+                else
+                    overflow_idx := overflow_idx + 1;
+                end if;
 
             when overflow =>
-            	state_out <= x"9";
-            	if ( DATA_TYPE = x"01" ) then
+                state_out <= x"9";
+                if ( DATA_TYPE = x"01" ) then
                     data_pix_generated.data <= overflow_time(3 downto 0) & lsfr_chip_id & row & col & lsfr_tot;
                 elsif ( DATA_TYPE = x"02" ) then
                     data_pix_generated.data(31 downto 21) <= (others => '0');
                     data_pix_generated.data(20 downto 6) <= overflow_time(14 downto 0);
                     data_pix_generated.data(5 downto 0) <= (others => '0');
                 end if;
-            	data_pix_generated.datak              <= "0000";
-            	data_header_state						<= part6;
+                data_pix_generated.datak <= "0000";
+                data_header_state <= part6;
 
             when trailer =>
-            	state_out <= x"8";
-            	data_pix_generated.data(31 downto 8) <= (others => '0');
-            	data_pix_generated.data(7 downto 0) <= x"9c";
-            	data_pix_generated.datak <= "0001";
-            	data_header_state 					<= part1;
+                state_out <= x"8";
+                data_pix_generated.data(31 downto 8) <= (others => '0');
+                data_pix_generated.data(7 downto 0) <= x"9c";
+                data_pix_generated.datak <= "0001";
+                data_header_state <= part1;
 
             when others =>
-            	state_out <= x"7";
-            	data_header_state 					<= trailer;
-            	---
+                state_out <= x"7";
+                data_header_state <= trailer;
+                ---
             end case;
-		else
-			state_out <= x"F";
+        else
+            state_out <= x"F";
             data_pix_generated <= work.mu3e.LINK_IDLE;
-			data_pix_ready <= '0';
-		end if;
-	end if;
+            data_pix_ready <= '0';
+        end if;
+    end if;
     end process;
 
 end architecture;

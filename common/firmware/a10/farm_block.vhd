@@ -1,7 +1,7 @@
 -------------------------------------------------------
 --! @farm_block.vhd
 --! @brief the farm_block can be used
---! for the development board mainly it includes 
+--! for the development board mainly it includes
 --! the datapath which includes merging detector data
 --! from multiple SWBs.
 --! Author: mkoeppel@uni-mainz.de
@@ -35,15 +35,15 @@ port (
     i_regwritten_link   : in  std_logic_vector(63 downto 0);
     i_writeregs_ddr     : in  work.util.slv32_array_t(63 downto 0);
     i_regwritten_ddr    : in  std_logic_vector(63 downto 0);
-    
+
     o_readregs_pcie     : out work.util.slv32_array_t(63 downto 0);
     o_readregs_link     : out work.util.slv32_array_t(63 downto 0);
-    o_readregs_ddr      : out work.util.slv32_array_t(63 downto 0);   
+    o_readregs_ddr      : out work.util.slv32_array_t(63 downto 0);
 
     i_resets_n_pcie     : in  std_logic_vector(31 downto 0);
     i_resets_n_link     : in  std_logic_vector(31 downto 0);
     i_resets_n_ddr      : in  std_logic_vector(31 downto 0);
-    
+
     -- TODO: write status readout entity with ADDR to PCIe REGS and mapping to one counter REG
     o_counter           : out work.util.slv32_array_t(19 downto 0);
     o_status            : out std_logic_vector(31 downto 0);
@@ -52,15 +52,15 @@ port (
     o_dma_wren          : out std_logic;
     o_endofevent        : out std_logic;
     o_dma_data          : out std_logic_vector(255 downto 0);
-    
+
     --! 250 MHz clock pice / reset_n
     i_reset_n_250_pcie  : in  std_logic;
-    i_clk_250_pcie      : in  std_logic;   
+    i_clk_250_pcie      : in  std_logic;
 
     --! 250 MHz clock link / reset_n
     i_reset_n_250_link  : in  std_logic;
     i_clk_250_link      : in  std_logic;
-    
+
     -- Interface to memory bank A
     o_A_mem_clk         : out   std_logic;
     A_mem_ck            : out   std_logic_vector(0 downto 0);                      -- mem_ck
@@ -100,13 +100,13 @@ port (
     B_mem_dm            : out   std_logic_vector(7 downto 0);                      -- mem_dm
     B_oct_rzqin         : in    std_logic                      := 'X';             -- oct_rzqin
     B_pll_ref_clk       : in    std_logic                      := 'X'              -- clk
-    
+
 );
 end entity;
 
 --! @brief arch definition of the farm_block
 --! @details the farm_block can be used
---! for the development board mainly it includes 
+--! for the development board mainly it includes
 --! the datapath which includes merging detector data
 --! from multiple SWBs.
 --! scifi, down and up stream pixel/tiles)
@@ -115,25 +115,25 @@ architecture arch of farm_block is
     --! mapping signals
     signal rx : work.util.slv32_array_t(g_NLINKS_TOTL-1 downto 0);
     signal rx_k : work.util.slv4_array_t(g_NLINKS_TOTL-1 downto 0);
-    
+
     --! data gen pixel
     signal full_pixel, w_pixel_en, r_pixel_en, empty_pixel : std_logic;
     signal w_pixel, r_pixel : std_logic_vector(g_NLINKS_PIXEL * 38 - 1 downto 0);
     signal link_data_pixel : std_logic_vector(g_NLINKS_PIXEL * 32 - 1 downto 0);
     signal link_datak_pixel : std_logic_vector(g_NLINKS_PIXEL * 4 - 1 downto 0);
     signal link_data_valid_pixel : std_logic_vector(g_NLINKS_PIXEL * 2 - 1 downto 0);
-    
+
     --! data gen scifi
     signal full_scifi, w_scifi_en, r_scifi_en, empty_scifi : std_logic;
     signal w_scifi, r_scifi : std_logic_vector(g_NLINKS_SCIFI * 38 - 1 downto 0);
     signal link_data_scifi : std_logic_vector(g_NLINKS_SCIFI * 32 - 1 downto 0);
     signal link_datak_scifi : std_logic_vector(g_NLINKS_SCIFI * 4 - 1 downto 0);
     signal link_data_valid_scifi : std_logic_vector(g_NLINKS_SCIFI * 2 - 1 downto 0);
-    
+
     --! link to fifo
     signal pixel_data, scifi_data : std_logic_vector(257 downto 0);
     signal pixel_empty, pixel_ren, scifi_empty, scifi_ren, pixel_error_link_to_fifo, scifi_error_link_to_fifo : std_logic;
-    
+
     --! midas event builder
     signal data_in : std_logic_vector(511 downto 0);
     signal data_wen : std_logic;
@@ -141,11 +141,11 @@ architecture arch of farm_block is
     signal pixel_next_farm : std_logic_vector(g_NLINKS_PIXEL * 32 + 1 downto 0);
     signal scifi_next_farm : std_logic_vector(g_NLINKS_SCIFI * 32 + 1 downto 0);
     signal pixel_next_farm_wen, scifi_next_farm_wen : std_logic;
-    
+
     --! link to next farm
     signal tx_wen, tx_empty_pixel, tx_empty_scifi : std_logic;
     signal tx_data_pixel, tx_data_scifi, tx_q_pixel, tx_q_scifi : std_logic_vector(257 downto 0);
-        
+
     --! farm data path
     signal ddr_ready        : std_logic;
     signal A_mem_clk        : std_logic;
@@ -166,7 +166,7 @@ architecture arch of farm_block is
     signal B_mem_read       : std_logic;
     signal B_mem_q          : std_logic_vector(511 downto 0);
     signal B_mem_q_valid    : std_logic;
-    
+
     --! counters
     --! 0: fifo sync_almost_full (pixel)
     --! 1: fifo sync_wrfull (pixel)
@@ -197,13 +197,13 @@ architecture arch of farm_block is
 begin
 
     --! @brief data path of the Farm board
-    --! @details the data path of the farm board is first aligning the 
+    --! @details the data path of the farm board is first aligning the
     --! data from the SWB and is than grouping them into Pixel, Scifi and Tiles.
     --! The data is saved according to the sub-header time in the DDR3 memory.
     --! Via MIDAS one can select how much data one wants to readout from the DDR3 memory
     --! the stored data is marked and than forworded to the next farm pc
-    
-    
+
+
     --! status counter / outputs
     --! ------------------------------------------------------------------------
     --! ------------------------------------------------------------------------
@@ -217,13 +217,13 @@ begin
     gen_ddr_cnt : FOR I in 16 to 19 GENERATE
         o_counter(I) <= counter_ddr(I-16);
     END GENERATE;
-    
+
     o_status(0) <= pixel_error_link_to_fifo;
     o_status(1) <= scifi_error_link_to_fifo;
-    
+
     o_A_mem_clk <= A_mem_clk;
     o_B_mem_clk <= B_mem_clk;
-    
+
     --! SWB Data Generation
     --! generate data in the format from the SWB
     --! PIXEL, SCIFI --> Int Run 2021
@@ -232,12 +232,12 @@ begin
     --! ------------------------------------------------------------------------
     -- gen pixel data
     e_data_gen_pixel : entity work.data_generator_merged_data
-    generic map(
+    generic map (
         NLINKS => g_NLINKS_PIXEL,
         go_to_sh => 2,
         go_to_trailer => 3--,
     )
-    port map(
+    port map (
         i_clk       => i_clk_250_link,
         i_reset_n   => i_resets_n_link(RESET_BIT_FARM_DATA_PATH),
         i_en        => not full_pixel and i_writeregs_link(FARM_READOUT_STATE_REGISTER_W)(USE_BIT_GEN_MERGE),
@@ -246,7 +246,7 @@ begin
         o_data_we   => w_pixel_en,
         o_state     => open--,
     );
-    
+
     e_merger_fifo_pixel : entity work.ip_scfifo
     generic map (
         ADDR_WIDTH      => 10,
@@ -262,7 +262,7 @@ begin
         empty           => empty_pixel,
         sclr            => not i_reset_n_250_link--,
     );
-    
+
     e_swb_data_merger_pixel : entity work.swb_data_merger
     generic map (
         NLINKS          => g_NLINKS_PIXEL,
@@ -271,23 +271,23 @@ begin
     port map (
         i_reset_n       => i_resets_n_link(RESET_BIT_FARM_DATA_PATH),
         i_clk           => i_clk_250_link,
-        
+
         i_data          => r_pixel,
         i_empty         => empty_pixel,
-        
+
         o_ren           => r_pixel_en,
         o_data          => link_data_pixel,
         o_data_valid    => link_data_valid_pixel--,
     );
-    
+
     -- gen scifi data
     e_data_gen_scifi : entity work.data_generator_merged_data
-    generic map(
+    generic map (
         NLINKS => g_NLINKS_SCIFI,
         go_to_sh => 2,
         go_to_trailer => 3--,
     )
-    port map(
+    port map (
         i_clk       => i_clk_250_link,
         i_reset_n   => i_resets_n_link(RESET_BIT_FARM_DATA_PATH),
         i_en        => not full_scifi and i_writeregs_link(FARM_READOUT_STATE_REGISTER_W)(USE_BIT_GEN_MERGE),
@@ -296,7 +296,7 @@ begin
         o_data_we   => w_scifi_en,
         o_state     => open--,
     );
-    
+
     e_merger_fifo_scifi : entity work.ip_scfifo
     generic map (
         ADDR_WIDTH      => 10,
@@ -312,7 +312,7 @@ begin
         empty           => empty_scifi,
         sclr            => not i_reset_n_250_link--,
     );
-    
+
     e_swb_data_merger_scifi : entity work.swb_data_merger
     generic map (
         NLINKS          => g_NLINKS_SCIFI,
@@ -321,19 +321,19 @@ begin
     port map (
         i_reset_n       => i_resets_n_link(RESET_BIT_FARM_DATA_PATH),
         i_clk           => i_clk_250_link,
-        
+
         i_data          => r_scifi,
         i_empty         => empty_scifi,
-        
+
         o_ren           => r_scifi_en,
         o_data          => link_data_scifi,
         o_data_valid    => link_data_valid_scifi--,
     );
-    
+
     --! map links pixel / scifi
     --! NOTE: we say that g_NLINKS_PIXEL = g_NLINKS_SCIFI at the moment
     gen_link_data : FOR I in 0 to g_NLINKS_PIXEL - 1 GENERATE
-    
+
         process(i_clk_250_link, i_reset_n_250_link)
         begin
         if ( i_reset_n_250_link = '0' ) then
@@ -355,9 +355,9 @@ begin
             end if;
         end if;
         end process;
-        
+
     END GENERATE gen_link_data;
-    
+
 
     --! Link Alignment
     --! align data according to detector data
@@ -378,17 +378,17 @@ begin
 
         -- pixel data
         o_pixel             => pixel_data,
-        o_empty_pixel       => pixel_empty, 
+        o_empty_pixel       => pixel_empty,
         i_ren_pixel         => pixel_ren,
         o_error_pixel       => pixel_error_link_to_fifo,
-        
+
         -- scifi data
         o_scifi             => scifi_data,
         o_empty_scifi       => scifi_empty,
         i_ren_scifi         => scifi_ren,
         o_error_scifi       => scifi_error_link_to_fifo,
-    
-        --! status counters 
+
+        --! status counters
         --! 0: fifo sync_almost_full (pixel)
         --! 1: fifo sync_wrfull (pixel)
         --! 2: # of overflow event (pixel)
@@ -398,14 +398,14 @@ begin
         --! 6: # of overflow event (scifi)
         --! 7: cnt events (scifi)
         o_counter           => counter_link_to_fifo,
-        
+
         i_clk_250_link      => i_clk_250_link,
         i_reset_n_250_link  => i_reset_n_250_link,
-        
+
         i_clk_250           => i_clk_250_pcie,
         i_reset_n_250       => i_resets_n_pcie(RESET_BIT_FARM_DATA_PATH)--,
     );
-    
+
 
     --! Farm MIDAS Event Builder
     --! ------------------------------------------------------------------------
@@ -422,11 +422,11 @@ begin
         i_pixel         => pixel_data,
         i_empty_pixel   => pixel_empty,
         o_ren_pixel     => pixel_ren,
-    
+
         i_scifi         => scifi_data,
         i_empty_scifi   => scifi_empty,
         o_ren_scifi     => scifi_ren,
-        
+
         i_farm_id       => i_writeregs_pcie(FARM_ID_REGISTER_W),
         i_builder_ctl   => i_writeregs_pcie(FARM_CTL_REGISTER_W),
 
@@ -435,11 +435,11 @@ begin
         o_wen           => data_wen,
         o_event_ts      => event_ts,
         i_ddr_ready     => ddr_ready,
-    
+
         -- Link data
         o_pixel         => pixel_next_farm,
         o_wen_pixel     => pixel_next_farm_wen,
-    
+
         o_scifi         => scifi_next_farm,
         o_wen_scifi     => scifi_next_farm_wen,
 
@@ -457,7 +457,7 @@ begin
         i_reset_n_250   => i_reset_n_250_pcie,
         i_clk_250       => i_clk_250_pcie--,
     );
-    
+
     --! map links pixel / scifi
     --! NOTE: we say that g_NLINKS_PIXEL = g_NLINKS_SCIFI at the moment
     process(i_clk_250_pcie, i_reset_n_250_pcie)
@@ -477,7 +477,7 @@ begin
                 tx_data_pixel(i * 32 + 31 downto i * 32) <= x"000000" & work.util.D28_5;
             end loop;
         end if;
-        
+
         if ( scifi_next_farm_wen = '1' ) then
             tx_data_scifi <= scifi_next_farm;
         else
@@ -488,9 +488,9 @@ begin
         end if;
     end if;
     end process;
-    
+
     e_sync_fifo_tx_pixel : entity work.ip_dcfifo
-    generic map(
+    generic map (
         ADDR_WIDTH  => 4,
         DATA_WIDTH  => 258--,
     )
@@ -504,9 +504,9 @@ begin
         rdempty     => tx_empty_pixel,
         aclr        => not i_reset_n_250_link--,
     );
-    
+
     e_sync_fifo_tx_scifi : entity work.ip_dcfifo
-    generic map(
+    generic map (
         ADDR_WIDTH  => 4,
         DATA_WIDTH  => 258--,
     )
@@ -520,9 +520,9 @@ begin
         rdempty     => tx_empty_scifi,
         aclr        => not i_reset_n_250_link--,
     );
-    
+
     gen_tx_data : FOR I in 0 to g_NLINKS_PIXEL - 1 GENERATE
-    
+
         process(i_clk_250_link, i_reset_n_250_link)
         begin
         if ( i_reset_n_250_link = '0' ) then
@@ -531,8 +531,8 @@ begin
             o_tx(I+g_NLINKS_SCIFI)  <= (others => '0');
             o_tx_k(I+g_NLINKS_SCIFI)<= (others => '0');
             --
-        elsif ( rising_edge( i_clk_250_link ) ) then
-            
+        elsif rising_edge(i_clk_250_link) then
+
             if ( tx_empty_pixel = '1' ) then
                 o_tx(I)   <= x"000000" & work.util.D28_5;
                 o_tx_k(I) <= "0001";
@@ -543,7 +543,7 @@ begin
                 o_tx(I)   <= tx_q_pixel(I * 32 + 31 downto I * 32);
                 o_tx_k(I) <= "0001";
             end if;
-            
+
             if ( tx_empty_scifi = '1' ) then
                 o_tx(I+g_NLINKS_SCIFI)   <= x"000000" & work.util.D28_5;
                 o_tx_k(I+g_NLINKS_SCIFI) <= "0001";
@@ -556,22 +556,22 @@ begin
             end if;
         end if;
         end process;
-        
+
     END GENERATE gen_tx_data;
-    
+
     --! Farm Data Path
     --! ------------------------------------------------------------------------
     --! ------------------------------------------------------------------------
     --! ------------------------------------------------------------------------
-    e_farm_data_path : entity work.farm_data_path 
-    port map(
+    e_farm_data_path : entity work.farm_data_path
+    port map (
         reset_n         => i_resets_n_pcie(RESET_BIT_DDR3),
         reset_n_ddr3    => i_resets_n_ddr(RESET_BIT_DDR3),
         dataclk         => i_clk_250_pcie,
 
         -- Input from merging (first board) or links (subsequent boards)
         data_in         => data_in,
-        data_en         => data_wen, 
+        data_en         => data_wen,
         ts_in           => event_ts(35 downto 4), -- 3:0 -> hit, 9:0 -> sub header
         o_ddr_ready     => ddr_ready,
 
@@ -592,8 +592,8 @@ begin
         i_num_req_events=> i_writeregs_pcie(FARM_REQ_EVENTS_W),
         o_dma_done      => o_readregs_pcie(EVENT_BUILD_STATUS_REGISTER_R)(EVENT_BUILD_DONE),
         i_dma_wen       => i_writeregs_pcie(DMA_REGISTER_W)(DMA_BIT_ENABLE),
-        
-        --! status counters 
+
+        --! status counters
         --! 0: cnt_skip_event_dma
         --! 1: A_almost_full
         --! 2: B_almost_full
@@ -622,16 +622,16 @@ begin
         B_mem_q         => B_mem_q,
         B_mem_q_valid   => B_mem_q_valid
     );
-    
-    
+
+
     --! Farm DDR Block
     --! ------------------------------------------------------------------------
     --! ------------------------------------------------------------------------
     --! ------------------------------------------------------------------------
-    e_ddr3_block : entity work.ddr3_block 
-    port map(
+    e_ddr3_block : entity work.ddr3_block
+    port map (
         reset_n             => i_resets_n_ddr(RESET_BIT_DDR3),
-        
+
         -- Control and status registers
         ddr3control         => i_writeregs_ddr(DDR3_CONTROL_W),
         ddr3status          => o_readregs_ddr(DDR3_STATUS_R),
@@ -646,7 +646,7 @@ begin
         A_ddr3_write        => A_mem_write,
         A_ddr3_read         => A_mem_read,
         A_ddr3_read_valid   => A_mem_q_valid,
-        
+
         -- B interface
         B_ddr3clk           => B_mem_clk,
         B_ddr3calibrated    => B_mem_calibrated,
@@ -657,7 +657,7 @@ begin
         B_ddr3_write        => B_mem_write,
         B_ddr3_read         => B_mem_read,
         B_ddr3_read_valid   => B_mem_q_valid,
-        
+
         -- Error counters
         errout              => o_readregs_ddr(DDR3_ERR_R),
 
@@ -669,7 +669,7 @@ begin
         A_mem_cke           => A_mem_cke,
         A_mem_cs_n          => A_mem_cs_n,
         A_mem_odt           => A_mem_odt,
-        A_mem_reset_n(0)    => A_mem_reset_n(0),      
+        A_mem_reset_n(0)    => A_mem_reset_n(0),
         A_mem_we_n(0)       => A_mem_we_n(0),
         A_mem_ras_n(0)      => A_mem_ras_n(0),
         A_mem_cas_n(0)      => A_mem_cas_n(0),
@@ -679,7 +679,7 @@ begin
         A_mem_dm            => A_mem_dm,
         A_oct_rzqin         => A_oct_rzqin,
         A_pll_ref_clk       => A_pll_ref_clk,
-        
+
         -- Interface to memory bank B
         B_mem_ck            => B_mem_ck,
         B_mem_ck_n          => B_mem_ck_n,
@@ -688,7 +688,7 @@ begin
         B_mem_cke           => B_mem_cke,
         B_mem_cs_n          => B_mem_cs_n,
         B_mem_odt           => B_mem_odt,
-        B_mem_reset_n(0)    => B_mem_reset_n(0),      
+        B_mem_reset_n(0)    => B_mem_reset_n(0),
         B_mem_we_n(0)       => B_mem_we_n(0),
         B_mem_ras_n(0)      => B_mem_ras_n(0),
         B_mem_cas_n(0)      => B_mem_cas_n(0),

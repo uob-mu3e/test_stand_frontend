@@ -155,7 +155,7 @@ begin
     end process;
 
     e_fifo : entity work.ip_dcfifo
-    generic map(
+    generic map (
         ADDR_WIDTH  => LINK_FIFO_ADDR_WIDTH,
         DATA_WIDTH  => N * 32 + 2--,
     )
@@ -175,15 +175,15 @@ begin
 
     process(i_clk_250, i_reset_n)
     begin
-        if ( i_reset_n_250 = '0' ) then
-            f_almost_full       <= '0';
-        elsif rising_edge(i_clk) then
-            if ( f_wrusedw(LINK_FIFO_ADDR_WIDTH - 1) = '1' ) then
-                f_almost_full <= '1';
-            else
-                f_almost_full <= '0';
-            end if;
+    if ( i_reset_n_250 = '0' ) then
+        f_almost_full       <= '0';
+    elsif rising_edge(i_clk) then
+        if ( f_wrusedw(LINK_FIFO_ADDR_WIDTH - 1) = '1' ) then
+            f_almost_full <= '1';
+        else
+            f_almost_full <= '0';
         end if;
+    end if;
     end process;
 
 end architecture;
