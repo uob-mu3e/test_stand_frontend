@@ -138,7 +138,7 @@ begin
         variable overflow_idx	  : integer range 0 to 15 := 0;
     begin
     if (i_reset_n = '0') then
-        data_pix_ready          <= '0';
+        data_pix_ready <= '0';
         data_pix_generated <= work.mu3e.LINK_IDLE;
         global_time <= start_global_time;
         time_cnt_t <= (others => '0');
@@ -156,7 +156,7 @@ begin
             when part1 =>
                 state_out <= x"A";
                 if ( delay_cnt = delay ) then
-                	data_header_state <= part2;
+                    data_header_state <= part2;
                     data_pix_generated.data(31 downto 26) <= DATA_HEADER_ID;
                     data_pix_generated.data(25 downto 24) <= (others => '0');
                     data_pix_generated.data(23 downto 8) <= fpga_id;
