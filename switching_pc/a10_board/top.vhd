@@ -12,13 +12,13 @@ port (
     BUTTON              : in    std_logic_vector(3 downto 0);
     SW                  : in    std_logic_vector(1 downto 0);
 
-    HEX0_D              : out   std_logic_vector(6 downto 0);
---    HEX0_DP             : out   std_logic;
-    HEX1_D              : out   std_logic_vector(6 downto 0);
---    HEX1_DP             : out   std_logic;
+    HEX0_D              : out   std_logic_vector(6 downto 0) := (others => '1');
+--    HEX0_DP             : out   std_logic := '1';
+    HEX1_D              : out   std_logic_vector(6 downto 0) := (others => '1');
+--    HEX1_DP             : out   std_logic := '1';
 
-    LED                 : out   std_logic_vector(3 downto 0) := "0000";
-    LED_BRACKET         : out   std_logic_vector(3 downto 0) := "0000";
+    LED                 : out   std_logic_vector(3 downto 0) := (others => '1');
+    LED_BRACKET         : out   std_logic_vector(3 downto 0) := (others => '1');
 
     SMA_CLKOUT          : out   std_logic;
     SMA_CLKIN           : in    std_logic;

@@ -3,21 +3,20 @@
 
 library ieee;
 use ieee.std_logic_1164.all;
-use ieee.numeric_std.all;
 
 entity swb_data_demerger is
 port (
-    i_aligned:                  in  std_logic; -- word alignment achieved
+    i_aligned                   : in    std_logic; -- word alignment achieved
     i_data                      : in    work.mu3e.link_t; -- optical from frontend board
-    i_fifo_almost_full:         in  std_logic;
+    i_fifo_almost_full          : in    std_logic;
 
     o_data                      : out   work.mu3e.link_t; -- to sorting fifos
     o_sc                        : out   work.mu3e.link_t; -- slowcontrol from frontend board
     o_rc                        : out   work.mu3e.link_t;
-    o_fpga_id:                  out std_logic_vector(15 downto 0);  -- FPGA ID of the connected frontend board
+    o_fpga_id                   : out   std_logic_vector(15 downto 0);  -- FPGA ID of the connected frontend board
 
-    i_reset:                    in  std_logic;
-    i_clk:                      in  std_logic--;
+    i_reset                     : in    std_logic;
+    i_clk                       : in    std_logic--;
 );
 end entity;
 

@@ -29,7 +29,6 @@ generic (
     SWB_ID              : std_logic_vector(7 downto 0) := x"01"--;
 );
 port (
-
     --! links to/from FEBs
     -- TODO: rename to i_feb_data_rx, etc.
     i_rx                 : in  work.util.slv32_array_t(g_NLINKS_FEB_TOTL-1 downto 0);

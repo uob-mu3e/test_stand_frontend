@@ -15,7 +15,6 @@ use ieee.std_logic_unsigned.all;
 use work.a10_pcie_registers.all;
 use work.mudaq.all;
 
-
 entity swb_data_path is
 generic (
     g_NLINKS_TOTL : positive := 64;

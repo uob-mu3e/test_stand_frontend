@@ -75,12 +75,12 @@ begin
         g_poly => "110000"
     )
     port map (
-        i_clk           => i_clk,
-        reset_n         => i_reset_n,
         i_sync_reset    => reset,--sync_reset,
         i_seed          => random_seed(5 downto 0),
         i_en            => enable_pix,
-        o_lfsr          => lsfr_chip_id_reg
+        o_lfsr          => lsfr_chip_id_reg--,
+        reset_n         => i_reset_n,
+        i_clk           => i_clk--,
     );
 
     pix_tot_shift : entity work.linear_shift
@@ -89,12 +89,12 @@ begin
         g_poly => "110000"
     )
     port map (
-        i_clk           => i_clk,
-        reset_n         => i_reset_n,
         i_sync_reset    => reset,--sync_reset,
         i_seed          => random_seed(15 downto 10),
         i_en            => enable_pix,
-        o_lfsr          => lsfr_tot_reg
+        o_lfsr          => lsfr_tot_reg,
+        reset_n => i_reset_n,
+        i_clk => i_clk--,
     );
 
     overflow_shift : entity work.linear_shift
@@ -103,12 +103,12 @@ begin
         g_poly => "1101000000001000"
     )
     port map (
-        i_clk           => i_clk,
-        reset_n         => i_reset_n,
         i_sync_reset    => reset,--sync_reset,
         i_seed          => random_seed,
         i_en            => enable_pix,
-        o_lfsr          => lsfr_overflow
+        o_lfsr          => lsfr_overflow,
+        reset_n => i_reset_n,
+        i_clk => i_clk--,
     );
 
     -- slow down process
