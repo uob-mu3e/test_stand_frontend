@@ -17,8 +17,7 @@ generic (
     LINK_FIFO_ADDR_WIDTH : positive := 10--;
 );
 port (
-    i_rx            : in std_logic_vector(31 downto 0);
-    i_rx_k          : in std_logic_vector(3 downto 0);
+    i_rx            : in    work.mu3e.link_t;
 
     o_q             : out std_logic_vector(33 downto 0);
     i_ren           : in std_logic;
@@ -81,16 +80,16 @@ begin
     elsif rising_edge(i_clk_156) then
 
         rx_156_wen  <= '0';
-        rx_156_data(31 downto 0)  <= i_rx;
+        rx_156_data(31 downto 0)  <= i_rx.data;
         rx_156_data(33 downto 32) <= "00";
 
-        if ( i_rx = x"000000BC" and i_rx_k = "0001" ) then
+        if ( i_rx.data = x"000000BC" and i_rx.datak = "0001" ) then
             --
         else
             case link_to_fifo_state is
 
             when idle =>
-                if ( i_rx(7 downto 0) = x"BC" and i_rx_k = "0001" ) then
+                if ( i_rx.data(7 downto 0) = x"BC" and i_rx.datak = "0001" ) then
                     cnt_events <= cnt_events + '1';
                     if ( almost_full = '1' ) then
                         link_to_fifo_state <= skip_data;
@@ -111,26 +110,26 @@ begin
                 rx_156_wen <= '1';
 
             when write_data =>
-                if ( i_rx(7 downto 0) = x"9C" and i_rx_k = "0001" ) then
+                if ( i_rx.data(7 downto 0) = x"9C" and i_rx.datak = "0001" ) then
                     link_to_fifo_state <= idle;
                     rx_156_data(33 downto 32) <= "01"; -- trailer
                 end if;
 
-                if ( i_rx(31 downto 26) = "111111" and i_rx_k = "0000" ) then
+                if ( i_rx.data(31 downto 26) = "111111" and i_rx.datak = "0000" ) then
                     rx_156_data(33 downto 32) <= "11"; -- sub header
                     cnt_sub <= cnt_sub + '1';
                 end if;
 
-                hit_reg <= i_rx;
+                hit_reg <= i_rx.data;
 
-                if ( SKIP_DOUBLE_SUB = 1 and i_rx = hit_reg ) then
+                if ( SKIP_DOUBLE_SUB = 1 and i_rx.data = hit_reg ) then
                     rx_156_wen <= '0';
                 else
                     rx_156_wen <= '1';
                 end if;
 
             when skip_data =>
-                if ( i_rx(7 downto 0) = x"9C" and i_rx_k = "0001" ) then
+                if ( i_rx.data(7 downto 0) = x"9C" and i_rx.datak = "0001" ) then
                     link_to_fifo_state <= idle;
                 end if;
 

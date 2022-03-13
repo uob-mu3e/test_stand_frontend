@@ -193,8 +193,7 @@ begin
             LINK_FIFO_ADDR_WIDTH => LINK_FIFO_ADDR_WIDTH--,
         )
         port map (
-            i_rx            => rx(i).data,
-            i_rx_k          => rx(i).datak,
+            i_rx            => rx(i),
 
             o_q             => rx_q(i),
             i_ren           => rx_ren(i),
