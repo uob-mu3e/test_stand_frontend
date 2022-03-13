@@ -26,8 +26,10 @@ set_global_assignment -name VHDL_FILE a10/time_merger_tree_fifo_32_v3.vhd
 set_global_assignment -name QIP_FILE ../../common/firmware/registers/include.qip
 
 set_global_assignment -name QIP_FILE a10/include.qip
-set_global_assignment -name QIP_FILE a10/ddr/include.qip
 set_global_assignment -name QIP_FILE a10/pcieapp/include.qip
 set_global_assignment -name QIP_FILE a10/xcvr/include.qip
+
+set DDR_TYPE "ddr4"
+set_global_assignment -name QIP_FILE a10/ddr/include.qip
 
 set_global_assignment -name QIP_FILE util/include.qip
