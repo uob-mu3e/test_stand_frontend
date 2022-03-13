@@ -367,8 +367,7 @@ begin
         N_SCIFI             => g_NLINKS_SCIFI--,
     )
     port map (
-        i_rx                => rx,
-        i_rx_k              => rx_k,
+        i_rx                => work.mu3e.to_link_array(rx, rx_k),
 
         -- pixel data
         o_pixel             => pixel_data,

@@ -19,8 +19,7 @@ generic (
     LINK_FIFO_ADDR_WIDTH : positive := 10--;
 );
 port (
-    i_rx            : in  work.util.slv32_array_t(g_NLINKS_SWB_TOTL-1 downto 0);
-    i_rx_k          : in  work.util.slv4_array_t(g_NLINKS_SWB_TOTL-1 downto 0);
+    i_rx            : in  work.mu3e.link_array_t(g_NLINKS_SWB_TOTL-1 downto 0);
 
     -- pixel data
     o_pixel         : out std_logic_vector(N_PIXEL * 32 + 1 downto 0);
@@ -82,19 +81,19 @@ begin
             rx_wen(i)   <= '0';
         elsif rising_edge(i_clk) then
             -- idle word
-            if ( i_rx(i) = x"000000BC" and i_rx_k(i) = "0001" ) then
+            if ( i_rx(i).data = x"000000BC" and i_rx(i).datak = "0001" ) then
                 rx_wen(i) <= '0';
             -- header
-            elsif ( i_rx(i)(7 downto 0) = x"7C" and i_rx_k(i) = "0001" ) then
-                rx_data(i) <= "01" & i_rx(i);
+            elsif ( i_rx(i).data(7 downto 0) = x"7C" and i_rx(i).datak = "0001" ) then
+                rx_data(i) <= "01" & i_rx(i).data;
                 rx_wen(i) <= '1';
             -- trailer
-            elsif ( i_rx(i)(7 downto 0) = x"9C" and i_rx_k(i) = "0001" ) then
-                rx_data(i) <= "10" & i_rx(i);
+            elsif ( i_rx(i).data(7 downto 0) = x"9C" and i_rx(i).datak = "0001" ) then
+                rx_data(i) <= "10" & i_rx(i).data;
                 rx_wen(i) <= '1';
             -- hits
             else
-                rx_data(i) <= "00" & i_rx(i);
+                rx_data(i) <= "00" & i_rx(i).data;
                 rx_wen(i) <= '1';
             end if;
         end if;
