@@ -9,19 +9,29 @@ use ieee.numeric_std.all;
 
 package mu3e is
 
-    constant LINK_LENGTH : positive := 32 + 4 + 1;
+    --                                eop sop  I   k  data
+    constant LINK_LENGTH : positive := 1 + 1 + 1 + 4 + 32;
 
     type link_t is record
         data    : std_logic_vector(31 downto 0);
         datak   : std_logic_vector(3 downto 0);
 
         idle    : std_logic;
+        sop     : std_logic;
+        eop     : std_logic;
     end record;
     type link_array_t is array(natural range <>) of link_t;
+
+    constant LINK_ZERO : link_t := (
+        data => X"00000000",
+        datak => "0000",
+        others => '0'
+    );
 
     constant LINK_IDLE : link_t := (
         data => X"000000" & work.util.D28_5,
         datak => "0001",
+        idle => '1',
         others => '0'
     );
 
@@ -40,6 +50,11 @@ package mu3e is
         link : link_t--;
     ) return std_logic_vector;
 
+    function to_link_array (
+        data : work.util.slv32_array_t;
+        datak : work.util.slv4_array_t--;
+    ) return link_array_t;
+
 end package;
 
 package body mu3e is
@@ -49,15 +64,30 @@ package body mu3e is
         datak : std_logic_vector(3 downto 0)--;
     ) return link_t is
         variable link : link_t;
+        variable length : integer := 0;
     begin
-        link.data := data;
-        link.datak := datak;
+        link.eop := not link.idle and work.util.to_std_logic(
+            datak = "0001" and data(7 downto 0) = work.util.D28_4 -- 9C
+        );
+        length := length + 1;
+
+        link.sop := not link.idle and work.util.to_std_logic(
+            datak = "0001" and data(7 downto 0) = work.util.D28_5 -- BC
+        );
+        length := length + 1;
 
         link.idle := work.util.to_std_logic(
             datak = "0001" and data(7 downto 0) = work.util.D28_5
             and data(31 downto 26) = "000000"
         );
+        length := length + 1;
 
+        link.datak := datak;
+        length := length + 4;
+        link.data := data;
+        length := length + 32;
+
+        assert ( length = LINK_LENGTH ) severity failure;
         return link;
     end function;
 
@@ -65,10 +95,23 @@ package body mu3e is
         slv : std_logic_vector(LINK_LENGTH-1 downto 0)--;
     ) return link_t is
         variable link : link_t;
+        variable length : integer := 0;
     begin
-        link.data := slv(31 downto 0);
-        link.datak := slv(35 downto 32);
+        link.eop := slv(38);
+        length := length + 1;
+
+        link.sop := slv(37);
+        length := length + 1;
+
         link.idle := slv(36);
+        length := length + 1;
+
+        link.datak := slv(35 downto 32);
+        length := length + 4;
+        link.data := slv(31 downto 0);
+        length := length + 32;
+
+        assert ( length = LINK_LENGTH ) severity failure;
         return link;
     end function;
 
@@ -76,7 +119,20 @@ package body mu3e is
         link : link_t--;
     ) return std_logic_vector is
     begin
-        return link.idle & link.datak & link.data;
+        assert ( 1 + 1 + 1 + 4 + 32 = LINK_LENGTH ) severity failure;
+        return link.eop & link.sop & link.idle & link.datak & link.data;
+    end function;
+
+    function to_link_array (
+        data : work.util.slv32_array_t;
+        datak : work.util.slv4_array_t--;
+    ) return link_array_t is
+        variable links : link_array_t(data'range);
+    begin
+        for i in data'range loop
+            links(i) := to_link(data(i), datak(i));
+        end loop;
+        return links;
     end function;
 
 end package body;
