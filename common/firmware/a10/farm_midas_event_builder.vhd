@@ -178,11 +178,11 @@ begin
     ram_halffull <= sub_add(RAM_ADDR-1) when tag_fifo_empty = '0' else '0';
     e_cnt_ram_halffull : entity work.counter
     generic map ( WRAP => true, W => 32 )
-    port map ( o_cnt => o_counters(2), i_ena => ram_halffull, i_reset_n => i_reset_n_250, i_clk => i_clk_250 );
+    port map ( o_cnt => o_counters(2), i_ena => ram_halffull, i_reset_n => i_reset_n, i_clk => i_clk );
 
     e_cnt_tag_fifo : entity work.counter
     generic map ( WRAP => true, W => 32 )
-    port map ( o_cnt => o_counters(3), i_ena => tag_fifo_full, i_reset_n => i_reset_n_250, i_clk => i_clk_250 );
+    port map ( o_cnt => o_counters(3), i_ena => tag_fifo_full, i_reset_n => i_reset_n, i_clk => i_clk );
 
     o_counters(4) <= serial_number;
 
@@ -192,11 +192,11 @@ begin
 
     e_cnt_pixel_link : entity work.counter
     generic map ( WRAP => true, W => 32 )
-    port map ( o_cnt => o_counters(7), i_ena => not i_empty_pixel, i_reset_n => i_reset_n_250, i_clk => i_clk_250 );
+    port map ( o_cnt => o_counters(7), i_ena => not i_empty_pixel, i_reset_n => i_reset_n, i_clk => i_clk );
 
     e_cnt_scifi_link : entity work.counter
     generic map ( WRAP => true, W => 32 )
-    port map ( o_cnt => o_counters(8), i_ena => not i_empty_scifi, i_reset_n => i_reset_n_250, i_clk => i_clk_250 );
+    port map ( o_cnt => o_counters(8), i_ena => not i_empty_scifi, i_reset_n => i_reset_n, i_clk => i_clk );
 
     e_ram_32_256 : entity work.ip_ram
     generic map (

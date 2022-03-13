@@ -39,7 +39,7 @@ port (
     --! PCIe registers / memory
     i_writeregs_250      : in  work.util.slv32_array_t(63 downto 0);
     i_writeregs_156      : in  work.util.slv32_array_t(63 downto 0);
-    
+
     o_readregs_250       : out work.util.slv32_array_t(63 downto 0);
     o_readregs_156       : out work.util.slv32_array_t(63 downto 0);
 
@@ -61,13 +61,8 @@ port (
     o_farm_tx_data      : out   work.util.slv32_array_t(g_NLINKS_FARM_TOTL-1 downto 0);
     o_farm_tx_datak     : out   work.util.slv4_array_t(g_NLINKS_FARM_TOTL-1 downto 0);
 
-    --! 250 MHz clock / reset_n
-    i_reset_n_250        : in  std_logic;
-    i_clk_250            : in  std_logic;
-
-    --! 156 MHz clock / reset_n
-    i_reset_n_156        : in  std_logic;
-    i_clk_156            : in  std_logic--;
+    i_reset_n           : in    std_logic;
+    i_clk               : in    std_logic--;
 );
 end entity;
 
@@ -147,11 +142,11 @@ begin
         o_pcie_addr         => o_readregs_250(SWB_COUNTER_REGISTER_ADDR_R),
 
         --! i_reset
-        i_reset_n_A         => i_reset_n_250,
+        i_reset_n_A         => i_reset_n,
 
         --! clocks
-        i_clk_A             => i_clk_250,
-        i_clk_B             => i_clk_156--,
+        i_clk_A             => i_clk,
+        i_clk_B             => i_clk--,
     );
 
 
@@ -173,7 +168,7 @@ begin
             o_fpga_id           => open,
 
             i_reset             => not i_resets_n_156(RESET_BIT_EVENT_COUNTER),
-            i_clk               => i_clk_156--,
+            i_clk               => i_clk--,
         );
     end generate;
 
@@ -202,7 +197,7 @@ begin
         o_run_number           => o_readregs_156(RUN_NR_REGISTER_R), -- run number of i_addr
         o_runNr_ack            => o_readregs_156(RUN_NR_ACK_REGISTER_R), -- which FEBs have responded with run number in i_run_number
         o_run_stop_ack         => o_readregs_156(RUN_STOP_ACK_REGISTER_R),
-        i_clk                  => i_clk_156--,
+        i_clk                  => i_clk--,
     );
 
 
@@ -215,7 +210,7 @@ begin
         NLINKS => g_NLINKS_FEB_TOTL--,
     )
     port map (
-        i_clk           => i_clk_156,
+        i_clk           => i_clk,
         i_reset_n       => i_resets_n_156(RESET_BIT_SC_MAIN),
         i_length_we     => i_writeregs_156(SC_MAIN_ENABLE_REGISTER_W)(0),
         i_length        => i_writeregs_156(SC_MAIN_LENGTH_REGISTER_W)(15 downto 0),
@@ -242,7 +237,7 @@ begin
         stateout                => o_readregs_156(SC_STATE_REGISTER_R)(31 downto 28),
 
         i_reset_n               => i_resets_n_156(RESET_BIT_SC_SECONDARY),
-        i_clk                   => i_clk_156--,
+        i_clk                   => i_clk--,
     );
 
 
@@ -260,9 +255,9 @@ begin
     farm_data(g_NLINKS_FARM_PIXEL + g_NLINKS_FARM_SCIFI - 1 downto g_NLINKS_FARM_PIXEL)       <= scifi_farm_data;
     farm_data_valid(g_NLINKS_FARM_PIXEL + g_NLINKS_FARM_SCIFI - 1 downto g_NLINKS_FARM_PIXEL) <= scifi_farm_data_valid;
 
-    process(i_clk_250)
+    process(i_clk)
     begin
-    if rising_edge(i_clk_250) then
+    if rising_edge(i_clk) then
         for i in farm_data'range loop
             o_farm_tx_data(i) <= farm_data(i);
             o_farm_tx_datak(i) <= "0000";
@@ -310,12 +305,6 @@ begin
         DATA_TYPE               => x"01"--;
     )
     port map (
-        i_clk_156        => i_clk_156,
-        i_clk_250        => i_clk_250,
-
-        i_reset_n_156    => i_resets_n_156(RESET_BIT_DATA_PATH),
-        i_reset_n_250    => i_resets_n_250(RESET_BIT_DATA_PATH),
-
         i_resets_n_156   => i_resets_n_156,
         i_resets_n_250   => i_resets_n_250,
 
@@ -337,7 +326,10 @@ begin
         o_dma_cnt_words  => pixel_dma_cnt_words,
         o_dma_done       => pixel_dma_done,
         o_endofevent     => pixel_dma_endofevent,
-        o_dma_data       => pixel_dma_data--;
+        o_dma_data       => pixel_dma_data,
+
+        i_reset_n           => i_resets_n_250(RESET_BIT_DATA_PATH),
+        i_clk               => i_clk--,
     );
 
 
@@ -358,8 +350,8 @@ begin
 --       DATA_TYPE               => x"02"--;
 --   )
 --   port map(
---        i_clk_156        => i_clk_156,
---        i_clk_250        => i_clk_250,
+--        i_clk_156        => i_clk,
+--        i_clk_250        => i_clk,
 --
 --        i_reset_n_156    => i_resets_n_156(RESET_BIT_DATA_PATH),
 --        i_reset_n_250    => i_resets_n_250(RESET_BIT_DATA_PATH),
@@ -406,8 +398,8 @@ begin
 --        DATA_TYPE               => x"03"--;
 --    )
 --    port map(
---        i_clk_156        => i_clk_156,
---        i_clk_250        => i_clk_250,
+--        i_clk_156        => i_clk,
+--        i_clk_250        => i_clk,
 --
 --        i_reset_n_156    => i_resets_n_156(RESET_BIT_DATA_PATH),
 --        i_reset_n_250    => i_resets_n_250(RESET_BIT_DATA_PATH),

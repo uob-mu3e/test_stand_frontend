@@ -56,11 +56,11 @@ begin
 
     e_cnt_link_fifo_almost_full : entity work.counter
     generic map ( WRAP => true, W => 32 )
-    port map ( o_cnt => o_counter(0), i_ena => f_almost_full, i_reset_n => i_reset_n_250, i_clk => i_clk_250 );
+    port map ( o_cnt => o_counter(0), i_ena => f_almost_full, i_reset_n => i_reset_n, i_clk => i_clk );
 
     e_cnt_dc_link_fifo_full : entity work.counter
     generic map ( WRAP => true, W => 32 )
-    port map ( o_cnt => o_counter(1), i_ena => f_wrfull, i_reset_n => i_reset_n_250, i_clk => i_clk_250 );
+    port map ( o_cnt => o_counter(1), i_ena => f_wrfull, i_reset_n => i_reset_n, i_clk => i_clk );
 
     o_counter(2) <= cnt_skip_sub_header;
     o_counter(3) <= cnt_sub_header;
@@ -170,12 +170,12 @@ begin
         rdusedw     => open,
         wrfull      => f_wrfull,
         wrusedw     => f_wrusedw,
-        aclr        => not i_reset_n_250--,
+        aclr        => not i_reset_n--,
     );
 
-    process(i_clk_250, i_reset_n)
+    process(i_clk, i_reset_n)
     begin
-    if ( i_reset_n_250 = '0' ) then
+    if ( i_reset_n = '0' ) then
         f_almost_full       <= '0';
     elsif rising_edge(i_clk) then
         if ( f_wrusedw(LINK_FIFO_ADDR_WIDTH - 1) = '1' ) then

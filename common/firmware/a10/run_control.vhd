@@ -11,7 +11,6 @@ generic (
     N_LINKS_g : positive := 4--;
 );
 port (
-    i_clk                   : in    std_logic; -- receive clock (156.25 MHz)
     i_reset_ack_seen_n      : in    std_logic;
     i_reset_run_end_n       : in    std_logic;
     i_buffers_empty         : in    std_logic_vector(31 downto 0);
@@ -24,7 +23,10 @@ port (
     o_runNr_ack             : out   std_logic_vector(31 downto 0);
     o_run_stop_ack          : out   std_logic_vector(31 downto 0);
     o_buffers_empty         : out   std_logic_vector(31 downto 0);
-    o_feb_merger_timeout    : out   std_logic_vector(31 downto 0)--;
+    o_feb_merger_timeout    : out   std_logic_vector(31 downto 0);
+
+    -- receive clock (156.25 MHz)
+    i_clk                   : in    std_logic--;
 );
 end entity;
 

@@ -53,14 +53,6 @@ port (
     o_endofevent        : out std_logic;
     o_dma_data          : out std_logic_vector(255 downto 0);
 
-    --! 250 MHz clock pice / reset_n
-    i_reset_n_250_pcie  : in  std_logic;
-    i_clk_250_pcie      : in  std_logic;
-
-    --! 250 MHz clock link / reset_n
-    i_reset_n_250_link  : in  std_logic;
-    i_clk_250_link      : in  std_logic;
-
     -- Interface to memory bank A
     o_A_mem_clk         : out   std_logic;
     A_mem_ck            : out   std_logic_vector(0 downto 0);                      -- mem_ck
@@ -99,8 +91,10 @@ port (
     B_mem_dq            : inout std_logic_vector(63 downto 0)  := (others => 'X'); -- mem_dq
     B_mem_dm            : out   std_logic_vector(7 downto 0);                      -- mem_dm
     B_oct_rzqin         : in    std_logic                      := 'X';             -- oct_rzqin
-    B_pll_ref_clk       : in    std_logic                      := 'X'              -- clk
+    B_pll_ref_clk       : in    std_logic                      := 'X';             -- clk
 
+    i_reset_n           : in    std_logic;
+    i_clk               : in    std_logic--;
 );
 end entity;
 
@@ -238,7 +232,7 @@ begin
         go_to_trailer => 3--,
     )
     port map (
-        i_clk       => i_clk_250_link,
+        i_clk       => i_clk,
         i_reset_n   => i_resets_n_link(RESET_BIT_FARM_DATA_PATH),
         i_en        => not full_pixel and i_writeregs_link(FARM_READOUT_STATE_REGISTER_W)(USE_BIT_GEN_MERGE),
         i_sd        => x"00000002",
@@ -256,11 +250,11 @@ begin
         data            => w_pixel,
         wrreq           => w_pixel_en,
         rdreq           => r_pixel_en,
-        clock           => i_clk_250_link,
+        clock           => i_clk,
         q               => r_pixel,
         full            => full_pixel,
         empty           => empty_pixel,
-        sclr            => not i_reset_n_250_link--,
+        sclr            => not i_reset_n--,
     );
 
     e_swb_data_merger_pixel : entity work.swb_data_merger
@@ -270,7 +264,7 @@ begin
     )
     port map (
         i_reset_n       => i_resets_n_link(RESET_BIT_FARM_DATA_PATH),
-        i_clk           => i_clk_250_link,
+        i_clk           => i_clk,
 
         i_data          => r_pixel,
         i_empty         => empty_pixel,
@@ -288,7 +282,7 @@ begin
         go_to_trailer => 3--,
     )
     port map (
-        i_clk       => i_clk_250_link,
+        i_clk       => i_clk,
         i_reset_n   => i_resets_n_link(RESET_BIT_FARM_DATA_PATH),
         i_en        => not full_scifi and i_writeregs_link(FARM_READOUT_STATE_REGISTER_W)(USE_BIT_GEN_MERGE),
         i_sd        => x"00000002",
@@ -306,11 +300,11 @@ begin
         data            => w_scifi,
         wrreq           => w_scifi_en,
         rdreq           => r_scifi_en,
-        clock           => i_clk_250_link,
+        clock           => i_clk,
         q               => r_scifi,
         full            => full_scifi,
         empty           => empty_scifi,
-        sclr            => not i_reset_n_250_link--,
+        sclr            => not i_reset_n--,
     );
 
     e_swb_data_merger_scifi : entity work.swb_data_merger
@@ -320,7 +314,7 @@ begin
     )
     port map (
         i_reset_n       => i_resets_n_link(RESET_BIT_FARM_DATA_PATH),
-        i_clk           => i_clk_250_link,
+        i_clk           => i_clk,
 
         i_data          => r_scifi,
         i_empty         => empty_scifi,
@@ -334,14 +328,14 @@ begin
     --! NOTE: we say that g_NLINKS_PIXEL = g_NLINKS_SCIFI at the moment
     gen_link_data : FOR I in 0 to g_NLINKS_PIXEL - 1 GENERATE
 
-        process(i_clk_250_link, i_reset_n_250_link)
+        process(i_clk, i_reset_n)
         begin
-        if ( i_reset_n_250_link = '0' ) then
+        if ( i_reset_n = '0' ) then
             rx(I)   <= (others => '0');
             rx_k(I) <= (others => '0');
             rx(I+g_NLINKS_SCIFI)   <= (others => '0');
             rx_k(I+g_NLINKS_SCIFI) <= (others => '0');
-        elsif ( rising_edge( i_clk_250_link ) ) then
+        elsif rising_edge(i_clk) then
             if ( i_writeregs_link(FARM_READOUT_STATE_REGISTER_W)(USE_BIT_GEN_MERGE) = '1' ) then
                 rx(I)   <= link_data_pixel(I*32 + 31 downto I*32);
                 rx_k(I) <= link_datak_pixel(I*4 + 3 downto I*4);
@@ -399,11 +393,8 @@ begin
         --! 7: cnt events (scifi)
         o_counter           => counter_link_to_fifo,
 
-        i_clk_250_link      => i_clk_250_link,
-        i_reset_n_250_link  => i_reset_n_250_link,
-
-        i_clk_250           => i_clk_250_pcie,
-        i_reset_n_250       => i_resets_n_pcie(RESET_BIT_FARM_DATA_PATH)--,
+        i_reset_n           => i_resets_n_pcie(RESET_BIT_FARM_DATA_PATH),
+        i_clk               => i_clk--,
     );
 
 
@@ -454,20 +445,20 @@ begin
         --! 8: # 256b scifi written to link
         o_counters      => counter_midas_event_builder,
 
-        i_reset_n_250   => i_reset_n_250_pcie,
-        i_clk_250       => i_clk_250_pcie--,
+        i_reset_n       => i_reset_n,
+        i_clk           => i_clk--,
     );
 
     --! map links pixel / scifi
     --! NOTE: we say that g_NLINKS_PIXEL = g_NLINKS_SCIFI at the moment
-    process(i_clk_250_pcie, i_reset_n_250_pcie)
+    process(i_clk, i_reset_n)
     begin
-    if ( i_reset_n_250_pcie = '0' ) then
+    if ( i_reset_n = '0' ) then
         tx_data_pixel   <= (others => '0');
         tx_data_scifi   <= (others => '0');
         tx_wen          <= '0';
         --
-    elsif ( rising_edge( i_clk_250_pcie ) ) then
+    elsif rising_edge(i_clk) then
         tx_wen <= '1';
         if ( pixel_next_farm_wen = '1' ) then
             tx_data_pixel <= pixel_next_farm;
@@ -498,11 +489,11 @@ begin
         data        => tx_data_pixel,
         wrreq       => tx_wen,
         rdreq       => not tx_empty_pixel,
-        wrclk       => i_clk_250_pcie,
-        rdclk       => i_clk_250_link,
+        wrclk       => i_clk,
+        rdclk       => i_clk,
         q           => tx_q_pixel,
         rdempty     => tx_empty_pixel,
-        aclr        => not i_reset_n_250_link--,
+        aclr        => not i_reset_n--,
     );
 
     e_sync_fifo_tx_scifi : entity work.ip_dcfifo
@@ -514,24 +505,24 @@ begin
         data        => tx_data_scifi,
         wrreq       => tx_wen,
         rdreq       => not tx_empty_scifi,
-        wrclk       => i_clk_250_pcie,
-        rdclk       => i_clk_250_link,
+        wrclk       => i_clk,
+        rdclk       => i_clk,
         q           => tx_q_scifi,
         rdempty     => tx_empty_scifi,
-        aclr        => not i_reset_n_250_link--,
+        aclr        => not i_reset_n--,
     );
 
     gen_tx_data : FOR I in 0 to g_NLINKS_PIXEL - 1 GENERATE
 
-        process(i_clk_250_link, i_reset_n_250_link)
+        process(i_clk, i_reset_n)
         begin
-        if ( i_reset_n_250_link = '0' ) then
+        if ( i_reset_n = '0' ) then
             o_tx(I)                 <= (others => '0');
             o_tx_k(I)               <= (others => '0');
             o_tx(I+g_NLINKS_SCIFI)  <= (others => '0');
             o_tx_k(I+g_NLINKS_SCIFI)<= (others => '0');
             --
-        elsif rising_edge(i_clk_250_link) then
+        elsif rising_edge(i_clk) then
 
             if ( tx_empty_pixel = '1' ) then
                 o_tx(I)   <= x"000000" & work.util.D28_5;
@@ -567,7 +558,7 @@ begin
     port map (
         reset_n         => i_resets_n_pcie(RESET_BIT_DDR3),
         reset_n_ddr3    => i_resets_n_ddr(RESET_BIT_DDR3),
-        dataclk         => i_clk_250_pcie,
+        dataclk         => i_clk,
 
         -- Input from merging (first board) or links (subsequent boards)
         data_in         => data_in,
@@ -576,7 +567,7 @@ begin
         o_ddr_ready     => ddr_ready,
 
         -- Input from PCIe demanding events
-        pcieclk        => i_clk_250_pcie,
+        pcieclk        => i_clk,
         ts_req_A       => i_writeregs_ddr(DATA_REQ_A_W),
         req_en_A       => i_regwritten_ddr(DATA_REQ_A_W),
         ts_req_B       => i_writeregs_ddr(DATA_REQ_B_W),

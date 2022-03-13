@@ -45,11 +45,8 @@ port (
     --! 7: cnt events (scifi)
     o_counter       : out work.util.slv32_array_t(7 downto 0);
 
-    i_clk_250_link      : in std_logic;
-    i_reset_n_250_link  : in std_logic;
-
-    i_clk_250       : in std_logic;
-    i_reset_n_250   : in std_logic--;
+    i_reset_n       : in    std_logic;
+    i_clk           : in    std_logic--;
 );
 end entity;
 
@@ -78,12 +75,12 @@ begin
     --! sync link data from link to pcie clk
     gen_link_to_fifo : FOR i in 0 to g_NLINKS_SWB_TOTL - 1 GENERATE
 
-        process(i_clk_250_link, i_reset_n_250_link)
+        process(i_clk, i_reset_n)
         begin
-        if ( i_reset_n_250_link = '0' ) then
+        if ( i_reset_n = '0' ) then
             rx_data(i)  <= (others => '0');
             rx_wen(i)   <= '0';
-        elsif rising_edge(i_clk_250_link) then
+        elsif rising_edge(i_clk) then
             -- idle word
             if ( i_rx(i) = x"000000BC" and i_rx_k(i) = "0001" ) then
                 rx_wen(i) <= '0';
@@ -112,11 +109,11 @@ begin
             data        => rx_data(i),
             wrreq       => rx_wen(i),
             rdreq       => sync_ren(i),
-            wrclk       => i_clk_250_link,
-            rdclk       => i_clk_250,
+            wrclk       => i_clk,
+            rdclk       => i_clk,
             q           => rx_q(i),
             rdempty     => sync_rdempty(i),
-            aclr        => not i_reset_n_250--,
+            aclr        => not i_reset_n--,
         );
 
         sop(i) <= '1' when rx_q(i)(33 downto 32) = "01" else '0';
@@ -163,8 +160,8 @@ begin
 
         o_error     => o_error_pixel,
 
-        i_reset_n_250   => i_reset_n_250,
-        i_clk_250       => i_clk_250--,
+        i_reset_n   => i_reset_n,
+        i_clk       => i_clk--,
     );
 
     e_aligne_scifi : entity work.farm_aligne_link
@@ -192,8 +189,8 @@ begin
 
         o_error     => o_error_scifi,
 
-        i_reset_n_250   => i_reset_n_250,
-        i_clk_250       => i_clk_250--,
+        i_reset_n   => i_reset_n,
+        i_clk       => i_clk--,
     );
 
 end architecture;

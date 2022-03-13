@@ -55,9 +55,9 @@ port (
     A_mem_we_n          : out   std_logic_vector(0 downto 0);
     A_mem_ras_n         : out   std_logic_vector(0 downto 0);
     A_mem_cas_n         : out   std_logic_vector(0 downto 0);
-    A_mem_dqs           : inout std_logic_vector(7 downto 0)
-    A_mem_dqs_n         : inout std_logic_vector(7 downto 0)
-    A_mem_dq            : inout std_logic_vector(63 downto 0)
+    A_mem_dqs           : inout std_logic_vector(7 downto 0);
+    A_mem_dqs_n         : inout std_logic_vector(7 downto 0);
+    A_mem_dq            : inout std_logic_vector(63 downto 0);
     A_mem_dm            : out   std_logic_vector(7 downto 0);
     A_oct_rzqin         : in    std_logic;
     A_pll_ref_clk       : in    std_logic;
@@ -74,9 +74,9 @@ port (
     B_mem_we_n          : out   std_logic_vector(0 downto 0);
     B_mem_ras_n         : out   std_logic_vector(0 downto 0);
     B_mem_cas_n         : out   std_logic_vector(0 downto 0);
-    B_mem_dqs           : inout std_logic_vector(7 downto 0)
-    B_mem_dqs_n         : inout std_logic_vector(7 downto 0)
-    B_mem_dq            : inout std_logic_vector(63 downto 0)
+    B_mem_dqs           : inout std_logic_vector(7 downto 0);
+    B_mem_dqs_n         : inout std_logic_vector(7 downto 0);
+    B_mem_dq            : inout std_logic_vector(63 downto 0);
     B_mem_dm            : out   std_logic_vector(7 downto 0);
     B_oct_rzqin         : in    std_logic;
     B_pll_ref_clk       : in    std_logic;

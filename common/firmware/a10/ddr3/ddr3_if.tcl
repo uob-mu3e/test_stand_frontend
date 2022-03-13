@@ -29,4 +29,4 @@ set_instance_parameter_value emif_0 {MEM_DDR3_TRP_NS} {10.285}
 
 set_instance_parameter_value emif_0 {PHY_DDR3_IO_VOLTAGE} {1.35}
 
-
+set_instance_property emif_0 AUTO_EXPORT {true}

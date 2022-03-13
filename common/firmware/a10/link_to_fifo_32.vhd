@@ -31,11 +31,8 @@ port (
     --! 4: # of sub header
     o_counter       : out work.util.slv32_array_t(4 downto 0);
 
-    i_reset_n_156   : in std_logic;
-    i_clk_156       : in std_logic;
-
-    i_reset_n_250   : in std_logic;
-    i_clk_250       : in std_logic--;
+    i_reset_n       : in    std_logic;
+    i_clk           : in    std_logic--;
 );
 end entity;
 
@@ -55,20 +52,20 @@ begin
 
     e_cnt_link_fifo_almost_full : entity work.counter
     generic map ( WRAP => true, W => 32 )
-    port map ( o_cnt => o_counter(0), i_ena => almost_full, i_reset_n => i_reset_n_156, i_clk => i_clk_156 );
+    port map ( o_cnt => o_counter(0), i_ena => almost_full, i_reset_n => i_reset_n, i_clk => i_clk );
 
     e_cnt_dc_link_fifo_full : entity work.counter
     generic map ( WRAP => true, W => 32 )
-    port map ( o_cnt => o_counter(1), i_ena => wrfull, i_reset_n => i_reset_n_156, i_clk => i_clk_156 );
+    port map ( o_cnt => o_counter(1), i_ena => wrfull, i_reset_n => i_reset_n, i_clk => i_clk );
 
     o_counter(2) <= cnt_skip_data;
     o_counter(3) <= cnt_events;
     o_counter(4) <= cnt_sub;
 
     --! write only if not idle
-    process(i_clk_156, i_reset_n_156)
+    process(i_clk, i_reset_n)
     begin
-    if ( i_reset_n_156 /= '1' ) then
+    if ( i_reset_n /= '1' ) then
         rx_156_data         <= (others => '0');
         cnt_sub             <= (others => '0');
         cnt_events          <= (others => '0');
@@ -77,7 +74,7 @@ begin
         hit_reg             <= (others => '0');
         link_to_fifo_state  <= idle;
         --
-    elsif rising_edge(i_clk_156) then
+    elsif rising_edge(i_clk) then
 
         rx_156_wen  <= '0';
         rx_156_data(31 downto 0)  <= i_rx.data;
@@ -154,21 +151,21 @@ begin
         i_we        => rx_156_wen,
         o_wfull     => wrfull,
         o_wusedw    => wrusedw,
-        i_wclk      => i_clk_156,
+        i_wclk      => i_clk,
 
         o_rdata     => o_q,
         i_rack      => i_ren,
         o_rempty    => o_rdempty,
-        i_rclk      => i_clk_250,
+        i_rclk      => i_clk,
 
-        i_reset_n   => i_reset_n_250--;
+        i_reset_n   => i_reset_n--;
     );
 
-    process(i_clk_156, i_reset_n_156)
+    process(i_clk, i_reset_n)
     begin
-    if ( i_reset_n_156 = '0' ) then
+    if ( i_reset_n = '0' ) then
         almost_full <= '0';
-    elsif rising_edge(i_clk_156) then
+    elsif rising_edge(i_clk) then
         if(wrusedw(LINK_FIFO_ADDR_WIDTH - 1) = '1') then
             almost_full <= '1';
         else

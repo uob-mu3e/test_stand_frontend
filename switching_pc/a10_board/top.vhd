@@ -376,13 +376,8 @@ begin
         o_farm_tx_data  => open,
         o_farm_tx_datak => open,
 
-        --! 250 MHz clock / reset_n
-        i_reset_n_250   => pcie0_reset_n,
-        i_clk_250       => pcie0_clk,
-
-        --! 156 MHz clock / reset_n
-        i_reset_n_156   => pcie0_reset_n,
-        i_clk_156       => pcie0_clk--,
+        i_reset_n       => pcie0_reset_n,
+        i_clk           => pcie0_clk--,
     );
 
 end architecture;
