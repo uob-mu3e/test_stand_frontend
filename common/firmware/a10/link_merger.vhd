@@ -24,8 +24,7 @@ port (
     i_dataclk : in std_logic;
     i_memclk : in std_logic;
 
-    i_link_data : in std_logic_vector(NLINKS_TOTL * 32 - 1 downto 0);
-    i_link_datak : in std_logic_vector(NLINKS_TOTL * 4 - 1 downto 0);
+    i_link              : in    work.mu3e.link_array_t(NLINKS_TOTL-1 downto 0);
     i_link_valid : in integer;
     i_link_mask_n : in std_logic_vector(NLINKS_TOTL - 1 downto 0);
 
@@ -40,14 +39,13 @@ architecture arch of link_merger is
 
     signal reset_data, reset_mem : std_logic;
 
-    signal link_data, link_dataq : work.util.slv38_array_t(NLINKS_TOTL - 1 downto 0);
+    signal link_data, link_dataq : work.mu3e.link_array_t(NLINKS_TOTL-1 downto 0);
     signal link_empty, link_wren, link_full, link_afull, link_wrfull, sop, eop, shop, link_ren : std_logic_vector(NLINKS_TOTL - 1 downto 0);
     signal link_usedw : std_logic_vector(LINK_FIFO_ADDR_WIDTH * NLINKS_TOTL - 1 downto 0);
     signal sync_fifo_empty : std_logic_vector(NLINKS_TOTL - 1 downto 0);
     signal sync_fifo_i_wrreq : std_logic_vector(NLINKS_TOTL - 1 downto 0);
-    type sync_fifo_t is array (NLINKS_TOTL - 1 downto 0) of std_logic_vector(35 downto 0);
-    signal sync_fifo_q : sync_fifo_t;
-    signal sync_fifo_data : sync_fifo_t;
+    signal sync_fifo_q : work.mu3e.link_array_t(NLINKS_TOTL-1 downto 0);
+    signal sync_fifo_data : work.mu3e.link_array_t(NLINKS_TOTL-1 downto 0);
 
     signal stream_wdata, stream_rdata : std_logic_vector(W-1 downto 0);
     signal we_counter : std_logic_vector(63 downto 0);
@@ -64,11 +62,11 @@ begin
         process(i_dataclk, i_reset_data_n)
         begin
         if ( i_reset_data_n = '0' ) then
-            sync_fifo_data(i) <= (others => '0');
+            sync_fifo_data(i) <= work.mu3e.LINK_ZERO;
             sync_fifo_i_wrreq(i) <= '0';
         elsif rising_edge(i_dataclk) then
-            sync_fifo_data(i) <= i_link_data(31 + i * 32 downto i * 32) & i_link_datak(3 + i * 4 downto i * 4);
-            if ( i_link_data(31 + i * 32 downto i * 32) = x"000000BC" and i_link_datak(3 + i * 4 downto i * 4) = "0001" ) then
+            sync_fifo_data(i) <= i_link(i);
+            if ( i_link(i).idle = '1' ) then
                 sync_fifo_i_wrreq(i) <= '0';
             else
                 sync_fifo_i_wrreq(i) <= '1';
@@ -76,60 +74,51 @@ begin
         end if;
         end process;
 
-        e_sync_fifo : entity work.ip_dcfifo
+        e_sync_fifo : entity work.link_dcfifo
         generic map(
-            ADDR_WIDTH  => 6,
-            DATA_WIDTH  => 36--,
+            g_ADDR_WIDTH  => 6--,
         )
         port map (
-            data        => sync_fifo_data(i),
-            wrreq       => sync_fifo_i_wrreq(i),
-            rdreq       => not sync_fifo_empty(i),
-            wrclk       => i_dataclk,
-            rdclk       => i_memclk,
-            q           => sync_fifo_q(i),
-            rdempty     => sync_fifo_empty(i),
-            aclr        => '0'--,
+            i_we        => sync_fifo_i_wrreq(i),
+            i_wdata     => sync_fifo_data(i),
+            i_wclk      => i_dataclk,
+
+            i_rack      => not sync_fifo_empty(i),
+            o_rdata     => sync_fifo_q(i),
+            o_rempty    => sync_fifo_empty(i),
+            i_rclk      => i_memclk,
+
+            i_reset_n   => '1'--,
         );
 
         e_link_to_fifo : entity work.link_to_fifo
-        generic map(
-            W => 32--,
-        )
-        port map(
-            i_link_data         => sync_fifo_q(i)(35 downto 4),
-            i_link_datak        => sync_fifo_q(i)(3 downto 0),
+        port map (
+            i_link              => sync_fifo_q(i),
             i_fifo_almost_full  => link_afull(i),
             i_sync_fifo_empty   => sync_fifo_empty(i),
-            o_fifo_data         => link_data(i)(35 downto 0),
+            o_fifo_data         => link_data(i),
             o_fifo_wr           => link_wren(i),
             o_cnt_skip_data     => open,
             i_reset_n           => i_reset_mem_n,
             i_clk               => i_memclk--,
         );
 
-        -- sop
-        link_data(i)(36) <= '1' when ( link_data(i)(3 downto 0) = "0001" and link_data(i)(11 downto 4) = x"BC" ) else '0';
-        -- eop
-        link_data(i)(37) <= '1' when ( link_data(i)(3 downto 0) = "0001" and link_data(i)(11 downto 4) = x"9C" ) else '0';
-
-        e_fifo : entity work.ip_dcfifo
-        generic map(
-            ADDR_WIDTH  => LINK_FIFO_ADDR_WIDTH,
-            DATA_WIDTH  => 38--,
+        e_fifo : entity work.link_dcfifo
+        generic map (
+            g_ADDR_WIDTH  => LINK_FIFO_ADDR_WIDTH--,
         )
         port map (
-            data        => link_data(i),
-            wrreq       => link_wren(i),
-            rdreq       => link_ren(i),
-            wrclk       => i_dataclk,
-            rdclk       => i_memclk,
-            q           => link_dataq(i),
-            rdempty     => link_empty(i),
-            rdusedw     => open,
-            wrfull      => open,
-            wrusedw     => link_usedw(i * LINK_FIFO_ADDR_WIDTH + LINK_FIFO_ADDR_WIDTH - 1 downto i * LINK_FIFO_ADDR_WIDTH),
-            aclr        => reset_data--,
+            i_we        => link_wren(i),
+            i_wdata     => link_data(i),
+            o_wusedw    => link_usedw(i * LINK_FIFO_ADDR_WIDTH + LINK_FIFO_ADDR_WIDTH - 1 downto i * LINK_FIFO_ADDR_WIDTH),
+            i_wclk      => i_dataclk,
+
+            i_rack      => link_ren(i),
+            o_rdata     => link_dataq(i),
+            o_rempty    => link_empty(i),
+            i_rclk      => i_memclk,
+
+            i_reset_n   => not reset_data--,
         );
 
         process(i_dataclk, i_reset_data_n)
@@ -145,9 +134,9 @@ begin
         end if;
         end process;
 
-        sop(i) <= link_dataq(i)(36);
-        shop(i) <= '1' when link_dataq(i)(37 downto 36) = "00" and link_dataq(I)(31 downto 26) = "111111" else '0';
-        eop(i) <= link_dataq(i)(37);
+        sop(i) <= link_dataq(i).sop;
+        shop(i) <= '1' when link_dataq(i).eop = '0' and link_dataq(i).sop = '0' and link_dataq(I).data(27 downto 22) = "111111" else '0';
+        eop(i) <= link_dataq(i).eop;
 
     END GENERATE buffer_link_fifos;
 
@@ -161,8 +150,6 @@ begin
     port map (
         -- input streams
         i_rdata                 => link_dataq,
-        i_rsop                  => sop,
-        i_reop                  => eop,
         i_rshop                 => shop,
         i_rempty                => link_empty,
         i_link                  => i_link_valid,

@@ -20,9 +20,7 @@ generic (
 );
 port (
     -- input streams
-    i_rdata     : in    work.util.slv38_array_t(N - 1 downto 0);
-    i_rsop      : in    std_logic_vector(N-1 downto 0); -- start of packet (SOP)
-    i_reop      : in    std_logic_vector(N-1 downto 0); -- end of packet (EOP)
+    i_rdata     : in    work.mu3e.link_array_t(N-1 downto 0);
     i_rshop     : in    std_logic_vector(N-1 downto 0); -- sub header of packet (SHOP)
     i_rempty    : in    std_logic_vector(N-1 downto 0);
     i_mask_n    : in    std_logic_vector(N-1 downto 0);
@@ -63,7 +61,7 @@ architecture arch of time_merger is
     signal rack, rack_hit, error_pre, error_sh, error_tr, sh_state, pre_state, tr_state : std_logic_vector(N - 1 downto 0);
     signal wait_cnt_pre, wait_cnt_sh, wait_cnt_merger : std_logic_vector(31 downto 0);
     signal header_trailer : std_logic_vector(37 downto 0);
-    signal gtime1, gtime2 : work.util.slv38_array_t(N - 1 downto 0);
+    signal gtime1, gtime2 : work.mu3e.link_array_t(N-1 downto 0);
     signal shtime : std_logic_vector(5 downto 0);
     signal overflow : std_logic_vector(15 downto 0);
     signal sheader_time : sheader_time_array_t;
@@ -196,7 +194,7 @@ begin
         if ( or_reduce(i_mask_n) /= '0' ) then
             FOR I in N - 1 downto 0 LOOP
                 -- link is good ('1') if link is not empty, wfull not full, not masked, w_ack is zero, i_rdata has hit data else '0'
-                if ( i_rempty(I) = '0' and i_mask_n(I) = '1' and i_rdata(I)(37 downto 36) = "00" and i_rdata(I)(31 downto 26) /= "111111" ) then
+                if ( i_rempty(I) = '0' and i_mask_n(I) = '1' and i_rdata(I).eop = '0' and i_rdata(I).sop = '0' and i_rdata(I).data(27 downto 22) /= "111111" ) then
                     link_good(I) <= '1';
                 else
                     link_good(I) <= '0';
@@ -207,9 +205,9 @@ begin
                     sop_wait(I) <= '1';
                 elsif ( i_mask_n(I) = '0' ) then
                     sop_wait(I) <= '0';
-                elsif ( i_rempty(I) = '0' and i_rsop(I) = '1' ) then
+                elsif ( i_rempty(I) = '0' and i_rdata(i).sop = '1' ) then
                     sop_wait(I) <= '0';
-                    fpga_id(I) <= i_rdata(I)(27 downto 12);
+                    fpga_id(I) <= i_rdata(I).data(23 downto 8);
                 elsif ( merge_state = wait_for_pre and rack_link(I) = '0' and i_rempty(I) = '0' ) then
                     sop_wait(I) <= '1';
                     rack_link(I) <= '1';
@@ -245,7 +243,7 @@ begin
                     sh_state(I) <= '1';
                 end if;
 
-                if ( i_rempty(I) = '0' and i_rsop(I) = '1' and i_mask_n(I) = '1' and rack(I) = '0' and rack_hit(I) = '0' and merge_state = merge_hits ) then
+                if ( i_rempty(I) = '0' and i_rdata(I).sop = '1' and i_mask_n(I) = '1' and rack(I) = '0' and rack_hit(I) = '0' and merge_state = merge_hits ) then
                     pre_state(I) <= '0';
                 elsif ( i_mask_n(I) = '0' ) then
                     pre_state(I) <= '0';
@@ -253,7 +251,7 @@ begin
                     pre_state(I) <= '1';
                 end if;
 
-                if ( i_rempty(I) = '0' and i_reop(I) = '1' and i_mask_n(I) = '1' and rack(I) = '0' and rack_hit(I) = '0' and merge_state = merge_hits ) then
+                if ( i_rempty(I) = '0' and i_rdata(I).eop = '1' and i_mask_n(I) = '1' and rack(I) = '0' and rack_hit(I) = '0' and merge_state = merge_hits ) then
                     tr_state(I) <= '0';
                 elsif ( i_mask_n(I) = '0' ) then
                     tr_state(I) <= '0';
@@ -303,22 +301,22 @@ begin
                     elsif ( fifo_full_0(i) = '1' or reset_fifo_0(i) = '1' or wait_cnt_fifo_0(i) /= "11" ) then
                         --
                     else
-                        if ( fifo_full_0(i) = '0' and link_good(i) = '1' and i_rempty(i) = '0' and rack_hit(i) = '0' and i_rdata(i)(31 downto 26) /= "111111" and i_rdata(i)(37 downto 36) = "00" ) then
-                            fifo_data_0(i) <= work.mudaq.link_36_to_std(i) & i_rdata(i)(35 downto 4);
+                        if ( fifo_full_0(i) = '0' and link_good(i) = '1' and i_rempty(i) = '0' and rack_hit(i) = '0' and i_rdata(i).data(27 downto 22) /= "111111" and i_rdata(i).eop = '0' and i_rdata(i).sop = '0' ) then
+                            fifo_data_0(i) <= work.mudaq.link_36_to_std(i) & i_rdata(i).data;
                             fifo_wen_0(i) <= '1';
                             rack_hit(i) <= '1';
                             layer_0_cnt(i) <= layer_0_cnt(i) + '1';
                             saw_header_0(i) <= '0';
                             saw_trailer_0(i) <= '0';
                         -- TODO: is this fine to quite until one is written (cnt > 0)?
-                        elsif ( i_rdata(i)(31 downto 26) = "111111" ) then
+                        elsif ( i_rdata(i).data(27 downto 22) = "111111" ) then
                             saw_header_0(i) <= '1';
                             layer_0_state(i) <= "0001";
                             fifo_data_0(i) <= tree_padding;
                             layer_0_cnt(i) <= layer_0_cnt(i) + '1';
                             fifo_wen_0(i) <= '1';
                         -- TODO: is this fine to quite until one is written (cnt > 0)?
-                        elsif ( i_rdata(i)(37 downto 36) /= "00" ) then
+                        elsif ( i_rdata(i).eop = '1' or i_rdata(i).sop = '1' ) then
                             saw_trailer_0(i) <= '1';
                             layer_0_state(i) <= "0001";
                             fifo_data_0(i) <= tree_padding;
@@ -659,8 +657,8 @@ begin
         wait_cnt_pre <= (others => '0');
         wait_cnt_sh <= (others => '0');
         wait_cnt_merger <= (others => '0');
-        gtime1 <= (others => (others => '0'));
-        gtime2 <= (others => (others => '0'));
+        gtime1 <= (others => work.mu3e.LINK_ZERO);
+        gtime2 <= (others => work.mu3e.LINK_ZERO);
         shtime <= (others => '1');
         sheader_time <= (others => (others => '0'));
         error_gtime1 <= '0';
@@ -713,7 +711,7 @@ begin
             when compare_time1 =>
                 -- compare MSB from FPGA time
                 FOR I in N - 1 downto 0 LOOP
-                    if ( gtime1(I) /= gtime1(i_link) and i_mask_n(I) = '1' ) then
+                    if ( work.mu3e.to_slv(gtime1(I)) /= work.mu3e.to_slv(gtime1(i_link)) and i_mask_n(I) = '1' ) then
                         error_gtime1 <= '1';
                     end if;
                 END LOOP;
@@ -723,10 +721,10 @@ begin
                     merge_state <= get_time2;
                     rack <= i_mask_n;
                     -- reset signals
-                    gtime1 <= (others => (others => '0'));
+                    gtime1 <= (others => work.mu3e.LINK_ZERO);
                     -- send gtime1
                     header_trailer(37 downto 32) <= ts1_marker;
-                    header_trailer(31 downto 0) <= gtime1(i_link)(35 downto 4);
+                    header_trailer(31 downto 0) <= gtime1(i_link).data;
                     header_trailer_we <= '1';
                 elsif ( error_gtime1 = '1' ) then
                     merge_state <= error_state;
@@ -744,7 +742,7 @@ begin
             when compare_time2 =>
                 -- compare LSB from FPGA time
                 FOR I in N - 1 downto 0 LOOP
-                    if ( gtime2(I) /= gtime2(i_link) and i_mask_n(I) = '1' ) then
+                    if ( work.mu3e.to_slv(gtime2(I)) /= work.mu3e.to_slv(gtime2(i_link)) and i_mask_n(I) = '1' ) then
                         error_gtime2 <= '1';
                     end if;
                 END LOOP;
@@ -753,10 +751,10 @@ begin
                 if ( error_gtime2 = '0' and fifo_full_6(0) = '0' ) then
                     merge_state <= wait_for_sh;
                     -- reset signals
-                    gtime2 <= (others => (others => '0'));
+                    gtime2 <= (others => work.mu3e.LINK_ZERO);
                     -- send gtime2
                     header_trailer(37 downto 32) <= ts2_marker;
-                    header_trailer(31 downto 0) <= gtime2(i_link)(35 downto 4);
+                    header_trailer(31 downto 0) <= gtime2(i_link).data;
                     header_trailer_we <= '1';
                 elsif ( error_gtime2 = '1' ) then
                     merge_state <= error_state;
@@ -793,11 +791,11 @@ begin
                     header_trailer(31 downto 28) <= "0000";
                     header_trailer(27 downto 22) <= "111111";
                     -- send sub header time -- check later if equal
-                    header_trailer(21 downto 16) <= i_rdata(i_link)(25 downto 20);
-                    shtime <= i_rdata(i_link)(25 downto 20);
+                    header_trailer(21 downto 16) <= i_rdata(i_link).data(21 downto 16);
+                    shtime <= i_rdata(i_link).data(21 downto 16);
                     FOR I in N - 1 downto 0 LOOP
                         if ( i_mask_n(I) = '1' ) then
-                            sheader_time(I) <= i_rdata(I)(25 downto 20);
+                            sheader_time(I) <= i_rdata(I).data(21 downto 16);
                         end if;
                     END LOOP;
                     header_trailer(15 downto 0) <= overflow;
