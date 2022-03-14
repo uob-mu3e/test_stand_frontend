@@ -1,4 +1,5 @@
 #!/bin/sh
+
 device=$(lspci -nn | grep "\[1172:0004\]" | cut -d" " -f1)
 if [[ ! -f /sys/bus/pci/devices/0000\:$device/config ]]
 then

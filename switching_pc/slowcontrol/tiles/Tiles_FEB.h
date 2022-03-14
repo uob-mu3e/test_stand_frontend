@@ -22,11 +22,12 @@ class TilesFEB : public MutrigFEB{
       TilesFEB(FEBSlowcontrolInterface & feb_sc_,
                const vector<mappedFEB> & febs_,
                const uint64_t & febmask_,
-               const char* equipment_name_,
-               const char* odb_prefix_,
+               std::string equipment_name_,
+               std::string link_equipment_name_,
+               std::string tile_equipment_name_,
                const uint8_t SB_number_)
         :
-    MutrigFEB(feb_sc_, febs_, febmask_, equipment_name_, odb_prefix_, SB_number_){}
+    MutrigFEB(feb_sc_, febs_, febmask_, equipment_name_, link_equipment_name_, "/Equipment/" + tile_equipment_name_, SB_number_){}
 
 
       //Mapping from ASIC number to FPGA_ID and ASIC_ID
@@ -44,13 +45,13 @@ class TilesFEB : public MutrigFEB{
 
       //Read all sipm matrix temperatures from FEB/TMB, store in subtree $odb_prefix/Variables/matrix_temperatures
       //Parameter FPGA_ID refers to global numbering, i.e. before mapping
-      int ReadBackMatrixTemperatures(uint16_t FPGA_ID);
-      void ReadBackAllMatrixTemperatures(){for(size_t i=0;i<febs.size();i++) ReadBackMatrixTemperatures(i);}
+      int ReadBackMatrixTemperatures(mappedFEB & FEB);
+      void ReadBackAllMatrixTemperatures(){for(auto feb : febs) ReadBackMatrixTemperatures(feb);}
 
       //Read all power monitor readings from FEB/TMB, store in subtree $odb_prefix/Variables/tmb_current , tmb_voltage
       //Parameter FPGA_ID refers to global numbering, i.e. before mapping
-      int ReadBackTMBPower(uint16_t FPGA_ID);
-      void ReadBackAllTMBPower(){for(size_t i=0;i<febs.size();i++) ReadBackTMBPower(i);}
+      int ReadBackTMBPower(mappedFEB & FEB);
+      void ReadBackAllTMBPower(){for(auto feb : febs) ReadBackTMBPower(feb);}
 
 
 

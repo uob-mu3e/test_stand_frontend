@@ -106,7 +106,7 @@ architecture rtl of mupix_datapath is
     -- error signal output from unpacker
     signal unpack_errorcounter      : work.util.slv32_array_t(35 downto 0);
 
-    --signal regwritten_reg         : std_logic_vector(NREGISTERS-1 downto 0); 
+    --signal regwritten_reg         : std_logic_vector(NREGISTERS-1 downto 0);
 
     signal counter125               : std_logic_vector(63 downto 0);
 
@@ -162,8 +162,9 @@ architecture rtl of mupix_datapath is
     signal mp_lvds_rx_reg           : work.util.rw_t;
     signal mp_datapath_reg          : work.util.rw_t;
 
-	signal ena3_counter				: std_logic_vector(31 downto 0);
-	signal ena4_counter				: std_logic_vector(31 downto 0);
+    signal ena3_counter             : std_logic_vector(31 downto 0);
+    signal ena4_counter             : std_logic_vector(31 downto 0);
+
 begin
 
     process(i_clk156)
@@ -179,23 +180,23 @@ begin
 
     process(i_clk125)
     begin
-        if(rising_edge(i_clk125)) then
-            if(i_run_state_125=RUN_STATE_SYNC) then
-				ena3_counter <= (others => '0');
-				ena4_counter <= (others => '0');
-                reset_125_n <= '0';
-            else 
-                reset_125_n <=  '1';
-				if(i_trigger_in0 = '1') then
-					ena3_counter <= ena3_counter + '1';
-				end if;
-				if(i_trigger_in1 = '1') then
-					ena4_counter <= ena4_counter + '1';
-				end if;
+    if(rising_edge(i_clk125)) then
+        if(i_run_state_125=RUN_STATE_SYNC) then
+            ena3_counter <= (others => '0');
+            ena4_counter <= (others => '0');
+            reset_125_n <= '0';
+        else
+            reset_125_n <=  '1';
+            if(i_trigger_in0 = '1') then
+                ena3_counter <= ena3_counter + '1';
+            end if;
+            if(i_trigger_in1 = '1') then
+                ena4_counter <= ena4_counter + '1';
             end if;
         end if;
+    end if;
     end process;
-    
+
 ------------------------------------------------------------------------------------
 ---------------------- sc ----------------------------------------------------------
 
@@ -319,7 +320,7 @@ begin
     genunpack:
     FOR i in 0 to 35 GENERATE
     -- we currently only use link 0 of each chip (up to 8 possible)
- 
+
     unpacker_single : work.data_unpacker
     generic map(
         COARSECOUNTERSIZE   => COARSECOUNTERSIZE,
@@ -328,8 +329,8 @@ begin
     port map(
         reset_n             => reset_125_n,
         clk                 => i_clk125,
-        datain              => rx_data(LINK_ORDER_g(i)), 
-        kin                 => rx_k(LINK_ORDER_g(i)), 
+        datain              => rx_data(LINK_ORDER_g(i)),
+        kin                 => rx_k(LINK_ORDER_g(i)),
         readyin             => link_enable(LINK_ORDER_g(i)),
         i_mp_readout_mode   => mp_readout_mode,
         o_ts                => ts_unpacker(i),
@@ -377,14 +378,14 @@ begin
 
     process(i_clk125, reset_125_n)
     begin
-        if(reset_125_n = '0')then
-            counter125                  <= (others => '0');
-            last_sorter_hit             <= (others => '0');
-            hitsorter_out_ena_cnt       <= (others => '0');
-            hitsorter_in_ena_counters   <= (others => (others => '0'));
-            hits_sorter_in_ena          <= (others => '0');
+    if(reset_125_n = '0')then
+        counter125                  <= (others => '0');
+        last_sorter_hit             <= (others => '0');
+        hitsorter_out_ena_cnt       <= (others => '0');
+        hitsorter_in_ena_counters   <= (others => (others => '0'));
+        hits_sorter_in_ena          <= (others => '0');
 
-        elsif(rising_edge(i_clk125))then
+    elsif(rising_edge(i_clk125))then
             lvds_link_mask_reg  <= lvds_link_mask;
 
             if(i_sync_reset_cnt = '1')then
@@ -398,7 +399,7 @@ begin
             end if;
 
             if(i_run_state_125 = RUN_STATE_RUNNING) then
-                if(sorter_out_is_hit='1') then 
+                if(sorter_out_is_hit='1') then
                         hitsorter_out_ena_cnt <= hitsorter_out_ena_cnt + '1';
                 end if;
             end if;
@@ -409,7 +410,7 @@ begin
             --    hits_sorter_in_ena  <= (others => '0');
             --    hits_sorter_in_ena(to_integer(unsigned(sorter_inject(MP_SORTER_INJECT_SELECT_RANGE)))) <= '1';
             --else
-				
+
 				-- todo: reverse this again (cabling mistake in muEDM run hotfix)
                     --hits_sorter_in(0)      <= hits_sorter_in_buf(0);
                     --hits_sorter_in_ena(0)  <= hits_sorter_in_ena_buf(2);
@@ -421,7 +422,7 @@ begin
                     hits_sorter_in(i)      <= hits_sorter_in_buf(i);
                     hits_sorter_in_ena(i)  <= hits_sorter_in_ena_buf(i);
                 end loop;
-                
+
 
                 if(IS_TELESCOPE_g = '1') then
                     hits_sorter_in(3)      <= i_trigger_in0_timestamp(20 downto 0) & counter125(10 downto 0);--counter125(10 downto 0) & ena3_counter(9 downto 0) & counter125(10 downto 0);
@@ -449,7 +450,7 @@ begin
 
             for i in 0 to 11 loop
                 if(i_run_state_125 = RUN_STATE_RUNNING) then
-                    if(hits_sorter_in_ena(i)='1') then 
+                    if(hits_sorter_in_ena(i)='1') then
                         hitsorter_in_ena_counters(i) <= hitsorter_in_ena_counters(i) + '1';
                     end if;
                 end if;
@@ -470,7 +471,7 @@ begin
                 tot     <= tot_unpacker;
                 hits_ena<= hits_ena_unpacker;
             end if;
-        end if;
+    end if;
     end process;
 
     gen_hm:
@@ -506,26 +507,26 @@ begin
             o_hit_ena           => hits_sorter_in_ena_buf(i)--,
         );
         --hits_sorter_in_buf(i)       <= row_hs(i) & col_hs(i) & tot_hs(i)(4 downto 0) & ts_hs(i);
-		hits_sorter_in_buf(i)       <= row_hs(i) & col_hs(i) & tot_hs(i)(4 downto 0) & counter125(10 downto 0); -- TODO: change me
-		
+        hits_sorter_in_buf(i)       <= row_hs(i) & col_hs(i) & tot_hs(i)(4 downto 0) & counter125(10 downto 0); -- TODO: change me
+
     END GENERATE;
 
     process(i_clk125)
-        begin
-        if(rising_edge(i_clk125))then
-            if(i_run_state_125 = RUN_STATE_RUNNING) then
-                running         <= '1';
-            else
-                running         <= '0';
-            end if;
-            if(i_run_state_125 = RUN_STATE_IDLE) then
-                sorter_reset_n  <= '0';
-            else 
-                sorter_reset_n  <= '1';
-            end if;
+    begin
+    if(rising_edge(i_clk125))then
+        if(i_run_state_125 = RUN_STATE_RUNNING) then
+            running         <= '1';
+        else
+            running         <= '0';
         end if;
+        if(i_run_state_125 = RUN_STATE_IDLE) then
+            sorter_reset_n  <= '0';
+        else
+            sorter_reset_n  <= '1';
+        end if;
+    end if;
     end process;
- 
+
     sorter: work.hitsorter_wide
     port map(
         reset_n         => sorter_reset_n,
@@ -549,18 +550,18 @@ begin
         i_reg_wdata     => mp_sorter_reg.wdata--,
     );
 
-    output_select : process(i_clk125) -- hitsorter, generator, unsorted ...
+    process(i_clk125) -- hitsorter, generator, unsorted ...
     begin
-        if(rising_edge(i_clk125))then
-            if(mp_datagen_control_reg(MP_DATA_GEN_ENGAGE_BIT)='1') then
-                fifo_wdata  <= fifo_wdata_gen;
-                fifo_write  <= fifo_write_gen;
-            else
-                fifo_wdata  <= fifo_wdata_hs;
-                fifo_write  <= fifo_write_hs;
-            end if;
+    if(rising_edge(i_clk125))then
+        if(mp_datagen_control_reg(MP_DATA_GEN_ENGAGE_BIT)='1') then
+            fifo_wdata  <= fifo_wdata_gen;
+            fifo_write  <= fifo_write_gen;
+        else
+            fifo_wdata  <= fifo_wdata_hs;
+            fifo_write  <= fifo_write_hs;
         end if;
-    end process output_select;
+    end if;
+    end process;
 
     datagen: work.mp_sorter_datagen
     port map(
@@ -610,7 +611,7 @@ begin
     process(i_clk156)
     begin
     if(rising_edge(i_clk156)) then
-        if(sync_fifo_empty='0') then 
+        if(sync_fifo_empty='0') then
             o_fifo_wdata <= sync_fifo_wdata_out;
             o_fifo_write <= sync_fifo_write_out;
         else
@@ -623,7 +624,7 @@ begin
     process(i_clk125)
     begin
     if(rising_edge(i_clk125)) then
-        if(to_integer(unsigned(data_bypass_select)) <= NCHIPS) then 
+        if(to_integer(unsigned(data_bypass_select)) <= NCHIPS) then
             data_bypass     <= hits_sorter_in(to_integer(unsigned(data_bypass_select)));
             data_bypass_we  <= hits_sorter_in_ena(to_integer(unsigned(data_bypass_select)));
         else

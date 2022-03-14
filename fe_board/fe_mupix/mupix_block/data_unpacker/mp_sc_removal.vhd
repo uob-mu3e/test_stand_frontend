@@ -2,7 +2,7 @@
 --
 -- Removing SC information from hit data stream for MP10
 -- Sebastian Dittmeier, June 2020
--- 
+--
 -- dittmeier@physi.uni-heidelberg.de
 --
 -- last edit: M.Mueller, March 2021
@@ -11,20 +11,19 @@
 library ieee;
 use ieee.std_logic_1164.all;
 
-entity mp_sc_removal is 
-    port (
-        i_reset_n           : in std_logic;
-        i_clk               : in std_logic;
-        i_sc_active         : in std_logic;
-        i_new_block         : in std_logic;
-        i_hit               : in std_logic_vector(31 DOWNTO 0);
-        i_hit_ena           : in std_logic;
-        i_coarsecounters_ena: in std_logic; -- has to be '0' for hits!
-        o_hit               : out std_logic_vector(31 DOWNTO 0);
-        o_hit_ena           : out std_logic--;
-        );
-end mp_sc_removal;
-
+entity mp_sc_removal is
+port (
+    i_reset_n           : in std_logic;
+    i_clk               : in std_logic;
+    i_sc_active         : in std_logic;
+    i_new_block         : in std_logic;
+    i_hit               : in std_logic_vector(31 DOWNTO 0);
+    i_hit_ena           : in std_logic;
+    i_coarsecounters_ena: in std_logic; -- has to be '0' for hits!
+    o_hit               : out std_logic_vector(31 DOWNTO 0);
+    o_hit_ena           : out std_logic--;
+);
+end entity;
 
 architecture rtl of mp_sc_removal is
 
@@ -41,7 +40,6 @@ architecture rtl of mp_sc_removal is
     signal hit_ena_reg_1    : std_logic;
     signal hit_ena_reg_2    : std_logic;
     signal hit_ena_reg_out  : std_logic;
-
 
 begin
 
@@ -81,4 +79,4 @@ begin
     end if;
     end process;
 
-end rtl;
+end architecture;

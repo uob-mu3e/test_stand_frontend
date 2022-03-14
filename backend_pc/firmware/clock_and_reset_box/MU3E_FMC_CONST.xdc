@@ -488,14 +488,3 @@ set_property -dict { PACKAGE_PIN N30  IOSTANDARD LVCMOS33 } [get_ports { CLK_INT
 set_property -dict { PACKAGE_PIN N29  IOSTANDARD LVCMOS33 } [get_ports { CLK_OE_L }]; 		#FMC_K10 Sch=OE				OUT
 set_property -dict { PACKAGE_PIN P22  IOSTANDARD LVCMOS33 } [get_ports { CLK_RST_L }]; 		#FMC_K8 Sch=RST				OUT
 set_property -dict { PACKAGE_PIN P21  IOSTANDARD LVCMOS33 } [get_ports { CLK_LOL_L }]; 		#FMC_K7 Sch=LOL				IN
-
-
-
-
-
-
-
-
-
-
-

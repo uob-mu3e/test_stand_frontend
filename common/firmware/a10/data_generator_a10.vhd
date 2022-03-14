@@ -20,26 +20,27 @@ generic (
         max_row: std_logic_vector (7 downto 0) := (others => '0');
         max_col: std_logic_vector (7 downto 0) := (others => '0');
         test_error: boolean := false;
+        is_farm: boolean := false;
         wtot: std_logic := '0';
         go_to_sh : positive := 2;
         go_to_trailer : positive := 3;
         wchip: std_logic := '0';
-        -- Data type: x"01" = pixel, x"02" = scifi, x"03" = tiles
-        DATA_TYPE : std_logic_vector(7 downto 0) := x"01"--;
+        -- Data type: x"00" = pixel, x"01" = scifi, "10" = tiles
+        DATA_TYPE : std_logic_vector(1 downto 0) := "00"--;
     );
 port (
-		clk 				: in  std_logic;
-		i_reset_n    		: in  std_logic;
-		enable_pix			: in  std_logic;
-        i_dma_half_full		: in  std_logic;
-        delay               : in  std_logic_vector (15 downto 0);
-		random_seed			: in  std_logic_vector (15 downto 0);
-		start_global_time 	: in  std_logic_vector(47 downto 0);
-		data_pix_generated 	: out std_logic_vector(31 downto 0);
-		datak_pix_generated	: out std_logic_vector(3 downto 0);
-		data_pix_ready		: out std_logic;
-		slow_down			: in  std_logic_vector(31 downto 0);
-		state_out			: out std_logic_vector(3 downto 0)
+    clk                 : in    std_logic;
+    i_reset_n           : in    std_logic;
+    enable_pix          : in    std_logic;
+    i_dma_half_full     : in    std_logic;
+    delay               : in    std_logic_vector (15 downto 0);
+    random_seed         : in    std_logic_vector (15 downto 0);
+    start_global_time   : in    std_logic_vector(47 downto 0);
+    data_pix_generated  : out   std_logic_vector(31 downto 0);
+    datak_pix_generated : out   std_logic_vector(3 downto 0);
+    data_pix_ready      : out   std_logic;
+    slow_down           : in    std_logic_vector(31 downto 0);
+    state_out           : out   std_logic_vector(3 downto 0)
 );
 end entity;
 
@@ -60,7 +61,7 @@ architecture rtl of data_generator_a10 is
 	signal row:     	  	  std_logic_vector (7 downto 0);
 	signal col:     	     std_logic_vector (7 downto 0);
 	signal lsfr_overflow, delay_cnt:        std_logic_vector (15 downto 0);
-	
+
 	-- slow down signals
 	signal waiting:				  std_logic;
 	signal wait_counter:			  std_logic_vector(31 downto 0);
@@ -81,10 +82,10 @@ begin
 		reset_n   		=> i_reset_n,
 		i_sync_reset	=> reset,--sync_reset,
 		i_seed   		=> random_seed(5 downto 0),
-		i_en 				=> enable_pix,    
+		i_en 				=> enable_pix,
 		o_lfsr 			=> lsfr_chip_id_reg
 	);
-	
+
 	pix_tot_shift : entity work.linear_shift
 	generic map(
 		g_m 	   		=> 6,
@@ -95,10 +96,10 @@ begin
 		reset_n   		=> i_reset_n,
 		i_sync_reset	=> reset,--sync_reset,
 		i_seed   		=> random_seed(15 downto 10),
-		i_en 				=> enable_pix,    
+		i_en 				=> enable_pix,
 		o_lfsr 			=> lsfr_tot_reg
 	);
-	
+
 	overflow_shift : entity work.linear_shift
 	generic map(
 		g_m 	   		=> 16,
@@ -109,13 +110,13 @@ begin
 		reset_n   		=> i_reset_n,
 		i_sync_reset	=> reset,--sync_reset,
 		i_seed   		=> random_seed,
-		i_en 				=> enable_pix,    
+		i_en 				=> enable_pix,
 		o_lfsr 			=> lsfr_overflow
 	);
 
--- slow down process
-process(clk, i_reset_n)
-begin
+    -- slow down process
+    process(clk, i_reset_n)
+    begin
 	if(i_reset_n = '0') then
 		waiting 			<= '0';
 		wait_counter	<= (others => '0');
@@ -128,19 +129,18 @@ begin
 			waiting			<= '1';
 		end if;
 	end if;
-end process;
+    end process;
 
 lsfr_tot <= (others => '0') when wtot = '0' else lsfr_tot_reg;
 lsfr_chip_id <= (others => '0') when wchip = '0' else lsfr_chip_id_reg;
-	
-	
-	
-process (clk, i_reset_n, start_global_time)
 
-variable current_overflow : std_logic_vector(15 downto 0) := "0000000000000000";
-variable overflow_idx	  : integer range 0 to 15 := 0;
 
-begin
+    process (clk, i_reset_n, start_global_time)
+
+        variable current_overflow : std_logic_vector(15 downto 0) := "0000000000000000";
+        variable overflow_idx	  : integer range 0 to 15 := 0;
+
+    begin
 	if (i_reset_n = '0') then
 		data_pix_ready          <= '0';
 		data_pix_generated      <= (others => '0');
@@ -191,9 +191,9 @@ begin
 					
 					when part3 =>
 						state_out <= x"C";
-						if ( DATA_TYPE = x"01" ) then
+						if ( DATA_TYPE = "00" ) then
                             data_pix_generated					<= global_time(15 downto 0) & x"0000";
-                        elsif ( DATA_TYPE = x"02" ) then
+                        elsif ( DATA_TYPE = "01" ) then
                             data_pix_generated					<= global_time(15 downto 0) & x"AFFE";
                         end if;
 						datak_pix_generated              <= "0000";
@@ -202,10 +202,14 @@ begin
 					when part4 =>
 						state_out <= x"D";
 						global_time <= global_time + '1';
-						if ( DATA_TYPE = x"01" ) then
-                            data_pix_generated 					<= DATA_SUB_HEADER_ID & "000" & global_time(10 downto 4) & lsfr_overflow;
-                        elsif ( DATA_TYPE = x"02" ) then
-                            data_pix_generated 					<= DATA_SUB_HEADER_ID & global_time(13 downto 4) & lsfr_overflow;
+                        if ( not is_farm ) then
+                            if ( DATA_TYPE = "00" ) then
+                                data_pix_generated 					<= DATA_SUB_HEADER_ID & "000" & global_time(10 downto 4) & lsfr_overflow;
+                            elsif ( DATA_TYPE = "01" ) then
+                                data_pix_generated 					<= DATA_SUB_HEADER_ID & global_time(13 downto 4) & lsfr_overflow;
+                            end if;
+                        else
+                            data_pix_generated  <= "00" & global_time(10 downto 9) & "1111111" & global_time(8 downto 4) & lsfr_overflow;
                         end if;
 						datak_pix_generated              <= "0000";
 						overflow_idx 							:= 0;
@@ -214,9 +218,9 @@ begin
 						
                     when part5 =>
                         global_time <= global_time + '1';
-                        if ( DATA_TYPE = x"01" ) then
+                        if ( DATA_TYPE = "00" ) then
                             data_pix_generated 					<= DATA_SUB_HEADER_ID & "000" & global_time(10 downto 4) & lsfr_overflow;
-                        elsif ( DATA_TYPE = x"02" ) then
+                        elsif ( DATA_TYPE = "01" ) then
                             data_pix_generated 					<= DATA_SUB_HEADER_ID & global_time(13 downto 4) & lsfr_overflow;
                         end if;
 						datak_pix_generated              <= "0000";
@@ -241,9 +245,9 @@ begin
                             col <= col + '1';
                         end if;
                         
-                        if ( DATA_TYPE = x"01" ) then
+                        if ( DATA_TYPE = "00" ) then
                             data_pix_generated					<= global_time(3 downto 0) & lsfr_chip_id & row & col & lsfr_tot;
-                        elsif ( DATA_TYPE = x"02" ) then
+                        elsif ( DATA_TYPE = "01" ) then
                             data_pix_generated(31 downto 21)    <= (others => '0');
                             data_pix_generated(20 downto 6)     <= global_time(14 downto 0);
                             data_pix_generated(5 downto 0)    <= (others => '0');
@@ -264,9 +268,9 @@ begin
 							
 					when overflow =>
 						state_out <= x"9";
-						if ( DATA_TYPE = x"01" ) then
+						if ( DATA_TYPE = "00" ) then
                             data_pix_generated				  <= overflow_time(3 downto 0) & lsfr_chip_id & row & col & lsfr_tot;
-                        elsif ( DATA_TYPE = x"02" ) then
+                        elsif ( DATA_TYPE = "01" ) then
                             data_pix_generated(31 downto 21)  <= (others => '0');
                             data_pix_generated(20 downto 6)   <= overflow_time(14 downto 0);
                             data_pix_generated(5 downto 0)    <= (others => '0');
@@ -293,7 +297,7 @@ begin
 			data_pix_ready <= '0';
 		end if;
 	end if;
-end process;
-
+    end process;
 
 end architecture;
+

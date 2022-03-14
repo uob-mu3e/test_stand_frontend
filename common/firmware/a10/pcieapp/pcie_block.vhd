@@ -535,12 +535,12 @@ begin
         refclk              => pld_clk,
 
         -- to IF
-        tx_st_data0         => tx_st_data0,
-        tx_st_eop0          => tx_st_eop0(0),
-        tx_st_sop0          => tx_st_sop0(0),
-        tx_st_ready0        => tx_st_ready0,
-        tx_st_valid0        => tx_st_valid0(0),
-        tx_st_empty0        => tx_st_empty0,
+        o_tx_st_data0       => tx_st_data0,
+        o_tx_st_eop0        => tx_st_eop0(0),
+        o_tx_st_sop0        => tx_st_sop0(0),
+        i_tx_st_ready0      => tx_st_ready0,
+        o_tx_st_valid0      => tx_st_valid0(0),
+        o_tx_st_empty0      => tx_st_empty0,
 
         -- from Config
         completer_id        => cfg_busdev_icm,

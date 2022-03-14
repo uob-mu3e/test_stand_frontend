@@ -8,7 +8,6 @@ generic (
     W : positive := 32--;
 );
 port (
-
     i_link_data  : in std_logic_vector(W-1 downto 0);
     i_link_datak : in std_logic_vector(3 downto 0);
     i_fifo_almost_full : in std_logic;
@@ -19,19 +18,19 @@ port (
 
     o_cnt_skip_data : out std_logic_vector(31 downto 0);
 
-    i_reset_n : in std_logic;
-    i_clk     : in std_logic--;
+    i_reset_n           : in    std_logic;
+    i_clk               : in    std_logic--;
 );
 end entity;
 
 architecture arch of link_to_fifo is
-   
+
     type link_to_fifo_type is (idle, write_data, skip_data);
     signal link_to_fifo_state : link_to_fifo_type;
     signal cnt_skip_data : std_logic_vector(31 downto 0);
 
 begin
-    
+
     o_cnt_skip_data <= cnt_skip_data;
 
     process(i_clk, i_reset_n)
@@ -46,8 +45,8 @@ begin
 
         o_fifo_wr <= '0';
         o_fifo_data <= i_link_data & i_link_datak;
-        
-        case link_to_fifo_state is 
+
+        case link_to_fifo_state is
 
         when idle =>
             if ( (i_link_data = x"000000BC" and i_link_datak = "0001") or i_sync_fifo_empty = '1' ) then
@@ -80,7 +79,7 @@ begin
 
         when others =>
             link_to_fifo_state <= idle;
-        
+
         end case;
     --
     end if;

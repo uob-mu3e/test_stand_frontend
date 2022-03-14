@@ -29,7 +29,7 @@ port (
     o_fifo_empty    : out std_logic_vector(gen_fifos - 1 downto 0);
     o_fifo_ren      : out std_logic_vector(compare_fifos - 1 downto 0);
     o_mask_n        : out std_logic_vector(gen_fifos - 1 downto 0);
-    
+
     i_reset_n       : in  std_logic;
     i_clk           : in  std_logic--;
 );
@@ -39,7 +39,7 @@ architecture arch of time_merger_tree_fifo_64 is
 
     -- merger signals
     constant size : integer := compare_fifos/2;
-    
+
     signal fifo_data, fifo_data_reg, fifo_q, fifo_q_reg : work.util.slv76_array_t(gen_fifos - 1 downto 0);
     signal layer_state : work.util.slv4_array_t(gen_fifos - 1 downto 0);
     signal fifo_ren_reg, fifo_ren : std_logic_vector(compare_fifos - 1 downto 0);
@@ -57,25 +57,25 @@ begin
 
     o_mask_n(i) <= i_mask_n(i) or i_mask_n(i + size);
 
-    e_link_fifo : entity work.ip_dcfifo_mixed_widths
+    e_link_fifo : entity work.ip_dcfifo_v2
     generic map(
-        ADDR_WIDTH_w    => TREE_w,
-        DATA_WIDTH_w    => w_width,
-        ADDR_WIDTH_r    => TREE_r,
-        DATA_WIDTH_r    => r_width--,
+        g_WADDR_WIDTH => TREE_w,
+        g_WDATA_WIDTH => w_width,
+        g_RADDR_WIDTH => TREE_r,
+        g_RDATA_WIDTH => r_width--,
     )
     port map (
-        aclr    => not i_reset_n or reset_fifo(i),
-        data    => fifo_data_reg(i),
-        rdclk   => i_clk,
-        rdreq   => i_fifo_ren(i),
-        wrclk   => i_clk,
-        wrreq   => fifo_wen_reg(i),
-        q       => fifo_q_reg(i),
-        rdempty => fifo_empty_reg(i),
-        rdusedw => open,
-        wrfull  => fifo_full_reg(i),
-        wrusedw => open--,
+        i_we        => fifo_wen_reg(i),
+        i_wdata     => fifo_data_reg(i),
+        o_wfull     => fifo_full_reg(i),
+        i_wclk      => i_clk,
+
+        i_rack      => i_fifo_ren(i),
+        o_rdata     => fifo_q_reg(i),
+        o_rempty    => fifo_empty_reg(i),
+        i_rclk      => i_clk,
+
+        i_reset_n   => i_reset_n and (not reset_fifo(i))--,
     );
 
     process(i_clk, i_reset_n)
@@ -103,7 +103,7 @@ begin
         reset_fifo_reg1(i) <= reset_fifo_reg0(i);
         reset_fifo_reg2(i) <= reset_fifo_reg1(i);
         fifo_wen(i) <= '0';
-        
+
         -- 31 downto 0  -> hit1
         -- 31 downto 28 -> ts1
         -- 37 downto 32 -> link number1
@@ -112,7 +112,7 @@ begin
         -- 75 downto 70 -> link number 2
         if ( i_merge_state = '1' ) then
             case layer_state(i) is
-            
+
                 when "0000" =>
                     if ( fifo_full(i) = '1' or reset_fifo(i) = '1' ) then -- or reset_fifo_reg0(i) = '1' or reset_fifo_reg1(i) = '1' or reset_fifo_reg2(i) = '1' ) then
                         --
@@ -156,7 +156,7 @@ begin
                                 fifo_wen(i) <= '1';
                                 layer_state(i) <= "1110";
                             end if;
-                        elsif ( i_fifo_q(i)(37 downto 0) = tree_padding and i_fifo_q(i + size)(37 downto 0) = tree_padding ) then 
+                        elsif ( i_fifo_q(i)(37 downto 0) = tree_padding and i_fifo_q(i + size)(37 downto 0) = tree_padding ) then
                             fifo_data(i) <= tree_padding & tree_padding;
                             fifo_wen(i) <= '1';
                             layer_state(i) <= "1110";
@@ -215,8 +215,8 @@ begin
                     -- TODO: define signal for empty since the fifo should be able to get empty if no hits are comming
                     if ( fifo_full(i) = '1' ) then
                         --
-                    elsif ( i_fifo_empty(i + size) = '0' and fifo_ren(i + size) = '0' and fifo_ren_reg(i + size) = '0' ) then       
-                        -- TODO: what to do when i_fifo_q(i)(69 downto 66) is zero? maybe error cnt?     
+                    elsif ( i_fifo_empty(i + size) = '0' and fifo_ren(i + size) = '0' and fifo_ren_reg(i + size) = '0' ) then
+                        -- TODO: what to do when i_fifo_q(i)(69 downto 66) is zero? maybe error cnt?
                         if ( i_fifo_q(i)(69 downto 66) <= i_fifo_q(i + size)(31 downto 28) and i_fifo_q(i)(75 downto 38) /= tree_zero and i_fifo_q(i)(75 downto 38) /= tree_padding ) then
                             fifo_data(i)(75 downto 38) <= i_fifo_q(i)(75 downto 38);
                             layer_state(i)(1) <= '1';
@@ -236,12 +236,12 @@ begin
                     end if;
                 when "1111" =>
                     if ( fifo_full(i) = '0' ) then
-                        if ( i_mask_n(i) = '1' and i_fifo_empty(i) = '0' and fifo_ren(i) = '0' and fifo_ren_reg(i) = '0' and i_fifo_q(i)(75 downto 38) /= tree_zero ) then 
-                            fifo_data(i) <= i_fifo_q(i);    
+                        if ( i_mask_n(i) = '1' and i_fifo_empty(i) = '0' and fifo_ren(i) = '0' and fifo_ren_reg(i) = '0' and i_fifo_q(i)(75 downto 38) /= tree_zero ) then
+                            fifo_data(i) <= i_fifo_q(i);
                             fifo_wen(i) <= '1';
                             fifo_ren(i) <= '1';
                         elsif ( i_mask_n(i + size) = '1' and i_fifo_empty(i + size) = '0' and fifo_ren(i + size) = '0' and fifo_ren_reg(i + size) = '0' and i_fifo_q(i + size)(75 downto 38) /= tree_zero ) then
-                            fifo_data(i) <= i_fifo_q(i + size);    
+                            fifo_data(i) <= i_fifo_q(i + size);
                             fifo_wen(i) <= '1';
                             fifo_ren(i + size) <= '1';
                         elsif ( i_mask_n(i) = '0' and i_mask_n(i + size) = '0' ) then
@@ -263,7 +263,7 @@ begin
         end if;
     end if;
     end process;
-    
+
     -- reg for FIFO outputs (timing)
     process(i_clk, i_reset_n)
     begin
@@ -276,7 +276,7 @@ begin
         fifo_empty(i) <= fifo_empty_reg(i);
     end if;
     end process;
-    
+
     -- reg for FIFO inputs (timing)
     process(i_clk, i_reset_n)
     begin
@@ -290,7 +290,7 @@ begin
         fifo_full(i)        <= fifo_full_reg(i);
     end if;
     end process;
-    
+
     END GENERATE tree_fifos;
 
 end architecture;

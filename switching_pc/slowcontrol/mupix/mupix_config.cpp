@@ -5,6 +5,10 @@
 
 #include "mupix_config.h"
 
+namespace midas{
+    class odb;
+}
+
 namespace mupix {
 
 /// MUPIX configuration
@@ -160,6 +164,45 @@ void MupixConfig::Parse_BiasDACs_from_struct(MUPIX_BIASDACS mt) {
     setParameter("Bandgap_on", mt.Bandgap_on, false);
 }
 
+void MupixConfig::Parse_BiasDACs_from_odb(odb & mt) {
+    setParameter("VNTimerDel", mt["VNTimerDel"], false);
+    setParameter("VPTimerDel", mt["VPTimerDel"], false);
+    setParameter("VNDAC", mt["VNDAC"], false);
+    setParameter("VPFoll", mt["VPFoll"], false);
+    setParameter("VNComp", mt["VNComp"], false);
+    setParameter("VNHB", mt["VNHB"], false);
+    setParameter("VPComp2", mt["VPComp2"], false);
+    setParameter("VPPump", mt["VPPump"], false);
+    setParameter("VNLVDSDel", mt["VNLVDSDel"], false);
+    setParameter("VNLVDS", mt["VNLVDS"], false);
+    setParameter("VNDcl", mt["VNDcl"], false);
+    setParameter("VPDcl", mt["VPDcl"], false);
+    setParameter("VNDelPreEmp", mt["VNDelPreEmp"], false);
+    setParameter("VPDelPreEmp", mt["VPDelPreEmp"], false);
+    setParameter("VNDelDcl", mt["VNDelDcl"], false);
+    setParameter("VPDelDcl", mt["VPDelDcl"], false);
+    setParameter("VNDelDclMux", mt["VNDelDclMux"], false);
+    setParameter("VPDelDclMux", mt["VPDelDclMux"], false);
+    setParameter("VNVCO", mt["VNVCO"], false);
+    setParameter("VPVCO", mt["VPVCO"], false);
+    setParameter("VNOutPix", mt["VNOutPix"], false);
+    setParameter("VPLoadPix", mt["VPLoadPix"], false);
+    setParameter("VNBiasPix", mt["VNBiasPix"], false);
+    setParameter("BLResDig", mt["BLResDig"], false);
+    setParameter("VNPix2", mt["VNPix2"], false);
+    setParameter("VPDAC", mt["VPDAC"], false);
+    setParameter("VPComp1", mt["VPComp1"], false);
+    setParameter("VNDel", mt["VNDel"], false);
+    setParameter("VNRegC", mt["VNRegC"], false);
+    setParameter("VNFollPix", mt["VNFollPix"], false);
+    setParameter("VNFBPix", mt["VNFBPix"], false);
+    setParameter("VNPix", mt["VNPix"], false);
+    setParameter("ThRes", mt["ThRes"], false);
+    setParameter("BLResPix", mt["BLResPix"], false);
+    setParameter("BiasBlock_on", mt["BiasBlock_on"], false);
+    setParameter("Bandgap_on", mt["Bandgap_on"], false);
+}
+
 void MupixConfig::Parse_ConfDACs_from_struct(MUPIX_CONFDACS mt) {
     setParameter("SelFast", mt.SelFast, false);
     setParameter("count_sheep", mt.count_sheep, false);
@@ -196,6 +239,42 @@ void MupixConfig::Parse_ConfDACs_from_struct(MUPIX_CONFDACS mt) {
     setParameter("ckdivend", mt.ckdivend, false);
 }
 
+void MupixConfig::Parse_ConfDACs_from_odb(odb & mt) {
+    setParameter("SelFast", mt["SelFast"], false);
+    setParameter("count_sheep", mt["count_sheep"], false);
+    setParameter("NC1", mt["NC1"], false);
+    setParameter("TestOut", mt["TestOut"], false);
+    setParameter("disable_HB", mt["disable_HB"], false);
+    setParameter("conf_res_n", mt["conf_res_n"], false);
+    setParameter("RO_res_n", mt["RO_res_n"], false);
+    setParameter("Ser_res_n", mt["Ser_res_n"], false);
+    setParameter("Aur_res_n", mt["Aur_res_n"], false);
+    setParameter("NC2", mt["NC2"], false);
+    setParameter("Tune_Reg_L", mt["Tune_Reg_L"], false);
+    setParameter("NC3", mt["NC3"], false);
+    setParameter("Tune_Reg_R", mt["Tune_Reg_R"], false);
+    setParameter("AlwaysEnable", mt["AlwaysEnable"], false);
+    setParameter("En2thre", mt["En2thre"], false);
+    setParameter("NC4", mt["NC4"], false);
+    setParameter("EnPLL", mt["EnPLL"], false);
+    setParameter("SelSlow", mt["SelSlow"], false);
+    setParameter("SelEx", mt["SelEx"], false);
+    setParameter("invert", mt["invert"], false);
+    setParameter("slowdownlDColEnd", mt["slowdownlDColEnd"], false);
+    setParameter("EnSync_SC", mt["EnSync_SC"], false);
+    setParameter("NC5", mt["NC5"], false);
+    setParameter("linksel", mt["linksel"], false);
+    setParameter("tsphase", mt["tsphase"], false);
+    setParameter("sendcounter", mt["sendcounter"], false);
+    setParameter("resetckdivend", mt["resetckdivend"], false);
+    setParameter("NC6", mt["NC6"], false);
+    setParameter("maxcycend", mt["maxcycend"], false);
+    setParameter("slowdownend", mt["slowdownend"], false);
+    setParameter("timerend", mt["timerend"], false);
+    setParameter("ckdivend2", mt["ckdivend2"], false);
+    setParameter("ckdivend", mt["ckdivend"], false);
+}
+
 void MupixConfig::Parse_VDACs_from_struct(MUPIX_VDACS mt) {
     setParameter("VCAL", mt.VCAL, false);
     setParameter("BLPix", mt.BLPix, false);
@@ -209,4 +288,17 @@ void MupixConfig::Parse_VDACs_from_struct(MUPIX_VDACS mt) {
     setParameter("ref_Vss", mt.ref_Vss, false);
 }
 
-} // namespace mutrig
+void MupixConfig::Parse_VDACs_from_odb(odb & mt) {
+    setParameter("VCAL", mt["VCAL"], false);
+    setParameter("BLPix", mt["BLPix"], false);
+    setParameter("ThPix", mt["ThPix"], false);
+    setParameter("ThHigh", mt["ThHigh"], false);
+    setParameter("ThLow", mt["ThLow"], false);
+    setParameter("ThHigh2", mt["ThHigh2"], false);
+    setParameter("ThLow2", mt["ThLow2"], false);
+    setParameter("Baseline", mt["Baseline"], false);
+    setParameter("VDAC1", mt["VDAC1"], false);
+    setParameter("ref_Vss", mt["ref_Vss"], false);
+}
+
+} // namespace mupix
