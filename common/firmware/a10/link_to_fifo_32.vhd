@@ -19,7 +19,7 @@ generic (
 port (
     i_rx            : in    work.mu3e.link_t;
 
-    o_q             : out std_logic_vector(33 downto 0);
+    o_q             : out   work.mu3e.link_t;
     i_ren           : in std_logic;
     o_rdempty       : out std_logic;
 
@@ -42,7 +42,7 @@ architecture arch of link_to_fifo_32 is
     signal link_to_fifo_state : link_to_fifo_type;
     signal cnt_skip_data, cnt_sub, cnt_events : std_logic_vector(31 downto 0);
 
-    signal rx_156_data : std_logic_vector(33 downto 0);
+    signal rx_156_data : work.mu3e.link_t;
     signal rx_156_wen, almost_full, wrfull : std_logic;
     signal wrusedw : std_logic_vector(LINK_FIFO_ADDR_WIDTH - 1 downto 0);
 
@@ -66,7 +66,7 @@ begin
     process(i_clk, i_reset_n)
     begin
     if ( i_reset_n /= '1' ) then
-        rx_156_data         <= (others => '0');
+        rx_156_data         <= work.mu3e.LINK_ZERO;
         cnt_sub             <= (others => '0');
         cnt_events          <= (others => '0');
         rx_156_wen          <= '0';
@@ -77,8 +77,11 @@ begin
     elsif rising_edge(i_clk) then
 
         rx_156_wen  <= '0';
-        rx_156_data(31 downto 0)  <= i_rx.data;
-        rx_156_data(33 downto 32) <= "00";
+        rx_156_data <= i_rx;
+        -- reset sop/eop/sh
+        rx_156_data.sop <= '0';
+        rx_156_data.eop <= '0';
+        rx_156_data.sbhdr <= '0';
 
         if ( i_rx.data = x"000000BC" and i_rx.datak = "0001" ) then
             --
@@ -93,7 +96,8 @@ begin
                         cnt_skip_data <= cnt_skip_data + '1';
                     else
                         link_to_fifo_state <= write_ts_0;
-                        rx_156_data(33 downto 32) <= "10"; -- header
+                        -- header
+                        rx_156_data.sop <= '1';
                         rx_156_wen <= '1';
                     end if;
                 end if;
@@ -109,11 +113,13 @@ begin
             when write_data =>
                 if ( i_rx.data(7 downto 0) = x"9C" and i_rx.datak = "0001" ) then
                     link_to_fifo_state <= idle;
-                    rx_156_data(33 downto 32) <= "01"; -- trailer
+                    -- trailer
+                    rx_156_data.eop <= '1';
                 end if;
 
                 if ( i_rx.data(31 downto 26) = "111111" and i_rx.datak = "0000" ) then
-                    rx_156_data(33 downto 32) <= "11"; -- sub header
+                    -- sub header
+                    rx_156_data.sbhdr <= '1';
                     cnt_sub <= cnt_sub + '1';
                 end if;
 
@@ -139,10 +145,9 @@ begin
     end if;
     end process;
 
-    e_fifo : entity work.ip_dcfifo_v2
+    e_fifo : entity work.link_dcfifo
     generic map (
         g_ADDR_WIDTH => LINK_FIFO_ADDR_WIDTH,
-        g_DATA_WIDTH => 34,
         g_WREG_N => 1,
         g_RREG_N => 1--,
     )

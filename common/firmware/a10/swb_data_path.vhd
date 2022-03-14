@@ -69,13 +69,13 @@ architecture arch of swb_data_path is
     --! data link signals
     signal rx : work.mu3e.link_array_t(g_NLINKS_DATA-1 downto 0);
     signal rx_ren, rx_mask_n, rx_rdempty : std_logic_vector(g_NLINKS_DATA-1 downto 0) := (others => '0');
-    signal rx_q : work.util.slv34_array_t(g_NLINKS_DATA-1 downto 0) := (others => (others => '0'));
+    signal rx_q : work.mu3e.link_array_t(g_NLINKS_DATA-1 downto 0) := (others => work.mu3e.LINK_ZERO);
     signal sop, eop, shop : std_logic_vector(g_NLINKS_DATA-1 downto 0) := (others => '0');
 
     --! stream merger
-    signal stream_rdata : std_logic_vector(31 downto 0);
+    signal stream_rdata : work.mu3e.link_t;
     signal stream_counters : work.util.slv32_array_t(0 downto 0);
-    signal stream_rempty, stream_ren, stream_header, stream_trailer : std_logic;
+    signal stream_rempty, stream_ren : std_logic;
     signal stream_rack : std_logic_vector(g_NLINKS_DATA-1 downto 0);
 
     --! timer merger
@@ -199,10 +199,6 @@ begin
             i_clk           => i_clk--,
         );
 
-        sop(i)  <= '1' when rx_q(i)(33 downto 32) = "10" else '0';
-        shop(i) <= '1' when rx_q(i)(33 downto 32) = "11" else '0';
-        eop(i)  <= '1' when rx_q(i)(33 downto 32) = "01" else '0';
-
     END GENERATE gen_link_fifos;
 
 
@@ -212,13 +208,10 @@ begin
     --! ------------------------------------------------------------------------
     e_stream : entity work.swb_stream_merger
     generic map (
-        W => 34,
         N => g_NLINKS_DATA--,
     )
     port map (
         i_rdata     => rx_q,
-        i_rsop      => sop,
-        i_reop      => eop,
         i_rempty    => rx_rdempty,
         i_rmask_n   => i_rmask_n,
         i_en        => i_writeregs_250(SWB_READOUT_STATE_REGISTER_W)(USE_BIT_STREAM),
@@ -227,8 +220,6 @@ begin
         o_wdata     => stream_rdata,
         o_rempty    => stream_rempty,
         i_ren       => stream_ren,
-        o_wsop      => stream_header,
-        o_weop      => stream_trailer,
 
         o_counters  => stream_counters,
 
@@ -252,9 +243,6 @@ begin
     )
     port map (
         i_rx            => rx_q,
-        i_rsop          => sop,
-        i_reop          => eop,
-        i_rshop         => shop,
         i_rempty        => rx_rdempty,
         i_rmask_n       => i_rmask_n,
         o_rack          => merger_rack,
@@ -279,21 +267,21 @@ begin
     --! ------------------------------------------------------------------------
     --! ------------------------------------------------------------------------
     --! ------------------------------------------------------------------------
-    builder_data  <=  stream_rdata when i_writeregs_250(SWB_READOUT_STATE_REGISTER_W)(USE_BIT_STREAM) = '1' else
+    builder_data  <=  stream_rdata.data when i_writeregs_250(SWB_READOUT_STATE_REGISTER_W)(USE_BIT_STREAM) = '1' else
                       merger_rdata_debug when i_writeregs_250(SWB_READOUT_STATE_REGISTER_W)(USE_BIT_MERGER) = '1' else
                       (others => '0');
     builder_rempty  <=  stream_rempty when i_writeregs_250(SWB_READOUT_STATE_REGISTER_W)(USE_BIT_STREAM) = '1' else
                         merger_rempty_debug when i_writeregs_250(SWB_READOUT_STATE_REGISTER_W)(USE_BIT_MERGER) = '1' else
                         '0';
-    builder_header  <=  stream_header when i_writeregs_250(SWB_READOUT_STATE_REGISTER_W)(USE_BIT_STREAM) = '1' else
+    builder_header  <=  stream_rdata.sop when i_writeregs_250(SWB_READOUT_STATE_REGISTER_W)(USE_BIT_STREAM) = '1' else
                         merger_header when i_writeregs_250(SWB_READOUT_STATE_REGISTER_W)(USE_BIT_MERGER) = '1' else
                         '0';
-    builder_trailer <=  stream_trailer when i_writeregs_250(SWB_READOUT_STATE_REGISTER_W)(USE_BIT_STREAM) = '1' else
+    builder_trailer <=  stream_rdata.eop when i_writeregs_250(SWB_READOUT_STATE_REGISTER_W)(USE_BIT_STREAM) = '1' else
                         merger_trailer when i_writeregs_250(SWB_READOUT_STATE_REGISTER_W)(USE_BIT_MERGER) = '1' else
                         '0';
     stream_ren <= builder_rack when i_writeregs_250(SWB_READOUT_STATE_REGISTER_W)(USE_BIT_STREAM) = '1' else '0';
-    merger_ren <= farm_rack when i_writeregs_250(SWB_READOUT_STATE_REGISTER_W)(USE_BIT_FARM) = '1' else 
-                  builder_rack when i_writeregs_250(SWB_READOUT_STATE_REGISTER_W)(USE_BIT_MERGER) = '1' else 
+    merger_ren <= farm_rack when i_writeregs_250(SWB_READOUT_STATE_REGISTER_W)(USE_BIT_FARM) = '1' else
+                  builder_rack when i_writeregs_250(SWB_READOUT_STATE_REGISTER_W)(USE_BIT_MERGER) = '1' else
                   '0';
     rx_ren <=   stream_rack when i_writeregs_250(SWB_READOUT_STATE_REGISTER_W)(USE_BIT_STREAM) = '1' else
                 merger_rack when i_writeregs_250(SWB_READOUT_STATE_REGISTER_W)(USE_BIT_MERGER) = '1' else

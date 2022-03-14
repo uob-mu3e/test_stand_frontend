@@ -26,8 +26,7 @@ port (
     i_reset_data_n              : in    std_logic;
     i_reset_dma_n               : in    std_logic;
 
-    i_link_data                 : in    std_logic_vector (NLINKS * 32 - 1 downto 0);
-    i_link_datak                : in    std_logic_vector (NLINKS * 4 - 1 downto 0);
+    i_link_data                 : in    work.mu3e.link_array_t(NLINKS-1 downto 0);
     i_link_mask_n               : in    std_logic_vector (NLINKS - 1 downto 0);
 
     i_wen_reg                   : in    std_logic;
@@ -68,13 +67,13 @@ architecture rtl of midas_event_builder is
 
     -- link fifos
     signal link_fifo_wren, link_fifo_ren, link_fifo_ren_reg, link_fifo_empty, link_fifo_empty_reg, link_fifo_full, link_fifo_almost_full : std_logic_vector(NLINKS - 1 downto 0);
-    signal link_data_f, link_dataq_f, link_dataq_f_reg : work.util.slv38_array_t(NLINKS - 1 downto 0);
+    signal link_data_f, link_dataq_f, link_dataq_f_reg : work.mu3e.link_array_t(NLINKS-1 downto 0);
     signal link_fifo_usedw, link_fifo_usedw_reg : std_logic_vector(LINK_FIFO_ADDR_WIDTH * NLINKS - 1 downto 0);
     signal sync_fifo_empty : std_logic_vector(NLINKS - 1 downto 0);
     signal sync_fifo_i_wrreq : std_logic_vector(NLINKS - 1 downto 0);
     type sync_fifo_t is array (NLINKS - 1 downto 0) of std_logic_vector(35 downto 0);
-    signal sync_fifo_q : sync_fifo_t;
-    signal sync_fifo_data : sync_fifo_t;
+    signal sync_fifo_q : work.mu3e.link_array_t(NLINKS-1 downto 0);
+    signal sync_fifo_data : work.mu3e.link_array_t(NLINKS-1 downto 0);
 
     -- event ram
     signal w_ram_data : std_logic_vector(31 downto 0);
@@ -122,15 +121,15 @@ architecture rtl of midas_event_builder is
     signal word_counter : std_logic_vector(31 downto 0);
 
     -- current link data/datak/empty
-    signal sop, sop_reg, eop, eop_reg, shop, shop_reg : std_logic_vector(NLINKS-1 downto 0);
+    signal sop_reg, eop_reg, shop, shop_reg : std_logic_vector(NLINKS-1 downto 0);
     signal stream_in_rempty : std_logic_vector(NLINKS-1 downto 0);
     signal stream_wdata, stream_rdata : std_logic_vector(35 downto 0);
+    signal stream_wdata2, stream_rdata2 : work.mu3e.link_t;
     signal time_merger_hit : std_logic_vector(37 downto 0);
     signal stream_rempty, time_rempty, stream_rack, stream_wfull, stream_we : std_logic;
-    signal link_data : std_logic_vector(31 downto 0);
-    signal link_datak : std_logic_vector(3 downto 0);
+    signal link_data : work.mu3e.link_t := work.mu3e.LINK_ZERO;
     signal link_number : std_logic_vector(5 downto 0);
-    signal link_header, link_trailer, link_error : std_logic;
+    signal link_error : std_logic;
 
     -- error cnt
     constant all_zero : std_logic_vector(NLINKS - 1 downto 0) := (others => '0');
@@ -241,11 +240,11 @@ begin
         process(i_clk_data, i_reset_data_n)
         begin
             if ( i_reset_data_n = '0' ) then
-                sync_fifo_data(i) <= (others => '0');
+                sync_fifo_data(i) <= work.mu3e.LINK_ZERO;
                 sync_fifo_i_wrreq(i) <= '0';
             elsif ( rising_edge(i_clk_data) ) then
-                sync_fifo_data(i) <= i_link_data(31 + i * 32 downto i * 32) & i_link_datak(3 + i * 4 downto i * 4);
-                if ( i_link_data(31 + i * 32 downto i * 32) = x"000000BC" and i_link_datak(3 + i * 4 downto i * 4) = "0001" ) then
+                sync_fifo_data(i) <= i_link_data(i);
+                if ( i_link_data(i).data = x"000000BC" and i_link_data(i).datak = "0001" ) then
                     sync_fifo_i_wrreq(i) <= '0';
                 else
                     sync_fifo_i_wrreq(i) <= '1';
@@ -265,65 +264,55 @@ begin
             end if;
         end process;
 
-        e_sync_fifo : entity work.ip_dcfifo
+        e_sync_fifo : entity work.link_dcfifo
         generic map(
-            ADDR_WIDTH  => 6,
-            DATA_WIDTH  => 36--,
+            g_ADDR_WIDTH  => 6--,
         )
         port map (
-            data        => sync_fifo_data(i),
-            wrreq       => sync_fifo_i_wrreq(i),
-            rdreq       => not sync_fifo_empty(i),
-            wrclk       => i_clk_data,
-            rdclk       => i_clk_dma,
-            q           => sync_fifo_q(i),
-            rdempty     => sync_fifo_empty(i),
-            aclr        => '0'--,
+            i_we        => sync_fifo_i_wrreq(i),
+            i_wdata     => sync_fifo_data(i),
+            i_wclk      => i_clk_data,
+
+            i_rack      => not sync_fifo_empty(i),
+            o_rdata     => sync_fifo_q(i),
+            o_rempty    => sync_fifo_empty(i),
+            i_rclk      => i_clk_dma,
+
+            i_reset_n   => '1'--,
         );
 
         e_link_to_fifo : entity work.link_to_fifo
-        generic map(
-            W => 32--,
-        )
         port map(
-            i_link_data         => sync_fifo_q(i)(35 downto 4),
-            i_link_datak        => sync_fifo_q(i)(3 downto 0),
+            i_link              => sync_fifo_q(i),
             i_fifo_almost_full  => link_fifo_almost_full(i),
             i_sync_fifo_empty   => sync_fifo_empty(i),
-            o_fifo_data         => link_data_f(i)(35 downto 0),
+            o_fifo_data         => link_data_f(i),
             o_fifo_wr           => link_fifo_wren(i),
             o_cnt_skip_data     => o_cnt_skip_link_data,
             i_reset_n           => i_reset_dma_n,
             i_clk               => i_clk_dma--,
         );
 
-        -- sop
-        link_data_f(i)(36) <= '1' when ( link_data_f(i)(3 downto 0) = "0001" and link_data_f(i)(11 downto 4) = x"BC" ) else '0';
-        -- eop
-        link_data_f(i)(37) <= '1' when ( link_data_f(i)(3 downto 0) = "0001" and link_data_f(i)(11 downto 4) = x"9C" ) else '0';
-
-        e_fifo : entity work.ip_dcfifo
+        e_fifo : entity work.link_dcfifo
         generic map(
-            ADDR_WIDTH  => LINK_FIFO_ADDR_WIDTH,
-            DATA_WIDTH  => 38--,
+            g_ADDR_WIDTH  => LINK_FIFO_ADDR_WIDTH--,
         )
         port map (
-            data        => link_data_f(i),
-            wrreq       => link_fifo_wren(i),
-            rdreq       => link_fifo_ren(i),--_reg(i),
-            wrclk       => i_clk_dma,
-            rdclk       => i_clk_dma,
-            q           => link_dataq_f(i),
-            rdempty     => link_fifo_empty(i),
-            rdusedw     => open,
-            wrfull      => fifos_full(i),
-            wrusedw     => link_fifo_usedw(i * LINK_FIFO_ADDR_WIDTH + LINK_FIFO_ADDR_WIDTH - 1 downto i * LINK_FIFO_ADDR_WIDTH),
-            aclr        => reset_dma--,
+            i_we        => link_fifo_wren(i),
+            i_wdata     => link_data_f(i),
+            o_wfull     => fifos_full(i),
+            o_wusedw    => link_fifo_usedw(i * LINK_FIFO_ADDR_WIDTH + LINK_FIFO_ADDR_WIDTH - 1 downto i * LINK_FIFO_ADDR_WIDTH),
+            i_wclk      => i_clk_dma,
+
+            i_rack      => link_fifo_ren(i),--_reg(i),
+            o_rdata     => link_dataq_f(i),
+            o_rempty    => link_fifo_empty(i),
+            i_rclk      => i_clk_dma,
+
+            i_reset_n   => not reset_dma--,
         );
 
-        sop(i) <= link_dataq_f(i)(36);
-        shop(i) <= '1' when link_dataq_f(i)(37 downto 36) = "00" and link_dataq_f(I)(31 downto 26) = "111111" else '0';
-        eop(i) <= link_dataq_f(i)(37);
+        shop(i) <= '1' when link_dataq_f(i).eop = '0' and link_dataq_f(i).sop = '0' and link_dataq_f(I).data(27 downto 22) = "111111" else '0';
 
         process(i_clk_dma, i_reset_dma_n)
         begin
@@ -386,13 +375,11 @@ begin
             N => NLINKS--,
         )
         port map (
-            i_rdata                 => link_dataq_f,
-            i_rsop                  => sop,
-            i_reop                  => eop,
-            i_rempty                => stream_in_rempty,
             o_rack                  => link_fifo_ren,
+            i_rdata                 => link_dataq_f,
+            i_rempty                => stream_in_rempty,
 
-            o_wdata(35 downto 0)    => stream_wdata,
+            o_wdata                 => stream_wdata2,
             i_wfull                 => stream_wfull,
             o_we                    => stream_we,
 
@@ -400,31 +387,25 @@ begin
             i_clk                   => i_clk_dma--,
         );
 
-        e_stream_fifo : entity work.ip_scfifo
+        e_stream_fifo : entity work.link_scfifo
         generic map (
-            ADDR_WIDTH => 8,
-            DATA_WIDTH => 36--,
+            g_ADDR_WIDTH => 8--,
         )
         port map (
-            q               => stream_rdata,
-            empty           => stream_rempty,
-            rdreq           => stream_rack,
-            data            => stream_wdata,
-            full            => stream_wfull,
-            wrreq           => stream_we,
-            sclr            => reset_dma,
-            clock           => i_clk_dma--,
+            i_we            => stream_we,
+            i_wdata         => stream_wdata2,
+            o_wfull         => stream_wfull,
+
+            i_rack          => stream_rack,
+            o_rdata         => stream_rdata2,
+            o_rempty        => stream_rempty,
+
+            i_reset_n       => not reset_dma,
+            i_clk           => i_clk_dma--,
         );
 
-        link_data <= stream_rdata(35 downto 4);
-        link_datak <= stream_rdata(3 downto 0);
+        link_data <= stream_rdata2;
 
-        link_header <=
-            '1' when link_datak = "0001" and link_data(7 downto 0) = x"BC"
-            else '0';
-        link_trailer <=
-            '1' when link_datak = "0001" and link_data(7 downto 0) = x"9C"
-            else '0';
     end generate;
 
 
@@ -464,8 +445,6 @@ begin
         port map (
             -- input streams
             i_rdata                 => link_dataq_f,--link_dataq_f_reg,
-            i_rsop                  => sop,--sop_reg,
-            i_reop                  => eop,--eop_reg,
             i_rshop                 => shop,--shop_reg,
             i_rempty                => link_fifo_empty,--link_fifo_empty_reg,
             i_link                  => 1, -- which link should be taken to check ts etc.
@@ -511,9 +490,9 @@ begin
             clock           => i_clk_dma--,
         );
 
-        link_data <= stream_rdata(31 downto 0);
-        link_header <= '1' when stream_rdata(33 downto 32) = "01" else '0';
-        link_trailer <= '1' when stream_rdata(33 downto 32) = "10" else '0';
+        link_data.data <= stream_rdata(31 downto 0);
+        link_data.sop <= '1' when stream_rdata(33 downto 32) = "01" else '0';
+        link_data.eop <= '1' when stream_rdata(33 downto 32) = "10" else '0';
         -- TODO: handle errors, at the moment they are sent out at the end of normal events
         link_error <= '1' when stream_rdata(33 downto 32) = "11" and stream_rdata(7 downto 0) = x"DC" else '0';
 
@@ -521,7 +500,7 @@ begin
 
     stream_rack <=
         '1' when ( event_tagging_state = bank_data and stream_rempty = '0' ) else
-        '1' when ( event_tagging_state = EVENT_IDLE and stream_rempty = '0' and link_header = '0' ) else
+        '1' when ( event_tagging_state = EVENT_IDLE and stream_rempty = '0' and link_data.sop = '0' ) else
         '0';
 
     -- write link data to event ram
@@ -576,9 +555,9 @@ begin
         case event_tagging_state is
         when EVENT_IDLE =>
             -- start if at least one not masked link has data
-            if ( stream_rempty = '0' and link_header = '1' ) then
+            if ( stream_rempty = '0' and link_data.sop = '1' ) then
                 event_tagging_state <= event_head;
-            elsif ( stream_rempty = '0' and link_header = '0' ) then
+            elsif ( stream_rempty = '0' and link_data.sop = '0' ) then
                 cnt_idle_not_header <= cnt_idle_not_header + 1;
             end if;
 
@@ -628,7 +607,7 @@ begin
 
             -- here we check if the link is masked and if the current fifo is empty
             -- check for mupix or mutrig data header
-            if ( stream_rempty = '0' and link_header = '1' ) then
+            if ( stream_rempty = '0' and link_data.sop = '1' ) then
                 data_flag <= '1';
                 w_ram_en    <= '1';
                 w_ram_add   <= w_ram_add_reg + 1;
@@ -637,13 +616,13 @@ begin
                 --                work.util.to_slv(work.util.to_hstring(link_data(15 downto 12))) &
                 --                work.util.to_slv(work.util.to_hstring(link_data(19 downto 16))) &
                 --                work.util.to_slv(work.util.to_hstring(link_data(23 downto 20)));
-                if(link_data(23 downto 8) = x"FEB0") then
+                if(link_data.data(23 downto 8) = x"FEB0") then
                     w_ram_data <= x"30424546";
-                elsif(link_data(23 downto 8) = x"FEB1") then
+                elsif(link_data.data(23 downto 8) = x"FEB1") then
                     w_ram_data <= x"31424546";
-                elsif(link_data(23 downto 8) = x"FEB2") then
+                elsif(link_data.data(23 downto 8) = x"FEB2") then
                     w_ram_data <= x"32424546";
-                elsif(link_data(23 downto 8) = x"FEB3") then
+                elsif(link_data.data(23 downto 8) = x"FEB3") then
                     w_ram_data <= x"33424546";
                 else
                     w_ram_data <= x"34424546";
@@ -673,10 +652,10 @@ begin
             if ( stream_rempty = '0' ) then
                 w_ram_en            <= '1';
                 w_ram_add           <= w_ram_add + 1;
-                w_ram_data          <= link_data;
+                w_ram_data          <= link_data.data;
                 event_size_cnt      <= event_size_cnt + 4;
                 bank_size_cnt       <= bank_size_cnt + 4;
-                if ( link_trailer = '1' ) then
+                if ( link_data.eop = '1' ) then
                     -- check if the size of the bank data is in 64 bit if not add a word
                     -- this word is not counted to the bank size
                     if ( bank_size_cnt(2 downto 0) = "000" ) then

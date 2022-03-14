@@ -17,10 +17,7 @@ generic (
 );
 port (
     -- input streams
-    i_rx            : in    work.util.slv34_array_t(g_NLINKS_DATA - 1 downto 0);
-    i_rsop          : in    std_logic_vector(g_NLINKS_DATA - 1 downto 0);
-    i_reop          : in    std_logic_vector(g_NLINKS_DATA - 1 downto 0);
-    i_rshop         : in    std_logic_vector(g_NLINKS_DATA - 1 downto 0);
+    i_rx            : in    work.mu3e.link_array_t(g_NLINKS_DATA-1 downto 0);
     i_rempty        : in    std_logic_vector(g_NLINKS_DATA - 1 downto 0) := (others => '1');
     i_rmask_n       : in    std_logic_vector(g_NLINKS_DATA - 1 downto 0);
     o_rack          : out   std_logic_vector(g_NLINKS_DATA - 1 downto 0);
@@ -93,9 +90,6 @@ begin
     port map (
         -- input streams
         i_rdata                 => i_rx,
-        i_rsop                  => i_rsop,
-        i_reop                  => i_reop,
-        i_rshop                 => i_rshop,
         i_rempty                => i_rempty,
         i_mask_n                => i_rmask_n,
         o_rack                  => o_rack,
