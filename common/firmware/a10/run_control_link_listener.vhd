@@ -10,14 +10,16 @@ use work.mudaq.all;
 
 entity run_control_link_listener is
 port (
-    i_clk               : in    std_logic; -- receive clock (156.25 MHz)
     i_reset_ack_seen_n  : in    std_logic;
     i_reset_run_end_n   : in    std_logic;
     i_aligned           : in    std_logic; -- word alignment achieved
     i_data              : in    std_logic_vector(31 downto 0); -- optical from frontend board
     i_datak             : in    std_logic_vector(3  downto 0);
     o_merger_timeout    : out   std_logic;
-    o_FEB_status        : out   std_logic_vector(25 downto 0)--;
+    o_FEB_status        : out   std_logic_vector(25 downto 0);
+
+    -- receive clock (156.25 MHz)
+    i_clk               : in    std_logic--;
 );
 end entity;
 

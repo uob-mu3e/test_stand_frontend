@@ -17,8 +17,8 @@ generic (
 );
 port (
     i_link_enable               : in    std_logic_vector(NLINKS-1 downto 0);
-    link_data_in                : in    work.util.slv32_array_t(NLINKS-1 downto 0);
-    link_data_in_k              : in    work.util.slv4_array_t(NLINKS-1 downto 0);
+    i_link_data                 : in    work.mu3e.link_array_t(NLINKS-1 downto 0);
+
     mem_data_out                : out   std_logic_vector(31 downto 0);
     mem_addr_out                : out   std_logic_vector(15 downto 0);
     mem_addr_finished_out       : out   std_logic_vector(15 downto 0);
@@ -32,6 +32,8 @@ end entity;
 
 architecture arch of swb_sc_secondary is
 
+    signal link_data : work.mu3e.link_array_t(NLINKS-1 downto 0);
+
     signal mem_data_o : std_logic_vector(31 downto 0);
     signal mem_addr_o : std_logic_vector(15 downto 0);
     signal mem_wren_o : std_logic;
@@ -41,6 +43,8 @@ architecture arch of swb_sc_secondary is
     signal state : state_type;
 
 begin
+
+    link_data <= i_link_data;
 
     mem_data_out <= mem_data_o;
     mem_addr_out <= mem_addr_o;
@@ -84,12 +88,12 @@ begin
             link_mux:
             FOR i in 0 to NLINKS - 1 LOOP
                 if ( i_link_enable(i)='1'
-                    and link_data_in(i)(7 downto 0) = x"BC"
-                    and link_data_in_k(i) = "0001"
-                    and link_data_in(i)(31 downto 26) = "000111"
+                    and link_data(i).data(7 downto 0) = x"BC"
+                    and link_data(i).datak = "0001"
+                    and link_data(i).data(31 downto 26) = "000111"
                 ) then
                     mem_addr_o <= mem_addr_o + '1';
-                    mem_data_o <= link_data_in(i);
+                    mem_data_o <= link_data(i).data;
                     mem_wren_o <= '1';
                     state <= starting;
                     current_link <= i;
@@ -98,14 +102,14 @@ begin
 
         when starting =>
             stateout(3 downto 0) <= x"3";
-            if ( link_data_in_k(current_link) = "0000" ) then
+            if ( link_data(current_link).datak = "0000" ) then
                 mem_addr_o <= mem_addr_o + '1';
-                mem_data_o <= link_data_in(current_link);
+                mem_data_o <= link_data(current_link).data;
                 mem_wren_o <= '1';
-            elsif ( link_data_in(current_link)(7 downto 0) = x"9C" and link_data_in_k(current_link) = "0001" ) then
+            elsif ( link_data(current_link).data(7 downto 0) = x"9C" and link_data(current_link).datak = "0001" ) then
                 mem_addr_o <= mem_addr_o + '1';
                 mem_addr_finished_out <= mem_addr_o + '1';
-                mem_data_o <= link_data_in(current_link);
+                mem_data_o <= link_data(current_link).data;
                 mem_wren_o <= '1';
                 state <= waiting;
             end if;

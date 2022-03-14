@@ -370,11 +370,11 @@ begin
         --! generate reset regs for 250 MHz link clk for pcie0
         e_reset_logic_farm : entity work.reset_logic
         port map (
-            rst_n          => reset_250_n,
+            rst_n          => pcie0_reset_n,
             reset_register => pcie0_wregs_B(RESET_REGISTER_W),
             resets         => open,
             resets_n       => pcie0_resets_n_B,
-            clk            => clk_250--,
+            clk            => pcie0_clk--,
         );
     END GENERATE gen_FARM;
 
@@ -382,11 +382,11 @@ begin
         --! generate reset regs for 156 MHz link clk for pcie0
         e_reset_logic_swb : entity work.reset_logic
         port map (
-            rst_n          => reset_156_n,
+            rst_n          => pcie0_reset_n,
             reset_register => pcie0_wregs_B(RESET_REGISTER_W),
             resets         => open,
             resets_n       => pcie0_resets_n_B,
-            clk            => clk_156--,
+            clk            => pcie0_clk--,
         );
      END GENERATE gen_SWB;
 
@@ -785,14 +785,15 @@ begin
     --! DMA evaluationg / monitoring for PCIe 0
     e_dma_evaluation_pcie0 : entity work.dma_evaluation
     port map (
-        reset_n                 => pcie0_resets_n_A(RESET_BIT_DMA_EVAL),
         dmamemhalffull          => pcie0_dma0_hfull,
         dmamem_endofevent       => i_pcie0_dma0_eoe,
         halffull_counter        => local_pcie0_rregs_A(DMA_HALFFUL_REGISTER_R),
         nothalffull_counter     => local_pcie0_rregs_A(DMA_NOTHALFFUL_REGISTER_R),
         endofevent_counter      => local_pcie0_rregs_A(DMA_ENDEVENT_REGISTER_R),
         notendofevent_counter   => local_pcie0_rregs_A(DMA_NOTENDEVENT_REGISTER_R),
-        clk                     => pcie0_clk--,
+
+        i_reset_n               => pcie0_resets_n_A(RESET_BIT_DMA_EVAL),
+        i_clk                   => pcie0_clk--,
     );
     local_pcie0_rregs_A(DMA_STATUS_R)(DMA_DATA_WEN) <= i_pcie0_dma0_we;
 

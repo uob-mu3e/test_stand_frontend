@@ -25,9 +25,6 @@ port (
 );
 end entity;
 
-library altera_mf;
-use altera_mf.altera_mf_components.all;
-
 architecture arch of ip_scfifo is
 
 begin

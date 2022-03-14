@@ -11,13 +11,11 @@ generic (
     N_LINKS_g : positive := 4--;
 );
 port (
-    i_clk                   : in    std_logic; -- receive clock (156.25 MHz)
     i_reset_ack_seen_n      : in    std_logic;
     i_reset_run_end_n       : in    std_logic;
     i_buffers_empty         : in    std_logic_vector(31 downto 0);
     i_aligned               : in    std_logic_vector(31 downto 0); -- word alignment achieved
-    i_data                  : in    work.util.slv32_array_t(N_LINKS_g-1 downto 0); -- optical from frontend board
-    i_datak                 : in    work.util.slv4_array_t(N_LINKS_g-1 downto 0);
+    i_data                  : in    work.mu3e.link_array_t(N_LINKS_g-1 downto 0); -- optical from frontend board
     i_link_enable           : in    std_logic_vector(31 downto 0);
     i_addr                  : in    std_logic_vector(31 downto 0);
     i_run_number            : in    std_logic_vector(23 downto 0);
@@ -25,7 +23,10 @@ port (
     o_runNr_ack             : out   std_logic_vector(31 downto 0);
     o_run_stop_ack          : out   std_logic_vector(31 downto 0);
     o_buffers_empty         : out   std_logic_vector(31 downto 0);
-    o_feb_merger_timeout    : out   std_logic_vector(31 downto 0)--;
+    o_feb_merger_timeout    : out   std_logic_vector(31 downto 0);
+
+    -- receive clock (156.25 MHz)
+    i_clk                   : in    std_logic--;
 );
 end entity;
 
@@ -51,8 +52,8 @@ BEGIN
             i_reset_ack_seen_n      => i_reset_ack_seen_n,
             i_reset_run_end_n       => i_reset_run_end_n,
             i_aligned               => i_aligned(i),
-            i_data                  => i_data(i),
-            i_datak                 => i_datak(i),
+            i_data                  => i_data(i).data,
+            i_datak                 => i_data(i).datak,
             o_merger_timeout        => feb_merger_timeouts(i),
             o_FEB_status            => FEB_status(i)(25 downto 0)--,
         );

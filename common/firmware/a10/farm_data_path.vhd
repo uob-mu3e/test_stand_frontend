@@ -444,108 +444,108 @@ begin
         A_readreqfifo       <= '0';
         A_memreadfifo_write <= '0';
         case ddr3if_state_A is
-            when disabled =>
-                if ( A_mem_calibrated = '1' ) then
-                    A_tagram_address    <= (others => '1');
-                    ddr3if_state_A      <= overwriting;
-                    -- TODO: MK: is overwriting needed?
-                    -- Skip memory overwriting for simulation
-                    -- synthesis translate_off
-                    ddr3if_state_A      <= ready;
-                    A_done              <= '1';
-                    -- synthesis translate_on
+        when disabled =>
+            if ( A_mem_calibrated = '1' ) then
+                A_tagram_address    <= (others => '1');
+                ddr3if_state_A      <= overwriting;
+                -- TODO: MK: is overwriting needed?
+                -- Skip memory overwriting for simulation
+                -- synthesis translate_off
+                ddr3if_state_A      <= ready;
+                A_done              <= '1';
+                -- synthesis translate_on
+            end if;
+
+        when ready =>
+            if ( A_writestate = '1' ) then
+                ddr3if_state_A      <= writing;
+                A_mem_addr          <= (others => '1');
+                A_mem_word_cnt      <= (others => '0');
+                A_tagram_address    <= (others => '0');
+                A_tagts_last        <= (others => '1');
+                A_done              <= '0';
+            end if;
+
+        when writing =>
+            if ( A_readstate = '1' and A_fifo_empty = '1' ) then
+                ddr3if_state_A  <= reading;
+                A_readsubstate  <= fifowait;
+            end if;
+
+            if ( A_fifo_empty = '0' and A_mem_ready = '1' ) then
+                readfifo_A      <= '1';
+
+                -- write DDR memory
+                A_mem_write     <= '1';
+                A_mem_addr      <= A_mem_addr + '1';
+                A_mem_word_cnt  <= A_mem_word_cnt + '1';
+
+                if ( A_tagts_last /= qfifo_A(519 downto 512) ) then
+                    A_tagts_last                <= qfifo_A(519 downto 512);
+                    A_tagram_write              <= '1';
+                    -- address of tag ram are x"00" & (7 downto 0) from 35 downto 4 of the 48b TS
+                    A_tagram_address            <= qfifo_A(519 downto 512);
+                    -- data of tag is the last DDR RAM Address of this event (25 downto 0)
+                    -- and the number of words (512b) (31 downto 26)
+                    A_tagram_data(31 downto 26) <= A_mem_word_cnt;
+                    A_tagram_data(25 downto 0)  <= A_mem_addr + '1';
+                    A_mem_word_cnt              <= (others => '0');
                 end if;
+            end if;
 
-            when ready =>
-                if ( A_writestate = '1' ) then
-                    ddr3if_state_A      <= writing;
-                    A_mem_addr          <= (others => '1');
-                    A_mem_word_cnt      <= (others => '0');
-                    A_tagram_address    <= (others => '0');
-                    A_tagts_last        <= (others => '1');
-                    A_done              <= '0';
-                end if;
+        when reading =>
+            if ( A_readstate = '0' and A_reqfifo_empty = '1' and A_readsubstate = fifowait ) then
+                ddr3if_state_A      <= overwriting;
+                A_tagram_address    <= (others => '1');
+            end if;
 
-            when writing =>
-                if ( A_readstate = '1' and A_fifo_empty = '1' ) then
-                    ddr3if_state_A  <= reading;
-                    A_readsubstate  <= fifowait;
-                end if;
-
-                if ( A_fifo_empty = '0' and A_mem_ready = '1' ) then
-                    readfifo_A      <= '1';
-
-                    -- write DDR memory
-                    A_mem_write     <= '1';
-                    A_mem_addr      <= A_mem_addr + '1';
-                    A_mem_word_cnt  <= A_mem_word_cnt + '1';
-
-                    if ( A_tagts_last /= qfifo_A(519 downto 512) ) then
-                        A_tagts_last                <= qfifo_A(519 downto 512);
-                        A_tagram_write              <= '1';
-                        -- address of tag ram are x"00" & (7 downto 0) from 35 downto 4 of the 48b TS
-                        A_tagram_address            <= qfifo_A(519 downto 512);
-                        -- data of tag is the last DDR RAM Address of this event (25 downto 0)
-                        -- and the number of words (512b) (31 downto 26)
-                        A_tagram_data(31 downto 26) <= A_mem_word_cnt;
-                        A_tagram_data(25 downto 0)  <= A_mem_addr + '1';
-                        A_mem_word_cnt              <= (others => '0');
+            case A_readsubstate is
+            when fifowait =>
+                if ( A_reqfifo_empty = '0' ) then
+                    A_tagram_address    <= A_reqfifoq;
+                    A_req_last          <= A_reqfifoq;
+                    A_readreqfifo       <= '1';
+                    if ( A_reqfifoq /= A_req_last ) then
+                        A_readsubstate  <= tagmemwait_1;
                     end if;
                 end if;
-
+            when tagmemwait_1 =>
+                A_readsubstate <= tagmemwait_2;
+            when tagmemwait_2 =>
+                A_readsubstate <= tagmemwait_3;
+            when tagmemwait_3 =>
+                A_mem_addr  <= A_tagram_q(25 downto 0);
+                A_readwords <= A_tagram_q(31 downto 26) - '1';
+                if ( A_mem_ready = '1' ) then
+                    A_mem_read <= '1';
+                    A_readsubstate  <= reading;
+                    -- save number of 512b words, ts_in(tsupper), tagram address
+                    A_memreadfifo_data  <= A_tagram_q(31 downto 26) & A_tsrange & A_tagram_address;
+                    A_memreadfifo_write <= '1';
+                end if;
             when reading =>
-                if ( A_readstate = '0' and A_reqfifo_empty = '1' and A_readsubstate = fifowait ) then
-                    ddr3if_state_A      <= overwriting;
-                    A_tagram_address    <= (others => '1');
+                if ( A_mem_ready = '1' ) then
+                    A_mem_addr      <= A_mem_addr_reg;
+                    A_mem_addr_reg  <= A_mem_addr_reg + '1';
+                    A_readwords     <= A_readwords - '1';
+                    A_mem_read      <= '1';
                 end if;
-
-                case A_readsubstate is
-                    when fifowait =>
-                        if ( A_reqfifo_empty = '0' ) then
-                            A_tagram_address    <= A_reqfifoq;
-                            A_req_last          <= A_reqfifoq;
-                            A_readreqfifo       <= '1';
-                            if ( A_reqfifoq /= A_req_last ) then
-                                A_readsubstate  <= tagmemwait_1;
-                            end if;
-                        end if;
-                    when tagmemwait_1 =>
-                        A_readsubstate <= tagmemwait_2;
-                    when tagmemwait_2 =>
-                        A_readsubstate <= tagmemwait_3;
-                    when tagmemwait_3 =>
-                        A_mem_addr  <= A_tagram_q(25 downto 0);
-                        A_readwords <= A_tagram_q(31 downto 26) - '1';
-                        if ( A_mem_ready = '1' ) then
-                            A_mem_read <= '1';
-                            A_readsubstate  <= reading;
-                            -- save number of 512b words, ts_in(tsupper), tagram address
-                            A_memreadfifo_data  <= A_tagram_q(31 downto 26) & A_tsrange & A_tagram_address;
-                            A_memreadfifo_write <= '1';
-                        end if;
-                    when reading =>
-                        if ( A_mem_ready = '1' ) then
-                            A_mem_addr      <= A_mem_addr_reg;
-                            A_mem_addr_reg  <= A_mem_addr_reg + '1';
-                            A_readwords     <= A_readwords - '1';
-                            A_mem_read      <= '1';
-                        end if;
-                        if ( A_readwords = "00001" ) then
-                            A_readsubstate  <= fifowait;
-                        end if;
-                end case;
-
-            when overwriting =>
-                A_tagram_address    <= A_tagram_address + '1';
-                A_tagram_write      <= '1';
-                A_tagram_data       <= (others => '0');
-                if ( A_tagram_address = tsone and A_tagram_write = '1' ) then
-                    ddr3if_state_A  <= ready;
-                    A_done          <= '1';
+                if ( A_readwords = "00001" ) then
+                    A_readsubstate  <= fifowait;
                 end if;
+            end case;
 
-             when others =>
-                ddr3if_state_A <= disabled;
+        when overwriting =>
+            A_tagram_address    <= A_tagram_address + '1';
+            A_tagram_write      <= '1';
+            A_tagram_data       <= (others => '0');
+            if ( A_tagram_address = tsone and A_tagram_write = '1' ) then
+                ddr3if_state_A  <= ready;
+                A_done          <= '1';
+            end if;
+
+         when others =>
+            ddr3if_state_A <= disabled;
 
         end case;
     end if;
@@ -572,108 +572,108 @@ begin
         B_readreqfifo       <= '0';
         B_memreadfifo_write <= '0';
         case ddr3if_state_B is
-            when disabled =>
-                if ( B_mem_calibrated = '1' ) then
-                    B_tagram_address    <= (others => '1');
-                    ddr3if_state_B      <= overwriting;
-                    -- TODO: MK: is overwriting needed?
-                    -- Skip memory overwriting for simulation
-                    -- synthesis translate_off
-                    ddr3if_state_B      <= ready;
-                    B_done              <= '1';
-                    -- synthesis translate_on
+        when disabled =>
+            if ( B_mem_calibrated = '1' ) then
+                B_tagram_address    <= (others => '1');
+                ddr3if_state_B      <= overwriting;
+                -- TODO: MK: is overwriting needed?
+                -- Skip memory overwriting for simulation
+                -- synthesis translate_off
+                ddr3if_state_B      <= ready;
+                B_done              <= '1';
+                -- synthesis translate_on
+            end if;
+
+        when ready =>
+            if ( B_writestate = '1' ) then
+                ddr3if_state_B      <= writing;
+                B_mem_addr          <= (others => '1');
+                B_mem_word_cnt      <= (others => '0');
+                B_tagram_address    <= (others => '0');
+                B_tagts_last        <= (others => '1');
+                B_done              <= '0';
+            end if;
+
+        when writing =>
+            if ( B_readstate = '1' and B_fifo_empty = '1' ) then
+                ddr3if_state_B  <= reading;
+                B_readsubstate  <= fifowait;
+            end if;
+
+            if ( B_fifo_empty = '0' and B_mem_ready = '1' ) then
+                readfifo_B      <= '1';
+
+                -- write DDR memory
+                B_mem_write     <= '1';
+                B_mem_addr      <= B_mem_addr + '1';
+                B_mem_word_cnt  <= B_mem_word_cnt + '1';
+
+                if ( B_tagts_last /= qfifo_B(519 downto 512) ) then
+                    B_tagts_last                <= qfifo_B(519 downto 512);
+                    B_tagram_write              <= '1';
+                    -- address of tag ram are x"00" & (7 downto 0) from 35 downto 4 of the 48b TS
+                    B_tagram_address            <= qfifo_B(519 downto 512);
+                    -- data of tag is the last DDR RAM Address of this event (25 downto 0)
+                    -- and the number of words (512b) (31 downto 26)
+                    B_tagram_data(31 downto 26) <= B_mem_word_cnt;
+                    B_tagram_data(25 downto 0)  <= B_mem_addr + '1';
+                    B_mem_word_cnt              <= (others => '0');
                 end if;
+            end if;
 
-            when ready =>
-                if ( B_writestate = '1' ) then
-                    ddr3if_state_B      <= writing;
-                    B_mem_addr          <= (others => '1');
-                    B_mem_word_cnt      <= (others => '0');
-                    B_tagram_address    <= (others => '0');
-                    B_tagts_last        <= (others => '1');
-                    B_done              <= '0';
-                end if;
+        when reading =>
+            if ( B_readstate = '0' and B_reqfifo_empty = '1' and B_readsubstate = fifowait ) then
+                ddr3if_state_B      <= overwriting;
+                B_tagram_address    <= (others => '1');
+            end if;
 
-            when writing =>
-                if ( B_readstate = '1' and B_fifo_empty = '1' ) then
-                    ddr3if_state_B  <= reading;
-                    B_readsubstate  <= fifowait;
-                end if;
-
-                if ( B_fifo_empty = '0' and B_mem_ready = '1' ) then
-                    readfifo_B      <= '1';
-
-                    -- write DDR memory
-                    B_mem_write     <= '1';
-                    B_mem_addr      <= B_mem_addr + '1';
-                    B_mem_word_cnt  <= B_mem_word_cnt + '1';
-
-                    if ( B_tagts_last /= qfifo_B(519 downto 512) ) then
-                        B_tagts_last                <= qfifo_B(519 downto 512);
-                        B_tagram_write              <= '1';
-                        -- address of tag ram are x"00" & (7 downto 0) from 35 downto 4 of the 48b TS
-                        B_tagram_address            <= qfifo_B(519 downto 512);
-                        -- data of tag is the last DDR RAM Address of this event (25 downto 0)
-                        -- and the number of words (512b) (31 downto 26)
-                        B_tagram_data(31 downto 26) <= B_mem_word_cnt;
-                        B_tagram_data(25 downto 0)  <= B_mem_addr + '1';
-                        B_mem_word_cnt              <= (others => '0');
+            case B_readsubstate is
+            when fifowait =>
+                if ( B_reqfifo_empty = '0' ) then
+                    B_tagram_address    <= B_reqfifoq;
+                    B_req_last          <= B_reqfifoq;
+                    B_readreqfifo       <= '1';
+                    if ( B_reqfifoq /= B_req_last ) then
+                        B_readsubstate  <= tagmemwait_1;
                     end if;
                 end if;
-
+            when tagmemwait_1 =>
+                B_readsubstate <= tagmemwait_2;
+            when tagmemwait_2 =>
+                B_readsubstate <= tagmemwait_3;
+            when tagmemwait_3 =>
+                B_mem_addr  <= B_tagram_q(25 downto 0);
+                B_readwords <= B_tagram_q(31 downto 26) - '1';
+                if ( B_mem_ready = '1' ) then
+                    B_mem_read <= '1';
+                    B_readsubstate  <= reading;
+                    -- save number of 512b words, ts_in(tsupper), tagram address
+                    B_memreadfifo_data  <= B_tagram_q(31 downto 26) & B_tsrange & B_tagram_address;
+                    B_memreadfifo_write <= '1';
+                end if;
             when reading =>
-                if ( B_readstate = '0' and B_reqfifo_empty = '1' and B_readsubstate = fifowait ) then
-                    ddr3if_state_B      <= overwriting;
-                    B_tagram_address    <= (others => '1');
+                if ( B_mem_ready = '1' ) then
+                    B_mem_addr      <= B_mem_addr_reg;
+                    B_mem_addr_reg  <= B_mem_addr_reg + '1';
+                    B_readwords     <= B_readwords - '1';
+                    B_mem_read      <= '1';
                 end if;
-
-                case B_readsubstate is
-                    when fifowait =>
-                        if ( B_reqfifo_empty = '0' ) then
-                            B_tagram_address    <= B_reqfifoq;
-                            B_req_last          <= B_reqfifoq;
-                            B_readreqfifo       <= '1';
-                            if ( B_reqfifoq /= B_req_last ) then
-                                B_readsubstate  <= tagmemwait_1;
-                            end if;
-                        end if;
-                    when tagmemwait_1 =>
-                        B_readsubstate <= tagmemwait_2;
-                    when tagmemwait_2 =>
-                        B_readsubstate <= tagmemwait_3;
-                    when tagmemwait_3 =>
-                        B_mem_addr  <= B_tagram_q(25 downto 0);
-                        B_readwords <= B_tagram_q(31 downto 26) - '1';
-                        if ( B_mem_ready = '1' ) then
-                            B_mem_read <= '1';
-                            B_readsubstate  <= reading;
-                            -- save number of 512b words, ts_in(tsupper), tagram address
-                            B_memreadfifo_data  <= B_tagram_q(31 downto 26) & B_tsrange & B_tagram_address;
-                            B_memreadfifo_write <= '1';
-                        end if;
-                    when reading =>
-                        if ( B_mem_ready = '1' ) then
-                            B_mem_addr      <= B_mem_addr_reg;
-                            B_mem_addr_reg  <= B_mem_addr_reg + '1';
-                            B_readwords     <= B_readwords - '1';
-                            B_mem_read      <= '1';
-                        end if;
-                        if ( B_readwords = "00001" ) then
-                            B_readsubstate  <= fifowait;
-                        end if;
-                end case;
-
-            when overwriting =>
-                B_tagram_address    <= B_tagram_address + '1';
-                B_tagram_write      <= '1';
-                B_tagram_data       <= (others => '0');
-                if ( A_tagram_address = tsone and B_tagram_write = '1' ) then
-                    ddr3if_state_B  <= ready;
-                    B_done          <= '1';
+                if ( B_readwords = "00001" ) then
+                    B_readsubstate  <= fifowait;
                 end if;
+            end case;
 
-            when others =>
-                ddr3if_state_B <= disabled;
+        when overwriting =>
+            B_tagram_address    <= B_tagram_address + '1';
+            B_tagram_write      <= '1';
+            B_tagram_data       <= (others => '0');
+            if ( A_tagram_address = tsone and B_tagram_write = '1' ) then
+                ddr3if_state_B  <= ready;
+                B_done          <= '1';
+            end if;
+
+        when others =>
+            ddr3if_state_B <= disabled;
 
         end case;
     end if;

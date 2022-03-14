@@ -12,13 +12,13 @@ port (
     BUTTON              : in    std_logic_vector(3 downto 0);
     SW                  : in    std_logic_vector(1 downto 0);
 
-    HEX0_D              : out   std_logic_vector(6 downto 0);
---    HEX0_DP             : out   std_logic;
-    HEX1_D              : out   std_logic_vector(6 downto 0);
---    HEX1_DP             : out   std_logic;
+    HEX0_D              : out   std_logic_vector(6 downto 0) := (others => '1');
+--    HEX0_DP             : out   std_logic := '1';
+    HEX1_D              : out   std_logic_vector(6 downto 0) := (others => '1');
+--    HEX1_DP             : out   std_logic := '1';
 
-    LED                 : out   std_logic_vector(3 downto 0) := "0000";
-    LED_BRACKET         : out   std_logic_vector(3 downto 0) := "0000";
+    LED                 : out   std_logic_vector(3 downto 0) := (others => '1');
+    LED_BRACKET         : out   std_logic_vector(3 downto 0) := (others => '1');
 
     SMA_CLKOUT          : out   std_logic;
     SMA_CLKIN           : in    std_logic;
@@ -242,7 +242,7 @@ begin
         o_xcvr0_rx_datak                => rx_datak_raw(7 downto 0),
         i_xcvr0_tx_data                 => tx_data(7 downto 0),
         i_xcvr0_tx_datak                => tx_datak(7 downto 0),
-        i_xcvr0_clk                     => clk_156,
+        i_xcvr0_clk                     => pcie0_clk,
 
         -- XCVR2 (1250 Mbps @ 125 MHz)
         i_xcvr2_rx( 3 downto  0)        => QSFPD_RX_p,
@@ -275,13 +275,13 @@ begin
         -- PCIe0 read interface to writable memory
         i_pcie0_wmem_addr               => writememreadaddr,
         o_pcie0_wmem_rdata              => writememreaddata,
-        i_pcie0_wmem_clk                => clk_156,
+        i_pcie0_wmem_clk                => pcie0_clk,
 
         -- PCIe0 write interface to readable memory
         i_pcie0_rmem_addr               => readmem_writeaddr,
         i_pcie0_rmem_wdata              => readmem_writedata,
         i_pcie0_rmem_we                 => readmem_wren,
-        i_pcie0_rmem_clk                => clk_156,
+        i_pcie0_rmem_clk                => pcie0_clk,
 
         -- PCIe0 update interface for readable registers
         i_pcie0_rregs_A                 => pcie0_readregs_A,
@@ -291,18 +291,14 @@ begin
         o_pcie0_wregs_A                 => pcie0_writeregs_A,
         i_pcie0_wregs_A_clk             => pcie0_clk,
         o_pcie0_wregs_B                 => pcie0_writeregs_B,
-        i_pcie0_wregs_B_clk             => clk_156,
+        i_pcie0_wregs_B_clk             => pcie0_clk,
         o_pcie0_wregs_C                 => open,
-        i_pcie0_wregs_C_clk             => clk_125,
+        i_pcie0_wregs_C_clk             => pcie0_clk,
         o_pcie0_resets_n_A              => pcie0_resets_n_A,
         o_pcie0_resets_n_B              => pcie0_resets_n_B,
 
         -- resets clk
         top_pll_locked                  => locked_50to125,
-
-        o_reset_156_n                   => reset_156_n,
-        o_clk_156                       => clk_156,
-        o_clk_156_hz                    => LED(2),
 
         i_reset_125_n                   => reset_125_n,
         i_clk_125                       => clk_125,
@@ -383,13 +379,8 @@ begin
         o_farm_tx_data  => open,
         o_farm_tx_datak => open,
 
-        --! 250 MHz clock / reset_n
-        i_reset_n_250   => pcie0_reset_n,
-        i_clk_250       => pcie0_clk,
-
-        --! 156 MHz clock / reset_n
-        i_reset_n_156   => reset_156_n,
-        i_clk_156       => clk_156--,
+        i_reset_n       => pcie0_reset_n,
+        i_clk           => pcie0_clk--,
     );
 
 end architecture;

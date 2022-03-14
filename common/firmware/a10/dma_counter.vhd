@@ -8,8 +8,6 @@ use ieee.numeric_std.all;
 
 entity dma_counter is
 port (
-    i_clk               : in    std_logic;
-    i_reset_n           : in    std_logic;
     i_enable            : in    std_logic;
     i_dma_wen_reg       : in    std_logic;
     i_fraccount         : in    std_logic_vector(7 downto 0);
@@ -17,7 +15,10 @@ port (
     i_dma_halffull      : in    std_logic;
     o_dma_end_event     : out   std_logic;
     o_dma_wen           : out   std_logic;
-    o_cnt               : out   std_logic_vector (159 downto 0)--;
+    o_cnt               : out   std_logic_vector (159 downto 0);
+
+    i_reset_n           : in    std_logic;
+    i_clk               : in    std_logic--;
 );
 end entity;
 

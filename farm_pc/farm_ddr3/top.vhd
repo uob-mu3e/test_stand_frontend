@@ -413,14 +413,6 @@ begin
         o_endofevent    => dmamem_endofevent,
         o_dma_data      => dma_data,
 
-        --! 250 MHz clock pice / reset_n
-        i_reset_n_250_pcie => pcie0_reset_n,
-        i_clk_250_pcie     => pcie0_clk,
-
-        --! 250 MHz clock link / reset_n
-        i_reset_n_250_link => pcie0_reset_n,
-        i_clk_250_link     => pcie0_clk,
-
         -- Interface to memory bank A
         o_A_mem_clk        => A_mem_clk,
         A_mem_ck           => DDR3A_CK,
@@ -459,7 +451,10 @@ begin
         B_mem_dq           => DDR3B_DQ,
         B_mem_dm           => DDR3B_DM,
         B_oct_rzqin        => RZQ_DDR3_B,
-        B_pll_ref_clk      => DDR3B_REFCLK_p--,
+        B_pll_ref_clk      => DDR3B_REFCLK_p,
+
+        i_reset_n       => pcie0_reset_n,
+        i_clk           => pcie0_clk--,
     );
 
     DDR3A_SDA   <= 'Z';

@@ -20,11 +20,11 @@ port (
 
     i_reset_run_number  : in    std_logic_vector(31 downto 0);
     i_reset_ctl         : in    std_logic_vector(31 downto 0);
-    i_clk               : in    std_logic;
 
     o_state_out         : out   std_logic_vector(31 downto 0);
 
-    i_reset_n           : in    std_logic--;
+    i_reset_n           : in    std_logic;
+    i_clk               : in    std_logic--;
 );
 end entity;
 
@@ -39,31 +39,39 @@ architecture arch of a10_reset_link is
 
 begin
 
-	o_xcvr_tx_data(7 downto 0)   <= xcvr_tx_data when cur_output = "000" else
-									xcvr_tx_data when cur_output = "111"
-									else x"BC";
-	o_xcvr_tx_data(15 downto 8)  <= xcvr_tx_data when cur_output = "001" else
-									xcvr_tx_data when cur_output = "111"
-									else x"BC";
-	o_xcvr_tx_data(23 downto 16) <= xcvr_tx_data when cur_output = "010" else
-									xcvr_tx_data when cur_output = "111"
-									else x"BC";
-	o_xcvr_tx_data(31 downto 24) <= xcvr_tx_data when cur_output = "011" else
-									xcvr_tx_data when cur_output = "111"
-									else x"BC";
+    o_xcvr_tx_data(7 downto 0) <=
+        xcvr_tx_data when cur_output = "000" else
+        xcvr_tx_data when cur_output = "111" else
+        x"BC";
+    o_xcvr_tx_data(15 downto 8) <=
+        xcvr_tx_data when cur_output = "001" else
+        xcvr_tx_data when cur_output = "111" else
+        x"BC";
+    o_xcvr_tx_data(23 downto 16) <=
+        xcvr_tx_data when cur_output = "010" else
+        xcvr_tx_data when cur_output = "111" else
+        x"BC";
+    o_xcvr_tx_data(31 downto 24) <=
+        xcvr_tx_data when cur_output = "011" else
+        xcvr_tx_data when cur_output = "111" else
+        x"BC";
 
-	o_xcvr_tx_datak(0)  <= 	xcvr_tx_datak when cur_output = "000" else
-							xcvr_tx_datak when cur_output = "111"
-							else '1';
-	o_xcvr_tx_datak(1)  <= 	xcvr_tx_datak when cur_output = "001" else
-							xcvr_tx_datak when cur_output = "111"
-							else '1';
-	o_xcvr_tx_datak(2)  <= 	xcvr_tx_datak when cur_output = "010"  else
-							xcvr_tx_datak when cur_output = "111"
-							else '1';
-	o_xcvr_tx_datak(3)  <= 	xcvr_tx_datak when cur_output = "011"  else
-							xcvr_tx_datak when cur_output = "111"
-							else '1';
+    o_xcvr_tx_datak(0) <=
+        xcvr_tx_datak when cur_output = "000" else
+        xcvr_tx_datak when cur_output = "111" else
+        '1';
+    o_xcvr_tx_datak(1) <=
+        xcvr_tx_datak when cur_output = "001" else
+        xcvr_tx_datak when cur_output = "111" else
+        '1';
+    o_xcvr_tx_datak(2) <=
+        xcvr_tx_datak when cur_output = "010" else
+        xcvr_tx_datak when cur_output = "111" else
+        '1';
+    o_xcvr_tx_datak(3) <=
+        xcvr_tx_datak when cur_output = "011" else
+        xcvr_tx_datak when cur_output = "111" else
+        '1';
 
     -- reset link process
     process(i_clk, i_reset_n)

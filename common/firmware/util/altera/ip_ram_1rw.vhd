@@ -15,6 +15,7 @@ port (
     i_we        : in    std_logic := '0';
     i_wdata     : in    std_logic_vector(g_DATA_WIDTH-1 downto 0) := (others => '0');
     i_re        : in    std_logic := '1';
+    o_rvalid    : out   std_logic;
     o_rdata     : out   std_logic_vector(g_DATA_WIDTH-1 downto 0);
     i_clk       : in    std_logic--;
 );
@@ -24,6 +25,8 @@ library altera_mf;
 use altera_mf.altera_mf_components.all;
 
 architecture arch of ip_ram_1rw is
+
+    signal rvalid : std_logic_vector(g_RDATA_REG+1 downto 0) := (others => '0');
 
 begin
 
@@ -58,5 +61,15 @@ begin
         q_a => o_rdata,
         clock0 => i_clk--,
     );
+
+    -- generate rvalid
+    o_rvalid <= rvalid(0);
+    rvalid(g_RDATA_REG+1) <= i_re;
+    process(i_clk)
+    begin
+    if rising_edge(i_clk) then
+        rvalid(g_RDATA_REG downto 0) <= rvalid(g_RDATA_REG+1 downto 1);
+    end if;
+    end process;
 
 end architecture;

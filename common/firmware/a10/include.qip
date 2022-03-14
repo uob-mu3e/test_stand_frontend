@@ -15,3 +15,5 @@ set_global_assignment -name VHDL_FILE [ file join $::quartus(qip_path) chip_look
 set_global_assignment -name VHDL_FILE [ file join $::quartus(qip_path) chip_lookup_edm_2021.vhd ]
 set_global_assignment -name VHDL_FILE [ file join $::quartus(qip_path) a10_reset_link.vhd ]
 set_global_assignment -name VHDL_FILE [ file join $::quartus(qip_path) chip_lookup.vhd ]
+
+set_global_assignment -name QIP_FILE [ file join $::quartus(qip_path) link/include.qip ]
