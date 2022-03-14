@@ -46,7 +46,6 @@ INT display_period = 0;
 /* DMA Buffer and related */
 volatile uint32_t *dma_buf;
 size_t dma_buf_size = MUDAQ_DMABUF_DATA_LEN;
-uint32_t *dma_buf_copy = (uint32_t *) malloc(dma_buf_size);
 uint32_t dma_buf_nwords = dma_buf_size/sizeof(uint32_t);
 uint32_t laddr;
 uint32_t newdata;
@@ -54,19 +53,20 @@ uint32_t readindex;
 uint32_t wlen;
 uint32_t lastreadindex;
 uint32_t lastlastWritten;
-uint32_t lastWritten;
 uint32_t lastRunWritten;
 bool moreevents;
 bool firstevent;
 
+
+
 /* maximum event size produced by this frontend */
-INT max_event_size = dma_buf_size; // we fix this for now to 32MB
+INT max_event_size = dma_buf_size; //TODO: how to define this?
 
 /* maximum event size for fragmented events (EQ_FRAGMENTED) */
 INT max_event_size_frag = 5 * 1024 * 1024;
 
 /* buffer size to hold events */
-INT event_buffer_size = 2 * max_event_size;
+INT event_buffer_size = 32 * max_event_size;
 
 mudaq::DmaMudaqDevice * mup;
 mudaq::DmaMudaqDevice::DataBlock block;
@@ -174,7 +174,6 @@ INT frontend_init()
 void stream_settings_changed(odb o)
 {
     std::string name = o.get_name();
-    uint32_t current_state;
 
     cm_msg(MINFO, "stream_settings_changed", "Stream stettings changed");
 
@@ -187,11 +186,11 @@ void stream_settings_changed(odb o)
     if (name == "Datagen Enable") {
         cm_msg(MINFO, "stream_settings_changed", "Set Disable Datagen to %s", o ? "y" : "n");
         if (o) {
-            current_state = mup->read_register_rw(SWB_READOUT_STATE_REGISTER_W);
+            uint32_t current_state = mup->read_register_rw(SWB_READOUT_STATE_REGISTER_W);
             current_state |= (1 << 0);
             mup->write_register(SWB_READOUT_STATE_REGISTER_W, current_state);
         } else {
-            current_state = mup->read_register_rw(SWB_READOUT_STATE_REGISTER_W);
+            uint32_t current_state = mup->read_register_rw(SWB_READOUT_STATE_REGISTER_W);
             current_state &= ~(1 << 0);
             mup->write_register(SWB_READOUT_STATE_REGISTER_W, current_state);
         }
@@ -200,11 +199,11 @@ void stream_settings_changed(odb o)
     if (name == "use_merger") {
         cm_msg(MINFO, "stream_settings_changed", "Set Disable Merger to %s", o ? "y" : "n");
         if (o) {
-            current_state = mup->read_register_rw(SWB_READOUT_STATE_REGISTER_W);
+            uint32_t current_state = mup->read_register_rw(SWB_READOUT_STATE_REGISTER_W);
             current_state |= (1 << 2);
             mup->write_register(SWB_READOUT_STATE_REGISTER_W, current_state);
         } else {
-            current_state = mup->read_register_rw(SWB_READOUT_STATE_REGISTER_W);
+            uint32_t current_state = mup->read_register_rw(SWB_READOUT_STATE_REGISTER_W);
             current_state &= ~(1 << 2);
             mup->write_register(SWB_READOUT_STATE_REGISTER_W, current_state);
         }
@@ -234,7 +233,7 @@ void link_active_settings_changed(odb o){
     //printf("Data link active: 0x");
     int idx=0;
     for(int link : o) {
-        int offset = 0;//MAX_LINKS_PER_SWITCHINGBOARD* switch_id;
+        
         if(link & FEBLINKMASK::DataOn)
             //a standard FEB link (SC and data) is considered enabled if RX and TX are.
             //a secondary FEB link (only data) is enabled if RX is.
@@ -327,12 +326,12 @@ INT init_mudaq(){
     }
     dma_buf = (uint32_t*)mmap(nullptr, MUDAQ_DMABUF_DATA_LEN, PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0);
     if(dma_buf == MAP_FAILED) {
-        cm_msg(MERROR, "frontend_init" , "mmap failed: dmabuf = %x\n", dma_buf);
+        cm_msg(MERROR, "frontend_init" , "mmap failed: dmabuf = %x\n", MAP_FAILED);
         return FE_ERR_DRIVER;
     }
     
     // initialize to zero
-    for (int i = 0; i < dma_buf_nwords ; i++) {
+    for (uint32_t i = 0; i < dma_buf_nwords ; i++) {
         (dma_buf)[i] = 0;
     }
     
@@ -394,7 +393,7 @@ INT frontend_exit()
 
 /*-- Begin of Run --------------------------------------------------*/
 
-INT begin_of_run(INT run_number, char *error)
+INT begin_of_run(INT, char *)
 { 
    set_equipment_status(equipment[0].name, "Starting run", "var(--myellow)");
    
@@ -415,7 +414,7 @@ INT begin_of_run(INT run_number, char *error)
    mu.write_register_wait(RESET_REGISTER_W, reset_reg, 100);
 
    // empty dma buffer
-   for (int i = 0; i < dma_buf_nwords ; i++) {
+   for (uint32_t i = 0; i < dma_buf_nwords ; i++) {
       (dma_buf)[i] = 0;
    }
 
@@ -425,7 +424,7 @@ INT begin_of_run(INT run_number, char *error)
    mu.write_register_wait(RESET_REGISTER_W, 0x0, 100);
 
    // Set up data generator: enable only if set in ODB
-   uint32_t reg=mu.read_register_rw(DATAGENERATOR_REGISTER_W);
+   //uint32_t reg=mu.read_register_rw(DATAGENERATOR_REGISTER_W);
    odb stream_settings;
    stream_settings.connect("/Equipment/Stream/Settings");
 
@@ -465,13 +464,14 @@ INT begin_of_run(INT run_number, char *error)
 
 /*-- End of Run ----------------------------------------------------*/
 
-INT end_of_run(INT run_number, char *error)
+INT end_of_run(INT, char *)
 {
 
    mudaq::DmaMudaqDevice & mu = *mup;
    cm_msg(MINFO,"farm_fe","Waiting for buffers to empty");
    uint16_t timeout_cnt = 0;
-   while(! mu.read_register_ro(BUFFER_STATUS_REGISTER_R) & 1<<0/* TODO right bit */ &&
+  
+   while(! (mu.read_register_ro(BUFFER_STATUS_REGISTER_R) & 1<<0)/* TODO right bit */ &&
          timeout_cnt++ < 50) {
       //printf("Waiting for buffers to empty %d/50\n", timeout_cnt);
       timeout_cnt++;
@@ -531,7 +531,7 @@ INT end_of_run(INT run_number, char *error)
 
 /*-- Pause Run -----------------------------------------------------*/
 
-INT pause_run(INT run_number, char *error)
+INT pause_run(INT, char *)
 {
    mudaq::DmaMudaqDevice & mu = *mup;
    
@@ -549,7 +549,7 @@ INT pause_run(INT run_number, char *error)
 
 /*-- Resume Run ----------------------------------------------------*/
 
-INT resume_run(INT run_number, char *error)
+INT resume_run(INT, char *)
 {
    mudaq::DmaMudaqDevice & mu = *mup;
    
@@ -576,7 +576,7 @@ INT frontend_loop()
 
 /*-- Trigger event routines ----------------------------------------*/
 
-INT poll_event(INT source, INT count, BOOL test)
+INT poll_event(INT, INT, BOOL)
 /* Polling routine for events. Returns TRUE if event
  is available. If test equals TRUE, don't return. The test
  flag is used to time the polling */
@@ -586,14 +586,14 @@ INT poll_event(INT source, INT count, BOOL test)
 
 /*-- Interrupt configuration ---------------------------------------*/
 
-INT interrupt_configure(INT cmd, INT source, POINTER_T adr)
+INT interrupt_configure(INT, INT, POINTER_T)
 {
    return SUCCESS;
 }
 
 /*-- Event readout -------------------------------------------------*/
 
-INT read_stream_event(char *pevent, INT off)
+INT read_stream_event(char *pevent, INT)
 {
     
    // get mudaq 
@@ -665,9 +665,10 @@ uint32_t check_event(T* buffer, uint32_t idx, uint32_t* pdata) {
         printf("Data: %8.8x\n", buffer[idx+4+eventDataSize/4-2]);
         return -1;
     }
-
+    // TODO: Variable size buffers are not legal C/C++
+    // Can't we copy dircetly from buffer to pdata?
     uint32_t dma_buf[4+eventDataSize/4];
-    for ( int i = 0; i<4+eventDataSize/4; i++ ) {
+    for (uint32_t i = 0; i<4+eventDataSize/4; i++ ) {
       dma_buf[i] = buffer[idx + i];
       //printf("%8.8x %8.8x\n", i, buffer[idx + i]);
     }
@@ -679,203 +680,185 @@ uint32_t check_event(T* buffer, uint32_t idx, uint32_t* pdata) {
 
 /*-- Event readout -------------------------------------------------*/
 
-INT read_stream_thread(void *param) {
+INT read_stream_thread(void *) {
 
     // get mudaq
     mudaq::DmaMudaqDevice & mu = *mup;
 
-    // set registers to default values and disable DMA
     uint32_t reset_reg = 0;
     reset_reg = SET_RESET_BIT_EVENT_COUNTER(reset_reg);
     reset_reg = SET_RESET_BIT_DATAGEN(reset_reg);
     reset_reg = SET_RESET_BIT_DATA_PATH(reset_reg);
-    mu.disable();
 
     // tell framework that we are alive
     signal_readout_thread_active(0, TRUE);
 
     // obtain ring buffer for inter-thread data exchange
     int rbh = get_event_rbh(0);
-    int status;
 
-    // max number of requested words
-    uint32_t max_requested_words = dma_buf_nwords / 2;
+    uint32_t max_requested_words = dma_buf_nwords/2;
     
-    // get midas buffer
-    uint32_t *pdata;
-    
-    // DMA buffer stuff
-    uint32_t size_dma_buf;
-    uint32_t words_written;
-    uint32_t cnt_loop;
-    uint32_t endofevent;
-
-    // readout state
-    uint32_t current_readout_register;
-    uint32_t current_pixel_mask_n;
-    uint32_t current_scifi_mask_n;
-    
-    // actuall readout loop
     while (is_readout_thread_enabled()) {
 
         // don't readout events if we are not running
-        if (!readout_enabled()) {
-            // do not produce events when run is stopped
-            ss_sleep(10);// don't eat all CPU
+        if (run_state != STATE_RUNNING) {
+            ss_sleep(100);
             continue;
         }
 
-        // obtain buffer space with 10 ms timeout
-        status = rb_get_wp(rbh, (void **) &pdata, 10);
-        
-        // just try again if buffer has no space
-        if (status == DB_TIMEOUT) {
-            printf("WARNING: DB_TIMEOUT\n");
-            ss_sleep(10);// don't eat all CPU
-            continue;
-        }
-        
-        // stop if there is an error in the ODB
-        if ( status != DB_SUCCESS ) {
+        // get midas buffer
+        uint32_t* pdata = nullptr;
+        int rb_status = rb_get_wp(rbh, (void**)&pdata, 0);
+        if ( rb_status != DB_SUCCESS ) {
             printf("ERROR: rb_get_wp -> rb_status != DB_SUCCESS\n");
-            break;
+            continue;
         }
-
-        // reset data path
-        //mu.write_register(RESET_REGISTER_W, reset_reg);
 
         // change readout state to switch between pixel and scifi
-        current_readout_register = mu.read_register_rw(SWB_READOUT_STATE_REGISTER_W);
-        current_pixel_mask_n = mu.read_register_rw(SWB_LINK_MASK_PIXEL_REGISTER_W);
-        current_scifi_mask_n = mu.read_register_rw(SWB_LINK_MASK_SCIFI_REGISTER_W);
-        current_readout_register |= (1 << 7);
-        mu.write_register(SWB_READOUT_STATE_REGISTER_W, current_readout_register);
+        // TODO: What is needed here??
+        uint32_t current_readout_register = mu.read_register_rw(SWB_READOUT_STATE_REGISTER_W);
+        uint32_t current_pixel_mask_n = mu.read_register_rw(SWB_LINK_MASK_PIXEL_REGISTER_W);
+        uint32_t current_scifi_mask_n = mu.read_register_rw(SWB_LINK_MASK_SCIFI_REGISTER_W);
+
+//        if ( current_pixel_mask_n != 0 && current_scifi_mask_n != 0 ) {
+//            current_readout_register ^= 1UL << 7;
+//            mu.write_register(SWB_READOUT_STATE_REGISTER_W, current_readout_register);
+//            //cout << "1state: " << hex << mu.read_register_rw(SWB_READOUT_STATE_REGISTER_W) << endl;
+//        } else if ( current_pixel_mask_n != 0 && current_scifi_mask_n == 0 ) {
+            current_readout_register |= (1 << 7);
+            mu.write_register(SWB_READOUT_STATE_REGISTER_W, current_readout_register);
+            //cout << "2state: " << hex << mu.read_register_rw(SWB_READOUT_STATE_REGISTER_W) << endl;
+//        } else if ( current_pixel_mask_n == 0 && current_scifi_mask_n != 0 ) {
+//            current_readout_register &= ~(1 << 7);
+//            mu.write_register(SWB_READOUT_STATE_REGISTER_W, current_readout_register);
+//            //cout << "3state: " << hex << mu.read_register_rw(SWB_READOUT_STATE_REGISTER_W) << endl;
+//        } else {
+//            //cout << "4state: " << endl;
+//            continue;
+//        }
+
+        // disable dma
+        mu.disable();
+        // start dma
+        mu.enable_continous_readout(0);
 
         // wait for requested data
         // request to read dma_buffer_size/2 (count in blocks of 256 bits)
         mu.write_register(GET_N_DMA_WORDS_REGISTER_W, max_requested_words / (256/32));
+        //cout << "request " << max_requested_words << endl;
 
-        // start DMA and stop reset
-        mu.enable_continous_readout(0);
+        // reset data path
+        mu.write_register(RESET_REGISTER_W, reset_reg);
         usleep(10);
         mu.write_register(RESET_REGISTER_W, 0x0);
 
-        // wait for FPGA
-        cnt_loop = 0;
-        while ( (mu.read_register_ro(EVENT_BUILD_STATUS_REGISTER_R) & 0x1) == 0x0 ) { cnt_loop++; ss_sleep(10); }
+        uint32_t cnt_loop = 0;
+        while ( (mu.read_register_ro(0x1C) & 1) == 0 ) {
+            if (cnt_loop == 100000) break;
+            cnt_loop++;
+//             check mask for timeout
+            usleep(100);
+//            if ( mu.read_register_rw(SWB_LINK_MASK_PIXEL_REGISTER_W) == 0 && mu.read_register_rw(SWB_LINK_MASK_SCIFI_REGISTER_W) == 0 ) {
+//                break;
+//            } else if ( mu.read_register_rw(SWB_LINK_MASK_PIXEL_REGISTER_W) != 0 && mu.read_register_rw(SWB_LINK_MASK_SCIFI_REGISTER_W) != 0 ) {
+//                continue;
+//            } else if ( mu.read_register_rw(SWB_LINK_MASK_PIXEL_REGISTER_W) != 0 ) {
+//                current_readout_register = mu.read_register_rw(SWB_READOUT_STATE_REGISTER_W);
+//                current_readout_register |= (1 << 7);
+//                mu.write_register(SWB_READOUT_STATE_REGISTER_W, current_readout_register);
+//            } else if ( mu.read_register_rw(SWB_LINK_MASK_SCIFI_REGISTER_W) != 0 ) {
+//                current_readout_register = mu.read_register_rw(SWB_READOUT_STATE_REGISTER_W);
+//                current_readout_register &= ~(1 << 7);
+//                mu.write_register(SWB_READOUT_STATE_REGISTER_W, current_readout_register);
+//           }
+        }
+
+        uint32_t words_written = mu.read_register_ro(0x32);
 
         // disable dma
         mu.disable();
-        
-        // get written words from FPGA
-        words_written  = mu.read_register_ro(DMA_CNT_WORDS_REGISTER_R);
-        
-        // get lastWritten / endofevent
-        // since we only use the DMA write 4kB at the end on the farm firmware
-        lastlastWritten = 0;
-        lastWritten = mu.last_written_addr();
-        endofevent = mu.last_endofevent_addr();
-        
         // stop readout
         mu.write_register(SWB_READOUT_LINK_REGISTER_W, 0x0);
         mu.write_register(GET_N_DMA_WORDS_REGISTER_W, 0x0);
-        
         // reset all
         mu.write_register(RESET_REGISTER_W, reset_reg);
 
+        // check mask
+        if ( mu.read_register_rw(SWB_LINK_MASK_PIXEL_REGISTER_W) == 0 && mu.read_register_rw(SWB_LINK_MASK_SCIFI_REGISTER_W) == 0 ) continue;
+
         // check cnt loop
-        if (cnt_loop == 100000) { printf("ERROR: cnt_loop == 100000\n"); break; }
+        if (cnt_loop == 100000) continue;
         
+        // and get lastWritten / endofevent
+        // NOTE (24.06.2021): for the moment we dont really care for the endofevent
+        // since we only use the DMA write 4kB at the end on the farm firmware
+        lastlastWritten = 0;
+        uint32_t lastWritten = mu.last_written_addr();
+        //uint32_t endofevent = mu.last_endofevent_addr();
+
         // walk events to find end of last event
         uint32_t offset = 0;
         uint32_t cnt = 0;
-        size_dma_buf = 0;
-        printf("lastWritten: 0x%08X ", lastWritten);
-        printf("endofevent: 0x%08X ", endofevent);
-        printf("words_written: 0x%08X ", words_written);
-        printf("words_written*8: 0x%08X ", words_written*8);
-        printf("dma_buf[words_written]: 0x%08X ", dma_buf[words_written]);
-        printf("dma_buf[words_written*8]: 0x%08X ", dma_buf[words_written*8]);
-        printf("dma_buf[words_written*8-1]: 0x%08X ", dma_buf[words_written*8-1]);
-        printf("dma_buf[words_written-1]: 0x%08X ", dma_buf[words_written-1]);
-        printf("dma_buf[lastWritten]: 0x%08X ", dma_buf[lastWritten]);
-        printf("dma_buf[lastWritten-1]: 0x%08X ", dma_buf[lastWritten-1]);
-        printf("dma_buf[endofevent]: 0x%08X ", dma_buf[endofevent]);
-        printf("dma_buf[endofevent+1]: 0x%08X ", dma_buf[endofevent+1]);
-        printf("dma_buf[endofevent*8-1]: 0x%08X ", dma_buf[endofevent*8-1]);
-        printf("dma_buf[endofevent*8]: 0x%08X ", dma_buf[endofevent*8]);
-        printf("total data: %d MB ", (words_written*8-1)*4/1000000);
-        printf("dma_buf_size: %d %d ", dma_buf_size, 1 * (1024 * 1024));
-        printf("dma_buf[endofevent-1]: 0x%08X\n", dma_buf[endofevent-1]);
-        
-        // increase words_written if there is another event
-//         if ( dma_buf[words_written*8] != 0xFFFFFFFF ) {
-//             for ( unsigned int i = words_written*8; i < (words_written*8 + (dma_buf[words_written*8+3] / 4 + 4)); i++ )
-//                 printf("0x%08X %i\n", dma_buf[i], i);
-//             words_written += (dma_buf[words_written*8+3] / 4 + 4) / 8;
-//         }
+        while(true) {
 
-        uint32_t size = (words_written*8 + (dma_buf[words_written*8+3] / 4 + 4)) - (words_written*8);
+            int rb_status = rb_get_wp(rbh, (void**)&pdata, 10);
+            uint32_t eventLength = 16 + dma_buf[(offset + 3) % dma_buf_nwords];
 
-//         printf("size %d\n", size);
+            // check ODB status
+            if ( rb_status != DB_SUCCESS ) {
+                printf("ERROR: rb_get_wp -> rb_status != DB_SUCCESS\n");
+                printf("Events written %d\n", cnt);
+                continue;
+            }
 
-        //memcpy(dma_buf_copy, const_cast<uint32_t*>(&dma_buf[words_written*8]), size*4);
-        //copy_n(&dma_buf_copy[0], size*4, pdata);
-        
-        dma_buf_copy[ 0 ] = 0x00000001;           // Trigger Mask & Event ID
-        dma_buf_copy[ 1 ] = 0x00000001;             // Serial number
-        dma_buf_copy[ 2 ] = ss_time();            // time
-        dma_buf_copy[ 3 ] = 32 * 4 - 4 * 4;// event size
+            // check enough space for header
+            if(offset + 4 > lastWritten) {
+                printf("ERROR: check enough space for header\n");
+                printf("Events written %d\n", cnt);
+                break;
+            }
 
-        dma_buf_copy[ 4 ] = 32 * 4 - 6 * 4;// all bank size
-        dma_buf_copy[ 5 ] = 0x31;                 // flags
+            // check if length is to big (not needed at the moment but we still check it)
+            if(eventLength > max_requested_words * 4) {
+                printf("ERROR: (eventLength = 0x%08X) > max_event_size\n", eventLength);
+                printf("Events written %d\n", cnt);
+                break;
+            }
 
-        // bank PCD0 first FEB
-        dma_buf_copy[ 6 ] = 'P' << 0 | 'C' << 8 | 'D' << 16 | '0' << 24;// bank name
-        dma_buf_copy[ 7 ] = 0x06;                                       // bank type TID_DWORD
-        dma_buf_copy[ 8 ] = 10 * 4;                                     // data size
-        dma_buf_copy[ 9 ] = 0x0;                                        // reserved
+            // check enough space for data
+            if(offset + eventLength / 4 > lastWritten) break;
+            uint32_t size_dma_buf = check_event(dma_buf, offset, pdata);
+            // TODO: -1 is not a good value for a uint32_t... 
+            if ( size_dma_buf == -1 ) {
+                printf("ERROR: size_dma_buf == -1\n");
+                printf("Events written %d\n", cnt);
+                break;
+            }
 
-        dma_buf_copy[10 ] = 0xE80000BC;                                // preamble
-        dma_buf_copy[11 ] = 0x00000000;                                // TS0
-        dma_buf_copy[12 ] = ss_time();                                 // TS1
-        dma_buf_copy[13 ] = 0xFC000000;                                // sub header
-        dma_buf_copy[14 ] = 0xABABABAB;  // hit0
-        dma_buf_copy[15 ] = 0xABABABAB;  // hit1
-        dma_buf_copy[16 ] = 0xABABABAB;// chip 3 beam ref bits 22:1 -> fast TS
-        dma_buf_copy[17 ] = 0xABABABAB;// chip 4 sintilator bits 22:1 -> fast TS
-        dma_buf_copy[18 ] = 0xFC00009C;                                // TRAILER
-        dma_buf_copy[19 ] = 0xAFFEAFFE;                                // PADDING
+            // check if new offset is to big
+            offset += eventLength / 4;
+            if ( offset > lastWritten/2 ) {
+                printf("INFO: Offset to big\n");
+                printf("Events written %d\n", cnt);
+                break;
+            }
 
-        // bank PCD1 second FEB
-        dma_buf_copy[20 ] = 'P' << 0 | 'C' << 8 | 'D' << 16 | '1' << 24;// bank name
-        dma_buf_copy[21 ] = 0x6;                                       // bank type TID_DWORD
-        dma_buf_copy[22 ] = 8 * 4;                                     // data size
-        dma_buf_copy[23 ] = 0x0;                                       // reserved
+            // check if we got a wrong offset
+            if ( dma_buf[offset] != 0x00000001 ) {
+                printf("ERROR: dma_buf[offset] != 0x00000001\n");
+                printf("Events written %d\n", cnt);
+                break;
+            }
+            
+            // debug info
+            //printf("data2: %8.8x offset: %8.8x lastwritten: %8.8x sizeEvent: %d\n", dma_buf[offset], offset, lastWritten, size_dma_buf);
+            
+            // increase pointer etc.
+            cnt++;
+            pdata+=size_dma_buf;
+            rb_increment_wp(rbh, size_dma_buf); // in byte length
 
-        dma_buf_copy[24 ] = 0xE80001BC;                              // preamble
-        dma_buf_copy[25 ] = 0x00000000;                              // TS0
-        dma_buf_copy[26 ] = ss_time();                               // TS1
-        dma_buf_copy[27 ] = 0xFC000000;                              // sub header
-        dma_buf_copy[28 ] = 0xABABABAB;// hit0
-        dma_buf_copy[29 ] = 0xABABABAB;// hit1
-        dma_buf_copy[30 ] = 0xFC00009C;                              // TRAILER
-        dma_buf_copy[31 ] = 0xAFFEAFFE;                              // PADDING
-        
-        size = 32;
-        
-        memcpy(pdata, dma_buf_copy, size*sizeof(uint32_t));//((words_written+(dma_buf[words_written*8+3] / 4 + 4) / 8)*8-1)*4);
-//         for ( unsigned int i = 0; i < 100; i++)
-//             printf("dma_buf[i]: 0x%08X %d\n", dma_buf[i], i);
-//         for ( unsigned int i = words_written*8-100; i < words_written*8+100; i++)
-//             printf("dma_buf[size_dma_buf]: 0x%08X %d %d\n", dma_buf[i], i, words_written*8);
-//         for ( unsigned int i = words_written*8; i < (words_written*8 + (dma_buf[words_written*8+3] / 4 + 4)); i++ )
-//             printf("0x%08X  %d\n", dma_buf[i], i);
-        for ( unsigned int i = 0; i < size; i++ )
-            printf("0x%08X  %d\n", dma_buf_copy[i], i);
-        rb_increment_wp(rbh, size*sizeof(uint32_t));//(words_written*8-1)*4); // in byte length
-        
-        
+        }
     }
 
     // tell framework that we finished
