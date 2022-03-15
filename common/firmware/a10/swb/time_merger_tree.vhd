@@ -43,7 +43,7 @@ architecture arch of time_merger_tree is
     signal layer_state, last_state : work.util.slv4_array_t(N_LINKS_OUT - 1 downto 0);
 
     -- fifo signals
-    signal data, q_data :work.mu3e.link_array_t(N_LINKS_OUT - 1 downto 0);
+    signal data, q_data : work.mu3e.link_array_t(N_LINKS_OUT - 1 downto 0);
     signal wrreq, wrfull : std_logic_vector(N_LINKS_OUT - 1 downto 0);
 
     -- hit signals

@@ -125,7 +125,7 @@ begin
 
     o_ren <=
         '1' when ( event_tagging_state = bank_data and i_rempty = '0' ) else
-        '1' when ( event_tagging_state = EVENT_IDLE and i_rempty = '0' and i_rx.sop = '1' ) else
+        '1' when ( event_tagging_state = EVENT_IDLE and i_rempty = '0' and i_rx.sop = '0' ) else
         '0';
 
     -- write link data to event ram
@@ -182,7 +182,7 @@ begin
             -- start if at least one not masked link has data
             if ( i_rempty = '0' and i_rx.sop = '1' ) then
                 event_tagging_state <= event_head;
-            elsif ( i_rempty = '0' and i_rx.sop = '1' ) then
+            elsif ( i_rempty = '0' and i_rx.sop = '0' ) then
                 cnt_idle_not_header <= cnt_idle_not_header + 1;
             end if;
 

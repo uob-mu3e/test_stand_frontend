@@ -119,7 +119,7 @@ begin
 
             when idle =>
                 -- start on start of package
-                if ( rdata.sop ) then
+                if ( rdata.sop = '1' ) then
                     if ( almost_full = '1' ) then
                         write_debug_state   <= skip_data;
                     else
@@ -131,13 +131,13 @@ begin
             when write_data =>
                 we_debug            <= '1';
                 -- stop on end of package
-                if ( rdata.eop ) then
+                if ( rdata.eop = '1' ) then
                     write_debug_state   <= idle;
                 end if;
 
             when skip_data =>
                 -- stop on end of package
-                if ( rdata.eop ) then
+                if ( rdata.eop = '1' ) then
                     write_debug_state <= idle;
                 end if;
 
