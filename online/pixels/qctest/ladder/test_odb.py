@@ -31,6 +31,6 @@ if __name__ == "__main__":
 
     print(client.odb_get("/Equipment/Switching/Settings/MupixChipToConfigure"))
 
-    client.odb_set("/Equipment/Switching/Settings/MupixChipToConfigure", 0)
+    client.odb_set("/Equipment/Mupix/Settings/AutomaticTests/IV", True)
 
     

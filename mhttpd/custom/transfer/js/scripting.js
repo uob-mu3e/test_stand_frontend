@@ -37,6 +37,13 @@ function load(){
 	   }).catch(function(error) {
 		   console.log("Error getting info on DACs avaliable for change in ODB:", error);
 	   });
+
+	document.getElementById("autotest_IV").addEventListener('DOMSubtreeModified', function () {
+		if (document.getElementById("autotest_IV").innerHTML == "y")
+	            document.getElementById("status_report").innerHTML = "IV test required!";
+		else
+	            document.getElementById("status_report").innerHTML = "Nothing to do";
+    	});
 }
 
 

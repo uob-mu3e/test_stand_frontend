@@ -1,0 +1,39 @@
+PARAM start_voltage, "Starting voltage"
+PARAM step_size, "Voltage increment"
+PARAM num_steps, "Number of steps"
+
+# do everything in this ODB sub directory
+ODBSUBDIR /Equipment/Mupix/LadderTest/Variables
+
+SET v, $start_voltage
+ODBSET V, $v
+
+SET current, 0
+
+LOOP i, $num_steps
+   # Set voltage array in ODB
+   ODBSUBDIR /Equipment/Mupix/LadderTest/Variables
+   ODBGET V, v
+   ODBSET Voltage[$i-1], $v
+
+   # wait for measurement
+   WAIT SECONDS, 2
+
+   # dummy measurement: just copy current to voltage
+   # for a real measurement, get the current from the correct location in the ODB
+   #ODBGET V, current
+   ENDODBSUBDIR
+
+   ODBSUBDIR /Equipment/Mupix/Settings/BIASDACS/0
+   ODBGET VPPump, current
+   ENDODBSUBDIR
+
+   ODBSUBDIR /Equipment/Mupix/LadderTest/Variables
+   ODBSET Current[$i-1], $current
+
+   # increment voltage
+   ODBINC V, $step_size
+   ENDODBSUBDIR
+ENDLOOP
+ENDODBSUBDIR
+

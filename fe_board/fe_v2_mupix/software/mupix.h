@@ -31,24 +31,24 @@ struct mupix_t {
         sc->ram->data[MP_CTRL_INVERT_REGISTER_W]=0x00000003;
         
         // write data for the  complete BIAS reg into FEB storage
-        sc->ram->data[MP_CTRL_BIAS_REGISTER_W]=0x2A000A03;
-        sc->ram->data[MP_CTRL_BIAS_REGISTER_W]=0xFA3F0025;
-        sc->ram->data[MP_CTRL_BIAS_REGISTER_W]=0x1E041041;
-        sc->ram->data[MP_CTRL_BIAS_REGISTER_W]=0x041E5951;
-        sc->ram->data[MP_CTRL_BIAS_REGISTER_W]=0x40280000;
-        sc->ram->data[MP_CTRL_BIAS_REGISTER_W]=0x1400C20A;
-        sc->ram->data[MP_CTRL_BIAS_REGISTER_W]=0x028A0000;
+        sc->ram->data[MP_CTRL_BIAS_REGISTER_W]=0x16000000;
+        sc->ram->data[MP_CTRL_BIAS_REGISTER_W]=0x05050149;
+        sc->ram->data[MP_CTRL_BIAS_REGISTER_W]=0x1EF3CF3C;
+        sc->ram->data[MP_CTRL_BIAS_REGISTER_W]=0x514B0CA1;
+        sc->ram->data[MP_CTRL_BIAS_REGISTER_W]=0x00100005;
+        sc->ram->data[MP_CTRL_BIAS_REGISTER_W]=0x14010A14;
+        sc->ram->data[MP_CTRL_BIAS_REGISTER_W]=0x010A0000;
         
         //write conf defaults
-        sc->ram->data[MP_CTRL_CONF_REGISTER_W]=0x001F0002;
+        sc->ram->data[MP_CTRL_CONF_REGISTER_W]=0x001F0003;
         sc->ram->data[MP_CTRL_CONF_REGISTER_W]=0x00380000;
-        sc->ram->data[MP_CTRL_CONF_REGISTER_W]=0xFC09F000;
+        sc->ram->data[MP_CTRL_CONF_REGISTER_W]=0xFC05F000;
 
         
         // write vdac defaults
-        sc->ram->data[MP_CTRL_VDAC_REGISTER_W]=0x007200DC;
-        sc->ram->data[MP_CTRL_VDAC_REGISTER_W]=0xC8000046;
-        sc->ram->data[MP_CTRL_VDAC_REGISTER_W]=0x00B80000;
+        sc->ram->data[MP_CTRL_VDAC_REGISTER_W]=0x008D00AD;
+        sc->ram->data[MP_CTRL_VDAC_REGISTER_W]=0xA60000A4;
+        sc->ram->data[MP_CTRL_VDAC_REGISTER_W]=0x00C30000;
         
         // zero the rest
         for(int i = 0; i<30; i++){
@@ -95,22 +95,22 @@ struct mupix_t {
         sc->ram->data[MP_CTRL_ENABLE_REGISTER_W]=0x00000000;
         sc->ram->data[MP_CTRL_INVERT_REGISTER_W]=0x00000003;
         
-        sc->ram->data[MP_CTRL_ALL_REGISTER_W]=0x16000000;
-        sc->ram->data[MP_CTRL_ALL_REGISTER_W]=0x00050149;
-        sc->ram->data[MP_CTRL_ALL_REGISTER_W]=0x1EF3CF3C;
-        sc->ram->data[MP_CTRL_ALL_REGISTER_W]=0x514B0CA1;
+        sc->ram->data[MP_CTRL_ALL_REGISTER_W]=0x16000A00;
+        sc->ram->data[MP_CTRL_ALL_REGISTER_W]=0xA53F014F;
+        sc->ram->data[MP_CTRL_ALL_REGISTER_W]=0x1E514A28;
+        sc->ram->data[MP_CTRL_ALL_REGISTER_W]=0x514c51A1;
         sc->ram->data[MP_CTRL_ALL_REGISTER_W]=0x00100005;
         sc->ram->data[MP_CTRL_ALL_REGISTER_W]=0x14010A14;
-        sc->ram->data[MP_CTRL_ALL_REGISTER_W]=0x010A001F;
+        sc->ram->data[MP_CTRL_ALL_REGISTER_W]=0x010A003F;
 	if (maskPixel) {
 	        sc->ram->data[MP_CTRL_ALL_REGISTER_W]=0x00010038;
 	} else {
-	        sc->ram->data[MP_CTRL_ALL_REGISTER_W]=0x00030038;
+	        sc->ram->data[MP_CTRL_ALL_REGISTER_W]=0x00020038;
 	}
-        sc->ram->data[MP_CTRL_ALL_REGISTER_W]=0x0000FC05;
-        sc->ram->data[MP_CTRL_ALL_REGISTER_W]=0xF0002340;
-        sc->ram->data[MP_CTRL_ALL_REGISTER_W]=0x2B698000;
-        sc->ram->data[MP_CTRL_ALL_REGISTER_W]=0x29003030;
+        sc->ram->data[MP_CTRL_ALL_REGISTER_W]=0x0000FC04;
+        sc->ram->data[MP_CTRL_ALL_REGISTER_W]=0xF00025C0;
+        sc->ram->data[MP_CTRL_ALL_REGISTER_W]=0x2E6D4000;
+        sc->ram->data[MP_CTRL_ALL_REGISTER_W]=0x29C03120;
    	
 	if (maskPixel) {
 
