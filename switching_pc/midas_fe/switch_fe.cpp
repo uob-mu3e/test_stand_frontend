@@ -1344,8 +1344,10 @@ void sc_settings_changed(odb o)
           int status=mupixfeb->ConfigureASICs();
           if(status!=SUCCESS){ 
          	//TODO: what to do? 
+              std::cout << "\n\n\n\nConfiguration not successful in line 1347!\n\n\n\n";
           }
       o = false;
+      std::cout << "\n\n\n\nConfiguration done in line 1350!\n\n\n\n";
     }
     if (name == "Reset Bypass Command") {
          uint32_t command = o;

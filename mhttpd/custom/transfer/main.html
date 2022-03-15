@@ -26,8 +26,24 @@
 			<input type="file" id="jsonInputConfig" accept=".json"
 				   onchange="handleFile()"></input>
 			<p class="content"></p>
-			<button type="button" id="uploadButton" onclick="uploadConfigToODB()">Upload</button>
-			<button type="button" id="configureButton" onclick="checkAndConfig()">Load configuration</button>
+            
+
+            <form>
+                <label for="mupixID">Mupix numberID</label>
+                <select name="muxpiID" id="mupixID">
+                    <option value="6">0</option>
+                    <option value="1">1</option>
+                    <option value="2">2</option>
+                    <option value="3">3</option>
+                    <option value="4">4</option>
+                    <option value="5">5</option>
+                </select>
+            </form>
+          
+
+            <button type="button" id="uploadAllButton" onclick="uploadAllConfigToODB()">Upload all</button>
+			<button type="button" id="uploadButton" onclick="uploadConfigToODB(0)">Upload</button>
+			<button type="button" id="configureButton" onclick="loadConfig([0, 1, 2, 3, 4, 5])">Load configuration to all</button>
 
 
             <table class="mtable" id="hameg0">
@@ -100,16 +116,16 @@
                     <td style="text-align: center"><div class="modbbox" style="width: 20px; height: 20px;" data-odb-path="/Equipment/KEITHLEY0/Variables/State[0]" data-color="lightgreen" data-background-color="red"></div></td>
                     <td style="text-align: center"><input type="checkbox" name="CheckboxPixels" class="modbcheckbox" data-odb-path="/Equipment/KEITHLEY0/Variables/Set State[0]"></input></td>
                     <td><div class="modbvalue" data-odb-path="/Equipment/KEITHLEY0/Variables/Demand Voltage[0]" data-odb-editable="1"></div></td>
-                    <td><div class="modbvalue" data-odb-path="/Equipment/KEITHLEY0/Variables/Voltage[0]"></div></td>
-                    <td><div class="modbvalue" data-odb-path="/Equipment/KEITHLEY0/Variables/Current Limit[0]" data-odb-editable="1"></div></td>
-                    <td><div id="keithley_curr" class="modbvalue" data-odb-path="/Equipment/KEITHLEY0/Variables/Current[0]" data-formula="1000000*x"></div></td>
+                    <td><div class="modbvalue" data-format="e3" data-odb-path="/Equipment/KEITHLEY0/Variables/Voltage[0]"></div></td>
+                    <td><div class="modbvalue" data-format="e3" data-odb-path="/Equipment/KEITHLEY0/Variables/Current Limit[0]" data-odb-editable="1"></div></td>
+                    <td><div id="keithley_curr" data-format="e3" class="modbvalue" data-odb-path="/Equipment/KEITHLEY0/Variables/Current[0]" data-formula="1000000*x"></div></td>
                     <td id="keithley0_0" style="text-align: center">PM1+</td>
                 </tr>
                 <tr>
             </table>
 
             <button onclick="iv_curve()">IV Curve</button>
-            <button onclick="lv_test_0()">LV Test 0</button>
+            <button onclick="await lv_power_on_test2()">LV Test 0</button>
 	    <div id="status">
 		<div style="display: none;" id="autotest_IV" class="modbvalue" data-odb-path="/Equipment/Mupix/Settings/AutomaticTests/IV"></div>
 		<div id="status_report">Nothing</div>

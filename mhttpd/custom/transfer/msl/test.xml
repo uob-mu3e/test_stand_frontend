@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="ISO-8859-1"?>
+<RunSequence xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="">
+<Param l="1" name="start_voltage" comment="Starting voltage" />
+<Param l="2" name="step_size" comment="Voltage increment" />
+<Param l="3" name="num_steps" comment="Number of steps" />
+<ODBSubdir l="6" path="/Equipment/Ladder/Variables">
+<Set l="8" name="v">$start_voltage</Set>
+<ODBSet l="9" path="V">$v</ODBSet>
+<Set l="11" name="current">0</Set>
+<Loop l="13" le="27" var="i" n="$num_steps">
+<ODBSet l="15" path="Voltage[$i]">$v</ODBSet>
+<Wait l="18" for="SECONDS">10</Wait>
+<ODBGet l="22" path="V">current</ODBGet>
+<ODBSet l="23" path="Current[$i]">$current</ODBSet>
+<ODBInc l="26" path="V">$step_size</ODBInc>
+</Loop>
+</ODBSubdir>
+</RunSequence>

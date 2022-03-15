@@ -11,3 +11,6 @@ killall msysmon-nvidia
 
 #soemwhat rash...
 killall xterm
+
+#Go to build dir
+cd "/home/labor/online/build"
