@@ -16,18 +16,14 @@ architecture arch of tb_swb_data_path is
 
     signal clk, clk_fast, reset_n : std_logic := '0';
     --! data link signals
-    signal rx : work.util.slv32_array_t(g_NLINKS_DATA-1 downto 0) := (others => (others => '0'));
-    signal rx_k : work.util.slv4_array_t(g_NLINKS_DATA-1 downto 0) := (others => (others => '0'));
+    signal rx : work.mu3e.link_array_t(g_NLINKS_DATA-1 downto 0);
 
-    signal writeregs_156 : work.util.slv32_array_t(63 downto 0) := (others => (others => '0'));
-    signal writeregs_250 : work.util.slv32_array_t(63 downto 0) := (others => (others => '0'));
+    signal writeregs : work.util.slv32_array_t(63 downto 0) := (others => (others => '0'));
 
-    signal resets_n_156, resets_n_250 : std_logic_vector(31 downto 0) := (others => '0');
+    signal resets_n : std_logic_vector(31 downto 0) := (others => '0');
 
     signal counter : work.util.slv32_array_t(5+(g_NLINKS_DATA*5)-1 downto 0);
     
-    signal farm_data : std_logic_vector(31  downto 0);
-    signal farm_datak : std_logic_vector(3  downto 0);
     signal fram_wen, dma_wren, dma_done, endofevent : std_logic;
     signal dma_data : std_logic_vector (255 downto 0);
     signal mask_n : std_logic_vector(63 downto 0);
@@ -51,20 +47,20 @@ begin
     --! 1            | 1          | 0          | 0              | 0        | -                           | Generate data for all 64 links, simple merging of links, readout via DAM       | x
     --! 1            | 0          | 1          | 0              | 0        | -                           | Generate data for all 64 links, time merging of links, readout via DAM         | x
     --! 0            | 0          | 0          | 1              | 1        | -                           | Generate time merged data, send to farm                                        | x
-    resets_n_156(RESET_BIT_DATAGEN)                             <= '0', '1' after (1.0 us / CLK_MHZ);
-    resets_n_250(RESET_BIT_SWB_STREAM_MERGER)                   <= '0', '1' after (1.0 us / CLK_MHZ);
-    resets_n_250(RESET_BIT_SWB_TIME_MERGER)                     <= '0', '1' after (1.0 us / CLK_MHZ);
-    writeregs_156(DATAGENERATOR_DIVIDER_REGISTER_W)             <= x"00000002";
-    writeregs_156(SWB_READOUT_STATE_REGISTER_W)(USE_BIT_GEN_LINK)   <= '1';
-    writeregs_156(SWB_READOUT_STATE_REGISTER_W)(USE_BIT_TEST_ERROR) <= '1'; 
-    writeregs_250(SWB_READOUT_STATE_REGISTER_W)(USE_BIT_STREAM)     <= '0';
-    writeregs_250(SWB_READOUT_STATE_REGISTER_W)(USE_BIT_MERGER)     <= '1';
+    resets_n(RESET_BIT_DATAGEN)                             <= '0', '1' after (1.0 us / CLK_MHZ);
+    resets_n(RESET_BIT_SWB_STREAM_MERGER)                   <= '0', '1' after (1.0 us / CLK_MHZ);
+    resets_n(RESET_BIT_SWB_TIME_MERGER)                     <= '0', '1' after (1.0 us / CLK_MHZ);
+    writeregs(DATAGENERATOR_DIVIDER_REGISTER_W)             <= x"00000002";
+    writeregs(SWB_READOUT_STATE_REGISTER_W)(USE_BIT_GEN_LINK)   <= '1';
+    writeregs(SWB_READOUT_STATE_REGISTER_W)(USE_BIT_TEST_ERROR) <= '1'; 
+    writeregs(SWB_READOUT_STATE_REGISTER_W)(USE_BIT_STREAM)     <= '0';
+    writeregs(SWB_READOUT_STATE_REGISTER_W)(USE_BIT_MERGER)     <= '1';
     
-    writeregs_250(SWB_LINK_MASK_PIXEL_REGISTER_W)               <= x"0000001F";--x"00000048";
-    writeregs_250(SWB_READOUT_LINK_REGISTER_W)                  <= x"00000001";
-    writeregs_250(GET_N_DMA_WORDS_REGISTER_W)                   <= (others => '1');
-    writeregs_250(DMA_REGISTER_W)(DMA_BIT_ENABLE)               <= '1';
-    mask_n <= x"00000000" & writeregs_250(SWB_LINK_MASK_PIXEL_REGISTER_W);
+    writeregs(SWB_LINK_MASK_PIXEL_REGISTER_W)               <= x"0000001F";--x"00000048";
+    writeregs(SWB_READOUT_LINK_REGISTER_W)                  <= x"00000001";
+    writeregs(GET_N_DMA_WORDS_REGISTER_W)                   <= (others => '1');
+    writeregs(DMA_REGISTER_W)(DMA_BIT_ENABLE)               <= '1';
+    mask_n <= x"00000000" & writeregs(SWB_LINK_MASK_PIXEL_REGISTER_W);
 
 
     --! SWB Block
@@ -82,30 +78,21 @@ begin
         DATA_TYPE               => "00"--;
     )
     port map(
-        i_clk_156        => clk,
-        i_clk_250        => clk_fast,
+        i_clk           => clk,
+        i_reset_n       => reset_n,
+        i_resets_n      => resets_n,
         
-        i_reset_n_156    => reset_n,
-        i_reset_n_250    => reset_n,
-
-        i_resets_n_156   => resets_n_156,
-        i_resets_n_250   => resets_n_250,
-        
-        i_rx             => rx,
-        i_rx_k           => rx_k,
+        i_rx            => rx,
             
-        i_rmask_n        => mask_n(g_NLINKS_DATA - 1 downto 0),
+        i_rmask_n       => mask_n(g_NLINKS_DATA - 1 downto 0),
 
-        i_writeregs_156  => writeregs_156,
-        i_writeregs_250  => writeregs_250,
+        i_writeregs     => writeregs,
 
-        o_counter_156    => open,
-        o_counter_250    => open,
+        o_counter       => open,
 
         i_dmamemhalffull => '0',
         
-        o_farm_data      => farm_data,
-        o_farm_datak     => farm_datak,
+        o_farm_data      => open,
 
         o_dma_wren       => dma_wren,
         o_dma_done       => dma_done,

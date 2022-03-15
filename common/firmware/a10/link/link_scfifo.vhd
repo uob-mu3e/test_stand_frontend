@@ -52,6 +52,7 @@ begin
         o_wfull         => o_wfull,
         o_wfull_n       => o_wfull_n,
         o_almost_full   => o_almost_full,
+        o_usedw         => o_usedw,
 
         i_rack          => i_rack,
         o_rdata         => rdata,

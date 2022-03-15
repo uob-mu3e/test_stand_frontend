@@ -11,11 +11,8 @@ use ieee.std_logic_unsigned.all;
 
 entity swb_midas_event_builder is
 port (
-    i_rx                : in  std_logic_vector (31 downto 0);
+    i_rx                : in  work.mu3e.link_t;
     i_rempty            : in  std_logic;
-    i_header            : in  std_logic;
-    i_trailer           : in  std_logic;
-    i_error             : in  std_logic;
     -- Data type: "00" = pixel, "01" = scifi, "10" = tiles
     i_data_type         : std_logic_vector(1 downto 0) := "00";
 
@@ -128,7 +125,7 @@ begin
 
     o_ren <=
         '1' when ( event_tagging_state = bank_data and i_rempty = '0' ) else
-        '1' when ( event_tagging_state = EVENT_IDLE and i_rempty = '0' and i_header = '0' ) else
+        '1' when ( event_tagging_state = EVENT_IDLE and i_rempty = '0' and i_rx.sop = '1' ) else
         '0';
 
     -- write link data to event ram
@@ -183,9 +180,9 @@ begin
         case event_tagging_state is
         when EVENT_IDLE =>
             -- start if at least one not masked link has data
-            if ( i_rempty = '0' and i_header = '1' ) then
+            if ( i_rempty = '0' and i_rx.sop = '1' ) then
                 event_tagging_state <= event_head;
-            elsif ( i_rempty = '0' and i_header = '0' ) then
+            elsif ( i_rempty = '0' and i_rx.sop = '1' ) then
                 cnt_idle_not_header <= cnt_idle_not_header + 1;
             end if;
 
@@ -233,7 +230,7 @@ begin
 
         when bank_name =>
             -- here we check if the link is empty and if we saw a header
-            if ( i_rempty = '0' and i_header = '1' ) then
+            if ( i_rempty = '0' and i_rx.sop = '1' ) then
                 w_ram_en    <= '1';
                 w_ram_add   <= w_ram_add_reg + 1;
                 -- MIDAS expects bank names in ascii:
@@ -282,19 +279,19 @@ begin
             if ( i_rempty = '0' ) then
                 w_ram_en            <= '1';
                 w_ram_add           <= w_ram_add + 1;
-                if ( i_error = '1' ) then
+                if ( i_rx.err = '1' ) then
                     is_error <= '1';
                 end if;
-                if ( i_trailer = '1' ) then
+                if (  i_rx.eop = '1' ) then
                     w_ram_data(31 downto 12)    <= x"FC000";
-                    w_ram_data(11 downto 8)     <= "00" & i_rx(9 downto 8);
+                    w_ram_data(11 downto 8)     <= "00" & i_rx.data(9 downto 8);
                     w_ram_data(7 downto 0)      <= x"9C";
                 else
-                    w_ram_data      <= i_rx;
+                    w_ram_data      <= i_rx.data;
                 end if;
                 event_size_cnt      <= event_size_cnt + 4;
                 bank_size_cnt       <= bank_size_cnt + 4;
-                if ( i_trailer = '1' or i_error = '1' ) then
+                if ( i_rx.eop = '1' or i_rx.err = '1' ) then
                     event_tagging_state <= set_algin_word;
                     align_event_size    <= w_ram_add + 1 - last_event_add;
                 end if;

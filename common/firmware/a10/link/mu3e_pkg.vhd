@@ -9,8 +9,10 @@ use ieee.numeric_std.all;
 
 package mu3e is
 
-    --                                data  datak  idl   sop  dthdr sbhdr  eop
-    constant LINK_LENGTH : positive := 32  +  4  +  1  +  1  +  1  +  1  +  1;
+    --                                data  datak  idl   sop  dthdr sbhdr  eop  err t0  t1
+    constant LINK_LENGTH : positive := 32  +  4  +  1  +  1  +  1  +  1  +  1  + 1 + 1 + 1;
+    
+    -- TODO: think about to add a linkID
 
     type link_t is record
         data    : std_logic_vector(31 downto 0);
@@ -20,6 +22,9 @@ package mu3e is
         dthdr   : std_logic; -- DaTa HeaDeR
         sbhdr   : std_logic; -- SuB HeaDeR
         eop     : std_logic; -- end of packet (trailer)
+        err     : std_logic; -- package has an error
+        t0      : std_logic; -- time stamp upper bits
+        t1      : std_logic; -- time stamp lower bits
     end record;
     type link_array_t is array(natural range <>) of link_t;
 
@@ -33,6 +38,34 @@ package mu3e is
         data => X"000000" & work.util.D28_5,
         datak => "0001",
         idle => '1',
+        others => '0'
+    );
+    
+    constant LINK_SOP : link_t := (
+        data => X"E80000" & work.util.D28_5,
+        datak => "0001",
+        sop => '1',
+        others => '0'
+    );
+    
+    constant LINK_EOP : link_t := (
+        data => X"000000" & work.util.D28_4,
+        datak => "0001",
+        eop => '1',
+        others => '0'
+    );
+    
+    constant LINK_SBHDR : link_t := (
+        data => X"00000000",
+        datak => "0000",
+        sbhdr => '1',
+        others => '0'
+    );
+    
+    constant LINK_ERR : link_t := (
+        data => X"3FFFFF9C",
+        datak => "0001",
+        err => '1',
         others => '0'
     );
 
@@ -93,6 +126,15 @@ package body mu3e is
             datak = "0001" and data(7 downto 0) = work.util.D28_4 -- 9C
         );
         length := length + 1;
+        
+        link.err := '0';
+        length := length + 1;
+        
+        link.t0 := '0';
+        length := length + 1;
+        
+        link.t1 := '0';
+        length := length + 1;
 
         assert ( length = LINK_LENGTH ) severity failure;
         return link;
@@ -123,6 +165,15 @@ package body mu3e is
 
         link.eop := slv(40);
         length := length + 1;
+        
+        link.err := slv(41);
+        length := length + 1;
+        
+        link.t0 := slv(42);
+        length := length + 1;
+        
+        link.t1 := slv(43);
+        length := length + 1;
 
         assert ( length = LINK_LENGTH ) severity failure;
         return link;
@@ -152,6 +203,15 @@ package body mu3e is
         length := length + 1;
 
         slv(40) := link.eop;
+        length := length + 1;
+        
+        slv(41) := link.err;
+        length := length + 1;
+        
+        slv(42) := link.t0;
+        length := length + 1;
+        
+        slv(43) := link.t1;
         length := length + 1;
 
         assert ( length = LINK_LENGTH ) severity failure;

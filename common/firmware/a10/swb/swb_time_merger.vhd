@@ -14,13 +14,7 @@ generic (
 );
 port (
     -- input streams
-    i_rx            : in    work.util.slv32_array_t(g_NLINKS_DATA - 1 downto 0);
-    i_rsop          : in    std_logic_vector(g_NLINKS_DATA - 1 downto 0);
-    i_reop          : in    std_logic_vector(g_NLINKS_DATA - 1 downto 0);
-    i_rshop         : in    std_logic_vector(g_NLINKS_DATA - 1 downto 0);
-    i_hit           : in    std_logic_vector(g_NLINKS_DATA - 1 downto 0);
-    i_t0            : in    std_logic_vector(g_NLINKS_DATA - 1 downto 0);
-    i_t1            : in    std_logic_vector(g_NLINKS_DATA - 1 downto 0);
+    i_rx            : in    work.mu3e.link_array_t(g_NLINKS_DATA-1 downto 0);
     i_rempty        : in    std_logic_vector(g_NLINKS_DATA - 1 downto 0) := (others => '1');
     i_rmask_n       : in    std_logic_vector(g_NLINKS_DATA - 1 downto 0);
     o_rack          : out   std_logic_vector(g_NLINKS_DATA - 1 downto 0);
@@ -29,23 +23,15 @@ port (
     o_counters      : out   work.util.slv32_array_t(6 downto 0);
 
     -- output stream
-    o_wdata         : out   std_logic_vector(31 downto 0);
+    o_wdata         : out   work.mu3e.link_t;
     o_rempty        : out   std_logic;
     i_ren           : in    std_logic;
-    o_wsop          : out   std_logic;
-    o_weop          : out   std_logic;
-    o_t0            : out   std_logic;
-    o_t1            : out   std_logic;
-    o_werp          : out   std_logic;
-
+    
     -- output stream debug
-    o_wdata_debug   : out   std_logic_vector(31 downto 0);
+    o_wdata_debug   : out   work.mu3e.link_t;
     o_rempty_debug  : out   std_logic;
     i_ren_debug     : in    std_logic;
-    o_wsop_debug    : out   std_logic;
-    o_weop_debug    : out   std_logic;
-    o_werp_debug    : out   std_logic;
-
+    
     o_error         : out   std_logic;
 
     i_en            : in    std_logic;
@@ -57,19 +43,18 @@ end entity;
 architecture arch of swb_time_merger is
 
     -- data path farm signals
-    signal wdata : std_logic_vector(31 downto 0);
-    signal wsop, weop, werp : std_logic;
+    signal rdata : work.mu3e.link_t;
 
     -- debug path signals
     type write_debug_type is (idle, write_data, skip_data);
     signal write_debug_state : write_debug_type;
     signal wrusedw : std_logic_vector(8 - 1 downto 0);
-    signal wdata_debug, q_stream_debug : std_logic_vector(34 downto 0);
+    signal wdata_debug, q_stream_debug : work.mu3e.link_t;
     signal almost_full, we_debug : std_logic;
 
 begin
 
-    e_time_merger : entity work.time_merger_v4
+    e_time_merger : entity work.time_merger
     generic map (
         g_ADDR_WIDTH => g_ADDR_WIDTH,
         g_NLINKS_DATA => g_NLINKS_DATA,
@@ -78,51 +63,32 @@ begin
     port map (
         -- input streams
         i_data                  => i_rx,
-        i_sop                   => i_rsop,
-        i_eop                   => i_reop,
-        i_shop                  => i_rshop,
-        i_hit                   => i_hit,
-        i_t0                    => i_t0,
-        i_t1                    => i_t1,
         i_empty                 => i_rempty,
         i_mask_n                => i_rmask_n,
         o_rack                  => o_rack,
 
         -- output stream
-        o_wdata                 => wdata,
-        o_wsop                  => wsop,
-        o_weop                  => weop,
-        o_t0                    => o_t0,
-        o_t1                    => o_t1,
+        --! TODO: cnt errors, at the moment they are sent out at the end of normal event
+        o_rdata                 => rdata,
         i_rack                  => i_ren,
         o_empty                 => o_rempty,
-
-        -- counters
-        o_error                 => werp,
 
         i_en                    => i_en,
         i_reset_n               => i_reset_n,
         i_clk                   => i_clk--,
     );
 
-    --! map output data
-    --! TODO: cnt errors, at the moment they are sent out at the end of normal event
-    o_wdata <= wdata;
-    o_wsop  <= wsop;
-    o_weop  <= weop;
-    o_werp  <= werp;
-
     --! write data to debug fifo
     process(i_clk, i_reset_n)
     begin
     if ( i_reset_n /= '1' ) then
-        wdata_debug         <= (others => '0');
+        wdata_debug         <= work.mu3e.LINK_ZERO;
         we_debug            <= '0';
         write_debug_state   <= idle;
         --
     elsif ( rising_edge(i_clk) ) then
 
-        wdata_debug <= werp & wsop & weop & wdata;
+        wdata_debug <= rdata;
         we_debug    <= '0';
 
         if ( i_ren = '0' ) then
@@ -132,7 +98,7 @@ begin
 
             when idle =>
                 -- start on start of package
-                if ( wsop = '1' ) then
+                if ( rdata.sop ) then
                     if ( almost_full = '1' ) then
                         write_debug_state   <= skip_data;
                     else
@@ -144,13 +110,13 @@ begin
             when write_data =>
                 we_debug            <= '1';
                 -- stop on end of package
-                if ( weop = '1' ) then
+                if ( rdata.eop ) then
                     write_debug_state   <= idle;
                 end if;
 
             when skip_data =>
                 -- stop on end of package
-                if ( weop = '1' ) then
+                if ( rdata.eop ) then
                     write_debug_state <= idle;
                 end if;
 
@@ -163,11 +129,10 @@ begin
     end if;
     end process;
 
-    e_stream_fifo_debug : entity work.ip_scfifo_v2
+    e_stream_fifo_debug : entity work.link_scfifo
     generic map (
-        g_ADDR_WIDTH => 8,
-        g_DATA_WIDTH => 35,
-        g_RREG_N => 1--, -- TNS=-900
+        g_ADDR_WIDTH    => g_ADDR_WIDTH,
+        g_RREG_N        => 1--, -- TNS=-900
     )
     port map (
         i_wdata         => wdata_debug,
@@ -175,7 +140,7 @@ begin
         o_wfull         => open, -- we dont use the full since we check wrusedw
         o_usedw         => wrusedw,
 
-        o_rdata         => q_stream_debug,
+        o_rdata         => o_wdata_debug,
         o_rempty        => o_rempty_debug,
         i_rack          => i_ren_debug,
 
@@ -183,18 +148,12 @@ begin
         i_reset_n       => i_reset_n--,
     );
 
-    --! map output data debug
-    o_wdata_debug   <= q_stream_debug(31 downto 0);
-    o_werp_debug    <= q_stream_debug(34);
-    o_wsop_debug    <= q_stream_debug(33);
-    o_weop_debug    <= q_stream_debug(32);
-
     process(i_clk, i_reset_n)
     begin
-    if ( i_reset_n = '0' ) then
+    if ( i_reset_n /= '1' ) then
         almost_full <= '0';
-    elsif rising_edge(i_clk) then
-        if(wrusedw(8 - 1) = '1') then
+    elsif ( rising_edge(i_clk) ) then
+        if ( wrusedw(g_ADDR_WIDTH - 1) = '1' ) then
             almost_full <= '1';
         else
             almost_full <= '0';
