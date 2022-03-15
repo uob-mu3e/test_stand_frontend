@@ -305,7 +305,9 @@ void setup_watches(){
     stream_settings.watch(stream_settings_changed);
 
     // link mask changed settings
-    odb links("/Equipment/Links/Settings/LinkMask");
+        //set link enables so slow control can pass
+    
+    odb links("/Equipment/LinksCentral/Settings/LinkMask");
     links.watch(link_active_settings_changed);
 
 }
@@ -367,7 +369,7 @@ INT init_mudaq(){
 
     //set data link enable
     odb link;
-    link.connect("/Equipment/Links/Settings/LinkMask");
+    link.connect("/Equipment/LinksCentral/Settings/LinkMask");
     link_active_settings_changed(link);
 
     return SUCCESS;
