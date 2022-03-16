@@ -182,9 +182,9 @@ begin
         elsif ( rising_edge(i_clk) ) then
             if ( i_writeregs(SWB_READOUT_STATE_REGISTER_W)(USE_BIT_GEN_LINK) = '1' ) then
                 if ( i_writeregs(SWB_READOUT_STATE_REGISTER_W)(USE_BIT_TEST_ERROR) = '1' and i = 0 ) then
-                    rx(i) <= gen_link_error;
+                    rx(i) <= work.mu3e.to_link(gen_link_error.data, gen_link_error.datak);
                 else
-                    rx(i) <= gen_link;
+                    rx(i) <= work.mu3e.to_link(gen_link.data, gen_link.datak);
                 end if;
             else
                 rx(i) <= i_rx(i);

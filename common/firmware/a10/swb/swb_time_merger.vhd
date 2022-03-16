@@ -77,6 +77,7 @@ begin
         i_reset_n               => i_reset_n,
         i_clk                   => i_clk--,
     );
+    o_wdata <= rdata;
 
     --! write data to debug fifo
     process(i_clk, i_reset_n)

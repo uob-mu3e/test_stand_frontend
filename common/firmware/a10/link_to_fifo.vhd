@@ -85,7 +85,7 @@ begin
         --
     elsif ( rising_edge(i_clk) ) then
 
-        rx_wen  <= '0';
+        rx_wen <= '0';
         rx <= i_rx;
         -- reset sop/eop/sh
         rx.sop <= '0';
@@ -98,7 +98,7 @@ begin
         
         hit_reg <= i_rx.data;
 
-        if ( i_rx.idle ) then
+        if ( i_rx.idle = '1' ) then
             --
         else
             case link_to_fifo_state is

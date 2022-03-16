@@ -52,7 +52,7 @@ begin
     resets_n(RESET_BIT_SWB_TIME_MERGER)                     <= '0', '1' after (1.0 us / CLK_MHZ);
     writeregs(DATAGENERATOR_DIVIDER_REGISTER_W)             <= x"00000002";
     writeregs(SWB_READOUT_STATE_REGISTER_W)(USE_BIT_GEN_LINK)   <= '1';
-    writeregs(SWB_READOUT_STATE_REGISTER_W)(USE_BIT_TEST_ERROR) <= '1'; 
+    writeregs(SWB_READOUT_STATE_REGISTER_W)(USE_BIT_TEST_ERROR) <= '0';
     writeregs(SWB_READOUT_STATE_REGISTER_W)(USE_BIT_STREAM)     <= '0';
     writeregs(SWB_READOUT_STATE_REGISTER_W)(USE_BIT_MERGER)     <= '1';
     

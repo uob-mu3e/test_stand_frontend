@@ -56,10 +56,10 @@ architecture arch of time_merger_tree is
     signal error_s : work.util.slv2_array_t(N_LINKS_OUT - 1 downto 0) := (others => (others => '0'));
     
     -- default link types
-    signal headerHit : work.mu3e.link_t := work.mu3e.LINK_SOP;
-    signal sbhdrHit : work.mu3e.link_t := work.mu3e.LINK_SBHDR;
-    signal trailerHit : work.mu3e.link_t := work.mu3e.LINK_EOP;
-    signal errorHit : work.mu3e.link_t := work.mu3e.LINK_ERR;
+    signal headerHit : work.mu3e.link_array_t(N_LINKS_OUT - 1 downto 0) := (others => work.mu3e.LINK_SOP);
+    signal sbhdrHit : work.mu3e.link_array_t(N_LINKS_OUT - 1 downto 0) := (others => work.mu3e.LINK_SBHDR);
+    signal trailerHit : work.mu3e.link_array_t(N_LINKS_OUT - 1 downto 0) := (others => work.mu3e.LINK_EOP);
+    signal errorHit : work.mu3e.link_array_t(N_LINKS_OUT - 1 downto 0) := (others => work.mu3e.LINK_ERR);
 
 begin
 
@@ -172,19 +172,20 @@ begin
                             '1' when layer_state(i) = ONEERROR and i_data(i+size).err = '1' else
                             '1' when work.util.or_reduce(error_s(i)) = '1' else
                             '0';
-                            
-        headerHit.data  <= x"E80000BC";
-        sbhdrHit.data   <= a_h(i).data(31 downto 16) & overflow(i);
-        trailerHit.data <= overflow(i) & x"009C";
-        errorHit.data(31 downto 30) <= error_s(i);
 
-        data(i)         <=  errorHit when work.util.or_reduce(error_s(i)) = '1' else
-                            headerHit when layer_state(i) = HEADER else
+        -- set data for no hit types
+        headerHit(i).data  <= x"E80000BC";
+        sbhdrHit(i).data   <= a_h(i).data(31 downto 16) & overflow(i);
+        trailerHit(i).data <= overflow(i) & x"009C";
+        errorHit(i).data   <= error_s(i) & "00" & x"FFFFF9C";
+
+        -- write out data
+        data(i)         <=  errorHit(i) when work.util.or_reduce(error_s(i)) = '1' else
+                            headerHit(i) when layer_state(i) = HEADER else
                             a_h(i) when layer_state(i) = TS0 else
-                            -- we write out the full ts1 here but we can ignore the lower bits from 10-0 later
                             a_h(i) when layer_state(i) = TS1 else
-                            sbhdrHit when layer_state(i) = SHEADER else
-                            trailerHit when layer_state(i) = TRAILER else
+                            sbhdrHit(i) when layer_state(i) = SHEADER else
+                            trailerHit(i) when layer_state(i) = TRAILER else
                             a_h(i) when layer_state(i) = ONEHIT and i_data(i).dthdr = '1' else
                             b_h(i) when layer_state(i) = ONEHIT and i_data(i+size).dthdr = '1' else
                             a_h(i) when layer_state(i) = HIT and a(i) <= b(i) else

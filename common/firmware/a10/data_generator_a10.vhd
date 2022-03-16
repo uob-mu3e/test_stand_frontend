@@ -134,7 +134,7 @@ begin
         variable overflow_idx	  : integer range 0 to 15 := 0;
     begin
     if ( i_reset_n = '0' ) then
-        o_data              <= work.mu3e.LINK_IDLE;
+        o_data              <= work.mu3e.LINK_ZERO;
         global_time         <= i_start_global_time;
         time_cnt_t          <= (others => '0');
         data_header_state   <= sop;
@@ -147,6 +147,9 @@ begin
         col                 <= (others => '0');
     elsif ( rising_edge(i_clk) ) then
         if ( i_enable = '1' and waiting = '0' and i_dma_half_full = '0' ) then
+
+            o_data <= work.mu3e.LINK_ZERO;
+
             case data_header_state is
             when sop =>
                 o_state <= x"A";
@@ -158,7 +161,6 @@ begin
                     o_data.data(7 downto 0)     <= x"bc";
                     o_data.datak                <= "0001";
                 end if;
-
 
             when t0 =>
                 o_state   <= x"B";
@@ -174,9 +176,9 @@ begin
 
             when t1 =>
                 o_state   <= x"C";
-                if ( DATA_TYPE = x"01" ) then
+                if ( DATA_TYPE = "00" ) then
                     o_data.data <= global_time(15 downto 0) & x"0000";
-                elsif ( DATA_TYPE = x"02" ) then
+                elsif ( DATA_TYPE = "01" ) then
                     o_data.data <= global_time(15 downto 0) & x"AFFE";
                 end if;
                 o_data.datak <= "0000";
@@ -190,9 +192,9 @@ begin
                     o_data.data(27 downto 21)   <= "1111111";
                     o_data.data(15 downto 0)    <= lsfr_overflow;
                 else
-                    if ( DATA_TYPE = x"01" ) then
+                    if ( DATA_TYPE = "00" ) then
                         o_data.data <= DATA_SUB_HEADER_ID & "000" & global_time(10 downto 4) & lsfr_overflow;
-                    elsif ( DATA_TYPE = x"02" ) then
+                    elsif ( DATA_TYPE = "01" ) then
                         o_data.data <= DATA_SUB_HEADER_ID & global_time(13 downto 4) & lsfr_overflow;
                     end if;
                 end if;
@@ -208,9 +210,9 @@ begin
                     o_data.data(27 downto 21)   <= "1111111";
                     o_data.data(15 downto 0)    <= lsfr_overflow;
                 else
-                    if ( DATA_TYPE = x"01" ) then
+                    if ( DATA_TYPE = "00" ) then
                         o_data.data <= DATA_SUB_HEADER_ID & "000" & global_time(10 downto 4) & lsfr_overflow;
-                    elsif ( DATA_TYPE = x"02" ) then
+                    elsif ( DATA_TYPE = "01" ) then
                         o_data.data <= DATA_SUB_HEADER_ID & global_time(13 downto 4) & lsfr_overflow;
                     end if;
                 end if;
@@ -236,9 +238,9 @@ begin
                     col <= col + '1';
                 end if;
 
-                if ( DATA_TYPE = x"01" ) then
+                if ( DATA_TYPE = "00" ) then
                     o_data.data <= global_time(3 downto 0) & lsfr_chipID & row & col & lsfr_tot;
-                elsif ( DATA_TYPE = x"02" ) then
+                elsif ( DATA_TYPE = "01" ) then
                     o_data.data(31 downto 21) <= (others => '0');
                     o_data.data(20 downto 6) <= global_time(14 downto 0);
                     o_data.data(5 downto 0) <= (others => '0');
@@ -259,9 +261,9 @@ begin
 
             when overflow =>
                 o_state <= x"9";
-                if ( DATA_TYPE = x"01" ) then
+                if ( DATA_TYPE = "00" ) then
                     o_data.data <= overflow_time(3 downto 0) & lsfr_chipID & row & col & lsfr_tot;
-                elsif ( DATA_TYPE = x"02" ) then
+                elsif ( DATA_TYPE = "01" ) then
                     o_data.data(31 downto 21)   <= (others => '0');
                     o_data.data(20 downto 6)    <= overflow_time(14 downto 0);
                     o_data.data(5 downto 0)     <= (others => '0');

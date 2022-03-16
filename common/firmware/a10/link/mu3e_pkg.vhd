@@ -63,7 +63,7 @@ package mu3e is
     );
     
     constant LINK_ERR : link_t := (
-        data => X"3FFFFF9C",
+        data => X"0FFFFF9C",
         datak => "0001",
         err => '1',
         others => '0'
