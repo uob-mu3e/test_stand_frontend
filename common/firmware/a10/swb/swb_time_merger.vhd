@@ -48,7 +48,7 @@ architecture arch of swb_time_merger is
     -- debug path signals
     type write_debug_type is (idle, write_data, skip_data);
     signal write_debug_state : write_debug_type;
-    signal wrusedw : std_logic_vector(8 - 1 downto 0);
+    signal wrusedw : std_logic_vector(g_ADDR_WIDTH - 1 downto 0);
     signal wdata_debug, q_stream_debug : work.mu3e.link_t;
     signal almost_full, we_debug : std_logic;
 

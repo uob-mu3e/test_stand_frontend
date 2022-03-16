@@ -177,7 +177,7 @@ int main(int argc, char *argv[]) {
         // wait for requested data
         while ( (mu.read_register_ro(EVENT_BUILD_STATUS_REGISTER_R) & 1) == 0 ) {
             if ( cnt_loop == 100000 ) {
-                for(int i=0; i < 8; i++) cout << hex << "0x" <<  dma_buf[i+8] << " ";
+                for(int i=0; i < 100; i++) cout << hex << "0x" <<  dma_buf[mu.last_endofevent_addr() * 8 - 1 + i] << " ";
                 cout << endl;
                 cnt_loop = 0;
             }

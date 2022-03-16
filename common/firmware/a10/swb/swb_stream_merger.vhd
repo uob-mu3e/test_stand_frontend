@@ -26,8 +26,6 @@ port (
     o_wdata_debug     : out   work.mu3e.link_t;
     o_rempty_debug    : out   std_logic;
     i_ren_debug       : in    std_logic;
-    o_wsop_debug      : out   std_logic;
-    o_weop_debug      : out   std_logic;
 
     --! status counters
     --! 0: e_stream_fifo full

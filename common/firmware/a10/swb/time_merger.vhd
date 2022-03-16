@@ -35,6 +35,10 @@ end entity;
 
 architecture arch of time_merger is
 
+    -- input signals
+    signal data : work.mu3e.link_array_t(N_LINKS_TREE(0) - 1 downto 0);
+    signal empty, mask_n, rack : std_logic_vector(N_LINKS_TREE(0) - 1 downto 0) := (others => '0');
+
     -- layer0
     signal data0 : work.mu3e.link_array_t(N_LINKS_TREE(1) - 1 downto 0);
     signal empty0, mask_n0, rack0 : std_logic_vector(N_LINKS_TREE(1) - 1 downto 0);
@@ -45,6 +49,12 @@ architecture arch of time_merger is
 
 begin
 
+    --! map input signals to always have vectors of size 8 for the first layer
+    data(g_NLINKS_DATA - 1 downto 0)    <= i_data(g_NLINKS_DATA - 1 downto 0);
+    empty(g_NLINKS_DATA - 1 downto 0)   <= i_empty(g_NLINKS_DATA - 1 downto 0);
+    mask_n(g_NLINKS_DATA - 1 downto 0)  <= i_mask_n(g_NLINKS_DATA - 1 downto 0);
+    o_rack(g_NLINKS_DATA - 1 downto 0)  <= rack(g_NLINKS_DATA - 1 downto 0);
+
     --! setup tree from layer0 8-4, layer1 4-2, layer2 2-1
     layer0 : entity work.time_merger_tree
     generic map (
@@ -52,10 +62,10 @@ begin
     )
     port map (
         -- input data stream
-        i_data          => i_data,
-        i_empty         => i_empty,
-        i_mask_n        => i_mask_n,
-        o_rack          => o_rack,
+        i_data          => data,
+        i_empty         => empty,
+        i_mask_n        => mask_n,
+        o_rack          => rack,
         
         -- output data stream
         o_data          => data0,

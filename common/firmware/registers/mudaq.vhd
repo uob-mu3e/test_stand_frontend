@@ -55,7 +55,7 @@ package mudaq is
     constant ONEHIT : std_logic_vector(3 downto 0)      := x"8";
     constant TRAILER : std_logic_vector(3 downto 0)     := x"9";
     constant ONEERROR : std_logic_vector(3 downto 0)    := x"a";
-    type N_LINKS_TREE_t is array (3 downto 0) of integer;
+    type N_LINKS_TREE_t is array (3 downto 0) of positive;
     constant N_LINKS_TREE : N_LINKS_TREE_t := (1, 2, 4, 8);
 
 

@@ -168,7 +168,7 @@ begin
                          "11"   when layer_state(i) = SHEADER and shop_time0(i) /= shop_time1(i) else
                          (others => '0');
                          
-        data(i).err     <=  '1' when layer_state(i) = ONEERROR and i_data(i).err = '1' else
+        errorHit(i).err <=  '1' when layer_state(i) = ONEERROR and i_data(i).err = '1' else
                             '1' when layer_state(i) = ONEERROR and i_data(i+size).err = '1' else
                             '1' when work.util.or_reduce(error_s(i)) = '1' else
                             '0';

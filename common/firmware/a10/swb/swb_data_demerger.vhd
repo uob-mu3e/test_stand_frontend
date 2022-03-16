@@ -8,7 +8,6 @@ entity swb_data_demerger is
 port (
     i_aligned                   : in    std_logic; -- word alignment achieved
     i_data                      : in    work.mu3e.link_t; -- optical from frontend board
-    i_fifo_almost_full          : in    std_logic;
 
     o_data                      : out   work.mu3e.link_t; -- to sorting fifos
     o_sc                        : out   work.mu3e.link_t; -- slowcontrol from frontend board
@@ -48,7 +47,7 @@ begin
         when idle =>
             if ( i_data.datak = "0001" and i_data.data(7 downto 0) /= work.util.K28_5 and i_data.data(7 downto 0) /= work.util.K28_4 ) then
                 o_rc <= i_data;
-            elsif ( i_data.datak(3 downto 0) = "0001" and i_data.data(7 downto 0) = work.util.K28_5 and i_data.data(31 downto 29) = "111" and i_fifo_almost_full='0' ) then -- Mupix or MuTrig preamble
+            elsif ( i_data.datak(3 downto 0) = "0001" and i_data.data(7 downto 0) = work.util.K28_5 and i_data.data(31 downto 29) = "111" ) then -- Mupix or MuTrig preamble
                 o_fpga_id <= i_data.data(23 downto 8);
                 demerge_state           <= receiving_data;
                 o_data <= i_data;

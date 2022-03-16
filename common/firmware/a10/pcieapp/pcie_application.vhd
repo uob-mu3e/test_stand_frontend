@@ -27,10 +27,6 @@ port (
     o_regwritten_B          : out   std_logic_vector(63 downto 0);
     i_clk_B                 : in    std_logic := '0';
 
-    o_writeregs_C           : out   reg32array_pcie;
-    o_regwritten_C          : out   std_logic_vector(63 downto 0);
-    i_clk_C                 : in    std_logic := '0';
-
     local_rstn              : in    std_logic;
     refclk                  : in    std_logic;
 
@@ -221,10 +217,6 @@ begin
         o_writeregs_B   => o_writeregs_B,
         o_regwritten_B  => o_regwritten_B,
         i_clk_B         => i_clk_B,
-
-        o_writeregs_C   => o_writeregs_C,
-        o_regwritten_C  => o_regwritten_C,
-        i_clk_C         => i_clk_C,
 
         local_rstn      => local_rstn,
         refclk          => refclk,

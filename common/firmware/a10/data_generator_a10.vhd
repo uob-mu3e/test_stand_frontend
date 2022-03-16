@@ -130,8 +130,8 @@ begin
     lsfr_chipID <= (others => '0') when wchip = '0' else lsfr_chipID_reg;
 
     process (i_clk, i_reset_n, i_start_global_time)
-        variable current_overflow : std_logic_vector(15 downto 0) := "0000000000000000";
-        variable overflow_idx	  : integer range 0 to 15 := 0;
+        variable current_overflow   : std_logic_vector(15 downto 0) := "0000000000000000";
+        variable overflow_idx       : integer range 0 to 15 := 0;
     begin
     if ( i_reset_n = '0' ) then
         o_data              <= work.mu3e.LINK_ZERO;
@@ -140,7 +140,7 @@ begin
         data_header_state   <= sop;
         current_overflow    := "0000000000000000";
         overflow_idx        := 0;
-        o_state           <= (others => '0');
+        o_state             <= (others => '0');
         delay_cnt           <= (others => '0');
         row                 <= (others => '0');
         nEvent              <= (others => '0');
@@ -276,6 +276,7 @@ begin
                 o_data.data(31 downto 8) <= (others => '0');
                 o_data.data(7 downto 0) <= x"9c";
                 o_data.datak <= "0001";
+                nEvent <= nEvent + '1';
                 data_header_state <= sop;
 
             when others =>

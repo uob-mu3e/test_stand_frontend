@@ -33,7 +33,7 @@ port(
     i_resets_n       : in  std_logic_vector(31 downto 0);
     
     -- link inputs
-    i_rx             : in  work.mu3e.link_array_t(g_NLINKS_DATA-1 downto 0);
+    i_rx             : in  work.mu3e.link_array_t(g_NLINKS_DATA-1 downto 0) := (others => work.mu3e.LINK_IDLE);
     i_rmask_n        : in  std_logic_vector(g_NLINKS_DATA-1 downto 0);
 
     -- pcie regs
@@ -43,7 +43,7 @@ port(
     o_counter        : out work.util.slv32_array_t(g_NLINKS_DATA*5+6-1 downto 0);
 
     -- farm data
-    o_farm_data      : out work.mu3e.link_t;
+    o_farm_data      : out work.mu3e.link_t := work.mu3e.LINK_IDLE;
 
     -- dma
     i_dmamemhalffull : in  std_logic;
@@ -112,7 +112,7 @@ begin
     o_counter(3) <= builder_counters(2); --! bank_builder_ram_full
     o_counter(4) <= builder_counters(3); --! bank_builder_tag_fifo_full
     o_counter(5) <= events_to_farm_cnt;  --! events send to the farm
-    
+
     -- link to fifo counters
     generate_rdata : for i in 0 to g_NLINKS_DATA - 1 generate
         o_counter(6+0+i*5) <= link_to_fifo_cnt(0+i*5); --! fifo almost_full
@@ -121,7 +121,7 @@ begin
         o_counter(6+3+i*5) <= link_to_fifo_cnt(3+i*5); --! # of events
         o_counter(6+4+i*5) <= link_to_fifo_cnt(4+i*5); --! # of sub header
     end generate;
-    
+
     e_cnt_farm_events : entity work.counter
     generic map ( WRAP => true, W => 32 )
     port map ( o_cnt => events_to_farm_cnt, i_ena => farm_data.sop, i_reset_n => i_reset_n, i_clk => i_clk );
@@ -151,7 +151,7 @@ begin
         i_reset_n           => i_resets_n(RESET_BIT_DATAGEN),
         i_clk               => i_clk--,
     );
-    
+
     e_data_gen_error_test : entity work.data_generator_a10
     generic map (
         DATA_TYPE => DATA_TYPE,
@@ -172,13 +172,13 @@ begin
         i_reset_n           => i_resets_n(RESET_BIT_DATAGEN),
         i_clk               => i_clk--,
     );
-    
+
     gen_link_data : FOR i in 0 to g_NLINKS_DATA - 1 GENERATE
 
         process(i_clk, i_reset_n)
         begin
         if ( i_reset_n = '0' ) then
-            rx(i)   <= work.mu3e.LINK_ZERO;
+            rx(i) <= work.mu3e.LINK_ZERO;
         elsif ( rising_edge(i_clk) ) then
             if ( i_writeregs(SWB_READOUT_STATE_REGISTER_W)(USE_BIT_GEN_LINK) = '1' ) then
                 if ( i_writeregs(SWB_READOUT_STATE_REGISTER_W)(USE_BIT_TEST_ERROR) = '1' and i = 0 ) then
@@ -187,7 +187,7 @@ begin
                     rx(i) <= work.mu3e.to_link(gen_link.data, gen_link.datak);
                 end if;
             else
-                rx(i) <= i_rx(i);
+                rx(i) <= work.mu3e.to_link(i_rx(i).data, i_rx(i).datak);
             end if;
         end if;
         end process;
@@ -350,8 +350,8 @@ begin
 
         o_counters          => builder_counters,
 
-        i_reset_n_250       => i_reset_n,
-        i_clk_250           => i_clk--,
+        i_reset_n           => i_reset_n,
+        i_clk               => i_clk--,
     );
 
 

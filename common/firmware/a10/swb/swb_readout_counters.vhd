@@ -13,23 +13,20 @@ generic (
 );
 port (
     --! register inputs for pcie0
-    i_wregs_add_A       : in    std_logic_vector(31 downto 0);
+    i_wregs_add         : in    std_logic_vector(31 downto 0);
 
     --! counters
-    i_counter_A         : in    work.util.slv32_array_t(g_A_CNT - 1 downto 0);
-    i_counter_B_pixel   : in    work.util.slv32_array_t(g_NLINKS_DATA_PIXEL * 5 - 1 downto 0);
-    i_counter_B_scifi   : in    work.util.slv32_array_t(g_NLINKS_DATA_SCIFI * 5 - 1 downto 0);
+    i_counter           : in    work.util.slv32_array_t(g_A_CNT - 1 downto 0);
 
     --! register outputs for pcie0
     o_pcie_data         : out   std_logic_vector(31 downto 0);
     o_pcie_addr         : out   std_logic_vector(31 downto 0);
 
     --! i_reset
-    i_reset_n_A         : in    std_logic;    -- pcie clk
+    i_reset_n           : in    std_logic;
 
     --! clocks
-    i_clk_A             : in    std_logic;    -- pcie clk
-    i_clk_B             : in    std_logic--;  -- link clk
+    i_clk               : in    std_logic--;
 
 );
 end entity;
@@ -40,70 +37,32 @@ end entity;
 --! the counters for a given input addr
 architecture arch of swb_readout_counters is
 
-    signal rdempty_B                    : std_logic;
-    signal data_rregs_B, q_rregs_B      : std_logic_vector((g_NLINKS_DATA_PIXEL + g_NLINKS_DATA_SCIFI) * 5 * 32 - 1 downto 0);
-    signal s_counter_B                  : work.util.slv32_array_t((g_NLINKS_DATA_PIXEL + g_NLINKS_DATA_SCIFI) * 5 - 1 downto 0);
-
     signal swb_counter_addr, link_id, link_counter_addr : integer;
 
 begin
 
-    --! sync counters from different blocks
-    gen_sync_pixel : FOR i in 0 to g_NLINKS_DATA_PIXEL * 5 - 1 GENERATE
-        data_rregs_B(i * 32 + 31 downto i * 32) <= i_counter_B_pixel(i);
-    END GENERATE gen_sync_pixel;
-
-    gen_sync_scifi : FOR i in g_NLINKS_DATA_PIXEL * 5 to (g_NLINKS_DATA_PIXEL + g_NLINKS_DATA_SCIFI) * 5 - 1 GENERATE
-        data_rregs_B(i * 32 + 31 downto i * 32) <= i_counter_B_scifi(i-g_NLINKS_DATA_PIXEL * 5);
-    END GENERATE gen_sync_scifi;
-
-    --! sync FIFOs
-    e_sync_fifo_pixel_B : entity work.ip_dcfifo_v2
-    generic map(
-        g_ADDR_WIDTH => 4,
-        g_DATA_WIDTH => data_rregs_B'length,
-        g_RREG_N => 1--, -- TNS=-2700
-    )
-    port map (
-        i_wdata     => data_rregs_B,
-        i_we        => '1',
-        o_wfull     => open,
-        i_wclk      => i_clk_B,
-
-        o_rdata     => q_rregs_B,
-        i_rack      => not rdempty_B,
-        o_rempty    => rdempty_B,
-        i_rclk      => i_clk_A,
-
-        i_reset_n   => '1'--;
-    );
-
-    gen_sync_cnt : FOR i in s_counter_B'range GENERATE
-        s_counter_B(i) <= q_rregs_B(i * 32 + 31 downto i * 32);
-    END GENERATE gen_sync_cnt;
-
-    swb_counter_addr <= to_integer(unsigned(i_wregs_add_A(SWB_COUNTER_ADDR_RANGE)));
-    link_id <= to_integer(unsigned(i_wregs_add_A(SWB_LINK_RANGE)));
+    swb_counter_addr <= to_integer(unsigned(i_wregs_add(SWB_COUNTER_ADDR_RANGE)));
+    link_id <= to_integer(unsigned(i_wregs_add(SWB_LINK_RANGE)));
     link_counter_addr <= swb_counter_addr + link_id * 5;
 
     --! map counters pixel
-    process(i_clk_A, i_reset_n_A)
+    process(i_clk, i_reset_n)
     begin
-    if ( i_reset_n_A = '0' ) then
+    if ( i_reset_n = '0' ) then
         o_pcie_data <= (others => '0');
         o_pcie_addr <= (others => '0');
         --
-    elsif rising_edge(i_clk_A) then
+    elsif ( rising_edge(i_clk) ) then
+        o_pcie_addr <= i_wregs_add;
         case swb_counter_addr is
         when SWB_STREAM_FIFO_FULL_PIXEL_CNT | SWB_BANK_BUILDER_IDLE_NOT_HEADER_PIXEL_CNT | SWB_BANK_BUILDER_RAM_FULL_PIXEL_CNT | SWB_BANK_BUILDER_TAG_FIFO_FULL_PIXEL_CNT =>
-            o_pcie_data <= i_counter_A(swb_counter_addr);
-            o_pcie_addr <= i_wregs_add_A;
+            o_pcie_data <= i_counter(swb_counter_addr);
         when SWB_LINK_FIFO_ALMOST_FULL_PIXEL_CNT | SWB_LINK_FIFO_FULL_PIXEL_CNT | SWB_SKIP_EVENT_PIXEL_CNT | SWB_EVENT_PIXEL_CNT | SWB_SUB_HEADER_PIXEL_CNT =>
-            o_pcie_data <= s_counter_B(link_counter_addr);
-            o_pcie_addr <= i_wregs_add_A;
+            o_pcie_data <= i_counter(link_counter_addr);
         when others =>
             null;
         end case;
+
     end if;
     end process;
 

@@ -34,8 +34,8 @@ port (
     --! 3: bank_builder_tag_fifo_full
     o_counters          : out work.util.slv32_array_t(3 downto 0);
 
-    i_reset_n_250       : in  std_logic;
-    i_clk_250           : in  std_logic--;
+    i_reset_n           : in  std_logic;
+    i_clk               : in  std_logic--;
 );
 end entity;
 
@@ -82,7 +82,7 @@ begin
     o_counters(2) <= (others => '0');
     e_cnt_tag_fifo : entity work.counter
     generic map ( WRAP => true, W => 32 )
-    port map ( o_cnt => o_counters(3), i_ena => tag_fifo_full, i_reset_n => i_reset_n_250, i_clk => i_clk_250 );
+    port map ( o_cnt => o_counters(3), i_ena => tag_fifo_full, i_reset_n => i_reset_n, i_clk => i_clk );
 
     --! data out
     o_data <= (others => '1') when event_counter_state = write_4kb_padding and is_error_q = '0' else r_ram_data;
@@ -97,8 +97,8 @@ begin
     port map (
         address_a       => w_ram_add,
         address_b       => r_ram_add,
-        clock_a         => i_clk_250,
-        clock_b         => i_clk_250,
+        clock_a         => i_clk,
+        clock_b         => i_clk,
         data_a          => w_ram_data,
         data_b          => (others => '0'),
         wren_a          => w_ram_en,
@@ -116,11 +116,11 @@ begin
         data            => w_fifo_data,
         wrreq           => w_fifo_en,
         rdreq           => r_fifo_en,
-        clock           => i_clk_250,
+        clock           => i_clk,
         q               => r_fifo_data,
         full            => tag_fifo_full,
         empty           => tag_fifo_empty,
-        sclr            => not i_reset_n_250--,
+        sclr            => not i_reset_n--,
     );
 
     o_ren <=
@@ -129,9 +129,9 @@ begin
         '0';
 
     -- write link data to event ram
-    process(i_clk_250, i_reset_n_250)
+    process(i_clk, i_reset_n)
     begin
-    if ( i_reset_n_250 = '0' ) then
+    if ( i_reset_n = '0' ) then
         e_size_add          <= (others => '0');
         b_size_add          <= (others => '0');
         b_length_add        <= (others => '0');
@@ -164,7 +164,7 @@ begin
         event_tagging_state <= EVENT_IDLE;
 
     --
-    elsif rising_edge(i_clk_250) then
+    elsif rising_edge(i_clk) then
         flags           <= x"00000031";
         trigger_mask    <= (others => '0');
         event_id        <= x"0001";
@@ -359,9 +359,9 @@ begin
 
 
     -- dma end of events, count events and write control
-    process(i_clk_250, i_reset_n_250)
+    process(i_clk, i_reset_n)
     begin
-    if ( i_reset_n_250 = '0' ) then
+    if ( i_reset_n = '0' ) then
         o_wen               <= '0';
         cnt_4kb_done        <= '0';
         o_endofevent        <= '0';
@@ -377,7 +377,7 @@ begin
         o_dma_cnt_words     <= (others => '0');
         word_counter_endofevent <= (others => '0');
         --
-    elsif rising_edge(i_clk_250) then
+    elsif rising_edge(i_clk) then
 
         o_done          <= '0';
         r_fifo_en       <= '0';
