@@ -172,7 +172,7 @@ INT frontend_init()
     // check if PCIE is working
     uint32_t val=mup->read_register_ro(VERSION_REGISTER_R);
     if(val == 0xFFFFFFFF){
-        cm_msg(MINFO, "frontend_init()", "PCIE Error");
+        cm_msg(MINFO, "frontend_init()", "PCIE Error, swb pcie reg reading not working");
         return FE_ERR_DRIVER;
     }
 

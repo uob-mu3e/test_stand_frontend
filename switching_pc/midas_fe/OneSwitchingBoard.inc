@@ -29,7 +29,7 @@ EQUIPMENT equipment[NEQUIPMENT+1] = {
      0,                         /* event source */
      "MIDAS",                   /* format */
      TRUE,                      /* enabled */
-     RO_ALWAYS | RO_ODB,        /* read always and update ODB */
+     RO_RUNNING | RO_STOPPED | RO_ODB,        /* dont read during run start and update ODB */
      1000,                      /* read every 1 sec */
      0,                         /* stop run after this event limit */
      0,                         /* number of sub events */
@@ -44,7 +44,7 @@ EQUIPMENT equipment[NEQUIPMENT+1] = {
      0,                         /* event source */
      "MIDAS",                   /* format */
      TRUE,                      /* enabled */
-     RO_ALWAYS | RO_ODB,        /* read always and update ODB */
+     RO_RUNNING | RO_STOPPED | RO_ODB,        /* dont read during run start  and update ODB */
      1000,                      /* read every 1 sec */
      0,                         /* stop run after this event limit */
      0,                         /* number of sub events */
@@ -59,7 +59,7 @@ EQUIPMENT equipment[NEQUIPMENT+1] = {
      0,                         /* event source crate 0, all stations */
      "MIDAS",                   /* format */
      FALSE,                      /* enabled */
-     RO_ALWAYS | RO_ODB,        /* read always and update ODB */
+     RO_RUNNING | RO_STOPPED | RO_ODB,        /* dont read during run start  and update ODB */
      10000,                      /* read every 10 sec */
      0,                         /* stop run after this event limit */
      0,                         /* number of sub events */
@@ -74,7 +74,7 @@ EQUIPMENT equipment[NEQUIPMENT+1] = {
      0,                         /* event source crate 0, all stations */
      "MIDAS",                   /* format */
      FALSE,                      /* enabled */
-     RO_ALWAYS | RO_ODB,        /* read always and update ODB */
+     RO_RUNNING | RO_STOPPED | RO_ODB,        /* dont read during run start  and update ODB */
      10000,                      /* read every 10 sec */
      0,                         /* stop run after this event limit */
      0,                         /* number of sub events */
@@ -89,7 +89,7 @@ EQUIPMENT equipment[NEQUIPMENT+1] = {
      0,                         /* event source crate 0, all stations */
      "MIDAS",                   /* format */
      TRUE,                      /* enabled */
-     RO_ALWAYS | RO_ODB,   /* read during run transitions and update ODB */
+     RO_RUNNING | RO_STOPPED | RO_ODB,   /* dont read during run start  and update ODB */
      1000,                      /* read every 1 sec */
      0,                         /* stop run after this event limit */
      0,                         /* number of sub events */
