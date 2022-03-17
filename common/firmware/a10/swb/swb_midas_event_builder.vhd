@@ -437,7 +437,7 @@ begin
             else
                 r_ram_add <= r_ram_add + '1';
             end if;
-            
+
          when write_4kb_padding =>
             if ( is_error_q = '1' ) then
                 is_error_q <= '0';

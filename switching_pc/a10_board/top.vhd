@@ -349,8 +349,8 @@ begin
         SWB_ID                  => SWB_ID--,
     )
     port map (
-        i_feb_rx        => feb_rx(g_NLINKS_FEB_TOTL-1 downto 0),
-        o_feb_tx        => feb_tx(g_NLINKS_FEB_TOTL-1 downto 0),
+        i_feb_rx        => feb_rx,
+        o_feb_tx        => feb_tx,
 
         i_writeregs     => pcie0_writeregs,
         o_readregs      => pcie0_readregs,
