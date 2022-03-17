@@ -162,11 +162,19 @@ INT frontend_init()
         mup = new mudaq::DummyDmaMudaqDevice("/dev/mudaq0");
     #else
         mup = new mudaq::DmaMudaqDevice("/dev/mudaq0");
-    #endif       
+    #endif
+
         
     INT status = init_mudaq(*mup);
     if (status != SUCCESS)
         return FE_ERR_DRIVER;
+
+    // check if PCIE is working
+    uint32_t val=mup->read_register_ro(VERSION_REGISTER_R);
+    if(val == 0xFFFFFFFF){
+        cm_msg(MINFO, "frontend_init()", "PCIE Error");
+        return FE_ERR_DRIVER;
+    }
 
     //init febs (general)
     status = init_febs();
