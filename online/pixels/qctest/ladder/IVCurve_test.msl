@@ -1,0 +1,155 @@
+#
+# IVCurve test with parameter specification at startup
+#
+
+
+
+# Empty all buffers at startup
+ODBSET /Equipment/Mupix/QCTests/Ladder/IV/Output/V, 0
+LOOP k, 32
+    ODBSET /Equipment/Mupix/QCTests/Ladder/IV/Output/Voltage[$k-1], 0
+    ODBSET /Equipment/Mupix/QCTests/Ladder/IV/Output/Current[$k-1], 0
+ENDLOOP
+
+
+
+PARAM current_limit, "Current limit (Amps)"
+PARAM start_voltage, "Starting voltage"
+PARAM step_size, "Voltage increment"
+PARAM fine_step_size, "Fine voltage increment"
+PARAM stop_voltage, "Stop voltage"
+
+# Check
+SET end, 152
+
+
+
+# Check values
+
+# If $current_limit is higher than value at Keithley complain
+ODBGET /Equipment/KEITHLEY0/Variables/Current Limit, keith_curr_limit
+IF $current_limit > $keith_curr_limit
+    MESSAGE "Current limit in Keithley is lower than requested current limit", 1
+    GOTO $end
+ENDIF
+
+# If step size is smaller than fine step complain
+
+MESSAGE $step_size, 1
+MESSAGE $fine_step_size, 1
+
+IF $step_size < $fine_step_size
+    MESSAGE "Fine step voltage must be smaller than step voltage", 1
+    GOTO $end
+ENDIF
+
+# If voltage step is not compatible with intervals complain
+SET c1, (abs($stop_voltage)-abs($start_voltage)) % $step_size
+IF $c1 != 0
+    MESSAGE "Introduce compatible voltage step size"
+    GOTO $end
+ENDIF
+
+# If fine voltage step is not compatible with interval complain
+IF $step_size % $fine_step_size != 0
+    MESSAGE "Introduce compatible fine voltage step size"
+    GOTO $end
+ENDIF
+
+
+
+# Calculation of num_steps without taking into account the fine steps of last interval
+SET num_steps, (abs($stop_voltage)-abs($start_voltage))/$step_size+1
+SET num_fine_steps, $step_size/$fine_step_size-1
+
+# Check whether buffers are big enough
+SET total_datapoints, $num_steps+$num_fine_steps
+IF $total_datapoints > 32
+    MESSAGE "Buffer too small for run. Increase buffer size or increase steps", 1
+    GOTO $end
+ENDIF
+
+
+
+# Save values into ODB
+
+ODBSUBDIR /Equipment/Mupix/QCTests/Ladder/IV/Input
+    ODBSET current_limit, $current_limit
+    ODBSET start_voltage, $start_voltage
+    ODBSET step_voltage, $step_size
+    ODBSET fine_step_voltage, $fine_step_size
+    ODBSET stop_voltage, $stop_voltage
+ENDODBSUBDIR
+
+
+
+# Config
+
+SET v, -1*abs($start_voltage)
+ODBSET /Equipment/Mupix/QCTests/Ladder/IV/Output/V, $v
+
+SET current, 0
+
+# Turn on Keithley
+ODBSET /Equipment/KEITHLEY0/Variables/Set State, 1
+# Wait to turn on
+WAIT SECONDS, 2
+
+
+# Looping starts at 1
+
+LOOP i, $num_steps
+    # Set voltage array in Output
+    ODBSUBDIR /Equipment/Mupix/QCTests/Ladder/IV/Output
+        ODBGET V, v
+        ODBSET Voltage[$i-1], $v
+    ENDODBSUBDIR
+
+    # Set voltage and measure
+    ODBSUBDIR /Equipment/KEITHLEY0/Variables
+        # Input voltage is positive but we want to output negative one
+        ODBSET Demand Voltage, -1*abs($v)
+        # Wait for measurement to be stored in Current
+        WAIT SECONDS, 2
+        ODBGET Current, current
+    ENDODBSUBDIR
+    
+    # Outputting current to ODB and incrementing voltage
+    ODBSUBDIR /Equipment/Mupix/QCTests/Ladder/IV/Output
+        ODBSET Current[$i-1], $current*1000000
+
+        # increment voltage
+        ODBINC V, $step_size
+    ENDODBSUBDIR
+
+    ODBGET /Equipment/Mupix/QCTests/Ladder/IV/Output/Current[$i-1], t_curr
+
+    # If current has exceeded the limit, go back one step in voltage run and use fine_step_size
+    IF abs($t_curr) > $current_limit*1000000
+        IF $step_size == $fine_step_size
+            MESSAGE "[DEBUG] Skipping fine loop after current exceeded limit", 1
+            GOTO $end
+        ENDIF
+
+        IF $fine_step_size == 0
+            MESSAGE "[DEBUG] Skipping fine loop after current exceeded limit", 1
+            GOTO $end
+        ENDIF
+
+        ODBGET /Equipment/Mupix/QCTests/Ladder/IV/Output/Voltage[$i-2], f_start_voltage
+        LOOP j, $num_fine_steps
+            ODBSET /Equipment/KEITHLEY0/Variables/Demand Voltage, -1*($f_start_voltage+$j*$fine_step_size)
+            WAIT SECONDS, 2
+            ODBGET /Equipment/KEITHLEY0/Variables/Current, current
+            ODBSET /Equipment/Mupix/QCTests/Ladder/IV/Output/Current[$i+($j-1)], $current
+        ENDLOOP
+        GOTO $end
+    ENDIF
+ENDLOOP
+
+
+# Turn off. # end
+ODBSET /Equipment/KEITHLEY0/Variables/Set State, 0
+# Wait to turn off. 
+WAIT SECONDS, 0.1
+
