@@ -20,7 +20,7 @@ PARAM fine_step_size, "Fine voltage increment"
 PARAM stop_voltage, "Stop voltage"
 
 # Check
-SET end, 152
+end = 152
 
 
 
@@ -44,8 +44,7 @@ IF $step_size < $fine_step_size
 ENDIF
 
 # If voltage step is not compatible with intervals complain
-SET c1, (abs($stop_voltage)-abs($start_voltage)) % $step_size
-IF $c1 != 0
+IF (abs($stop_voltage)-abs($start_voltage)) % $step_size != 0
     MESSAGE "Introduce compatible voltage step size"
     GOTO $end
 ENDIF
@@ -59,11 +58,11 @@ ENDIF
 
 
 # Calculation of num_steps without taking into account the fine steps of last interval
-SET num_steps, (abs($stop_voltage)-abs($start_voltage))/$step_size+1
-SET num_fine_steps, $step_size/$fine_step_size-1
+num_steps = (abs($stop_voltage)-abs($start_voltage))/$step_size+1
+num_fine_steps = $step_size/$fine_step_size-1
 
 # Check whether buffers are big enough
-SET total_datapoints, $num_steps+$num_fine_steps
+total_datapoints = $num_steps+$num_fine_steps
 IF $total_datapoints > 32
     MESSAGE "Buffer too small for run. Increase buffer size or increase steps", 1
     GOTO $end
@@ -85,10 +84,10 @@ ENDODBSUBDIR
 
 # Config
 
-SET v, -1*abs($start_voltage)
+v = -1*abs($start_voltage)
 ODBSET /Equipment/Mupix/QCTests/Ladder/IV/Output/V, $v
 
-SET current, 0
+current = 0
 
 # Turn on Keithley
 ODBSET /Equipment/KEITHLEY0/Variables/Set State, 1
