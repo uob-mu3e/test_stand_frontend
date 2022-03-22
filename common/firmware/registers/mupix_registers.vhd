@@ -47,6 +47,7 @@ constant MUPIX_LVDS_STATUS_BLOCK_LENGTH     : integer := 36;
     constant MP_CTRL_DIRECT_SPI_BUSY_REGISTER_R     :  integer := 16#0469#; -- DOC: contains 1 bit for each spi bus, 1 if busy | MP_FEB
     constant MP_CTRL_DIRECT_SPI_START_REGISTER_W    :  integer := 16#046A#; -- DOC: Register for direct spi configuration mode, needs to be enabled first | MP_FEB
     constant MP_CTRL_RESET_REGISTER_W               :  integer := 16#04A0#; -- DOC: write to this reg triggers a 1 cycle mp ctrl reset | MP_FEB
+    constant MP_CTRL_RUN_TEST_REGISTER_W            :  integer := 16#04A1#; -- DOC: write to this reg triggers write of a TDAC test pattern | MP_FEB
 
 -----------------------------------------------------------------
 ---- mupix datapath general (0x1300-0xFBFF)----------------------

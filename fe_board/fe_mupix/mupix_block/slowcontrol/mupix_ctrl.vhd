@@ -77,6 +77,8 @@ architecture RTL of mupix_ctrl is
     signal tdac_data                    : reg32 := (others => '0');
     signal tdac_we                      : std_logic := '0';
 
+    signal run_test                     : std_logic;
+
 begin
 
     slow_down                   <= slow_down_buf(15 downto 0);
@@ -121,6 +123,7 @@ begin
 
         o_tdac_data                 => tdac_data,
         o_tdac_we                   => tdac_we,
+        o_run_tdac_test             => run_test,
 
         o_mp_ctrl_slow_down         => slow_down_buf,
         o_mp_direct_spi_data        => sc_to_direct_spi,
@@ -199,7 +202,8 @@ begin
             o_data_to_direct_spi_we => mp_ctrl_to_direct_spi_wr(I),
             i_direct_spi_fifo_full  => direct_spi_fifo_full(I),
             i_direct_spi_fifo_empty => mp_direct_spi_busy_n(I),
-            o_spi_chip_selct_mask   => spi_chip_select_mask_mp_ctrl(I*N_CHIPS_PER_SPI_g+N_CHIPS_PER_SPI_g-1 downto N_CHIPS_PER_SPI_g*I)
+            o_spi_chip_selct_mask   => spi_chip_select_mask_mp_ctrl(I*N_CHIPS_PER_SPI_g+N_CHIPS_PER_SPI_g-1 downto N_CHIPS_PER_SPI_g*I),
+            i_run_test              => run_test
         );
 
         mp_ctrl_direct_spi_inst: entity work.mp_ctrl_direct_spi

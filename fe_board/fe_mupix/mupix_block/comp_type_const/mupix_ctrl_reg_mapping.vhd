@@ -44,6 +44,7 @@ port (
 
     o_tdac_data                 : out reg32;
     o_tdac_we                   : out std_logic;
+    o_run_tdac_test             : out std_logic;
 
     o_mp_ctrl_slow_down         : out std_logic_vector(31 downto 0);
     o_mp_direct_spi_data        : out reg32array(N_SPI_g-1 downto 0);
@@ -89,6 +90,7 @@ architecture rtl of mupix_ctrl_reg_mapping is
             o_chip_cvb                  <= (others => '0');
             o_combined_data             <= (others => '0');
             conf_write_chip_select      <= (others => '0');
+            o_run_tdac_test             <= '0';
 
         elsif(rising_edge(i_clk156)) then
 
@@ -107,6 +109,8 @@ architecture rtl of mupix_ctrl_reg_mapping is
             o_conf_reg_we               <= '0';
             o_vdac_reg_we               <= '0';
             o_bias_reg_we               <= '0';
+            o_run_tdac_test             <= '0';
+
 
             -----------------------------------------------------------------
             ---- mupix ctrl -------------------------------------------------
@@ -192,6 +196,10 @@ architecture rtl of mupix_ctrl_reg_mapping is
 
             if ( regaddr = MP_CTRL_RESET_REGISTER_W and i_reg_we = '1' ) then
                 o_reset_n <= '0';
+            end if;
+
+            if ( regaddr = MP_CTRL_RUN_TEST_REGISTER_W and i_reg_we = '1' ) then
+                o_run_tdac_test <= '1';
             end if;
         end if;
     end process;

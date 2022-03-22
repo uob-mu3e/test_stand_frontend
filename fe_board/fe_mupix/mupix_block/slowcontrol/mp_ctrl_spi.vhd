@@ -35,7 +35,9 @@ entity mp_ctrl_spi is
         o_data_to_direct_spi_we : out std_logic;
         i_direct_spi_fifo_full  : in  std_logic;
         i_direct_spi_fifo_empty : in  std_logic;
-        o_spi_chip_selct_mask   : out std_logic_vector(N_CHIPS_PER_SPI_g-1 downto 0)--;
+        o_spi_chip_selct_mask   : out std_logic_vector(N_CHIPS_PER_SPI_g-1 downto 0);
+
+        i_run_test              : out std_logic--;
     );
 end entity mp_ctrl_spi;
 
@@ -50,7 +52,7 @@ architecture RTL of mp_ctrl_spi is
     signal chip_is_writing_int  : integer range 0 to N_CHIPS_PER_SPI_g-1;
     signal reg_is_writing       : std_logic_vector(3 downto 0);
 
-    type mp_spi_state_type      is (init,idle, waiting, load_bits, writing, shift_col_by_one, load, pre_load, rem_load);
+    type mp_spi_state_type      is (init, test, test2, test3, idle, waiting, load_bits, writing, shift_col_by_one, load, pre_load, rem_load);
     signal mp_spi_state         : mp_spi_state_type;
     type mp_spi_clk_state_type  is (zero1, clk1, zero2, clk2, zero3);
     signal mp_spi_clk_state     : mp_spi_clk_state_type;
@@ -100,6 +102,10 @@ architecture RTL of mp_ctrl_spi is
 
     signal dpf_empty_this_round : std_logic_vector(3 downto 0);
     signal init_counter         : integer range 0 to 1023;
+    
+    signal run_test_prev        : std_logic;
+    signal test_tdac_step       : integer range 0 to 7;
+    signal running_test         : std_logic;
 
 begin
 
@@ -177,10 +183,13 @@ begin
             Load_VDAC   <= '0';
             Load_Bias   <= '0';
             Load_Conf   <= '0';
-            Load_Test <= '0';
-            Ck1_Test  <= '0';
-            Ck2_Test  <= '0';
-            
+            Load_Test   <= '0';
+            Ck1_Test    <= '0';
+            Ck2_Test    <= '0';
+
+            run_test_prev  <= '0';
+            test_tdac_step <= 0;
+            running_test   <= '0';
 
         elsif(rising_edge(i_clk)) then
             -- defaults
@@ -208,9 +217,11 @@ begin
             Load_VDAC   <= '0';
             Load_Bias   <= '0';
             Load_Conf   <= '1';
-            Load_Test <= '0';
-            Ck1_Test  <= '0';
-            Ck2_Test  <= '0';
+            Load_Test   <= '0';
+            Ck1_Test    <= '0';
+            Ck2_Test    <= '0';
+
+            run_test_prev <= i_run_test;
 
             case mp_spi_state is
               when init =>
@@ -265,6 +276,103 @@ begin
                     mp_spi_clk_state <= zero1;
                     o_data_to_direct_spi_we <= '0';
                 end case;
+              
+              when test =>
+                o_spi_chip_selct_mask <= (others => '0');
+                running_test          <= '1';
+
+                case mp_spi_clk_state is
+                  when zero1 =>
+                    if(init_counter = 350 and i_direct_spi_fifo_empty = '1') then
+                        o_data_to_direct_spi_we <= '1';
+                        Load_Col <= '1';
+                        init_counter <= init_counter + 1;
+                    elsif(init_counter = 351 and i_direct_spi_fifo_empty = '1') then
+                        o_data_to_direct_spi_we <= '1';
+                        Load_Col <= '0';
+                        mp_spi_clk_state <= zero1;
+                        init_counter <= 0;
+                        mp_spi_state <= test2;
+                    elsif(i_direct_spi_fifo_empty = '1') then 
+                        mp_spi_clk_state <= clk1;
+                        init_counter <= init_counter + 1;
+                        o_data_to_direct_spi_we <= '1';
+                    end if;
+                    -- default all
+                  when clk1 =>
+                    o_data_to_direct_spi_we <= '1';
+                    mp_spi_clk_state <= zero2;
+                    Ck1_Col <= '1';
+                    Ck1_tdac <= '1';
+                    -- others to default
+                  when zero2 =>
+                    o_data_to_direct_spi_we <= '1';
+                    mp_spi_clk_state <= clk2;
+                    -- default all
+                  when clk2 =>
+                    o_data_to_direct_spi_we <= '1';
+                    mp_spi_clk_state <= zero3;
+                    Ck2_Col <= '1'; 
+                    Ck2_tdac <= '1';
+                    -- others to default
+                  when zero3 => -- is this one needed ?
+                    mp_spi_clk_state <= zero1;
+                    o_data_to_direct_spi_we <= '1';
+                    -- default all
+                  when others =>
+                    mp_spi_clk_state <= zero1;
+                    o_data_to_direct_spi_we <= '0';
+                end case;
+            when test2 =>
+                o_spi_chip_selct_mask <= (others => '0');
+                tdac <= '1';
+
+                case mp_spi_clk_state is
+                  when zero1 =>
+                    if(init_counter = 512 and i_direct_spi_fifo_empty = '1') then
+                        o_data_to_direct_spi_we <= '1';
+                        Load_tdac               <= '1';
+                        init_counter <= init_counter + 1;
+                    elsif(init_counter = 513 and i_direct_spi_fifo_empty = '1') then
+                        o_data_to_direct_spi_we <= '1';
+                        Load_tdac <= '0';
+                        mp_spi_clk_state <= zero1;
+                        init_counter <= 0;
+                        if(test_tdac_step = 7) then 
+                            mp_spi_state <= idle;
+                            test_tdac_step <= 0;
+                        else
+                            test_tdac_step <= test_tdac_step + 1;
+                            mp_spi_state <= shift_col_by_one;
+                        end if;
+                    elsif(i_direct_spi_fifo_empty = '1') then 
+                        mp_spi_clk_state <= clk1;
+                        init_counter <= init_counter + 1;
+                        o_data_to_direct_spi_we <= '1';
+                    end if;
+                    -- default all
+                  when clk1 =>
+                    o_data_to_direct_spi_we <= '1';
+                    mp_spi_clk_state <= zero2;
+                    Ck1_tdac <= '1';
+                    -- others to default
+                  when zero2 =>
+                    o_data_to_direct_spi_we <= '1';
+                    mp_spi_clk_state <= clk2;
+                    -- default all
+                  when clk2 =>
+                    o_data_to_direct_spi_we <= '1';
+                    mp_spi_clk_state <= zero3;
+                    Ck2_tdac <= '1';
+                    -- others to default
+                  when zero3 => -- is this one needed ?
+                    mp_spi_clk_state <= zero1;
+                    o_data_to_direct_spi_we <= '1';
+                    -- default all
+                  when others =>
+                    mp_spi_clk_state <= zero1;
+                    o_data_to_direct_spi_we <= '0';
+                end case;
 
               -- mupix 10 load conf bug does not allow for this .. put in again for mp 11
               -- when idle =>
@@ -282,17 +390,25 @@ begin
               --   end if;
 
               when idle =>
-                    for I in 0 to N_CHIPS_PER_SPI_g-1 loop -- decide on the chip that is supposed to write this round (could also write more than 1 chip if bits are identical but i dont want to right now)
-                      if((bias_rdy(I)='1'or tdac_rdy(I)='1') and i_direct_spi_fifo_empty = '1') then
-                        mp_spi_state    <= load_bits;
-                        chip_is_writing     <= (I => '1', others => '0');
-                        o_read              <= (I => (spi_read => i_data(I).rdy, mu3e_read => (others => 'Z')), others =>(spi_read => (others => '0'), mu3e_read => (others => 'Z')));
-                        reg_is_writing      <= i_data(I).rdy;
-                        chip_is_writing_int <= I;
-                      end if;
-                    end loop;
-                    -- now we know the chip (chip_is_writing, chip is writing int) and the regs of that chip (reg_is_writing) that we want to write this round
-
+                    running_test <= '0';
+                    if(i_run_test = '1' and run_test_prev = '0') then 
+                        mp_spi_state        <= test;
+                        mp_spi_clk_state    <= zero1;
+                        init_counter        <= 0;
+                        col                 <= '0';
+                        tdac                <= '0';
+                    else
+                        for I in 0 to N_CHIPS_PER_SPI_g-1 loop -- decide on the chip that is supposed to write this round (could also write more than 1 chip if bits are identical but i dont want to right now)
+                          if((bias_rdy(I)='1'or tdac_rdy(I)='1') and i_direct_spi_fifo_empty = '1') then
+                            mp_spi_state    <= load_bits;
+                            chip_is_writing     <= (I => '1', others => '0');
+                            o_read              <= (I => (spi_read => i_data(I).rdy, mu3e_read => (others => 'Z')), others =>(spi_read => (others => '0'), mu3e_read => (others => 'Z')));
+                            reg_is_writing      <= i_data(I).rdy;
+                            chip_is_writing_int <= I;
+                          end if;
+                        end loop;
+                        -- now we know the chip (chip_is_writing, chip is writing int) and the regs of that chip (reg_is_writing) that we want to write this round
+                    end if;
 
               when load_bits =>
                 mp_spi_state <= waiting;
@@ -458,7 +574,11 @@ begin
                         --WrEnable <= '1';
                       when zero4 => -- is this one needed ?
                         col_shift_state <= zero1;
-                        mp_spi_state <= idle;
+                        if(running_test = '1') then 
+                            mp_spi_state <= test2;
+                        else
+                            mp_spi_state <= idle;
+                        end if;
                       when others =>
                         col_shift_state <= zero1;
                         o_data_to_direct_spi_we <= '0';
