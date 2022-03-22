@@ -92,20 +92,22 @@ architecture arch of top is
 
     -- constants
     constant SWB_ID : std_logic_vector(7 downto 0) := x"01";
-    constant g_NLINKS_FEB_TOTL   : positive := 16;
-    constant g_NLINKS_FARM_TOTL  : positive := 16;
-    constant g_NLINKS_FARM_PIXEL : positive := 8;
-    constant g_NLINKS_DATA_PIXEL : positive := 10;
-    constant g_NLINKS_FARM_SCIFI : positive := 8;
-    constant g_NLINKS_DATA_SCIFI : positive := 4;
+    constant g_NLINKS_FEB_TOTL   : positive := 12;
+    constant g_NLINKS_FARM_TOTL  : positive := 3;
+    constant g_NLINKS_FARM_PIXEL : positive := 2;
+    constant g_NLINKS_DATA_PIXEL_US : positive := 5;
+    constant g_NLINKS_DATA_PIXEL_DS : positive := 5;
+    constant g_NLINKS_FARM_SCIFI : positive := 1;
+    constant g_NLINKS_DATA_SCIFI : positive := 2;
     constant g_NLINKS_FARM_TILE  : positive := 8;
     constant g_NLINKS_DATA_TILE  : positive := 12;
-
+    
+    
     signal led : std_logic_vector(7 downto 0) := (others => '0');
     signal reset_n : std_logic;
 
 
-
+    
     -- local 100 MHz clock
     signal clk_100, reset_100_n : std_logic;
 
@@ -351,17 +353,19 @@ begin
         g_NLINKS_FEB_TOTL       => g_NLINKS_FEB_TOTL,
         g_NLINKS_FARM_TOTL      => g_NLINKS_FARM_TOTL,
         g_NLINKS_FARM_PIXEL     => g_NLINKS_FARM_PIXEL,
-        g_NLINKS_DATA_PIXEL     => g_NLINKS_DATA_PIXEL,
+        g_NLINKS_DATA_PIXEL     => g_NLINKS_DATA_PIXEL_US + g_NLINKS_DATA_PIXEL_DS,
+        g_NLINKS_DATA_PIXEL_US  => g_NLINKS_DATA_PIXEL_US,
+        g_NLINKS_DATA_PIXEL_DS  => g_NLINKS_DATA_PIXEL_DS,
         g_NLINKS_FARM_SCIFI     => g_NLINKS_FARM_SCIFI,
         g_NLINKS_DATA_SCIFI     => g_NLINKS_DATA_SCIFI,
         SWB_ID                  => SWB_ID--,
     )
     port map (
         -- TODO: rename to feb_data_rx, etc.
-        i_rx            => rx_data_raw(15 downto 0),
-        i_rx_k          => rx_datak_raw(15 downto 0),
-        o_tx            => tx_data(15 downto 0),
-        o_tx_k          => tx_datak(15 downto 0),
+        i_rx            => rx_data_raw(g_NLINKS_FEB_TOTL-1 downto 0),
+        i_rx_k          => rx_datak_raw(g_NLINKS_FEB_TOTL-1 downto 0),
+        o_tx            => tx_data(g_NLINKS_FEB_TOTL-1 downto 0),
+        o_tx_k          => tx_datak(g_NLINKS_FEB_TOTL-1 downto 0),
 
         i_writeregs_250 => pcie0_writeregs_A,
         i_writeregs_156 => pcie0_writeregs_B,
@@ -384,8 +388,8 @@ begin
         o_endofevent    => dmamem_endofevent,
         o_dma_data      => dma_data,
 
-        o_farm_tx_data  => farm_tx_data(15 downto 0),
-        o_farm_tx_datak => farm_tx_datak(15 downto 0),
+        o_farm_tx_data  => farm_tx_data(g_NLINKS_FARM_TOTL-1 downto 0),
+        o_farm_tx_datak => farm_tx_datak(g_NLINKS_FARM_TOTL-1 downto 0),
 
         --! 250 MHz clock / reset_n
         i_reset_n_250   => pcie0_reset_n,
