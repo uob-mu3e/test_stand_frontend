@@ -20,12 +20,9 @@ PARAM fine_step_size, "Fine voltage increment"
 PARAM stop_voltage, "Stop voltage"
 
 # Check
-SET end, 153
-
-
+SET end, 146
 
 # Check values
-
 # If $current_limit is higher than value at Keithley complain
 ODBGET /Equipment/KEITHLEY0/Variables/Current Limit, keith_curr_limit
 IF $current_limit > $keith_curr_limit
