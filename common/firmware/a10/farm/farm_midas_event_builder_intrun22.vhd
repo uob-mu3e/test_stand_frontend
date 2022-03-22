@@ -16,14 +16,10 @@ use work.a10_pcie_registers.all;
 
 entity farm_midas_event_builder_intrun22 is
 port(
-    i_rx                : in  std_logic_vector (31 downto 0);
+    i_rx                : in  work.mu3e.link_t;
     o_ren               : out std_logic;
     i_rempty            : in  std_logic;
-    i_header            : in  std_logic;
-    i_trailer           : in  std_logic;
-    i_t0                : in  std_logic;
-    i_t1                : in  std_logic;
-    i_error             : in  std_logic;
+    
     -- Data type: "00" = pixel, "01" = scifi, "10" = tiles
     i_data_type         : std_logic_vector(1 downto 0) := "00";
     i_event_id          : std_logic_vector(15 downto 0) := x"0001";
@@ -33,10 +29,9 @@ port(
     o_wen               : out std_logic;
     o_event_ts          : out std_logic_vector(47 downto 0);
     i_ddr_ready         : in  std_logic;
-    o_error             : out std_logic;
+    o_state_out         : out std_logic_vector(3 downto 0);
     o_sop               : out std_logic;
     o_eop               : out std_logic;
-    o_state_out         : out std_logic_vector(3 downto 0);
     
     --! status counters 
     --! 0: bank_builder_idle_not_header
@@ -45,8 +40,8 @@ port(
     --! 3: bank_builder_tag_fifo_full
     o_counters          : out work.util.slv32_array_t(3 downto 0);
 
-    i_reset_n_250       : in  std_logic;
-    i_clk_250           : in  std_logic--;
+    i_reset_n           : in  std_logic;
+    i_clk               : in  std_logic--;
 );
 end entity;
 
@@ -93,7 +88,7 @@ begin
     o_counters(2) <= cnt_event;
     e_cnt_tag_fifo : entity work.counter
     generic map ( WRAP => true, W => 32 )
-    port map ( o_cnt => o_counters(3), i_ena => tag_fifo_full, i_reset_n => i_reset_n_250, i_clk => i_clk_250 );
+    port map ( o_cnt => o_counters(3), i_ena => tag_fifo_full, i_reset_n => i_reset_n, i_clk => i_clk );
 
     --! data out
     o_data <= r_ram_data;
@@ -108,8 +103,8 @@ begin
     port map (
         address_a       => w_ram_add,
         address_b       => r_ram_add,
-        clock_a         => i_clk_250,
-        clock_b         => i_clk_250,
+        clock_a         => i_clk,
+        clock_b         => i_clk,
         data_a          => w_ram_data,
         data_b          => (others => '0'),
         wren_a          => w_ram_en,
@@ -127,22 +122,22 @@ begin
         data            => w_fifo_data,
         wrreq           => w_fifo_en,
         rdreq           => r_fifo_en,
-        clock           => i_clk_250,
+        clock           => i_clk,
         q               => r_fifo_data,
         full            => tag_fifo_full,
         empty           => tag_fifo_empty,
-        sclr            => not i_reset_n_250--,
+        sclr            => not i_reset_n--,
     );
 
     o_ren <=
         '1' when ( event_tagging_state = bank_data and i_rempty = '0' ) else
-        '1' when ( event_tagging_state = EVENT_IDLE and i_rempty = '0' and i_header = '0' ) else
+        '1' when ( event_tagging_state = EVENT_IDLE and i_rempty = '0' and i_rx.sop = '0' ) else
         '0';
 
     -- write link data to event ram
-    process(i_clk_250, i_reset_n_250)
+    process(i_clk, i_reset_n)
     begin
-    if ( i_reset_n_250 = '0' ) then
+    if ( i_reset_n = '0' ) then
         e_size_add          <= (others => '0');
         b_size_add          <= (others => '0');
         b_length_add        <= (others => '0');
@@ -175,7 +170,7 @@ begin
         event_tagging_state <= EVENT_IDLE;
 
     --
-    elsif rising_edge(i_clk_250) then
+    elsif rising_edge(i_clk) then
         flags           <= x"00000031";
         trigger_mask    <= (others => '0');
         type_bank       <= x"00000006";
@@ -190,9 +185,9 @@ begin
         case event_tagging_state is
         when EVENT_IDLE =>
             -- start if at least one not masked link has data
-            if ( i_rempty = '0' and i_header = '1' ) then
+            if ( i_rempty = '0' and i_rx.sop = '1' ) then
                 event_tagging_state <= event_head;
-            elsif ( i_rempty = '0' and i_header = '0' ) then
+            elsif ( i_rempty = '0' and i_rx.sop = '0' ) then
                 cnt_idle_not_header <= cnt_idle_not_header + 1;
             end if;
 
@@ -240,7 +235,7 @@ begin
 
         when bank_name =>
             -- here we check if the link is empty and if we saw a header
-            if ( i_rempty = '0' and i_header = '1' ) then
+            if ( i_rempty = '0' and i_rx.sop = '1' ) then
                 w_ram_en    <= '1';
                 w_ram_add   <= w_ram_add_reg + 1;
                 -- MIDAS expects bank names in ascii:
@@ -289,25 +284,25 @@ begin
             if ( i_rempty = '0' ) then
                 w_ram_en            <= '1';
                 w_ram_add           <= w_ram_add + 1;
-                if ( i_error = '1' ) then
+                if ( i_rx.err = '1' ) then
                     is_error <= '1';
                 end if;
-                if ( i_trailer = '1' ) then
+                if ( i_rx.eop = '1' ) then
                     w_ram_data(31 downto 12)    <= x"FC000";
-                    w_ram_data(11 downto 8)     <= "00" & i_rx(9 downto 8);
+                    w_ram_data(11 downto 8)     <= "00" & i_rx.data(9 downto 8);
                     w_ram_data(7 downto 0)      <= x"9C";
                 else
-                    w_ram_data      <= i_rx;
+                    w_ram_data      <= i_rx.data;
                 end if;
-                if ( i_t0 = '1' ) then
-                    ts_tagging(47 downto 16) <= i_rx;
+                if ( i_rx.t0 = '1' ) then
+                    ts_tagging(47 downto 16) <= i_rx.data;
                 end if;
-                if ( i_t1 = '1' ) then
-                    ts_tagging(15 downto 0) <= i_rx(31 downto 16);
+                if ( i_rx.t1 = '1' ) then
+                    ts_tagging(15 downto 0) <= i_rx.data(31 downto 16);
                 end if;
                 event_size_cnt      <= event_size_cnt + 4;
                 bank_size_cnt       <= bank_size_cnt + 4;
-                if ( i_trailer = '1' or i_error = '1' ) then
+                if ( i_rx.eop = '1' or i_rx.err = '1' ) then
                     event_tagging_state <= set_algin_word;
                     align_event_size    <= w_ram_add + 1 - last_event_add;
                 end if;
@@ -376,14 +371,13 @@ begin
 
 
     -- dma end of events, count events and write control
-    process(i_clk_250, i_reset_n_250)
+    process(i_clk, i_reset_n)
     begin
-    if ( i_reset_n_250 = '0' ) then
+    if ( i_reset_n = '0' ) then
         o_sop               <= '0';
         o_eop               <= '0';
         o_wen               <= '0';
         o_event_ts          <= (others => '0');
-        o_error             <= '0';
         cnt_skip_event      <= (others => '0');
         cnt_event           <= (others => '0');
         r_fifo_en           <= '0';
@@ -391,7 +385,7 @@ begin
         event_last_ram_add  <= (others => '0');
         event_counter_state <= waiting;
         --
-    elsif rising_edge(i_clk_250) then
+    elsif rising_edge(i_clk) then
 
         r_fifo_en       <= '0';
         o_wen           <= '0';
@@ -405,7 +399,6 @@ begin
             if ( tag_fifo_empty = '0' ) then
                 r_fifo_en           <= '1';
                 event_last_ram_add  <= r_fifo_data(11 downto 4);
-                o_error             <= r_fifo_data(12);
                 o_event_ts          <= r_fifo_data(60 downto 13);
                 r_ram_add           <= r_ram_add + '1';
                 event_counter_state <= get_data;

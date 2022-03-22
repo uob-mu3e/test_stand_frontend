@@ -37,6 +37,7 @@ port (
 
     --! PCIe registers / memory
     i_writeregs         : in  work.util.slv32_array_t(63 downto 0) := (others => (others => '0'));
+    i_regwritten        : in  std_logic_vector(63 downto 0) := (others => '0');
     o_readregs          : out work.util.slv32_array_t(63 downto 0) := (others => (others => '0'));
     i_resets_n          : in  std_logic_vector(31 downto 0) := (others => '0');
 

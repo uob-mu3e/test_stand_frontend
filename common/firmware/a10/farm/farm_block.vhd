@@ -21,26 +21,21 @@ generic (
     g_ADDR_WIDTH            : positive  := 11;
     g_DDR4                  : boolean   := false;
     -- Data type: x"00" = pixel, x"01" = scifi, "10" = tiles
-    DATA_TYPE : std_logic_vector(1 downto 0) := "00";
+    DATA_TYPE               : std_logic_vector(1 downto 0) := "00";
     LINK_FIFO_ADDR_WIDTH    : positive  := 10--;
 );
 port (
 
     --! links to/from FEBs
-    i_rx                : in  work.util.slv32_array_t(g_NLINKS_TOTL-1 downto 0);
-    i_rx_k              : in  work.util.slv4_array_t(g_NLINKS_TOTL-1 downto 0);
-    o_tx                : out work.util.slv32_array_t(g_NLINKS_TOTL-1 downto 0);
-    o_tx_k              : out work.util.slv4_array_t(g_NLINKS_TOTL-1 downto 0);
+    i_rx                : in  work.mu3e.link_array_t(g_NLINKS_TOTL-1 downto 0) := (others => work.mu3e.LINK_IDLE);
+    o_tx                : out work.mu3e.link_array_t(g_NLINKS_TOTL-1 downto 0) := (others => work.mu3e.LINK_IDLE);
 
     --! PCIe registers / memory
     i_writeregs         : in  work.util.slv32_array_t(63 downto 0);
     i_regwritten        : in  std_logic_vector(63 downto 0);
     o_readregs          : out work.util.slv32_array_t(63 downto 0);  
-
     i_resets_n          : in  std_logic_vector(31 downto 0);
 
-    -- TODO: write status readout entity with ADDR to PCIe REGS and mapping to one counter REG
-    o_counter           : out work.util.slv32_array_t(4 + 4 + 4 + (g_NLINKS_TOTL*4) + (g_NLINKS_TOTL*5) - 1 downto 0);
 
     i_dmamemhalffull    : in  std_logic;
     o_dma_wren          : out std_logic;
@@ -109,26 +104,24 @@ end entity;
 architecture arch of farm_block is
 
     --! mapping signals
-    signal rx : work.util.slv32_array_t(g_NLINKS_TOTL-1 downto 0);
-    signal rx_k : work.util.slv4_array_t(g_NLINKS_TOTL-1 downto 0);
+    signal rx : work.mu3e.link_array_t(g_NLINKS_TOTL-1 downto 0) := (others => work.mu3e.LINK_IDLE);
 
     --! data gen links
-    signal gen_link : std_logic_vector(31 downto 0);
-    signal gen_link_k : std_logic_vector(3 downto 0);
+    signal gen_link : work.mu3e.link_t;
 
     --! aligned data
-    signal aligned_data : work.util.slv32_array_t(g_NLINKS_TOTL-1 downto 0);
-    signal aligned_empty, aligned_ren, aligned_shop, aligned_sop, aligned_eop, aligned_hit, aligned_t0, aligned_t1, aligned_error : std_logic_vector(g_NLINKS_TOTL-1 downto 0);
+    signal aligned_data : work.mu3e.link_array_t(g_NLINKS_TOTL-1 downto 0) := (others => work.mu3e.LINK_IDLE);
+    signal aligned_empty, aligned_ren : std_logic_vector(g_NLINKS_TOTL-1 downto 0);
 
     --! stream signal
-    signal stream_rdata : std_logic_vector(31 downto 0);
+    signal stream_rdata : work.mu3e.link_t;
     signal stream_counters : work.util.slv32_array_t(0 downto 0);
-    signal stream_rempty, stream_ren, stream_header, stream_trailer, stream_t0, stream_t1 : std_logic;
+    signal stream_rempty, stream_ren : std_logic;
     signal stream_rack : std_logic_vector(g_NLINKS_TOTL - 1 downto 0);
 
     --! merger signal
-    signal merger_rdata : std_logic_vector(31 downto 0);
-    signal merger_rempty, merger_ren, merger_header, merger_trailer, merger_t0, merger_t1, merger_error : std_logic;
+    signal merger_rdata : work.mu3e.link_t;
+    signal merger_rempty, merger_ren : std_logic;
     signal merger_rack : std_logic_vector(g_NLINKS_TOTL - 1 downto 0);
 
     --! ddr event builder
@@ -136,11 +129,11 @@ architecture arch of farm_block is
     signal ddr_dma_data : std_logic_vector(255 downto 0);
     signal ddr_data : std_logic_vector(511 downto 0);
     signal ddr_ts : std_logic_vector(47 downto 0);
-    signal ddr_wen, ddr_ready, ddr_error, ddr_sop, ddr_eop : std_logic;
+    signal ddr_wen, ddr_ready, ddr_sop, ddr_eop : std_logic;
 
     --! debug event builder
-    signal builder_data : std_logic_vector(31 downto 0);
-    signal builder_rempty, builder_header, builder_trailer, builder_error, builder_rack, builder_t0, builder_t1, builder_dma_wren, builder_endofevent, builder_dma_done : std_logic;
+    signal builder_data : work.mu3e.link_t;
+    signal builder_rempty, builder_dma_wren, builder_endofevent, builder_dma_done, builder_rack : std_logic;
     signal builder_dma_data : std_logic_vector(255 downto 0);
 
     --! farm data path
@@ -180,6 +173,8 @@ architecture arch of farm_block is
     --! bank_builder_ram_full
     --! bank_builder_tag_fifo_full
     signal builder_counters : work.util.slv32_array_t(3 downto 0);
+    -- TODO: write status readout entity with ADDR to PCIe REGS and mapping to one counter REG
+    signal counter : work.util.slv32_array_t(4 + 4 + 4 + (g_NLINKS_TOTL*4) + (g_NLINKS_TOTL*5) - 1 downto 0);
 
 begin
 
@@ -196,16 +191,16 @@ begin
     --! ------------------------------------------------------------------------
     --! ------------------------------------------------------------------------
     gen_link_to_fifo_cnt : FOR I in 0 to (g_NLINKS_TOTL*4) + (g_NLINKS_TOTL*5) - 1 GENERATE
-        o_counter(I) <= counter_link_to_fifo(I);
+        counter(I) <= counter_link_to_fifo(I);
     END GENERATE;
     gen_midas_event_cnt : FOR I in (g_NLINKS_TOTL*4) + (g_NLINKS_TOTL*5) to (g_NLINKS_TOTL*4) + (g_NLINKS_TOTL*5) + 3 GENERATE
-        o_counter(I) <= counter_midas_event_builder(I-((g_NLINKS_TOTL*4) + (g_NLINKS_TOTL*5)));
+        counter(I) <= counter_midas_event_builder(I-((g_NLINKS_TOTL*4) + (g_NLINKS_TOTL*5)));
     END GENERATE;
     gen_ddr_cnt : FOR I in (g_NLINKS_TOTL*4) + (g_NLINKS_TOTL*5) + 4 to (g_NLINKS_TOTL*4) + (g_NLINKS_TOTL*5) + 7 GENERATE
-        o_counter(I) <= counter_ddr(I-((g_NLINKS_TOTL*4) + (g_NLINKS_TOTL*5) + 4));
+        counter(I) <= counter_ddr(I-((g_NLINKS_TOTL*4) + (g_NLINKS_TOTL*5) + 4));
     END GENERATE;
     gen_builder_cnt : FOR I in (g_NLINKS_TOTL*4) + (g_NLINKS_TOTL*5) + 8 to (g_NLINKS_TOTL*4) + (g_NLINKS_TOTL*5) + 11 GENERATE
-        o_counter(I) <= builder_counters(I-((g_NLINKS_TOTL*4) + (g_NLINKS_TOTL*5) + 8));
+        counter(I) <= builder_counters(I-((g_NLINKS_TOTL*4) + (g_NLINKS_TOTL*5) + 8));
     END GENERATE;
 
     --! SWB Data Generation
@@ -219,39 +214,35 @@ begin
     generic map (
         DATA_TYPE => DATA_TYPE,
         go_to_sh => 3,
-        is_farm => true,
+        test_error => true,
         go_to_trailer => 4--,
     )
     port map (
-        i_reset_n           => i_resets_n(RESET_BIT_DATAGEN),
-        enable_pix          => i_writeregs(FARM_READOUT_STATE_REGISTER_W)(USE_BIT_GEN_LINK),
+        i_enable            => i_writeregs(FARM_READOUT_STATE_REGISTER_W)(USE_BIT_GEN_LINK),
         i_dma_half_full     => '0',
-        random_seed         => (others => '1'),
-        data_pix_generated  => gen_link,
-        datak_pix_generated => gen_link_k,
-        data_pix_ready      => open,
-        start_global_time   => (others => '0'),
-        delay               => (others => '0'),
-        slow_down           => i_writeregs(DATAGENERATOR_DIVIDER_REGISTER_W),
-        state_out           => open,
-        clk                 => i_clk--,
+        i_seed              => (others => '1'),
+        o_data              => gen_link,
+        i_start_global_time => (others => '0'),
+        i_delay             => (others => '0'),
+        i_slow_down         => i_writeregs(DATAGENERATOR_DIVIDER_REGISTER_W),
+        o_state             => open,
+
+        i_reset_n           => i_resets_n(RESET_BIT_DATAGEN),
+        i_clk               => i_clk--,
     );
-    
+
     --! map links pixel / scifi
     gen_link_data : FOR I in 0 to g_NLINKS_TOTL - 1 GENERATE
     
         process(i_clk, i_reset_n)
         begin
         if ( i_reset_n = '0' ) then
-            rx(I)   <= (others => '0');
-            rx_k(I) <= (others => '0');
+            rx(I)   <= work.mu3e.LINK_IDLE;
         elsif ( rising_edge( i_clk ) ) then
             if ( i_writeregs(FARM_READOUT_STATE_REGISTER_W)(USE_BIT_GEN_LINK) = '1' ) then
-                rx(I)   <= gen_link;
-                rx_k(I) <= gen_link_k;
+                rx(I)   <= work.mu3e.to_link(gen_link.data, gen_link.datak);
             else
-                rx(I)   <= i_rx(I);
-                rx_k(I) <= i_rx_k(I);
+                rx(I)   <= work.mu3e.to_link(i_rx(I).data, i_rx(I).datak);
             end if;
         end if;
         end process;
@@ -273,31 +264,20 @@ begin
         LINK_FIFO_ADDR_WIDTH=> LINK_FIFO_ADDR_WIDTH--,
     )
     port map (
-        --! link data in
+        --! link data
         i_rx                => rx,
-        i_rx_k              => rx_k,
-
-        --! link data out
         o_tx                => o_tx,
-        o_tx_k              => o_tx_k,
 
         --! data out
         o_data              => aligned_data,
         o_empty             => aligned_empty,
         i_ren               => aligned_ren,
-        o_shop              => aligned_shop,
-        o_sop               => aligned_sop,
-        o_eop               => aligned_eop,
-        o_hit               => aligned_hit,
-        o_t0                => aligned_t0,
-        o_t1                => aligned_t1,
-        o_error             => aligned_error,
 
         --! status counters
         --! (g_NLINKS_TOTL*5)-1 downto 0 -> link to fifo counters
         --! (g_NLINKS_TOTL*4)+(g_NLINKS_TOTL*5)-1 downto (g_NLINKS_TOTL*5) -> link align counters
         o_counter           => counter_link_to_fifo,
-        
+
         i_clk               => i_clk,
         i_reset_n           => i_reset_n--,
     );
@@ -310,15 +290,10 @@ begin
     e_stream : entity work.swb_stream_merger
     generic map (
         g_ADDR_WIDTH => LINK_FIFO_ADDR_WIDTH,
-        W => 32,
         N => g_NLINKS_TOTL--,
     )
     port map (
         i_rdata     => aligned_data,
-        i_rsop      => aligned_sop,
-        i_reop      => aligned_eop,
-        i_t0        => aligned_t0,
-        i_t1        => aligned_t1,
         i_rempty    => aligned_empty,
         i_rmask_n   => i_writeregs(FARM_LINK_MASK_REGISTER_W)(g_NLINKS_TOTL - 1 downto 0),
         o_rack      => stream_rack,
@@ -327,17 +302,11 @@ begin
         o_wdata     => stream_rdata,
         o_rempty    => stream_rempty,
         i_ren       => stream_ren,
-        o_wsop      => stream_header,
-        o_weop      => stream_trailer,
-        o_t0        => stream_t0,
-        o_t1        => stream_t1,
 
         -- data for debug readout
         o_wdata_debug   => open,
         o_rempty_debug  => open,
         i_ren_debug     => '0',
-        o_wsop_debug    => open,
-        o_weop_debug    => open,
 
         o_counters  => stream_counters,
 
@@ -359,12 +328,6 @@ begin
     )
     port map (
         i_rx            => aligned_data,
-        i_rsop          => aligned_sop,
-        i_reop          => aligned_eop,
-        i_rshop         => aligned_shop,
-        i_hit           => aligned_hit,
-        i_t0            => aligned_t0,
-        i_t1            => aligned_t1,
         i_rempty        => aligned_empty,
         i_rmask_n       => i_writeregs(FARM_LINK_MASK_REGISTER_W)(g_NLINKS_TOTL - 1 downto 0),
         o_rack          => merger_rack,
@@ -373,19 +336,11 @@ begin
         o_wdata         => merger_rdata,
         o_rempty        => merger_rempty,
         i_ren           => merger_ren,
-        o_wsop          => merger_header,
-        o_weop          => merger_trailer,
-        o_t0            => merger_t0,
-        o_t1            => merger_t1,
-        o_werp          => merger_error,
 
         -- data for debug readout
         o_wdata_debug   => open,
         o_rempty_debug  => open,
         i_ren_debug     => '0',
-        o_wsop_debug    => open,
-        o_weop_debug    => open,
-        o_werp_debug    => open,
 
         o_error         => open,
 
@@ -404,24 +359,9 @@ begin
                         (others => '0');
     builder_data    <=  stream_rdata    when i_writeregs(FARM_READOUT_STATE_REGISTER_W)(USE_BIT_STREAM) = '1' else
                         merger_rdata    when i_writeregs(FARM_READOUT_STATE_REGISTER_W)(USE_BIT_MERGER) = '1' else
-                        (others => '0');
+                        work.mu3e.LINK_IDLE;
     builder_rempty  <=  stream_rempty   when i_writeregs(FARM_READOUT_STATE_REGISTER_W)(USE_BIT_STREAM) = '1' else
                         merger_rempty   when i_writeregs(FARM_READOUT_STATE_REGISTER_W)(USE_BIT_MERGER) = '1' else
-                        '0';
-    builder_header  <=  stream_header   when i_writeregs(FARM_READOUT_STATE_REGISTER_W)(USE_BIT_STREAM) = '1' else
-                        merger_header   when i_writeregs(FARM_READOUT_STATE_REGISTER_W)(USE_BIT_MERGER) = '1' else
-                        '0';
-    builder_trailer <=  stream_trailer  when i_writeregs(FARM_READOUT_STATE_REGISTER_W)(USE_BIT_STREAM) = '1' else
-                        merger_trailer  when i_writeregs(FARM_READOUT_STATE_REGISTER_W)(USE_BIT_MERGER) = '1' else
-                        '0';
-    builder_t0      <=  stream_t0       when i_writeregs(FARM_READOUT_STATE_REGISTER_W)(USE_BIT_STREAM) = '1' else
-                        merger_t0       when i_writeregs(FARM_READOUT_STATE_REGISTER_W)(USE_BIT_MERGER) = '1' else
-                        '0';
-    builder_t1      <=  stream_t1       when i_writeregs(FARM_READOUT_STATE_REGISTER_W)(USE_BIT_STREAM) = '1' else
-                        merger_t1       when i_writeregs(FARM_READOUT_STATE_REGISTER_W)(USE_BIT_MERGER) = '1' else
-                        '0';
-    builder_error   <=  '0'             when i_writeregs(FARM_READOUT_STATE_REGISTER_W)(USE_BIT_STREAM) = '1' else
-                        merger_error    when i_writeregs(FARM_READOUT_STATE_REGISTER_W)(USE_BIT_MERGER) = '1' else
                         '0';
     stream_ren      <=  ddr_rack        when i_writeregs(FARM_READOUT_STATE_REGISTER_W)(USE_BIT_STREAM) = '1' and i_writeregs(FARM_READOUT_STATE_REGISTER_W)(USE_BIT_DDR) = '1' else
                         builder_rack    when i_writeregs(FARM_READOUT_STATE_REGISTER_W)(USE_BIT_STREAM) = '1' and i_writeregs(FARM_READOUT_STATE_REGISTER_W)(USE_BIT_DDR) = '0' else
@@ -451,9 +391,6 @@ begin
     port map (
         i_rx                => builder_data,
         i_rempty            => builder_rempty,
-        i_header            => builder_header,
-        i_trailer           => builder_trailer,
-        i_error             => builder_error,
         
         i_get_n_words       => i_writeregs(GET_N_DMA_WORDS_REGISTER_W),
         i_dmamemhalffull    => i_dmamemhalffull,
@@ -467,15 +404,15 @@ begin
         o_endofevent        => builder_endofevent,
         o_dma_cnt_words     => o_readregs(DMA_CNT_WORDS_REGISTER_R),
         o_done              => builder_dma_done,
-        
+
         --! bank_builder_idle_not_header
         --! bank_builder_skip_event_dma
         --! bank_builder_ram_full
         --! bank_builder_tag_fifo_full
         o_counters          => builder_counters,
 
-        i_reset_n_250       => i_reset_n,
-        i_clk_250           => i_clk--,
+        i_reset_n           => i_reset_n,
+        i_clk               => i_clk--,
     );
 
 
@@ -489,12 +426,7 @@ begin
         i_rx            => builder_data,
         i_rempty        => builder_rempty,
         o_ren           => ddr_rack,
-        i_header        => builder_header,
-        i_trailer       => builder_trailer,
-        i_t0            => builder_t0,
-        i_t1            => builder_t1,
-        i_error         => builder_error,
-        
+
         -- Data type: "00" = pixel, "01" = scifi, "10" = tiles
         i_data_type     => i_writeregs(FARM_DATA_TYPE_REGISTER_W)(FARM_DATA_TYPE_ADDR_RANGE),
         i_event_id      => i_writeregs(FARM_DATA_TYPE_REGISTER_W)(FARM_EVENT_ID_ADDR_RANGE),
@@ -504,10 +436,9 @@ begin
         o_wen           => ddr_wen,
         o_event_ts      => ddr_ts,
         i_ddr_ready     => ddr_ready,
-        o_error         => ddr_error,
         o_sop           => ddr_sop,
         o_eop           => ddr_eop,
-        
+
         --! status counters
         --! 0: bank_builder_idle_not_header
         --! 1: bank_builder_skip_event
@@ -515,8 +446,8 @@ begin
         --! 3: bank_builder_tag_fifo_full
         o_counters      => counter_midas_event_builder,
 
-        i_reset_n_250   => i_reset_n,
-        i_clk_250       => i_clk--,
+        i_reset_n       => i_reset_n,
+        i_clk           => i_clk--,
     );
 
 
@@ -590,12 +521,12 @@ begin
     --! ------------------------------------------------------------------------
     e_ddr_block : entity work.ddr_block
     generic map (
-        g_DDR4          => g_DDR4--,
+        g_DDR4                => g_DDR4--,
     )
     port map(
         i_reset_n             => i_resets_n(RESET_BIT_DDR),
         i_clk                 => i_clk,
-        
+
         --! control and status registers
         i_ddr_control         => i_writeregs(DDR_CONTROL_W),
 
@@ -608,7 +539,7 @@ begin
         i_A_ddr_write         => A_mem_write,
         i_A_ddr_read          => A_mem_read,
         o_A_ddr_read_valid    => A_mem_q_valid,
-        
+
         --! B interface
         o_B_ddr_calibrated    => B_mem_calibrated,
         o_B_ddr_ready         => B_mem_ready,
@@ -618,7 +549,7 @@ begin
         i_B_ddr_write         => B_mem_write,
         i_B_ddr_read          => B_mem_read,
         o_B_ddr_read_valid    => B_mem_q_valid,
-        
+
         --! error counters
         o_error               => o_readregs(DDR_ERR_R),
 
@@ -644,7 +575,7 @@ begin
         io_A_mem_dbi_n        => io_A_mem_dbi_n,
         i_A_oct_rzqin         => i_A_oct_rzqin,
         i_A_pll_ref_clk       => i_A_pll_ref_clk,
-        
+
         --! interface to memory bank B
         o_B_mem_ck            => o_B_mem_ck,
         o_B_mem_ck_n          => o_B_mem_ck_n,

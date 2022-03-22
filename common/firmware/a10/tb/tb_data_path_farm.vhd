@@ -236,6 +236,7 @@ begin
     writeregs(GET_N_DMA_WORDS_REGISTER_W)                       <= (others => '1');
     writeregs(FARM_LINK_MASK_REGISTER_W)                        <= x"0000000F";--x"00000048";
     writeregs(DMA_REGISTER_W)(DMA_BIT_ENABLE)                   <= '1';
+    writeregs(FARM_READOUT_STATE_REGISTER_W)(USE_BIT_DDR)       <= '0';
 
     
     --! Farm Block
@@ -250,10 +251,8 @@ begin
     port map (
 
         --! links to/from FEBs
-        i_rx            => (others => (others => '0')),
-        i_rx_k          => (others => (others => '0')),
+        i_rx            => (others => work.mu3e.LINK_IDLE),
         o_tx            => open,
-        o_tx_k          => open,
 
         --! PCIe registers / memory
         i_writeregs     => writeregs,
@@ -261,9 +260,6 @@ begin
         o_readregs      => open,
 
         i_resets_n      => resets_n,
-
-        -- TODO: write status readout entity with ADDR to PCIe REGS and mapping to one counter REG
-        o_counter       => open,
 
         i_dmamemhalffull=> '0',
         o_dma_wren      => open,

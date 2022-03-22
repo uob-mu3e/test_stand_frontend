@@ -206,7 +206,7 @@ begin
         local_cal_fail      => B_cal_fail
     );
 
---! we output counting errors when we performe the counter test
+    --! we output counting errors when we performe the counter test
     o_error <= B_errout when i_ddr_control(DDR_BIT_COUNTERTEST_B) = '1' else A_errout;
 
 

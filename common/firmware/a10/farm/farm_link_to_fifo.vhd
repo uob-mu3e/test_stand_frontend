@@ -22,23 +22,14 @@ generic (
     LINK_FIFO_ADDR_WIDTH : positive := 10--;
 );
 port (
-    i_rx            : in  work.util.slv32_array_t(g_NLINKS_SWB_TOTL-1 downto 0);
-    i_rx_k          : in  work.util.slv4_array_t(g_NLINKS_SWB_TOTL-1 downto 0);
-    
-    o_tx            : out  work.util.slv32_array_t(g_NLINKS_SWB_TOTL-1 downto 0);
-    o_tx_k          : out  work.util.slv4_array_t(g_NLINKS_SWB_TOTL-1 downto 0);
+    -- link data
+    i_rx            : in  work.mu3e.link_array_t(g_NLINKS_SWB_TOTL-1 downto 0) := (others => work.mu3e.LINK_IDLE);
+    o_tx            : out work.mu3e.link_array_t(g_NLINKS_SWB_TOTL-1 downto 0) := (others => work.mu3e.LINK_IDLE);
     
     -- data out for farm path
-    o_data          : out work.util.slv32_array_t(g_NLINKS_SWB_TOTL-1 downto 0);
+    o_data          : out work.mu3e.link_array_t(g_NLINKS_SWB_TOTL-1 downto 0) := (others => work.mu3e.LINK_IDLE);
     o_empty         : out std_logic_vector(g_NLINKS_SWB_TOTL-1 downto 0);
     i_ren           : in  std_logic_vector(g_NLINKS_SWB_TOTL-1 downto 0);
-    o_shop          : out std_logic_vector(g_NLINKS_SWB_TOTL-1 downto 0);
-    o_sop           : out std_logic_vector(g_NLINKS_SWB_TOTL-1 downto 0);
-    o_eop           : out std_logic_vector(g_NLINKS_SWB_TOTL-1 downto 0);
-    o_hit           : out std_logic_vector(g_NLINKS_SWB_TOTL-1 downto 0);
-    o_t0            : out std_logic_vector(g_NLINKS_SWB_TOTL-1 downto 0);
-    o_t1            : out std_logic_vector(g_NLINKS_SWB_TOTL-1 downto 0);
-    o_error         : out std_logic_vector(g_NLINKS_SWB_TOTL-1 downto 0);
     
     --! status counters 
     --! (g_NLINKS_DATA*5)-1 downto 0 -> link to fifo counters
@@ -62,7 +53,7 @@ begin
     gen_link_to_fifo : FOR i in 0 to g_NLINKS_SWB_TOTL - 1 GENERATE
     
         -- TODO: different lookup for farm
-        e_link_to_fifo_32 : entity work.link_to_fifo_32
+        e_link_to_fifo : entity work.link_to_fifo
         generic map (
             g_LOOPUP_NAME        => g_LOOPUP_NAME,
             is_FARM              => true,
@@ -71,10 +62,9 @@ begin
         )
         port map (
             i_rx            => i_rx(i),
-            i_rx_k          => i_rx_k(i),
             i_linkid        => work.mudaq.link_36_to_std(i),
 
-            o_q             => rx_q(i),
+            o_q             => o_data(i),
             i_ren           => i_ren(i),
             o_rdempty       => o_empty(i),
 
@@ -84,21 +74,9 @@ begin
             o_counter(3)    => o_counter(3+i*5),
             o_counter(4)    => o_counter(4+i*5),
 
-            i_reset_n_156   => i_reset_n,
-            i_clk_156       => i_clk,
-
-            i_reset_n_250   => i_reset_n,
-            i_clk_250       => i_clk--,
+            i_reset_n       => i_reset_n,
+            i_clk           => i_clk--,
         );
-
-        -- map outputs
-        o_sop(i)      <= '1' when rx_q(i)(34 downto 32) = "010" else '0';
-        o_shop(i)     <= '1' when rx_q(i)(34 downto 32) = "111" else '0';
-        o_eop(i)      <= '1' when rx_q(i)(34 downto 32) = "001" else '0';
-        o_hit(i)      <= '1' when rx_q(i)(34 downto 32) = "000" else '0';
-        o_t0(i)       <= '1' when rx_q(i)(34 downto 32) = "100" else '0';
-        o_t1(i)       <= '1' when rx_q(i)(34 downto 32) = "101" else '0';
-        o_data(i)     <= rx_q(i)(31 downto 0);
 
 -- Spring IntRun22 we dont align since we have on farm for pixel and one for scifi
 --        --! align links and send data to the next farm
@@ -137,8 +115,8 @@ begin
 --            
 --            o_error         => o_error(i),
 --
---            i_reset_n_250   => i_reset_n_250,
---            i_clk_250       => i_clk_250--,
+--            i_reset_n       => i_reset_n,
+--            i_clk           => i_clk--,
 --        );
 --        
 --        -- map outputs
