@@ -37,7 +37,6 @@ port (
 
     i_reset_n_156   : in std_logic;
     i_clk_156       : in std_logic;
-
     i_reset_n_250   : in std_logic;
     i_clk_250       : in std_logic--;
 );
@@ -69,7 +68,7 @@ begin
     o_counter(2) <= cnt_skip_data;
     o_counter(3) <= cnt_events;
     o_counter(4) <= cnt_sub;
-    
+
     -- replace chip id
     e_lookup : entity work.chip_lookup
     generic map ( g_LOOPUP_NAME => g_LOOPUP_NAME )
@@ -96,7 +95,6 @@ begin
             --
         else
             case link_to_fifo_state is
-
             when idle =>
                 if ( i_rx(7 downto 0) = x"BC" and i_rx_k = "0001" ) then
                     cnt_events <= cnt_events + '1';
@@ -106,7 +104,7 @@ begin
                     else
                         link_to_fifo_state <= write_ts_0;
                         rx_156_data <= "010" & i_rx; -- header
-                        
+
                         rx_156_wen <= '1';
                     end if;
                 end if;

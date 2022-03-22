@@ -5,7 +5,7 @@ use ieee.std_logic_unsigned.all;
 use std.textio.all;
 use ieee.std_logic_textio.all;
 
-entity tb_swb_midas_event_builder is 
+entity tb_swb_midas_event_builder is
 end entity;
 
 
@@ -13,7 +13,7 @@ architecture TB of tb_swb_midas_event_builder is
 
     -- Input from merging (first board) or links (subsequent boards)
     signal clk, clk_fast, reset_n : std_logic;
-    
+
     -- links and datageneration
     constant ckTime: 		time	:= 10 ns;
     constant ckTime_fast: 		time	:= 8 ns;
@@ -24,7 +24,7 @@ architecture TB of tb_swb_midas_event_builder is
     signal slow_down_0, slow_down_1 : std_logic_vector(31 downto 0);
     signal gen_link, gen_link_reg : work.util.slv32_array_t(1 downto 0);
     signal gen_link_k : work.util.slv4_array_t(1 downto 0);
-    
+
     -- signals
     signal rx_q : work.util.slv38_array_t(g_NLINKS_TOTL-1 downto 0) := (others => (others => '0'));
     signal rx_ren, rx_rdempty, sop, shop, eop, link_mask_n : std_logic_vector(g_NLINKS_TOTL-1 downto 0);
@@ -78,7 +78,6 @@ begin
             go_to_trailer => 4--,
         )
     port map (
-        i_reset_n           => reset_n,
         enable_pix          => '1',
         i_dma_half_full     => '0',
         random_seed         => (others => '1'),
@@ -89,9 +88,11 @@ begin
         delay               => (others => '0'),
         slow_down           => slow_down_0,
         state_out           => open,
-        clk                 => clk--,
+
+        i_reset_n           => reset_n,
+        i_clk               => clk--,
     );
-    
+
     gen_link_reg(0) <=  gen_link(0) when gen_link_k(0) = "0001" or gen_link(0)(28 downto 23) = "111111" else
                         gen_link(0)(31 downto 4) & gen_link(0)(31 downto 28); -- set hit time to zero for simulation checks
 
@@ -107,13 +108,13 @@ begin
     port map (
         i_rx            => gen_link_reg(0),
         i_rx_k          => gen_link_k(0),
-        
+
         o_q             => rx_q(0),
         i_ren           => rx_ren(0),
         o_rdempty       => rx_rdempty(0),
 
         o_counter       => open,
-        
+
         i_reset_n_156   => reset_n,
         i_clk_156       => clk,
 
@@ -124,7 +125,7 @@ begin
     sop(0) <= rx_q(0)(36);
     shop(0) <= '1' when rx_q(0)(37 downto 36) = "00" and rx_q(0)(31 downto 26) = "111111" else '0';
     eop(0) <= rx_q(0)(37);
-    
+
     e_swb_midas_event_builder : entity work.swb_midas_event_builder
     generic map (
         DATA_TYPE => x"01"--,
@@ -144,8 +145,8 @@ begin
         o_endofevent    => open,
         o_done          => open,
         o_state_out     => open,
-    
-        --! status counters 
+
+        --! status counters
         --! 0: bank_builder_idle_not_header
         --! 1: bank_builder_skip_event_dma
         --! 2: bank_builder_ram_full
@@ -170,7 +171,7 @@ begin
     begin
         wait until rising_edge(clk_fast);
             if ( dma_wen = '1' ) then
-                file_open(file_RESULTS, "memory_content.txt", append_mode); 
+                file_open(file_RESULTS, "memory_content.txt", append_mode);
                 for i in 0 to 7 loop
                     write(v_OLINE, work.util.to_hstring(dma_data_array(i)));
                     writeline(file_RESULTS, v_OLINE);

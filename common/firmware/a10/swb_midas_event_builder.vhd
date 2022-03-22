@@ -31,8 +31,8 @@ port(
     o_endofevent        : out std_logic;
     o_done              : out std_logic;
     o_state_out         : out std_logic_vector (3 downto 0);
-    
-    --! status counters 
+
+    --! status counters
     --! 0: bank_builder_idle_not_header
     --! 1: bank_builder_skip_event_dma
     --! 2: bank_builder_ram_full
@@ -55,16 +55,16 @@ architecture arch of swb_midas_event_builder is
     signal w_fifo_data, r_fifo_data : std_logic_vector(12 downto 0);
     signal w_fifo_en, r_fifo_en, tag_fifo_empty, tag_fifo_full, is_error, is_error_q : std_logic;
 
-    -- ram 
+    -- ram
     signal w_ram_en : std_logic;
     signal r_ram_add : std_logic_vector(8 downto 0);
     signal w_ram_data : std_logic_vector(31 downto 0);
     signal r_ram_data : std_logic_vector(255 downto 0);
 
-    -- midas event 
+    -- midas event
     signal event_id, trigger_mask : std_logic_vector(15 downto 0);
     signal serial_number, time_tmp, type_bank, flags, bank_size_cnt, event_size_cnt : std_logic_vector(31 downto 0);
-    
+
     -- event readout state machine
     type event_counter_state_type is (waiting, get_data, runing, skip_event, write_4kb_padding);
     signal event_counter_state : event_counter_state_type;
@@ -112,20 +112,22 @@ begin
         q_b             => r_ram_data--,
     );
 
-    e_tagging_fifo_event : entity work.ip_scfifo
+    e_tagging_fifo_event : entity work.ip_scfifo_v2
     generic map (
-        ADDR_WIDTH      => 12,
-        DATA_WIDTH      => 13--,
+        g_ADDR_WIDTH => 12,
+        g_DATA_WIDTH => w_fifo_data'length--,
     )
     port map (
-        data            => w_fifo_data,
-        wrreq           => w_fifo_en,
-        rdreq           => r_fifo_en,
-        clock           => i_clk_250,
-        q               => r_fifo_data,
-        full            => tag_fifo_full,
-        empty           => tag_fifo_empty,
-        sclr            => not i_reset_n_250--,
+        i_we            => w_fifo_en,
+        i_wdata         => w_fifo_data,
+        o_wfull         => tag_fifo_full,
+
+        i_rack          => r_fifo_en,
+        o_rdata         => r_fifo_data,
+        o_rempty        => tag_fifo_empty,
+
+        i_clk           => i_clk_250,
+        i_reset_n       => i_reset_n_250--,
     );
 
     o_ren <=
@@ -159,7 +161,7 @@ begin
         time_tmp            <= (others => '0');
         flags               <= x"00000031";
         type_bank           <= x"00000006"; -- MIDAS Bank Type TID_DWORD
-    
+
         -- for size counting in bytes
         bank_size_cnt       <= (others => '0');
         event_size_cnt      <= (others => '0');
@@ -239,7 +241,7 @@ begin
                 w_ram_en    <= '1';
                 w_ram_add   <= w_ram_add_reg + 1;
                 -- MIDAS expects bank names in ascii:
-                -- For the run 2021 
+                -- For the run 2021
                 -- PCD1 = PixelCentralDebug1
                 -- SCD1 = ScifiCentralDebug1
                 -- TCD1 = TileCentralDebug1
@@ -271,13 +273,13 @@ begin
             event_size_cnt      <= event_size_cnt + 4;
             b_length_add        <= w_ram_add + 1;
             event_tagging_state <= bank_reserved;
-            
+
         when bank_reserved =>
             w_ram_en            <= '1';
             w_ram_add           <= w_ram_add + 1;
             w_ram_data          <= (others => '0');
             event_size_cnt      <= event_size_cnt + 4;
-            event_tagging_state <= bank_data;            
+            event_tagging_state <= bank_data;
 
         when bank_data =>
             -- check again if the fifo is empty
@@ -308,7 +310,7 @@ begin
             w_ram_add_reg       <= w_ram_add + 1;
             w_ram_data          <= x"AFFEAFFE";
             align_event_size    <= align_event_size + 1;
-            -- check if the size of the bank data 
+            -- check if the size of the bank data
             -- is in 64 bit and 256 bit
             -- if not add a dummy words
             if ( align_event_size(2 downto 0) + '1' = "000" ) then
@@ -362,7 +364,6 @@ begin
     end if;
     end process;
 
-
     -- dma end of events, count events and write control
     process(i_clk_250, i_reset_n_250)
     begin
@@ -377,7 +378,7 @@ begin
         is_error_q          <= '0';
         r_ram_add           <= (others => '1');
         event_last_ram_add  <= (others => '0');
-        event_counter_state <= waiting;	
+        event_counter_state <= waiting;
         word_counter        <= (others => '0');
         o_dma_cnt_words     <= (others => '0');
         word_counter_endofevent <= (others => '0');
@@ -388,12 +389,12 @@ begin
         r_fifo_en       <= '0';
         o_wen    <= '0';
         o_endofevent    <= '0';
-        
+
         if ( i_wen = '0' ) then
             word_counter <= (others => '0');
             cnt_4kb_done <= '0';
         end if;
-        
+
         if ( i_wen = '1' and word_counter >= i_get_n_words and cnt_4kb_done = '1' ) then
             o_done <= '1';
             o_dma_cnt_words <= word_counter_endofevent;
@@ -442,7 +443,7 @@ begin
             else
                 r_ram_add <= r_ram_add + '1';
             end if;
-            
+
          when write_4kb_padding =>
             if ( is_error_q = '1' ) then
                 is_error_q <= '0';
@@ -464,11 +465,11 @@ begin
             else
                 r_ram_add <= r_ram_add + '1';
             end if;
-            
+
         when others =>
                 o_state_out <= x"D";
                 event_counter_state	<= waiting;
-                
+
         end case;
 
     end if;

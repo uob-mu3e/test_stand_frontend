@@ -2,7 +2,6 @@ library ieee;
 use ieee.std_logic_1164.all;
 use ieee.numeric_std.all;
 
-
 -- merge packets delimited by SOP and EOP from N input streams
 entity swb_stream_merger is
 generic (
@@ -26,7 +25,7 @@ port (
     i_ren       : in    std_logic;
     o_wsop      : out   std_logic;
     o_weop      : out   std_logic;
-    
+
     -- output stream debug
     o_wdata_debug     : out   std_logic_vector(W-1 downto 0);
     o_rempty_debug    : out   std_logic;
@@ -38,8 +37,8 @@ port (
     --! 0: e_stream_fifo full
     o_counters  : out work.util.slv32_array_t(0 downto 0);
 
-    i_reset_n   : in    std_logic;
-    i_clk       : in    std_logic--;
+    i_reset_n       : in    std_logic;
+    i_clk           : in    std_logic--;
 );
 end entity;
 
@@ -113,8 +112,8 @@ begin
         o_rempty        => o_rempty,
         i_rack          => i_ren,
 
-        i_clk           => i_clk,
-        i_reset_n       => i_reset_n--,
+        i_reset_n       => i_reset_n,
+        i_clk           => i_clk--,
     );
 
     --! map output data
@@ -130,7 +129,7 @@ begin
         we_debug            <= '0';
         write_debug_state   <= idle;
         --
-    elsif ( rising_edge(i_clk) ) then
+    elsif rising_edge(i_clk) then
 
         wdata_debug <= q_stream;
         we_debug    <= '0';
@@ -139,7 +138,6 @@ begin
             --
         else
             case write_debug_state is
-
             when idle =>
                 -- start on start of package
                 if ( q_stream(2+W-1) = '1' ) then
@@ -176,21 +174,21 @@ begin
     e_stream_fifo_debug : entity work.ip_scfifo_v2
     generic map (
         g_ADDR_WIDTH => g_ADDR_WIDTH,
-        g_DATA_WIDTH => 2+W,
-        g_RREG_N => 1--, -- TNS=-900
+        g_DATA_WIDTH => wdata_debug'length,
+        g_RREG_N => 1--,
     )
     port map (
-        i_wdata         => wdata_debug,
         i_we            => we_debug,
+        i_wdata         => wdata_debug,
         o_wfull         => open, -- we dont use the full since we check wrusedw
         o_usedw         => wrusedw,
 
+        i_rack          => i_ren_debug,
         o_rdata         => q_stream_debug,
         o_rempty        => o_rempty_debug,
-        i_rack          => i_ren_debug,
 
-        i_clk           => i_clk,
-        i_reset_n       => i_reset_n--,
+        i_reset_n       => i_reset_n,
+        i_clk           => i_clk--,
     );
 
     --! map output data debug

@@ -116,7 +116,7 @@ begin
         we_debug            <= '0';
         write_debug_state   <= idle;
         --
-    elsif ( rising_edge(i_clk) ) then
+    elsif rising_edge(i_clk) then
 
         wdata_debug <= werp & wsop & weop & wdata;
         we_debug    <= '0';
@@ -125,7 +125,6 @@ begin
             --
         else
             case write_debug_state is
-
             when idle =>
                 -- start on start of package
                 if ( wsop = '1' ) then
@@ -163,7 +162,7 @@ begin
     generic map (
         g_ADDR_WIDTH => 8,
         g_DATA_WIDTH => 35,
-        g_RREG_N => 1--, -- TNS=-900
+        g_RREG_N => 1--,
     )
     port map (
         i_wdata         => wdata_debug,
@@ -175,8 +174,8 @@ begin
         o_rempty        => o_rempty_debug,
         i_rack          => i_ren_debug,
 
-        i_clk           => i_clk,
-        i_reset_n       => i_reset_n--,
+        i_reset_n       => i_reset_n,
+        i_clk           => i_clk--,
     );
 
     --! map output data debug

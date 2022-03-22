@@ -3,9 +3,9 @@
 --! @brief the swb_block can be used
 --! for the LCHb Board and the development board
 --! mainly it includes the datapath which includes
---! merging hits from multiple FEBs. There will be 
+--! merging hits from multiple FEBs. There will be
 --! four types of SWB which differe accordingly to
---! the detector data they receive (inner pixel, 
+--! the detector data they receive (inner pixel,
 --! scifi, down and up stream pixel/tiles)
 --! Author: mkoeppel@uni-mainz.de
 -------------------------------------------------------
@@ -41,7 +41,7 @@ port (
     --! PCIe registers / memory
     i_writeregs_250      : in  work.util.slv32_array_t(63 downto 0);
     i_writeregs_156      : in  work.util.slv32_array_t(63 downto 0);
-    
+
     o_readregs_250       : out work.util.slv32_array_t(63 downto 0);
     o_readregs_156       : out work.util.slv32_array_t(63 downto 0);
 
@@ -63,11 +63,8 @@ port (
     o_farm_tx_data      : out   work.util.slv32_array_t(g_NLINKS_FARM_TOTL-1 downto 0);
     o_farm_tx_datak     : out   work.util.slv4_array_t(g_NLINKS_FARM_TOTL-1 downto 0);
 
-    --! 250 MHz clock / reset_n
     i_reset_n_250        : in  std_logic;
     i_clk_250            : in  std_logic;    
-
-    --! 156 MHz clock / reset_n
     i_reset_n_156        : in  std_logic;
     i_clk_156            : in  std_logic--;
 );
@@ -77,15 +74,15 @@ end entity;
 --! @details The arch of the swb_block can be used
 --! for the LCHb Board and the development board
 --! mainly it includes the datapath which includes
---! merging hits from multiple FEBs. There will be 
+--! merging hits from multiple FEBs. There will be
 --! four types of SWB which differe accordingly to
---! the detector data they receive (inner pixel, 
+--! the detector data they receive (inner pixel,
 --! scifi, down and up stream pixel/tiles)
 architecture arch of swb_block is
 
     --! masking signals
     signal pixel_mask_n, scifi_mask_n : std_logic_vector(63 downto 0);
-    
+
     --! farm links
     signal farm_data       : work.util.slv32_array_t(g_NLINKS_FARM_TOTL-1 downto 0);
     signal farm_data_valid : work.util.slv2_array_t(g_NLINKS_FARM_TOTL-1 downto 0);
@@ -93,16 +90,16 @@ architecture arch of swb_block is
     signal scifi_farm_data : work.util.slv32_array_t(g_NLINKS_FARM_SCIFI-1 downto 0);
     signal pixel_farm_datak : work.util.slv4_array_t(g_NLINKS_FARM_PIXEL-1 downto 0);
     signal scifi_farm_datak : work.util.slv4_array_t(g_NLINKS_FARM_SCIFI-1 downto 0);
-    
+
     --! DMA
     signal pixel_dma_data : work.util.slv256_array_t(g_NLINKS_FARM_PIXEL-1 downto 0);
     signal pixel_dma_cnt_words : work.util.slv32_array_t(g_NLINKS_FARM_PIXEL-1 downto 0);
     signal pixel_dma_wren, pixel_dma_endofevent, pixel_dma_done : std_logic_vector (g_NLINKS_FARM_PIXEL-1 downto 0);
-    
+
     signal scifi_dma_data : std_logic_vector (255 downto 0);
     signal scifi_dma_wren, scifi_dma_endofevent, scifi_dma_done : std_logic;
     signal scifi_dma_cnt_words : std_logic_vector (31 downto 0);
-    
+
     --! demerged FEB links
     signal rx_data         : work.util.slv32_array_t(g_NLINKS_FEB_TOTL-1 downto 0);
     signal rx_data_k       : work.util.slv4_array_t(g_NLINKS_FEB_TOTL-1 downto 0);
@@ -114,7 +111,7 @@ architecture arch of swb_block is
     signal rx_data_k_pixel : work.util.slv4_array_t(g_NLINKS_DATA_PIXEL-1 downto 0);
     signal rx_data_scifi   : work.util.slv32_array_t(g_NLINKS_DATA_SCIFI-1 downto 0);
     signal rx_data_k_scifi : work.util.slv4_array_t(g_NLINKS_DATA_SCIFI-1 downto 0);
-    
+
     --! counters
     signal counter_swb_data_pixel_156 : work.util.slv32_array_t(g_NLINKS_DATA_PIXEL*5-1 downto 0);
     signal counter_swb_data_scifi_156 : work.util.slv32_array_t(g_NLINKS_DATA_SCIFI*5-1 downto 0);
@@ -124,13 +121,13 @@ architecture arch of swb_block is
 begin
 
     --! @brief data path of the SWB board
-    --! @details the data path of the SWB board is first splitting the 
+    --! @details the data path of the SWB board is first splitting the
     --! data from the FEBs into data, slow control and run control packages.
     --! The different paths are than assigned to the corresponding entities.
     --! The data is merged in time over all incoming FEBs. After this packages
     --! are build and the data is send of to the farm boars. The slow control
-    --! data is saved in the PCIe memory and can be further used in the MIDAS 
-    --! system. The run control packages are used to control the run and give 
+    --! data is saved in the PCIe memory and can be further used in the MIDAS
+    --! system. The run control packages are used to control the run and give
     --! feedback to MIDAS if all FEBs started the run.
 
     --! counter readout
@@ -173,7 +170,7 @@ begin
     --! rc => runcontrol packages
     g_demerge: FOR i in g_NLINKS_FEB_TOTL-1 downto 0 GENERATE
         e_data_demerge : entity work.swb_data_demerger
-        port map(
+        port map (
             i_clk               => i_clk_156,
             i_reset             => not i_resets_n_156(RESET_BIT_EVENT_COUNTER),
             i_aligned           => '1',
@@ -216,6 +213,7 @@ begin
         o_run_number           => o_readregs_156(RUN_NR_REGISTER_R), -- run number of i_addr
         o_runNr_ack            => o_readregs_156(RUN_NR_ACK_REGISTER_R), -- which FEBs have responded with run number in i_run_number
         o_run_stop_ack         => o_readregs_156(RUN_STOP_ACK_REGISTER_R),
+
         i_clk                  => i_clk_156--,
     );
 
@@ -240,7 +238,7 @@ begin
         o_done          => o_readregs_156(SC_MAIN_STATUS_REGISTER_R)(SC_MAIN_DONE),
         o_state         => o_readregs_156(SC_STATE_REGISTER_R)(27 downto 0)--,
     );
-    
+
     e_sc_secondary : entity work.swb_sc_secondary
     generic map (
         NLINKS => g_NLINKS_FEB_TOTL--,
@@ -293,12 +291,12 @@ begin
                         pixel_dma_wren(1) when i_writeregs_250(SWB_READOUT_STATE_REGISTER_W)(USE_BIT_PIXEL_DS) = '1' else
                         scifi_dma_wren    when i_writeregs_250(SWB_READOUT_STATE_REGISTER_W)(USE_BIT_SCIFI) = '1' else
                         '0';
-    o_endofevent    <=  pixel_dma_endofevent(0) when i_writeregs_250(SWB_READOUT_STATE_REGISTER_W)(USE_BIT_PIXEL_US) = '1' else 
-                        pixel_dma_endofevent(1) when i_writeregs_250(SWB_READOUT_STATE_REGISTER_W)(USE_BIT_PIXEL_DS) = '1' else 
+    o_endofevent    <=  pixel_dma_endofevent(0) when i_writeregs_250(SWB_READOUT_STATE_REGISTER_W)(USE_BIT_PIXEL_US) = '1' else
+                        pixel_dma_endofevent(1) when i_writeregs_250(SWB_READOUT_STATE_REGISTER_W)(USE_BIT_PIXEL_DS) = '1' else
                         scifi_dma_endofevent    when i_writeregs_250(SWB_READOUT_STATE_REGISTER_W)(USE_BIT_SCIFI) = '1' else
                         '0';
     o_dma_data      <=  pixel_dma_data(0) when i_writeregs_250(SWB_READOUT_STATE_REGISTER_W)(USE_BIT_PIXEL_US) = '1' else
-                        pixel_dma_data(1) when i_writeregs_250(SWB_READOUT_STATE_REGISTER_W)(USE_BIT_PIXEL_DS) = '1' else 
+                        pixel_dma_data(1) when i_writeregs_250(SWB_READOUT_STATE_REGISTER_W)(USE_BIT_PIXEL_DS) = '1' else
                         scifi_dma_data    when i_writeregs_250(SWB_READOUT_STATE_REGISTER_W)(USE_BIT_SCIFI) = '1' else
                         (others => '0');
     o_readregs_250(EVENT_BUILD_STATUS_REGISTER_R)(EVENT_BUILD_DONE) <=  pixel_dma_done(0) when i_writeregs_250(SWB_READOUT_STATE_REGISTER_W)(USE_BIT_PIXEL_US) = '1' else
@@ -325,12 +323,6 @@ begin
         DATA_TYPE               => x"01"--;
     )
     port map(
-        i_clk_156        => i_clk_156,
-        i_clk_250        => i_clk_250,
-
-        i_reset_n_156    => i_resets_n_156(RESET_BIT_DATA_PATH),
-        i_reset_n_250    => i_resets_n_250(RESET_BIT_DATA_PATH),
-
         i_resets_n_156   => i_resets_n_156,
         i_resets_n_250   => i_resets_n_250,
 
@@ -343,9 +335,9 @@ begin
 
         o_counter_156    => counter_swb_data_pixel_156(g_NLINKS_DATA_PIXEL_US*5-1 downto 0),
         o_counter_250    => counter_swb_data_pixel_250_us,
-        
+
         i_dmamemhalffull => i_dmamemhalffull,
-        
+
         o_farm_data      => pixel_farm_data(0),
         o_farm_datak     => pixel_farm_datak(0),
 
@@ -353,9 +345,14 @@ begin
         o_dma_cnt_words  => pixel_dma_cnt_words(0),
         o_dma_done       => pixel_dma_done(0),
         o_endofevent     => pixel_dma_endofevent(0),
-        o_dma_data       => pixel_dma_data(0)--;
+        o_dma_data       => pixel_dma_data(0);
+
+        i_reset_n_156    => i_resets_n_156(RESET_BIT_DATA_PATH),
+        i_reset_n_250    => i_resets_n_250(RESET_BIT_DATA_PATH),
+        i_clk_156        => i_clk_156,
+        i_clk_250        => i_clk_250--,
     );
-    
+
 --    e_swb_data_path_pixel_ds : entity work.swb_data_path
 --    generic map (
 --        g_LOOPUP_NAME           => "intRun2021",
@@ -367,12 +364,6 @@ begin
 --        DATA_TYPE               => x"01"--;
 --    )
 --    port map(
---        i_clk_156        => i_clk_156,
---        i_clk_250        => i_clk_250,
---
---        i_reset_n_156    => i_resets_n_156(RESET_BIT_DATA_PATH),
---        i_reset_n_250    => i_resets_n_250(RESET_BIT_DATA_PATH),
---
 --        i_resets_n_156   => i_resets_n_156,
 --        i_resets_n_250   => i_resets_n_250,
 --
@@ -387,7 +378,7 @@ begin
 --        o_counter_250    => counter_swb_data_pixel_250_ds,
 --
 --        i_dmamemhalffull => i_dmamemhalffull,
---        
+--
 --        o_farm_data      => pixel_farm_data(1),
 --        o_farm_datak     => pixel_farm_datak(1),
 --
@@ -396,6 +387,9 @@ begin
 --        o_dma_done       => pixel_dma_done(1),
 --        o_endofevent     => pixel_dma_endofevent(1),
 --        o_dma_data       => pixel_dma_data(1)--;
+--
+--        i_reset_n           => i_resets_n_250(RESET_BIT_DATA_PATH),
+--        i_clk               => i_clk,
 --    );
 
 
@@ -416,12 +410,6 @@ begin
 --       DATA_TYPE               => x"02"--;
 --   )
 --   port map(
---        i_clk_156        => i_clk_156,
---        i_clk_250        => i_clk_250,
---
---        i_reset_n_156    => i_resets_n_156(RESET_BIT_DATA_PATH),
---        i_reset_n_250    => i_resets_n_250(RESET_BIT_DATA_PATH),
---
 --        i_resets_n_156   => i_resets_n_156,
 --        i_resets_n_250   => i_resets_n_250,
 --
@@ -444,6 +432,9 @@ begin
 --        o_dma_done       => scifi_dma_done,
 --        o_endofevent     => scifi_dma_endofevent,
 --        o_dma_data       => scifi_dma_data--;
+--
+--        i_reset_n           => i_resets_n_250(RESET_BIT_DATA_PATH),
+--        i_clk               => i_clk,
 --   );
 
 
@@ -464,15 +455,9 @@ begin
 --        DATA_TYPE               => x"03"--;
 --    )
 --    port map(
---        i_clk_156        => i_clk_156,
---        i_clk_250        => i_clk_250,
---        
---        i_reset_n_156    => i_resets_n_156(RESET_BIT_DATA_PATH),
---        i_reset_n_250    => i_resets_n_250(RESET_BIT_DATA_PATH),
---
 --        i_resets_n_156   => i_resets_n_156,
 --        i_resets_n_250   => i_resets_n_250,
---        
+--
 --        i_rx             => i_rx(15 downto 14),
 --        i_rx_k           => i_rx_k(15 downto 14),
 --        i_rmask_n        => x"0000000000" & i_writeregs_250(SWB_LINK_MASK_TILE_REGISTER_W),
@@ -483,7 +468,7 @@ begin
 --        o_counter        => counter_swb_data_tile,
 --
 --        i_dmamemhalffull => i_dmamemhalffull,
---        
+--
 --        o_farm_data      => o_tile_data,
 --        o_farm_datak     => o_tile_datak,
 --        o_fram_wen       => o_tile_wen,
@@ -492,6 +477,9 @@ begin
 --        o_dma_done       => o_tile_dma_done,
 --        o_endofevent     => o_tile_dma_endofevent,
 --        o_dma_data       => o_tile_dma_data--;
+--
+--        i_reset_n           => i_resets_n_250(RESET_BIT_DATA_PATH),
+--        i_clk               => i_clk,
 --    );
 
 end architecture;
