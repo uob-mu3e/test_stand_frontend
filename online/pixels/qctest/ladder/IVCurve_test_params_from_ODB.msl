@@ -20,7 +20,7 @@ ODBSUBDIR /Equipment/Mupix/QCTests/Ladder/IV/Input
 ENDODBSUBDIR
 
 # Check
-SET end, 149
+SET end, 150
 
 
 
@@ -138,6 +138,7 @@ LOOP i, $num_steps
             ODBSET /Equipment/KEITHLEY0/Variables/Demand Voltage, -1*($f_start_voltage+$j*$fine_step_size)
             WAIT SECONDS, 2
             ODBGET /Equipment/KEITHLEY0/Variables/Current, current
+            ODBSET /Equipment/Mupix/QCTests/Ladder/IV/Output/Voltage[$i+($j-1)], $f_start_voltage+$j*$fine_step_size
             ODBSET /Equipment/Mupix/QCTests/Ladder/IV/Output/Current[$i+($j-1)], $current
         ENDLOOP
         GOTO $end
@@ -146,6 +147,7 @@ ENDLOOP
 
 
 # Turn off. # end
+ODBSET /Equipment/KEITHLEY0/Variables//Demand Voltage, 0
 ODBSET /Equipment/KEITHLEY0/Variables/Set State, 0
 # Wait to turn off. 
 WAIT SECONDS, 0.1

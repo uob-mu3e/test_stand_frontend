@@ -40,3 +40,20 @@ WAIT SECONDS, 3
 SET diff, $current-$init_current
 MESSAGE $diff, 1
 ODBSET /Equipment/Mupix/QCTests/Ladder/LVPowerOn/Output/current_increase[2], $diff
+
+#ODBSET /Equipment/Mupix/Settings/BIASDACS/5/BiasBlock_On, 0
+#ODBSET /Equipment/Switching/Settings/MupixChipToConfigure, 5
+#ODBSET /Equipment/Switching/Settings/MupixConfig, 1
+#WAIT 3
+#
+#ODBSET /Equipment/Mupix/Settings/BIASDACS/4/BiasBlock_On, 0
+#ODBSET /Equipment/Switching/Settings/MupixChipToConfigure, 4
+#ODBSET /Equipment/Switching/Settings/MupixConfig, 1
+#WAIT 3
+#
+#ODBSET /Equipment/Mupix/Settings/BIASDACS/3/BiasBlock_On, 0
+#ODBSET /Equipment/Switching/Settings/MupixChipToConfigure, 3
+#ODBSET /Equipment/Switching/Settings/MupixConfig, 1
+#WAIT 3
+
+

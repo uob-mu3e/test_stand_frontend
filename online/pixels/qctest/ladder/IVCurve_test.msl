@@ -20,7 +20,7 @@ PARAM fine_step_size, "Fine voltage increment"
 PARAM stop_voltage, "Stop voltage"
 
 # Check
-SET end, 152
+SET end, 153
 
 
 
@@ -141,7 +141,8 @@ LOOP i, $num_steps
             ODBSET /Equipment/KEITHLEY0/Variables/Demand Voltage, -1*($f_start_voltage+$j*$fine_step_size)
             WAIT SECONDS, 2
             ODBGET /Equipment/KEITHLEY0/Variables/Current, current
-            ODBSET /Equipment/Mupix/QCTests/Ladder/IV/Output/Current[$i+($j-1)], $current
+            ODBSET /Equipment/Mupix/QCTests/Ladder/IV/Output/Voltage[$i+($j-1)], $f_start_voltage+$j*$fine_step_size
+            ODBSET /Equipment/Mupix/QCTests/Ladder/IV/Output/Current[$i+($j-1)], $current*1000000
         ENDLOOP
         GOTO $end
     ENDIF
@@ -149,6 +150,7 @@ ENDLOOP
 
 
 # Turn off. # end
+ODBSET /Equipment/KEITHLEY0/Variables//Demand Voltage, 0
 ODBSET /Equipment/KEITHLEY0/Variables/Set State, 0
 # Wait to turn off. 
 WAIT SECONDS, 0.1

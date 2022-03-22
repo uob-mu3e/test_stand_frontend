@@ -30,7 +30,10 @@ PARAM vpdac_start, "VPDAC start"
 PARAM vpdac_step, "VPDAC step"
 PARAM vpdac_stop, "VPDAC stop"
 
-SET num_VPDAC_steps, ($vpdac_stop-$vpdac_start) / $vpdac_step + 1 
+SET num_VPDAC_steps, (($vpdac_stop-$vpdac_start) / $vpdac_step) + 1 
+
+#SET message_vpdac, "num_VPDAC_steps = ", $num_VPDAC_steps 
+#MESSAGE $message_vpdac, 1
 
 ODBSET /Equipment/Mupix/QCTests/Ladder/DACScan/Input/VPDAC/start_value, $vpdac_start 
 ODBSET /Equipment/Mupix/QCTests/Ladder/DACScan/Input/VPDAC/step, $vpdac_step
@@ -41,7 +44,13 @@ PARAM ref_Vss_start, "ref_Vss start"
 PARAM ref_Vss_step, "ref_Vss step"
 PARAM ref_Vss_stop, "ref_Vss stop"
 
-SET num_ref_Vss_steps, ($ref_Vss_stop-$ref_Vss_start) / $ref_Vss_step + 1 
+#Selects upstream or downstream chips
+PARAM select_UD, "UPstream(-1) DOWNstream(2) chips"
+
+SET num_ref_Vss_steps, (($ref_Vss_stop-$ref_Vss_start) / $ref_Vss_step) + 1 
+
+#SET message_vss, "num_ref_Vss_steps = ", $num_ref_Vss_steps 
+#MESSAGE $message_vss, 1
 
 ODBSET /Equipment/Mupix/QCTests/Ladder/DACScan/Input/ref_Vss/start_value, $ref_Vss_start 
 ODBSET /Equipment/Mupix/QCTests/Ladder/DACScan/Input/ref_Vss/step, $ref_Vss_step
@@ -68,50 +77,69 @@ ODBSET /Equipment/KEITHLEY0/Variables/Set State, 1
 # To each chip
 LOOP i, 3
     # Turn on chip i. This is downstream
-    SET i_, $i+2 
+    SET i_, $i+$select_UD
+
+    MESSAGE $i_,1
     CAT path_to_bias, /Equipment/Mupix/Settings/BIASDACS/, $i_, /BiasBlock_On
     CAT path_to_vpdac, /Equipment/Mupix/Settings/BIASDACS/, $i_, /VPDAC
     CAT path_to_ref_Vss, /Equipment/Mupix/Settings/VDACS/, $i_, /ref_Vss
+    CAT path_to_vpdac_output, /Equipment/Mupix/QCTests/Ladder/DACScan/Output/VPDAC/, $i_
+    CAT path_to_ref_Vss_output, /Equipment/Mupix/QCTests/Ladder/DACScan/Output/ref_Vss/, $i_
 
     ODBGET $path_to_vpdac, default_vpdac_value
     ODBGET $path_to_ref_Vss, default_ref_vss_value
 
     # Turn on mupix i
     ODBSET $path_to_bias, 5
+    ODBSET /Equipment/Switching/Settings/MupixChipToConfigure, $i_
+
+    WAIT 1
 
     # Loop over VPDAC values. Values gotten from PARAM
+    SET index_j, 0
     LOOP j, $num_VPDAC_steps
-        ODBSET $path_to_vpdac, ($j-1)*$vpdac_step
-        ODBSET /Equipment/Switching/Settings/MupixChipToConfigure, $i_
+
+        ODBSET $path_to_vpdac, ($j-1)*$vpdac_step + $vpdac_start
         ODBSET /Equipment/Switching/Settings/MupixConfig, 1
 
-        WAIT 5
+        WAIT 3
 
         ODBGET /Equipment/HAMEG0/Variables/Current[1], current
-        ODBSET /Equipment/Mupix/QCTests/Ladder/DACScan/Output/VPDAC/VPDAC_values[$j-1], ($j-1)*$vpdac_step
-        ODBSET /Equipment/Mupix/QCTests/Ladder/DACScan/Output/VPDAC/VPDAC_current[$j-1], $current
+        CAT path_to_vpdac_output_value, /Equipment/Mupix/QCTests/Ladder/DACScan/Output/VPDAC/, $i_, /VPDAC_values[$index_j]
+        ODBSET $path_to_vpdac_output_value, ($j-1)*$vpdac_step + $vpdac_start
+        CAT path_to_vpdac_output_current, /Equipment/Mupix/QCTests/Ladder/DACScan/Output/VPDAC/, $i_, /VPDAC_current[$index_j]
+        ODBSET $path_to_vpdac_output_current, $current
+
+        SET index_j, $j
     ENDLOOP
 
+    WAIT 1
     # Set VPDAC back to the starting value
     ODBSET $path_to_vpdac, $default_vpdac_value
 
     # Loop over ref_Vss values. Values gotten from PARAM
+    SET index_k, 0
     LOOP k, $num_ref_Vss_steps
-        ODBSET $path_to_ref_Vss, ($k-1)*ref_Vss_step
-        ODBSET /Equipment/Switching/Settings/MupixChipToConfigure, $i_
+        ODBSET $path_to_ref_Vss, ($k-1)*$ref_Vss_step + $ref_Vss_start
         ODBSET /Equipment/Switching/Settings/MupixConfig, 1
 
-        WAIT 5
+        WAIT 3
 
         ODBGET /Equipment/HAMEG0/Variables/Current[1], current
-        ODBSET /Equipment/Mupix/QCTests/Ladder/DACScan/Output/ref_Vss/ref_Vss_values[$k-1], ($k-1)*$vpdac_step
-        ODBSET /Equipment/Mupix/QCTests/Ladder/DACScan/Output/ref_Vss/ref_Vss_current[$k-1], $current
+        CAT path_to_ref_Vss_output_value, /Equipment/Mupix/QCTests/Ladder/DACScan/Output/ref_Vss/, $i_, /ref_Vss_values[$index_k]
+        ODBSET $path_to_ref_Vss_output_value, ($k-1)*$ref_Vss_step + $ref_Vss_start
+
+        CAT path_to_ref_Vss_output_current, /Equipment/Mupix/QCTests/Ladder/DACScan/Output/ref_Vss/, $i_, /ref_Vss_current[$index_k]
+        ODBSET $path_to_ref_Vss_output_current, $current
+
+        SET index_k, $k
     ENDLOOP
 
     ODBSET $path_to_ref_Vss, $default_ref_vss_value
     ODBSET $path_to_bias, 0
-    ODBSET /Equipment/Switching/Settings/MupixChipToConfigure, $i_
     ODBSET /Equipment/Switching/Settings/MupixConfig, 1
+
+    WAIT SECONDS, 3
 ENDLOOP
 
 
