@@ -107,9 +107,9 @@ architecture arch of ddr_block is
     signal A_reset_n:       std_logic;
 
     signal A_ready:         std_logic;
-    signal A_read:          std_logic;
+    signal A_read, A_read_del1, A_read_del2, A_read_del3, A_read_del4 : std_logic;
     signal A_write:         std_logic;
-    signal A_address:       std_logic_vector(25 downto 0);
+    signal A_address, A_addr, A_addr_del1, A_addr_del2, A_addr_del3, A_addr_del4 : std_logic_vector(25 downto 0);
     signal A_readdata:      std_logic_vector(511 downto 0);
     signal A_writedata:     std_logic_vector(511 downto 0);
     signal A_burstcount:    std_logic_vector(6 downto 0);
@@ -122,9 +122,9 @@ architecture arch of ddr_block is
     signal B_reset_n:       std_logic;
 
     signal B_ready:         std_logic;
-    signal B_read:          std_logic;
+    signal B_read, B_read_del1, B_read_del2, B_read_del3, B_read_del4 : std_logic;
     signal B_write:         std_logic;
-    signal B_address:       std_logic_vector(25 downto 0);
+    signal B_address, B_addr, B_addr_del1, B_addr_del2, B_addr_del3, B_addr_del4 : std_logic_vector(25 downto 0);
     signal B_readdata:      std_logic_vector(511 downto 0);
     signal B_writedata:     std_logic_vector(511 downto 0);
     signal B_burstcount:    std_logic_vector(6 downto 0);
@@ -133,7 +133,7 @@ architecture arch of ddr_block is
     signal A_errout :       std_logic_vector(31 downto 0);
     signal B_errout :       std_logic_vector(31 downto 0);
 
-    constant CLK_MHZ : real := 10000.0; -- MHz
+    constant CLK_MHZ : time := 4 ns;
 
 begin
 
@@ -225,16 +225,16 @@ begin
         DATA_WIDTH_B    => 512--,
     )
     port map (
-        address_a       => A_mem_addr(8 downto 0),
-        address_b       => A_mem_addr(8 downto 0),
+        address_a       => A_address(8 downto 0),
+        address_b       => A_address(8 downto 0),
         clock_a         => i_clk,
         clock_b         => i_clk,
-        data_a          => A_mem_data,
+        data_a          => A_writedata,
         data_b          => (others => '0'),
-        wren_a          => A_mem_write,
+        wren_a          => A_write,
         wren_b          => '0',
         q_a             => open,
-        q_b             => A_mem_q--,
+        q_b             => A_readdata--,
     );
 
     e_ddr3_b : entity work.ip_ram
@@ -245,16 +245,16 @@ begin
         DATA_WIDTH_B    => 512--,
     )
     port map (
-        address_a       => B_mem_addr(8 downto 0),
-        address_b       => B_mem_addr(8 downto 0),
+        address_a       => B_address(8 downto 0),
+        address_b       => B_address(8 downto 0),
         clock_a         => i_clk,
         clock_b         => i_clk,
-        data_a          => B_mem_data,
+        data_a          => B_writedata,
         data_b          => (others => '0'),
-        wren_a          => B_mem_write,
+        wren_a          => B_write,
         wren_b          => '0',
         q_a             => open,
-        q_b             => B_mem_q--,
+        q_b             => B_readdata--,
     );
 
     -- Memready
@@ -286,24 +286,24 @@ begin
     process(i_clk, i_reset_n)
     begin
     if(i_reset_n <= '0') then
-        A_mem_q_valid   <= '0';
-        A_mem_read_del1 <= '0';
-        A_mem_read_del2 <= '0';
-        A_mem_read_del3 <= '0';
-        A_mem_read_del4 <= '0';
+        A_readdatavalid <= '0';
+        A_read_del1 <= '0';
+        A_read_del2 <= '0';
+        A_read_del3 <= '0';
+        A_read_del4 <= '0';
     elsif(i_clk'event and i_clk = '1') then
-        A_mem_read_del1 <= A_mem_read;
-        A_mem_read_del2 <= A_mem_read_del1;
-        A_mem_read_del3 <= A_mem_read_del2;
-        A_mem_read_del4 <= A_mem_read_del3;
-        A_mem_q_valid   <= A_mem_read_del4;
+        A_read_del1 <= A_read;
+        A_read_del2 <= A_read_del1;
+        A_read_del3 <= A_read_del2;
+        A_read_del4 <= A_read_del3;
+        A_readdatavalid <= A_read_del4;
 
-        A_mem_addr_del1 <= A_mem_addr;
-        A_mem_addr_del2 <= A_mem_addr_del1;
-        A_mem_addr_del3 <= A_mem_addr_del2;
-        A_mem_addr_del4 <= A_mem_addr_del3;
-    --  A_mem_q		<= (others => '0');
-    --  A_mem_q(25 downto 0)  <= A_mem_addr_del4;
+        A_addr_del1 <= A_address;
+        A_addr_del2 <= A_addr_del1;
+        A_addr_del3 <= A_addr_del2;
+        A_addr_del4 <= A_addr_del3;
+    --  A_mem_q <= (others => '0');
+    --  A_mem_q(25 downto 0) <= A_mem_addr_del4;
     end if;
     end process;
 
@@ -311,24 +311,24 @@ begin
     process(i_clk, i_reset_n)
     begin
     if(i_reset_n <= '0') then
-        B_mem_q_valid   <= '0';
-        B_mem_read_del1 <= '0';
-        B_mem_read_del2 <= '0';
-        B_mem_read_del3 <= '0';
-        B_mem_read_del4 <= '0';
+        B_readdatavalid <= '0';
+        B_read_del1 <= '0';
+        B_read_del2 <= '0';
+        B_read_del3 <= '0';
+        B_read_del4 <= '0';
     elsif(i_clk'event and i_clk = '1') then
-        B_mem_read_del1 <= B_mem_read;
-        B_mem_read_del2 <= B_mem_read_del1;
-        B_mem_read_del3 <= B_mem_read_del2;
-        B_mem_read_del4 <= B_mem_read_del3;
-        B_mem_q_valid   <= B_mem_read_del4;
+        B_read_del1 <= B_read;
+        B_read_del2 <= B_read_del1;
+        B_read_del3 <= B_read_del2;
+        B_read_del4 <= B_read_del3;
+        B_readdatavalid <= B_read_del4;
 
-        B_mem_addr_del1 <= B_mem_addr;
-        B_mem_addr_del2 <= B_mem_addr_del1;
-        B_mem_addr_del3 <= B_mem_addr_del2;
-        B_mem_addr_del4 <= B_mem_addr_del3;
-    --  B_mem_q		<= (others => '0');
-    --  B_mem_q(25 downto 0)  <= B_mem_addr_del4;
+        B_addr_del1 <= B_address;
+        B_addr_del2 <= B_addr_del1;
+        B_addr_del3 <= B_addr_del2;
+        B_addr_del4 <= B_addr_del3;
+    --  B_mem_q               <= (others => '0');
+    --  B_mem_q(25 downto 0)  <= B_addr_del4;
     end if;
     end process;
 

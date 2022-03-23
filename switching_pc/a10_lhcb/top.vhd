@@ -140,11 +140,11 @@ architecture arch of top is
 
     signal feb_rx_data, feb_tx_data : work.util.slv32_array_t(23 downto 0) := (others => x"000000BC");
     signal feb_rx_datak, feb_tx_datak : work.util.slv4_array_t(23 downto 0) := (others => "0001");
-    signal feb_rx, feb_tx : work.mu3e.link_array_t(g_NLINKS_FEB_TOTL-1 downto 0) := (others => work.mu3e.LINK_ZERO);
+    signal feb_rx, feb_tx : work.mu3e.link_array_t(g_NLINKS_FEB_TOTL-1 downto 0) := (others => work.mu3e.LINK_IDLE);
 
     signal farm_rx_data, farm_tx_data : work.util.slv32_array_t(23 downto 0) := (others => X"000000BC");
     signal farm_rx_datak, farm_tx_datak : work.util.slv4_array_t(23 downto 0) := (others => "0001");
-    signal farm_rx, farm_tx : work.mu3e.link_array_t(g_NLINKS_FARM_TOTL-1 downto 0) := (others => work.mu3e.LINK_ZERO);
+    signal farm_rx, farm_tx : work.mu3e.link_array_t(g_NLINKS_FARM_TOTL-1 downto 0) := (others => work.mu3e.LINK_IDLE);
 
     -- pll locked signal top
     signal locked_100to125 : std_logic;

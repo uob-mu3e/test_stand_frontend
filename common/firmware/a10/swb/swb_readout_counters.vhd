@@ -37,7 +37,7 @@ end entity;
 --! the counters for a given input addr
 architecture arch of swb_readout_counters is
 
-    signal swb_counter_addr, link_id, link_counter_addr : integer;
+    signal swb_counter_addr, link_id, link_counter_addr : integer := 0;
 
 begin
 

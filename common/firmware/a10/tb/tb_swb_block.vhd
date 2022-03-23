@@ -32,6 +32,7 @@ architecture arch of tb_swb_block is
     signal tx : work.mu3e.link_array_t(g_NLINKS_FEB_TOTL-1 downto 0) := (others => work.mu3e.LINK_IDLE);
 
     signal writeregs : work.util.slv32_array_t(63 downto 0) := (others => (others => '0'));
+    signal readregs : work.util.slv32_array_t(63 downto 0) := (others => (others => '0'));
 
     signal resets_n : std_logic_vector(31 downto 0) := (others => '0');
 
@@ -49,13 +50,11 @@ architecture arch of tb_swb_block is
     signal writememaddr : std_logic_vector(15 downto 0);
     signal memaddr : std_logic_vector(15 downto 0);
     signal memaddr_reg : std_logic_vector(15 downto 0);
-    signal mem_data_out : work.util.slv32_array_t(g_NLINKS_FEB_TOTL-1 downto 0);
-    signal mem_datak_out : work.util.slv4_array_t(g_NLINKS_FEB_TOTL-1 downto 0);
     signal readmem_writedata : std_logic_vector(31 downto 0);
-    signal readmem_writeaddr, length : std_logic_vector(15 downto 0);
+    signal readmem_writeaddr : std_logic_vector(15 downto 0);
     signal readmem_wren : std_logic;
 
-    signal writememwren, length_we, done, toggle_read, fifo_we : std_logic;
+    signal writememwren, toggle_read, done, fifo_we : std_logic;
 
     signal fifo_wdata : std_logic_vector(35 downto 0);
     signal link_data : std_logic_vector(127 downto 0);
@@ -90,14 +89,16 @@ architecture arch of tb_swb_block is
     resets_n(RESET_BIT_RUN_END_ACK)                         <= '0', '1' after (1.0 us / CLK_MHZ);
     resets_n(RESET_BIT_SC_MAIN)                             <= '0', '1' after (1.0 us / CLK_MHZ);
     resets_n(RESET_BIT_SC_SECONDARY)                        <= '0', '1' after (1.0 us / CLK_MHZ);
+    resets_n(RESET_BIT_EVENT_COUNTER)                       <= '0', '1' after (1.0 us / CLK_MHZ);
 
     writeregs(DATAGENERATOR_DIVIDER_REGISTER_W)             <= x"00000002";
     writeregs(SWB_READOUT_STATE_REGISTER_W)(USE_BIT_GEN_LINK)   <= '1';
     writeregs(SWB_READOUT_STATE_REGISTER_W)(USE_BIT_TEST_ERROR) <= '0';
-    writeregs(SWB_READOUT_STATE_REGISTER_W)(USE_BIT_STREAM)     <= '0';
-    writeregs(SWB_READOUT_STATE_REGISTER_W)(USE_BIT_MERGER)     <= '1';
+    writeregs(SWB_READOUT_STATE_REGISTER_W)(USE_BIT_STREAM)     <= '1';
+    writeregs(SWB_READOUT_STATE_REGISTER_W)(USE_BIT_MERGER)     <= '0';
 
     writeregs(SWB_LINK_MASK_PIXEL_REGISTER_W)               <= x"0000001F";--x"00000048";
+    writeregs(FEB_ENABLE_REGISTER_W)                        <= x"0000001F";--x"00000048";
     writeregs(SWB_READOUT_LINK_REGISTER_W)                  <= x"00000001";
     writeregs(GET_N_DMA_WORDS_REGISTER_W)                   <= (others => '1');
     writeregs(DMA_REGISTER_W)(DMA_BIT_ENABLE)               <= '1';
@@ -120,6 +121,7 @@ architecture arch of tb_swb_block is
         g_NLINKS_DATA_PIXEL_DS  => g_NLINKS_DATA_PIXEL_DS,
         g_NLINKS_FARM_SCIFI     => g_NLINKS_FARM_SCIFI,
         g_NLINKS_DATA_SCIFI     => g_NLINKS_DATA_SCIFI,
+        g_SC_SEC_SKIP_INIT      => '1',
         SWB_ID                  => SWB_ID--,
     )
     port map (
@@ -127,7 +129,7 @@ architecture arch of tb_swb_block is
         o_feb_tx        => tx(g_NLINKS_FEB_TOTL-1 downto 0),
 
         i_writeregs     => writeregs,
-        o_readregs      => open,
+        o_readregs      => readregs,
         i_resets_n      => resets_n,
 
         i_wmem_rdata    => writememdata_out,
@@ -164,8 +166,8 @@ architecture arch of tb_swb_block is
     --! ------------------------------------------------------------------------
     sc_rx : entity work.sc_rx
     port map(
-        i_link_data     => mem_data_out(0),
-        i_link_datak    => mem_datak_out(0),
+        i_link_data     => tx(0).data,
+        i_link_datak    => tx(0).datak,
 
         o_fifo_we       => fifo_we,
         o_fifo_wdata    => fifo_wdata,
@@ -260,19 +262,20 @@ architecture arch of tb_swb_block is
         q_b         => open--, 
     );
 
+    done <= readregs(SC_MAIN_STATUS_REGISTER_R)(SC_MAIN_DONE);
+
     memory : process(reset_n, clk)
     begin
     if(reset_n = '0')then
         writememdata <= (others => '0');
         writememaddr <= x"FFFF";
         writememwren <= '0';
-        length_we    <= '0';
+        writeregs(SC_MAIN_ENABLE_REGISTER_W)(0) <= '0';
         toggle_read  <= '0';
-        length       <= (others => '0');
         state        <= idle;
     elsif(rising_edge(clk))then
         writememwren    <= '0';
-        length_we       <= '0';
+        writeregs(SC_MAIN_ENABLE_REGISTER_W)(0) <= '0';
        
         case state is
             
@@ -306,9 +309,9 @@ architecture arch of tb_swb_block is
                     writememdata <= x"0000009c";
                     writememaddr <= writememaddr + 1;
                     writememwren <= '1';
-                    length <= x"0003";
+                    writeregs(SC_MAIN_LENGTH_REGISTER_W)(15 downto 0) <= x"0003";
                 elsif(writememaddr(3 downto 0)  = x"4")then
-                    length_we <= '1';
+                    writeregs(SC_MAIN_ENABLE_REGISTER_W)(0) <= '1';
                     writememaddr <= (others => '1');
                     state <= wait_state;
                 end if;
@@ -330,9 +333,9 @@ architecture arch of tb_swb_block is
                     writememdata <= x"0000009c";
                     writememaddr <= writememaddr + 1;
                     writememwren <= '1';
-                    length <= x"0002";
+                    writeregs(SC_MAIN_LENGTH_REGISTER_W)(15 downto 0) <= x"0002";
                 elsif(writememaddr(3 downto 0)  = x"3")then
-                    length_we <= '1';
+                    writeregs(SC_MAIN_ENABLE_REGISTER_W)(0) <= '1';
                     writememaddr <= (others => '1');
                     state <= wait_state;
                 end if;

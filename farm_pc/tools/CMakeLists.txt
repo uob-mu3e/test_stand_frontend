@@ -20,5 +20,10 @@ target_link_libraries(swb_dmatest libmudaq -lutil)
 target_link_libraries(reset_link_a10_test libmudaq -lutil)
 target_include_directories(test_slowcontrol PRIVATE ${LIBSLOWCONTROL_DIR})
 
-install(TARGETS rw ddr3_test swb_dmatest gpu_dmatest reset_link_a10_test
-        DESTINATION bin)
+if(CUDA_FOUND)
+    install(TARGETS rw ddr3_test swb_dmatest gpu_dmatest reset_link_a10_test
+            DESTINATION bin)
+else()
+    install(TARGETS rw ddr3_test swb_dmatest reset_link_a10_test
+            DESTINATION bin)
+endif(CUDA_FOUND)

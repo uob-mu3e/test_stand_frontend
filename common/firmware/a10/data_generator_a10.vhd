@@ -16,24 +16,21 @@ use work.mudaq.all;
 
 entity data_generator_a10 is
 generic (
-        fpga_id: std_logic_vector(15 downto 0) := x"FFFF";
-        max_row: std_logic_vector (7 downto 0) := (others => '0');
-        max_col: std_logic_vector (7 downto 0) := (others => '0');
-        test_error: boolean := false;
-        is_farm: boolean := false;
-        wtot: std_logic := '0';
-        go_to_sh : positive := 2;
-        go_to_trailer : positive := 3;
-        wchip: std_logic := '0';
-        -- Data type: x"00" = pixel, x"01" = scifi, "10" = tiles
-        DATA_TYPE : std_logic_vector(1 downto 0) := "00"--;
-    );
+    fpga_id: std_logic_vector(15 downto 0) := x"FFFF";
+    max_row: std_logic_vector (7 downto 0) := (others => '0');
+    max_col: std_logic_vector (7 downto 0) := (others => '0');
+    test_error: boolean := false;
+    is_farm: boolean := false;
+    wtot: std_logic := '0';
+    go_to_sh : positive := 2;
+    go_to_trailer : positive := 3;
+    wchip: std_logic := '0';
+    -- Data type: x"00" = pixel, x"01" = scifi, "10" = tiles
+    DATA_TYPE : std_logic_vector(1 downto 0) := "00"--;
+);
 port (
     i_enable            : in  std_logic;
-    i_dma_half_full     : in  std_logic;
-    i_delay             : in  std_logic_vector (15 downto 0);
     i_seed              : in  std_logic_vector (15 downto 0);
-    i_start_global_time : in  std_logic_vector(47 downto 0);
     o_data              : out work.mu3e.link_t;
     i_slow_down         : in  std_logic_vector(31 downto 0);
     o_state             : out std_logic_vector(3 downto 0);
@@ -55,7 +52,7 @@ architecture rtl of data_generator_a10 is
 
     signal lsfr_chipID, lsfr_tot, lsfr_chipID_reg, lsfr_tot_reg : std_logic_vector (5 downto 0);
     signal row, col : std_logic_vector (7 downto 0);
-    signal lsfr_overflow, delay_cnt : std_logic_vector (15 downto 0);
+    signal lsfr_overflow : std_logic_vector (15 downto 0);
 
     signal waiting : std_logic;
     signal wait_counter, nEvent : std_logic_vector(31 downto 0);
@@ -129,46 +126,42 @@ begin
     lsfr_tot <= (others => '0') when wtot = '0' else lsfr_tot_reg;
     lsfr_chipID <= (others => '0') when wchip = '0' else lsfr_chipID_reg;
 
-    process (i_clk, i_reset_n, i_start_global_time)
-        variable current_overflow   : std_logic_vector(15 downto 0) := "0000000000000000";
+    process (i_clk, i_reset_n)
+        variable current_overflow   : std_logic_vector(15 downto 0) := (others => '0');
         variable overflow_idx       : integer range 0 to 15 := 0;
     begin
     if ( i_reset_n = '0' ) then
         o_data              <= work.mu3e.LINK_ZERO;
-        global_time         <= i_start_global_time;
         time_cnt_t          <= (others => '0');
         data_header_state   <= sop;
-        current_overflow    := "0000000000000000";
+        current_overflow    := (others => '0');
         overflow_idx        := 0;
         o_state             <= (others => '0');
-        delay_cnt           <= (others => '0');
         row                 <= (others => '0');
         nEvent              <= (others => '0');
         col                 <= (others => '0');
+        global_time         <= (others => '0');
     elsif ( rising_edge(i_clk) ) then
-        if ( i_enable = '1' and waiting = '0' and i_dma_half_full = '0' ) then
+        if ( i_enable = '1' and waiting = '0' ) then
 
             o_data <= work.mu3e.LINK_ZERO;
 
             case data_header_state is
             when sop =>
                 o_state <= x"A";
-                if ( delay_cnt = i_delay ) then
-                    data_header_state <= t0;
-                    o_data.data(31 downto 26)   <= DATA_HEADER_ID;
-                    o_data.data(25 downto 24)   <= (others => '0');
-                    o_data.data(23 downto 8)    <= fpga_id;
-                    o_data.data(7 downto 0)     <= x"bc";
-                    o_data.datak                <= "0001";
-                end if;
+                data_header_state <= t0;
+                o_data.data(31 downto 26)   <= DATA_HEADER_ID;
+                o_data.data(25 downto 24)   <= (others => '0');
+                o_data.data(23 downto 8)    <= fpga_id;
+                o_data.data(7 downto 0)     <= x"bc";
+                o_data.datak                <= "0001";
 
             when t0 =>
                 o_state   <= x"B";
-                delay_cnt   <= (others => '0');
                 if ( test_error and nEvent > 1 ) then
-                        o_data.data <= (others => '1');
+                    o_data.data <= (others => '1');
                 else
-                        o_data.data <= global_time(47 downto 16);
+                    o_data.data <= global_time(47 downto 16);
                 end if;
                 o_data.datak        <= "0000";
                 global_time         <= global_time + '1';
@@ -253,10 +246,18 @@ begin
                 elsif ( work.util.and_reduce(global_time(go_to_sh downto 0)) = '1' ) then
                     data_header_state <= sbhdr;
                 elsif (current_overflow(overflow_idx) = '1') then
-                    overflow_idx := overflow_idx + 1;
+                    if ( overflow_idx = 15 ) then
+                        overflow_idx := 0;
+                    else
+                        overflow_idx := overflow_idx + 1;
+                    end if;
                     data_header_state <= overflow;
                 else
-                    overflow_idx := overflow_idx + 1;
+                    if ( overflow_idx = 15 ) then
+                        overflow_idx := 0;
+                    else
+                        overflow_idx := overflow_idx + 1;
+                    end if;
                 end if;
 
             when overflow =>

@@ -140,14 +140,11 @@ begin
     )
     port map (
         i_enable            => i_writeregs(SWB_READOUT_STATE_REGISTER_W)(USE_BIT_GEN_LINK),
-        i_dma_half_full     => '0',
         i_seed              => (others => '1'),
         o_data              => gen_link,
-        i_start_global_time => (others => '0'),
-        i_delay             => (others => '0'),
         i_slow_down         => i_writeregs(DATAGENERATOR_DIVIDER_REGISTER_W),
         o_state             => open,
-        
+
         i_reset_n           => i_resets_n(RESET_BIT_DATAGEN),
         i_clk               => i_clk--,
     );
@@ -161,11 +158,8 @@ begin
     )
     port map (
         i_enable            => i_writeregs(SWB_READOUT_STATE_REGISTER_W)(USE_BIT_GEN_LINK),
-        i_dma_half_full     => '0',
         i_seed              => (others => '1'),
         o_data              => gen_link_error,
-        i_start_global_time => (others => '0'),
-        i_delay             => (others => '0'),
         i_slow_down         => i_writeregs(DATAGENERATOR_DIVIDER_REGISTER_W),
         o_state             => open,
         

@@ -38,9 +38,11 @@ architecture arch of time_merger_tree is
 
     -- merger signals
     constant size : integer := N_LINKS_IN/2;
+    signal mask_n : std_logic_vector(N_LINKS_IN - 1 downto 0);
 
     -- layer states
     signal layer_state, last_state : work.util.slv4_array_t(N_LINKS_OUT - 1 downto 0);
+    signal state_reset : std_logic;
 
     -- fifo signals
     signal data, q_data : work.mu3e.link_array_t(N_LINKS_OUT - 1 downto 0);
@@ -63,6 +65,17 @@ architecture arch of time_merger_tree is
 
 begin
 
+    --! reset for tree
+    process(i_clk, i_reset_n)
+    begin
+    if ( i_reset_n /= '1' ) then
+        state_reset <= '1';
+        --
+    elsif ( rising_edge(i_clk) ) then
+        state_reset <= '0';
+    end if;
+    end process;
+
     gen_hits:
     FOR i in 0 to N_LINKS_OUT - 1 GENERATE
     
@@ -79,13 +92,25 @@ begin
         a_h(i)      <= i_data(i);
         b_h(i)      <= i_data(i+size);
 
-        o_mask_n(i) <= i_mask_n(i) or i_mask_n(i + size);
+        --! reg mask for timing
+        process(i_reset_n, i_clk)
+        begin
+        if ( i_reset_n /= '1' ) then
+            mask_n(i) <= '0';
+            o_mask_n(i) <= '0';
+            --
+        elsif ( rising_edge(i_clk) ) then
+            mask_n(i)           <= i_mask_n(i);
+            mask_n(i + size)    <= i_mask_n(i + size);
+            o_mask_n(i)         <= i_mask_n(i) or i_mask_n(i + size);
+        end if;
+        end process;
 
         e_tree_fifo : entity work.link_scfifo
         generic map (
             g_ADDR_WIDTH => g_ADDR_WIDTH,
-            g_WREG_N => 1,   -- TNS=...
-            g_RREG_N => 1--, -- TNS=-2300
+            g_WREG_N => 1,
+            g_RREG_N => 1--,
         )
         port map (
             i_wdata         => data(i),
@@ -109,11 +134,11 @@ begin
         -- [2]               [tr,2]                [3,sh,2]
         -- [b]               [b]                   [b]
         layer_state(i) <=             -- check if both are mask or if we are in enabled or in reset
-                            SWB_IDLE  when (i_mask_n(i) = '0' and i_mask_n(i+size) = '0') or i_en = '0' or i_reset_n /= '1' else
+                            SWB_IDLE  when (mask_n(i) = '0' and mask_n(i+size) = '0') or i_en = '0' or state_reset = '1' else
                                       -- we forword the error the chain
                             ONEERROR  when (i_data(i).err = '1' or i_data(i+size).err = '1') and wrfull(i) = '0' else
                                       -- simple case on of the links is mask so we just send the other throw the tree
-                            ONEMASK   when (i_mask_n(i) = '0' or i_mask_n(i+size) = '0') and wrfull(i) = '0' else
+                            ONEMASK   when (mask_n(i) = '0' or mask_n(i+size) = '0') and wrfull(i) = '0' else
                                       -- wait if one input is empty or the output fifo is full
                             WAITING   when i_empty(i) = '1' or i_empty(i+size) = '1' or wrfull(i) = '1' else
                                       -- since we check in before that we should have two links not masked and both are not empty we 
@@ -137,22 +162,22 @@ begin
         -- NOTE: if timing problem maybe add reg for writing
 
         wrreq(i)        <=  '1' when layer_state(i) = HEADER or layer_state(i) = TS0 or layer_state(i) = TS1 or layer_state(i) = SHEADER or layer_state(i) = HIT or layer_state(i) = ONEHIT or layer_state(i) = TRAILER or layer_state(i) = ONEERROR else
-                            not i_empty(i) when layer_state(i) = ONEMASK and i_mask_n(i) = '1' else
-                            not i_empty(i+size) when layer_state(i) = ONEMASK and i_mask_n(i+size) = '1' else
+                            not i_empty(i) when layer_state(i) = ONEMASK and mask_n(i) = '1' else
+                            not i_empty(i+size) when layer_state(i) = ONEMASK and mask_n(i+size) = '1' else
                             '0';
 
         o_rack(i)       <=  '1' when layer_state(i) = HEADER or layer_state(i) = TS0 or layer_state(i) = TS1 or layer_state(i) = SHEADER or layer_state(i) = TRAILER else
                             '1' when layer_state(i) = ONEHIT and i_data(i).dthdr = '1' else
                             '1' when layer_state(i) = HIT and a(i) <= b(i) else
                             not i_empty(i) when layer_state(i) = ONEERROR and i_data(i).err = '1' else
-                            not i_empty(i) when layer_state(i) = ONEMASK and i_mask_n(i) = '1' else
+                            not i_empty(i) when layer_state(i) = ONEMASK and mask_n(i) = '1' else
                             '0';
 
         o_rack(i+size)  <=  '1' when layer_state(i) = HEADER or layer_state(i) = TS0 or layer_state(i) = TS1 or layer_state(i) = SHEADER or layer_state(i) = TRAILER else
                             '1' when layer_state(i) = ONEHIT and i_data(i+size).dthdr = '1' else
                             '1' when layer_state(i) = HIT and b(i) < a(i) else
                             not i_empty(i+size) when layer_state(i) = ONEERROR and i_data(i+size).err = '1' else
-                            not i_empty(i+size) when layer_state(i) = ONEMASK and i_mask_n(i+size) = '1' else
+                            not i_empty(i+size) when layer_state(i) = ONEMASK and mask_n(i+size) = '1' else
                             '0';
 
         -- or'ed overflow
@@ -190,18 +215,18 @@ begin
                             b_h(i) when layer_state(i) = ONEHIT and i_data(i+size).dthdr = '1' else
                             a_h(i) when layer_state(i) = HIT and a(i) <= b(i) else
                             b_h(i) when layer_state(i) = HIT and b(i) < a(i) else
-                            a_h(i) when layer_state(i) = ONEMASK and i_mask_n(i) = '1' and i_data(i).sop = '1' else
-                            a_h(i) when layer_state(i) = ONEMASK and i_mask_n(i) = '1' and i_data(i).t0   = '1' else
-                            a_h(i) when layer_state(i) = ONEMASK and i_mask_n(i) = '1' and i_data(i).t1   = '1' else
-                            a_h(i) when layer_state(i) = ONEMASK and i_mask_n(i) = '1' and i_data(i).sbhdr = '1' else
-                            a_h(i) when layer_state(i) = ONEMASK and i_mask_n(i) = '1' and i_data(i).dthdr  = '1' else
-                            a_h(i) when layer_state(i) = ONEMASK and i_mask_n(i) = '1' and i_data(i).eop = '1' else
-                            b_h(i) when layer_state(i) = ONEMASK and i_mask_n(i+size) = '1' and i_data(i+size).sop = '1' else
-                            b_h(i) when layer_state(i) = ONEMASK and i_mask_n(i+size) = '1' and i_data(i+size).t0   = '1' else
-                            b_h(i) when layer_state(i) = ONEMASK and i_mask_n(i+size) = '1' and i_data(i+size).t1   = '1' else
-                            b_h(i) when layer_state(i) = ONEMASK and i_mask_n(i+size) = '1' and i_data(i+size).sbhdr = '1' else
-                            b_h(i) when layer_state(i) = ONEMASK and i_mask_n(i+size) = '1' and i_data(i+size).dthdr  = '1' else
-                            b_h(i) when layer_state(i) = ONEMASK and i_mask_n(i+size) = '1' and i_data(i+size).eop = '1' else
+                            a_h(i) when layer_state(i) = ONEMASK and mask_n(i) = '1' and i_data(i).sop = '1' else
+                            a_h(i) when layer_state(i) = ONEMASK and mask_n(i) = '1' and i_data(i).t0   = '1' else
+                            a_h(i) when layer_state(i) = ONEMASK and mask_n(i) = '1' and i_data(i).t1   = '1' else
+                            a_h(i) when layer_state(i) = ONEMASK and mask_n(i) = '1' and i_data(i).sbhdr = '1' else
+                            a_h(i) when layer_state(i) = ONEMASK and mask_n(i) = '1' and i_data(i).dthdr  = '1' else
+                            a_h(i) when layer_state(i) = ONEMASK and mask_n(i) = '1' and i_data(i).eop = '1' else
+                            b_h(i) when layer_state(i) = ONEMASK and mask_n(i+size) = '1' and i_data(i+size).sop = '1' else
+                            b_h(i) when layer_state(i) = ONEMASK and mask_n(i+size) = '1' and i_data(i+size).t0   = '1' else
+                            b_h(i) when layer_state(i) = ONEMASK and mask_n(i+size) = '1' and i_data(i+size).t1   = '1' else
+                            b_h(i) when layer_state(i) = ONEMASK and mask_n(i+size) = '1' and i_data(i+size).sbhdr = '1' else
+                            b_h(i) when layer_state(i) = ONEMASK and mask_n(i+size) = '1' and i_data(i+size).dthdr  = '1' else
+                            b_h(i) when layer_state(i) = ONEMASK and mask_n(i+size) = '1' and i_data(i+size).eop = '1' else
                             work.mu3e.LINK_ZERO;
 
         -- set last layer state

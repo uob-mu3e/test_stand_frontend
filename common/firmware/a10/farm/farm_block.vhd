@@ -26,7 +26,7 @@ generic (
 );
 port (
 
-    --! links to/from FEBs
+    --! links to/from Farm
     i_rx                : in  work.mu3e.link_array_t(g_NLINKS_TOTL-1 downto 0) := (others => work.mu3e.LINK_IDLE);
     o_tx                : out work.mu3e.link_array_t(g_NLINKS_TOTL-1 downto 0) := (others => work.mu3e.LINK_IDLE);
 
@@ -220,11 +220,8 @@ begin
     )
     port map (
         i_enable            => i_writeregs(FARM_READOUT_STATE_REGISTER_W)(USE_BIT_GEN_LINK),
-        i_dma_half_full     => '0',
         i_seed              => (others => '1'),
         o_data              => gen_link,
-        i_start_global_time => (others => '0'),
-        i_delay             => (others => '0'),
         i_slow_down         => i_writeregs(DATAGENERATOR_DIVIDER_REGISTER_W),
         o_state             => open,
 

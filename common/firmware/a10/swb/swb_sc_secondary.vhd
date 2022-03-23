@@ -12,8 +12,8 @@ use ieee.std_logic_unsigned.all;
 
 entity swb_sc_secondary is
 generic (
-    NLINKS : positive := 4;
-    skip_init : std_logic := '0'
+    NLINKS      : positive := 4;
+    skip_init   : std_logic := '0'
 );
 port (
     i_link_enable               : in    std_logic_vector(NLINKS-1 downto 0);
@@ -33,22 +33,46 @@ end entity;
 architecture arch of swb_sc_secondary is
 
     signal link_data : work.mu3e.link_array_t(NLINKS-1 downto 0);
+    signal rdempty, wen, wrfull, ren : std_logic_vector(NLINKS-1 downto 0);
 
     signal mem_data_o : std_logic_vector(31 downto 0);
     signal mem_addr_o : std_logic_vector(15 downto 0);
     signal mem_wren_o : std_logic;
     signal current_link : integer range 0 to NLINKS - 1;
 
-    type state_type is (init, waiting, starting);
+    type state_type is (init, waiting, startup, starting);
     signal state : state_type;
 
 begin
 
-    link_data <= i_link_data;
-
     mem_data_out <= mem_data_o;
     mem_addr_out <= mem_addr_o;
     mem_wren     <= mem_wren_o;
+
+    gen_buffer_sc : FOR i in 0 to NLINKS - 1 GENERATE
+
+        wen(i) <= '1' when i_link_data(i).idle = '0' else '0';
+
+        e_fifo : entity work.link_scfifo
+        generic map (
+            g_ADDR_WIDTH=> 8,
+            g_WREG_N    => 1,
+            g_RREG_N    => 1--,
+        )
+        port map (
+            i_wdata     => i_link_data(i),
+            i_we        => wen(i),
+            o_wfull     => wrfull(i),
+
+            o_rdata     => link_data(i),
+            i_rack      => ren(i),
+            o_rempty    => rdempty(i),
+
+            i_clk       => i_clk,
+            i_reset_n   => i_reset_n--;
+        );
+
+    END GENERATE;
 
     process(i_reset_n, i_clk)
     begin
@@ -57,6 +81,7 @@ begin
         mem_addr_o <= (others => '1');
         mem_addr_finished_out <= (others => '1');
         stateout <= (others => '0');
+        ren <= (others => '0');
         mem_wren_o <= '0';
         current_link <= 0;
         if ( skip_init = '0' ) then
@@ -68,6 +93,7 @@ begin
     elsif rising_edge(i_clk) then
         stateout <= (others => '0');
         mem_data_o <= (others => '0');
+        ren <= (others => '0');
         mem_wren_o <= '0';
         mem_wren_o <= '0';
 
@@ -87,31 +113,30 @@ begin
             --LOOP link mux take the last one for prio
             link_mux:
             FOR i in 0 to NLINKS - 1 LOOP
-                if ( i_link_enable(i)='1'
-                    and link_data(i).data(7 downto 0) = x"BC"
-                    and link_data(i).datak = "0001"
-                    and link_data(i).data(31 downto 26) = "000111"
-                ) then
-                    mem_addr_o <= mem_addr_o + '1';
-                    mem_data_o <= link_data(i).data;
-                    mem_wren_o <= '1';
+                if ( i_link_enable(i) = '1' and link_data(i).sop = '1' and rdempty(i) = '0' ) then
                     state <= starting;
                     current_link <= i;
-                    end if;
+                end if;
             END LOOP;
+
+        when startup =>
+            mem_addr_o <= mem_addr_o + '1';
+            mem_data_o <= link_data(current_link).data;
+            mem_wren_o <= '1';
+            ren(current_link) <= '1';
+            state <= starting;
 
         when starting =>
             stateout(3 downto 0) <= x"3";
-            if ( link_data(current_link).datak = "0000" ) then
+            if ( rdempty(current_link) = '0' ) then
+                ren(current_link) <= '1';
                 mem_addr_o <= mem_addr_o + '1';
                 mem_data_o <= link_data(current_link).data;
                 mem_wren_o <= '1';
-            elsif ( link_data(current_link).data(7 downto 0) = x"9C" and link_data(current_link).datak = "0001" ) then
-                mem_addr_o <= mem_addr_o + '1';
-                mem_addr_finished_out <= mem_addr_o + '1';
-                mem_data_o <= link_data(current_link).data;
-                mem_wren_o <= '1';
-                state <= waiting;
+                if ( link_data(current_link).eop = '1' ) then
+                    mem_addr_finished_out <= mem_addr_o + '1';
+                    state <= waiting;
+                end if;
             end if;
             --
         when others =>

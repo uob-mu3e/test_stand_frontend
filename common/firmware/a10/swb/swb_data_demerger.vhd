@@ -14,7 +14,7 @@ port (
     o_rc                        : out   work.mu3e.link_t;
     o_fpga_id                   : out   std_logic_vector(15 downto 0);  -- FPGA ID of the connected frontend board
 
-    i_reset                     : in    std_logic;
+    i_reset_n                   : in    std_logic;
     i_clk                       : in    std_logic--;
 );
 end entity;
@@ -29,9 +29,9 @@ architecture arch of swb_data_demerger is
 ----------------begin data_demerge------------------------
 begin
 
-    process(i_clk, i_reset, i_aligned)
+    process(i_clk, i_reset_n, i_aligned)
     begin
-    if ( i_reset = '1' or i_aligned = '0' ) then
+    if ( i_reset_n = '0' or i_aligned = '0' ) then
         demerge_state       <= idle;
         o_data <= work.mu3e.LINK_IDLE;
         o_sc <= work.mu3e.LINK_IDLE;

@@ -27,6 +27,8 @@ generic (
     g_NLINKS_DATA_PIXEL_DS  : positive := 5;
     g_NLINKS_FARM_SCIFI     : positive := 1;
     g_NLINKS_DATA_SCIFI     : positive := 2;
+    -- needed for simulation
+    g_SC_SEC_SKIP_INIT      : std_logic := '0';
     SWB_ID                  : std_logic_vector(7 downto 0) := x"01"--;
 );
 port (
@@ -75,6 +77,9 @@ architecture arch of swb_block is
 
     --! masking signals
     signal pixel_mask_n, scifi_mask_n : std_logic_vector(63 downto 0);
+
+    --! feb links
+    signal feb_rx : work.mu3e.link_array_t(g_NLINKS_FEB_TOTL-1 downto 0) := (others => work.mu3e.LINK_IDLE);
 
     --! farm links
     signal farm_data       : work.mu3e.link_array_t(g_NLINKS_FARM_TOTL-1 downto 0)  := (others => work.mu3e.LINK_IDLE);
@@ -151,12 +156,13 @@ begin
     --! sc => slow control packages
     --! rc => runcontrol packages
     g_demerge: FOR i in g_NLINKS_FEB_TOTL-1 downto 0 GENERATE
+        feb_rx(i) <= work.mu3e.to_link(i_feb_rx(i).data, i_feb_rx(i).datak);
         e_data_demerge : entity work.swb_data_demerger
         port map(
             i_clk               => i_clk,
-            i_reset             => not i_resets_n(RESET_BIT_EVENT_COUNTER),
+            i_reset_n           => i_resets_n(RESET_BIT_EVENT_COUNTER),
             i_aligned           => '1',
-            i_data              => i_feb_rx(i),
+            i_data              => feb_rx(i),
 
             o_data              => rx_data(i),
             o_sc                => rx_sc(i),
@@ -216,7 +222,8 @@ begin
 
     e_sc_secondary : entity work.swb_sc_secondary
     generic map (
-        NLINKS => g_NLINKS_FEB_TOTL--,
+        NLINKS      => g_NLINKS_FEB_TOTL,
+        skip_init   => g_SC_SEC_SKIP_INIT--,
     )
     port map (
         i_reset_n               => i_resets_n(RESET_BIT_SC_SECONDARY),

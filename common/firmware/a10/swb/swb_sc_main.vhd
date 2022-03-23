@@ -101,6 +101,7 @@ begin
         wren_reg        <= (others => '0');
 
         -- reset link
+        mem_data.datak  <= "0000";
         mem_data.t0     <= '0';
         mem_data.t1     <= '0';
         mem_data.err    <= '0';
