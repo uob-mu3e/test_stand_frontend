@@ -201,6 +201,8 @@ architecture TB of tb_data_path_farm is
     signal midas_data_511 : work.util.slv32_array_t(15 downto 0);
     
     signal test : std_logic := '0';
+    signal dma_data_array : work.util.slv32_array_t(7 downto 0);
+    signal dma_data : std_logic_vector(255 downto 0);
 
 
 begin
@@ -234,9 +236,26 @@ begin
     writeregs(FARM_READOUT_STATE_REGISTER_W)(USE_BIT_STREAM)    <= '0';
     writeregs(FARM_READOUT_STATE_REGISTER_W)(USE_BIT_MERGER)    <= '1';
     writeregs(GET_N_DMA_WORDS_REGISTER_W)                       <= (others => '1');
-    writeregs(FARM_LINK_MASK_REGISTER_W)                        <= x"0000000F";--x"00000048";
+    writeregs(FARM_LINK_MASK_REGISTER_W)                        <= x"00000003";--x"00000048";
     writeregs(DMA_REGISTER_W)(DMA_BIT_ENABLE)                   <= '1';
-    writeregs(FARM_READOUT_STATE_REGISTER_W)(USE_BIT_DDR)       <= '0';
+    writeregs(FARM_READOUT_STATE_REGISTER_W)(USE_BIT_DDR)       <= '1';
+
+    -- Request generation
+    process begin
+        req_en_A <= '0';
+        wait for pcieclk_period;-- * 26500;
+        req_en_A <= '1';
+        ts_req_num <= x"00000008";
+        ts_req_A <= x"04030201";--"00010000";
+        wait for pcieclk_period;
+        req_en_A <= '1';
+        ts_req_A <= x"0B0A0906";--x"00030002";
+        wait for pcieclk_period;
+        req_en_A <= '0';
+        wait for pcieclk_period;
+        req_en_A <= '0';
+        tsblock_done    <= (others => '0');
+    end process;
 
     
     --! Farm Block
@@ -264,143 +283,20 @@ begin
         i_dmamemhalffull=> '0',
         o_dma_wren      => open,
         o_endofevent    => open,
-        o_dma_data      => open,
+        o_dma_data      => dma_data,
 
         --! 250 MHz clock pice / reset_n
         i_reset_n       => reset_n,
         i_clk           => clk--,
     );
 
-    e_ddr3_a : entity work.ip_ram
-    generic map (
-        ADDR_WIDTH_A    => 9,
-        ADDR_WIDTH_B    => 9,
-        DATA_WIDTH_A    => 512,
-        DATA_WIDTH_B    => 512--,
-    )
-    port map (
-        address_a       => A_mem_addr(8 downto 0),
-        address_b       => A_mem_addr(8 downto 0),
-        clock_a         => A_mem_clk,
-        clock_b         => A_mem_clk,
-        data_a          => A_mem_data,
-        data_b          => (others => '0'),
-        wren_a          => A_mem_write,
-        wren_b          => '0',
-        q_a             => open,
-        q_b             => A_mem_q--,
-    );
-
-    e_ddr3_b : entity work.ip_ram
-    generic map (
-        ADDR_WIDTH_A    => 9,
-        ADDR_WIDTH_B    => 9,
-        DATA_WIDTH_A    => 512,
-        DATA_WIDTH_B    => 512--,
-    )
-    port map (
-        address_a       => B_mem_addr(8 downto 0),
-        address_b       => B_mem_addr(8 downto 0),
-        clock_a         => B_mem_clk,
-        clock_b         => B_mem_clk,
-        data_a          => B_mem_data,
-        data_b          => (others => '0'),
-        wren_a          => B_mem_write,
-        wren_b          => '0',
-        q_a             => open,
-        q_b             => B_mem_q--,
-    );
-
-    -- Memready
-    process begin
-        A_mem_ready <= '0';
-        B_mem_ready <= '0';
-        wait for A_mem_clk_period * 25;
-        A_mem_ready <= '1';
-        B_mem_ready <= '1';
-        wait for A_mem_clk_period * 300;
-        A_mem_ready <= '0';
-        B_mem_ready <= '0';
-        wait for A_mem_clk_period;
-        A_mem_ready <= '1';
-        B_mem_ready <= '1';
-        wait for A_mem_clk_period * 250;
-        A_mem_ready <= '0';
-        B_mem_ready <= '0';
-        wait for A_mem_clk_period;
-        A_mem_ready <= '1';
-        B_mem_ready <= '1';
-        wait for A_mem_clk_period * 600;
-    end process;
-
-    A_mem_calibrated <= '1';
-    B_mem_calibrated <= '1';
-
-    -- Request generation
-    process begin
-    req_en_A <= '0';
-    wait for pcieclk_period;-- * 26500;
-    req_en_A <= '1';
-    ts_req_num <= x"00000008";
-    ts_req_A <= x"04030201";--"00010000";
-    wait for pcieclk_period;
-    req_en_A <= '1';
-    ts_req_A <= x"0B0A0906";--x"00030002";
-    wait for pcieclk_period;
-    req_en_A <= '0';
-    wait for pcieclk_period;
-    req_en_A <= '0';
-    tsblock_done    <= (others => '0');
-    end process;
-
-    -- Memory A simulation
-    process(A_mem_clk, reset_n)
-    begin
-    if(reset_n <= '0') then
-        A_mem_q_valid   <= '0';
-        A_mem_read_del1 <= '0';
-        A_mem_read_del2 <= '0';
-        A_mem_read_del3 <= '0';
-        A_mem_read_del4 <= '0';
-    elsif(A_mem_clk'event and A_mem_clk = '1') then
-        A_mem_read_del1 <= A_mem_read;
-        A_mem_read_del2 <= A_mem_read_del1;
-        A_mem_read_del3 <= A_mem_read_del2;
-        A_mem_read_del4 <= A_mem_read_del3;
-        A_mem_q_valid   <= A_mem_read_del4;
-
-        A_mem_addr_del1 <= A_mem_addr;
-        A_mem_addr_del2 <= A_mem_addr_del1;
-        A_mem_addr_del3 <= A_mem_addr_del2;
-        A_mem_addr_del4 <= A_mem_addr_del3;
-    --  A_mem_q		<= (others => '0');
-    --  A_mem_q(25 downto 0)  <= A_mem_addr_del4;
-    end if;
-    end process;
-
-    -- Memory B simulation
-    process(B_mem_clk, reset_n)
-    begin
-    if(reset_n <= '0') then
-        B_mem_q_valid   <= '0';
-        B_mem_read_del1 <= '0';
-        B_mem_read_del2 <= '0';
-        B_mem_read_del3 <= '0';
-        B_mem_read_del4 <= '0';
-    elsif(B_mem_clk'event and B_mem_clk = '1') then
-        B_mem_read_del1 <= B_mem_read;
-        B_mem_read_del2 <= B_mem_read_del1;
-        B_mem_read_del3 <= B_mem_read_del2;
-        B_mem_read_del4 <= B_mem_read_del3;
-        B_mem_q_valid   <= B_mem_read_del4;
-
-        B_mem_addr_del1 <= B_mem_addr;
-        B_mem_addr_del2 <= B_mem_addr_del1;
-        B_mem_addr_del3 <= B_mem_addr_del2;
-        B_mem_addr_del4 <= B_mem_addr_del3;
-    --  B_mem_q		<= (others => '0');
-    --  B_mem_q(25 downto 0)  <= B_mem_addr_del4;
-    end if;
-    end process;
+    dma_data_array(0) <= dma_data(0*32 + 31 downto 0*32);
+    dma_data_array(1) <= dma_data(1*32 + 31 downto 1*32);
+    dma_data_array(2) <= dma_data(2*32 + 31 downto 2*32);
+    dma_data_array(3) <= dma_data(3*32 + 31 downto 3*32);
+    dma_data_array(4) <= dma_data(4*32 + 31 downto 4*32);
+    dma_data_array(5) <= dma_data(5*32 + 31 downto 5*32);
+    dma_data_array(6) <= dma_data(6*32 + 31 downto 6*32);
+    dma_data_array(7) <= dma_data(7*32 + 31 downto 7*32);
 
 end architecture;

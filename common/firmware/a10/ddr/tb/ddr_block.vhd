@@ -23,11 +23,11 @@ generic (
 port (
     i_reset_n               : in std_logic;
     i_clk                   : in std_logic;
-    
+
     -- Control and status registers
     i_ddr_control           : in  std_logic_vector(31 downto 0);
     o_ddr_status            : out std_logic_vector(31 downto 0);
-    
+
     -- A interface
     o_A_ddr_calibrated      : out std_logic;
     o_A_ddr_ready           : out std_logic;
@@ -37,7 +37,7 @@ port (
     i_A_ddr_write           : in  std_logic;
     i_A_ddr_read            : in  std_logic;
     o_A_ddr_read_valid      : out std_logic;
-    
+
     -- B interface
     o_B_ddr_calibrated      : out std_logic;
     o_B_ddr_ready           : out std_logic;
@@ -104,7 +104,6 @@ architecture arch of ddr_block is
     signal A_cal_success:   std_logic;
     signal A_cal_fail:      std_logic;
 
-    signal A_clk:           std_logic;
     signal A_reset_n:       std_logic;
 
     signal A_ready:         std_logic;
@@ -133,6 +132,8 @@ architecture arch of ddr_block is
 
     signal A_errout :       std_logic_vector(31 downto 0);
     signal B_errout :       std_logic_vector(31 downto 0);
+
+    constant CLK_MHZ : real := 10000.0; -- MHz
 
 begin
 
@@ -166,8 +167,8 @@ begin
         -- IF to DDR
         M_cal_success       => A_cal_success,
         M_cal_fail          => A_cal_fail,
-        M_clk               => A_clk,
-        M_reset_n           => A_reset_n,
+        M_clk               => i_clk,
+        M_reset_n           => i_reset_n,
         M_ready             => A_ready,
         M_read              => A_read,
         M_write             => A_write,
@@ -182,7 +183,7 @@ begin
     port map(
         i_reset_n           => i_reset_n,
         i_clk               => i_clk,
-        
+
         -- Control and status registers
         i_ddr_control       => i_ddr_control(DDR_RANGE_B),
         o_ddr_status        => o_ddr_status(DDR_RANGE_B),
@@ -203,8 +204,8 @@ begin
         -- IF to DDR
         M_cal_success       => B_cal_success,
         M_cal_fail          => B_cal_fail,
-        M_clk               => B_clk,
-        M_reset_n           => B_reset_n,
+        M_clk               => i_clk,
+        M_reset_n           => i_reset_n,
         M_ready             => B_ready,
         M_read              => B_read,
         M_write             => B_write,
@@ -214,5 +215,121 @@ begin
         M_burstcount        => B_burstcount,
         M_readdatavalid     => B_readdatavalid
     );
+
+    --! simulation of ddr ram
+    e_ddr3_a : entity work.ip_ram
+    generic map (
+        ADDR_WIDTH_A    => 9,
+        ADDR_WIDTH_B    => 9,
+        DATA_WIDTH_A    => 512,
+        DATA_WIDTH_B    => 512--,
+    )
+    port map (
+        address_a       => A_mem_addr(8 downto 0),
+        address_b       => A_mem_addr(8 downto 0),
+        clock_a         => i_clk,
+        clock_b         => i_clk,
+        data_a          => A_mem_data,
+        data_b          => (others => '0'),
+        wren_a          => A_mem_write,
+        wren_b          => '0',
+        q_a             => open,
+        q_b             => A_mem_q--,
+    );
+
+    e_ddr3_b : entity work.ip_ram
+    generic map (
+        ADDR_WIDTH_A    => 9,
+        ADDR_WIDTH_B    => 9,
+        DATA_WIDTH_A    => 512,
+        DATA_WIDTH_B    => 512--,
+    )
+    port map (
+        address_a       => B_mem_addr(8 downto 0),
+        address_b       => B_mem_addr(8 downto 0),
+        clock_a         => i_clk,
+        clock_b         => i_clk,
+        data_a          => B_mem_data,
+        data_b          => (others => '0'),
+        wren_a          => B_mem_write,
+        wren_b          => '0',
+        q_a             => open,
+        q_b             => B_mem_q--,
+    );
+
+    -- Memready
+    process begin
+        A_ready <= '0';
+        B_ready <= '0';
+        wait for CLK_MHZ * 25;
+        A_ready <= '1';
+        B_ready <= '1';
+        wait for CLK_MHZ * 300;
+        A_ready <= '0';
+        B_ready <= '0';
+        wait for CLK_MHZ;
+        A_ready <= '1';
+        B_ready <= '1';
+        wait for CLK_MHZ * 250;
+        A_ready <= '0';
+        B_ready <= '0';
+        wait for CLK_MHZ;
+        A_ready <= '1';
+        B_ready <= '1';
+        wait for CLK_MHZ * 600;
+    end process;
+
+    A_cal_success <= '1';
+    B_cal_success <= '1';
+
+    -- Memory A simulation
+    process(i_clk, i_reset_n)
+    begin
+    if(i_reset_n <= '0') then
+        A_mem_q_valid   <= '0';
+        A_mem_read_del1 <= '0';
+        A_mem_read_del2 <= '0';
+        A_mem_read_del3 <= '0';
+        A_mem_read_del4 <= '0';
+    elsif(i_clk'event and i_clk = '1') then
+        A_mem_read_del1 <= A_mem_read;
+        A_mem_read_del2 <= A_mem_read_del1;
+        A_mem_read_del3 <= A_mem_read_del2;
+        A_mem_read_del4 <= A_mem_read_del3;
+        A_mem_q_valid   <= A_mem_read_del4;
+
+        A_mem_addr_del1 <= A_mem_addr;
+        A_mem_addr_del2 <= A_mem_addr_del1;
+        A_mem_addr_del3 <= A_mem_addr_del2;
+        A_mem_addr_del4 <= A_mem_addr_del3;
+    --  A_mem_q		<= (others => '0');
+    --  A_mem_q(25 downto 0)  <= A_mem_addr_del4;
+    end if;
+    end process;
+
+    -- Memory B simulation
+    process(i_clk, i_reset_n)
+    begin
+    if(i_reset_n <= '0') then
+        B_mem_q_valid   <= '0';
+        B_mem_read_del1 <= '0';
+        B_mem_read_del2 <= '0';
+        B_mem_read_del3 <= '0';
+        B_mem_read_del4 <= '0';
+    elsif(i_clk'event and i_clk = '1') then
+        B_mem_read_del1 <= B_mem_read;
+        B_mem_read_del2 <= B_mem_read_del1;
+        B_mem_read_del3 <= B_mem_read_del2;
+        B_mem_read_del4 <= B_mem_read_del3;
+        B_mem_q_valid   <= B_mem_read_del4;
+
+        B_mem_addr_del1 <= B_mem_addr;
+        B_mem_addr_del2 <= B_mem_addr_del1;
+        B_mem_addr_del3 <= B_mem_addr_del2;
+        B_mem_addr_del4 <= B_mem_addr_del3;
+    --  B_mem_q		<= (others => '0');
+    --  B_mem_q(25 downto 0)  <= B_mem_addr_del4;
+    end if;
+    end process;
 
 end architecture;

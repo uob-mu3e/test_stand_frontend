@@ -129,7 +129,7 @@ architecture arch of farm_block is
     signal ddr_dma_data : std_logic_vector(255 downto 0);
     signal ddr_data : std_logic_vector(511 downto 0);
     signal ddr_ts : std_logic_vector(47 downto 0);
-    signal ddr_wen, ddr_ready, ddr_sop, ddr_eop : std_logic;
+    signal ddr_wen, ddr_ready, ddr_sop, ddr_eop, ddr_err : std_logic;
 
     --! debug event builder
     signal builder_data : work.mu3e.link_t;
@@ -215,6 +215,7 @@ begin
         DATA_TYPE => DATA_TYPE,
         go_to_sh => 3,
         test_error => true,
+        is_farm => true,
         go_to_trailer => 4--,
     )
     port map (
@@ -438,6 +439,7 @@ begin
         i_ddr_ready     => ddr_ready,
         o_sop           => ddr_sop,
         o_eop           => ddr_eop,
+        o_err           => ddr_err,
 
         --! status counters
         --! 0: bank_builder_idle_not_header
@@ -451,68 +453,68 @@ begin
     );
 
 
---    --! Farm Data Path
---    --! ------------------------------------------------------------------------
---    --! ------------------------------------------------------------------------
---    --! ------------------------------------------------------------------------
---    e_farm_data_path : entity work.farm_data_path 
---    port map(
---        i_reset_n       => i_resets_n(RESET_BIT_DDR),
---        i_clk           => i_clk,
---
---        --! input from merging (first board) or links (subsequent boards)
---        data_in         => ddr_data,
---        data_en         => ddr_wen, 
---        ts_in           => ddr_ts(35 downto 4), -- 3:0 -> hit, 9:0 -> sub header
---        o_ddr_ready     => ddr_ready,
---        i_error         => ddr_error,
---        i_sop           => ddr_sop,
---        i_eop           => ddr_eop
---
---        --! input from PCIe demanding events
---        ts_req_A        => i_writeregs(DATA_REQ_A_W),
---        req_en_A        => i_regwritten(DATA_REQ_A_W),
---        ts_req_B        => i_writeregs(DATA_REQ_B_W),
---        req_en_B        => i_regwritten(DATA_REQ_B_W),
---        tsblock_done    => i_writeregs(DATA_TSBLOCK_DONE_W)(15 downto 0),
---        tsblocks        => o_readregs(DATA_TSBLOCKS_R),
---
---        --! output to DMA
---        o_data          => ddr_dma_data,
---        o_wen           => ddr_dma_wren,
---        o_endofevent    => ddr_endofevent,
---        i_dmamemhalffull=> i_dmamemhalffull,
---        i_num_req_events=> i_writeregs(FARM_REQ_EVENTS_W),
---        o_done          => ddr_dma_done,
---        i_wen           => i_writeregs(DMA_REGISTER_W)(DMA_BIT_ENABLE),
---        
---        --! status counters 
---        --! 0: cnt_skip_event_dma
---        --! 1: A_almost_full
---        --! 2: B_almost_full
---        --! 3: i_dmamemhalffull
---        o_counters      => counter_ddr,
---
---        --! interface to memory bank A
---        A_mem_ready     => A_mem_ready,
---        A_mem_calibrated=> A_mem_calibrated,
---        A_mem_addr      => A_mem_addr,
---        A_mem_data      => A_mem_data,
---        A_mem_write     => A_mem_write,
---        A_mem_read      => A_mem_read,
---        A_mem_q         => A_mem_q,
---        A_mem_q_valid   => A_mem_q_valid,
---
---        --! interface to memory bank B
---        B_mem_ready     => B_mem_ready,
---        B_mem_calibrated=> B_mem_calibrated,
---        B_mem_addr      => B_mem_addr,
---        B_mem_data      => B_mem_data,
---        B_mem_write     => B_mem_write,
---        B_mem_read      => B_mem_read,
---        B_mem_q         => B_mem_q,
---        B_mem_q_valid   => B_mem_q_valid--,
---    );
+   --! Farm Data Path
+   --! ------------------------------------------------------------------------
+   --! ------------------------------------------------------------------------
+   --! ------------------------------------------------------------------------
+   e_farm_data_path : entity work.farm_data_path
+   port map(
+       i_reset_n        => i_resets_n(RESET_BIT_DDR),
+       i_clk            => i_clk,
+
+       --! input from merging (first board) or links (subsequent boards)
+       i_data           => ddr_data,
+       i_data_en        => ddr_wen,
+       i_ts             => ddr_ts(35 downto 4), -- 3:0 -> hit, 9:0 -> sub header
+       o_ddr_ready      => ddr_ready,
+       i_err            => ddr_err,
+       i_sop            => ddr_sop,
+       i_eop            => ddr_eop,
+
+       --! input from PCIe demanding events
+       i_ts_req_A        => i_writeregs(DATA_REQ_A_W),
+       i_req_en_A        => i_regwritten(DATA_REQ_A_W),
+       i_ts_req_B        => i_writeregs(DATA_REQ_B_W),
+       i_req_en_B        => i_regwritten(DATA_REQ_B_W),
+       i_tsblock_done    => i_writeregs(DATA_TSBLOCK_DONE_W)(15 downto 0),
+       o_tsblocks        => o_readregs(DATA_TSBLOCKS_R),
+
+       --! output to DMA
+       o_dma_data       => ddr_dma_data,
+       o_dma_wren       => ddr_dma_wren,
+       o_dma_eoe        => ddr_endofevent,
+       i_dmamemhalffull => i_dmamemhalffull,
+       i_num_req_events => i_writeregs(FARM_REQ_EVENTS_W),
+       o_dma_done       => ddr_dma_done,
+       i_dma_wen        => i_writeregs(DMA_REGISTER_W)(DMA_BIT_ENABLE),
+
+       --! status counters
+       --! 0: cnt_skip_event_dma
+       --! 1: A_almost_full
+       --! 2: B_almost_full
+       --! 3: i_dmamemhalffull
+       o_counters      => counter_ddr,
+
+       --! interface to memory bank A
+       A_mem_ready     => A_mem_ready,
+       A_mem_calibrated=> A_mem_calibrated,
+       A_mem_addr      => A_mem_addr,
+       A_mem_data      => A_mem_data,
+       A_mem_write     => A_mem_write,
+       A_mem_read      => A_mem_read,
+       A_mem_q         => A_mem_q,
+       A_mem_q_valid   => A_mem_q_valid,
+
+       --! interface to memory bank B
+       B_mem_ready     => B_mem_ready,
+       B_mem_calibrated=> B_mem_calibrated,
+       B_mem_addr      => B_mem_addr,
+       B_mem_data      => B_mem_data,
+       B_mem_write     => B_mem_write,
+       B_mem_read      => B_mem_read,
+       B_mem_q         => B_mem_q,
+       B_mem_q_valid   => B_mem_q_valid--,
+   );
 
 
     --! Farm DDR Block

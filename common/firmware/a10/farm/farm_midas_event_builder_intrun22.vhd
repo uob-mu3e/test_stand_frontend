@@ -32,6 +32,7 @@ port(
     o_state_out         : out std_logic_vector(3 downto 0);
     o_sop               : out std_logic;
     o_eop               : out std_logic;
+    o_err               : out std_logic;
     
     --! status counters 
     --! 0: bank_builder_idle_not_header
@@ -376,6 +377,7 @@ begin
     if ( i_reset_n = '0' ) then
         o_sop               <= '0';
         o_eop               <= '0';
+        o_err               <= '0';
         o_wen               <= '0';
         o_event_ts          <= (others => '0');
         cnt_skip_event      <= (others => '0');
@@ -391,6 +393,7 @@ begin
         o_wen           <= '0';
         o_sop           <= '0';
         o_eop           <= '0';
+        o_err           <= '0';
 
         case event_counter_state is
         when waiting =>
@@ -399,6 +402,7 @@ begin
             if ( tag_fifo_empty = '0' ) then
                 r_fifo_en           <= '1';
                 event_last_ram_add  <= r_fifo_data(11 downto 4);
+                o_err               <= r_fifo_data(12);
                 o_event_ts          <= r_fifo_data(60 downto 13);
                 r_ram_add           <= r_ram_add + '1';
                 event_counter_state <= get_data;
