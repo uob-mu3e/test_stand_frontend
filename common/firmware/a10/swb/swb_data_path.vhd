@@ -109,7 +109,7 @@ begin
     o_counter(0) <= stream_counters(0);  --! e_stream_fifo full
     o_counter(1) <= builder_counters(0); --! bank_builder_idle_not_header
     o_counter(2) <= builder_counters(1); --! bank_builder_skip_event_dma
-    o_counter(3) <= builder_counters(2); --! bank_builder_ram_full
+    o_counter(3) <= builder_counters(2); --! bank_builder_event_dma
     o_counter(4) <= builder_counters(3); --! bank_builder_tag_fifo_full
     o_counter(5) <= events_to_farm_cnt;  --! events send to the farm
 

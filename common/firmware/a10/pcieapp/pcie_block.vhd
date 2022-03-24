@@ -41,7 +41,7 @@ port (
     pcie_led_x4         : out   std_logic; --//User LED - Labeled x4
     pcie_led_x8         : out   std_logic; --//User LED - Labeled x8
     pcie_perstn         : in    std_logic; --//PCIe Reset
-    pcie_smbclk         : in    std_logic := '1'; --//SMBus Clock (TR=0)
+    pcie_smbclk         : in    std_logic := '0'; --//SMBus Clock (TR=0)
     pcie_smbdat         : inout std_logic; --//SMBus Data (TR=0)
     pcie_waken          : out   std_logic; --//PCIe Wake-Up (TR=0)
 

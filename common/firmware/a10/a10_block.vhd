@@ -124,9 +124,6 @@ port (
     o_pcie0_regwritten  : out   std_logic_vector(63 downto 0);
     o_pcie0_resets_n    : out   std_logic_vector(31 downto 0);
 
-
-    top_pll_locked      : in    std_logic;
-
     o_reset_156_n       : out   std_logic;
     o_clk_156           : out   std_logic;
     o_clk_156_hz        : out   std_logic;
@@ -201,7 +198,6 @@ architecture arch of a10_block is
     signal pcie0_dma0_hfull : std_logic;
 
     --! pll lock counters
-    signal cnt_lock_top : std_logic_vector(30 downto 0);
     signal cnt_lock_125to156 : std_logic_vector(30 downto 0);
     signal cnt_lock_125to250 : std_logic_vector(30 downto 0);
     signal locked_125to156, locked_125to250 : std_logic;
@@ -241,20 +237,6 @@ begin
     o_pcie0_resets_n    <= pcie0_resets_n;
     o_pcie0_dma0_hfull  <= pcie0_dma0_hfull;
 
-    --! pll counters
-    e_cnt_top_locked : entity work.counter
-    generic map (
-        WRAP => true,
-        W => cnt_lock_top'length--,
-    )
-    port map (
-        o_cnt => cnt_lock_top,
-        i_ena => top_pll_locked,
-        i_reset_n => pcie0_reset_n,
-        i_clk => pcie0_clk
-    );
-    local_pcie0_rregs_A(CNT_PLL_TOP_REGISTER_R) <= top_pll_locked & cnt_lock_top;
-
     e_cnt_125to156 : entity work.counter
     generic map (
         WRAP => true,
@@ -262,7 +244,7 @@ begin
     )
     port map (
         o_cnt => cnt_lock_125to156,
-        i_ena => locked_125to156,
+        i_ena => not locked_125to156,
         i_reset_n => pcie0_reset_n,
         i_clk => pcie0_clk--,
     );
@@ -275,7 +257,7 @@ begin
     )
     port map (
         o_cnt => cnt_lock_125to250,
-        i_ena => locked_125to250,
+        i_ena => not locked_125to250,
         i_reset_n => pcie0_reset_n,
         i_clk => pcie0_clk
     );
@@ -302,15 +284,15 @@ begin
     o_clk_250 <= clk_250;
 
     e_reset_156_n : entity work.reset_sync
-    port map ( o_reset_n => reset_156_n, i_reset_n => i_reset_125_n, i_clk => clk_156 );
+    port map ( o_reset_n => reset_156_n, i_reset_n => i_reset_n, i_clk => clk_156 );
     o_reset_156_n <= reset_156_n;
 
     e_reset_250_n : entity work.reset_sync
-    port map ( o_reset_n => reset_250_n, i_reset_n => i_reset_125_n, i_clk => clk_250 );
+    port map ( o_reset_n => reset_250_n, i_reset_n => i_reset_n, i_clk => clk_250 );
     o_reset_250_n <= reset_250_n;
 
     e_pcie0_reset_n : entity work.reset_sync
-    port map ( o_reset_n => pcie0_reset_n, i_reset_n => i_reset_125_n, i_clk => pcie0_clk );
+    port map ( o_reset_n => pcie0_reset_n, i_reset_n => i_reset_n, i_clk => pcie0_clk );
     o_pcie0_reset_n <= pcie0_reset_n;
 
     e_clk_125_hz : entity work.clkdiv
@@ -335,11 +317,11 @@ begin
     --! generate reset regs for 250 MHz clk for pcie0
     e_reset_logic_pcie : entity work.reset_logic
     port map (
-        rst_n          => pcie0_reset_n,
-        reset_register => pcie0_wregs(RESET_REGISTER_W),
-        resets         => open,
-        resets_n       => pcie0_resets_n,
-        clk            => pcie0_clk--,
+        i_reset_register    => pcie0_wregs(RESET_REGISTER_W),
+        o_resets_n          => pcie0_resets_n,
+
+        i_reset_n           => pcie0_reset_n,
+        i_clk               => pcie0_clk--,
     );
 
     --! blinky leds to check the wregs

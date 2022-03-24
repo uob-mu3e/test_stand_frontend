@@ -23,8 +23,29 @@
 #include <fcntl.h>
 
 #include "mudaq_device.h"
+#include "a10_counters.h"
 
 using namespace std;
+
+uint32_t read_counters(mudaq::DmaMudaqDevice & mu, uint32_t write_value, uint8_t link, uint8_t detector, uint8_t type)
+{
+    // SWB_COUNTER_ADDR_RANGE 7 downto 0
+    // SWB_LINK_RANGE 15 downto 8 Link addrs for link specific counters
+    // SWB_DETECTOR_RANGE 17 dowto 16 detector for readout, 00->PIXEL US, 01->PIXEL DS, 10->SCIFI
+    // SWB_COUNTER_TYPE 18 counter type 0=link, 1=datapath
+    mu.write_register(SWB_COUNTER_REGISTER_W, write_value | (link << 8) | (detector << 16) | (type << 18));
+    return mu.read_register_ro(SWB_COUNTER_REGISTER_R);
+}
+
+uint32_t cntBits(uint32_t n)
+{
+    uint32_t count = 0;
+    while (n) {
+        count += n & 1;
+        n >>= 1;
+    }
+    return count;
+}
 
 void print_usage() {
     cout << "Usage: " << endl;
@@ -159,50 +180,87 @@ int main(int argc, char *argv[]) {
     if ( atoi(argv[1]) == 4 ) mu.write_register(mask_n_add, strtol(argv[4], NULL, 16));
     if ( atoi(argv[1]) == 4 ) mu.write_register(SWB_READOUT_STATE_REGISTER_W, 0x44| (set_pixel << 7));
 
-    // Enable register on FPGA for continous readout and enable dma
-    mu.enable_continous_readout(0);
-
+    char cmd;
     usleep(10);
     mu.write_register(RESET_REGISTER_W, 0x0);
 
-    for(int i=0; i < 8; i++)
-        cout << hex << "0x" <<  dma_buf[i] << " ";
-    cout << endl;
+    while (1) {
+        
+        printf("  [1] => trigger a readout \n");
+        printf("  [2] => readout counters \n");
+        printf("  [q] => return \n");
+        cout << "Select entry ...";
+        cin >> cmd;
+        switch(cmd) {
+        case '1':
+            // start dma
+            mu.enable_continous_readout(0);
+            for(int i=0; i < 8; i++)
+                cout << hex << "0x" <<  dma_buf[i] << " ";
+            cout << endl;
 
-    if (atoi(argv[3]) == 1) {
-        for(int i=0; i < 8; i++)
-            cout << hex << "0x" <<  dma_buf[i+8] << " ";
-        cout << endl;
-        int cnt_loop = 0;
-        // wait for requested data
-        while ( (mu.read_register_ro(EVENT_BUILD_STATUS_REGISTER_R) & 1) == 0 ) {
-            if ( cnt_loop == 100000 ) {
-                for(int i=0; i < 100; i++) cout << hex << "0x" <<  dma_buf[mu.last_endofevent_addr() * 8 - 1 + i] << " ";
+            if (atoi(argv[3]) == 1) {
+                for(int i=0; i < 8; i++)
+                    cout << hex << "0x" <<  dma_buf[i+8] << " ";
                 cout << endl;
-                cnt_loop = 0;
+                int cnt_loop = 0;
+                // wait for requested data
+                while ( (mu.read_register_ro(EVENT_BUILD_STATUS_REGISTER_R) & 1) == 0 ) {
+                    if ( cnt_loop == 100000 ) {
+                        cout << hex << "0x" << mu.read_register_ro(DMA_CNT_WORDS_REGISTER_R) << endl;
+                        for(int i=0; i < 100; i++) cout << hex << "0x" <<  dma_buf[mu.last_endofevent_addr() * 8 - 1 + i] << " "; cout << endl;
+                        cnt_loop = 0;
+                    }
+                    cnt_loop = cnt_loop + 1;
+                }
             }
-            cnt_loop = cnt_loop + 1;
-        }
-    }
 
-    if ( atoi(argv[3]) != 1) {
-        for ( int i = 0; i < 3; i++ ) {
-            cout << "sleep " << i << "/3 s" << endl;
-            sleep(i);
+            if ( atoi(argv[3]) != 1) {
+                for ( int i = 0; i < 3; i++ ) {
+                    cout << "sleep " << i << "/3 s" << endl;
+                    sleep(i);
+                }
+            }
+            // stop dma
+            mu.disable();
+            break;
+        case '2':
+            cout << "DataPath counters" << endl;
+            cout << "SWB_STREAM_FIFO_FULL_CNT: 0x" << hex << read_counters(mu, SWB_STREAM_FIFO_FULL_CNT, 0, 0, 1) << endl;
+            cout << "SWB_BANK_BUILDER_IDLE_NOT_HEADER_CNT: 0x" << hex << read_counters(mu, SWB_BANK_BUILDER_IDLE_NOT_HEADER_CNT, 0, 0, 1) << endl;
+            cout << "SWB_BANK_BUILDER_SKIP_EVENT_CNT: 0x" << hex << read_counters(mu, SWB_BANK_BUILDER_SKIP_EVENT_CNT, 0, 0, 1) << endl;
+            cout << "SWB_BANK_BUILDER_EVENT_CNT: 0x" << hex << read_counters(mu, SWB_BANK_BUILDER_EVENT_CNT, 0, 0, 1) << endl;
+            cout << "SWB_BANK_BUILDER_TAG_FIFO_FULL_CNT: 0x" << hex << read_counters(mu, SWB_BANK_BUILDER_TAG_FIFO_FULL_CNT, 0, 0, 1) << endl;
+            cout << "SWB_EVENTS_TO_FARM_CNT: 0x" << hex << read_counters(mu, SWB_EVENTS_TO_FARM_CNT, 0, 0, 1) << endl;
+
+            cout << "Link counters" << endl;
+            for ( uint32_t i = 0; i < cntBits(strtol(argv[4], NULL, 16)); i++ ) {
+                cout << "SWB_LINK_FIFO_ALMOST_FULL_CNT: 0x" << hex << read_counters(mu, SWB_LINK_FIFO_ALMOST_FULL_CNT, i, 0, 1) << endl;
+                cout << "SWB_LINK_FIFO_FULL_CNT: 0x" << hex << read_counters(mu, SWB_LINK_FIFO_FULL_CNT, i, 0, 1) << endl;
+                cout << "SWB_SKIP_EVENT_CNT: 0x" << hex << read_counters(mu, SWB_SKIP_EVENT_CNT, i, 0, 1) << endl;
+                cout << "SWB_EVENT_CNT: 0x" << hex << read_counters(mu, SWB_EVENT_CNT, i, 0, 1) << endl;
+                cout << "SWB_SUB_HEADER_CNT: 0x" << hex << read_counters(mu, SWB_SUB_HEADER_CNT, i, 0, 1) << endl;
+            }
+            break;
+        case 'q':
+            goto exit_loop;
+        default:
+            printf("invalid command: '%c'\n", cmd);
         }
     }
+    exit_loop: ;
 
     cout << "start to write file" << endl;
 
     // stop dma
     mu.disable();
     // stop readout
+    mu.write_register(RESET_REGISTER_W, reset_regs);
     mu.write_register(DATAGENERATOR_DIVIDER_REGISTER_W, 0x0);
     mu.write_register(SWB_READOUT_STATE_REGISTER_W, 0x0);
     mu.write_register(SWB_LINK_MASK_PIXEL_REGISTER_W, 0x0);
     mu.write_register(SWB_READOUT_LINK_REGISTER_W, 0x0);
     mu.write_register(GET_N_DMA_WORDS_REGISTER_W, 0x0);
-    mu.write_register(RESET_REGISTER_W, reset_regs);
 
     // output data
     auto fout = fopen("memory_content.txt", "w");

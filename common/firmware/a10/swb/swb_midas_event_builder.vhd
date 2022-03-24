@@ -61,25 +61,27 @@ architecture arch of swb_midas_event_builder is
     signal serial_number, time_tmp, type_bank, flags, bank_size_cnt, event_size_cnt : std_logic_vector(31 downto 0);
 
     -- event readout state machine
-    type event_counter_state_type is (waiting, get_data, runing, skip_event, write_4kb_padding);
+    type event_counter_state_type is (waiting, get_data, runing, skip_event, wait_last_word, write_4kb_padding);
     signal event_counter_state : event_counter_state_type;
-    signal cnt_4kb_done : std_logic;
+    signal done, word_counter_written : std_logic;
     signal event_last_ram_add : std_logic_vector(8 downto 0);
     signal word_counter, word_counter_endofevent, cnt_4kb : std_logic_vector(31 downto 0);
 
-    -- error cnt
+    -- counters
     signal cnt_tag_fifo_full : std_logic_vector(31 downto 0);
     signal cnt_ram_full : std_logic_vector(31 downto 0);
-    signal cnt_skip_event_dma : std_logic_vector(31 downto 0);
+    signal cnt_skip_event_dma, cnt_event_dma : std_logic_vector(31 downto 0);
     signal cnt_idle_not_header : std_logic_vector(31 downto 0);
 
 begin
 
+    --! set output done
+    o_done <= done;
+
     --! counter
     o_counters(0) <= cnt_idle_not_header;
     o_counters(1) <= cnt_skip_event_dma;
-    --! TODO implement bank_builder_ram_full
-    o_counters(2) <= (others => '0');
+    o_counters(2) <= cnt_event_dma;
     e_cnt_tag_fifo : entity work.counter
     generic map ( WRAP => true, W => 32 )
     port map ( o_cnt => o_counters(3), i_ena => tag_fifo_full, i_reset_n => i_reset_n, i_clk => i_clk );
@@ -363,11 +365,12 @@ begin
     begin
     if ( i_reset_n = '0' ) then
         o_wen               <= '0';
-        cnt_4kb_done        <= '0';
+        done                <= '0';
         o_endofevent        <= '0';
-        o_state_out         <= x"0";
+        word_counter_written<= '0';
+        o_state_out         <= x"A";
         cnt_skip_event_dma  <= (others => '0');
-        o_done              <= '0';
+        cnt_event_dma       <= (others => '0');
         r_fifo_en           <= '0';
         is_error_q          <= '0';
         r_ram_add           <= (others => '1');
@@ -379,49 +382,47 @@ begin
         --
     elsif rising_edge(i_clk) then
 
-        o_done          <= '0';
         r_fifo_en       <= '0';
-        o_wen    <= '0';
+        o_wen           <= '0';
         o_endofevent    <= '0';
 
         if ( i_wen = '0' ) then
             word_counter <= (others => '0');
-            cnt_4kb_done <= '0';
-        end if;
-
-        if ( i_wen = '1' and word_counter = (word_counter'range => '0') and cnt_4kb_done = '1' ) then
-            o_done <= '1';
-            o_dma_cnt_words <= word_counter_endofevent;
+            done <= '0';
+            word_counter_written<= '0';
         end if;
 
         case event_counter_state is
         when waiting =>
             o_state_out             <= x"A";
-            if ( i_wen = '0' and tag_fifo_empty = '0' ) then
-                event_counter_state <= skip_event;
-                cnt_skip_event_dma  <= cnt_skip_event_dma + '1';
-            elsif ( i_wen = '1' and tag_fifo_empty = '0' and i_get_n_words /= (i_get_n_words'range => '0') ) then
-                word_counter        <= i_get_n_words;
+            if ( i_wen = '1' and tag_fifo_empty = '0' and i_get_n_words /= (i_get_n_words'range => '0') and done = '0' and i_dmamemhalffull = '0' ) then
+                if ( word_counter_written = '0' ) then
+                    word_counter            <= i_get_n_words;
+                    word_counter_written    <= '1';
+                end if;
                 r_fifo_en           <= '1';
                 event_last_ram_add  <= r_fifo_data(11 downto 3);
                 is_error_q          <= r_fifo_data(12);
                 r_ram_add           <= r_ram_add + '1';
                 event_counter_state <= get_data;
+                cnt_event_dma       <= cnt_event_dma + '1';
+            elsif ( tag_fifo_empty = '0' ) then
+                event_counter_state <= skip_event;
+                r_fifo_en           <= '1';
+                event_last_ram_add  <= r_fifo_data(11 downto 3);
+                is_error_q          <= r_fifo_data(12);
+                r_ram_add           <= r_ram_add + '1';
+                cnt_skip_event_dma  <= cnt_skip_event_dma + '1';
             end if;
 
         when get_data =>
             o_state_out             <= x"B";
-            if ( i_dmamemhalffull = '1' ) then
-                event_counter_state <= skip_event;
-                cnt_skip_event_dma  <= cnt_skip_event_dma + '1';
-            else
-                o_wen <= i_wen;
-                if ( word_counter /= (word_counter'range => '0') ) then
-                    word_counter <= word_counter - '1';
-                end if;
-                word_counter_endofevent <= word_counter_endofevent + '1';
-                event_counter_state     <= runing;
+            o_wen <= i_wen;
+            if ( word_counter /= (word_counter'range => '0') ) then
+                word_counter <= word_counter - '1';
             end if;
+            word_counter_endofevent <= word_counter_endofevent + '1';
+            event_counter_state     <= runing;
             r_ram_add <= r_ram_add + '1';
 
         when runing =>
@@ -432,9 +433,8 @@ begin
             end if;
             word_counter_endofevent <= word_counter_endofevent + '1';
             if(r_ram_add = event_last_ram_add - '1') then
-                o_endofevent        <= '1'; -- end of event
                 if ( is_error_q = '1' or word_counter = (word_counter'range => '0') ) then
-                    event_counter_state <= write_4kb_padding;
+                    event_counter_state <= wait_last_word;
                     cnt_4kb             <= (others => '0');
                 else
                     event_counter_state <= waiting;
@@ -443,6 +443,10 @@ begin
                 r_ram_add <= r_ram_add + '1';
             end if;
 
+         when wait_last_word =>
+            o_endofevent        <= '1'; -- end of last event
+            event_counter_state <= write_4kb_padding;
+
          when write_4kb_padding =>
             if ( is_error_q = '1' ) then
                 is_error_q <= '0';
@@ -450,7 +454,8 @@ begin
                 o_state_out <= x"D";
                 o_wen       <= i_wen;
                 if ( cnt_4kb = "01111111" ) then
-                    cnt_4kb_done <= '1';
+                    done <= '1';
+                    o_dma_cnt_words <= word_counter_endofevent;
                     event_counter_state <= waiting;
                 else
                     cnt_4kb <= cnt_4kb + '1';
@@ -460,14 +465,14 @@ begin
         when skip_event =>
             o_state_out <= x"E";
             if(r_ram_add = event_last_ram_add - '1') then
-                event_counter_state	<= waiting;
+                event_counter_state <= waiting;
             else
                 r_ram_add <= r_ram_add + '1';
             end if;
             
         when others =>
-                o_state_out <= x"D";
-                event_counter_state	<= waiting;
+            o_state_out <= x"F";
+            event_counter_state	<= waiting;
 
         end case;
 

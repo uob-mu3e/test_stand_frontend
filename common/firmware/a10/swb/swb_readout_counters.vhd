@@ -7,9 +7,10 @@ use work.a10_pcie_registers.all;
 
 entity swb_readout_counters is
 generic (
-    g_A_CNT             : positive := 4;
-    g_NLINKS_DATA_SCIFI : positive := 4;
-    g_NLINKS_DATA_PIXEL : positive := 10--;
+    g_A_CNT                 : positive := 4;
+    g_NLINKS_DATA_PIXEL_US  : positive := 5;
+    g_NLINKS_DATA_PIXEL_DS  : positive := 5;
+    g_NLINKS_DATA_SCIFI     : positive := 5--;
 );
 port (
     --! register inputs for pcie0
@@ -37,13 +38,22 @@ end entity;
 --! the counters for a given input addr
 architecture arch of swb_readout_counters is
 
-    signal swb_counter_addr, link_id, link_counter_addr : integer := 0;
+    signal swb_counter_addr, link_id, link_counter_addr, link_addr, datapath_counter_addr : integer := 0;
 
 begin
 
-    swb_counter_addr <= to_integer(unsigned(i_wregs_add(SWB_COUNTER_ADDR_RANGE)));
     link_id <= to_integer(unsigned(i_wregs_add(SWB_LINK_RANGE)));
-    link_counter_addr <= swb_counter_addr + link_id * 5;
+    swb_counter_addr <= to_integer(unsigned(i_wregs_add(SWB_COUNTER_ADDR_RANGE)));
+
+    link_addr <= NDATAPATH_CNTS + swb_counter_addr + link_id * NLINK_CNTS;
+    datapath_counter_addr <= swb_counter_addr                                                                                                             when i_wregs_add(SWB_DETECTOR_RANGE) = "00" else
+                             swb_counter_addr + (NDATAPATH_CNTS+g_NLINKS_DATA_PIXEL_US*NLINK_CNTS)                                                        when i_wregs_add(SWB_DETECTOR_RANGE) = "01" else
+                             swb_counter_addr + (NDATAPATH_CNTS+g_NLINKS_DATA_PIXEL_US*NLINK_CNTS) + (NDATAPATH_CNTS+g_NLINKS_DATA_PIXEL_DS*NLINK_CNTS)   when i_wregs_add(SWB_DETECTOR_RANGE) = "10" else
+                             0;
+    link_counter_addr     <= link_addr                                                                                                             when i_wregs_add(SWB_DETECTOR_RANGE) = "00" else
+                             link_addr + (NDATAPATH_CNTS+g_NLINKS_DATA_PIXEL_US*NLINK_CNTS)                                                        when i_wregs_add(SWB_DETECTOR_RANGE) = "01" else
+                             link_addr + (NDATAPATH_CNTS+g_NLINKS_DATA_PIXEL_US*NLINK_CNTS) + (NDATAPATH_CNTS+g_NLINKS_DATA_PIXEL_DS*NLINK_CNTS)   when i_wregs_add(SWB_DETECTOR_RANGE) = "10" else
+                             0;
 
     --! map counters pixel
     process(i_clk, i_reset_n)
@@ -54,14 +64,11 @@ begin
         --
     elsif ( rising_edge(i_clk) ) then
         o_pcie_addr <= i_wregs_add;
-        case swb_counter_addr is
-        when SWB_STREAM_FIFO_FULL_PIXEL_CNT | SWB_BANK_BUILDER_IDLE_NOT_HEADER_PIXEL_CNT | SWB_BANK_BUILDER_RAM_FULL_PIXEL_CNT | SWB_BANK_BUILDER_TAG_FIFO_FULL_PIXEL_CNT =>
-            o_pcie_data <= i_counter(swb_counter_addr);
-        when SWB_LINK_FIFO_ALMOST_FULL_PIXEL_CNT | SWB_LINK_FIFO_FULL_PIXEL_CNT | SWB_SKIP_EVENT_PIXEL_CNT | SWB_EVENT_PIXEL_CNT | SWB_SUB_HEADER_PIXEL_CNT =>
+        if ( i_wregs_add(SWB_COUNTER_TYPE) = '0' ) then
             o_pcie_data <= i_counter(link_counter_addr);
-        when others =>
-            null;
-        end case;
+        else
+            o_pcie_data <= i_counter(swb_counter_addr);
+        end if;
 
     end if;
     end process;

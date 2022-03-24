@@ -19,6 +19,7 @@ target_link_libraries(ddr3_test libmudaq -lutil)
 target_link_libraries(swb_dmatest libmudaq -lutil)
 target_link_libraries(reset_link_a10_test libmudaq -lutil)
 target_include_directories(test_slowcontrol PRIVATE ${LIBSLOWCONTROL_DIR})
+target_include_directories(swb_dmatest PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/../../common/firmware/include)
 
 if(CUDA_FOUND)
     install(TARGETS rw ddr3_test swb_dmatest gpu_dmatest reset_link_a10_test

@@ -127,9 +127,10 @@ begin
     -- TODO: merger counters, sync to MIDAS
     e_counters : entity work.swb_readout_counters
     generic map (
-        g_A_CNT             => counter_swb'left+1,
-        g_NLINKS_DATA_SCIFI => g_NLINKS_DATA_SCIFI,
-        g_NLINKS_DATA_PIXEL => g_NLINKS_DATA_PIXEL--,
+        g_A_CNT                 => counter_swb'left+1,
+        g_NLINKS_DATA_PIXEL_US  => g_NLINKS_DATA_PIXEL_US,
+        g_NLINKS_DATA_PIXEL_DS  => g_NLINKS_DATA_PIXEL_DS,
+        g_NLINKS_DATA_SCIFI     => g_NLINKS_DATA_SCIFI--,
     )
     port map (
         --! register inputs for pcie0

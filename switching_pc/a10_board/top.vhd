@@ -185,6 +185,9 @@ begin
         outclk => clk_125--,
     );
 
+    e_clk_pcieref_hz : entity work.clkdiv
+    generic map ( P => 100000000 )
+    port map ( o_clk => LED(4), i_reset_n => reset_50_n, i_clk => PCIE_REFCLK_p );
 
     --! A10 block
     --! ------------------------------------------------------------------------

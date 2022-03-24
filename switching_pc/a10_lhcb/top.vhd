@@ -101,8 +101,7 @@ architecture arch of top is
     constant g_NLINKS_DATA_SCIFI : positive := 2;
     constant g_NLINKS_FARM_TILE  : positive := 8;
     constant g_NLINKS_DATA_TILE  : positive := 12;
-    
-    
+
     signal led : std_logic_vector(7 downto 0) := (others => '0');
     signal reset_n : std_logic;
 
@@ -116,7 +115,7 @@ architecture arch of top is
     -- global 125 MHz clock
     signal clk_125, reset_125_n : std_logic;
 
-    signal clk_156, reset_156_n, clk_250, reset_250_n : std_logic;
+    signal clk_250, reset_250_n : std_logic;
 
     -- 250 MHz pcie clock
     signal pcie0_clk : std_logic;
@@ -188,7 +187,9 @@ begin
     A10_SI5345_1_JITTER_CLOCK_P <= clk_125;
     A10_SI5345_2_JITTER_CLOCK_P <= clk_125;
 
-
+    e_pcieref_clk_hz : entity work.clkdiv
+    generic map ( P => 100000000 )
+    port map ( o_clk => led(4), i_reset_n => reset_n, i_clk => i_pcie0_refclk );
 
     --! A10 block
     --! ------------------------------------------------------------------------
@@ -319,10 +320,7 @@ begin
         o_pcie0_resets_n                => pcie0_resets_n,
 
         -- resets clk
-        top_pll_locked                  => locked_100to125,
 
-        o_reset_156_n                   => reset_156_n,
-        o_clk_156                       => clk_156,
         o_clk_156_hz                    => led(2),
 
         i_reset_125_n                   => reset_125_n,

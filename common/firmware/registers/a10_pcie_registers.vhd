@@ -81,8 +81,10 @@ package a10_pcie_registers is
         constant SWB_READOUT_LINK_REGISTER_W                    : integer := 16#14#; -- DOC: Not used at the moment |  SWB & FARM
         
         constant SWB_COUNTER_REGISTER_W                         : integer := 16#15#; -- DOC: Register to readout counter values from the SWB, to have more information about the counter look at a10_counter.md | SWB
-            subtype SWB_COUNTER_ADDR_RANGE                          is integer range 7 downto 0;    -- DOC: Addr of the counter which should be read out | SWB
-            subtype SWB_LINK_RANGE                                  is integer range 15 downto 8;   -- DOC: Link addrs for link specific counters (#events, #subheaders, etc.) | SWB
+            subtype SWB_COUNTER_ADDR_RANGE                          is integer range 7 downto 0;        -- DOC: Addr of the counter which should be read out | SWB
+            subtype SWB_LINK_RANGE                                  is integer range 15 downto 8;       -- DOC: Link addrs for link specific counters (#events, #subheaders, etc.) | SWB
+            subtype SWB_DETECTOR_RANGE                              is integer range 17 downto 16;      -- DOC: which detector we want to readout, 00->PIXEL US, 01->PIXEL DS, 10->SCIFI | SWB
+            constant SWB_COUNTER_TYPE                               : integer := 18;                    -- DOC: counter type 0=link, 1=datapath | SWB
             
         constant FARM_READOUT_STATE_REGISTER_W                  : integer := 16#16#; -- DOC: Readout state | FARM
         constant FARM_DATA_TYPE_REGISTER_W                      : integer := 16#17#; -- DOC: Data type for readout | FARM
@@ -161,9 +163,8 @@ package a10_pcie_registers is
         constant EVENT2COUNTER64_REGISTER_R                     : integer := 16#08#;
         constant inaddr32_r                                     : integer := 16#09#;
         constant inaddr32_w                                     : integer := 16#10#;
-        constant CNT_PLL_TOP_REGISTER_R                         : integer := 16#0A#;
-        constant CNT_PLL_156_REGISTER_R                         : integer := 16#0B#;
-        constant CNT_PLL_250_REGISTER_R                         : integer := 16#0C#;
+        constant CNT_PLL_156_REGISTER_R                         : integer := 16#0A#;
+        constant CNT_PLL_250_REGISTER_R                         : integer := 16#0B#;
         constant DMA_STATUS_R                                   : integer := 16#11#;
             constant DMA_DATA_WEN                                   : integer:= 0;
             constant DMA_CONTROL_WEN                                : integer:= 1;
