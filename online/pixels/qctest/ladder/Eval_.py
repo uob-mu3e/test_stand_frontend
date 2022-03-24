@@ -1,3 +1,10 @@
+# Author A. Loreti, March 2022, cosmic run. andrea.loreti@physics.ox.ac.uk
+
+# Summary: Eval evaluates the quality of the Ladder
+# User input: ladder ID 
+# Input from MIDAS: DACScan Input/Outputs and IV Input/Outputs
+# Output: the total score for the ladder
+
 import matplotlib.pyplot as plt
 import numpy as np
 import midas.client
