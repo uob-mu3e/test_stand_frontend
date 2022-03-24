@@ -151,7 +151,7 @@ int main(int argc, char *argv[]) {
     mu.write_register(GET_N_DMA_WORDS_REGISTER_W, max_requested_words / (256/32));
 
     // setup datagen
-    mu.write_register(DATAGENERATOR_DIVIDER_REGISTER_W, 0x2);
+    mu.write_register(DATAGENERATOR_DIVIDER_REGISTER_W, 0x10);
 
     uint32_t mask_n_add;
     if (atoi(argv[5]) == 1) mask_n_add = SWB_LINK_MASK_SCIFI_REGISTER_W;
@@ -188,6 +188,7 @@ int main(int argc, char *argv[]) {
         
         printf("  [1] => trigger a readout \n");
         printf("  [2] => readout counters \n");
+        printf("  [3] => reset stuff \n");
         printf("  [q] => return \n");
         cout << "Select entry ...";
         cin >> cmd;
@@ -235,12 +236,33 @@ int main(int argc, char *argv[]) {
 
             cout << "Link counters" << endl;
             for ( uint32_t i = 0; i < cntBits(strtol(argv[4], NULL, 16)); i++ ) {
-                cout << "SWB_LINK_FIFO_ALMOST_FULL_CNT: 0x" << hex << read_counters(mu, SWB_LINK_FIFO_ALMOST_FULL_CNT, i, 0, 1) << endl;
-                cout << "SWB_LINK_FIFO_FULL_CNT: 0x" << hex << read_counters(mu, SWB_LINK_FIFO_FULL_CNT, i, 0, 1) << endl;
-                cout << "SWB_SKIP_EVENT_CNT: 0x" << hex << read_counters(mu, SWB_SKIP_EVENT_CNT, i, 0, 1) << endl;
-                cout << "SWB_EVENT_CNT: 0x" << hex << read_counters(mu, SWB_EVENT_CNT, i, 0, 1) << endl;
-                cout << "SWB_SUB_HEADER_CNT: 0x" << hex << read_counters(mu, SWB_SUB_HEADER_CNT, i, 0, 1) << endl;
+                cout << "SWB_LINK_FIFO_ALMOST_FULL_CNT: 0x" << hex << read_counters(mu, SWB_LINK_FIFO_ALMOST_FULL_CNT, i, 0, 0) << endl;
+                cout << "SWB_LINK_FIFO_FULL_CNT: 0x" << hex << read_counters(mu, SWB_LINK_FIFO_FULL_CNT, i, 0, 0) << endl;
+                cout << "SWB_SKIP_EVENT_CNT: 0x" << hex << read_counters(mu, SWB_SKIP_EVENT_CNT, i, 0, 0) << endl;
+                cout << "SWB_EVENT_CNT: 0x" << hex << read_counters(mu, SWB_EVENT_CNT, i, 0, 0) << endl;
+                cout << "SWB_SUB_HEADER_CNT: 0x" << hex << read_counters(mu, SWB_SUB_HEADER_CNT, i, 0, 0) << endl;
             }
+            break;
+        case '3':
+            mu.write_register(RESET_REGISTER_W, reset_regs);
+            usleep(10);
+            cout << "DataPath counters" << endl;
+            cout << "SWB_STREAM_FIFO_FULL_CNT: 0x" << hex << read_counters(mu, SWB_STREAM_FIFO_FULL_CNT, 0, 0, 1) << endl;
+            cout << "SWB_BANK_BUILDER_IDLE_NOT_HEADER_CNT: 0x" << hex << read_counters(mu, SWB_BANK_BUILDER_IDLE_NOT_HEADER_CNT, 0, 0, 1) << endl;
+            cout << "SWB_BANK_BUILDER_SKIP_EVENT_CNT: 0x" << hex << read_counters(mu, SWB_BANK_BUILDER_SKIP_EVENT_CNT, 0, 0, 1) << endl;
+            cout << "SWB_BANK_BUILDER_EVENT_CNT: 0x" << hex << read_counters(mu, SWB_BANK_BUILDER_EVENT_CNT, 0, 0, 1) << endl;
+            cout << "SWB_BANK_BUILDER_TAG_FIFO_FULL_CNT: 0x" << hex << read_counters(mu, SWB_BANK_BUILDER_TAG_FIFO_FULL_CNT, 0, 0, 1) << endl;
+            cout << "SWB_EVENTS_TO_FARM_CNT: 0x" << hex << read_counters(mu, SWB_EVENTS_TO_FARM_CNT, 0, 0, 1) << endl;
+
+            cout << "Link counters" << endl;
+            for ( uint32_t i = 0; i < cntBits(strtol(argv[4], NULL, 16)); i++ ) {
+                cout << "SWB_LINK_FIFO_ALMOST_FULL_CNT: 0x" << hex << read_counters(mu, SWB_LINK_FIFO_ALMOST_FULL_CNT, i, 0, 0) << endl;
+                cout << "SWB_LINK_FIFO_FULL_CNT: 0x" << hex << read_counters(mu, SWB_LINK_FIFO_FULL_CNT, i, 0, 0) << endl;
+                cout << "SWB_SKIP_EVENT_CNT: 0x" << hex << read_counters(mu, SWB_SKIP_EVENT_CNT, i, 0, 0) << endl;
+                cout << "SWB_EVENT_CNT: 0x" << hex << read_counters(mu, SWB_EVENT_CNT, i, 0, 0) << endl;
+                cout << "SWB_SUB_HEADER_CNT: 0x" << hex << read_counters(mu, SWB_SUB_HEADER_CNT, i, 0, 0) << endl;
+            }
+            mu.write_register(RESET_REGISTER_W, 0x0);
             break;
         case 'q':
             goto exit_loop;
