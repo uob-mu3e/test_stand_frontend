@@ -34,6 +34,8 @@ port (
     o_tx_clkout         : out   std_logic_vector(g_CHANNELS-1 downto 0);
     i_tx_clkin          : in    std_logic_vector(g_CHANNELS-1 downto 0);
 
+    o_rx_locked         : out   std_logic_vector(g_CHANNELS-1 downto 0);
+
     -- avalon slave interface
     -- # address units words
     -- # read latency 0
@@ -195,6 +197,13 @@ begin
             i_reset_n => rx(i).reset_n, i_clk => i_rx_clkin(i)
         );
     end generate;
+
+    process(all)
+    begin
+        for i in o_rx_locked'range loop
+            o_rx_locked(i) <= rx(i).locked;
+        end loop;
+    end process;
 
     -- av_ctrl process, avalon iface
     process(i_clk, i_reset_n)
