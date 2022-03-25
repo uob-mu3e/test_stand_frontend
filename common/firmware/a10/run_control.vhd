@@ -5,6 +5,8 @@
 library ieee;
 use ieee.std_logic_1164.all;
 use ieee.numeric_std.all;
+use ieee.std_logic_unsigned.all;
+
 
 entity run_control is
 generic (
@@ -81,11 +83,11 @@ BEGIN
     if ( i_reset_n /= '1' ) then
         o_time_counter <= (others => '0');
     elsif rising_edge(i_clk) then
-        o_time_counter <= time_counter + '1';
-        if ( work.util.reduced_or(runNr_ack) = '1' ) then
+        o_time_counter <= o_time_counter + '1';
+        if ( work.util.or_reduce(runNr_ack) = '1' ) then
             o_time_counter <= (others => '0');
         end if;
-    end if:
+    end if;
     end process;
 
     process(i_clk)
