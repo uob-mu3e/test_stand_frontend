@@ -1,8 +1,8 @@
 #
 # TODO
 # Check upstream / downstream behaviour
+# Add checks for input parameters
 #
-
 
 # Process input parameters
 PARAM hv_voltage, "HV voltage"
