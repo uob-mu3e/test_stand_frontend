@@ -11,38 +11,42 @@ generic (
     N_LINKS_g : positive := 4--;
 );
 port (
-    i_reset_ack_seen_n      : in    std_logic;
-    i_reset_run_end_n       : in    std_logic;
-    i_buffers_empty         : in    std_logic_vector(31 downto 0);
-    i_aligned               : in    std_logic_vector(31 downto 0); -- word alignment achieved
-    i_data                  : in    work.mu3e.link_array_t(N_LINKS_g-1 downto 0); -- optical from frontend board
-    i_link_enable           : in    std_logic_vector(31 downto 0);
-    i_addr                  : in    std_logic_vector(31 downto 0);
-    i_run_number            : in    std_logic_vector(23 downto 0);
-    o_run_number            : out   std_logic_vector(31 downto 0);
-    o_runNr_ack             : out   std_logic_vector(31 downto 0);
-    o_run_stop_ack          : out   std_logic_vector(31 downto 0);
-    o_buffers_empty         : out   std_logic_vector(31 downto 0);
-    o_feb_merger_timeout    : out   std_logic_vector(31 downto 0);
+    i_reset_ack_seen_n      : in  std_logic;
+    i_reset_run_end_n       : in  std_logic;
+    i_buffers_empty         : in  std_logic_vector(31 downto 0);
+    i_aligned               : in  std_logic_vector(31 downto 0); -- word alignment achieved
+    i_data                  : in  work.mu3e.link_array_t(N_LINKS_g-1 downto 0); -- optical from frontend board
+    i_link_enable           : in  std_logic_vector(31 downto 0);
+    i_addr                  : in  std_logic_vector(31 downto 0);
+    i_run_number            : in  std_logic_vector(23 downto 0);
+    o_run_number            : out std_logic_vector(31 downto 0);
+    o_runNr_ack             : out std_logic_vector(31 downto 0);
+    o_run_stop_ack          : out std_logic_vector(31 downto 0);
+    o_buffers_empty         : out std_logic_vector(31 downto 0);
+    o_feb_merger_timeout    : out std_logic_vector(31 downto 0);
+    o_time_counter          : out std_logic_vector(63 downto 0);
 
-    -- receive clock (156.25 MHz)
-    i_clk                   : in    std_logic--;
+    -- clk / reset
+    i_reset_n               : in  std_logic;
+    i_clk                   : in  std_logic--;
 );
 end entity;
 
 architecture rtl of run_control is
 
-signal FEB_status :                             work.util.slv32_array_t(N_LINKS_g-1 downto 0);
-signal feb_merger_timeouts :                    std_logic_vector(N_LINKS_g-1 downto 0);
-signal CNT_feb_merger_timeouts :                unsigned(31 downto 0);
-
-signal addr : integer;
+    signal FEB_status : work.util.slv32_array_t(N_LINKS_g-1 downto 0);
+    signal feb_merger_timeouts : std_logic_vector(N_LINKS_g-1 downto 0);
+    signal CNT_feb_merger_timeouts : unsigned(31 downto 0);
+    signal runNr_ack : std_logic_vector(31 downto 0);
+    signal addr : integer;
 
 BEGIN
 
     o_feb_merger_timeout <= std_logic_vector(CNT_feb_merger_timeouts);
 
     addr <= to_integer(unsigned(i_addr));
+
+    o_runNr_ack <= runNr_ack;
 
     g_link_listener : for i in N_LINKS_g-1 downto 0 generate
     begin
@@ -70,12 +74,26 @@ BEGIN
     end if;
     end process;
 
-    process (i_clk)
+    --! time counter for getting the current time one the SWB
+    --! reset if one of the FEBs send back the runNr at start of run
+    process(i_clk, i_reset_n)
+    begin
+    if ( i_reset_n /= '1' ) then
+        o_time_counter <= (others => '0');
+    elsif rising_edge(i_clk) then
+        o_time_counter <= time_counter + '1';
+        if ( work.util.reduced_or(runNr_ack) = '1' ) then
+            o_time_counter <= (others => '0');
+        end if;
+    end if:
+    end process;
+
+    process(i_clk)
     begin
     if rising_edge(i_clk) then
         if ( i_reset_ack_seen_n = '0' ) then
             o_run_number                    <= (others => '0');
-            o_runNr_ack                     <= (others => '0');
+            runNr_ack                     <= (others => '0');
         end if;
 
         if ( i_reset_run_end_n = '0' ) then
@@ -90,9 +108,9 @@ BEGIN
 
         for J in 0 to N_LINKS_g-1 loop
             if ( FEB_status(j)(25) = '1' and FEB_status(J)(23 downto 0) = i_run_number ) then
-                o_runNr_ack(J)      <= '1';
+                runNr_ack(J)      <= '1';
             else
-                o_runNr_ack(J)      <= '0';
+                runNr_ack(J)      <= '0';
             end if;
 
             o_run_stop_ack(J)       <= FEB_status(J)(24);

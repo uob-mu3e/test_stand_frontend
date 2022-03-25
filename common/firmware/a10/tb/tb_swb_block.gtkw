@@ -1,25 +1,26 @@
 [*]
 [*] GTKWave Analyzer v3.3.79 (w)1999-2017 BSI
-[*] Wed Mar 23 14:53:12 2022
+[*] Fri Mar 25 13:15:48 2022
 [*]
 [dumpfile] "/home/mu3e/online/common/firmware/a10/tb/.cache/tb_swb_block.ghw"
-[dumpfile_mtime] "Wed Mar 23 14:52:48 2022"
-[dumpfile_size] 2121381
+[dumpfile_mtime] "Fri Mar 25 13:15:22 2022"
+[dumpfile_size] 2120866
 [savefile] "/home/mu3e/online/common/firmware/a10/tb/tb_swb_block.gtkw"
-[timestart] 185000
+[timestart] 25173000
 [size] 2560 1376
 [pos] -1 -1
-*-19.695719 3375000 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
+*-20.695719 31084400 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
 [treeopen] top.
 [treeopen] top.tb_swb_block.
 [treeopen] top.tb_swb_block.e_swb_block.
-[treeopen] top.tb_swb_block.e_swb_block.e_sc_secondary.
 [treeopen] top.tb_swb_block.e_swb_block.e_sc_secondary.gen_buffer_sc[0].
 [treeopen] top.tb_swb_block.e_swb_block.e_sc_secondary.gen_buffer_sc[0].e_fifo.
 [treeopen] top.tb_swb_block.e_swb_block.e_sc_secondary.gen_buffer_sc[0].e_fifo.i_wdata.
 [treeopen] top.tb_swb_block.e_swb_block.e_sc_secondary.i_link_data.[0].
+[treeopen] top.tb_swb_block.e_swb_block.e_swb_data_path_pixel_us.
 [treeopen] top.tb_swb_block.e_swb_block.e_swb_data_path_pixel_us.e_data_gen_error_test.o_data.
 [treeopen] top.tb_swb_block.e_swb_block.e_swb_data_path_pixel_us.e_data_gen_link.o_data.
+[treeopen] top.tb_swb_block.e_swb_block.e_swb_data_path_pixel_us.e_event_builder.
 [treeopen] top.tb_swb_block.e_swb_block.e_swb_data_path_pixel_us.gen_link.
 [treeopen] top.tb_swb_block.e_swb_block.e_swb_data_path_pixel_us.rx.
 [treeopen] top.tb_swb_block.e_swb_block.e_swb_data_path_pixel_us.rx.[0].
@@ -161,5 +162,11 @@ top.tb_swb_block.dma_data_array[2][0]
 #{top.tb_swb_block.dma_data_array[5][31:0]} top.tb_swb_block.dma_data_array[5][31] top.tb_swb_block.dma_data_array[5][30] top.tb_swb_block.dma_data_array[5][29] top.tb_swb_block.dma_data_array[5][28] top.tb_swb_block.dma_data_array[5][27] top.tb_swb_block.dma_data_array[5][26] top.tb_swb_block.dma_data_array[5][25] top.tb_swb_block.dma_data_array[5][24] top.tb_swb_block.dma_data_array[5][23] top.tb_swb_block.dma_data_array[5][22] top.tb_swb_block.dma_data_array[5][21] top.tb_swb_block.dma_data_array[5][20] top.tb_swb_block.dma_data_array[5][19] top.tb_swb_block.dma_data_array[5][18] top.tb_swb_block.dma_data_array[5][17] top.tb_swb_block.dma_data_array[5][16] top.tb_swb_block.dma_data_array[5][15] top.tb_swb_block.dma_data_array[5][14] top.tb_swb_block.dma_data_array[5][13] top.tb_swb_block.dma_data_array[5][12] top.tb_swb_block.dma_data_array[5][11] top.tb_swb_block.dma_data_array[5][10] top.tb_swb_block.dma_data_array[5][9] top.tb_swb_block.dma_data_array[5][8] top.tb_swb_block.dma_data_array[5][7] top.tb_swb_block.dma_data_array[5][6] top.tb_swb_block.dma_data_array[5][5] top.tb_swb_block.dma_data_array[5][4] top.tb_swb_block.dma_data_array[5][3] top.tb_swb_block.dma_data_array[5][2] top.tb_swb_block.dma_data_array[5][1] top.tb_swb_block.dma_data_array[5][0]
 #{top.tb_swb_block.dma_data_array[6][31:0]} top.tb_swb_block.dma_data_array[6][31] top.tb_swb_block.dma_data_array[6][30] top.tb_swb_block.dma_data_array[6][29] top.tb_swb_block.dma_data_array[6][28] top.tb_swb_block.dma_data_array[6][27] top.tb_swb_block.dma_data_array[6][26] top.tb_swb_block.dma_data_array[6][25] top.tb_swb_block.dma_data_array[6][24] top.tb_swb_block.dma_data_array[6][23] top.tb_swb_block.dma_data_array[6][22] top.tb_swb_block.dma_data_array[6][21] top.tb_swb_block.dma_data_array[6][20] top.tb_swb_block.dma_data_array[6][19] top.tb_swb_block.dma_data_array[6][18] top.tb_swb_block.dma_data_array[6][17] top.tb_swb_block.dma_data_array[6][16] top.tb_swb_block.dma_data_array[6][15] top.tb_swb_block.dma_data_array[6][14] top.tb_swb_block.dma_data_array[6][13] top.tb_swb_block.dma_data_array[6][12] top.tb_swb_block.dma_data_array[6][11] top.tb_swb_block.dma_data_array[6][10] top.tb_swb_block.dma_data_array[6][9] top.tb_swb_block.dma_data_array[6][8] top.tb_swb_block.dma_data_array[6][7] top.tb_swb_block.dma_data_array[6][6] top.tb_swb_block.dma_data_array[6][5] top.tb_swb_block.dma_data_array[6][4] top.tb_swb_block.dma_data_array[6][3] top.tb_swb_block.dma_data_array[6][2] top.tb_swb_block.dma_data_array[6][1] top.tb_swb_block.dma_data_array[6][0]
 #{top.tb_swb_block.dma_data_array[7][31:0]} top.tb_swb_block.dma_data_array[7][31] top.tb_swb_block.dma_data_array[7][30] top.tb_swb_block.dma_data_array[7][29] top.tb_swb_block.dma_data_array[7][28] top.tb_swb_block.dma_data_array[7][27] top.tb_swb_block.dma_data_array[7][26] top.tb_swb_block.dma_data_array[7][25] top.tb_swb_block.dma_data_array[7][24] top.tb_swb_block.dma_data_array[7][23] top.tb_swb_block.dma_data_array[7][22] top.tb_swb_block.dma_data_array[7][21] top.tb_swb_block.dma_data_array[7][20] top.tb_swb_block.dma_data_array[7][19] top.tb_swb_block.dma_data_array[7][18] top.tb_swb_block.dma_data_array[7][17] top.tb_swb_block.dma_data_array[7][16] top.tb_swb_block.dma_data_array[7][15] top.tb_swb_block.dma_data_array[7][14] top.tb_swb_block.dma_data_array[7][13] top.tb_swb_block.dma_data_array[7][12] top.tb_swb_block.dma_data_array[7][11] top.tb_swb_block.dma_data_array[7][10] top.tb_swb_block.dma_data_array[7][9] top.tb_swb_block.dma_data_array[7][8] top.tb_swb_block.dma_data_array[7][7] top.tb_swb_block.dma_data_array[7][6] top.tb_swb_block.dma_data_array[7][5] top.tb_swb_block.dma_data_array[7][4] top.tb_swb_block.dma_data_array[7][3] top.tb_swb_block.dma_data_array[7][2] top.tb_swb_block.dma_data_array[7][1] top.tb_swb_block.dma_data_array[7][0]
+@28
+top.tb_swb_block.dma_wren
+@22
+#{top.tb_swb_block.e_swb_block.e_swb_data_path_pixel_us.e_event_builder.serial_number[31:0]} top.tb_swb_block.e_swb_block.e_swb_data_path_pixel_us.e_event_builder.serial_number[31] top.tb_swb_block.e_swb_block.e_swb_data_path_pixel_us.e_event_builder.serial_number[30] top.tb_swb_block.e_swb_block.e_swb_data_path_pixel_us.e_event_builder.serial_number[29] top.tb_swb_block.e_swb_block.e_swb_data_path_pixel_us.e_event_builder.serial_number[28] top.tb_swb_block.e_swb_block.e_swb_data_path_pixel_us.e_event_builder.serial_number[27] top.tb_swb_block.e_swb_block.e_swb_data_path_pixel_us.e_event_builder.serial_number[26] top.tb_swb_block.e_swb_block.e_swb_data_path_pixel_us.e_event_builder.serial_number[25] top.tb_swb_block.e_swb_block.e_swb_data_path_pixel_us.e_event_builder.serial_number[24] top.tb_swb_block.e_swb_block.e_swb_data_path_pixel_us.e_event_builder.serial_number[23] top.tb_swb_block.e_swb_block.e_swb_data_path_pixel_us.e_event_builder.serial_number[22] top.tb_swb_block.e_swb_block.e_swb_data_path_pixel_us.e_event_builder.serial_number[21] top.tb_swb_block.e_swb_block.e_swb_data_path_pixel_us.e_event_builder.serial_number[20] top.tb_swb_block.e_swb_block.e_swb_data_path_pixel_us.e_event_builder.serial_number[19] top.tb_swb_block.e_swb_block.e_swb_data_path_pixel_us.e_event_builder.serial_number[18] top.tb_swb_block.e_swb_block.e_swb_data_path_pixel_us.e_event_builder.serial_number[17] top.tb_swb_block.e_swb_block.e_swb_data_path_pixel_us.e_event_builder.serial_number[16] top.tb_swb_block.e_swb_block.e_swb_data_path_pixel_us.e_event_builder.serial_number[15] top.tb_swb_block.e_swb_block.e_swb_data_path_pixel_us.e_event_builder.serial_number[14] top.tb_swb_block.e_swb_block.e_swb_data_path_pixel_us.e_event_builder.serial_number[13] top.tb_swb_block.e_swb_block.e_swb_data_path_pixel_us.e_event_builder.serial_number[12] top.tb_swb_block.e_swb_block.e_swb_data_path_pixel_us.e_event_builder.serial_number[11] top.tb_swb_block.e_swb_block.e_swb_data_path_pixel_us.e_event_builder.serial_number[10] top.tb_swb_block.e_swb_block.e_swb_data_path_pixel_us.e_event_builder.serial_number[9] top.tb_swb_block.e_swb_block.e_swb_data_path_pixel_us.e_event_builder.serial_number[8] top.tb_swb_block.e_swb_block.e_swb_data_path_pixel_us.e_event_builder.serial_number[7] top.tb_swb_block.e_swb_block.e_swb_data_path_pixel_us.e_event_builder.serial_number[6] top.tb_swb_block.e_swb_block.e_swb_data_path_pixel_us.e_event_builder.serial_number[5] top.tb_swb_block.e_swb_block.e_swb_data_path_pixel_us.e_event_builder.serial_number[4] top.tb_swb_block.e_swb_block.e_swb_data_path_pixel_us.e_event_builder.serial_number[3] top.tb_swb_block.e_swb_block.e_swb_data_path_pixel_us.e_event_builder.serial_number[2] top.tb_swb_block.e_swb_block.e_swb_data_path_pixel_us.e_event_builder.serial_number[1] top.tb_swb_block.e_swb_block.e_swb_data_path_pixel_us.e_event_builder.serial_number[0]
+@28
+top.tb_swb_block.e_swb_block.e_swb_data_path_pixel_us.e_event_builder.event_counter_state
 [pattern_trace] 1
 [pattern_trace] 0

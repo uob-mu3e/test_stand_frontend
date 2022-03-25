@@ -32,6 +32,8 @@ package a10_pcie_registers is
             constant RESET_BIT_FARM_DATA_PATH                       :  integer := 23; -- DOC: Reset bit for the data path | FARM
             constant RESET_BIT_FARM_STREAM_MERGER                   :  integer := 24; -- DOC: Reset bit for farm stream merger | FARM
             constant RESET_BIT_FARM_TIME_MERGER                     :  integer := 25; -- DOC: Reset bit for farm time merger | FARM
+            constant RESET_BIT_LINK_LOCKED                          :  integer := 26; -- DOC: Reset bit for link locked bit | SWB/FARM
+            constant RESET_BIT_GLOBAL_TS                            :  integer := 27; -- DOC: Reset bit for global time counter | SWB/FARM
             constant RESET_BIT_PCIE                                 :  integer := 31; -- DOC: Not used at the moment | ALL
 
         constant DATAGENERATOR_REGISTER_W                       : integer := 16#02#; -- DOC: Register to control the datagenerator which is generating the link data from FEBs | SWB
@@ -51,10 +53,10 @@ package a10_pcie_registers is
         constant DMA_CONTROL_W                                  : integer := 16#05#; -- DOC: Not used at the moment | ALL
             subtype DMA_CONTROL_COUNTER_RANGE                       is integer range 15 downto 0; -- DOC: Not used at the moment | ALL
         constant DMA_SLOW_DOWN_REGISTER_W                       : integer := 16#06#; -- DOC: Not used at the moment | ALL
-        
+
         constant LINK_TEST_REGISTER_W                           : integer := 16#07#; -- DOC: Not used at the moment | ALL
         constant LINK_TEST_BIT_ENABLE                               : integer := 0;  -- DOC: Not used at the moment | ALL
-        
+
         constant RUN_NR_REGISTER_W                              : integer := 16#08#; -- DOC: Register to write the current run number | SWB
         constant RUN_NR_ADDR_REGISTER_W                         : integer := 16#09#; -- DOC: Ask for run number of FEB with this addr | SWB
         constant FEB_ENABLE_REGISTER_W                          : integer := 16#0A#; -- DOC: Enable register for FEBs for run control and slowcontrol | SWB
@@ -85,7 +87,7 @@ package a10_pcie_registers is
             subtype SWB_LINK_RANGE                                  is integer range 15 downto 8;       -- DOC: Link addrs for link specific counters (#events, #subheaders, etc.) | SWB
             subtype SWB_DETECTOR_RANGE                              is integer range 17 downto 16;      -- DOC: which detector we want to readout, 00->PIXEL US, 01->PIXEL DS, 10->SCIFI | SWB
             constant SWB_COUNTER_TYPE                               : integer := 18;                    -- DOC: counter type 0=link, 1=datapath | SWB
-            
+
         constant FARM_READOUT_STATE_REGISTER_W                  : integer := 16#16#; -- DOC: Readout state | FARM
         constant FARM_DATA_TYPE_REGISTER_W                      : integer := 16#17#; -- DOC: Data type for readout | FARM
             subtype FARM_DATA_TYPE_ADDR_RANGE                       is integer range 1 downto 0;    -- DOC: Data type: "00" = pixel, "01" = scifi, "10" = tiles | FARM
@@ -101,7 +103,7 @@ package a10_pcie_registers is
             subtype  DDR_COUNTERSEL_RANGE_B                        is integer range 31 downto 30; -- DOC: "01" -> get poserr_reg, "10" -> get counterr_reg else cur time counter written to DDR | FARM
             subtype  DDR_RANGE_B                                   is integer range 31 downto 16; -- DOC: range for ddr b | FARM
         constant FARM_LINK_MASK_REGISTER_W                      : integer := 16#21#; -- DOC: Mask Farm links | FARM
-        
+
         constant DATA_REQ_A_W                                   : integer := 16#22#; -- DOC: Register for requesting subheaders from DDR, for SUBTS in GPU_SUBTS_SEL DO writereg(SUBTS) | FARM
         constant DATA_REQ_B_W                                   : integer := 16#23#; -- DOC: Register for requesting subheaders from DDR, for SUBTS in GPU_SUBTS_SEL DO writereg(SUBTS) | FARM
         constant DATA_TSBLOCK_DONE_W                            : integer := 16#24#; -- DOC: dynamic limit when we change from writing to reading (15 downto 8 from 35 downto 4 of the 48b TS) | FARM
@@ -201,12 +203,16 @@ package a10_pcie_registers is
         constant DATA_TSBLOCKS_R                                : integer := 16#28#;
         constant SC_MAIN_STATUS_REGISTER_R                      : integer := 16#29#;
             constant SC_MAIN_DONE                                   : integer := 0;
-        constant DDR_CLK_CNT_R                                 : integer := 16#30#;
+        constant GLOBAL_TS_LOW_REGISTER_R                       : integer := 16#2A#;
+        constant GLOBAL_TS_HIGH_REGISTER_R                      : integer := 16#2B#;
+        constant DDR_CLK_CNT_R                                  : integer := 16#30#;
         constant SC_STATE_REGISTER_R                            : integer := 16#31#;
         constant DMA_CNT_WORDS_REGISTER_R                       : integer := 16#32#;
         constant SWB_COUNTER_REGISTER_R                         : integer := 16#33#;
         constant SWB_COUNTER_REGISTER_ADDR_R                    : integer := 16#34#;
         constant RESET_LINK_STATUS_REGISTER_R                   : integer := 16#35#;
+        constant LINK_LOCKED_LOW_REGISTER_R                     : integer := 16#36#;
+        constant LINK_LOCKED_HIGH_REGISTER_R                    : integer := 16#37#;
 
         -- Registers above 0x38 are in use for the PCIe controller/DMA
         constant DMA_STATUS_REGISTER_R                          : integer := 16#38#;

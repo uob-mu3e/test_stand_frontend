@@ -48,17 +48,9 @@ volatile uint32_t *dma_buf;
 size_t dma_buf_size = MUDAQ_DMABUF_DATA_LEN;
 uint32_t *dma_buf_copy = (uint32_t *) malloc(dma_buf_size);
 uint32_t dma_buf_nwords = dma_buf_size/sizeof(uint32_t);
-uint32_t laddr;
-uint32_t newdata;
-uint32_t readindex;
-uint32_t wlen;
-uint32_t lastreadindex;
-uint32_t lastlastWritten;
-uint32_t lastWritten;
-uint32_t lastRunWritten;
-bool moreevents;
-bool firstevent;
-
+uint32_t cnt_loop = 0;
+uint32_t reset_regs = 0;
+uint32_t readout_state_regs = 0;
 
 
 /* maximum event size produced by this frontend */
@@ -68,7 +60,7 @@ INT max_event_size = dma_buf_size; // we fix this for now to 32MB
 INT max_event_size_frag = 5 * 1024 * 1024;
 
 /* buffer size to hold events */
-INT event_buffer_size = 2 * max_event_size;
+INT event_buffer_size = 4 * max_event_size;
 
 mudaq::DmaMudaqDevice * mup;
 mudaq::DmaMudaqDevice::DataBlock block;
@@ -154,6 +146,12 @@ INT frontend_init()
     if (status != SUCCESS) return FE_ERR_DRIVER;
 
     usleep(5000);
+
+    // set reset registers
+    reset_regs = SET_RESET_BIT_DATA_PATH(reset_regs);
+    reset_regs = SET_RESET_BIT_DATAGEN(reset_regs);
+    reset_regs = SET_RESET_BIT_SWB_TIME_MERGER(reset_regs);
+    reset_regs = SET_RESET_BIT_SWB_STREAM_MERGER(reset_regs);
 
     // create ring buffer for readout thread
     create_event_rb(0);
@@ -308,20 +306,14 @@ void setup_watches(){
     stream_settings.watch(stream_settings_changed);
 
     // link mask changed settings
-    odb links("/Equipment/Links/Settings/LinkMask");
-    links.watch(link_active_settings_changed);
+    //odb links("/Equipment/Links/Settings/LinkMask");
+    //links.watch(link_active_settings_changed);
 
 }
 
 // INIT MUDAQ //////////////////////////////
 INT init_mudaq(){
-    
-/*    cudaError_t cuda_error = cudaMallocHost( (void**)&dma_buf, dma_buf_size );
-    if(cuda_error != cudaSuccess){
-        cm_msg(MERROR, "frontend_init" , "Allocation failed, aborting!");
-        return FE_ERR_DRIVER;
-    }*/
-    
+       
     int fd = open("/dev/mudaq0_dmabuf", O_RDWR);
     if(fd < 0) {
         printf("fd = %d\n", fd);
@@ -352,10 +344,6 @@ INT init_mudaq(){
     else {
         cm_msg(MINFO, "frontend_init" , "Mudaq device is ok");
     }
-    
-    // set fpga write pointers
-    lastlastWritten = 0;
-    lastRunWritten = mup->last_written_addr();
 
     // switch off and reset DMA for now
     mup->disable();
@@ -365,13 +353,8 @@ INT init_mudaq(){
     mup->write_register(DATAGENERATOR_REGISTER_W, 0x0);
     usleep(2000);
 
-    // DMA_CONTROL_W
-    mup->write_register(0x5,0x0);
-
-    //set data link enable
-    odb link;
-    link.connect("/Equipment/Links/Settings/LinkMask");
-    link_active_settings_changed(link);
+    // set DMA_CONTROL_W
+    mup->write_register(DMA_CONTROL_W, 0x0);
 
     return SUCCESS;
 }
@@ -385,10 +368,6 @@ INT frontend_exit()
       mup->close();
       delete mup;
    }
-
-   // following code crashes the frontend, please fix!
-   // free( (void *)dma_buf );
-//   cudaFreeHost((void *)dma_buf);
    
    return SUCCESS;
 }
@@ -398,71 +377,53 @@ INT frontend_exit()
 
 INT begin_of_run(INT run_number, char *error)
 { 
-   set_equipment_status(equipment[0].name, "Starting run", "var(--myellow)");
-   
-   mudaq::DmaMudaqDevice & mu = *mup;
-   
-   // Reset last written address used for polling
-   laddr = mu.last_written_addr();
-   newdata = 0;
-   readindex = 0;
-   moreevents = false;
-   firstevent = true;
+    set_equipment_status(equipment[0].name, "Starting run", "var(--myellow)");
 
-   // reset all
-   uint32_t reset_reg = 0;
-   reset_reg = SET_RESET_BIT_EVENT_COUNTER(reset_reg);
-   reset_reg = SET_RESET_BIT_DATAGEN(reset_reg);
-   reset_reg = SET_RESET_BIT_DATA_PATH(reset_reg);
-   mu.write_register_wait(RESET_REGISTER_W, reset_reg, 100);
+    mudaq::DmaMudaqDevice & mu = *mup;
 
-   // empty dma buffer
-   for (uint32_t i = 0; i < dma_buf_nwords ; i++) {
-      (dma_buf)[i] = 0;
-   }
+    // set all in reset
+    mu.write_register_wait(RESET_REGISTER_W, reset_regs, 100);
 
-   // Enable register on FPGA for continous readout and enable dma
-   mu.enable_continous_readout(0);
-   usleep(10);
-   mu.write_register_wait(RESET_REGISTER_W, 0x0, 100);
+    // empty dma buffer
+    for (uint32_t i = 0; i < dma_buf_nwords ; i++) {
+    (dma_buf)[i] = 0;
+    }
 
-   // Set up data generator: enable only if set in ODB
-   uint32_t reg=mu.read_register_rw(DATAGENERATOR_REGISTER_W);
-   odb stream_settings;
-   stream_settings.connect("/Equipment/Stream/Settings");
+    // setup readout registers
+    odb stream_settings;
+    stream_settings.connect("/Equipment/Stream/Settings");
 
-   if(stream_settings["Datagen Enable"]) {
-        int divider = stream_settings["Datagen Divider"];
-        cm_msg(MINFO,"farm_fe", "Use datagenerator with divider register %d", divider);
-        if(stream_settings["use_merger"]) {
-            // readout merger
-            mu.write_register(SWB_READOUT_STATE_REGISTER_W, 0x5);
-        } else {
-            // readout stream
-            mu.write_register(SWB_READOUT_STATE_REGISTER_W, 0x3);
-            mu.write_register(DATAGENERATOR_DIVIDER_REGISTER_W, divider);
-        }
-   } else if(stream_settings["use_merger"]) {
-        // readout links with merger
-        mu.write_register(SWB_READOUT_STATE_REGISTER_W, 0x44);
-   } else {
-        cm_msg(MINFO,"farm_fe", "Use link data");
-        // readout link
-        mu.write_register(SWB_READOUT_STATE_REGISTER_W, 0x42);
-   }
+    if(stream_settings["Datagen Enable"]) {
+        // setup data generator
+        cm_msg(MINFO,"farm_fe", "Use datagenerator with divider register %d", stream_settings["Datagen Divider"]);
+        mu.write_register(DATAGENERATOR_DIVIDER_REGISTER_W, stream_settings["Datagen Divider"]);
+        readout_state_regs = SET_USE_BIT_GEN_LINK(readout_state_regs);
+    }
+    if(stream_settings["use_merger"]) {
+        // readout merger
+        cm_msg(MINFO,"farm_fe", "Use Time Merger");
+        readout_state_regs = SET_USE_BIT_MERGER(readout_state_regs);
+    } else {
+        // readout stream
+        cm_msg(MINFO,"farm_fe", "Use Stream Merger");
+        readout_state_regs = SET_USE_BIT_STREAM(readout_state_regs);
+    }
+    cm_msg(MINFO,"farm_fe", "WARNING: For now just use US Pixel data");
+    readout_state_regs = SET_USE_BIT_PIXEL_US(readout_state_regs);
+    // write readout register
+    mu.write_register(SWB_READOUT_STATE_REGISTER_W, readout_state_regs);
 
-   mu.write_register(SWB_LINK_MASK_PIXEL_REGISTER_W, stream_settings["mask_n_pixel"]);
-   mu.write_register(SWB_LINK_MASK_SCIFI_REGISTER_W, stream_settings["mask_n_scifi"]);
-  
-   // reset lastlastwritten
-   lastlastWritten = 0;
-   lastRunWritten = mu.last_written_addr();//lastWritten;
+    // link masks 
+    // Note: link masks are already set via ODB watch
+    mu.write_register(SWB_LINK_MASK_PIXEL_REGISTER_W, stream_settings["mask_n_pixel"]);
+    mu.write_register(SWB_LINK_MASK_SCIFI_REGISTER_W, stream_settings["mask_n_scifi"]);
 
-   // Note: link masks are already set during fe_init and via ODB callback
+    // release reset
+    mu.write_register_wait(RESET_REGISTER_W, 0x0, 100);
 
-   set_equipment_status(equipment[0].name, "Running", "var(--mgreen)");
-   
-   return SUCCESS;
+    set_equipment_status(equipment[0].name, "Running", "var(--mgreen)");
+
+return SUCCESS;
 }
 
 /*-- End of Run ----------------------------------------------------*/
@@ -470,65 +431,62 @@ INT begin_of_run(INT run_number, char *error)
 INT end_of_run(INT run_number, char *error)
 {
 
-   mudaq::DmaMudaqDevice & mu = *mup;
-   cm_msg(MINFO,"farm_fe","Waiting for buffers to empty");
-   uint16_t timeout_cnt = 0;
-   while(! mu.read_register_ro(BUFFER_STATUS_REGISTER_R) & 1<<0/* TODO right bit */ &&
-         timeout_cnt++ < 50) {
-      //printf("Waiting for buffers to empty %d/50\n", timeout_cnt);
-      timeout_cnt++;
-      usleep(1000);
-   };
+    mudaq::DmaMudaqDevice & mu = *mup;
+    cm_msg(MINFO,"farm_fe","Waiting for buffers to empty");
+    uint16_t timeout_cnt = 0;
+    while(! mu.read_register_ro(BUFFER_STATUS_REGISTER_R) & 1<<0/* TODO right bit */ &&
+            timeout_cnt++ < 50) {
+        //printf("Waiting for buffers to empty %d/50\n", timeout_cnt);
+        timeout_cnt++;
+        usleep(1000);
+    };
 
-   if(timeout_cnt>=50) {
-      //cm_msg(MERROR,"farm_fe","Buffers on Switching Board not empty at end of run");
-      cm_msg(MINFO,"farm_fe","Buffers on Switching Board not empty at end of run");
-      set_equipment_status(equipment[0].name, "Buffers not empty", "var(--mred)");
-      // TODO: at the moment we dont care
-      //return CM_TRANSITION_CANCELED;
-   }else{
-      printf("Buffers all empty\n");
-   }
-
-   //Finish DMA while waiting for last requested data to be finished
-   cm_msg(MINFO, "farm_fe", "Waiting for DMA to finish");
-   usleep(1000); // Wait for DMA to finish
-   timeout_cnt = 0;
-   
-   //wait for requested data
-   //TODO: in readout th poll on run end reg from febs
-   //write variable and check this one here and then disable readout th
-   //also check if readout th is disabled by midas at run end
-   while ( (mu.read_register_ro(0x1C) & 1) == 0 && timeout_cnt < 100 ) {
-       timeout_cnt++;
-       usleep(1000);
-   };
-        
-   if(timeout_cnt>=100) {
-        //cm_msg(MERROR, "farm_fe", "DMA did not finish");
-        cm_msg(MINFO, "farm_fe", "DMA did not finish");
-        set_equipment_status(equipment[0].name, "DMA did not finish", "var(--mred)");
+    if(timeout_cnt>=50) {
+        //cm_msg(MERROR,"farm_fe","Buffers on Switching Board not empty at end of run");
+        cm_msg(MINFO,"farm_fe","Buffers on Switching Board not empty at end of run");
+        set_equipment_status(equipment[0].name, "Buffers not empty", "var(--mred)");
         // TODO: at the moment we dont care
         //return CM_TRANSITION_CANCELED;
-   }else{
-      cm_msg(MINFO, "farm_fe", "DMA is finished\n");
-   }
+    }else{
+        printf("Buffers all empty\n");
+    }
+
+    //Finish DMA while waiting for last requested data to be finished
+    cm_msg(MINFO, "farm_fe", "Waiting for DMA to finish");
+    usleep(1000); // Wait for DMA to finish
+    timeout_cnt = 0;
+    
+    //wait for requested data
+    //TODO: in readout th poll on run end reg from febs
+    //write variable and check this one here and then disable readout th
+    //also check if readout th is disabled by midas at run end
+    while ( (mu.read_register_ro(0x1C) & 1) == 0 && timeout_cnt < 100 ) {
+        timeout_cnt++;
+        usleep(1000);
+    };
+            
+    if(timeout_cnt>=100) {
+            //cm_msg(MERROR, "farm_fe", "DMA did not finish");
+            cm_msg(MINFO, "farm_fe", "DMA did not finish");
+            set_equipment_status(equipment[0].name, "DMA did not finish", "var(--mred)");
+            // TODO: at the moment we dont care
+            //return CM_TRANSITION_CANCELED;
+    }else{
+        cm_msg(MINFO, "farm_fe", "DMA is finished\n");
+    }
 
     // disable dma
     mu.disable();
     // stop readout
+    mu.write_register(RESET_REGISTER_W, reset_regs);
     mu.write_register(DATAGENERATOR_DIVIDER_REGISTER_W, 0x0);
     mu.write_register(SWB_READOUT_STATE_REGISTER_W, 0x0);
-    mu.write_register(SWB_LINK_MASK_PIXEL_REGISTER_W, 0x0);
-    mu.write_register(SWB_LINK_MASK_SCIFI_REGISTER_W, 0x0);
     mu.write_register(SWB_READOUT_LINK_REGISTER_W, 0x0);
     mu.write_register(GET_N_DMA_WORDS_REGISTER_W, 0x0);
-    // reset data path
-    mu.write_register(RESET_REGISTER_W, 0x0 | (1<<21));
-
-   set_equipment_status(equipment[0].name, "Ready for running", "var(--mgreen)");
+    
+    set_equipment_status(equipment[0].name, "Ready for running", "var(--mgreen)");
    
-   return SUCCESS;
+    return SUCCESS;
 }
 
 /*-- Pause Run -----------------------------------------------------*/
@@ -536,13 +494,9 @@ INT end_of_run(INT run_number, char *error)
 INT pause_run(INT run_number, char *error)
 {
    mudaq::DmaMudaqDevice & mu = *mup;
-   
-//   uint32_t datagen_setup = mu.read_register_rw(DATAGENERATOR_REGISTER_W);
-//   datagen_setup = UNSET_DATAGENERATOR_BIT_ENABLE(datagen_setup);
-//   mu.write_register_wait(DATAGENERATOR_REGISTER_W, datagen_setup,1000);
 
    // disable DMA
-   mu.disable(); // Marius Koeppel: not sure if this works
+   mu.disable();
    
    set_equipment_status(equipment[0].name, "Paused", "var(--myellow)");
    
@@ -553,15 +507,6 @@ INT pause_run(INT run_number, char *error)
 
 INT resume_run(INT run_number, char *error)
 {
-   mudaq::DmaMudaqDevice & mu = *mup;
-   
-//   uint32_t datagen_setup = mu.read_register_rw(DATAGENERATOR_REGISTER_W);
-//   datagen_setup = SET_DATAGENERATOR_BIT_ENABLE(datagen_setup);
-//   mu.write_register_wait(DATAGENERATOR_REGISTER_W, datagen_setup,1000);
-
-   // enable DMA
-   mu.enable_continous_readout(0); // Marius Koeppel: not sure if this works
-   
    set_equipment_status(equipment[0].name, "Running", "var(--mgreen)");
    
    return SUCCESS;
@@ -637,62 +582,12 @@ INT read_stream_event(char *pevent, INT off)
   
 }
 
-// check if the event is good
-template < typename T >
-uint32_t check_event(T* buffer, uint32_t idx, uint32_t* pdata) {
-    EVENT_HEADER* eh = (EVENT_HEADER*)(buffer + idx);
-    BANK_HEADER* bh = (BANK_HEADER*)(eh + 1);
-
-    if ( eh->event_id != 0x1 ) {
-        printf("Error: Wrong event id 0x%08X\n", eh->event_id);
-        return -1;
-    }
-    if ( eh->trigger_mask != 0x0 ) {
-        printf("Error: Wrong trigger_mask 0x%08X\n", eh->trigger_mask);
-        return -1;
-    }
-    if ( bh->flags != 0x31 ) {
-        printf("Error: Wrong flags 0x%08X\n", bh->flags);
-        return -1;
-    }
-    
-    uint32_t eventDataSize = eh->data_size; // bytes
-
-    //printf("EventDataSize: %8.8x\n", eventDataSize);
-    //printf("Header Buffer: %8.8x\n", buffer[idx]);
-    //printf("Data: %8.8x\n", buffer[idx+4+eventDataSize/4-1]);
-
-    if ( !(buffer[idx+4+eventDataSize/4-1] == 0xAFFEAFFE or buffer[idx+4+eventDataSize/4-1] == 0xFC00009C or buffer[idx+4+eventDataSize/4-1] == 0xFC00019C) ) {
-        printf("Error: Wrong trailer");
-        printf("Data: %8.8x\n", buffer[idx+4+eventDataSize/4-2]);
-        return -1;
-    }
-    // TODO: Variable size buffers are not legal C/C++
-    // Can't we copy dircetly from buffer to pdata?
-    uint32_t dma_buf[4+eventDataSize/4];
-    for (uint32_t i = 0; i<4+eventDataSize/4; i++ ) {
-      dma_buf[i] = buffer[idx + i];
-      //printf("%8.8x %8.8x\n", i, buffer[idx + i]);
-    }
-
-    copy_n(&dma_buf[0], sizeof(dma_buf)/4, pdata);
-
-    return sizeof(dma_buf);
-}
-
 /*-- Event readout -------------------------------------------------*/
 
 INT read_stream_thread(void *param) {
 
     // get mudaq
     mudaq::DmaMudaqDevice & mu = *mup;
-
-    // set registers to default values and disable DMA
-    uint32_t reset_reg = 0;
-    reset_reg = SET_RESET_BIT_EVENT_COUNTER(reset_reg);
-    reset_reg = SET_RESET_BIT_DATAGEN(reset_reg);
-    reset_reg = SET_RESET_BIT_DATA_PATH(reset_reg);
-    mu.disable();
 
     // tell framework that we are alive
     signal_readout_thread_active(0, TRUE);
@@ -709,14 +604,6 @@ INT read_stream_thread(void *param) {
     
     // DMA buffer stuff
     uint32_t size_dma_buf;
-    uint32_t words_written;
-    uint32_t cnt_loop;
-    uint32_t endofevent;
-
-    // readout state
-    uint32_t current_readout_register;
-    uint32_t current_pixel_mask_n;
-    uint32_t current_scifi_mask_n;
     
     // actuall readout loop
     while (is_readout_thread_enabled()) {
@@ -744,140 +631,30 @@ INT read_stream_thread(void *param) {
             break;
         }
 
-        // reset data path
-        //mu.write_register(RESET_REGISTER_W, reset_reg);
-
-        // change readout state to switch between pixel and scifi
-        current_readout_register = mu.read_register_rw(SWB_READOUT_STATE_REGISTER_W);
-        current_pixel_mask_n = mu.read_register_rw(SWB_LINK_MASK_PIXEL_REGISTER_W);
-        current_scifi_mask_n = mu.read_register_rw(SWB_LINK_MASK_SCIFI_REGISTER_W);
-        current_readout_register |= (1 << 7);
-        mu.write_register(SWB_READOUT_STATE_REGISTER_W, current_readout_register);
-
-        // wait for requested data
-        // request to read dma_buffer_size/2 (count in blocks of 256 bits)
+        // request to read dma_buffer_size / 2 (count in blocks of 256 bits)
         mu.write_register(GET_N_DMA_WORDS_REGISTER_W, max_requested_words / (256/32));
 
-        // start DMA and stop reset
+        // start dma
         mu.enable_continous_readout(0);
-        usleep(10);
-        mu.write_register(RESET_REGISTER_W, 0x0);
-
-        // wait for FPGA
+        // wait for requested data
         cnt_loop = 0;
-        while ( (mu.read_register_ro(EVENT_BUILD_STATUS_REGISTER_R) & 0x1) == 0x0 ) { cnt_loop++; ss_sleep(10); }
+        while ( (mu.read_register_ro(EVENT_BUILD_STATUS_REGISTER_R) & 0x1) == 0x0 ) { 
+            if ( cnt_loop > 1000 ) break;
+            cnt_loop++; 
+            ss_sleep(10); 
+        }
 
         // disable dma
         mu.disable();
         
-        // get written words from FPGA
-        words_written  = mu.read_register_ro(DMA_CNT_WORDS_REGISTER_R);
+        // get written words from FPGA in bytes
+        size_dma_buf = mu.last_endofevent_addr() * 256 / 8;
         
-        // get lastWritten / endofevent
-        // since we only use the DMA write 4kB at the end on the farm firmware
-        lastlastWritten = 0;
-        lastWritten = mu.last_written_addr();
-        endofevent = mu.last_endofevent_addr();
-        
-        // stop readout
-        mu.write_register(SWB_READOUT_LINK_REGISTER_W, 0x0);
-        mu.write_register(GET_N_DMA_WORDS_REGISTER_W, 0x0);
-        
-        // reset all
-        mu.write_register(RESET_REGISTER_W, reset_reg);
+        // copy data
+        memcpy(pdata, const_cast<uint32_t*>(dma_buf), size_dma_buf);
 
-        // check cnt loop
-        if (cnt_loop == 100000) { printf("ERROR: cnt_loop == 100000\n"); break; }
-
-        // walk events to find end of last event
-        uint32_t offset = 0;
-        uint32_t cnt = 0;
-        size_dma_buf = 0;
-        printf("lastWritten: 0x%08X ", lastWritten);
-        printf("endofevent: 0x%08X ", endofevent);
-        printf("words_written: 0x%08X ", words_written);
-        printf("words_written*8: 0x%08X ", words_written*8);
-        printf("dma_buf[words_written]: 0x%08X ", dma_buf[words_written]);
-        printf("dma_buf[words_written*8]: 0x%08X ", dma_buf[words_written*8]);
-        printf("dma_buf[words_written*8-1]: 0x%08X ", dma_buf[words_written*8-1]);
-        printf("dma_buf[words_written-1]: 0x%08X ", dma_buf[words_written-1]);
-        printf("dma_buf[lastWritten]: 0x%08X ", dma_buf[lastWritten]);
-        printf("dma_buf[lastWritten-1]: 0x%08X ", dma_buf[lastWritten-1]);
-        printf("dma_buf[endofevent]: 0x%08X ", dma_buf[endofevent]);
-        printf("dma_buf[endofevent+1]: 0x%08X ", dma_buf[endofevent+1]);
-        printf("dma_buf[endofevent*8-1]: 0x%08X ", dma_buf[endofevent*8-1]);
-        printf("dma_buf[endofevent*8]: 0x%08X ", dma_buf[endofevent*8]);
-        printf("total data: %d MB ", (words_written*8-1)*4/1000000);
-        printf("dma_buf_size: %d %d ", dma_buf_size, 1 * (1024 * 1024));
-        printf("dma_buf[endofevent-1]: 0x%08X\n", dma_buf[endofevent-1]);
-        
-        // increase words_written if there is another event
-//         if ( dma_buf[words_written*8] != 0xFFFFFFFF ) {
-//             for ( unsigned int i = words_written*8; i < (words_written*8 + (dma_buf[words_written*8+3] / 4 + 4)); i++ )
-//                 printf("0x%08X %i\n", dma_buf[i], i);
-//             words_written += (dma_buf[words_written*8+3] / 4 + 4) / 8;
-//         }
-
-        uint32_t size = (words_written*8 + (dma_buf[words_written*8+3] / 4 + 4)) - (words_written*8);
-
-//         printf("size %d\n", size);
-
-        //memcpy(dma_buf_copy, const_cast<uint32_t*>(&dma_buf[words_written*8]), size*4);
-        //copy_n(&dma_buf_copy[0], size*4, pdata);
-        
-        dma_buf_copy[ 0 ] = 0x00000001;           // Trigger Mask & Event ID
-        dma_buf_copy[ 1 ] = 0x00000001;             // Serial number
-        dma_buf_copy[ 2 ] = ss_time();            // time
-        dma_buf_copy[ 3 ] = 32 * 4 - 4 * 4;// event size
-
-        dma_buf_copy[ 4 ] = 32 * 4 - 6 * 4;// all bank size
-        dma_buf_copy[ 5 ] = 0x31;                 // flags
-
-        // bank PCD0 first FEB
-        dma_buf_copy[ 6 ] = 'P' << 0 | 'C' << 8 | 'D' << 16 | '0' << 24;// bank name
-        dma_buf_copy[ 7 ] = 0x06;                                       // bank type TID_DWORD
-        dma_buf_copy[ 8 ] = 10 * 4;                                     // data size
-        dma_buf_copy[ 9 ] = 0x0;                                        // reserved
-
-        dma_buf_copy[10 ] = 0xE80000BC;                                // preamble
-        dma_buf_copy[11 ] = 0x00000000;                                // TS0
-        dma_buf_copy[12 ] = ss_time();                                 // TS1
-        dma_buf_copy[13 ] = 0xFC000000;                                // sub header
-        dma_buf_copy[14 ] = 0xABABABAB;  // hit0
-        dma_buf_copy[15 ] = 0xABABABAB;  // hit1
-        dma_buf_copy[16 ] = 0xABABABAB;// chip 3 beam ref bits 22:1 -> fast TS
-        dma_buf_copy[17 ] = 0xABABABAB;// chip 4 sintilator bits 22:1 -> fast TS
-        dma_buf_copy[18 ] = 0xFC00009C;                                // TRAILER
-        dma_buf_copy[19 ] = 0xAFFEAFFE;                                // PADDING
-
-        // bank PCD1 second FEB
-        dma_buf_copy[20 ] = 'P' << 0 | 'C' << 8 | 'D' << 16 | '1' << 24;// bank name
-        dma_buf_copy[21 ] = 0x6;                                       // bank type TID_DWORD
-        dma_buf_copy[22 ] = 8 * 4;                                     // data size
-        dma_buf_copy[23 ] = 0x0;                                       // reserved
-
-        dma_buf_copy[24 ] = 0xE80001BC;                              // preamble
-        dma_buf_copy[25 ] = 0x00000000;                              // TS0
-        dma_buf_copy[26 ] = ss_time();                               // TS1
-        dma_buf_copy[27 ] = 0xFC000000;                              // sub header
-        dma_buf_copy[28 ] = 0xABABABAB;// hit0
-        dma_buf_copy[29 ] = 0xABABABAB;// hit1
-        dma_buf_copy[30 ] = 0xFC00009C;                              // TRAILER
-        dma_buf_copy[31 ] = 0xAFFEAFFE;                              // PADDING
-        
-        size = 32;
-        
-        memcpy(pdata, dma_buf_copy, size*sizeof(uint32_t));//((words_written+(dma_buf[words_written*8+3] / 4 + 4) / 8)*8-1)*4);
-//         for ( unsigned int i = 0; i < 100; i++)
-//             printf("dma_buf[i]: 0x%08X %d\n", dma_buf[i], i);
-//         for ( unsigned int i = words_written*8-100; i < words_written*8+100; i++)
-//             printf("dma_buf[size_dma_buf]: 0x%08X %d %d\n", dma_buf[i], i, words_written*8);
-//         for ( unsigned int i = words_written*8; i < (words_written*8 + (dma_buf[words_written*8+3] / 4 + 4)); i++ )
-//             printf("0x%08X  %d\n", dma_buf[i], i);
-        for ( unsigned int i = 0; i < size; i++ )
-            printf("0x%08X  %d\n", dma_buf_copy[i], i);
-        rb_increment_wp(rbh, size*sizeof(uint32_t));//(words_written*8-1)*4); // in byte length
-        
+        // increment write pointer of ring buffer
+        rb_increment_wp(rbh, size_dma_buf); // in byte length         
         
     }
 

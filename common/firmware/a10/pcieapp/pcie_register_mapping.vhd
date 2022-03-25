@@ -81,6 +81,8 @@ begin
             i_local_pcie0_rregs_A(DMA_NOTENDEVENT_REGISTER_R)   when i = DMA_NOTENDEVENT_REGISTER_R else
             i_local_pcie0_rregs_A(CNT_PLL_156_REGISTER_R)       when i = CNT_PLL_156_REGISTER_R else
             i_local_pcie0_rregs_A(CNT_PLL_250_REGISTER_R)       when i = CNT_PLL_250_REGISTER_R else
+            i_local_pcie0_rregs_A(LINK_LOCKED_LOW_REGISTER_R)   when i = LINK_LOCKED_LOW_REGISTER_R else
+            i_local_pcie0_rregs_A(LINK_LOCKED_HIGH_REGISTER_R)  when i = LINK_LOCKED_HIGH_REGISTER_R else
             q_rregs_B_reg(i * 32 + 31 downto i * 32)            when i = RESET_LINK_STATUS_REGISTER_R else -- for SWB reset link, does not work for the farm
             i_pcie0_rregs_A(i);
     END GENERATE gen_map;

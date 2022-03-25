@@ -197,6 +197,10 @@ begin
         o_run_number           => o_readregs(RUN_NR_REGISTER_R), -- run number of i_addr
         o_runNr_ack            => o_readregs(RUN_NR_ACK_REGISTER_R), -- which FEBs have responded with run number in i_run_number
         o_run_stop_ack         => o_readregs(RUN_STOP_ACK_REGISTER_R),
+        o_time_counter(31 downto 0)  => o_readregs(GLOBAL_TS_LOW_REGISTER_R),
+        o_time_counter(63 downto 32) => o_readregs(GLOBAL_TS_HIGH_REGISTER_R),
+
+        i_reset_n              => i_resets_n(RESET_BIT_GLOBAL_TS),
         i_clk                  => i_clk--,
     );
 

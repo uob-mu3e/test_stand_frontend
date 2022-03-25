@@ -188,8 +188,8 @@ architecture arch of a10_block is
     signal xcvr2_tx_data    : std_logic_vector(g_XCVR2_CHANNELS*8-1 downto 0) := (others => '0');
     signal xcvr2_tx_datak   : std_logic_vector(g_XCVR2_CHANNELS-1 downto 0) := (others => '0');
 
-    signal xcvr0_rx_locked  : std_logic_vector(63 downto 0) := (others => '0');
-    signal xcvr1_rx_locked  : std_logic_vector(63 downto 0) := (others => '0');
+    signal xcvr0_rx_locked  : std_logic_vector(o_xcvr0_rx_data'range);
+    signal xcvr1_rx_locked  : std_logic_vector(o_xcvr1_rx_data'range);
 
     signal pcie0_rregs      : reg32array_pcie;
     signal pcie0_wregs      : reg32array_pcie;
@@ -441,7 +441,7 @@ begin
 
         i_refclk            => i_xcvr0_refclk,
 
-        o_rx_locked         => xcvr0_rx_locked(g_XCVR0_CHANNELS-1 downto 0),
+        o_rx_locked         => xcvr0_rx_locked,
 
         i_avs_address       => av_xcvr0.address(17 downto 0),
         i_avs_read          => av_xcvr0.read,
@@ -501,7 +501,7 @@ begin
 
         i_refclk            => i_xcvr1_refclk,
 
-        o_rx_locked         => xcvr0_rx_locked(g_XCVR1_CHANNELS-1 downto 0),
+        o_rx_locked         => xcvr0_rx_locked,
 
         i_avs_address       => av_xcvr1.address(17 downto 0),
         i_avs_read          => av_xcvr1.read,
@@ -560,21 +560,21 @@ begin
         i_clk       => i_clk--,
     );
 
-    process(pcie0_clk, pcie0_reset_n)
+    --! check locks for links
+    process(pcie0_clk, pcie0_resets_n(RESET_BIT_LINK_LOCKED))
+        variable errors_out, errors_in : std_logic_vector(63 downto 0);
     begin
-    if ( pcie0_reset_n /= '1' ) then
-        -- TODO: reset rx_locked pcie0 registers
+    if ( pcie0_resets_n(RESET_BIT_LINK_LOCKED) /= '1' ) then
+        local_pcie0_rregs_A(LINK_LOCKED_LOW_REGISTER_R) <= (others => '0');
+        local_pcie0_rregs_A(LINK_LOCKED_HIGH_REGISTER_R) <= (others => '0');
         --
     elsif rising_edge(pcie0_clk) then
-        for i in 63 downto 0 loop
-            if ( xcvr0_rx_locked(i) /= '1' ) then
-                -- TODO: set sticky error bit
-            end if;
-        end loop;
-        -- reset when not running
-        if ( true ) then
-            -- TODO: reset rx_locked pcie0 registers
-        end if;
+        errors_in := (others => '0');
+        errors_in(g_XCVR1_CHANNELS+g_XCVR0_CHANNELS-1 downto 0) := not ( xcvr1_rx_locked & xcvr0_rx_locked );
+        errors_out := local_pcie0_rregs_A(LINK_LOCKED_HIGH_REGISTER_R) & local_pcie0_rregs_A(LINK_LOCKED_LOW_REGISTER_R);
+        errors_out := errors_out or errors_in;
+        local_pcie0_rregs_A(LINK_LOCKED_LOW_REGISTER_R) <= errors_out(31 downto 0);
+        local_pcie0_rregs_A(LINK_LOCKED_HIGH_REGISTER_R) <= errors_out(63 downto 32);
     end if;
     end process;
 

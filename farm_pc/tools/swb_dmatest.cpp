@@ -19,6 +19,7 @@
 #include <stdlib.h>
 #include <cassert>
 #include <string.h>
+#include <bitset>
 
 #include <fcntl.h>
 
@@ -142,6 +143,7 @@ int main(int argc, char *argv[]) {
     reset_regs = SET_RESET_BIT_DATAGEN(reset_regs);
     reset_regs = SET_RESET_BIT_SWB_STREAM_MERGER(reset_regs);
     reset_regs = SET_RESET_BIT_SWB_TIME_MERGER(reset_regs);
+    reset_regs = SET_RESET_BIT_LINK_LOCKED(reset_regs);
     cout << "Reset Regs: " << hex << reset_regs << endl;
     mu.write_register(RESET_REGISTER_W, reset_regs);
 
@@ -186,6 +188,7 @@ int main(int argc, char *argv[]) {
 
     while (1) {
         
+        cout << hex << readout_state_regs << endl;
         printf("  [1] => trigger a readout \n");
         printf("  [2] => readout counters \n");
         printf("  [3] => reset stuff \n");
@@ -226,6 +229,7 @@ int main(int argc, char *argv[]) {
             mu.disable();
             break;
         case '2':
+            cout << "Last Word in buffer: 0x" << hex << dma_buf[mu.last_endofevent_addr() * 8 - 1] << endl;
             cout << "DataPath counters" << endl;
             cout << "SWB_STREAM_FIFO_FULL_CNT: 0x" << hex << read_counters(mu, SWB_STREAM_FIFO_FULL_CNT, 0, 0, 1) << endl;
             cout << "SWB_BANK_BUILDER_IDLE_NOT_HEADER_CNT: 0x" << hex << read_counters(mu, SWB_BANK_BUILDER_IDLE_NOT_HEADER_CNT, 0, 0, 1) << endl;
@@ -242,6 +246,13 @@ int main(int argc, char *argv[]) {
                 cout << "SWB_EVENT_CNT: 0x" << hex << read_counters(mu, SWB_EVENT_CNT, i, 0, 0) << endl;
                 cout << "SWB_SUB_HEADER_CNT: 0x" << hex << read_counters(mu, SWB_SUB_HEADER_CNT, i, 0, 0) << endl;
             }
+            cout << "Link/PLL Counters" << endl;
+            cout << "156 L:" << (mu.read_register_ro(CNT_PLL_156_REGISTER_R) >> 31) << endl;
+            cout << "250 L:" << (mu.read_register_ro(CNT_PLL_250_REGISTER_R) >> 31) << endl;
+            cout << "156 C:" << (mu.read_register_ro(CNT_PLL_156_REGISTER_R) & 0x7FFFFFFF) << endl;
+            cout << "250 C:" << (mu.read_register_ro(CNT_PLL_250_REGISTER_R) & 0x7FFFFFFF) << endl;
+            cout << "Links:" << std::bitset<32>(mu.read_register_ro(LINK_LOCKED_LOW_REGISTER_R)) << endl;
+            cout << "Links:" << std::bitset<32>(mu.read_register_ro(LINK_LOCKED_HIGH_REGISTER_R)) << endl;
             break;
         case '3':
             mu.write_register(RESET_REGISTER_W, reset_regs);
