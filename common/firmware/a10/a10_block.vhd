@@ -188,6 +188,9 @@ architecture arch of a10_block is
     signal xcvr2_tx_data    : std_logic_vector(g_XCVR2_CHANNELS*8-1 downto 0) := (others => '0');
     signal xcvr2_tx_datak   : std_logic_vector(g_XCVR2_CHANNELS-1 downto 0) := (others => '0');
 
+    signal xcvr0_rx_locked  : std_logic_vector(63 downto 0) := (others => '0');
+    signal xcvr1_rx_locked  : std_logic_vector(63 downto 0) := (others => '0');
+
     signal pcie0_rregs      : reg32array_pcie;
     signal pcie0_wregs      : reg32array_pcie;
     signal pcie0_wregs_B    : reg32array_pcie;
@@ -438,6 +441,8 @@ begin
 
         i_refclk            => i_xcvr0_refclk,
 
+        o_rx_locked         => xcvr0_rx_locked(g_XCVR0_CHANNELS-1 downto 0),
+
         i_avs_address       => av_xcvr0.address(17 downto 0),
         i_avs_read          => av_xcvr0.read,
         o_avs_readdata      => av_xcvr0.readdata,
@@ -495,6 +500,8 @@ begin
         o_tx_serial         => o_xcvr1_tx,
 
         i_refclk            => i_xcvr1_refclk,
+
+        o_rx_locked         => xcvr0_rx_locked(g_XCVR1_CHANNELS-1 downto 0),
 
         i_avs_address       => av_xcvr1.address(17 downto 0),
         i_avs_read          => av_xcvr1.read,
