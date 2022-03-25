@@ -637,6 +637,24 @@ begin
         i_clk       => i_clk--,
     );
 
+    process(pcie0_clk, pcie0_reset_n)
+    begin
+    if ( pcie0_reset_n /= '1' ) then
+        -- TODO: reset rx_locked pcie0 registers
+        --
+    elsif rising_edge(pcie0_clk) then
+        for i in 63 downto 0 loop
+            if ( xcvr0_rx_locked(i) /= '1' ) then
+                -- TODO: set sticky error bit
+            end if;
+        end loop;
+        -- reset when not running
+        if ( true ) then
+            -- TODO: reset rx_locked pcie0 registers
+        end if;
+    end if;
+    end process;
+
     e_a10_reset_link : entity work.a10_reset_link
     generic map (
         g_XCVR2_CHANNELS => 4--,
