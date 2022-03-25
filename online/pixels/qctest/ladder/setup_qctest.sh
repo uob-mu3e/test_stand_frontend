@@ -1,4 +1,4 @@
-# Author J. Guzmán, March 2022, Cosmic Run. jose.guzman-funck19@imperial.ac.uk || pepe.guzmanfunck@gmail.com
+# Author J. Guzmán-Funck, March 2022, Cosmic Run. jose.guzman-funck19@imperial.ac.uk || pepe.guzmanfunck@gmail.com
 
 # Power suppliers configuration
 odbedit -d /Equipment/HAMEG0/Common/ -c "set Period 500"
