@@ -9,8 +9,8 @@ package a10_pcie_registers is
         constant RESET_REGISTER_W                               :  integer := 16#01#; -- DOC: Reset Register | ALL
             constant RESET_BIT_ALL                                  :  integer := 0;  -- DOC: Reset bit to reset all | ALL
             constant RESET_BIT_DATAGEN                              :  integer := 1;  -- DOC: Reset bit for the datagenerator which is generating the link data from FEBs | SWB
-            constant RESET_BIT_BOARD                                :  integer := 2;  -- DOC: Not used at the moment | ALL
-            constant RESET_BIT_WORDALIGN                            :  integer := 3;  -- DOC: Not used at the moment | ALL
+            constant RESET_BIT_SWB_STREAM_MERGER                    :  integer := 2;  -- DOC: Reset Round Robin Merger | SWB
+            constant RESET_BIT_SWB_TIME_MERGER                      :  integer := 3;  -- DOC: Reset Time Merger | SWB
             constant RESET_BIT_RECEIVER                             :  integer := 4;  -- DOC: Not used at the moment | ALL
             constant RESET_BIT_DATAFIFO                             :  integer := 5;  -- DOC: Not used at the moment | ALL
             constant RESET_BIT_FIFOPLL                              :  integer := 6;  -- DOC: Not used at the moment | ALL
@@ -29,7 +29,7 @@ package a10_pcie_registers is
             constant RESET_BIT_DATAFLOW                             :  integer := 20; -- DOC: Not used at the moment | ALL
             constant RESET_BIT_LINK_MERGER                          :  integer := 21; -- DOC: Not used at the moment | ALL
             constant RESET_BIT_DATA_PATH                            :  integer := 22; -- DOC: Reset bit for the data path | SWB
-            constant RESET_BIT_FARM_DATA_PATH                       :  integer := 23; -- DOC: Reset bit for the data path | SWB
+            constant RESET_BIT_FARM_DATA_PATH                       :  integer := 23; -- DOC: Reset bit for the data path | FARM
             constant RESET_BIT_PCIE                                 :  integer := 31; -- DOC: Not used at the moment | ALL
 
         constant DATAGENERATOR_REGISTER_W                       : integer := 16#02#; -- DOC: Register to control the datagenerator which is generating the link data from FEBs | SWB
@@ -71,8 +71,10 @@ package a10_pcie_registers is
             constant USE_BIT_GEN_MERGER                             : integer := 4;  -- DOC: Readout state where the time aligned data is generated (for debugging) | SWB
             constant USE_BIT_FARM                                   : integer := 5;  -- DOC: Readout state where the data is send to the farm (1) else (0) it is readout via DMA on the SWB | SWB
             constant USE_BIT_TEST                                   : integer := 6;  -- DOC: Not used at the moment | SWB
-            constant USE_BIT_PIXEL                                  : integer := 7;  -- DOC: Readout state to only readout pixel data via DMA (for debugging) | SWB
-            constant USE_BIT_SCIFI                                  : integer := 8;  -- DOC: Readout state to only readout scifi data via DMA (for debugging) | SWB
+            constant USE_BIT_PIXEL_US                               : integer := 7;  -- DOC: Readout state to only readout US pixel data via DMA (for debugging) | SWB
+            constant USE_BIT_PIXEL_DS                               : integer := 8;  -- DOC: Readout state to only readout DS pixel data via DMA (for debugging) | SWB
+            constant USE_BIT_SCIFI                                  : integer := 9;  -- DOC: Readout state to only readout scifi data via DMA (for debugging) | SWB
+            constant USE_BIT_TEST_ERROR                             : integer := 10; -- DOC: Readout state for testing an error handling in the time merger using generated data | SWB
         constant SWB_READOUT_LINK_REGISTER_W                    : integer := 16#14#; -- DOC: Not used at the moment | SWB
         
         constant SWB_COUNTER_REGISTER_W                         : integer := 16#15#; -- DOC: Register to readout counter values from the SWB, to have more information about the counter look at a10_counter.md | SWB
@@ -91,7 +93,7 @@ package a10_pcie_registers is
         constant DATA_REQ_B_W                                   : integer := 16#22#; -- DOC: Register for requesting subheaders from DDR3, for SUBTS in GPU_SUBTS_SEL DO writereg(SUBTS) | FARM
         constant DATA_TSBLOCK_DONE_W                            : integer := 16#23#; -- DOC: dynamic limit when we change from writing to reading (15 downto 8 from 35 downto 4 of the 48b TS) | FARM
         constant FARM_READOUT_STATE_REGISTER_W                  : integer := 16#24#; -- DOC: Readout state | FARM
-            constant USE_BIT_GEN_MERGE                              : integer := 0;  -- DOC: Generate SWB data (for dubugging) | FARM
+            constant USE_BIT_GEN_LINK_FARM                          : integer := 0;  -- DOC: Generate SWB data (for dubugging) | FARM
         constant FARM_ID_REGISTER_W                             : integer := 16#25#; -- DOC: Farm ID written to the reserved filed of the MIDAS bank | FARM
         constant FARM_REQ_EVENTS_W                              : integer := 16#26#; -- DOC: total number of requested events (should match to len(DATA_REQ_A/B_W) from GPU selection | FARM
         constant FARM_CTL_REGISTER_W                            : integer := 16#27#;
