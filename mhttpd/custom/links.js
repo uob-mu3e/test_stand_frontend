@@ -761,17 +761,18 @@ function update_plls(valuex, swb) {
     
     for(var i=0; i < nlinksrx[swb]; i++){
         if(rxlinks[swb][i].status > 0){
-            if(i < 32)
+            if(i < 32){
                 rxlinks[swb][i].locked = value[2] & (1<<i);
-            else
+            } else {
                 rxlinks[swb][i].locked = value[3] & (1<<(i-32)); 
+            }
         }
     }
 
     // TXlinks are always locked
     for(var i=0; i < nlinkstx[swb]; i++){
         if(txlinks[swb][i].status > 0)
-            txlinks[swb][i].status = 1;
+            txlinks[swb][i].locked = 1;
     } 
 
     draw(rxselindex, txselindex);
