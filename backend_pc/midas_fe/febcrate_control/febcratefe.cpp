@@ -31,6 +31,8 @@ using std::vector;
 
 using midas::odb;
 
+using namespace mu3ebanks;
+
 /* Start address of power in the crate controller - TODO: Move to an appropriate header*/
 constexpr uint8_t CC_POWER_OFFSET = 5;
 constexpr uint8_t CC_VT_READOUT_START = 1;

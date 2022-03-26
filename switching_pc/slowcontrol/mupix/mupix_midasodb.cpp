@@ -7,13 +7,15 @@
 #include "mupix_midasodb.h"
 #include "odbxx.h"
 #include "link_constants.h"
+#include "mu3ebanks.h"
 using midas::odb;
 using namespace std;
+using namespace mu3ebanks;
 
 namespace mupix { namespace midasODB {
 
 
-int setup_db(std::string prefix, MupixFEB & FEB_interface, bool init_FEB, bool write_defaults = true){
+int setup_db(std::string prefix, MupixFEB & FEB_interface, int switch_id, bool init_FEB, bool write_defaults = true){
     /* Book Setting space */
     
     cm_msg(MINFO, "mupix_midasodb::setup_db", "Setting up odb");
@@ -101,54 +103,29 @@ int setup_db(std::string prefix, MupixFEB & FEB_interface, bool init_FEB, bool w
     // load tdac json from ODB into feb_interface
     FEB_interface.SetTDACs();
 
-    // PSLL Bank setup
+    // PSLS Bank setup
     /* Default values for /Equipment/Mupix/Settings */
+    // TODO: Get rid of N_FEBS_MUPIX_INT_2021
     odb settings = {
-        {namestrPSLL.c_str(), std::array<std::string, per_fe_PSLL_size*N_FEBS_MUPIX_INT_2021*lvds_links_per_feb>{}}
+        {pslsnames[switch_id].c_str(), std::array<std::string, per_fe_PSLS_size*N_FEBS_MUPIX_INT_2021>{}}
     };
 
-    // TODO: why do I have to connect here? In switch_fe.cpp we do first the naming and than we connect
+    // TODO: why do I have to connect here? In switch_fe.cpp we do first the naming and than we connect 
+    // (NB: I have the same problem in the switch FE at some point)
     settings.connect(prefix + "/Settings", write_defaults);
 
-    create_psll_names_in_odb(settings, N_FEBS_MUPIX_INT_2021, lvds_links_per_feb);
+    create_psls_names_in_odb(settings, switch_id, N_FEBS_MUPIX_INT_2021);
 
     settings.connect(prefix + "/Settings", write_defaults=write_defaults);
 
     /* Default values for /Equipment/Mupix/Variables */
     odb variables = {
-        {banknamePSLL.c_str(), std::array<int, per_fe_PSLL_size*N_FEBS_MUPIX_INT_2021*lvds_links_per_feb>{}}
+        {psls[switch_id].c_str(), std::array<int, per_fe_PSLS_size*N_FEBS_MUPIX_INT_2021>{}}
     };
 
     variables.connect(prefix + "/Variables", write_defaults=write_defaults);
 
     return DB_SUCCESS;
-}
-
-
-void create_psll_names_in_odb(odb & settings, uint32_t N_FEBS_MUPIX, uint32_t N_LINKS){
-    int bankindex = 0;
-
-    for(uint32_t i=0; i < N_FEBS_MUPIX; i++){
-        for(uint32_t j=0; j < N_LINKS; j++){
-            string name = "FEB" + to_string(i) + " LVDS" + to_string(j);
-
-            string * s = new string(name);
-            (*s) += " INDEX";
-            settings[namestrPSLL.c_str()][bankindex++] = s;
-
-            s = new string(name);
-            (*s) += " STATUS LVDS";
-            settings[namestrPSLL.c_str()][bankindex++] = s;
-
-            s = new string(name);
-            (*s) += " NUM HITS LVDS";
-            settings[namestrPSLL.c_str()][bankindex++] = s;
-
-            s = new string(name);
-            (*s) += " NUM MuPix HITS LVDS";
-            settings[namestrPSLL.c_str()][bankindex++] = s;
-        }
-    }
 }
 
 

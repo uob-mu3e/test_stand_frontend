@@ -9,7 +9,7 @@ target_compile_options(febcratefe PRIVATE
 
 target_include_directories(febcratefe PRIVATE ${MIDASSYS}/mscb/include
                     ${CMAKE_CURRENT_SOURCE_DIR}/../../../common/include)
-target_link_libraries(febcratefe mscb mfe midas rt dl pthread util ${Boost_LIBRARIES})
+target_link_libraries(febcratefe mscb mfe midas rt dl pthread util ${Boost_LIBRARIES} libmubanks)
 
 if(DEBUG)
     add_definitions(-DMY_DEBUG)

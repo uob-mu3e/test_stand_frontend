@@ -44,4 +44,4 @@ add_library(libslowcontrol STATIC
 )
 
 target_include_directories(libslowcontrol PUBLIC . ./mupix ./mutrig ./tiles ./scifi ../../common/include ${CMAKE_SOURCE_DIR}/common/firmware/include)
-target_link_libraries(libslowcontrol libmudaq midas ${Boost_LIBRARIES})
+target_link_libraries(libslowcontrol libmudaq libmubanks midas ${Boost_LIBRARIES})

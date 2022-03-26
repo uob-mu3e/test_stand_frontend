@@ -372,8 +372,8 @@ DWORD* MupixFEB::ReadLVDSCounters(DWORD* pdata, mappedFEB & FEB)
 {
     for(uint32_t i=0; i<64; i++){ 
 
-        // TODO: intrun fix for lvds configuration
-        if (i>=lvds_links_per_feb) continue;
+        // TODO: intrun fix for lvds configuration: The FEB should know how many links it has...
+        if (i>= MAX_LVDS_LINKS_PER_FEB) continue;
         // Link ID
         *pdata++ = i;
         // read lvds status
@@ -384,5 +384,29 @@ DWORD* MupixFEB::ReadLVDSCounters(DWORD* pdata, mappedFEB & FEB)
         *pdata++ = ReadBackLVDSNumHitsInMupixFormat(FEB, i);
 
     };
+    return pdata;
+}
+
+
+DWORD* MupixFEB::ReadLVDSforPSLS(DWORD* pdata, mappedFEB & FEB)
+{
+    std::vector<uint32_t> status(MAX_LVDS_LINKS_PER_FEB);
+    feb_sc.FEB_read(FEB, MP_LVDS_STATUS_START_REGISTER_W, status);
+
+    std::vector<uint32_t> histos(MAX_LVDS_LINKS_PER_FEB*4);
+    // TODO: Uncomment when register is defined
+    //feb_sc.FEB_read(FEB, MP_HIT_ARRIVAL_START_REGISTER, histos);
+
+
+    for(uint32_t i=0; i<64; i++){ 
+        if (i>=MAX_LVDS_LINKS_PER_FEB) continue;
+        // Link ID
+        *pdata++ = i;  
+        *pdata++ = status[i];
+        *pdata++ = histos[i*4];
+        *pdata++ = histos[i*4+1];
+        *pdata++ = histos[i*4+2]; 
+        *pdata++ = histos[i*4+3];
+    }
     return pdata;
 }

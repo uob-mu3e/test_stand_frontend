@@ -48,6 +48,7 @@
 
 using namespace std;
 using midas::odb;
+using namespace mu3ebanks;
 
 /*-- Globals -------------------------------------------------------*/
 
@@ -617,7 +618,7 @@ INT init_mupix() {
                      equipment[EQUIPMENT_ID::Pixels].name,
                      switch_id); //create FEB interface signleton for mupix
 
-    int status=mupix::midasODB::setup_db("/Equipment/" + pixel_eq_name, *mupixfeb, true, false);//true);
+    int status=mupix::midasODB::setup_db("/Equipment/" + pixel_eq_name, *mupixfeb, switch_id, true, false);//true);
     if(status != SUCCESS){
         set_equipment_status(equipment[EQUIPMENT_ID::Pixels].name, "Start up failed", "var(--mred)");
         return status;
@@ -910,7 +911,6 @@ INT read_link_sc_event(char *pevent, INT)
 
 DWORD * fill_SSPL(DWORD * pdata)
 {
-    
     *pdata++ = mup->read_register_ro(CNT_PLL_156_REGISTER_R);
     *pdata++ = mup->read_register_ro(CNT_PLL_250_REGISTER_R);
     //TODO: Uncomment once registers are defined
@@ -953,8 +953,10 @@ INT read_mupix_sc_event(char *pevent, INT){
     // create banks with LVDS counters & status
     bk_init(pevent);
     DWORD *pdata;
-    bk_create(pevent, banknamePSLL.c_str(), TID_INT, (void **)&pdata);
-    pdata = mupixfeb->fill_PSLL(pdata);
+    string lvdsbankname = psls[switch_id];
+
+    bk_create(pevent, lvdsbankname.c_str(), TID_INT, (void **)&pdata);
+    pdata = mupixfeb->fill_PSLS(pdata);
     bk_close(pevent, pdata);
 
 //     TODO: implement bank PSLM
