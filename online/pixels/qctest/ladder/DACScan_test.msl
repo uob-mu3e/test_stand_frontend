@@ -79,7 +79,6 @@ LOOP i, 3
     # Turn on chip i. This is downstream
     SET i_, $i+$select_UD
 
-    MESSAGE $i_,1
     CAT path_to_bias, /Equipment/Mupix/Settings/BIASDACS/, $i_, /BiasBlock_On
     CAT path_to_vpdac, /Equipment/Mupix/Settings/BIASDACS/, $i_, /VPDAC
     CAT path_to_ref_Vss, /Equipment/Mupix/Settings/VDACS/, $i_, /ref_Vss

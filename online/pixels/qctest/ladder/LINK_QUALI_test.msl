@@ -9,12 +9,9 @@
 
 PARAM select_UD, "UPstream(-1) DOWNstream(2) chips"
 
-# TODO update manually
-end = 50
-
 
 start_magic_value = 7
-stop_magic_value = 29
+stop_magic_value = 9
 
 # Check default. If not, loop from 7 to 29 for magic values, record difference, output magic values with better link quality
 
@@ -26,46 +23,46 @@ stop_magic_value = 29
 
 
 # For single chip first. There are three values to check
-mupixID0 = 0 + $select_UD
-mupixID1 = 1 + $select_UD
-mupixID2 = 2 + $select_UD
+mupixID0 = 1 + $select_UD
+mupixID1 = 2 + $select_UD
+mupixID2 = 3 + $select_UD
 
 norm1 = 100000000 
 norm2 = 100000000
 norm3 = 100000000
 
-ODBGET /Equipment/Mupix/Settings/BIASDACS/$mupixID0/VPVCO, out0
-ODBGET /Equipment/Mupix/Settings/BIASDACS/$mupixID1/VPVCO, out1
-ODBGET /Equipment/Mupix/Settings/BIASDACS/$mupixID2/VPVCO, out2
+ODBGET /Equipment/Mupix/Settings/BIASDACS/$mupixID0/VPVCO, out1
+ODBGET /Equipment/Mupix/Settings/BIASDACS/$mupixID1/VPVCO, out2
+ODBGET /Equipment/Mupix/Settings/BIASDACS/$mupixID2/VPVCO, out3
 
 
 # Get errors
-    ODBGET Equipment/Mupix/Variables/PSLL[3*$mupixID0 + 1], error0
-    ODBGET Equipment/Mupix/Variables/PSLL[3*$mupixID0 + 4], error1
-    ODBGET Equipment/Mupix/Variables/PSLL[3*$mupixID0 + 7], error2
+    ODBGET Equipment/Mupix/Variables/PSLL[12*$mupixID0 + 1], error0
+    ODBGET Equipment/Mupix/Variables/PSLL[12*$mupixID0 + 5], error1
+    ODBGET Equipment/Mupix/Variables/PSLL[12*$mupixID0 + 9], error2
 
-    ODBGET Equipment/Mupix/Variables/PSLL[3*$mupixID1 + 1], error3
-    ODBGET Equipment/Mupix/Variables/PSLL[3*$mupixID1 + 4], error4
-    ODBGET Equipment/Mupix/Variables/PSLL[3*$mupixID1 + 7], error5
+    ODBGET Equipment/Mupix/Variables/PSLL[12*$mupixID1 + 1], error3
+    ODBGET Equipment/Mupix/Variables/PSLL[12*$mupixID1 + 5], error4
+    ODBGET Equipment/Mupix/Variables/PSLL[12*$mupixID1 + 9], error5
 
-    ODBGET Equipment/Mupix/Variables/PSLL[3*$mupixID2 + 1], error6
-    ODBGET Equipment/Mupix/Variables/PSLL[3*$mupixID2 + 4], error7
-    ODBGET Equipment/Mupix/Variables/PSLL[3*$mupixID2 + 7], error8
+    ODBGET Equipment/Mupix/Variables/PSLL[12*$mupixID2 + 1], error6
+    ODBGET Equipment/Mupix/Variables/PSLL[12*$mupixID2 + 5], error7
+    ODBGET Equipment/Mupix/Variables/PSLL[12*$mupixID2 + 9], error8
 
-WAIT SECONDS 3
+WAIT 3
 
 # Get errors again
-    ODBGET Equipment/Mupix/Variables/PSLL[3*$mupixID0 + 1], error0_final
-    ODBGET Equipment/Mupix/Variables/PSLL[3*$mupixID0 + 4], error1_final
-    ODBGET Equipment/Mupix/Variables/PSLL[3*$mupixID0 + 7], error2_final
+    ODBGET Equipment/Mupix/Variables/PSLL[12*$mupixID0 + 1], error0_final
+    ODBGET Equipment/Mupix/Variables/PSLL[12*$mupixID0 + 5], error1_final
+    ODBGET Equipment/Mupix/Variables/PSLL[12*$mupixID0 + 9], error2_final
 
-    ODBGET Equipment/Mupix/Variables/PSLL[3*$mupixID1 + 1], error3_final
-    ODBGET Equipment/Mupix/Variables/PSLL[3*$mupixID1 + 4], error4_final
-    ODBGET Equipment/Mupix/Variables/PSLL[3*$mupixID1 + 7], error5_final
+    ODBGET Equipment/Mupix/Variables/PSLL[12*$mupixID0 + 1], error3_final
+    ODBGET Equipment/Mupix/Variables/PSLL[12*$mupixID0 + 5], error4_final
+    ODBGET Equipment/Mupix/Variables/PSLL[12*$mupixID0 + 9], error5_final
 
-    ODBGET Equipment/Mupix/Variables/PSLL[3*$mupixID2 + 1], error6_final
-    ODBGET Equipment/Mupix/Variables/PSLL[3*$mupixID2 + 4], error7_final
-    ODBGET Equipment/Mupix/Variables/PSLL[3*$mupixID2 + 7], error8_final
+    ODBGET Equipment/Mupix/Variables/PSLL[12*$mupixID0 + 1], error6_final
+    ODBGET Equipment/Mupix/Variables/PSLL[12*$mupixID0 + 5], error7_final
+    ODBGET Equipment/Mupix/Variables/PSLL[12*$mupixID0 + 9], error8_final
 
 # Get differences
     diff0 = $error0_final - $error0
@@ -81,15 +78,9 @@ WAIT SECONDS 3
     diff8 = $error8_final - $error8
 
 # Get norms
-    norm1 = sqrt($diff0*$diff0 + $diff1*$diff1 + $diff2*$diff2)
-    norm2 = sqrt($diff3*$diff3 + $diff4*$diff4 + $diff5*$diff5)
-    norm3 = sqrt($diff6*$diff6 + $diff7*$diff7 + $diff8*$diff8)
-        
-
-# If bit error good enough go to end of routine
-IF norm1 < 30 && norm2 < 30 && norm3 < 30
-    GOTO $end
-ENDIF
+    norm1 = $diff0 + $diff1 + $diff2
+    norm2 = $diff3 + $diff4 + $diff5
+    norm3 = $diff6 + $diff7 + $diff8
 
 
 # Loop over all possible magic values
@@ -98,98 +89,104 @@ LOOP j, ($stop_magic_value-$start_magic_value)
     vnvco = $vpvco + 1
 
     # Reconfigure chip
-    LOOP j, 3
-        mupixID = $j-1 # Implement UPSTREAM or DOWNSTREAM
+    LOOP chip_i, 3
+        mupixID = $chip_i -1 + 2 # Implement UPSTREAM or DOWNSTREAM
 
-        ODBSET /Equipment/Mupix/Settings/BIASDACS/$mupixID/VPVCO, $vpvco
-        ODBSET /Equipment/Mupix/Settings/BIASDACS/$mupixID/VNVCO, $vnvco
+        CAT set_vpvco, "/Equipment/Mupix/Settings/BIASDACS/",$mupixID,"/VPVCO"
+        CAT set_vnvco, "/Equipment/Mupix/Settings/BIASDACS/",$mupixID,"/VNVCO"
+        ODBSET $set_vpvco, $vpvco
+        ODBSET $set_vnvco, $vnvco
 
         # Upload config
         ODBSET /Equipment/Switching/Settings/MupixChipToConfigure, $mupixID
         ODBSET /Equipment/Switching/Settings/MupixConfig, 1
-        WAIT 2 SECONDS
+        WAIT 2
     ENDLOOP
 
 
 
     # Get errors
-        ODBGET Equipment/Mupix/Variables/PSLL[3*$mupixID0 + 1], error0
-        ODBGET Equipment/Mupix/Variables/PSLL[3*$mupixID0 + 4], error1
-        ODBGET Equipment/Mupix/Variables/PSLL[3*$mupixID0 + 7], error2
+        ODBGET Equipment/Mupix/Variables/PSLL[12*$mupixID0 + 1], error0
+        ODBGET Equipment/Mupix/Variables/PSLL[12*$mupixID0 + 5], error1
+        ODBGET Equipment/Mupix/Variables/PSLL[12*$mupixID0 + 9], error2
 
-        ODBGET Equipment/Mupix/Variables/PSLL[3*$mupixID1 + 1], error3
-        ODBGET Equipment/Mupix/Variables/PSLL[3*$mupixID1 + 4], error4
-        ODBGET Equipment/Mupix/Variables/PSLL[3*$mupixID1 + 7], error5
+        ODBGET Equipment/Mupix/Variables/PSLL[12*$mupixID1 + 1], error3
+        ODBGET Equipment/Mupix/Variables/PSLL[12*$mupixID1 + 5], error4
+        ODBGET Equipment/Mupix/Variables/PSLL[12*$mupixID1 + 9], error5
 
-        ODBGET Equipment/Mupix/Variables/PSLL[3*$mupixID2 + 1], error6
-        ODBGET Equipment/Mupix/Variables/PSLL[3*$mupixID2 + 4], error7
-        ODBGET Equipment/Mupix/Variables/PSLL[3*$mupixID2 + 7], error8
+        ODBGET Equipment/Mupix/Variables/PSLL[12*$mupixID2 + 1], error6
+        ODBGET Equipment/Mupix/Variables/PSLL[12*$mupixID2 + 5], error7
+        ODBGET Equipment/Mupix/Variables/PSLL[12*$mupixID2 + 9], error8
 
-    WAIT SECONDS 3
+    WAIT 3
 
     # Get errors again
-        ODBGET Equipment/Mupix/Variables/PSLL[3*$mupixID0 + 1], error0_final
-        ODBGET Equipment/Mupix/Variables/PSLL[3*$mupixID0 + 4], error1_final
-        ODBGET Equipment/Mupix/Variables/PSLL[3*$mupixID0 + 7], error2_final
+        ODBGET Equipment/Mupix/Variables/PSLL[12*$mupixID0 + 1], error0_final
+        ODBGET Equipment/Mupix/Variables/PSLL[12*$mupixID0 + 5], error1_final
+        ODBGET Equipment/Mupix/Variables/PSLL[12*$mupixID0 + 9], error2_final
 
-        ODBGET Equipment/Mupix/Variables/PSLL[3*$mupixID1 + 1], error3_final
-        ODBGET Equipment/Mupix/Variables/PSLL[3*$mupixID1 + 4], error4_final
-        ODBGET Equipment/Mupix/Variables/PSLL[3*$mupixID1 + 7], error5_final
+        ODBGET Equipment/Mupix/Variables/PSLL[12*$mupixID0 + 1], error3_final
+        ODBGET Equipment/Mupix/Variables/PSLL[12*$mupixID0 + 5], error4_final
+        ODBGET Equipment/Mupix/Variables/PSLL[12*$mupixID0 + 9], error5_final
 
-        ODBGET Equipment/Mupix/Variables/PSLL[3*$mupixID2 + 1], error6_final
-        ODBGET Equipment/Mupix/Variables/PSLL[3*$mupixID2 + 4], error7_final
-        ODBGET Equipment/Mupix/Variables/PSLL[3*$mupixID2 + 7], error8_final
+        ODBGET Equipment/Mupix/Variables/PSLL[12*$mupixID0 + 1], error6_final
+        ODBGET Equipment/Mupix/Variables/PSLL[12*$mupixID0 + 5], error7_final
+        ODBGET Equipment/Mupix/Variables/PSLL[12*$mupixID0 + 9], error8_final
+
 
     # Get differences
-        diff0 = error0_final - error0
-        diff1 = error1_final - error1
-        diff2 = error2_final - error2
+        diff0 = $error0_final - $error0
+        diff1 = $error1_final - $error1
+        diff2 = $error2_final - $error2
 
-        diff3 = error3_final - error3
-        diff4 = error4_final - error4
-        diff5 = error5_final - error5
+        diff3 = $error3_final - $error3
+        diff4 = $error4_final - $error4
+        diff5 = $error5_final - $error5
 
-        diff6 = error6_final - error6
-        diff7 = error7_final - error7
-        diff8 = error8_final - error8
+        diff6 = $error6_final - $error6
+        diff7 = $error7_final - $error7
+        diff8 = $error8_final - $error8
 
-        candidate_norm1 = sqrt(diff0*diff0 + diff1*diff1 + diff2*diff2)
-        candidate_norm2 = sqrt(diff3*diff3+ diff4*diff4 + diff5*diff5)
-        candidate_norm3 = sqrt(diff6*diff6+ diff7*diff7 + diff8*diff8)
+        candidate_norm1 = $diff0 + $diff1 + $diff2
+        candidate_norm2 = $diff3 + $diff4 + $diff5
+        candidate_norm3 = $diff6 + $diff7 + $diff8
 
-    IF candidate_norm1 < norm1
-        norm1 = candidate_norm1
+    IF $candidate_norm1 < $norm1
+        norm1 = $candidate_norm1
         out1 = $vpvco
     ENDIF
 
-    IF candidate_norm2 < norm2
-        norm2 = candidate_norm2
+    IF $candidate_norm2 < $norm2
+        norm2 = $candidate_norm2
         out2 = $vpvco
     ENDIF
 
-    IF candidate_norm3 < norm3 
-        norm3 = candidate_norm3
+    IF $candidate_norm3 < $norm3 
+        norm3 = $candidate_norm3
         out3 = $vpvco
     ENDIF
 ENDLOOP
 
+
+
 # Output
+SET i_,0
 LOOP i, 3
     mupixID = $i - 1 + $select_UD
-    CAT mupix_out, out, $mupixID
-    ODBSET /Equipment/Mupix/QCTests/Ladder/LINKQUALIcheck/Output/$mupixID/VPVCO, $($mupix_out)
-    ODBSET /Equipment/Mupix/QCTests/Ladder/LINKQUALIcheck/Output/$mupixID/VNVCO, $($mupix_out)+1
-    CAT norm_out, norm, $mupixID 
+    CAT mupix_out, "out", $i
+    ODBSET /Equipment/Mupix/QCTests/Ladder/LINKQUALIcheck/Output/$mupixID/VPVCO[i_], $($mupix_out)
+    ODBSET /Equipment/Mupix/QCTests/Ladder/LINKQUALIcheck/Output/$mupixID/VNVCO[i_], $($mupix_out)+1
+    CAT norm_out, "norm", $i 
     ODBSET /Equipment/Mupix/QCTests/Ladder/LINKQUALIcheck/Output/$mupixID/ErrorRate, $($norm_out)
 
     # Set to better config. TODO test
-    ODBSET /Equipment/Mupix/Settings/BIASDACS/$mupixID/VPVCO, $($mupix_out)
-    ODBSET /Equipment/Mupix/Settings/BIASDACS/$mupixID/VNVCO, $($mupix_out)+1
+    #ODBSET /Equipment/Mupix/Settings/BIASDACS/$mupixID/VPVCO, $($mupix_out)
+    #ODBSET /Equipment/Mupix/Settings/BIASDACS/$mupixID/VNVCO, $($mupix_out)+1
 
     # Upload config. TODO test
-    ODBSET /Equipment/Switching/Settings/MupixChipToConfigure, $mupixID
-    ODBSET /Equipment/Switching/Settings/MupixConfig, 1
-    WAIT 2 SECONDS
+    #ODBSET /Equipment/Switching/Settings/MupixChipToConfigure, $mupixID
+    #ODBSET /Equipment/Switching/Settings/MupixConfig, 1
+    #WAIT 2
 
 ENDLOOP
 

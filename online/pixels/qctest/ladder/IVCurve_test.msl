@@ -20,7 +20,7 @@ PARAM fine_step_size, "Fine voltage increment"
 PARAM stop_voltage, "Stop voltage"
 
 # Check
-SET end, 146
+SET end, 150
 
 # Check values
 # If $current_limit is higher than value at Keithley complain
@@ -32,8 +32,8 @@ ENDIF
 
 # If step size is smaller than fine step complain
 
-MESSAGE $step_size, 1
-MESSAGE $fine_step_size, 1
+#MESSAGE $step_size, 1
+#MESSAGE $fine_step_size, 1
 
 IF $step_size < $fine_step_size
     MESSAGE "Fine step voltage must be smaller than step voltage", 1
@@ -147,7 +147,7 @@ ENDLOOP
 
 
 # Turn off. # end
-ODBSET /Equipment/KEITHLEY0/Variables//Demand Voltage, 0
+ODBSET /Equipment/KEITHLEY0/Variables/Demand Voltage, 0
 ODBSET /Equipment/KEITHLEY0/Variables/Set State, 0
 # Wait to turn off. 
 WAIT SECONDS, 0.1

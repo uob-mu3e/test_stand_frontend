@@ -7,12 +7,16 @@ odbedit -d /Sequencer/State -c "set Path ${PWD}"
 odbedit -d /Equipment/Mupix/ -c "mkdir QCTests"
 odbedit -d /Equipment/Mupix/QCTests -c "mkdir Ladder"
 odbedit -d /Equipment/Mupix/QCTests/Ladder -c "mkdir Eval"
-
+            #From Andrea
+            odbedit -d /Equipment/Mupix/QCTests/Ladder/Eval -c "mkdir SingleChip"
+            odbedit -d /Equipment/Mupix/QCTests/Ladder/Eval -c "mkdir Ladders"
 
 #Test 1 : IV curve
 odbedit -d /Equipment/Mupix/QCTests/Ladder -c "mkdir IV"
 odbedit -d /Equipment/Mupix/QCTests/Ladder/IV -c "mkdir Input"
 odbedit -d /Equipment/Mupix/QCTests/Ladder/IV -c "mkdir Output"
+
+
 #Input parameters
 odbedit -d /Equipment/Mupix/QCTests/Ladder/IV/Input -c "create DOUBLE current_limit"
 odbedit -d /Equipment/Mupix/QCTests/Ladder/IV/Input -c "set start_voltage 0"
@@ -56,8 +60,81 @@ odbedit -d /Equipment/Mupix/QCTests/Ladder/DACScan/Input/ref_Vss -c "create INT3
 odbedit -d /Equipment/Mupix/QCTests/Ladder/DACScan/Input/ref_Vss -c "create INT32 stop_value"
 # Output 
 odbedit -d /Equipment/Mupix/QCTests/Ladder/DACScan/Output -c "mkdir VPDAC"
-odbedit -d /Equipment/Mupix/QCTests/Ladder/DACScan/Output/VPDAC -c "create DOUBLE VPDAC_values[10]"
-odbedit -d /Equipment/Mupix/QCTests/Ladder/DACScan/Output/VPDAC -c "create DOUBLE VPDAC_current[10]"
+odbedit -d /Equipment/Mupix/QCTests/Ladder/DACScan/Output/VPDAC -c "mkdir 0"
+odbedit -d /Equipment/Mupix/QCTests/Ladder/DACScan/Output/VPDAC -c "mkdir 1"
+odbedit -d /Equipment/Mupix/QCTests/Ladder/DACScan/Output/VPDAC -c "mkdir 2"
+odbedit -d /Equipment/Mupix/QCTests/Ladder/DACScan/Output/VPDAC -c "mkdir 3"
+odbedit -d /Equipment/Mupix/QCTests/Ladder/DACScan/Output/VPDAC -c "mkdir 4"
+odbedit -d /Equipment/Mupix/QCTests/Ladder/DACScan/Output/VPDAC -c "mkdir 5"
+odbedit -d /Equipment/Mupix/QCTests/Ladder/DACScan/Output/VPDAC/0 -c "create DOUBLE VPDAC_values[10]"
+odbedit -d /Equipment/Mupix/QCTests/Ladder/DACScan/Output/VPDAC/0 -c "create DOUBLE VPDAC_current[10]"
+odbedit -d /Equipment/Mupix/QCTests/Ladder/DACScan/Output/VPDAC/1 -c "create DOUBLE VPDAC_values[10]"
+odbedit -d /Equipment/Mupix/QCTests/Ladder/DACScan/Output/VPDAC/1 -c "create DOUBLE VPDAC_current[10]"
+odbedit -d /Equipment/Mupix/QCTests/Ladder/DACScan/Output/VPDAC/2 -c "create DOUBLE VPDAC_values[10]"
+odbedit -d /Equipment/Mupix/QCTests/Ladder/DACScan/Output/VPDAC/2 -c "create DOUBLE VPDAC_current[10]"
+odbedit -d /Equipment/Mupix/QCTests/Ladder/DACScan/Output/VPDAC/3 -c "create DOUBLE VPDAC_values[10]"
+odbedit -d /Equipment/Mupix/QCTests/Ladder/DACScan/Output/VPDAC/3 -c "create DOUBLE VPDAC_current[10]"
+odbedit -d /Equipment/Mupix/QCTests/Ladder/DACScan/Output/VPDAC/4 -c "create DOUBLE VPDAC_values[10]"
+odbedit -d /Equipment/Mupix/QCTests/Ladder/DACScan/Output/VPDAC/4 -c "create DOUBLE VPDAC_current[10]"
+odbedit -d /Equipment/Mupix/QCTests/Ladder/DACScan/Output/VPDAC/5 -c "create DOUBLE VPDAC_values[10]"
+odbedit -d /Equipment/Mupix/QCTests/Ladder/DACScan/Output/VPDAC/5 -c "create DOUBLE VPDAC_current[10]"
 odbedit -d /Equipment/Mupix/QCTests/Ladder/DACScan/Output -c "mkdir ref_Vss"
-odbedit -d /Equipment/Mupix/QCTests/Ladder/DACScan/Output/ref_Vss -c "create DOUBLE ref_Vss_values[32]"
-odbedit -d /Equipment/Mupix/QCTests/Ladder/DACScan/Output/ref_Vss -c "create DOUBLE ref_Vss_current[32]"
+odbedit -d /Equipment/Mupix/QCTests/Ladder/DACScan/Output/ref_Vss -c "mkdir 0"
+odbedit -d /Equipment/Mupix/QCTests/Ladder/DACScan/Output/ref_Vss -c "mkdir 1"
+odbedit -d /Equipment/Mupix/QCTests/Ladder/DACScan/Output/ref_Vss -c "mkdir 2"
+odbedit -d /Equipment/Mupix/QCTests/Ladder/DACScan/Output/ref_Vss -c "mkdir 3"
+odbedit -d /Equipment/Mupix/QCTests/Ladder/DACScan/Output/ref_Vss -c "mkdir 4"
+odbedit -d /Equipment/Mupix/QCTests/Ladder/DACScan/Output/ref_Vss -c "mkdir 5"
+odbedit -d /Equipment/Mupix/QCTests/Ladder/DACScan/Output/ref_Vss/0 -c "create DOUBLE ref_Vss_values[32]"
+odbedit -d /Equipment/Mupix/QCTests/Ladder/DACScan/Output/ref_Vss/0 -c "create DOUBLE ref_Vss_current[32]"
+odbedit -d /Equipment/Mupix/QCTests/Ladder/DACScan/Output/ref_Vss/1 -c "create DOUBLE ref_Vss_values[32]"
+odbedit -d /Equipment/Mupix/QCTests/Ladder/DACScan/Output/ref_Vss/1 -c "create DOUBLE ref_Vss_current[32]"
+odbedit -d /Equipment/Mupix/QCTests/Ladder/DACScan/Output/ref_Vss/2 -c "create DOUBLE ref_Vss_values[32]"
+odbedit -d /Equipment/Mupix/QCTests/Ladder/DACScan/Output/ref_Vss/2 -c "create DOUBLE ref_Vss_current[32]"
+odbedit -d /Equipment/Mupix/QCTests/Ladder/DACScan/Output/ref_Vss/3 -c "create DOUBLE ref_Vss_values[32]"
+odbedit -d /Equipment/Mupix/QCTests/Ladder/DACScan/Output/ref_Vss/3 -c "create DOUBLE ref_Vss_current[32]"
+odbedit -d /Equipment/Mupix/QCTests/Ladder/DACScan/Output/ref_Vss/4 -c "create DOUBLE ref_Vss_values[32]"
+odbedit -d /Equipment/Mupix/QCTests/Ladder/DACScan/Output/ref_Vss/4 -c "create DOUBLE ref_Vss_current[32]"
+odbedit -d /Equipment/Mupix/QCTests/Ladder/DACScan/Output/ref_Vss/5 -c "create DOUBLE ref_Vss_values[32]"
+odbedit -d /Equipment/Mupix/QCTests/Ladder/DACScan/Output/ref_Vss/5 -c "create DOUBLE ref_Vss_current[32]"
+
+odbedit -d /Equipment/Mupix/QCTests/Ladder/ -c "mkdir LINKQUALIcheck"
+odbedit -d /Equipment/Mupix/QCTests/Ladder/LINKQUALIcheck -c "mkdir Input"
+odbedit -d /Equipment/Mupix/QCTests/Ladder/LINKQUALIcheck -c "mkdir Output"
+odbedit /Equipment/Mupix/QCTests/Ladder/LINKQUALIcheck/ -c "mkdir Input"
+odbedit -d /Equipment/Mupix/QCTests/Ladder/LINKQUALIcheck/Input/ -c "create DOUBLE HV_voltage"
+odbedit -d /Equipment/Mupix/QCTests/Ladder/LINKQUALIcheck/Input/ -c "create DOUBLE HV_curr_limit"
+
+odbedit -d /Equipment/Mupix/QCTests/Ladder/LINKQUALIcheck/Output -c "mkdir 0"
+odbedit -d /Equipment/Mupix/QCTests/Ladder/LINKQUALIcheck/Output -c "mkdir 1"
+odbedit -d /Equipment/Mupix/QCTests/Ladder/LINKQUALIcheck/Output -c "mkdir 2"
+odbedit -d /Equipment/Mupix/QCTests/Ladder/LINKQUALIcheck/Output -c "mkdir 3"
+odbedit -d /Equipment/Mupix/QCTests/Ladder/LINKQUALIcheck/Output -c "mkdir 4"
+odbedit -d /Equipment/Mupix/QCTests/Ladder/LINKQUALIcheck/Output -c "mkdir 5"
+
+odbedit -d /Equipment/Mupix/QCTests/Ladder/LINKQUALIcheck/Output/0 -c "create DOUBLE VPVCO[3]"
+odbedit -d /Equipment/Mupix/QCTests/Ladder/LINKQUALIcheck/Output/0 -c "create DOUBLE VNVCO[3]"
+odbedit -d /Equipment/Mupix/QCTests/Ladder/LINKQUALIcheck/Output/0 -c "create DOUBLE ErrorRate"
+
+odbedit -d /Equipment/Mupix/QCTests/Ladder/LINKQUALIcheck/Output/1 -c "create DOUBLE VPVCO[3]"
+odbedit -d /Equipment/Mupix/QCTests/Ladder/LINKQUALIcheck/Output/1 -c "create DOUBLE VNVCO[3]"
+odbedit -d /Equipment/Mupix/QCTests/Ladder/LINKQUALIcheck/Output/1 -c "create DOUBLE ErrorRate"
+
+odbedit -d /Equipment/Mupix/QCTests/Ladder/LINKQUALIcheck/Output/2 -c "create DOUBLE VPVCO[3]"
+odbedit -d /Equipment/Mupix/QCTests/Ladder/LINKQUALIcheck/Output/2 -c "create DOUBLE VNVCO[3]"
+odbedit -d /Equipment/Mupix/QCTests/Ladder/LINKQUALIcheck/Output/2 -c "create DOUBLE ErrorRate"
+
+odbedit -d /Equipment/Mupix/QCTests/Ladder/LINKQUALIcheck/Output/3 -c "create DOUBLE VPVCO[3]"
+odbedit -d /Equipment/Mupix/QCTests/Ladder/LINKQUALIcheck/Output/3 -c "create DOUBLE VNVCO[3]"
+odbedit -d /Equipment/Mupix/QCTests/Ladder/LINKQUALIcheck/Output/3 -c "create DOUBLE ErrorRate"
+
+odbedit -d /Equipment/Mupix/QCTests/Ladder/LINKQUALIcheck/Output/4 -c "create DOUBLE VPVCO[3]"
+odbedit -d /Equipment/Mupix/QCTests/Ladder/LINKQUALIcheck/Output/4 -c "create DOUBLE VNVCO[3]"
+odbedit -d /Equipment/Mupix/QCTests/Ladder/LINKQUALIcheck/Output/4 -c "create DOUBLE ErrorRate"
+
+odbedit -d /Equipment/Mupix/QCTests/Ladder/LINKQUALIcheck/Output/5 -c "create DOUBLE VPVCO[3]"
+odbedit -d /Equipment/Mupix/QCTests/Ladder/LINKQUALIcheck/Output/5 -c "create DOUBLE VNVCO[3]"
+odbedit -d /Equipment/Mupix/QCTests/Ladder/LINKQUALIcheck/Output/5 -c "create DOUBLE ErrorRate"
+
+
+# DEFAULT PARAMETERS FOLDER SET HERE
