@@ -233,5 +233,20 @@ void create_sscn_names_in_odb(odb & settings, int switch_id){
 
 }
 
+constexpr int ssplsize = 4;
+
+const array<const string, MAX_N_SWITCHINGBOARDS> sspl = {"SCPL","SUPL","SDPL","SFPL"};
+const array<const string, MAX_N_SWITCHINGBOARDS> ssplnames = {"Names SCPL","Names SUPL","Names SDPL","Names SFPL"};
+
+void create_sspl_names_in_odb(odb & settings, int switch_id){
+    string cntnamestr = ssplnames[switch_id];
+
+    int bankindex = 0;
+
+    settings[cntnamestr][bankindex++] = "PLL156";
+    settings[cntnamestr][bankindex++] = "PLL250";
+    settings[cntnamestr][bankindex++] = "Links Locked Low";
+    settings[cntnamestr][bankindex++] = "Links Locked High";
+}
 
 #endif // MU3EBANKS_H

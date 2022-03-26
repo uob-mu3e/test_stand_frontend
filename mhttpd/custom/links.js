@@ -44,7 +44,7 @@ function DataLink(xmin,y,xmax, index, name){
         if(this.status > 0){    
             if(this.locked == 0)
                 this.lockcol = "rgb(255,0,0)";    
-            if(this.locked == 1)
+            else
                 this.lockcol = "rgb(100,255,100)";   
         } else {
             this.lockcol = "rgb(130,130,130)";
@@ -148,7 +148,7 @@ function SCLink(xmin,y,xmax, index, name){
         if(this.status > 0){    
             if(this.locked == 0)
                 this.lockcol = "rgb(255,0,0)";    
-            if(this.locked == 1)
+            else
                 this.lockcol = "rgb(100,255,100)";   
         } else {
             this.lockcol = "rgb(130,130,130)";
@@ -236,7 +236,8 @@ function Switchingboard(x,y,dx,dy, index){
     this.index = index;
     this.active = 0;
     this.name = "";
-    this.PLLlocked = 0;
+    this.PLL156locked = 0;
+    this.PLL250locked = 0;
 
     this.Data = new Array(4);
     this.SC = new Array(4);
@@ -279,16 +280,33 @@ function Switchingboard(x,y,dx,dy, index){
         cc.fillText("PLL locked", this.x+10, this.y+725);
 
         if(this.active > 0){    
-            if(this.PLLlocked == 0)
+            if(this.PLL156locked == 0)
                 cc.fillStyle = "rgb(255,0,0)";    
-            if(this.locked == 1)
+            if(this.PLL156locked != 0)
                 cc.fillStyle = "rgb(100,255,100)";   
         } else {
             cc.fillStyle = "rgb(150,150,150)";
         }    
         cc.beginPath();
-        cc.arc(this.x+85, this.y+722, 8, 2*Math.PI, false);
+        cc.arc(this.x+83, this.y+722, 8, 2*Math.PI, false);
         cc.fill();
+        cc.fillStyle = "Black";
+        cc.font = "8px Arial, sans-serif";
+        cc.fillText("156", this.x+76, this.y+725);
+
+        if(this.active > 0){    
+            if(this.PLL250locked == 0)
+                cc.fillStyle = "rgb(255,0,0)";    
+            if(this.PLL250locked != 0)
+                cc.fillStyle = "rgb(100,255,100)";   
+        } else {
+            cc.fillStyle = "rgb(150,150,150)";
+        }    
+        cc.beginPath();
+        cc.arc(this.x+105, this.y+722, 8, 2*Math.PI, false);
+        cc.fill();
+        cc.fillStyle = "Black";
+        cc.fillText("250", this.x+98, this.y+725);
 
         cc.fillStyle = "Black";
         cc.font = "12px Arial, sans-serif";
@@ -440,6 +458,35 @@ function init(){
      mjsonrpc_db_get_values(["/Equipment/LinksFibre/Variables/LinkStatus"]).then(function(rpc) {
         if(rpc.result.data[0])
             update_status(rpc.result.data[0],3);
+     }).catch(function(error) {
+        mjsonrpc_error_alert(error);
+     }); 
+
+     
+     mjsonrpc_db_get_values(["/Equipment/LinksCentral/Variables/SCPL"]).then(function(rpc) {
+        if(rpc.result.data[0]) 
+            update_plls(rpc.result.data[0],0);
+    }).catch(function(error) {
+       mjsonrpc_error_alert(error);
+    });
+
+    mjsonrpc_db_get_values(["/Equipment/LinksUpstream/Variables/SUPL"]).then(function(rpc) {
+        if(rpc.result.data[0])
+            update_plls(rpc.result.data[0],1);
+     }).catch(function(error) {
+        mjsonrpc_error_alert(error);
+     });
+
+     mjsonrpc_db_get_values(["/Equipment/LinksDownstream/Variables/SDPL"]).then(function(rpc) {
+        if(rpc.result.data[0])
+            update_plls(rpc.result.data[0],2);
+     }).catch(function(error) {
+        mjsonrpc_error_alert(error);
+     });
+     
+     mjsonrpc_db_get_values(["/Equipment/LinksFibre/Variables/SFPL"]).then(function(rpc) {
+        if(rpc.result.data[0])
+            update_plls(rpc.result.data[0],3);
      }).catch(function(error) {
         mjsonrpc_error_alert(error);
      }); 
@@ -699,6 +746,33 @@ function update_masks(valuex, swb) {
             rxlinks[swb][i].shorttype = "U";
         }
     }
+
+    draw(rxselindex, txselindex);
+}
+
+
+function update_plls(valuex, swb) {
+    var value = valuex;
+    if(typeof valuex === 'string')
+        value = JSON.parse(valuex);
+
+    switchingboards[swb].PLL156locked = value[0] & (1<<31);
+    switchingboards[swb].PLL250locked = value[1] & (1<<31); 
+    
+    for(var i=0; i < nlinksrx[swb]; i++){
+        if(rxlinks[swb][i].status > 0){
+            if(i < 32)
+                rxlinks[swb][i].locked = value[2] & (1<<i);
+            else
+                rxlinks[swb][i].locked = value[3] & (1<<(i-32)); 
+        }
+    }
+
+    // TXlinks are always locked
+    for(var i=0; i < nlinkstx[swb]; i++){
+        if(txlinks[swb][i].status > 0)
+            txlinks[swb][i].status = 1;
+    } 
 
     draw(rxselindex, txselindex);
 }

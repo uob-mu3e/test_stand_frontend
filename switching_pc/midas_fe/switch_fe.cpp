@@ -91,12 +91,14 @@ TilesFEB    * tilefeb;
 /*-- Function declarations -----------------------------------------*/
 
 INT read_sc_event(char *pevent, INT off);
-INT read_WMEM_event(char *pevent, INT off);
+INT read_link_sc_event(char *pevent, INT off);
+//INT read_WMEM_event(char *pevent, INT off);
 INT read_scifi_sc_event(char *pevent, INT off);
 INT read_scitiles_sc_event(char *pevent, INT off);
 INT read_mupix_sc_event(char *pevent, INT off);
 
 DWORD * fill_SSCN(DWORD *);
+DWORD * fill_SSPL(DWORD *);
 
 void sc_settings_changed(odb o);
 void switching_board_mask_changed(odb o);
@@ -287,7 +289,7 @@ void setup_odb(){
     commands.connect(path_c, true);
 
 
-    /* Default values for /Equipment/Switching/Variables */
+    /* Default values for /Equipment/SwitchingX/Variables */
     odb sc_variables = {
             {"FPGA_ID_READ", 0},
             {"START_ADD_READ", 0},
@@ -318,6 +320,9 @@ void setup_odb(){
     string path2 = "/Equipment/" + eq_name + "/Variables";
     sc_variables.connect(path2);
 
+    string pllnamestring    = ssplnames[switch_id];
+    string pllbankname      = sspl[switch_id];
+
     std::array<uint32_t, N_FEBS[switch_id]> verarray;
     verarray.fill(20);
     odb firmware_variables = {
@@ -334,16 +339,21 @@ void setup_odb(){
         {"LinkMask", std::array<uint32_t,N_FEBS[switch_id]>{}},
         {"LinkFEB", febarray},
         {"FEBType", std::array<uint32_t, N_FEBS[switch_id]>{}},
-        {"FEBName", std::array<std::string, N_FEBS[switch_id]>{}}
+        {"FEBName", std::array<std::string, N_FEBS[switch_id]>{}},
+        {pllnamestring.c_str(), std::array<std::string, ssplsize>{}}
     };
+    
+    
     string path_ls = "/Equipment/" + link_eq_name + "/Settings";
     link_settings.connect(path_ls);
 
+    create_sspl_names_in_odb(link_settings,switch_id);
 
     odb link_variables = {
         {"LinkStatus", std::array<uint32_t, N_FEBS[switch_id]>{}},
         {"BypassEnabled", std::array<uint32_t,N_FEBS[switch_id]>{}},
-        {"RunState", std::array<uint32_t, N_FEBS[switch_id]>{}}
+        {"RunState", std::array<uint32_t, N_FEBS[switch_id]>{}},
+        {pllbankname.c_str(), std::array<uint32_t, ssplsize>{}}
     };
     string path_lv = "/Equipment/" + link_eq_name + "/Variables";
     link_variables.connect(path_lv);
@@ -804,10 +814,11 @@ INT resume_run(INT, char *)
 /*--- Read Slow Control Event from FEBs to be put into data stream --------*/
 INT read_sc_event(char *pevent, INT)
 {    
-    auto vec = mufeb->CheckLinks(N_FEBS[switch_id]);
+    // Do this in link SC?
+    /*auto vec = mufeb->CheckLinks(N_FEBS[switch_id]);
     string path_l = "/Equipment/" + std::string(link_eq_name) + "/Variables/LinkStatus";
     odb linkstatus_odb(path_l);
-    linkstatus_odb = vec;
+    linkstatus_odb = vec;*/
 
     //cm_msg(MINFO, "switch_fe::read_sc_event()" , "Reading FEB SC");
     mufeb->ReadBackAllRunState();
@@ -875,6 +886,40 @@ DWORD * fill_SSCN(DWORD * pdata)
     }
     return pdata;
 }
+
+/*--- Read Slow Control Event from Link status to be put into data stream --------*/
+INT read_link_sc_event(char *pevent, INT)
+{    
+    auto vec = mufeb->CheckLinks(N_FEBS[switch_id]);
+    string path_l = "/Equipment/" + std::string(link_eq_name) + "/Variables/LinkStatus";
+    odb linkstatus_odb(path_l);
+    linkstatus_odb = vec;
+
+    string pllbankname = sspl[switch_id];
+
+    // create bank, pdata
+    bk_init(pevent);
+    DWORD *pdata;
+
+    bk_create(pevent, pllbankname.c_str(), TID_UINT32, (void **)&pdata);
+    pdata = fill_SSPL(pdata);
+    bk_close(pevent,pdata);
+
+    return bk_size(pevent);
+}
+
+DWORD * fill_SSPL(DWORD * pdata)
+{
+    
+    *pdata++ = mup->read_register_ro(CNT_PLL_156_REGISTER_R);
+    *pdata++ = mup->read_register_ro(CNT_PLL_250_REGISTER_R);
+    //TODO: Uncomment once registers are defined
+    *pdata++ = 0;//mup->read_register_ro(LINK_LOCKED_LOW_REGISTER_R);
+    *pdata++ = 0;//mup->read_register_ro(LINK_LOCKED_HIGH_REGISTER_R);
+
+    return pdata;
+}
+
 
 /*--- Read Slow Control Event from SciFi to be put into data stream --------*/
 
