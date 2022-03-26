@@ -358,15 +358,11 @@ uint32_t MupixFEB::ReadBackLVDSStatus(mappedFEB & FEB, uint16_t LVDS_ID)
 
 uint32_t MupixFEB::ReadBackLVDSNumHits(mappedFEB & FEB, uint16_t LVDS_ID)
 {
+    //TODO Read a hit counter here
     //cm_msg(MINFO, "MupixFEB::ReadBackLVDSNumHits" , "Implement Me");
     return 0;
 }
 
-uint32_t MupixFEB::ReadBackLVDSNumHitsInMupixFormat(mappedFEB & FEB, uint16_t LVDS_ID)
-{
-    //cm_msg(MINFO, "MupixFEB::ReadBackLVDSNumHitsInMupixFormat" , "Implement Me");
-    return 0;
-}
 
 DWORD* MupixFEB::ReadLVDSCounters(DWORD* pdata, mappedFEB & FEB)
 {
@@ -380,8 +376,7 @@ DWORD* MupixFEB::ReadLVDSCounters(DWORD* pdata, mappedFEB & FEB)
         *pdata++ = ReadBackLVDSStatus(FEB, i);
         // number of hits from link
         *pdata++ = ReadBackLVDSNumHits(FEB, i);
-        // number of hits from link in mupix format
-        *pdata++ = ReadBackLVDSNumHitsInMupixFormat(FEB, i);
+
 
     };
     return pdata;
@@ -403,6 +398,7 @@ DWORD* MupixFEB::ReadLVDSforPSLS(DWORD* pdata, mappedFEB & FEB)
         // Link ID
         *pdata++ = i;  
         *pdata++ = status[i];
+        *pdata++ = ReadBackLVDSNumHits(FEB, i);
         *pdata++ = histos[i*4];
         *pdata++ = histos[i*4+1];
         *pdata++ = histos[i*4+2]; 

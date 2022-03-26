@@ -231,9 +231,6 @@ void mu3ebanks::create_psls_names_in_odb(odb & settings, int switch_id, uint32_t
             (*s) += " Num Hits LVDS";
             settings[cntnamestr][bankindex++] = s;
             s = new string(name);
-            (*s) += " Num Mupix Hits LVDS";
-            settings[cntnamestr][bankindex++] = s;
-            s = new string(name);
             (*s) += " Arrival Histogram Bin 0";
             settings[cntnamestr][bankindex++] = s;
             s = new string(name);

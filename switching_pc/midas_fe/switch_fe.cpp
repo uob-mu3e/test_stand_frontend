@@ -375,6 +375,7 @@ void setup_odb(){
     custom["Links"] = "links.html";
     custom["Febs&"] = "febs.html";
     custom["DAQcounters&"] = "daqcounters.html";
+    custom["Data Flow&"] = "dataflow.html";
 
     // Inculde the line below to set up the FEBs and their mapping for the 2021 integration run
     //#include "odb_feb_mapping_integration_run_2021.h"

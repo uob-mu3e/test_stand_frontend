@@ -65,7 +65,6 @@ class MupixFEB  : public MuFEB{
 
       //FEB registers and functions
       uint32_t ReadBackLVDSNumHits(mappedFEB & FEB, uint16_t LVDS_ID);
-      uint32_t ReadBackLVDSNumHitsInMupixFormat(mappedFEB & FEB, uint16_t LVDS_ID);
       DWORD* ReadLVDSCounters(DWORD* pdata, mappedFEB & FEB);
       uint32_t ReadBackLVDSStatus(mappedFEB & FEB, uint16_t LVDS_ID);
       DWORD * ReadLVDSforPSLS(DWORD* pdata, mappedFEB & FEB);

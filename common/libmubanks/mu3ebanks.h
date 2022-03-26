@@ -57,7 +57,7 @@ const array<const string, MAX_N_SWITCHINGBOARDS> ssplnames = {"Names SCPL","Name
 
 void create_sspl_names_in_odb(odb & settings, int switch_id);
 
-constexpr uint32_t per_fe_PSLS_size = MAX_LVDS_LINKS_PER_FEB*7 +2;
+constexpr uint32_t per_fe_PSLS_size = MAX_LVDS_LINKS_PER_FEB*6 +2;
 
 // The fibre switching board should not produce these pixel banks, thus XXXX
 const array <const string, MAX_N_SWITCHINGBOARDS> psls = {"PCLS","PULS","PDLS","XXXX"};
