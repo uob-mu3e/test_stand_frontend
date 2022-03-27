@@ -8,6 +8,10 @@ function arrival_histogram(x,y){
     this.h = 25;
 
     this.data = new Array(4);
+    this.data[0]=0;
+    this.data[1]=0;
+    this.data[2]=0;
+    this.data[3]=0;
 
     this.draw = function(){
         var max =0;
@@ -27,7 +31,7 @@ function arrival_histogram(x,y){
             var drawval = this.h*this.data[i]/max;
             if(this.data[i] > 0 && drawval < 1)
                 drawval =1;
-            cc.fillRect(this.x+this.w/4*i, this.y+this.h, this.w/4, -this.h*this.data[i]/max);
+            cc.fillRect(this.x+this.w/4*i, this.y+this.h, this.w/4, -drawval);
         }
     }
 }
@@ -39,7 +43,7 @@ function lvdslink(x,y,name){
     this.locked = 0;
     this.ready  = 0;
 
-    this.disperr =7;
+    this.disperr =0;
     this.disperr_last =0;
 
     this.numhits =0;
@@ -117,14 +121,23 @@ for(var i=0; i < 10; i++)
     febs[i] = new feb(160*i,0,"FEB "+ i);
 
 function init(){
+    mjsonrpc_db_get_values(["/Equipment/PixelsCentral/Variables/PCLS"]).then(function(rpc) {
+        if(rpc.result.data[0]){
+            update_pcls(rpc.result.data[0]);
+        }  
+     }).catch(function(error) {
+        mjsonrpc_error_alert(error);
+     });
 
 }
 
 function draw(){
-    febs[0].links[0].ah.data[0] = 12;
-    febs[0].links[0].ah.data[1] = 0;
-    febs[0].links[0].ah.data[2] = 119;
-    febs[0].links[0].ah.data[3] = 8;   
+    canvas = document.querySelector('canvas');
+    cc = canvas.getContext('2d');
+
+
+    cc.fillStyle = "#f2f2f2";
+    cc.fillRect(0, 0, canvas.width, canvas.height);
     
     for(var i=0; i < 10; i++)
         febs[i].draw();
@@ -132,6 +145,34 @@ function draw(){
 
 init();
 draw();
+
+function update_pcls(valuex){
+    var value = valuex;
+    if(typeof valuex === 'string')
+        value = JSON.parse(valuex);
+
+    var offset =0;
+    for(var f=0; f <10; f++){
+        var febindex = parseInt(value[offset+0],16);
+        if(f != febindex)
+            console.log("Index mismatch in PCLs", f, febindex);
+        var nlinks = parseInt(value[offset +1],16);
+        for(var l=0; l < nlinks; l++){
+            febs[f].links[l].locked = value[offset+2+6*l] & (1<<28);
+            febs[f].links[l].ready  = value[offset+2+6*l] & (1<<31);
+            febs[f].links[l].disperr= value[offset+2+6*l] & 0xFFFFFFF;
+            febs[f].links[l].numhits= value[offset+3+6*l];
+            febs[f].links[l].ah.data[0] = value[offset+4+6*l];
+            febs[f].links[l].ah.data[1] = value[offset+5+6*l];
+            febs[f].links[l].ah.data[2] = value[offset+6+6*l];
+            febs[f].links[l].ah.data[3] = value[offset+7+6*l];
+        }
+        offset += 2 + nlinks*6;
+        if(offset >= value.length)
+            break;
+    }
+    draw();
+}
 
 
 
