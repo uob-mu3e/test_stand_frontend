@@ -219,10 +219,19 @@ rrro[2] = new RoundRobinRo(500,450, "Round Robin RO Fibre");
 var dma = new DMA(1100,50);
 
 function init(){
-
+    mjsonrpc_db_get_values(["/Equipment/SwicthingCentral/Variables/SCCN"]).then(function(rpc) {
+        if(rpc.result.data[0]){
+            update_sccn(rpc.result.data[0]);
+        }  
+     }).catch(function(error) {
+        mjsonrpc_error_alert(error);
+     });
 }
 
 function draw(){
+    canvas = document.querySelector('canvas');
+    cc = canvas.getContext('2d');
+
     for(var i=0; i <12; i++){
         febs[i].draw();
     }
@@ -235,6 +244,17 @@ function draw(){
 
 init();
 draw();
+
+function update_sccn(valuex){
+
+    var value = valuex;
+    if(typeof valuex === 'string')
+        value = JSON.parse(valuex);
+
+    //TODO: Caluclate rates from counters and time, fill into objects    
+
+
+}
 
 
 
