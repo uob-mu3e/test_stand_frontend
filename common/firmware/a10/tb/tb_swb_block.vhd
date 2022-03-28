@@ -94,8 +94,8 @@ architecture arch of tb_swb_block is
     writeregs(DATAGENERATOR_DIVIDER_REGISTER_W)             <= x"00000002";
     writeregs(SWB_READOUT_STATE_REGISTER_W)(USE_BIT_GEN_LINK)   <= '1';
     writeregs(SWB_READOUT_STATE_REGISTER_W)(USE_BIT_TEST_ERROR) <= '0';
-    writeregs(SWB_READOUT_STATE_REGISTER_W)(USE_BIT_STREAM)     <= '1';
-    writeregs(SWB_READOUT_STATE_REGISTER_W)(USE_BIT_MERGER)     <= '0';
+    writeregs(SWB_READOUT_STATE_REGISTER_W)(USE_BIT_STREAM)     <= '0';
+    writeregs(SWB_READOUT_STATE_REGISTER_W)(USE_BIT_MERGER)     <= '1';
 
     writeregs(SWB_LINK_MASK_PIXEL_REGISTER_W)               <= x"0000001F";--x"00000048";
     writeregs(FEB_ENABLE_REGISTER_W)                        <= x"0000001F";--x"00000048";

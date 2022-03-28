@@ -21,13 +21,19 @@ port (
     i_empty         : in  std_logic_vector(N_LINKS_IN - 1 downto 0);
     i_mask_n        : in  std_logic_vector(N_LINKS_IN - 1 downto 0);
     o_rack          : out std_logic_vector(N_LINKS_IN - 1 downto 0);
-    
+
     -- output data stream
     o_data          : out work.mu3e.link_array_t(N_LINKS_OUT - 1 downto 0);
     o_empty         : out std_logic_vector(N_LINKS_OUT - 1 downto 0);
     o_mask_n        : out std_logic_vector(N_LINKS_OUT - 1 downto 0);
     i_rack          : in  std_logic_vector(N_LINKS_OUT - 1 downto 0);
-    
+
+    -- counters
+    -- 0: HEADER counters
+    -- 1: SHEADER counters
+    -- 2: HIT counters
+    o_counters      : out work.util.slv32_array_t(3 * N_LINKS_OUT - 1 downto 0);
+
     i_en            : in  std_logic;
     i_reset_n       : in  std_logic;
     i_clk           : in  std_logic--;
@@ -56,7 +62,10 @@ architecture arch of time_merger_tree is
     -- error signals
     signal shop_time0, shop_time1 : work.util.slv7_array_t(N_LINKS_OUT - 1 downto 0) := (others => (others => '0'));
     signal error_s : work.util.slv2_array_t(N_LINKS_OUT - 1 downto 0) := (others => (others => '0'));
-    
+
+    -- counters
+    signal countSop, countSbhdr, countHit : std_logic_vector(N_LINKS_OUT - 1 downto 0);
+
     -- default link types
     signal headerHit : work.mu3e.link_array_t(N_LINKS_OUT - 1 downto 0) := (others => work.mu3e.LINK_SOP);
     signal sbhdrHit : work.mu3e.link_array_t(N_LINKS_OUT - 1 downto 0) := (others => work.mu3e.LINK_SBHDR);
@@ -78,7 +87,49 @@ begin
 
     gen_hits:
     FOR i in 0 to N_LINKS_OUT - 1 GENERATE
-    
+
+        --! HEADER counters
+        countSop(i) <= '1' when layer_state(i) = HEADER else '0';
+        e_cnt_header_state : entity work.counter
+        generic map (
+            WRAP => true,
+            W => o_counters(0+i*3)'length--,
+        )
+        port map (
+            o_cnt => o_counters(0+i*3),
+            i_ena => countSop(i),
+            i_reset_n => i_reset_n,
+            i_clk => i_clk--,
+        );
+
+        --! SHEADER counters
+        countSbhdr(i) <= '1' when layer_state(i) = SHEADER else '0';
+        e_cnt_sheader_state : entity work.counter
+        generic map (
+            WRAP => true,
+            W => o_counters(1+i*3)'length--,
+        )
+        port map (
+            o_cnt => o_counters(1+i*3),
+            i_ena => countSbhdr(i),
+            i_reset_n => i_reset_n,
+            i_clk => i_clk--,
+        );
+
+        --! HIT counters
+        countHit(i) <= '1' when layer_state(i) = HIT else '0';
+        e_cnt_hit_state : entity work.counter
+        generic map (
+            WRAP => true,
+            W => o_counters(2+i*3)'length--,
+        )
+        port map (
+            o_cnt => o_counters(2+i*3),
+            i_ena => countHit(i),
+            i_reset_n => i_reset_n,
+            i_clk => i_clk--,
+        );
+
         mupix_data : IF DATA_TYPE = "00" GENERATE
             a(i)    <= i_data(i).data(31 downto 28) when i_mask_n(i) = '1' else (others => '1');
             b(i)    <= i_data(i+size).data(31 downto 28) when i_mask_n(i+size) = '1' else (others => '1');
@@ -109,8 +160,8 @@ begin
         e_tree_fifo : entity work.link_scfifo
         generic map (
             g_ADDR_WIDTH => g_ADDR_WIDTH,
-            g_WREG_N => 1,
-            g_RREG_N => 1--,
+            g_WREG_N => 2,
+            g_RREG_N => 2--,
         )
         port map (
             i_wdata         => data(i),

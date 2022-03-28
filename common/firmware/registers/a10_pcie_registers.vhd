@@ -81,12 +81,7 @@ package a10_pcie_registers is
             constant USE_BIT_TEST_ERROR                             : integer := 10; -- DOC: Readout state for testing an error handling in the time merger using generated data |  SWB & FARM
             constant USE_BIT_DDR                                    : integer := 10; -- DOC: Readout state for using the ddr memory | FARM
         constant SWB_READOUT_LINK_REGISTER_W                    : integer := 16#14#; -- DOC: Not used at the moment |  SWB & FARM
-        
-        constant SWB_COUNTER_REGISTER_W                         : integer := 16#15#; -- DOC: Register to readout counter values from the SWB, to have more information about the counter look at a10_counter.md | SWB
-            subtype SWB_COUNTER_ADDR_RANGE                          is integer range 7 downto 0;        -- DOC: Addr of the counter which should be read out | SWB
-            subtype SWB_LINK_RANGE                                  is integer range 15 downto 8;       -- DOC: Link addrs for link specific counters (#events, #subheaders, etc.) | SWB
-            subtype SWB_DETECTOR_RANGE                              is integer range 17 downto 16;      -- DOC: which detector we want to readout, 00->PIXEL US, 01->PIXEL DS, 10->SCIFI | SWB
-            constant SWB_COUNTER_TYPE                               : integer := 18;                    -- DOC: counter type 0=link, 1=datapath | SWB
+        constant SWB_COUNTER_REGISTER_W                         : integer := 16#15#; -- DOC: Addr register to readout counter values from the SWB, to have more information about the counter look at a10_counter.md | SWB
 
         constant FARM_READOUT_STATE_REGISTER_W                  : integer := 16#16#; -- DOC: Readout state | FARM
         constant FARM_DATA_TYPE_REGISTER_W                      : integer := 16#17#; -- DOC: Data type for readout | FARM
@@ -209,10 +204,9 @@ package a10_pcie_registers is
         constant SC_STATE_REGISTER_R                            : integer := 16#31#;
         constant DMA_CNT_WORDS_REGISTER_R                       : integer := 16#32#;
         constant SWB_COUNTER_REGISTER_R                         : integer := 16#33#;
-        constant SWB_COUNTER_REGISTER_ADDR_R                    : integer := 16#34#;
-        constant RESET_LINK_STATUS_REGISTER_R                   : integer := 16#35#;
-        constant LINK_LOCKED_LOW_REGISTER_R                     : integer := 16#36#;
-        constant LINK_LOCKED_HIGH_REGISTER_R                    : integer := 16#37#;
+        constant RESET_LINK_STATUS_REGISTER_R                   : integer := 16#34#;
+        constant LINK_LOCKED_LOW_REGISTER_R                     : integer := 16#35#;
+        constant LINK_LOCKED_HIGH_REGISTER_R                    : integer := 16#36#;
 
         -- Registers above 0x38 are in use for the PCIe controller/DMA
         constant DMA_STATUS_REGISTER_R                          : integer := 16#38#;

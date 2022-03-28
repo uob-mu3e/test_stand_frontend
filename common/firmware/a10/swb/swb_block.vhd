@@ -103,10 +103,10 @@ architecture arch of swb_block is
     signal rx_data_scifi   : work.mu3e.link_array_t(g_NLINKS_DATA_SCIFI-1 downto 0) := (others => work.mu3e.LINK_IDLE);
 
     --! counters
-    signal counter_swb_data_pixel_us    : work.util.slv32_array_t(6+g_NLINKS_DATA_PIXEL_US*5-1 downto 0);
-    signal counter_swb_data_pixel_ds    : work.util.slv32_array_t(6+g_NLINKS_DATA_PIXEL_DS*5-1 downto 0);
-    signal counter_swb_data_scifi       : work.util.slv32_array_t(6+g_NLINKS_DATA_SCIFI*5-1 downto 0);
-    signal counter_swb                  : work.util.slv32_array_t(6+g_NLINKS_DATA_PIXEL_US*5 + 6+g_NLINKS_DATA_PIXEL_DS*5 + 6+g_NLINKS_DATA_SCIFI*5 - 1 downto 0);
+    signal counter_swb_data_pixel_us    : work.util.slv32_array_t(g_NLINKS_DATA_PIXEL_US * 5 + 3 * (N_LINKS_TREE(3) + N_LINKS_TREE(2) + N_LINKS_TREE(1)) + 7 downto 0);
+    signal counter_swb_data_pixel_ds    : work.util.slv32_array_t(g_NLINKS_DATA_PIXEL_DS * 5 + 3 * (N_LINKS_TREE(3) + N_LINKS_TREE(2) + N_LINKS_TREE(1)) + 7 downto 0);
+    signal counter_swb_data_scifi       : work.util.slv32_array_t(g_NLINKS_DATA_SCIFI * 5 + 3 * (N_LINKS_TREE(3) + N_LINKS_TREE(2) + N_LINKS_TREE(1)) + 7 downto 0);
+    signal counter_swb                  : work.util.slv32_array_t(counter_swb_data_pixel_us'left+1 + counter_swb_data_pixel_ds'left+1 + counter_swb_data_scifi'left+1 - 1 downto 0);
 
 begin
 
@@ -124,31 +124,7 @@ begin
     --! ------------------------------------------------------------------------
     --! ------------------------------------------------------------------------
     --! ------------------------------------------------------------------------
-    -- TODO: merger counters, sync to MIDAS
-    e_counters : entity work.swb_readout_counters
-    generic map (
-        g_A_CNT                 => counter_swb'left+1,
-        g_NLINKS_DATA_PIXEL_US  => g_NLINKS_DATA_PIXEL_US,
-        g_NLINKS_DATA_PIXEL_DS  => g_NLINKS_DATA_PIXEL_DS,
-        g_NLINKS_DATA_SCIFI     => g_NLINKS_DATA_SCIFI--,
-    )
-    port map (
-        --! register inputs for pcie0
-        i_wregs_add         => i_writeregs(SWB_COUNTER_REGISTER_W),
-
-        --! counters
-        i_counter           => counter_swb,
-
-        --! register outputs for pcie0
-        o_pcie_data         => o_readregs(SWB_COUNTER_REGISTER_R),
-        o_pcie_addr         => o_readregs(SWB_COUNTER_REGISTER_ADDR_R),
-
-        --! i_reset
-        i_reset_n           => i_reset_n,
-
-        --! clocks
-        i_clk               => i_clk--,
-    );
+    o_readregs(SWB_COUNTER_REGISTER_R) <= counter_swb(to_integer(unsigned(i_writeregs(SWB_COUNTER_REGISTER_W))));
 
 
     --! demerge data
@@ -264,9 +240,9 @@ begin
     END GENERATE gen_scifi_data_mapping;
 
     -- counter mapping
-    counter_swb((6+g_NLINKS_DATA_PIXEL_US*5) - 1 downto 0) <= counter_swb_data_pixel_us; 
-    counter_swb((6+g_NLINKS_DATA_PIXEL_DS*5) + (6+g_NLINKS_DATA_PIXEL_US*5) - 1 downto (6+g_NLINKS_DATA_PIXEL_US*5)) <= counter_swb_data_pixel_ds;
-    counter_swb((6+g_NLINKS_DATA_SCIFI*5) + (6+g_NLINKS_DATA_PIXEL_DS*5) + (6+g_NLINKS_DATA_PIXEL_US*5) -1 downto (6+g_NLINKS_DATA_PIXEL_DS*5) + (6+g_NLINKS_DATA_PIXEL_US*5)) <= counter_swb_data_scifi;
+    counter_swb(counter_swb_data_pixel_us'left downto 0) <= counter_swb_data_pixel_us;
+    counter_swb(counter_swb_data_pixel_ds'left+1 + counter_swb_data_pixel_us'left+1 - 1 downto counter_swb_data_pixel_us'left+1) <= counter_swb_data_pixel_ds;
+    counter_swb(counter_swb_data_scifi'left+1 + counter_swb_data_pixel_ds'left+1 + counter_swb_data_pixel_us'left+1 - 1 downto counter_swb_data_pixel_ds'left+1 + counter_swb_data_pixel_us'left+1) <= counter_swb_data_scifi;
 
     -- DAM mapping
     o_dma_wren      <=  pixel_dma_wren(0) when i_writeregs(SWB_READOUT_STATE_REGISTER_W)(USE_BIT_PIXEL_US) = '1' else

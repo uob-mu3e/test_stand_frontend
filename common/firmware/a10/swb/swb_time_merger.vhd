@@ -19,8 +19,13 @@ port (
     i_rmask_n       : in    std_logic_vector(g_NLINKS_DATA - 1 downto 0);
     o_rack          : out   std_logic_vector(g_NLINKS_DATA - 1 downto 0);
 
-    -- TODO: add me
-    o_counters      : out   work.util.slv32_array_t(6 downto 0);
+    -- counters
+    -- 0: debug fifo almost full
+    -- 1 to 3 * (N_LINKS_TREE(3) + N_LINKS_TREE(2) + N_LINKS_TREE(1) tree couters
+    --      0: HEADER counters
+    --      1: SHEADER counters
+    --      2: HIT counters
+    o_counters      : out   work.util.slv32_array_t(3 * (N_LINKS_TREE(3) + N_LINKS_TREE(2) + N_LINKS_TREE(1)) downto 0);
 
     -- output stream
     o_wdata         : out   work.mu3e.link_t;
@@ -54,6 +59,11 @@ architecture arch of swb_time_merger is
 
 begin
 
+    --! counters
+    e_cnt_e_time_merger_fifo_full : entity work.counter
+    generic map ( WRAP => true, W => 32 )
+    port map ( o_cnt => o_counters(0), i_ena => almost_full, i_reset_n => i_reset_n, i_clk => i_clk );
+
     e_time_merger : entity work.time_merger
     generic map (
         g_ADDR_WIDTH => g_ADDR_WIDTH,
@@ -72,6 +82,8 @@ begin
         o_rdata                 => rdata,
         i_rack                  => i_ren,
         o_empty                 => o_rempty,
+
+        o_counters              => o_counters(3 * (N_LINKS_TREE(3) + N_LINKS_TREE(2) + N_LINKS_TREE(1)) downto 1),
 
         i_en                    => i_en,
         i_reset_n               => i_reset_n,

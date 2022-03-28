@@ -28,14 +28,95 @@
 
 using namespace std;
 
-uint32_t read_counters(mudaq::DmaMudaqDevice & mu, uint32_t write_value, uint8_t link, uint8_t detector, uint8_t type)
+uint32_t read_counters(mudaq::DmaMudaqDevice & mu, uint32_t write_value, uint8_t link, uint8_t detector, uint8_t type, uint8_t treeLayer)
 {
-    // SWB_COUNTER_ADDR_RANGE 7 downto 0
-    // SWB_LINK_RANGE 15 downto 8 Link addrs for link specific counters
-    // SWB_DETECTOR_RANGE 17 dowto 16 detector for readout, 00->PIXEL US, 01->PIXEL DS, 10->SCIFI
-    // SWB_COUNTER_TYPE 18 counter type 0=link, 1=datapath
-    mu.write_register(SWB_COUNTER_REGISTER_W, write_value | (link << 8) | (detector << 16) | (type << 18));
+    // write_value: counter one wants to read
+    // link:        addrs for link specific counters
+    // detector:    for readout, 0=PIXEL US, 1=PIXEL DS, 2=SCIFI
+    // type:        0=link, 1=datapath, 2=tree
+    // layer:       layer of the tree 0, 1 or 2
+
+    // counter range for each sub detector
+    // 0 to 7:  
+    //      e_stream_fifo full
+    //      e_debug_stream_fifo almost full
+    //      bank_builder_idle_not_header
+    //      bank_builder_skip_event_dma
+    //      bank_builder_event_dma
+    //      bank_builder_tag_fifo_full
+    //      events send to the farm
+    //      e_debug_time_merger_fifo almost full
+    // 8 to 3 * (1 + 2 + 4):
+    //      tree layer0: 8 to 3 * 4
+    //      tree layer1: 8 + 3 * 4 to 3 * 4 + 3 * 2
+    //      tree layer2: 8 + 3 * 4 + 3 * 2 to 3 * 4 + 3 * 2 + 3 * 1
+    //          layerN link output: # HEADER, SHEADER, HIT
+    // 8 + 3 * (1 + 2 + 4) to 8 + 3 * (1 + 2 + 4) + NLINKS * 5:
+    //      fifo almost_full
+    //      fifo wrfull
+    //      # of skip event
+    //      # of events
+    //      # of sub header
+
+    // link counters
+    if ( type == 0 ) {
+        write_value += SWB_DATAPATH_CNT + SWB_TREE_CNT * (SWB_LAYER0_OUT_CNT + SWB_LAYER1_OUT_CNT + SWB_LAYER2_OUT_CNT) + link * SWB_LINK_CNT;
+    // tree counters
+    } else if ( type == 2 ) {
+        uint32_t treeLinkOffset[3] = { 0, 4, 6 };
+        write_value += SWB_DATAPATH_CNT + SWB_TREE_CNT * (treeLinkOffset[treeLayer] + link);
+        //printf("write_value %d, link %d, treeLinkOffset[treeLayer] %d\n", write_value, link, treeLinkOffset[treeLayer]);
+    }
+
+    // TODO: add detector
+    //write_value += detector * SWB_DATAPATH_CNT + SWB_TREE_CNT * (SWB_LAYER0_OUT_CNT + SWB_LAYER1_OUT_CNT + SWB_LAYER2_OUT_CNT) + link * SWB_LINK_CNT
+
+    mu.write_register(SWB_COUNTER_REGISTER_W, write_value);
     return mu.read_register_ro(SWB_COUNTER_REGISTER_R);
+}
+
+void print_counters(mudaq::DmaMudaqDevice & mu, uint32_t bits)
+{
+    cout << "DataPath counters" << endl;
+    cout << "SWB_STREAM_FIFO_FULL_CNT: 0x" << hex << read_counters(mu, SWB_STREAM_FIFO_FULL_CNT, 0, 0, 1, 0) << endl;
+    cout << "SWB_STREAM_DEBUG_FIFO_ALFULL_CNT: 0x" << hex << read_counters(mu, SWB_STREAM_DEBUG_FIFO_ALFULL_CNT, 0, 0, 1, 0) << endl;
+    cout << "SWB_BANK_BUILDER_IDLE_NOT_HEADER_CNT: 0x" << hex << read_counters(mu, SWB_BANK_BUILDER_IDLE_NOT_HEADER_CNT, 0, 0, 1, 0) << endl;
+    cout << "SWB_BANK_BUILDER_SKIP_EVENT_CNT: 0x" << hex << read_counters(mu, SWB_BANK_BUILDER_SKIP_EVENT_CNT, 0, 0, 1, 0) << endl;
+    cout << "SWB_BANK_BUILDER_EVENT_CNT: 0x" << hex << read_counters(mu, SWB_BANK_BUILDER_EVENT_CNT, 0, 0, 1, 0) << endl;
+    cout << "SWB_BANK_BUILDER_TAG_FIFO_FULL_CNT: 0x" << hex << read_counters(mu, SWB_BANK_BUILDER_TAG_FIFO_FULL_CNT, 0, 0, 1, 0) << endl;
+    cout << "SWB_EVENTS_TO_FARM_CNT: 0x" << hex << read_counters(mu, SWB_EVENTS_TO_FARM_CNT, 0, 0, 1, 0) << endl;
+    cout << "SWB_MERGER_DEBUG_FIFO_ALFULL_CNT: 0x" << hex << read_counters(mu, SWB_MERGER_DEBUG_FIFO_ALFULL_CNT, 0, 0, 1, 0) << endl;
+
+    cout << "Link counters" << endl;
+    for ( uint32_t i = 0; i < bits; i++ ) {
+        cout << "SWB_LINK_FIFO_ALMOST_FULL_CNT: 0x" << hex << read_counters(mu, SWB_LINK_FIFO_ALMOST_FULL_CNT, i, 0, 0, 0) << endl;
+        cout << "SWB_LINK_FIFO_FULL_CNT: 0x" << hex << read_counters(mu, SWB_LINK_FIFO_FULL_CNT, i, 0, 0, 0) << endl;
+        cout << "SWB_SKIP_EVENT_CNT: 0x" << hex << read_counters(mu, SWB_SKIP_EVENT_CNT, i, 0, 0, 0) << endl;
+        cout << "SWB_EVENT_CNT: 0x" << hex << read_counters(mu, SWB_EVENT_CNT, i, 0, 0, 0) << endl;
+        cout << "SWB_SUB_HEADER_CNT: 0x" << hex << read_counters(mu, SWB_SUB_HEADER_CNT, i, 0, 0, 0) << endl;
+    }
+
+    cout << "Tree counters" << endl;
+    uint32_t treeLayers[3] = { 4, 2, 1 };
+    for ( uint32_t layer = 0; layer < 3; layer++ ) {
+        cout << "Layer " << layer;
+        for ( uint32_t link = 0; link < treeLayers[layer]; link++ ) {
+            cout << " L" << link << ":";
+            cout << " SOP 0x" << hex << read_counters(mu, SWB_MERGER_HEADER_CNT, link, 0, 2, layer) << "\t";
+            cout << " SH 0x" << hex << read_counters(mu, SWB_MERGER_SHEADER_CNT, link, 0, 2, layer) << "\t";
+            cout << " HIT 0x" << hex << read_counters(mu, SWB_MERGER_HIT_CNT, link, 0, 2, layer) << " |";
+        }
+        cout << endl;
+    }
+
+    cout << "Link/PLL Counters" << endl;
+    cout << "TS:" << mu.read_register_ro(GLOBAL_TS_LOW_REGISTER_R) << endl;
+    cout << "156 L:" << (mu.read_register_ro(CNT_PLL_156_REGISTER_R) >> 31) << endl;
+    cout << "250 L:" << (mu.read_register_ro(CNT_PLL_250_REGISTER_R) >> 31) << endl;
+    cout << "156 C:" << (mu.read_register_ro(CNT_PLL_156_REGISTER_R) & 0x7FFFFFFF) << endl;
+    cout << "250 C:" << (mu.read_register_ro(CNT_PLL_250_REGISTER_R) & 0x7FFFFFFF) << endl;
+    cout << "Links:" << std::bitset<32>(mu.read_register_ro(LINK_LOCKED_LOW_REGISTER_R)) << endl;
+    cout << "Links:" << std::bitset<32>(mu.read_register_ro(LINK_LOCKED_HIGH_REGISTER_R)) << endl;
 }
 
 uint32_t cntBits(uint32_t n)
@@ -230,49 +311,12 @@ int main(int argc, char *argv[]) {
             break;
         case '2':
             cout << "Last Word in buffer: 0x" << hex << dma_buf[mu.last_endofevent_addr() * 8 - 1] << endl;
-            cout << "DataPath counters" << endl;
-            cout << "SWB_STREAM_FIFO_FULL_CNT: 0x" << hex << read_counters(mu, SWB_STREAM_FIFO_FULL_CNT, 0, 0, 1) << endl;
-            cout << "SWB_BANK_BUILDER_IDLE_NOT_HEADER_CNT: 0x" << hex << read_counters(mu, SWB_BANK_BUILDER_IDLE_NOT_HEADER_CNT, 0, 0, 1) << endl;
-            cout << "SWB_BANK_BUILDER_SKIP_EVENT_CNT: 0x" << hex << read_counters(mu, SWB_BANK_BUILDER_SKIP_EVENT_CNT, 0, 0, 1) << endl;
-            cout << "SWB_BANK_BUILDER_EVENT_CNT: 0x" << hex << read_counters(mu, SWB_BANK_BUILDER_EVENT_CNT, 0, 0, 1) << endl;
-            cout << "SWB_BANK_BUILDER_TAG_FIFO_FULL_CNT: 0x" << hex << read_counters(mu, SWB_BANK_BUILDER_TAG_FIFO_FULL_CNT, 0, 0, 1) << endl;
-            cout << "SWB_EVENTS_TO_FARM_CNT: 0x" << hex << read_counters(mu, SWB_EVENTS_TO_FARM_CNT, 0, 0, 1) << endl;
-
-            cout << "Link counters" << endl;
-            for ( uint32_t i = 0; i < cntBits(strtol(argv[4], NULL, 16)); i++ ) {
-                cout << "SWB_LINK_FIFO_ALMOST_FULL_CNT: 0x" << hex << read_counters(mu, SWB_LINK_FIFO_ALMOST_FULL_CNT, i, 0, 0) << endl;
-                cout << "SWB_LINK_FIFO_FULL_CNT: 0x" << hex << read_counters(mu, SWB_LINK_FIFO_FULL_CNT, i, 0, 0) << endl;
-                cout << "SWB_SKIP_EVENT_CNT: 0x" << hex << read_counters(mu, SWB_SKIP_EVENT_CNT, i, 0, 0) << endl;
-                cout << "SWB_EVENT_CNT: 0x" << hex << read_counters(mu, SWB_EVENT_CNT, i, 0, 0) << endl;
-                cout << "SWB_SUB_HEADER_CNT: 0x" << hex << read_counters(mu, SWB_SUB_HEADER_CNT, i, 0, 0) << endl;
-            }
-            cout << "Link/PLL Counters" << endl;
-            cout << "156 L:" << (mu.read_register_ro(CNT_PLL_156_REGISTER_R) >> 31) << endl;
-            cout << "250 L:" << (mu.read_register_ro(CNT_PLL_250_REGISTER_R) >> 31) << endl;
-            cout << "156 C:" << (mu.read_register_ro(CNT_PLL_156_REGISTER_R) & 0x7FFFFFFF) << endl;
-            cout << "250 C:" << (mu.read_register_ro(CNT_PLL_250_REGISTER_R) & 0x7FFFFFFF) << endl;
-            cout << "Links:" << std::bitset<32>(mu.read_register_ro(LINK_LOCKED_LOW_REGISTER_R)) << endl;
-            cout << "Links:" << std::bitset<32>(mu.read_register_ro(LINK_LOCKED_HIGH_REGISTER_R)) << endl;
+            print_counters(mu, cntBits(strtol(argv[4], NULL, 16)));
             break;
         case '3':
             mu.write_register(RESET_REGISTER_W, reset_regs);
             usleep(10);
-            cout << "DataPath counters" << endl;
-            cout << "SWB_STREAM_FIFO_FULL_CNT: 0x" << hex << read_counters(mu, SWB_STREAM_FIFO_FULL_CNT, 0, 0, 1) << endl;
-            cout << "SWB_BANK_BUILDER_IDLE_NOT_HEADER_CNT: 0x" << hex << read_counters(mu, SWB_BANK_BUILDER_IDLE_NOT_HEADER_CNT, 0, 0, 1) << endl;
-            cout << "SWB_BANK_BUILDER_SKIP_EVENT_CNT: 0x" << hex << read_counters(mu, SWB_BANK_BUILDER_SKIP_EVENT_CNT, 0, 0, 1) << endl;
-            cout << "SWB_BANK_BUILDER_EVENT_CNT: 0x" << hex << read_counters(mu, SWB_BANK_BUILDER_EVENT_CNT, 0, 0, 1) << endl;
-            cout << "SWB_BANK_BUILDER_TAG_FIFO_FULL_CNT: 0x" << hex << read_counters(mu, SWB_BANK_BUILDER_TAG_FIFO_FULL_CNT, 0, 0, 1) << endl;
-            cout << "SWB_EVENTS_TO_FARM_CNT: 0x" << hex << read_counters(mu, SWB_EVENTS_TO_FARM_CNT, 0, 0, 1) << endl;
-
-            cout << "Link counters" << endl;
-            for ( uint32_t i = 0; i < cntBits(strtol(argv[4], NULL, 16)); i++ ) {
-                cout << "SWB_LINK_FIFO_ALMOST_FULL_CNT: 0x" << hex << read_counters(mu, SWB_LINK_FIFO_ALMOST_FULL_CNT, i, 0, 0) << endl;
-                cout << "SWB_LINK_FIFO_FULL_CNT: 0x" << hex << read_counters(mu, SWB_LINK_FIFO_FULL_CNT, i, 0, 0) << endl;
-                cout << "SWB_SKIP_EVENT_CNT: 0x" << hex << read_counters(mu, SWB_SKIP_EVENT_CNT, i, 0, 0) << endl;
-                cout << "SWB_EVENT_CNT: 0x" << hex << read_counters(mu, SWB_EVENT_CNT, i, 0, 0) << endl;
-                cout << "SWB_SUB_HEADER_CNT: 0x" << hex << read_counters(mu, SWB_SUB_HEADER_CNT, i, 0, 0) << endl;
-            }
+            print_counters(mu, cntBits(strtol(argv[4], NULL, 16)));
             mu.write_register(RESET_REGISTER_W, 0x0);
             break;
         case 'q':

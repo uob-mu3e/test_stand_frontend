@@ -28,8 +28,9 @@ port (
     i_ren_debug       : in    std_logic;
 
     --! status counters
-    --! 0: e_stream_fifo full
-    o_counters  : out work.util.slv32_array_t(0 downto 0);
+    --! 0: farm fifo full
+    --! 1: debug fifo almost full
+    o_counters  : out work.util.slv32_array_t(1 downto 0);
 
     i_reset_n   : in    std_logic;
     i_clk       : in    std_logic--;
@@ -56,6 +57,10 @@ begin
     e_cnt_e_stream_fifo_full : entity work.counter
     generic map ( WRAP => true, W => 32 )
     port map ( o_cnt => o_counters(0), i_ena => wfull, i_reset_n => i_reset_n, i_clk => i_clk );
+
+    e_cnt_e_debug_stream_fifo_full : entity work.counter
+    generic map ( WRAP => true, W => 32 )
+    port map ( o_cnt => o_counters(1), i_ena => almost_full, i_reset_n => i_reset_n, i_clk => i_clk );
 
     rempty <= i_rempty or not i_rmask_n when i_en = '1' else (others => '1');
 

@@ -40,7 +40,7 @@ port(
     i_writeregs      : in  work.util.slv32_array_t(63 downto 0);
 
     -- counters
-    o_counter        : out work.util.slv32_array_t(g_NLINKS_DATA*5+6-1 downto 0);
+    o_counter        : out work.util.slv32_array_t(g_NLINKS_DATA * 5 + 3 * (N_LINKS_TREE(3) + N_LINKS_TREE(2) + N_LINKS_TREE(1)) + 7 downto 0);
 
     -- farm data
     o_farm_data      : out work.mu3e.link_t := work.mu3e.LINK_IDLE;
@@ -69,13 +69,14 @@ architecture arch of swb_data_path is
 
     --! stream merger
     signal stream_rdata, stream_rdata_debug : work.mu3e.link_t;
-    signal stream_counters : work.util.slv32_array_t(0 downto 0);
+    signal stream_counters : work.util.slv32_array_t(1 downto 0);
     signal stream_rempty, stream_ren : std_logic;
     signal stream_rempty_debug, stream_ren_debug : std_logic;
     signal stream_rack : std_logic_vector(g_NLINKS_DATA-1 downto 0);
 
     --! timer merger
     signal merger_rdata : work.mu3e.link_t;
+    signal merger_counters : work.util.slv32_array_t(3 * (N_LINKS_TREE(3) + N_LINKS_TREE(2) + N_LINKS_TREE(1)) downto 0);
     signal merger_rdata_debug : work.mu3e.link_t;
     signal merger_rempty, merger_ren, merger_header, merger_trailer, merger_error : std_logic;
     signal merger_rempty_debug, merger_ren_debug : std_logic;
@@ -107,19 +108,22 @@ begin
 
     -- dma and farm counters
     o_counter(0) <= stream_counters(0);  --! e_stream_fifo full
-    o_counter(1) <= builder_counters(0); --! bank_builder_idle_not_header
-    o_counter(2) <= builder_counters(1); --! bank_builder_skip_event_dma
-    o_counter(3) <= builder_counters(2); --! bank_builder_event_dma
-    o_counter(4) <= builder_counters(3); --! bank_builder_tag_fifo_full
-    o_counter(5) <= events_to_farm_cnt;  --! events send to the farm
+    o_counter(1) <= stream_counters(1);  --! e_debug_stream_fifo almost full
+    o_counter(2) <= builder_counters(0); --! bank_builder_idle_not_header
+    o_counter(3) <= builder_counters(1); --! bank_builder_skip_event_dma
+    o_counter(4) <= builder_counters(2); --! bank_builder_event_dma
+    o_counter(5) <= builder_counters(3); --! bank_builder_tag_fifo_full
+    o_counter(6) <= events_to_farm_cnt;  --! events send to the farm
+    o_counter(7) <= merger_counters(0);  --! e_debug_time_merger_fifo almost full
+    o_counter(7 + 3 * (N_LINKS_TREE(3) + N_LINKS_TREE(2) + N_LINKS_TREE(1)) downto 8) <= merger_counters(3 * (N_LINKS_TREE(3) + N_LINKS_TREE(2) + N_LINKS_TREE(1)) downto 1);
 
     -- link to fifo counters
-    generate_rdata : for i in 0 to g_NLINKS_DATA - 1 generate
-        o_counter(6+0+i*5) <= link_to_fifo_cnt(0+i*5); --! fifo almost_full
-        o_counter(6+1+i*5) <= link_to_fifo_cnt(1+i*5); --! fifo wrfull
-        o_counter(6+2+i*5) <= link_to_fifo_cnt(2+i*5); --! # of skip event
-        o_counter(6+3+i*5) <= link_to_fifo_cnt(3+i*5); --! # of events
-        o_counter(6+4+i*5) <= link_to_fifo_cnt(4+i*5); --! # of sub header
+    generate_link_to_fifo_cnt : for i in 0 to g_NLINKS_DATA - 1 generate
+        o_counter(8 + 3 * (N_LINKS_TREE(3) + N_LINKS_TREE(2) + N_LINKS_TREE(1)) + 0+i*5) <= link_to_fifo_cnt(0+i*5); --! fifo almost_full
+        o_counter(8 + 3 * (N_LINKS_TREE(3) + N_LINKS_TREE(2) + N_LINKS_TREE(1)) + 1+i*5) <= link_to_fifo_cnt(1+i*5); --! fifo wrfull
+        o_counter(8 + 3 * (N_LINKS_TREE(3) + N_LINKS_TREE(2) + N_LINKS_TREE(1)) + 2+i*5) <= link_to_fifo_cnt(2+i*5); --! # of skip event
+        o_counter(8 + 3 * (N_LINKS_TREE(3) + N_LINKS_TREE(2) + N_LINKS_TREE(1)) + 3+i*5) <= link_to_fifo_cnt(3+i*5); --! # of events
+        o_counter(8 + 3 * (N_LINKS_TREE(3) + N_LINKS_TREE(2) + N_LINKS_TREE(1)) + 4+i*5) <= link_to_fifo_cnt(4+i*5); --! # of sub header
     end generate;
 
     e_cnt_farm_events : entity work.counter
@@ -275,6 +279,8 @@ begin
         i_rempty        => rx_rdempty,
         i_rmask_n       => i_rmask_n,
         o_rack          => merger_rack,
+
+        o_counters      => merger_counters,
 
         -- farm data
         o_wdata         => merger_rdata,
