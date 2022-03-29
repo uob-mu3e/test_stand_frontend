@@ -8,11 +8,10 @@ use ieee.std_logic_1164.all;
 use ieee.std_logic_unsigned.all;
 use ieee.numeric_std.all;
 
-
 entity mutrig_store is
 port (
     i_clk_deser      : in  std_logic;
-    i_clk_rd         : in  std_logic;   -- fast PCIe memory clk 
+    i_clk_rd         : in  std_logic;   -- fast PCIe memory clk
     i_reset          : in  std_logic;   -- reset, active high
     i_aclear         : in  std_logic;   -- asyncronous reset for buffer clear
     i_event_data     : in  std_logic_vector(47 downto 0);   -- event data from deserelizer
@@ -25,11 +24,11 @@ port (
     i_crc_error      : in  std_logic;
     --event data output inteface
     o_fifo_data      : out std_logic_vector(55 downto 0);   -- event data output
-    o_fifo_empty     :  out std_logic;
-    i_fifo_rd        :  in std_logic;
+    o_fifo_empty     : out std_logic;
+    i_fifo_rd        : in  std_logic;
     --monitoring
     o_fifo_full      : out std_logic;   -- sync to i_clk_deser. Write-when-fill is prevented internally
-    i_reset_counters : in std_logic;
+    i_reset_counters : in  std_logic;
     o_eventcounter   : out std_logic_vector(31 downto 0);   -- sync to i_clk_deser
     o_timecounter    : out std_logic_vector(63 downto 0);   -- sync to i_clk_deser
     o_framecounter   : out std_logic_vector(63 downto 0);   -- sync to i_clk_deser
@@ -39,9 +38,9 @@ port (
     o_prbs_wrd_cnt   : out std_logic_vector(63 downto 0);
 
     --configuration
-    i_SC_mask        : in std_logic -- '1':  block any data from being written to the fifo
+    i_SC_mask        : in  std_logic -- '1':  block any data from being written to the fifo
 );
-end mutrig_store;
+end entity;
 
 architecture RTL of mutrig_store is
 
@@ -66,7 +65,7 @@ signal s_eventcounter       : std_logic_vector(31 downto 0);
 signal s_framecounter       : std_logic_vector(63 downto 0);
 signal s_crcerrorcounter    : std_logic_vector(31 downto 0);
 
-begin 
+begin
 
 u_prbs_checker : entity work.prbs48_checker
 port map(
@@ -163,41 +162,27 @@ end process;
 rst_sync_clear : entity work.reset_sync
 port map( i_reset_n => not i_aclear, o_reset_n => s_clear_rxclk_n, i_clk => i_clk_deser);
 
---u_channel_data_fifo : entity work.channeldata_fifo   
---port map(
---    aclr     => i_reset or (not s_clear_rxclk_n),
---    data	   => s_full_event_data,
---    rdclk	   => i_clk_rd,
---    rdreq	   => i_fifo_rd,
---    wrclk	   => i_clk_deser,
---    wrreq	   => s_event_ready,
---    q	      => o_fifo_data,
---    rdempty	=> o_fifo_empty,
---    wrfull	=> s_fifofull,
---    rdusedw   => s_fifoused
---);
+    u_channel_data_fifo : entity work.ip_dcfifo_v2
+    generic map (
+        g_ADDR_WIDTH => 8,
+        g_DATA_WIDTH => 56,
+        g_WREG_N => 1,
+        g_RREG_N => 1--,
+    )
+    port map (
+        i_wdata     => s_full_event_data,
+        i_we        => s_event_ready,
+        o_wfull     => s_fifofull,
+        o_wusedw    => s_fifoused,
+        i_wclk      => i_clk_deser,
 
-u_channel_data_fifo : entity work.ip_dcfifo_v2
-generic map (
-	g_ADDR_WIDTH => 8,
-	g_DATA_WIDTH => 56,
-	g_WREG_N => 1,
-	g_RREG_N => 1--,
-)
-port map (
-	i_wdata     => s_full_event_data,
-	i_we        => s_event_ready,
-	o_wfull     => s_fifofull,
-	o_wusedw    => s_fifoused,
-	i_wclk      => i_clk_deser,
+        o_rdata     => o_fifo_data,
+        i_rack      => i_fifo_rd,
+        o_rempty    => o_fifo_empty,
+        i_rclk      => i_clk_rd,
 
-	o_rdata     => o_fifo_data,
-	i_rack      => i_fifo_rd,
-	o_rempty    => o_fifo_empty,
-	i_rclk      => i_clk_rd,
-
-	i_reset_n   => (not i_reset) or s_clear_rxclk_n--,
-);
+        i_reset_n   => (not i_reset) or s_clear_rxclk_n--,
+    );
 
 o_fifo_full     <= s_fifofull;
 o_eventcounter <= s_eventcounter;
@@ -205,4 +190,4 @@ o_crcerrorcounter <= s_crcerrorcounter;
 o_timecounter <= s_timecounter;
 o_framecounter <= s_framecounter;
 
-end RTL;
+end architecture;

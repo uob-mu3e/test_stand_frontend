@@ -14,11 +14,6 @@ generic (
     N_LINKS     : positive := 1--;
 );
 port (
-    i_clk                       : in  std_logic;
-    i_reset_n                   : in  std_logic;
-    
-    i_receivers_usrclk          : in  std_logic;
-
     i_reg_add                   : in  std_logic_vector(15 downto 0);
     i_reg_re                    : in  std_logic;
     o_reg_rdata                 : out std_logic_vector(31 downto 0);
@@ -27,22 +22,26 @@ port (
 
     -- inputs
     i_cntreg_num                : in  std_logic_vector(31 downto 0); -- on receivers_usrclk domain
-    i_cntreg_denom_b            : in  std_logic_vector(63 downto 0); -- on receivers_usrclk domain
+    i_cntreg_denom_b            : in  std_logic_vector(63 downto 0);
     i_rx_pll_lock               : in  std_logic;
     i_frame_desync              : in  std_logic_vector(1 downto 0);
-    i_rx_dpa_lock_reg           : in  std_logic_vector(N_MODULES*N_ASICS - 1 downto 0); -- on receivers_usrclk domain
-    i_rx_ready                  : in  std_logic_vector(N_MODULES*N_ASICS - 1 downto 0); -- on receivers_usrclk domain
+    i_rx_dpa_lock_reg           : in  std_logic_vector(N_MODULES*N_ASICS - 1 downto 0);
+    i_rx_ready                  : in  std_logic_vector(N_MODULES*N_ASICS - 1 downto 0);
     i_miso_transition_count     : in  std_logic_vector(31 downto 0);
 
     -- outputs
     o_cntreg_ctrl               : out std_logic_vector(31 downto 0);
     o_dummyctrl_reg             : out std_logic_vector(31 downto 0);
     o_dpctrl_reg                : out std_logic_vector(31 downto 0);
-	 o_dpctrl_rx_reg             : out std_logic_vector(31 downto 0); -- on receivers_usrclk domai
     o_subdet_reset_reg          : out std_logic_vector(31 downto 0);
     o_subdet_resetdly_reg_written : out std_logic;
-    o_subdet_resetdly_reg       : out std_logic_vector(31 downto 0)--;
+    o_subdet_resetdly_reg       : out std_logic_vector(31 downto 0);
+    o_ctrl_lapse_counter_reg    : out std_logic_vector(31 downto 0);
 
+    i_clk_125                   : in    std_logic;
+
+    i_reset_n                   : in    std_logic;
+    i_clk                       : in    std_logic--;
 );
 end entity;
 
@@ -57,7 +56,9 @@ architecture rtl of scifi_reg_mapping is
     signal sync_cntreg_num      : std_logic_vector(31 downto 0);
     signal sync_cntreg_denom_b  : std_logic_vector(63 downto 0);
     signal sync_rx_dpa_lock_reg : std_logic_vector(N_MODULES*N_ASICS - 1 downto 0);
-	 signal rx_ready 				  : std_logic_vector(N_MODULES*N_ASICS - 1 downto 0);
+    signal rx_ready             : std_logic_vector(N_MODULES*N_ASICS - 1 downto 0);
+    signal frame_desync         : std_logic_vector(1 downto 0);
+    signal ctrl_lapse_counter_reg : std_logic_vector(31 downto 0);
     
     signal q_sync, data_sync    : std_logic_vector(32 + 64 + N_MODULES*N_ASICS + N_MODULES*N_ASICS - 1 downto 0);
     signal empty                : std_logic;
@@ -67,47 +68,81 @@ architecture rtl of scifi_reg_mapping is
 
 begin
 
-    o_dpctrl_reg            <= dpctrl_reg;
     o_subdet_reset_reg      <= subdet_reset_reg;
     o_subdet_resetdly_reg   <= subdet_resetdly_reg;
 
-
-    --! input sync
-    data_sync <= i_cntreg_num & i_cntreg_denom_b & i_rx_dpa_lock_reg & i_rx_ready;
-    e_sync_in : entity work.fifo_sync
-    generic map(
-        g_RDATA_RESET => (data_sync'range => '0')--,
-    ) port map ( 	i_wdata => data_sync, i_wclk => i_receivers_usrclk, i_wreset_n => '1',
-						o_rdata => q_sync, i_rclk => i_clk, i_rreset_n => '1'--,
+    -- sync from 125 clock to 156
+    ----------------------------------------------------------------------------
+    e_sync_cntreg_num : entity work.ff_sync
+    generic map ( W => sync_cntreg_num'length )
+    port map (
+        i_d => i_cntreg_num, o_q => sync_cntreg_num,
+        i_reset_n => i_reset_n, i_clk => i_clk--,
     );
-    sync_cntreg_num         <= q_sync(32 + 64 + N_MODULES*N_ASICS + N_MODULES*N_ASICS - 1 downto 64 + N_MODULES*N_ASICS + N_MODULES*N_ASICS);
-    sync_cntreg_denom_b     <= q_sync(     64 + N_MODULES*N_ASICS + N_MODULES*N_ASICS - 1 downto      N_MODULES*N_ASICS + N_MODULES*N_ASICS);
-    sync_rx_dpa_lock_reg    <= q_sync(          N_MODULES*N_ASICS + N_MODULES*N_ASICS - 1 downto                      	  N_MODULES*N_ASICS);
-	 rx_ready					 <= q_sync(          						  N_MODULES*N_ASICS - 1 downto                      	  	               0);
-
-    --! output sync
-    data_sync_out <= cntreg_ctrl & dummyctrl_reg & dpctrl_reg;
-    e_sync_out : entity work.fifo_sync
-    generic map(
-        g_RDATA_RESET => (data_sync_out'range => '0')--,
-    ) port map ( 	i_wdata => data_sync_out, i_wclk => i_clk, i_wreset_n => '1',
-						o_rdata => q_sync_out, i_rclk => i_receivers_usrclk, i_rreset_n => '1'--,
+    e_sync_cntreg_denom_b : entity work.ff_sync
+    generic map ( W => sync_cntreg_denom_b'length )
+    port map (
+        i_d => i_cntreg_denom_b, o_q => sync_cntreg_denom_b,
+        i_reset_n => i_reset_n, i_clk => i_clk--,
     );
-    o_cntreg_ctrl   <= q_sync_out(95 downto 64);
-    o_dummyctrl_reg <= q_sync_out(63 downto 32);
-	 o_dpctrl_rx_reg <= q_sync_out(31 downto  0);
+    e_sync_rx_dpa_lock_reg : entity work.ff_sync
+    generic map ( W => sync_rx_dpa_lock_reg'length )
+    port map (
+        i_d => i_rx_dpa_lock_reg, o_q => sync_rx_dpa_lock_reg,
+        i_reset_n => i_reset_n, i_clk => i_clk--,
+    );
+    e_rx_ready : entity work.ff_sync
+    generic map ( W => rx_ready'length )
+    port map (
+        i_d => i_rx_ready, o_q => rx_ready,
+        i_reset_n => i_reset_n, i_clk => i_clk--,
+    );
+    e_frame_desync : entity work.ff_sync
+    generic map ( W => frame_desync'length )
+    port map (
+        i_d => i_frame_desync, o_q => frame_desync,
+        i_reset_n => i_reset_n, i_clk => i_clk--,
+    );
+    ----------------------------------------------------------------------------
 
+    -- sync from 156 to 125 clock
+    ----------------------------------------------------------------------------
+    e_cntreg_ctrl : entity work.ff_sync
+    generic map ( W => cntreg_ctrl'length )
+    port map (
+        i_d => cntreg_ctrl, o_q => o_cntreg_ctrl,
+        i_reset_n => i_reset_n, i_clk => i_clk_125--,
+    );
+    e_dummyctrl_reg : entity work.ff_sync
+    generic map ( W => dummyctrl_reg'length )
+    port map (
+        i_d => dummyctrl_reg, o_q => o_dummyctrl_reg,
+        i_reset_n => i_reset_n, i_clk => i_clk_125--,
+    );
+    e_dpctrl_reg : entity work.ff_sync
+    generic map ( W => dpctrl_reg'length )
+    port map (
+        i_d => dpctrl_reg, o_q => o_dpctrl_reg,
+        i_reset_n => i_reset_n, i_clk => i_clk_125--,
+    );
+    e_ctrl_lapse_reg : entity work.ff_sync
+    generic map ( W => ctrl_lapse_counter_reg'length )
+    port map (
+        i_d => ctrl_lapse_counter_reg, o_q => o_ctrl_lapse_counter_reg,
+        i_reset_n => i_reset_n, i_clk => i_clk_125--,
+    );
+    ----------------------------------------------------------------------------
 
     process(i_clk, i_reset_n)
         variable regaddr : integer;
     begin
-
-        if ( i_reset_n = '0' ) then
+    if ( i_reset_n /= '1' ) then
             dummyctrl_reg           <= (others=>'0');
             dpctrl_reg              <= (others=>'0');
             subdet_reset_reg        <= (others=>'0');
             subdet_resetdly_reg     <= (others=>'0');
-        elsif ( rising_edge(i_clk) ) then
+            ctrl_lapse_counter_reg  <= (others=>'0');
+    elsif rising_edge(i_clk) then
             o_reg_rdata         <= X"CCCCCCCC";
             regaddr             := to_integer(unsigned(i_reg_add));
             o_subdet_resetdly_reg_written <= '0';
@@ -133,7 +168,7 @@ begin
             if ( i_reg_re = '1' and regaddr = SCIFI_MON_STATUS_REGISTER_R ) then
                 o_reg_rdata <= (others => '0');
                 o_reg_rdata(0) <= i_rx_pll_lock;
-                o_reg_rdata(5 downto 4) <= i_frame_desync;
+                o_reg_rdata(5 downto 4) <= frame_desync;
                 o_reg_rdata(9 downto 8) <= "00";
             end if;
 
@@ -180,7 +215,11 @@ begin
                 o_reg_rdata <= i_miso_transition_count;
             end if;
 
-        end if;
+            if ( i_reg_re = '1' and regaddr = SCIFI_CTRL_LAPSE_COUNTER_REGISTER_W ) then
+                ctrl_lapse_counter_reg <= i_reg_wdata;
+            end if;
+
+    end if;
     end process;
 
 end architecture;

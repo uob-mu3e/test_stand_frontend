@@ -45,7 +45,7 @@ port (
 	i_SC_mask	 : in std_logic_vector(N_INPUTS-1 downto 0);		-- allow missing header or tailer from masked asic, block read requests from this 
 	i_SC_nomerge     : in std_logic --do not enforce merging data withing frames, instead only use the first (!!) asic to generate frames
 );
-end framebuilder_mux;
+end entity;
 
 architecture impl of framebuilder_mux is
 	--integer to one hot encoding

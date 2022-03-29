@@ -19,13 +19,21 @@ end entity doNotCompileAwayMux;
 
 architecture rtl of doNotCompileAwayMux is
 
-signal counter          : unsigned(16 downto 0):= (others => '0');
+    signal counter          : unsigned(16 downto 0):= (others => '0');
+    signal doNotCompileAway : std_logic_vector(WIDTH_g downto 0);
 
 begin
 
+    e_doNotCompileAway : entity work.ff_sync
+    generic map ( W => i_doNotCompileAway'length )
+    port map (
+        i_d => i_doNotCompileAway, o_q => doNotCompileAway,
+        i_reset_n => i_reset_n, i_clk => i_clk--,
+    );
+
     process(i_clk, i_reset_n)
     begin
-        if(i_reset_n = '0') then
+        if(i_reset_n /= '1') then
             counter     <= (others => '0');
         elsif(rising_edge(i_clk)) then
             if(counter = WIDTH_g) then 
@@ -33,7 +41,7 @@ begin
             else
                 counter <= counter + 1;
             end if;
-            o_led       <= i_doNotCompileAway(to_integer(counter));
+            o_led       <= doNotCompileAway(to_integer(counter));
         end if;
     end process;
 end rtl;

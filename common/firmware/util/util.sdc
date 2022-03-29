@@ -5,6 +5,9 @@
 foreach e [ get_entity_instances -nowarn "ff_sync" ] {
     set to_regs [ get_registers -nocase -nowarn "$e|ff*" ]
     if { [ get_collection_size $to_regs ] > 1 } {
+        set_false_path -to $to_regs
+#        set_min_delay -to $to_regs -100
+#        set_max_delay -to $to_regs 100
 #        set_max_skew -to $to_regs -get_skew_value_from_clock_period dst_clock_period -skew_value_multiplier 0.5
     }
 }

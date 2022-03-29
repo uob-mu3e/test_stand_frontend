@@ -46,4 +46,7 @@ package scifi_registers is
     constant SCIFI_CTRL_RESET_REGISTER_W         :   integer := 16#4A#;
     constant SCIFI_CTRL_RESETDELAY_REGISTER_W    :   integer := 16#4B#;
 
+    -- lapse counting
+    constant SCIFI_CTRL_LAPSE_COUNTER_REGISTER_W :   integer := 16#404C#;
+
 end package;

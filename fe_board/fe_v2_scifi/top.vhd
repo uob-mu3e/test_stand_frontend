@@ -11,7 +11,7 @@ use ieee.numeric_std.all;
 use work.mudaq.all;
 
 entity top is
-    port (
+port (
         fpga_reset                  : in    std_logic;
 
         LVDS_clk_si1_fpga_A         : in    std_logic; -- 125 MHz base clock for LVDS PLLs - right // SI5345
@@ -35,8 +35,8 @@ entity top is
         scifi_spi_sclk              : out   std_logic;
         scifi_spi_miso              : in    std_logic;
         scifi_spi_mosi              : out   std_logic;
-        scifi_temp_mutrig         	: in    std_logic;
-        scifi_temp_sipm           	: in    std_logic;
+        scifi_temp_mutrig           : in    std_logic;
+        scifi_temp_sipm             : in    std_logic;
 
         scifi_spi_sclk2             : out   std_logic;
         scifi_spi_miso2             : in    std_logic;
@@ -49,8 +49,8 @@ entity top is
         scifi_cec_miso2             : in    std_logic;
         scifi_fifo_ext2             : out   std_logic;
         scifi_inject2               : out   std_logic;
-        scifi_temp_mutrig2        	: in    std_logic;
-        scifi_temp_sipm2          	: in    std_logic;
+        scifi_temp_mutrig2          : in    std_logic;
+        scifi_temp_sipm2            : in    std_logic;
 
         -- Fireflies
         firefly1_tx_data            : out   std_logic_vector(3 downto 0); -- transceiver
@@ -113,10 +113,13 @@ entity top is
         max10_spi_D2                : inout std_logic;
         max10_spi_D3                : inout std_logic;
         max10_spi_csn               : out   std_logic
-        );
-end top;
+);
+end entity;
 
 architecture rtl of top is
+
+    signal clk_125, reset_125_n : std_logic;
+    signal clk_156, reset_156_n : std_logic;
 
     -- Debouncers
     signal pb_db                    : std_logic_vector(1 downto 0);
@@ -159,13 +162,26 @@ architecture rtl of top is
     signal chip_reset : std_logic := '0';
     signal counter_vec : std_logic_vector(31 downto 0);
     signal counter : integer;
-	 signal chip_reset_v : std_logic_vector(N_MODULES-1 downto 0);
+    signal chip_reset_v : std_logic_vector(N_MODULES-1 downto 0);
     
     signal pll_test : std_logic;
 
     signal fast_pll_clk : std_logic;
 
 begin
+
+    clk_125 <= lvds_firefly_clk;
+
+    e_reset_125_n : entity work.reset_sync
+    port map ( o_reset_n => reset_125_n, i_reset_n => pb_db(0), i_clk => clk_125 );
+
+    clk_156 <= transceiver_pll_clock(0);
+
+    e_reset_156_n : entity work.reset_sync
+    port map ( o_reset_n => reset_156_n, i_reset_n => pb_db(0), i_clk => clk_156 );
+
+
+
 --------------------------------------------------------------------
 --------------------------------------------------------------------
 ---- SciFi SUB-DETECTOR FIRMWARE -----------------------------------
@@ -192,8 +208,8 @@ begin
     scifi_csn_buf(6) <= not scifi_int_csn(6);
     scifi_csn_buf(7) <=     scifi_int_csn(7);
 
-    scifi_syncres   	<= not scifi_int_syncres;
-    scifi_syncres2  	<= not scifi_int_syncres2;
+    scifi_syncres    <= not scifi_int_syncres;
+    scifi_syncres2   <= not scifi_int_syncres2;
     
     scifi_spi_sclk   <= not scifi_int_spi_sclk; -- check google doc
     scifi_spi_mosi   <= not scifi_int_spi_mosi;
@@ -201,11 +217,11 @@ begin
     scifi_spi_mosi2  <= not scifi_int_spi_mosi;
 
     scifi_int_spi_miso <=  (not scifi_spi_miso2) when (scifi_csn_buf(7 downto 4) /= x"F") else scifi_spi_miso;
-	 
+
     -- LVDS inputs signflip in receiver block generic
-     
-	 -- scifi detector firmware
-    e_tile_path : entity work.scifi_path
+
+    -- scifi detector firmware
+    e_scifi_path : entity work.scifi_path
     generic map (
         IS_SCITILE      => '0',
         N_MODULES       => N_MODULES,
@@ -222,7 +238,7 @@ begin
         i_reg_we                    => scifi_reg.we,
         i_reg_wdata                 => scifi_reg.wdata,
 
-        o_chip_reset		            => chip_reset_v,
+        o_chip_reset                => chip_reset_v,
 
         o_pll_test                  => pll_test,
         i_data                      => scifi_din(N_MODULES*N_ASICS-1 downto 0),
@@ -246,19 +262,21 @@ begin
 
         o_MON_rxrdy                 => s_MON_rxrdy,
 
-        i_clk_core                  => transceiver_pll_clock(0),
-        i_clk_g125                  => lvds_firefly_clk,
         i_clk_ref_A                 => LVDS_clk_si1_fpga_A,
         i_clk_ref_B                 => LVDS_clk_si1_fpga_B,
 
         o_fast_pll_clk              => fast_pll_clk,
         o_test_led                  => lcd_data(4 downto 3),
-        i_reset                     => not pb_db(0)--,
+
+        i_reset_156_n               => reset_156_n,
+        i_clk_156                   => clk_156,
+        i_reset_125_n               => reset_125_n,
+        i_clk_125                   => clk_125--,
     );
 
-    process(lvds_firefly_clk)
+    process(clk_125)
     begin
-    if ( falling_edge(lvds_firefly_clk) ) then
+    if falling_edge(clk_125) then
         if ( run_state_125 = RUN_STATE_SYNC and sync_cnt <= 10 ) then
             scifi_int_syncres <= '1';
             scifi_int_syncres2 <= '1';
@@ -406,14 +424,16 @@ begin
 
         -- reset system
         o_run_state_125             => run_state_125,
-        i_ack_run_prep_permission   => '1',--and_reduce(s_MON_rxrdy), --TODO: check what s_MON_rxrdy does and if it works
+        --TODO: check what s_MON_rxrdy does and if it works
+        --MK: it is the ready bit for all the receivers
+        i_ack_run_prep_permission   => '1',--and_reduce(s_MON_rxrdy),
 
         -- clocks
         i_nios_clk          => spare_clk_osc,
         o_nios_clk_mon      => lcd_data(0),
-        i_clk_156           => transceiver_pll_clock(0),
+        i_clk_156           => clk_156,
         o_clk_156_mon       => lcd_data(1),
-        i_clk_125           => lvds_firefly_clk,
+        i_clk_125           => clk_125,
 
         i_areset_n          => pb_db(0),
 
@@ -425,6 +445,7 @@ begin
 
 
     FPGA_Test(0) <= transceiver_pll_clock(0);
-    FPGA_Test(1) <= lvds_firefly_clk;
+    FPGA_Test(1) <= clk_125;
     FPGA_Test(2) <= clk_125_top;
-end rtl;
+
+end architecture;

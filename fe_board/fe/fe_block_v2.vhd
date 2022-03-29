@@ -531,7 +531,7 @@ begin
 
     process(i_clk_156)
     begin
-        if(rising_edge(i_clk_156)) then
+    if rising_edge(i_clk_156) then
             if(i_data_bypass_we = '1') then
                 ffly_rx_data(127 downto 96) <= i_data_bypass;
                 ffly_rx_datak(15 downto 12) <= "0000";
@@ -539,7 +539,7 @@ begin
                 ffly_rx_data(127 downto 96) <= x"000000BC";
                 ffly_rx_datak(15 downto 12) <= "0001";
             end if;
-        end if;
+    end if;
     end process;
 
     --TODO: do we need two independent link test modules for both fibers?
@@ -618,8 +618,8 @@ begin
         i_clk                   => i_clk_156--,
     );
 
-    firefly: entity work.firefly
-    port map(
+    firefly : entity work.firefly
+    port map (
         i_clk                           => i_clk_156,
         i_sysclk                        => i_nios_clk,
         i_clk_i2c                       => i_nios_clk,
@@ -673,7 +673,7 @@ begin
     );
 
     e_max10_interface : entity work.max10_interface
-    port map(
+    port map (
         i_clk               => i_nios_clk,
         i_reset_n           => nios_reset_n,
         i_clk_156           => i_clk_156,
