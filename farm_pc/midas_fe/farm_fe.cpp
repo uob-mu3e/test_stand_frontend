@@ -66,7 +66,7 @@ INT max_event_size = dma_buf_size; //TODO: how to define this?
 INT max_event_size_frag = 5 * 1024 * 1024;
 
 /* buffer size to hold events */
-INT event_buffer_size = 2 * max_event_size;
+INT event_buffer_size = 32 * max_event_size;
 
 mudaq::DmaMudaqDevice * mup;
 mudaq::DmaMudaqDevice::DataBlock block;
