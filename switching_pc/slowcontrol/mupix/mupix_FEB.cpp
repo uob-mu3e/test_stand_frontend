@@ -172,7 +172,7 @@ int MupixFEB::ConfigureASICs(){
                 payload.push_back(bitpattern_m);
             }
             int size = payload.size();
-            payload[size-1] = 0x2900303;//TOFIX: why different?
+            //payload[size-1] = 0x2900303;//TOFIX: why different?
 
             std::cout << "Payload:\n";
             for(uint32_t j = 0; j<payload.size();j++){
@@ -195,15 +195,15 @@ int MupixFEB::ConfigureASICs(){
             for (int i = 0; i < pos; ++i)
                 chip_select_mask |= (0x1 << i);
 
-            if (MupixChipToConfigure == 0)
+            if (MupixChipToConfigure == 5)
             {
                 chip_select_mask = 0xfffffdff;
             }
-            else if (MupixChipToConfigure == 1)
+            else if (MupixChipToConfigure == 4)
             {
                 chip_select_mask = 0xfffffbff;
             }
-            if (MupixChipToConfigure == 2)
+            if (MupixChipToConfigure == 3)
             {
                 chip_select_mask = 0xfffff7ff;
             }//TOFIX: why has it changed?
