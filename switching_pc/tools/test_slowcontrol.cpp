@@ -26,8 +26,19 @@
 
 using namespace std;
 
-int main()
+void print_usage() {
+    cout << "Usage: " << endl;
+    cout << "       test_slowcontrol <FPGA Addr>" << endl;
+}
+
+int main(int argc, char *argv[])
 {
+    if(argc < 2) {
+        print_usage();
+        return -1;
+    }
+
+
     
     /* Open mudaq device */
     mudaq::DmaMudaqDevice mu("/dev/mudaq0");
@@ -49,7 +60,7 @@ int main()
     // test write
     const vector<uint32_t> data = {0,1,5};
     uint32_t startaddr = 0;
-    uint32_t FPGA_ID = 0;
+    uint32_t FPGA_ID = atoi(argv[1]);
     uint32_t packet_type = PACKET_TYPE_SC_WRITE;
 
     if(startaddr >= pow(2,16)){

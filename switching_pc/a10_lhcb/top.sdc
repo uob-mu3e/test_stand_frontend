@@ -21,3 +21,7 @@ create_clock -period "125.000 MHz" [get_ports A10_REFCLK_GBT_P_7]
 derive_pll_clocks -create_base_clocks
 
 derive_clock_uncertainty
+
+# false path from rx.locked bits to pcie registers
+set_false_path -to {a10_block:a10_block|local_pcie0_rregs_A[53][*]}
+set_false_path -to {a10_block:a10_block|local_pcie0_rregs_A[54][*]}
