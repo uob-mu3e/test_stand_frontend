@@ -162,11 +162,19 @@ INT frontend_init()
         mup = new mudaq::DummyDmaMudaqDevice("/dev/mudaq0");
     #else
         mup = new mudaq::DmaMudaqDevice("/dev/mudaq0");
-    #endif       
+    #endif
+
         
     INT status = init_mudaq(*mup);
     if (status != SUCCESS)
         return FE_ERR_DRIVER;
+
+    // check if PCIE is working
+    uint32_t val=mup->read_register_ro(VERSION_REGISTER_R);
+    if(val == 0xFFFFFFFF){
+        cm_msg(MINFO, "frontend_init()", "PCIE Error, swb pcie reg reading not working");
+        return FE_ERR_DRIVER;
+    }
 
     //init febs (general)
     status = init_febs();
@@ -732,9 +740,10 @@ INT end_of_run(INT, char *)
 {
 
 try{
-   /* get link active from odb */
-    odb cur_links_odb("/Equipment/Links/Settings/LinkMask");
-    uint64_t link_active_from_odb = get_link_active_from_odb(cur_links_odb);
+    /* get link active from odb. */
+   string path_l = "/Equipment/" + std::string(link_eq_name) + "/Settings/LinkMask";
+   odb cur_links_odb(path_l);
+   uint64_t link_active_from_odb = get_link_active_from_odb(cur_links_odb);
 
    printf("end_of_run: Waiting for stop signals from all FEBs\n");
    uint16_t timeout_cnt = 50;

@@ -516,7 +516,7 @@ void prepare_run_on_request(odb & o){
 
 
 
-    odb a("/Equipment/Links/Settings/SwitchingBoardMask");
+    odb a("/Equipment/Clock Reset/Settings/SwitchingBoardMask");
     vector<int> active = a;
 
     bool allok = true;
@@ -525,7 +525,7 @@ void prepare_run_on_request(odb & o){
         printf("%i : %i : %i\n", i, request[i], active[i]);
         allok = allok && ((request[i] > 0) || (active[i] == 0));
         notalloff = notalloff || active[i];
-    }
+     }
 
     if(!notalloff) return;
 
