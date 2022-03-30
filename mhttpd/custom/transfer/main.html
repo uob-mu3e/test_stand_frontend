@@ -13,10 +13,18 @@
 	   <script src="transfer/js/scripting.js"></script>
        <script src="transfer/js/pixel_tests.js"></script>
 
-	   <title>Pixel test</title>
+       <style>
+            textarea {
+                overflow-y: scroll;
+                height: 100px;
+                resize: none; /* Remove this if you want the user to resize the textarea */
+            }
+       </style>
+
+	   <title>Pixel test helper</title>
 	</head>
 
-	<body class="mcss" onload="load()">
+	<body class="mcss" onload="load()"style="margin-left: 15px; margin-top: 15px;">
 		<!-- header and side navigation will be filled in mhttpd_start -->
 		<div id="mheader"></div>
 		<div id="msidenav"></div>
@@ -24,14 +32,12 @@
 		<div id="mmain">
 
 			<input type="file" id="jsonInputConfig" accept=".json"
-				   onchange="handleFile()"></input>
-			<p class="content"></p>
+				   onchange="handleFile()" ></input>
             
-
             <form>
                 <label for="mupixID">Mupix numberID</label>
                 <select name="muxpiID" id="mupixID">
-                    <option value="6">0</option>
+                    <option value="0" selected="selected">0</option>
                     <option value="1">1</option>
                     <option value="2">2</option>
                     <option value="3">3</option>
@@ -41,10 +47,38 @@
             </form>
           
 
-            <button type="button" id="uploadAllButton" onclick="uploadAllConfigToODB()">Upload all</button>
-			<button type="button" id="uploadButton" onclick="uploadConfigToODB(0)">Upload</button>
-			<button type="button" id="configureButton" onclick="loadConfig([0, 1, 2, 3, 4, 5])">Load configuration to all</button>
+            <!--<button type="button" id="uploadAllButton" onclick="uploadAllConfigToODB()">Upload all</button>-->
+			<button type="button" id="uploadButton" onclick="uploadConfigToODB()">Upload config to mupix</button>
+            <button type="button" id="uploadButton" onclick="uploadAllConfigToODB()">Upload config to all mupix</button>
+            <button type="button" id="uploadButton" onclick="loadConfigToMupix()">Apply config to mupix</button>
+			<!--<button type="button" id="configureButton" onclick="loadConfig([0, 1, 2, 3, 4, 5])">Load configuration to all</button>-->
 
+            <br />    
+			<textarea id='log' rows=3 cols=50 readonly ></textarea>
+
+            <table class="mtable" id="keithley0">
+                <tr><th colspan="8" class="mtableheader">KEITHLEY 0</th></tr>
+                <tr>
+                    <th colspan="2" >Channel</th>
+                    <th>State</th>
+                    <th>Demand Voltage</th>
+                    <th>Voltage</th>
+                    <th>Current Limit</th>
+                    <th>Current (uA)</th>
+                    <th>Description</th>
+                </tr>
+                <tr>
+                    <th>0</th>
+                    <td style="text-align: center"><div class="modbbox" style="width: 20px; height: 20px;" data-odb-path="/Equipment/KEITHLEY0/Variables/State[0]" data-color="lightgreen" data-background-color="red"></div></td>
+                    <td style="text-align: center"><input type="checkbox" name="CheckboxPixels" class="modbcheckbox" data-odb-path="/Equipment/KEITHLEY0/Variables/Set State[0]"></input></td>
+                    <td><div class="modbvalue" data-odb-path="/Equipment/KEITHLEY0/Variables/Demand Voltage[0]" data-odb-editable="1"></div></td>
+                    <td><div class="modbvalue" data-format="e3" data-odb-path="/Equipment/KEITHLEY0/Variables/Voltage[0]"></div></td>
+                    <td><div class="modbvalue" data-format="e3" data-odb-path="/Equipment/KEITHLEY0/Variables/Current Limit[0]" data-odb-editable="1"></div></td>
+                    <td><div id="keithley_curr" data-format="e3" class="modbvalue" data-odb-path="/Equipment/KEITHLEY0/Variables/Current[0]" data-formula="1000000*x"></div></td>
+                    <td id="keithley0_0" style="text-align: center">PM1+</td>
+                </tr>
+                <tr>
+            </table>
 
             <table class="mtable" id="hameg0">
                 <tr><th colspan="8" class="mtableheader">HAMEG 0</th></tr>
@@ -99,36 +133,9 @@
                 </tr>
             </table>
 
-
-            <table class="mtable" id="keithley0">
-                <tr><th colspan="8" class="mtableheader">KEITHLEY 0</th></tr>
-                <tr>
-                    <th colspan="2" >Channel</th>
-                    <th>State</th>
-                    <th>Demand Voltage</th>
-                    <th>Voltage</th>
-                    <th>Current Limit</th>
-                    <th>Current (uA)</th>
-                    <th>Description</th>
-                </tr>
-                <tr>
-                    <th>0</th>
-                    <td style="text-align: center"><div class="modbbox" style="width: 20px; height: 20px;" data-odb-path="/Equipment/KEITHLEY0/Variables/State[0]" data-color="lightgreen" data-background-color="red"></div></td>
-                    <td style="text-align: center"><input type="checkbox" name="CheckboxPixels" class="modbcheckbox" data-odb-path="/Equipment/KEITHLEY0/Variables/Set State[0]"></input></td>
-                    <td><div class="modbvalue" data-odb-path="/Equipment/KEITHLEY0/Variables/Demand Voltage[0]" data-odb-editable="1"></div></td>
-                    <td><div class="modbvalue" data-format="e3" data-odb-path="/Equipment/KEITHLEY0/Variables/Voltage[0]"></div></td>
-                    <td><div class="modbvalue" data-format="e3" data-odb-path="/Equipment/KEITHLEY0/Variables/Current Limit[0]" data-odb-editable="1"></div></td>
-                    <td><div id="keithley_curr" data-format="e3" class="modbvalue" data-odb-path="/Equipment/KEITHLEY0/Variables/Current[0]" data-formula="1000000*x"></div></td>
-                    <td id="keithley0_0" style="text-align: center">PM1+</td>
-                </tr>
-                <tr>
-            </table>
-
-            <button onclick="iv_curve()">IV Curve</button>
-            <button onclick="await lv_power_on_test2()">LV Test 0</button>
-	    <div id="status">
+	    <!--<div id="status">
 		<div style="display: none;" id="autotest_IV" class="modbvalue" data-odb-path="/Equipment/Mupix/Settings/AutomaticTests/IV"></div>
-		<div id="status_report">Nothing</div>
+		<div id="status_report">Nothing</div>-->
 	    </div>
 
 		</div>      

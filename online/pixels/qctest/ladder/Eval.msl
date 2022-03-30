@@ -1,27 +1,72 @@
-# Author A. Loreti, March 2022, cosmic run. andrea.loreti@physics.ox.ac.uk
+#############################################################################################################################       
+    # Author A. Loreti, March 2022, cosmic run. andrea.loreti@physics.ox.ac.uk
 
-# Summary: Eval evaluates the quality of the Ladder
-# User input: ladder ID 
-# Input from MIDAS: DACScan Input/Outputs and IV Input/Outputs
-# Output: the total score for the ladder
+    # Summary: Eval evaluates the quality of the Ladder
+    # User input: ladder ID 
+    # Input from MIDAS: DACScan Input/Outputs -- IV Input/Outputs -- Lov voltage Output
+    # Output single chip: to be done
+    # Output ladder: the total score for the ladder and a breakthrough evaluation in array format, one netry for each test done
+#############################################################################################################################
 
 
-# SCRIPT /home/labor/online/online/pixels/qctest/ladder/DACScan_test.msl
 
-# PATHS TO MIDAS INPUTs & OUTPUTs
+# MAIN PATH TO MIDAS LADDER QUALITY CONTROL DIRECTORY
 SET path_root, "/Equipment/Mupix/QCTests/Ladder"
-CAT path_DAC_input, $path_root,"/DACScan/Input"
-CAT path_DAC_output, $path_root,"/ACScan/Output"
+
+# MAKE NEW KEY IN THE EVAL DIRECTORY WITH LADDER ID NUMBER IN IT
+# The new key is a vector that stores evaluation outcomes for this ladder. Possble outcomes 0 (failed) 1(passed)
+CAT path_Eval,$path_root,"/Eval"
+PARAM ladderID, "Ladder identification number"
+CAT Eval_output, $path_Eval,"/Ladders/",$ladderID
+ODBCREATE $Eval_output,INT8,4
+
+#ODBSET $Eval_output[1],0
+#ODBSET $Eval_output[2],0
+#ODBSET $Eval_output[3],0
+#ODBSET $Eval_output[4],0
+
+# INITIALIZE TEST OUTCOMES WITH "0" (test not passed yet)
+TEST_chip_config =0
+TEST_IV=0
+TEST_VPDAC=0
+TEST_refVss=0
+
+# CONTROL VALUES 
+SET _brkdwnV_min,10
+SET _brkdwnV_max,25
+SET _min_config_current, 0.4
+SET _VPDAC_gradient_min, -1
+SET _VPDAC_gradient_max, 1
+
+
+
+###################################### CHIP CONFIG TEST ##########################################
+SET control_flag, 6
+SET j,0
+LOOP i,6
+
+CAT path_chip_config, $path_root, "/LVPowerOn/Output/current_increase[$j]"
+ODBGET $path_chip_config, chip_config_current
+IF $chip_config_current < $_min_config_current
+control_flag = $control_flag -1
+ENDIF
+
+SET j,$i
+ENDLOOP
+
+# Test passed
+IF $control_flag==6
+TEST_chip_config=1
+ENDIF
+
+#ODBSET $Eval_output[1], $TEST_chip_config
+
+
+###################################### LADDER IV TEST ##########################################
 CAT path_IV_input, $path_root,"/IV/Input"
 CAT path_IV_output, $path_root,"/IV/Output"
-CAT path_Eval,$path_root,"/Eval"
 
-# USER INPUT, make new key inside Eval
-PARAM ladderID, "Ladder identification number"
-CAT Eval_output, $path_Eval,"/",$ladderID
-ODBCREATE $Eval_output,INT8,2
-
-# Initialize variables
+# Initialize variables before loop
 SET this_current, 0
 SET this_V, 0
 
@@ -33,25 +78,100 @@ ODBGET $path_IV_output/Voltage[$j], this_V
 
 # defines max. current
 SET max_current, 0
-ODBSUBDIR /Equipment/Mupix/QCTests/Ladder/IV/Input
-    ODBGET current_limit, max_current
-ENDODBSUBDIR
-
-SET I_thr, $this_current
-SET V_thr, $this_V
-
-MESSAGE $j,1
-MESSAGE $i,1
-MESSAGE $this_current,1
-MESSAGE $max_current,1
+ODBGET /Equipment/Mupix/QCTests/Ladder/IV/Input/current_limit, max_current
 
 # We have exceeded max current
 IF $this_current>$max_current
-GOTO 55
+GOTO 97
 ENDIF
 
 SET j,$i
 ENDLOOP
 
-MESSAGE $I_thr,1
-MESSAGE $V_thr,1
+# Test passed 
+IF $this_V>$_brkdwnV_min
+IF $this_V<$_brkdwnV_max
+SET TEST_IV,1
+ENDIF
+ENDIF
+
+#ODBSET $Eval_output[2],$TEST_IV
+
+
+###################################### LADDER VPDAC TEST ##########################################
+#Input parameters
+CAT path_DAC_input,  $path_root,"/DACScan/Input/VPDAC"
+CAT path_DAC_output, $path_root,"/DACScan/Output/VPDAC/"
+
+
+# Nr.of steps in VPDAC
+ODBSUBDIR $path_DAC_input
+ODBGET start_value, vpdac_start
+ODBGET stop_value, vpdac_stop
+ODBGET step, vpdac_step
+SET VPDAC_steps, (($vpdac_stop-$vpdac_start) / $vpdac_step) + 1 
+ENDODBSUBDIR
+
+
+#Nr of chips
+SET chips,6
+
+# Control_flag: 6 if ladder passed test, smaller than 6 otherwise
+SET control_flag_1, $chips
+
+# This chip
+SET chip,0
+
+
+LOOP i,$chips
+
+#Append this path till I say so
+CAT path_VPDAC, $path_DAC_output,$chip
+ODBSUBDIR $path_VPDAC
+
+SET control_flag_2, $VPDAC_steps
+SET j_,0
+LOOP j,$VPDAC_steps/2
+
+ODBGET VPDAC_values[$j_], VPDAC_val_0
+ODBGET VPDAC_current[$j_], VPDAC_cur_0
+ODBGET VPDAC_values[$j], VPDAC_val_1
+ODBGET VPDAC_current[$j], VPDAC_cur_1
+
+
+SET control_flag_2, $VPDAC_steps
+IF $VPDAC_val_1 != $VPDAC_val_0
+SET gradient, ($VPDAC_cur_1 - $VPDAC_cur_0)/($VPDAC_val_1 - $VPDAC_val_0)
+IF $gradient<$_VPDAC_gradient_min
+IF $gradient>$_VPDAC_gradient_max
+control_flag_2 = $control_flag_2 -1
+ENDIF
+ENDIF
+ELSE 
+control_flag_2 = $control_flag_2 -1
+ENDIF
+
+j_=$j
+ENDLOOP
+
+# Test for this chip passed 
+IF $control_flag_2<$VPDAC_steps
+control_flag_1 = $control_flag_1 -1
+ENDIF
+
+chip=$i
+ENDODBSUBDIR
+ENDLOOP
+
+
+# Test for ladder passed 
+IF $control_flag_1==$chips
+TEST_VPDAC=1
+ENDIF
+#ODBSET $Eval_output[2], $TEST_VPDAC
+
+
+###################################### LADDER ref_Vss TEST ##########################################
+
+CAT test_results, "TEST RESULTS : (Current increase, LV, VPDAC) : ",$TEST_chip_config,$TEST_IV,$TEST_VPDAC
+MESSAGE $test_results,1

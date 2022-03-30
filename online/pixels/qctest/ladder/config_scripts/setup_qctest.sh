@@ -98,13 +98,16 @@ odbedit -d /Equipment/Mupix/QCTests/Ladder/DACScan/Output/ref_Vss/4 -c "create D
 odbedit -d /Equipment/Mupix/QCTests/Ladder/DACScan/Output/ref_Vss/5 -c "create DOUBLE ref_Vss_values[32]"
 odbedit -d /Equipment/Mupix/QCTests/Ladder/DACScan/Output/ref_Vss/5 -c "create DOUBLE ref_Vss_current[32]"
 
+# Test 4 : Link Quality test
 odbedit -d /Equipment/Mupix/QCTests/Ladder/ -c "mkdir LINKQUALIcheck"
 odbedit -d /Equipment/Mupix/QCTests/Ladder/LINKQUALIcheck -c "mkdir Input"
 odbedit -d /Equipment/Mupix/QCTests/Ladder/LINKQUALIcheck -c "mkdir Output"
-odbedit /Equipment/Mupix/QCTests/Ladder/LINKQUALIcheck/ -c "mkdir Input"
+
+# Input
 odbedit -d /Equipment/Mupix/QCTests/Ladder/LINKQUALIcheck/Input/ -c "create DOUBLE HV_voltage"
 odbedit -d /Equipment/Mupix/QCTests/Ladder/LINKQUALIcheck/Input/ -c "create DOUBLE HV_curr_limit"
 
+# Output
 odbedit -d /Equipment/Mupix/QCTests/Ladder/LINKQUALIcheck/Output -c "mkdir 0"
 odbedit -d /Equipment/Mupix/QCTests/Ladder/LINKQUALIcheck/Output -c "mkdir 1"
 odbedit -d /Equipment/Mupix/QCTests/Ladder/LINKQUALIcheck/Output -c "mkdir 2"
@@ -112,28 +115,28 @@ odbedit -d /Equipment/Mupix/QCTests/Ladder/LINKQUALIcheck/Output -c "mkdir 3"
 odbedit -d /Equipment/Mupix/QCTests/Ladder/LINKQUALIcheck/Output -c "mkdir 4"
 odbedit -d /Equipment/Mupix/QCTests/Ladder/LINKQUALIcheck/Output -c "mkdir 5"
 
-odbedit -d /Equipment/Mupix/QCTests/Ladder/LINKQUALIcheck/Output/0 -c "create DOUBLE VPVCO[3]"
-odbedit -d /Equipment/Mupix/QCTests/Ladder/LINKQUALIcheck/Output/0 -c "create DOUBLE VNVCO[3]"
+odbedit -d /Equipment/Mupix/QCTests/Ladder/LINKQUALIcheck/Output/0 -c "create DOUBLE VPVCO"
+odbedit -d /Equipment/Mupix/QCTests/Ladder/LINKQUALIcheck/Output/0 -c "create DOUBLE VNVCO"
 odbedit -d /Equipment/Mupix/QCTests/Ladder/LINKQUALIcheck/Output/0 -c "create DOUBLE ErrorRate"
 
-odbedit -d /Equipment/Mupix/QCTests/Ladder/LINKQUALIcheck/Output/1 -c "create DOUBLE VPVCO[3]"
-odbedit -d /Equipment/Mupix/QCTests/Ladder/LINKQUALIcheck/Output/1 -c "create DOUBLE VNVCO[3]"
+odbedit -d /Equipment/Mupix/QCTests/Ladder/LINKQUALIcheck/Output/1 -c "create DOUBLE VPVCO"
+odbedit -d /Equipment/Mupix/QCTests/Ladder/LINKQUALIcheck/Output/1 -c "create DOUBLE VNVCO"
 odbedit -d /Equipment/Mupix/QCTests/Ladder/LINKQUALIcheck/Output/1 -c "create DOUBLE ErrorRate"
 
-odbedit -d /Equipment/Mupix/QCTests/Ladder/LINKQUALIcheck/Output/2 -c "create DOUBLE VPVCO[3]"
-odbedit -d /Equipment/Mupix/QCTests/Ladder/LINKQUALIcheck/Output/2 -c "create DOUBLE VNVCO[3]"
+odbedit -d /Equipment/Mupix/QCTests/Ladder/LINKQUALIcheck/Output/2 -c "create DOUBLE VPVCO"
+odbedit -d /Equipment/Mupix/QCTests/Ladder/LINKQUALIcheck/Output/2 -c "create DOUBLE VNVCO"
 odbedit -d /Equipment/Mupix/QCTests/Ladder/LINKQUALIcheck/Output/2 -c "create DOUBLE ErrorRate"
 
-odbedit -d /Equipment/Mupix/QCTests/Ladder/LINKQUALIcheck/Output/3 -c "create DOUBLE VPVCO[3]"
-odbedit -d /Equipment/Mupix/QCTests/Ladder/LINKQUALIcheck/Output/3 -c "create DOUBLE VNVCO[3]"
+odbedit -d /Equipment/Mupix/QCTests/Ladder/LINKQUALIcheck/Output/3 -c "create DOUBLE VPVCO"
+odbedit -d /Equipment/Mupix/QCTests/Ladder/LINKQUALIcheck/Output/3 -c "create DOUBLE VNVCO"
 odbedit -d /Equipment/Mupix/QCTests/Ladder/LINKQUALIcheck/Output/3 -c "create DOUBLE ErrorRate"
 
-odbedit -d /Equipment/Mupix/QCTests/Ladder/LINKQUALIcheck/Output/4 -c "create DOUBLE VPVCO[3]"
-odbedit -d /Equipment/Mupix/QCTests/Ladder/LINKQUALIcheck/Output/4 -c "create DOUBLE VNVCO[3]"
+odbedit -d /Equipment/Mupix/QCTests/Ladder/LINKQUALIcheck/Output/4 -c "create DOUBLE VPVCO"
+odbedit -d /Equipment/Mupix/QCTests/Ladder/LINKQUALIcheck/Output/4 -c "create DOUBLE VNVCO"
 odbedit -d /Equipment/Mupix/QCTests/Ladder/LINKQUALIcheck/Output/4 -c "create DOUBLE ErrorRate"
 
-odbedit -d /Equipment/Mupix/QCTests/Ladder/LINKQUALIcheck/Output/5 -c "create DOUBLE VPVCO[3]"
-odbedit -d /Equipment/Mupix/QCTests/Ladder/LINKQUALIcheck/Output/5 -c "create DOUBLE VNVCO[3]"
+odbedit -d /Equipment/Mupix/QCTests/Ladder/LINKQUALIcheck/Output/5 -c "create DOUBLE VPVCO"
+odbedit -d /Equipment/Mupix/QCTests/Ladder/LINKQUALIcheck/Output/5 -c "create DOUBLE VNVCO"
 odbedit -d /Equipment/Mupix/QCTests/Ladder/LINKQUALIcheck/Output/5 -c "create DOUBLE ErrorRate"
 
 

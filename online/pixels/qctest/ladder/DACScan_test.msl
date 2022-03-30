@@ -1,3 +1,4 @@
+# Author J. Guzmán-Funck, March 2022, Cosmic Run. jose.guzman-funck19@imperial.ac.uk || pepe.guzmanfunck@gmail.com
 #
 # DACScan test
 #
@@ -32,8 +33,6 @@ PARAM vpdac_stop, "VPDAC stop"
 
 SET num_VPDAC_steps, (($vpdac_stop-$vpdac_start) / $vpdac_step) + 1 
 
-#SET message_vpdac, "num_VPDAC_steps = ", $num_VPDAC_steps 
-#MESSAGE $message_vpdac, 1
 
 ODBSET /Equipment/Mupix/QCTests/Ladder/DACScan/Input/VPDAC/start_value, $vpdac_start 
 ODBSET /Equipment/Mupix/QCTests/Ladder/DACScan/Input/VPDAC/step, $vpdac_step
@@ -49,8 +48,6 @@ PARAM select_UD, "UPstream(-1) DOWNstream(2) chips"
 
 SET num_ref_Vss_steps, (($ref_Vss_stop-$ref_Vss_start) / $ref_Vss_step) + 1 
 
-#SET message_vss, "num_ref_Vss_steps = ", $num_ref_Vss_steps 
-#MESSAGE $message_vss, 1
 
 ODBSET /Equipment/Mupix/QCTests/Ladder/DACScan/Input/ref_Vss/start_value, $ref_Vss_start 
 ODBSET /Equipment/Mupix/QCTests/Ladder/DACScan/Input/ref_Vss/step, $ref_Vss_step
@@ -90,26 +87,22 @@ LOOP i, 3
 
     # Turn on mupix i
     ODBSET $path_to_bias, 5
-    ODBSET /Equipment/Switching/Settings/MupixChipToConfigure, $i_
-
-    WAIT 1
 
     # Loop over VPDAC values. Values gotten from PARAM
-    SET index_j, 0
     LOOP j, $num_VPDAC_steps
 
         ODBSET $path_to_vpdac, ($j-1)*$vpdac_step + $vpdac_start
+        ODBSET /Equipment/Switching/Settings/MupixChipToConfigure, $i_
         ODBSET /Equipment/Switching/Settings/MupixConfig, 1
 
         WAIT 3
 
         ODBGET /Equipment/HAMEG0/Variables/Current[1], current
-        CAT path_to_vpdac_output_value, /Equipment/Mupix/QCTests/Ladder/DACScan/Output/VPDAC/, $i_, /VPDAC_values[$index_j]
+        CAT path_to_vpdac_output_value, /Equipment/Mupix/QCTests/Ladder/DACScan/Output/VPDAC/, $i_, /VPDAC_values[$j-1]
         ODBSET $path_to_vpdac_output_value, ($j-1)*$vpdac_step + $vpdac_start
-        CAT path_to_vpdac_output_current, /Equipment/Mupix/QCTests/Ladder/DACScan/Output/VPDAC/, $i_, /VPDAC_current[$index_j]
+        CAT path_to_vpdac_output_current, /Equipment/Mupix/QCTests/Ladder/DACScan/Output/VPDAC/, $i_, /VPDAC_current[$j-1]
         ODBSET $path_to_vpdac_output_current, $current
 
-        SET index_j, $j
     ENDLOOP
 
     WAIT 1
@@ -136,6 +129,8 @@ LOOP i, 3
 
     ODBSET $path_to_ref_Vss, $default_ref_vss_value
     ODBSET $path_to_bias, 0
+    ODBSET /Equipment/Mupix/Settings/BIASDACS/*/BiasBlock_On, 0
+    ODBSET /Equipment/Switching/Settings/MupixChipToConfigure, $i_  
     ODBSET /Equipment/Switching/Settings/MupixConfig, 1
 
     WAIT SECONDS, 3
