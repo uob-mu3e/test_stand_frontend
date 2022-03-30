@@ -762,9 +762,9 @@ function update_plls(valuex, swb) {
     for(var i=0; i < nlinksrx[swb]; i++){
         if(rxlinks[swb][i].status > 0){
             if(i < 32){
-                rxlinks[swb][i].locked = value[2] & (1<<i);
+                rxlinks[swb][i].locked = ! value[2] & (1<<i);
             } else {
-                rxlinks[swb][i].locked = value[3] & (1<<(i-32)); 
+                rxlinks[swb][i].locked = ! value[3] & (1<<(i-32)); 
             }
         }
     }

@@ -396,37 +396,37 @@ void setup_odb(){
 
 void setup_history(){
 
-    hs_define_panel(eq_name.c_str(), "All FEBs", {"Switching:Merger Timeout All FEBs"});
+    hs_define_panel(eq_name.c_str(), "All FEBs", {eq_name.c_str() + std::string(": Merger Timeout All FEBs")});
 
     //TODO: The 12 is the integration run number used to reduce clutter
     for(uint i= 0; i < 12; i++){
         std::string name("FEB"+std::to_string(i));
         std::vector<std::string> tnames;
-        tnames.push_back(std::string(eq_name.c_str() + name + std::string(" Arria Temperature")));
-        tnames.push_back(std::string(eq_name.c_str() + name + std::string(" MAX Temperature")));
-        tnames.push_back(std::string(eq_name.c_str() + name + std::string(" SI1 Temperature")));
-        tnames.push_back(std::string(eq_name.c_str() + name + std::string(" SI2 Temperature")));
-        tnames.push_back(std::string(eq_name.c_str() + name + std::string(" ext Arria Temperature")));
-        tnames.push_back(std::string(eq_name.c_str() + name + std::string(" DCDC Temperature")));
-        tnames.push_back(std::string(eq_name.c_str() + name + std::string(" Firefly1 Temperature")));
+        tnames.push_back(std::string(eq_name.c_str() + name + std::string(":Arria Temperature")));
+        tnames.push_back(std::string(eq_name.c_str() + name + std::string(":MAX Temperature")));
+        tnames.push_back(std::string(eq_name.c_str() + name + std::string(":SI1 Temperature")));
+        tnames.push_back(std::string(eq_name.c_str() + name + std::string(":SI2 Temperature")));
+        tnames.push_back(std::string(eq_name.c_str() + name + std::string(":ext Arria Temperature")));
+        tnames.push_back(std::string(eq_name.c_str() + name + std::string(":DCDC Temperature")));
+        tnames.push_back(std::string(eq_name.c_str() + name + std::string(":Firefly1 Temperature")));
 
        std::vector<std::string> vnames;
-       vnames.push_back(std::string(eq_name.c_str() + name + std::string(" Voltage 1.1")));
-       vnames.push_back(std::string(eq_name.c_str() + name + std::string(" Voltage 1.8")));
-       vnames.push_back(std::string(eq_name.c_str() + name + std::string(" Voltage 2.5")));
-       vnames.push_back(std::string(eq_name.c_str() + name + std::string(" Voltage 3.3")));
-       vnames.push_back(std::string(eq_name.c_str() + name + std::string(" Voltage 20")));
-       vnames.push_back(std::string(eq_name.c_str() + name + std::string(" Firefly1 Voltage")));
+       vnames.push_back(std::string(eq_name.c_str() + name + std::string(":Voltage 1.1")));
+       vnames.push_back(std::string(eq_name.c_str() + name + std::string(":Voltage 1.8")));
+       vnames.push_back(std::string(eq_name.c_str() + name + std::string(":Voltage 2.5")));
+       vnames.push_back(std::string(eq_name.c_str() + name + std::string(":Voltage 3.3")));
+       vnames.push_back(std::string(eq_name.c_str() + name + std::string(":Voltage 20")));
+       vnames.push_back(std::string(eq_name.c_str() + name + std::string(":Firefly1 Voltage")));
 
        std::vector<std::string> pnames;
-       pnames.push_back(std::string(eq_name.c_str() + name + std::string(" Firefly1 RX1 Power")));
-       pnames.push_back(std::string(eq_name.c_str() + name + std::string(" Firefly1 RX2 Power")));
-       pnames.push_back(std::string(eq_name.c_str() + name + std::string(" Firefly1 RX3 Power")));
-       pnames.push_back(std::string(eq_name.c_str() + name + std::string(" Firefly1 RX4 Power")));
+       pnames.push_back(std::string(eq_name.c_str() + name + std::string(":Firefly1 RX1 Power")));
+       pnames.push_back(std::string(eq_name.c_str() + name + std::string(":Firefly1 RX2 Power")));
+       pnames.push_back(std::string(eq_name.c_str() + name + std::string(":Firefly1 RX3 Power")));
+       pnames.push_back(std::string(eq_name.c_str() + name + std::string(":Firefly1 RX4 Power")));
 
-       hs_define_panel(eq_name.c_str(),std::string(name + std::string(" Temperatures")).c_str(),tnames);
-       hs_define_panel(eq_name.c_str(),std::string(name + std::string(" Voltages")).c_str(),vnames);
-       hs_define_panel(eq_name.c_str(),std::string(name + std::string(" RX Power")).c_str(),pnames);
+       hs_define_panel(eq_name.c_str(),std::string(name + std::string(":Temperatures")).c_str(),tnames);
+       hs_define_panel(eq_name.c_str(),std::string(name + std::string(":Voltages")).c_str(),vnames);
+       hs_define_panel(eq_name.c_str(),std::string(name + std::string(":RX Power")).c_str(),pnames);
     }
 }
 
@@ -741,7 +741,9 @@ try{ // TODO: What can throw here?? Why?? Is there another way to handle this??
    }
 
    set_equipment_status(equipment[EQUIPMENT_ID::SciFi].name, "Scintillating...", "mblue");
-   set_equipment_status(equipment[EQUIPMENT_ID::Pixels].name, "Running...", "mgreen");
+   for(int i = 0; i < NEQUIPMENT; i++) 
+        if(i!= EQUIPMENT_ID::SciFi)
+            set_equipment_status(equipment[i].name, "Running...", "mgreen");
    return CM_SUCCESS;
 }catch(...){return CM_TRANSITION_CANCELED;}
 }
@@ -797,10 +799,8 @@ try{
 
    printf("EOR successful\n");
 
-
-   set_equipment_status(equipment[EQUIPMENT_ID::Switching].name, "Ok", "var(--mgreen)");
-   set_equipment_status(equipment[EQUIPMENT_ID::SciFi].name, "Ok", "var(--mgreen)");
-   set_equipment_status(equipment[EQUIPMENT_ID::Pixels].name, "Ok", "var(--mgreen)");
+    for(int i = 0; i < NEQUIPMENT; i++) 
+        set_equipment_status(equipment[i].name, "Ok", "var(--mgreen)");
    return CM_SUCCESS;
 }catch(...){return CM_TRANSITION_CANCELED;}
 }
