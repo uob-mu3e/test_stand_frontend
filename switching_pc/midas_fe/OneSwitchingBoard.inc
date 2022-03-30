@@ -50,7 +50,7 @@ EQUIPMENT equipment[NEQUIPMENT+1] = {
      0,                         /* number of sub events */
      1,                         /* log history every event */
      "", "", ""},
-     read_sc_event,             /* readout routine */
+     read_link_sc_event,        /* readout routine */
    },
    {"SciFiCentral",         /* equipment name */
     {112, 0,                    /* event ID, trigger mask */
