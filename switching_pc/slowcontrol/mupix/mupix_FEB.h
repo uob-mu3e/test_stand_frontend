@@ -65,18 +65,14 @@ class MupixFEB  : public MuFEB{
 
       //FEB registers and functions
       uint32_t ReadBackLVDSNumHits(mappedFEB & FEB, uint16_t LVDS_ID);
-      uint32_t ReadBackLVDSNumHitsInMupixFormat(mappedFEB & FEB, uint16_t LVDS_ID);
       DWORD* ReadLVDSCounters(DWORD* pdata, mappedFEB & FEB);
       uint32_t ReadBackLVDSStatus(mappedFEB & FEB, uint16_t LVDS_ID);
-
+      DWORD * ReadLVDSforPSLS(DWORD* pdata, mappedFEB & FEB);
   
-      // TODO: See whether this works after refactoring
+      
       DWORD* fill_PSLL(DWORD* pdata){
           if ( febs.size() == 0 ) {
-            // if no febs than send 3 zeros
-            *(DWORD*)pdata++ = 0;
-            *(DWORD*)pdata++ = 0;
-            *(DWORD*)pdata++ = 0;
+            // if no febs then send empty bank
             return pdata;
           }
           for(auto FEB : febs){
@@ -85,8 +81,21 @@ class MupixFEB  : public MuFEB{
           return pdata;
       }
 
+      DWORD* fill_PSLS(DWORD* pdata){
+          if ( febs.size() == 0 ) {
+            // if no febs then send empty bank
+            return pdata;
+          }
+          for(auto FEB : febs){
+                *pdata++ = FEB.GetLinkID();
+                pdata = ReadLVDSforPSLS(pdata, FEB);
+          };
+          return pdata;
+      }
 
-      //MIDAS callback for all setters below. Made static and using the user data argument as "this" to ease binding to C-style midas-callbacks
+
+
+      //MIDAS callback. Made static and using the user data argument as "this" to ease binding to C-style midas-callbacks
       static void on_settings_changed(odb o, void * userdata);
 
 };//class MupixFEB

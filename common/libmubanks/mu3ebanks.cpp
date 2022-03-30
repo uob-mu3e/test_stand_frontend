@@ -1,31 +1,8 @@
-/* Constants and definitions for MIDAS banks */
+#include "mu3ebanks.h"
 
 
-#ifndef MU3EBANKS_H
-#define MU3EBANKS_H
 
-#include <array>
-#include <string>
-#include <string>
-
-#include "odbxx.h"
-
-#include "link_constants.h"
-
-using std::array;
-using std::string;
-using std::to_string;
-
-using midas::odb;
-
-////////////// Switching board
-
-//// SSFE
-constexpr int per_fe_SSFE_size = 26;
-const array<const string, MAX_N_SWITCHINGBOARDS> ssfe = {"SCFE","SUFE","SDFE","SFFE"};
-const array<const string, MAX_N_SWITCHINGBOARDS> ssfenames = {"Names SCFE","Names SUFE","Names SDFE","Names SFFE"};
-
-void create_ssfe_names_in_odb(odb & settings, int switch_id){
+void mu3ebanks::create_ssfe_names_in_odb(odb & settings, int switch_id){
     string namestr = ssfenames[switch_id];
 
     int bankindex = 0;
@@ -114,9 +91,7 @@ void create_ssfe_names_in_odb(odb & settings, int switch_id){
 }
 
 //// SCFC
-constexpr int per_crate_SCFC_size = 21;
-
-void create_scfc_names_in_odb(odb crate_settings){
+void mu3ebanks::create_scfc_names_in_odb(odb crate_settings){
     int bankindex = 0;
     for(uint32_t i=0; i < N_FEBCRATES; i++){
         string feb = "Crate " + to_string(i);
@@ -144,13 +119,7 @@ void create_scfc_names_in_odb(odb crate_settings){
 }
 
 //// SSSO
-constexpr int max_sorter_inputs_per_feb = 12;
-constexpr int num_sorter_counters_per_feb = 3*max_sorter_inputs_per_feb +2;
-constexpr int per_fe_SSSO_size = num_sorter_counters_per_feb + 1;
-const array<const string, MAX_N_SWITCHINGBOARDS> ssso = {"SCSO","SUSO","SDSO","SFSO"};
-const array<const string, MAX_N_SWITCHINGBOARDS> sssonames = {"Names SCSO","Names SUSO","Names SDSO","Names SFSO"};
-
-void create_ssso_names_in_odb(odb & settings, int switch_id){
+void mu3ebanks::create_ssso_names_in_odb(odb & settings, int switch_id){
     string sorternamestr = sssonames[switch_id];
 
     int bankindex = 0;
@@ -187,11 +156,7 @@ void create_ssso_names_in_odb(odb & settings, int switch_id){
 
 
 //// SSCN
-constexpr int num_swb_counters_per_feb = 9;
-const array<const string, MAX_N_SWITCHINGBOARDS> sscn = {"SCCN","SUCN","SDCN","SFCN"};
-const array<const string, MAX_N_SWITCHINGBOARDS> sscnnames = {"Names SCCN","Names SUCN","Names SDCN","Names SFCN"};
-
-void create_sscn_names_in_odb(odb & settings, int switch_id){
+void mu3ebanks::create_sscn_names_in_odb(odb & settings, int switch_id){
     string cntnamestr = sscnnames[switch_id];
 
     int bankindex = 0;
@@ -233,5 +198,51 @@ void create_sscn_names_in_odb(odb & settings, int switch_id){
 
 }
 
+void mu3ebanks::create_sspl_names_in_odb(odb & settings, int switch_id){
+    string cntnamestr = ssplnames[switch_id];
 
-#endif // MU3EBANKS_H
+    int bankindex = 0;
+
+    settings[cntnamestr][bankindex++] = "PLL156";
+    settings[cntnamestr][bankindex++] = "PLL250";
+    settings[cntnamestr][bankindex++] = "Links Locked Low";
+    settings[cntnamestr][bankindex++] = "Links Locked High";
+}
+
+
+void mu3ebanks::create_psls_names_in_odb(odb & settings, int switch_id, uint32_t n_febs_mupix){
+    int bankindex = 0;
+    uint32_t nlinks = MAX_LVDS_LINKS_PER_FEB;
+    string cntnamestr = pslsnames[switch_id];
+
+    for(uint32_t i=0; i < n_febs_mupix; i++){
+        string name = "FEB" + to_string(i);
+        settings[cntnamestr][bankindex++] = name;
+        string * s = new string(name);
+            (*s) += " N LVDS Links";
+        settings[cntnamestr][bankindex++] = s;
+        
+        for(uint32_t j=0; j < nlinks; j++){
+            string n = "F" + to_string(i) + "L" + to_string(j);
+            string * s = new string(name);
+            (*s) += " Status";
+            settings[cntnamestr][bankindex++] = s;
+            s = new string(name);
+            (*s) += " Num Hits LVDS";
+            settings[cntnamestr][bankindex++] = s;
+            s = new string(name);
+            (*s) += " Arrival Histogram Bin 0";
+            settings[cntnamestr][bankindex++] = s;
+            s = new string(name);
+            (*s) += " Arrival Histogram Bin 1";
+            settings[cntnamestr][bankindex++] = s;
+             s = new string(name);
+            (*s) += " Arrival Histogram Bin 2";
+            settings[cntnamestr][bankindex++] = s;
+            s = new string(name);
+            (*s) += " Arrival Histogram Bin 3";
+            settings[cntnamestr][bankindex++] = s;                      
+        }
+    }
+}
+
