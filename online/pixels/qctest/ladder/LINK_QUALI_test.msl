@@ -21,11 +21,6 @@ PARAM select_UD, "UPstream(-1) DOWNstream(2) chips"
 start_magic_value = 7
 stop_magic_value = 29
 
-# Check default. If not, loop from 7 to 29 for magic values, record difference, output magic values with better link quality
-
-# Set to default values?
-
-# Make sure chip is on?
 
 # Power settings?
 # - LV: on
@@ -51,7 +46,6 @@ mupixID2 = 2 + $select_UD
 norm0 = 1000000000
 norm1 = 1000000000
 norm2 = 1000000000
-
 
 # Loop over all possible magic values
 LOOP j, ($stop_magic_value-$start_magic_value)+1
