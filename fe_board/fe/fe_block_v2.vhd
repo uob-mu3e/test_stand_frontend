@@ -554,7 +554,7 @@ begin
         i_en            => work.util.to_std_logic(run_state_156 = RUN_STATE_LINK_TEST),
         o_lsfr          => linktest_data,
         o_datak         => linktest_datak,
-        reset_n         => reset_156_n,
+        i_reset_n       => reset_156_n,
         i_clk           => i_clk_156--,
     );
 
