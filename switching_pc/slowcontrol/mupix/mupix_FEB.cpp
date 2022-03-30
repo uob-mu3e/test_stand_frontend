@@ -161,7 +161,10 @@ int MupixFEB::ConfigureASICs(){
                 }
                 payload.push_back(bitpattern_m);
             }
+            int size = payload.size();
+            payload[size-1] = 0x2900303;//TOFIX: why different?
 
+            std::cout << "Payload:\n";
             for(uint32_t j = 0; j<payload.size();j++){
                 std::cout<<std::hex<<payload.at(j)<<std::endl;
             }
@@ -181,6 +184,19 @@ int MupixFEB::ConfigureASICs(){
             printf("chip_select_mask %04x\n", chip_select_mask);
             for (int i = 0; i < pos; ++i)
                 chip_select_mask |= (0x1 << i);
+
+            if (MupixChipToConfigure == 0)
+            {
+                chip_select_mask = 0xfffffdff;
+            }
+            else if (MupixChipToConfigure == 1)
+            {
+                chip_select_mask = 0xfffffbff;
+            }
+            if (MupixChipToConfigure == 2)
+            {
+                chip_select_mask = 0xfffff7ff;
+            }//TOFIX: why has it changed?
             printf("chip_select_mask %04x\n", chip_select_mask);
 
             // check if FEB is busy
@@ -198,7 +214,7 @@ int MupixFEB::ConfigureASICs(){
                 cm_msg(MERROR, "setup_mupix", "FEB Mupix SPI timeout");
             } else { // do the SPI writing 
                 // TODO: make this correct
-                feb_sc.FEB_write(FEB, MP_CTRL_CHIP_MASK_REGISTER_W, 0x0);//chip_select_mask); //
+                feb_sc.FEB_write(FEB, MP_CTRL_CHIP_MASK_REGISTER_W, chip_select_mask); //
                 // TODO: include headers for addr.
                 feb_sc.FEB_write(FEB, MP_CTRL_SLOW_DOWN_REGISTER_W, 0x0000000F); // SPI slow down reg
                 feb_sc.FEB_write(FEB, MP_CTRL_ENABLE_REGISTER_W, 0x00000FC0); // reset Mupix config fifos

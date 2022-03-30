@@ -5,31 +5,31 @@
 //	F.Wauters - Nov. 2020
 //	
 
-#ifndef HMP4040DRIVER_H
-#define HMP4040DRIVER_H
+#ifndef Keithley2450Driver_H
+#define Keithley2450Driver_H
 
 #include "PowerDriver.h"
 
-class HMP4040Driver : public PowerDriver {
+class Keithley2450Driver : public PowerDriver {
 
 	public:
 	
-		HMP4040Driver();
-		HMP4040Driver(std::string n, EQUIPMENT_INFO* inf);
-		~HMP4040Driver();
+        Keithley2450Driver();
+        Keithley2450Driver(std::string n, EQUIPMENT_INFO* inf);
+        ~Keithley2450Driver();
 		
 		INT ConnectODB();
 		INT Init();
 		INT ReadAll();
-
+	
         std::string GenerateCommand(COMMAND_TYPE cmdt, float val) override;
+
+    private:
 	
-	private:
-	
-        std::string idCode;
-        std::string ip;
 		void InitODBArray();
 		bool AskPermissionToTurnOn(int);
+		std::string idCode;
+		std::string ip;
 
 		//watch
 		void ReadESRChanged();
