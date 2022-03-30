@@ -1,3 +1,5 @@
+# Author J. Guzman-Funck, March 2022, Cosmic Run. jose.guzman-funck19@imperial.ac.uk || pepe.guzmanfunck@gmail.com
+
 # Power suppliers configuration
 odbedit -d /Equipment/HAMEG0/Common/ -c "set Period 500"
 
@@ -15,8 +17,6 @@ odbedit -d /Equipment/Mupix/QCTests/Ladder -c "mkdir Eval"
 odbedit -d /Equipment/Mupix/QCTests/Ladder -c "mkdir IV"
 odbedit -d /Equipment/Mupix/QCTests/Ladder/IV -c "mkdir Input"
 odbedit -d /Equipment/Mupix/QCTests/Ladder/IV -c "mkdir Output"
-
-
 #Input parameters
 odbedit -d /Equipment/Mupix/QCTests/Ladder/IV/Input -c "create DOUBLE current_limit"
 odbedit -d /Equipment/Mupix/QCTests/Ladder/IV/Input -c "set start_voltage 0"
@@ -78,6 +78,7 @@ odbedit -d /Equipment/Mupix/QCTests/Ladder/DACScan/Output/VPDAC/4 -c "create DOU
 odbedit -d /Equipment/Mupix/QCTests/Ladder/DACScan/Output/VPDAC/4 -c "create DOUBLE VPDAC_current[10]"
 odbedit -d /Equipment/Mupix/QCTests/Ladder/DACScan/Output/VPDAC/5 -c "create DOUBLE VPDAC_values[10]"
 odbedit -d /Equipment/Mupix/QCTests/Ladder/DACScan/Output/VPDAC/5 -c "create DOUBLE VPDAC_current[10]"
+
 odbedit -d /Equipment/Mupix/QCTests/Ladder/DACScan/Output -c "mkdir ref_Vss"
 odbedit -d /Equipment/Mupix/QCTests/Ladder/DACScan/Output/ref_Vss -c "mkdir 0"
 odbedit -d /Equipment/Mupix/QCTests/Ladder/DACScan/Output/ref_Vss -c "mkdir 1"
@@ -98,16 +99,14 @@ odbedit -d /Equipment/Mupix/QCTests/Ladder/DACScan/Output/ref_Vss/4 -c "create D
 odbedit -d /Equipment/Mupix/QCTests/Ladder/DACScan/Output/ref_Vss/5 -c "create DOUBLE ref_Vss_values[32]"
 odbedit -d /Equipment/Mupix/QCTests/Ladder/DACScan/Output/ref_Vss/5 -c "create DOUBLE ref_Vss_current[32]"
 
-# Test 4 : Link Quality test
+# Test 4: link quality test 
 odbedit -d /Equipment/Mupix/QCTests/Ladder/ -c "mkdir LINKQUALIcheck"
 odbedit -d /Equipment/Mupix/QCTests/Ladder/LINKQUALIcheck -c "mkdir Input"
 odbedit -d /Equipment/Mupix/QCTests/Ladder/LINKQUALIcheck -c "mkdir Output"
-
 # Input
 odbedit -d /Equipment/Mupix/QCTests/Ladder/LINKQUALIcheck/Input/ -c "create DOUBLE HV_voltage"
 odbedit -d /Equipment/Mupix/QCTests/Ladder/LINKQUALIcheck/Input/ -c "create DOUBLE HV_curr_limit"
-
-# Output
+# Output 
 odbedit -d /Equipment/Mupix/QCTests/Ladder/LINKQUALIcheck/Output -c "mkdir 0"
 odbedit -d /Equipment/Mupix/QCTests/Ladder/LINKQUALIcheck/Output -c "mkdir 1"
 odbedit -d /Equipment/Mupix/QCTests/Ladder/LINKQUALIcheck/Output -c "mkdir 2"
