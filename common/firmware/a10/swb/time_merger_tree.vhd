@@ -42,6 +42,8 @@ end entity;
 
 architecture arch of time_merger_tree is
 
+    signal reset_n : std_logic;
+
     -- merger signals
     constant size : integer := N_LINKS_IN/2;
     signal mask_n : std_logic_vector(N_LINKS_IN - 1 downto 0);
@@ -74,10 +76,13 @@ architecture arch of time_merger_tree is
 
 begin
 
+    e_reset_n : entity work.reset_sync
+    port map ( o_reset_n => reset_n, i_reset_n => i_reset_n, i_clk => i_clk );
+
     --! reset for tree
-    process(i_clk, i_reset_n)
+    process(i_clk, reset_n)
     begin
-    if ( i_reset_n /= '1' ) then
+    if ( reset_n /= '1' ) then
         state_reset <= '1';
         --
     elsif ( rising_edge(i_clk) ) then
@@ -98,7 +103,7 @@ begin
         port map (
             o_cnt => o_counters(0+i*3),
             i_ena => countSop(i),
-            i_reset_n => i_reset_n,
+            i_reset_n => reset_n,
             i_clk => i_clk--,
         );
 
@@ -112,7 +117,7 @@ begin
         port map (
             o_cnt => o_counters(1+i*3),
             i_ena => countSbhdr(i),
-            i_reset_n => i_reset_n,
+            i_reset_n => reset_n,
             i_clk => i_clk--,
         );
 
@@ -126,7 +131,7 @@ begin
         port map (
             o_cnt => o_counters(2+i*3),
             i_ena => countHit(i),
-            i_reset_n => i_reset_n,
+            i_reset_n => reset_n,
             i_clk => i_clk--,
         );
 
@@ -144,9 +149,9 @@ begin
         b_h(i)      <= i_data(i+size);
 
         --! reg mask for timing
-        process(i_reset_n, i_clk)
+        process(reset_n, i_clk)
         begin
-        if ( i_reset_n /= '1' ) then
+        if ( reset_n /= '1' ) then
             mask_n(i) <= '0';
             o_mask_n(i) <= '0';
             --
@@ -173,7 +178,7 @@ begin
             i_rack          => i_rack(i),
 
             i_clk           => i_clk,
-            i_reset_n       => i_reset_n--,
+            i_reset_n       => reset_n--,
         );
 
         o_data(i)  <= q_data(i) when o_empty(i) = '0' else work.mu3e.LINK_ZERO;
@@ -281,9 +286,9 @@ begin
                             work.mu3e.LINK_ZERO;
 
         -- set last layer state
-        process(i_clk, i_reset_n)
+        process(i_clk, reset_n)
         begin
-        if ( i_reset_n /= '1' ) then
+        if ( reset_n /= '1' ) then
             last_state(i) <= SWB_IDLE;
             --
         elsif ( rising_edge(i_clk) ) then

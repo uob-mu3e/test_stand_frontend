@@ -223,7 +223,7 @@ void mu3ebanks::create_psls_names_in_odb(odb & settings, int switch_id, uint32_t
         settings[cntnamestr][bankindex++] = s;
         
         for(uint32_t j=0; j < nlinks; j++){
-            string n = "F" + to_string(i) + "L" + to_string(j);
+            string name = "F" + to_string(i) + "L" + to_string(j);
             string * s = new string(name);
             (*s) += " Status";
             settings[cntnamestr][bankindex++] = s;

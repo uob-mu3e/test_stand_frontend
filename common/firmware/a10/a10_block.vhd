@@ -483,7 +483,12 @@ begin
         --
     elsif rising_edge(pcie0_clk) then
         errors_in := (others => '0');
-        errors_in(g_XCVR1_CHANNELS+g_XCVR0_CHANNELS-1 downto 0) := not ( xcvr1_rx_locked & xcvr0_rx_locked );
+        for i in g_XCVR0_CHANNELS-1 downto 0 loop
+            errors_in(i) := not xcvr0_rx_locked(f_xcvr0_rx_p(i));
+        end loop;
+        for i in g_XCVR1_CHANNELS-1 downto 0 loop
+            errors_in(g_XCVR0_CHANNELS+i) := not xcvr1_rx_locked(f_xcvr1_rx_p(i));
+        end loop;
         errors_out := local_pcie0_rregs_A(LINK_LOCKED_HIGH_REGISTER_R) & local_pcie0_rregs_A(LINK_LOCKED_LOW_REGISTER_R);
         errors_out := errors_out or errors_in;
         local_pcie0_rregs_A(LINK_LOCKED_LOW_REGISTER_R) <= errors_out(31 downto 0);

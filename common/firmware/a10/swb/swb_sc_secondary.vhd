@@ -97,55 +97,57 @@ begin
         mem_wren_o <= '0';
         mem_wren_o <= '0';
 
-        case state is
-        when init =>
-            stateout(3 downto 0) <= x"1";
-            mem_addr_o <= mem_addr_o + '1';
-            mem_data_o <= (others => '0');
-            mem_wren_o <= '1';
-            if ( mem_addr_o = x"FFFE" ) then
-                mem_addr_finished_out <= (others => '1');
-                state <= waiting;
-            end if;
-            --
-        when waiting =>
-            stateout(3 downto 0) <= x"2";
-            --LOOP link mux take the last one for prio
-            link_mux:
-            FOR i in 0 to NLINKS - 1 LOOP
-                if ( i_link_enable(i) = '1' and link_data(i).sop = '1' and rdempty(i) = '0' ) then
-                    state <= starting;
-                    current_link <= i;
+        if ( ren(current_link) /= '1' ) then
+            case state is
+            when init =>
+                stateout(3 downto 0) <= x"1";
+                mem_addr_o <= mem_addr_o + '1';
+                mem_data_o <= (others => '0');
+                mem_wren_o <= '1';
+                if ( mem_addr_o = x"FFFE" ) then
+                    mem_addr_finished_out <= (others => '1');
+                    state <= waiting;
                 end if;
-            END LOOP;
+                --
+            when waiting =>
+                stateout(3 downto 0) <= x"2";
+                --LOOP link mux take the last one for prio
+                link_mux:
+                FOR i in 0 to NLINKS - 1 LOOP
+                    if ( i_link_enable(i) = '1' and link_data(i).sop = '1' and rdempty(i) = '0' ) then
+                        state <= startup;
+                        current_link <= i;
+                    end if;
+                END LOOP;
 
-        when startup =>
-            mem_addr_o <= mem_addr_o + '1';
-            mem_data_o <= link_data(current_link).data;
-            mem_wren_o <= '1';
-            ren(current_link) <= '1';
-            state <= starting;
-
-        when starting =>
-            stateout(3 downto 0) <= x"3";
-            if ( rdempty(current_link) = '0' ) then
-                ren(current_link) <= '1';
+            when startup =>
                 mem_addr_o <= mem_addr_o + '1';
                 mem_data_o <= link_data(current_link).data;
                 mem_wren_o <= '1';
-                if ( link_data(current_link).eop = '1' ) then
-                    mem_addr_finished_out <= mem_addr_o + '1';
-                    state <= waiting;
+                ren(current_link) <= '1';
+                state <= starting;
+
+            when starting =>
+                stateout(3 downto 0) <= x"3";
+                if ( rdempty(current_link) = '0' ) then
+                    ren(current_link) <= '1';
+                    mem_addr_o <= mem_addr_o + '1';
+                    mem_data_o <= link_data(current_link).data;
+                    mem_wren_o <= '1';
+                    if ( link_data(current_link).eop = '1' ) then
+                        mem_addr_finished_out <= mem_addr_o + '1';
+                        state <= waiting;
+                    end if;
                 end if;
-            end if;
-            --
-        when others =>
-            stateout(3 downto 0) <= x"E";
-            mem_data_o <= (others => '0');
-            mem_wren_o <= '0';
-            state <= waiting;
-            --
-        end case;
+                --
+            when others =>
+                stateout(3 downto 0) <= x"E";
+                mem_data_o <= (others => '0');
+                mem_wren_o <= '0';
+                state <= waiting;
+                --
+            end case;
+        end if;
 
     end if;
     end process;

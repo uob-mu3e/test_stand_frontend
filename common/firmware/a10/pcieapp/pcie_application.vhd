@@ -346,7 +346,7 @@ begin
 
         -- registers
         writeregs           => writeregs_s,
-        readregs            => readregs_s,
+        i_readregs          => readregs_s,
 
         -- from register read part
         rreg_readaddr       => rreg_readaddr,

@@ -293,7 +293,7 @@ begin
 
         i_writeregs         => i_writeregs,
 
-        o_counter           => counter_swb_data_pixel_us,
+        o_counter           => counter_swb_data_pixel_ds,
 
         i_dmamemhalffull    => i_dmamemhalffull,
 
@@ -328,7 +328,7 @@ begin
 
         i_writeregs         => i_writeregs,
 
-        o_counter           => counter_swb_data_pixel_ds,
+        o_counter           => counter_swb_data_pixel_us,
 
         i_dmamemhalffull    => i_dmamemhalffull,
 

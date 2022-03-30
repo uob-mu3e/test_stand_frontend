@@ -1,20 +1,20 @@
 [*]
 [*] GTKWave Analyzer v3.3.79 (w)1999-2017 BSI
-[*] Mon Mar 28 16:07:04 2022
+[*] Wed Mar 30 16:24:07 2022
 [*]
 [dumpfile] "/home/mu3e/online/common/firmware/a10/tb/.cache/tb_swb_block.ghw"
-[dumpfile_mtime] "Mon Mar 28 16:06:45 2022"
-[dumpfile_size] 4329590
+[dumpfile_mtime] "Wed Mar 30 16:23:12 2022"
+[dumpfile_size] 5722169
 [savefile] "/home/mu3e/online/common/firmware/a10/tb/tb_swb_block.gtkw"
-[timestart] 0
-[size] 2560 1312
+[timestart] 2923000
+[size] 2560 1376
 [pos] -1 -1
-*-20.695719 3099000 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
+*-17.695719 3997000 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
 [treeopen] top.
 [treeopen] top.tb_swb_block.
 [treeopen] top.tb_swb_block.e_swb_block.
 [treeopen] top.tb_swb_block.e_swb_block.counter_swb_data_pixel_us.
-[treeopen] top.tb_swb_block.e_swb_block.e_sc_secondary.gen_buffer_sc[0].
+[treeopen] top.tb_swb_block.e_swb_block.e_sc_secondary.
 [treeopen] top.tb_swb_block.e_swb_block.e_sc_secondary.gen_buffer_sc[0].e_fifo.
 [treeopen] top.tb_swb_block.e_swb_block.e_sc_secondary.gen_buffer_sc[0].e_fifo.i_wdata.
 [treeopen] top.tb_swb_block.e_swb_block.e_sc_secondary.i_link_data.[0].
@@ -39,7 +39,6 @@
 [treeopen] top.tb_swb_block.e_swb_block.g_demerge[0].e_data_demerge.o_sc.
 [treeopen] top.tb_swb_block.e_swb_block.i_feb_rx.[0].
 [treeopen] top.tb_swb_block.e_swb_block.o_feb_tx.[0].
-[treeopen] top.tb_swb_block.rram.
 [treeopen] top.tb_swb_block.tx.[0].
 [sst_width] 468
 [signals_width] 413
@@ -102,7 +101,11 @@ top.tb_swb_block.e_swb_block.e_sc_secondary.i_link_data[0].sop
 top.tb_swb_block.e_swb_block.e_sc_secondary.gen_buffer_sc[0].e_fifo.e_fifo.i_we
 @22
 #{top.tb_swb_block.e_swb_block.e_sc_secondary.mem_data_o[31:0]} top.tb_swb_block.e_swb_block.e_sc_secondary.mem_data_o[31] top.tb_swb_block.e_swb_block.e_sc_secondary.mem_data_o[30] top.tb_swb_block.e_swb_block.e_sc_secondary.mem_data_o[29] top.tb_swb_block.e_swb_block.e_sc_secondary.mem_data_o[28] top.tb_swb_block.e_swb_block.e_sc_secondary.mem_data_o[27] top.tb_swb_block.e_swb_block.e_sc_secondary.mem_data_o[26] top.tb_swb_block.e_swb_block.e_sc_secondary.mem_data_o[25] top.tb_swb_block.e_swb_block.e_sc_secondary.mem_data_o[24] top.tb_swb_block.e_swb_block.e_sc_secondary.mem_data_o[23] top.tb_swb_block.e_swb_block.e_sc_secondary.mem_data_o[22] top.tb_swb_block.e_swb_block.e_sc_secondary.mem_data_o[21] top.tb_swb_block.e_swb_block.e_sc_secondary.mem_data_o[20] top.tb_swb_block.e_swb_block.e_sc_secondary.mem_data_o[19] top.tb_swb_block.e_swb_block.e_sc_secondary.mem_data_o[18] top.tb_swb_block.e_swb_block.e_sc_secondary.mem_data_o[17] top.tb_swb_block.e_swb_block.e_sc_secondary.mem_data_o[16] top.tb_swb_block.e_swb_block.e_sc_secondary.mem_data_o[15] top.tb_swb_block.e_swb_block.e_sc_secondary.mem_data_o[14] top.tb_swb_block.e_swb_block.e_sc_secondary.mem_data_o[13] top.tb_swb_block.e_swb_block.e_sc_secondary.mem_data_o[12] top.tb_swb_block.e_swb_block.e_sc_secondary.mem_data_o[11] top.tb_swb_block.e_swb_block.e_sc_secondary.mem_data_o[10] top.tb_swb_block.e_swb_block.e_sc_secondary.mem_data_o[9] top.tb_swb_block.e_swb_block.e_sc_secondary.mem_data_o[8] top.tb_swb_block.e_swb_block.e_sc_secondary.mem_data_o[7] top.tb_swb_block.e_swb_block.e_sc_secondary.mem_data_o[6] top.tb_swb_block.e_swb_block.e_sc_secondary.mem_data_o[5] top.tb_swb_block.e_swb_block.e_sc_secondary.mem_data_o[4] top.tb_swb_block.e_swb_block.e_sc_secondary.mem_data_o[3] top.tb_swb_block.e_swb_block.e_sc_secondary.mem_data_o[2] top.tb_swb_block.e_swb_block.e_sc_secondary.mem_data_o[1] top.tb_swb_block.e_swb_block.e_sc_secondary.mem_data_o[0]
+@29
+top.tb_swb_block.e_swb_block.e_sc_secondary.mem_wren
+@22
 #{top.tb_swb_block.e_swb_block.e_sc_secondary.mem_addr_o[15:0]} top.tb_swb_block.e_swb_block.e_sc_secondary.mem_addr_o[15] top.tb_swb_block.e_swb_block.e_sc_secondary.mem_addr_o[14] top.tb_swb_block.e_swb_block.e_sc_secondary.mem_addr_o[13] top.tb_swb_block.e_swb_block.e_sc_secondary.mem_addr_o[12] top.tb_swb_block.e_swb_block.e_sc_secondary.mem_addr_o[11] top.tb_swb_block.e_swb_block.e_sc_secondary.mem_addr_o[10] top.tb_swb_block.e_swb_block.e_sc_secondary.mem_addr_o[9] top.tb_swb_block.e_swb_block.e_sc_secondary.mem_addr_o[8] top.tb_swb_block.e_swb_block.e_sc_secondary.mem_addr_o[7] top.tb_swb_block.e_swb_block.e_sc_secondary.mem_addr_o[6] top.tb_swb_block.e_swb_block.e_sc_secondary.mem_addr_o[5] top.tb_swb_block.e_swb_block.e_sc_secondary.mem_addr_o[4] top.tb_swb_block.e_swb_block.e_sc_secondary.mem_addr_o[3] top.tb_swb_block.e_swb_block.e_sc_secondary.mem_addr_o[2] top.tb_swb_block.e_swb_block.e_sc_secondary.mem_addr_o[1] top.tb_swb_block.e_swb_block.e_sc_secondary.mem_addr_o[0]
+#{top.tb_swb_block.e_swb_block.e_sc_secondary.mem_addr_finished_out[15:0]} top.tb_swb_block.e_swb_block.e_sc_secondary.mem_addr_finished_out[15] top.tb_swb_block.e_swb_block.e_sc_secondary.mem_addr_finished_out[14] top.tb_swb_block.e_swb_block.e_sc_secondary.mem_addr_finished_out[13] top.tb_swb_block.e_swb_block.e_sc_secondary.mem_addr_finished_out[12] top.tb_swb_block.e_swb_block.e_sc_secondary.mem_addr_finished_out[11] top.tb_swb_block.e_swb_block.e_sc_secondary.mem_addr_finished_out[10] top.tb_swb_block.e_swb_block.e_sc_secondary.mem_addr_finished_out[9] top.tb_swb_block.e_swb_block.e_sc_secondary.mem_addr_finished_out[8] top.tb_swb_block.e_swb_block.e_sc_secondary.mem_addr_finished_out[7] top.tb_swb_block.e_swb_block.e_sc_secondary.mem_addr_finished_out[6] top.tb_swb_block.e_swb_block.e_sc_secondary.mem_addr_finished_out[5] top.tb_swb_block.e_swb_block.e_sc_secondary.mem_addr_finished_out[4] top.tb_swb_block.e_swb_block.e_sc_secondary.mem_addr_finished_out[3] top.tb_swb_block.e_swb_block.e_sc_secondary.mem_addr_finished_out[2] top.tb_swb_block.e_swb_block.e_sc_secondary.mem_addr_finished_out[1] top.tb_swb_block.e_swb_block.e_sc_secondary.mem_addr_finished_out[0]
 @200
 -PCIe RAM
 @22
