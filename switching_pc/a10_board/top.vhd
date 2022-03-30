@@ -103,12 +103,13 @@ architecture rtl of top is
 
     -- constants
     constant SWB_ID : std_logic_vector(7 downto 0) := x"01";
-    constant g_NLINKS_FEB_TOTL   : positive := 16;
-    constant g_NLINKS_FARM_TOTL  : positive := 16;
-    constant g_NLINKS_FARM_PIXEL : positive := 8;
-    constant g_NLINKS_DATA_PIXEL : positive := 10;
-    constant g_NLINKS_FARM_SCIFI : positive := 8;
-    constant g_NLINKS_DATA_SCIFI : positive := 4;
+    constant g_NLINKS_FEB_TOTL   : positive := 12;
+    constant g_NLINKS_FARM_TOTL  : positive := 3;
+    constant g_NLINKS_FARM_PIXEL : positive := 2;
+    constant g_NLINKS_DATA_PIXEL_US : positive := 5;
+    constant g_NLINKS_DATA_PIXEL_DS : positive := 5;
+    constant g_NLINKS_FARM_SCIFI : positive := 1;
+    constant g_NLINKS_DATA_SCIFI : positive := 2;
     constant g_NLINKS_FARM_TILE  : positive := 8;
     constant g_NLINKS_DATA_TILE  : positive := 12;
 
@@ -125,7 +126,8 @@ architecture rtl of top is
     signal reset_156_n : std_logic;
 
     -- 250 MHz pcie clock
-    signal reset_pcie0_n : std_logic;
+    signal pcie0_clk : std_logic;
+    signal pcie0_reset_n : std_logic;
 
     -- flash
     signal flash_cs_n : std_logic;
@@ -137,8 +139,6 @@ architecture rtl of top is
     signal pcie0_writeregs_B  : work.util.slv32_array_t(63 downto 0);
     signal pcie0_readregs_A   : work.util.slv32_array_t(63 downto 0);
     signal pcie0_readregs_B   : work.util.slv32_array_t(63 downto 0);
-
-    signal pcie_fastclk_out     : std_logic;
 
     -- pcie read / write memory
     signal readmem_writedata    : std_logic_vector(31 downto 0);
@@ -201,7 +201,6 @@ begin
         g_XCVR2_CHANNELS => 4,
         g_XCVR3_CHANNELS => 4,
         g_PCIE0_X => 8,
-        g_PCIE1_X => 0,
         g_FARM    => 0,
         g_CLK_MHZ => 50.0--,
     )
@@ -228,10 +227,9 @@ begin
         o_spi_sclk(0)                   => RJ45_LED_R,
         o_spi_ss_n(0)                   => RS422_DE,
 
-        -- LED / BUTTONS
+        -- LEDs
         o_LED(1)                        => LED(0),
         o_LED_BRACKET                   => LED_BRACKET,
-        i_BUTTON                        => BUTTON,
 
         -- XCVR0 (6250 Mbps @ 156.25 MHz)
         i_xcvr0_rx( 3 downto  0)        => QSFPA_RX_p,
@@ -263,7 +261,8 @@ begin
         o_pcie0_tx                      => PCIE_TX_p,
         i_pcie0_perst_n                 => PCIE_PERST_n,
         i_pcie0_refclk                  => PCIE_REFCLK_p,
-        o_pcie0_clk                     => pcie_fastclk_out,
+        o_pcie0_reset_n                 => pcie0_reset_n,
+        o_pcie0_clk                     => pcie0_clk,
         o_pcie0_clk_hz                  => LED(3),
 
         -- PCIe0 DMA0
@@ -271,7 +270,7 @@ begin
         i_pcie0_dma0_we                 => dma_data_wren,
         i_pcie0_dma0_eoe                => dmamem_endofevent,
         o_pcie0_dma0_hfull              => pcie0_dma0_hfull,
-        i_pcie0_dma0_clk                => pcie_fastclk_out,
+        i_pcie0_dma0_clk                => pcie0_clk,
 
         -- PCIe0 read interface to writable memory
         i_pcie0_wmem_addr               => writememreadaddr,
@@ -290,7 +289,7 @@ begin
 
         -- PCIe0 read interface for writable registers
         o_pcie0_wregs_A                 => pcie0_writeregs_A,
-        i_pcie0_wregs_A_clk             => pcie_fastclk_out,
+        i_pcie0_wregs_A_clk             => pcie0_clk,
         o_pcie0_wregs_B                 => pcie0_writeregs_B,
         i_pcie0_wregs_B_clk             => clk_156,
         o_pcie0_wregs_C                 => open,
@@ -300,8 +299,6 @@ begin
 
         -- resets clk
         top_pll_locked                  => locked_50to125,
-
-        o_reset_pcie0_n                 => reset_pcie0_n,
 
         o_reset_156_n                   => reset_156_n,
         o_clk_156                       => clk_156,
@@ -349,16 +346,18 @@ begin
         g_NLINKS_FEB_TOTL       => g_NLINKS_FEB_TOTL,
         g_NLINKS_FARM_TOTL      => g_NLINKS_FARM_TOTL,
         g_NLINKS_FARM_PIXEL     => g_NLINKS_FARM_PIXEL,
-        g_NLINKS_DATA_PIXEL     => g_NLINKS_DATA_PIXEL,
+        g_NLINKS_DATA_PIXEL     => g_NLINKS_DATA_PIXEL_US + g_NLINKS_DATA_PIXEL_DS,
+        g_NLINKS_DATA_PIXEL_US  => g_NLINKS_DATA_PIXEL_US,
+        g_NLINKS_DATA_PIXEL_DS  => g_NLINKS_DATA_PIXEL_DS,
         g_NLINKS_FARM_SCIFI     => g_NLINKS_FARM_SCIFI,
         g_NLINKS_DATA_SCIFI     => g_NLINKS_DATA_SCIFI,
         SWB_ID                  => SWB_ID--,
     )
     port map (
-        i_rx            => rx_data_raw,
-        i_rx_k          => rx_datak_raw,
-        o_tx            => tx_data,
-        o_tx_k          => tx_datak,
+        i_rx            => rx_data_raw(g_NLINKS_FEB_TOTL-1 downto 0),
+        i_rx_k          => rx_datak_raw(g_NLINKS_FEB_TOTL-1 downto 0),
+        o_tx            => tx_data(g_NLINKS_FEB_TOTL-1 downto 0),
+        o_tx_k          => tx_datak(g_NLINKS_FEB_TOTL-1 downto 0),
 
         i_writeregs_250 => pcie0_writeregs_A,
         i_writeregs_156 => pcie0_writeregs_B,
@@ -385,8 +384,8 @@ begin
         o_farm_tx_datak => open,
 
         --! 250 MHz clock / reset_n
-        i_reset_n_250   => reset_pcie0_n,
-        i_clk_250       => pcie_fastclk_out,
+        i_reset_n_250   => pcie0_reset_n,
+        i_clk_250       => pcie0_clk,
 
         --! 156 MHz clock / reset_n
         i_reset_n_156   => reset_156_n,

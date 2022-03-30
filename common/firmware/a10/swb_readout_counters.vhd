@@ -5,7 +5,6 @@ use ieee.numeric_std.all;
 use work.a10_counters.all;
 use work.a10_pcie_registers.all;
 
-
 entity swb_readout_counters is
 generic (
     g_A_CNT             : positive := 4;
@@ -59,14 +58,24 @@ begin
     END GENERATE gen_sync_scifi;
 
     --! sync FIFOs
-    e_sync_fifo_pixel_B : entity work.ip_dcfifo
+    e_sync_fifo_pixel_B : entity work.ip_dcfifo_v2
     generic map(
-        ADDR_WIDTH  => 4, DATA_WIDTH  => data_rregs_B'length--,
+        g_ADDR_WIDTH => 4,
+        g_DATA_WIDTH => data_rregs_B'length,
+        g_RREG_N => 1--, -- TNS=-2700
     )
     port map (
-        data => data_rregs_B, wrreq => '1',
-        rdreq => not rdempty_B, wrclk => i_clk_B, rdclk => i_clk_A,
-        q => q_rregs_B, rdempty => rdempty_B, aclr => '0'--,
+        i_wdata     => data_rregs_B,
+        i_we        => '1',
+        o_wfull     => open,
+        i_wclk      => i_clk_B,
+
+        o_rdata     => q_rregs_B,
+        i_rack      => not rdempty_B,
+        o_rempty    => rdempty_B,
+        i_rclk      => i_clk_A,
+
+        i_reset_n   => '1'--;
     );
 
     gen_sync_cnt : FOR i in s_counter_B'range GENERATE
@@ -77,7 +86,7 @@ begin
     link_id <= to_integer(unsigned(i_wregs_add_A(SWB_LINK_RANGE)));
     link_counter_addr <= swb_counter_addr + link_id * 5;
 
-        --! map counters pixel
+    --! map counters pixel
     process(i_clk_A, i_reset_n_A)
     begin
     if ( i_reset_n_A = '0' ) then

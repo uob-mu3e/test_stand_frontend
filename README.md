@@ -1,6 +1,7 @@
 # Mu3e online repository
 
-- current development branch is `v0.12_dev`
+- for latest version use tag `release/22.03`
+- current development branch is `dev`
 - Documentation and manual are under construction in the wiki associated to this repo
 
 ## Raspberry Pi USB Server
@@ -31,4 +32,3 @@
 - [setup #1](docs/setup1.md)
 - [code style](docs/style.md)
 - [git faq](docs/git.md)
-

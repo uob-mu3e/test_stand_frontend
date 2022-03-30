@@ -187,4 +187,3 @@ for i, layer in enumerate([4, 8]):
 
     setTreeOutput(root)
     printOutput()
-

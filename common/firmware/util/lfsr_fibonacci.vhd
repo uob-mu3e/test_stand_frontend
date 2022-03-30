@@ -29,7 +29,7 @@ begin
     process(i_clk, i_reset_n)
         variable feedback : std_logic;
     begin
-    if ( i_reset_n = '0' ) then
+    if ( i_reset_n /= '1' ) then
         lfsr <= (others => '0');
         lfsr(g_INIT'length-1 downto 0) <= g_INIT;
         --

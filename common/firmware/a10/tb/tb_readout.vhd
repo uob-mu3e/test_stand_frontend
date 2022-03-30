@@ -3,7 +3,7 @@ use ieee.numeric_std.all;
 use ieee.std_logic_1164.all;
 use ieee.std_logic_unsigned.all;
 use std.textio.all;
-use ieee.std_logic_textio.all; 
+use ieee.std_logic_textio.all;
 
 
 --  A testbench has no ports.
@@ -38,7 +38,7 @@ architecture behav of readout_tb is
       signal dma_data_wren : std_logic;
       signal dma_data : std_logic_vector(255 downto 0);
       signal all_done : std_logic_vector(NLINKS downto 0);
-        
+
 
       signal dma_data_32_0 : std_logic_vector(31 downto 0);
       signal dma_data_32_1 : std_logic_vector(31 downto 0);
@@ -52,16 +52,16 @@ architecture behav of readout_tb is
       signal rx_data : std_logic_vector(NLINKS * 32 - 1 downto 0);
       signal rx_datak : std_logic_vector(NLINKS * 4 - 1 downto 0);
       signal mask_n : std_logic_vector(NLINKS - 1 downto 0);
-  		  		
+
   		constant ckTime: 		time	:= 10 ns;
-		
+
 begin
   --  Component instantiation.
-  
+
   reset <= not reset_n;
   enable_pix <= '1';
   slow_down <= x"00000002";--(others => '0');
-  
+
   -- generate the clock
 ckProc: process
 begin
@@ -86,18 +86,16 @@ begin
 	   reset_n	 <= '1';
 	   wait for 20 ns;
 	   enable_pix    <= '1';
-	
+
 	   wait;
 end process inita;
- 
-e_data_gen_mupix : entity work.data_generator_a10
+
+    e_data_gen_mupix : entity work.data_generator_a10
     generic map (
       go_to_trailer => 4,
       go_to_sh => 3--,
     )
 	port map (
-		clk 				   => clk,
-		reset				   => reset,
 		enable_pix	           => enable_pix,
         i_dma_half_full       => '0',
 		random_seed 		   => (others => '1'),
@@ -106,17 +104,18 @@ e_data_gen_mupix : entity work.data_generator_a10
 		datak_pix_generated    => datak_pix_generated,
 		data_pix_ready		   => data_pix_ready,
 		slow_down			   => slow_down,
-		state_out			   => open--,
-);
+		state_out			   => open,
 
-e_data_gen_scifi : entity work.data_generator_a10
+        i_reset                 => reset,
+        i_clk                   => clk,
+    );
+
+    e_data_gen_scifi : entity work.data_generator_a10
     generic map (
         go_to_trailer => 4,
         go_to_sh => 3--,
     )
 	port map (
-		clk 				     => clk,
-		reset				     => reset,
 		enable_pix	        => enable_pix,
          i_dma_half_full       => '0',
 		random_seed 		  => (others => '1'),
@@ -125,17 +124,18 @@ e_data_gen_scifi : entity work.data_generator_a10
 		datak_pix_generated => datak_scifi_generated,
 		data_pix_ready		  => data_pix_ready,
 		slow_down			  => slow_down,
-		state_out			  => open--,
-);
+		state_out			  => open,
 
-e_data_gen_tiles : entity work.data_generator_a10
+        i_reset                 => reset,
+        i_clk                   => clk,
+    );
+
+    e_data_gen_tiles : entity work.data_generator_a10
     generic map (
         go_to_trailer => 4,
         go_to_sh => 3--,
     )
 	port map (
-		clk 				     => clk,
-		reset				     => reset,
 		enable_pix	        => enable_pix,
          i_dma_half_full       => '0',
 		random_seed 		  => (others => '1'),
@@ -144,18 +144,19 @@ e_data_gen_tiles : entity work.data_generator_a10
 		datak_pix_generated => datak_tile_generated,
 		data_pix_ready		  => data_pix_ready,
 		slow_down			  => slow_down,
-		state_out			  => open--,
-);
+		state_out			  => open,
+
+        i_reset                 => reset,
+        i_clk                   => clk,
+    );
 
 
- e_data_gen_tiles2 : entity work.data_generator_a10
-     generic map (
+    e_data_gen_tiles2 : entity work.data_generator_a10
+    generic map (
         go_to_trailer => 4,
         go_to_sh => 3--,
     )
-     port map (
-         clk                      => clk,
-         reset                    => reset,
+    port map (
          enable_pix          => enable_pix,
           i_dma_half_full       => '0',
          random_seed           => (others => '1'),
@@ -164,17 +165,18 @@ e_data_gen_tiles : entity work.data_generator_a10
          datak_pix_generated => datak_tile_generated2,
          data_pix_ready        => data_pix_ready,
          slow_down             => slow_down,
-         state_out             => open--,
- );
+         state_out             => open,
 
- e_data_gen_tiles3 : entity work.data_generator_a10
-     generic map (
+        i_reset                 => reset,
+        i_clk                   => clk,
+    );
+
+    e_data_gen_tiles3 : entity work.data_generator_a10
+    generic map (
         go_to_trailer => 4,
         go_to_sh => 3--,
     )
-     port map (
-         clk                      => clk,
-         reset                    => reset,
+    port map (
          enable_pix          => enable_pix,
           i_dma_half_full       => '0',
          random_seed           => (others => '1'),
@@ -184,25 +186,28 @@ e_data_gen_tiles : entity work.data_generator_a10
          data_pix_ready        => data_pix_ready,
          slow_down             => slow_down,
          state_out             => open--,
- );
+
+        i_reset                 => reset,
+        i_clk                   => clk,
+    );
 
 rx_data <= x"00000000"        & x"00000000"          & x"00000000"          & x"00000000"        &
                  x"00000000"        & x"00000000"          & x"00000000"          & x"00000000"        & x"00000000"        & x"00000000"          & x"00000000"          & x"00000000"        &
                  x"00000000"        & x"00000000"          & x"00000000"          & x"00000000"        & x"00000000"        & x"00000000"          & x"00000000"          & x"00000000"        &
                  x"00000000"        & x"00000000"          & x"00000000"          & x"00000000"        & x"00000000"        & x"00000000"          & x"00000000"          & x"00000000"        &
-                 data_pix_generated & data_pix_generated & data_pix_generated & data_pix_generated & data_pix_generated & data_pix_generated & data_pix_generated & data_pix_generated & 
+                 data_pix_generated & data_pix_generated & data_pix_generated & data_pix_generated & data_pix_generated & data_pix_generated & data_pix_generated & data_pix_generated &
                  data_pix_generated & data_pix_generated & data_pix_generated & data_pix_generated & data_pix_generated & data_pix_generated & data_pix_generated & data_pix_generated &
                  data_pix_generated & data_pix_generated & data_pix_generated & data_pix_generated & data_pix_generated & data_pix_generated & data_pix_generated & data_pix_generated &
                  data_pix_generated & data_pix_generated & data_pix_generated & data_pix_generated & data_pix_generated & data_pix_generated & data_pix_generated & data_pix_generated &
                  data_pix_generated & data_pix_generated & data_pix_generated & data_scifi_generated ;
 
-rx_datak <=   x"0"                & x"0"                  & x"0"                  & x"0"              &        
-              x"0"                & x"0"                  &  x"0"                 & x"0"              & x"0"                  & x"0"                  & x"0"                  & x"0"                & 
-              x"0"                & x"0"                  &  x"0"                 & x"0"              & x"0"                  & x"0"                  & x"0"                  & x"0"                & 
+rx_datak <=   x"0"                & x"0"                  & x"0"                  & x"0"              &
               x"0"                & x"0"                  &  x"0"                 & x"0"              & x"0"                  & x"0"                  & x"0"                  & x"0"                &
-              datak_pix_generated & datak_pix_generated & datak_pix_generated & datak_pix_generated & datak_pix_generated & datak_pix_generated & datak_pix_generated & datak_pix_generated & 
-              datak_pix_generated & datak_pix_generated & datak_pix_generated & datak_pix_generated & datak_pix_generated & datak_pix_generated & datak_pix_generated & datak_pix_generated & 
-              datak_pix_generated & datak_pix_generated & datak_pix_generated & datak_pix_generated & datak_pix_generated & datak_pix_generated & datak_pix_generated & datak_pix_generated & 
+              x"0"                & x"0"                  &  x"0"                 & x"0"              & x"0"                  & x"0"                  & x"0"                  & x"0"                &
+              x"0"                & x"0"                  &  x"0"                 & x"0"              & x"0"                  & x"0"                  & x"0"                  & x"0"                &
+              datak_pix_generated & datak_pix_generated & datak_pix_generated & datak_pix_generated & datak_pix_generated & datak_pix_generated & datak_pix_generated & datak_pix_generated &
+              datak_pix_generated & datak_pix_generated & datak_pix_generated & datak_pix_generated & datak_pix_generated & datak_pix_generated & datak_pix_generated & datak_pix_generated &
+              datak_pix_generated & datak_pix_generated & datak_pix_generated & datak_pix_generated & datak_pix_generated & datak_pix_generated & datak_pix_generated & datak_pix_generated &
               datak_pix_generated & datak_pix_generated & datak_pix_generated & datak_pix_generated & datak_pix_generated & datak_pix_generated & datak_pix_generated & datak_pix_generated &
               datak_pix_generated & datak_pix_generated & datak_pix_generated & datak_pix_generated ;
 --mask_n <= x"0000000FFFFFFFFF";

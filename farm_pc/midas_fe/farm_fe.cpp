@@ -57,6 +57,8 @@ uint32_t lastRunWritten;
 bool moreevents;
 bool firstevent;
 
+
+
 /* maximum event size produced by this frontend */
 INT max_event_size = dma_buf_size; //TODO: how to define this?
 
@@ -231,7 +233,7 @@ void link_active_settings_changed(odb o){
     //printf("Data link active: 0x");
     int idx=0;
     for(int link : o) {
-        int offset = 0;//MAX_LINKS_PER_SWITCHINGBOARD* switch_id;
+        
         if(link & FEBLINKMASK::DataOn)
             //a standard FEB link (SC and data) is considered enabled if RX and TX are.
             //a secondary FEB link (only data) is enabled if RX is.
@@ -303,7 +305,9 @@ void setup_watches(){
     stream_settings.watch(stream_settings_changed);
 
     // link mask changed settings
-    odb links("/Equipment/Links/Settings/LinkMask");
+        //set link enables so slow control can pass
+    
+    odb links("/Equipment/LinksCentral/Settings/LinkMask");
     links.watch(link_active_settings_changed);
 
 }
@@ -324,12 +328,12 @@ INT init_mudaq(){
     }
     dma_buf = (uint32_t*)mmap(nullptr, MUDAQ_DMABUF_DATA_LEN, PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0);
     if(dma_buf == MAP_FAILED) {
-        cm_msg(MERROR, "frontend_init" , "mmap failed: dmabuf = %x\n", dma_buf);
+        cm_msg(MERROR, "frontend_init" , "mmap failed: dmabuf = %x\n", MAP_FAILED);
         return FE_ERR_DRIVER;
     }
     
     // initialize to zero
-    for (int i = 0; i < dma_buf_nwords ; i++) {
+    for (uint32_t i = 0; i < dma_buf_nwords ; i++) {
         (dma_buf)[i] = 0;
     }
     
@@ -365,7 +369,7 @@ INT init_mudaq(){
 
     //set data link enable
     odb link;
-    link.connect("/Equipment/Links/Settings/LinkMask");
+    link.connect("/Equipment/LinksCentral/Settings/LinkMask");
     link_active_settings_changed(link);
 
     return SUCCESS;
@@ -391,7 +395,7 @@ INT frontend_exit()
 
 /*-- Begin of Run --------------------------------------------------*/
 
-INT begin_of_run(INT run_number, char *error)
+INT begin_of_run(INT, char *)
 { 
    set_equipment_status(equipment[0].name, "Starting run", "var(--myellow)");
    
@@ -412,7 +416,7 @@ INT begin_of_run(INT run_number, char *error)
    mu.write_register_wait(RESET_REGISTER_W, reset_reg, 100);
 
    // empty dma buffer
-   for (int i = 0; i < dma_buf_nwords ; i++) {
+   for (uint32_t i = 0; i < dma_buf_nwords ; i++) {
       (dma_buf)[i] = 0;
    }
 
@@ -422,7 +426,7 @@ INT begin_of_run(INT run_number, char *error)
    mu.write_register_wait(RESET_REGISTER_W, 0x0, 100);
 
    // Set up data generator: enable only if set in ODB
-   uint32_t reg=mu.read_register_rw(DATAGENERATOR_REGISTER_W);
+   //uint32_t reg=mu.read_register_rw(DATAGENERATOR_REGISTER_W);
    odb stream_settings;
    stream_settings.connect("/Equipment/Stream/Settings");
 
@@ -462,13 +466,14 @@ INT begin_of_run(INT run_number, char *error)
 
 /*-- End of Run ----------------------------------------------------*/
 
-INT end_of_run(INT run_number, char *error)
+INT end_of_run(INT, char *)
 {
 
    mudaq::DmaMudaqDevice & mu = *mup;
    cm_msg(MINFO,"farm_fe","Waiting for buffers to empty");
    uint16_t timeout_cnt = 0;
-   while(! mu.read_register_ro(BUFFER_STATUS_REGISTER_R) & 1<<0/* TODO right bit */ &&
+  
+   while(! (mu.read_register_ro(BUFFER_STATUS_REGISTER_R) & 1<<0)/* TODO right bit */ &&
          timeout_cnt++ < 50) {
       //printf("Waiting for buffers to empty %d/50\n", timeout_cnt);
       timeout_cnt++;
@@ -528,7 +533,7 @@ INT end_of_run(INT run_number, char *error)
 
 /*-- Pause Run -----------------------------------------------------*/
 
-INT pause_run(INT run_number, char *error)
+INT pause_run(INT, char *)
 {
    mudaq::DmaMudaqDevice & mu = *mup;
    
@@ -546,7 +551,7 @@ INT pause_run(INT run_number, char *error)
 
 /*-- Resume Run ----------------------------------------------------*/
 
-INT resume_run(INT run_number, char *error)
+INT resume_run(INT, char *)
 {
    mudaq::DmaMudaqDevice & mu = *mup;
    
@@ -573,7 +578,7 @@ INT frontend_loop()
 
 /*-- Trigger event routines ----------------------------------------*/
 
-INT poll_event(INT source, INT count, BOOL test)
+INT poll_event(INT, INT, BOOL)
 /* Polling routine for events. Returns TRUE if event
  is available. If test equals TRUE, don't return. The test
  flag is used to time the polling */
@@ -583,14 +588,14 @@ INT poll_event(INT source, INT count, BOOL test)
 
 /*-- Interrupt configuration ---------------------------------------*/
 
-INT interrupt_configure(INT cmd, INT source, POINTER_T adr)
+INT interrupt_configure(INT, INT, POINTER_T)
 {
    return SUCCESS;
 }
 
 /*-- Event readout -------------------------------------------------*/
 
-INT read_stream_event(char *pevent, INT off)
+INT read_stream_event(char *pevent, INT)
 {
     
    // get mudaq 
@@ -662,9 +667,10 @@ uint32_t check_event(T* buffer, uint32_t idx, uint32_t* pdata) {
         printf("Data: %8.8x\n", buffer[idx+4+eventDataSize/4-2]);
         return -1;
     }
-
+    // TODO: Variable size buffers are not legal C/C++
+    // Can't we copy dircetly from buffer to pdata?
     uint32_t dma_buf[4+eventDataSize/4];
-    for ( int i = 0; i<4+eventDataSize/4; i++ ) {
+    for (uint32_t i = 0; i<4+eventDataSize/4; i++ ) {
       dma_buf[i] = buffer[idx + i];
       //printf("%8.8x %8.8x\n", i, buffer[idx + i]);
     }
@@ -676,7 +682,7 @@ uint32_t check_event(T* buffer, uint32_t idx, uint32_t* pdata) {
 
 /*-- Event readout -------------------------------------------------*/
 
-INT read_stream_thread(void *param) {
+INT read_stream_thread(void *) {
 
     // get mudaq
     mudaq::DmaMudaqDevice & mu = *mup;
@@ -711,6 +717,7 @@ INT read_stream_thread(void *param) {
         }
 
         // change readout state to switch between pixel and scifi
+        // TODO: What is needed here??
         uint32_t current_readout_register = mu.read_register_rw(SWB_READOUT_STATE_REGISTER_W);
         uint32_t current_pixel_mask_n = mu.read_register_rw(SWB_LINK_MASK_PIXEL_REGISTER_W);
         uint32_t current_scifi_mask_n = mu.read_register_rw(SWB_LINK_MASK_SCIFI_REGISTER_W);
@@ -823,7 +830,7 @@ INT read_stream_thread(void *param) {
             // check enough space for data
             if(offset + eventLength / 4 > lastWritten) break;
             uint32_t size_dma_buf = check_event(dma_buf, offset, pdata);
-            
+            // TODO: -1 is not a good value for a uint32_t... 
             if ( size_dma_buf == -1 ) {
                 printf("ERROR: size_dma_buf == -1\n");
                 printf("Events written %d\n", cnt);

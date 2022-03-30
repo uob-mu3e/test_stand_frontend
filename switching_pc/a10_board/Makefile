@@ -8,7 +8,4 @@ IPs = \
     $(wildcard a10/*.vhd.envsubst) \
     nios.tcl
 
-include util/altera/makefile.mk
-
-clean :
-	rm -rf *.rpt *.chg smart.log *.htm *.eqn *.pin *.sof *.pof db incremental_db *.sopcinfo *.bak
+include util/quartus/makefile.mk

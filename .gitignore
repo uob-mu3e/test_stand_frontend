@@ -1,3 +1,8 @@
+#
+
+# git
+.git
+*.orig
 
 .cache
 generated
@@ -11,10 +16,10 @@ CMakeLists.txt.*
 
 # quartus
 .qsys_edit/
-db/
+db
 greybox_tmp/
-incremental_db/
-output_files/
+incremental_db
+output_files
 reconfig_mif/
 **/simulation/modelsim/
 *.qdf

@@ -60,6 +60,7 @@ architecture TB of tb_data_path_farm is
     constant NLINKS     : positive := 8;
     constant NLINKS_TOTL: positive := 16;
     constant LINK_FIFO_ADDR_WIDTH : integer := 10;
+    constant g_NLINKS_FARM_TOTL : positive := 3;
 
     signal link_data        : std_logic_vector(NLINKS * 32 - 1 downto 0);
     signal link_datak       : std_logic_vector(NLINKS * 4 - 1 downto 0);
@@ -69,11 +70,7 @@ architecture TB of tb_data_path_farm is
     signal w_pixel_en, r_pixel_en, full_pixel, empty_pixel : std_logic;
     signal w_scifi_en, r_scifi_en, full_scifi, empty_scifi : std_logic;
 
-    signal farm_data_pixel, farm_data_scifi : work.util.slv32_array_t(7 downto 0); 
-    signal farm_data_pixel_q, farm_data_scifi_q : work.util.slv32_array_t(7 downto 0); 
-    signal farm_datak_pixel, farm_datak_scifi : work.util.slv4_array_t(7 downto 0); 
-    signal farm_datak_pixel_q, farm_datak_scifi_q : work.util.slv4_array_t(7 downto 0); 
-    signal farm_valid_pixel, farm_valid_scifi : work.util.slv2_array_t(7 downto 0); 
+    signal farm_data, farm_datak : work.util.slv32_array_t(g_NLINKS_FARM_TOTL-1 downto 0);
 
     signal rx : work.util.slv32_array_t(NLINKS_TOTL-1 downto 0);
     signal rx_k : work.util.slv4_array_t(NLINKS_TOTL-1 downto 0);
@@ -149,176 +146,109 @@ begin
     --! 0            | 0          | 0          | 0        | 1              | 1        | -                           | Generate time merged data, send to farm                                        | x
 
     resets_n_156(RESET_BIT_DATAGEN)                             <= '0', '1' after (1.0 us / CLK_MHZ);
+    resets_n_250(RESET_BIT_SWB_STREAM_MERGER)                   <= '0', '1' after (1.0 us / CLK_MHZ);
+    resets_n_250(RESET_BIT_SWB_TIME_MERGER)                     <= '0', '1' after (1.0 us / CLK_MHZ);
     writeregs_156(DATAGENERATOR_DIVIDER_REGISTER_W)             <= x"00000002";
     writeregs_156(SWB_READOUT_STATE_REGISTER_W)(USE_BIT_GEN_LINK)   <= '1';
     writeregs_250(SWB_READOUT_STATE_REGISTER_W)(USE_BIT_STREAM)     <= '0';
     writeregs_250(SWB_READOUT_STATE_REGISTER_W)(USE_BIT_MERGER)     <= '1';
-    writeregs_250(SWB_READOUT_STATE_REGISTER_W)(USE_BIT_GEN_MERGER) <= '0';
-    writeregs_250(SWB_READOUT_STATE_REGISTER_W)(USE_BIT_FARM)       <= '1';
 
-    writeregs_250(SWB_LINK_MASK_PIXEL_REGISTER_W)               <= x"0000000F";
+    writeregs_250(SWB_LINK_MASK_PIXEL_REGISTER_W)               <= x"00000003";--x"00000048";
     writeregs_250(SWB_READOUT_LINK_REGISTER_W)                  <= x"00000001";
     writeregs_250(GET_N_DMA_WORDS_REGISTER_W)                   <= (others => '1');
     writeregs_250(DMA_REGISTER_W)(DMA_BIT_ENABLE)               <= '1';
+    mask_n <= x"00000000" & writeregs_250(SWB_LINK_MASK_PIXEL_REGISTER_W);
 
 
-    --! SWB Block Pixel
+    --! SWB data path
     --! ------------------------------------------------------------------------
     --! ------------------------------------------------------------------------
     --! ------------------------------------------------------------------------
-    e_swb_pixel : entity work.swb_data_path
-    generic map (
-        g_NLINKS_TOTL           => 64,
-        g_NLINKS_FARM           => NLINKS,
-        g_NLINKS_DATA           => 10,
-        LINK_FIFO_ADDR_WIDTH    => 8,
-        TREE_w                  => 10,
-        TREE_r                  => 10,
-        SWB_ID                  => x"01",
-        -- Data type: x"01" = pixel, x"02" = scifi, x"03" = tiles
-        DATA_TYPE               => x"01"--;
-    )
-    port map(
-        i_clk_156        => clk_156,
-        i_clk_250        => dataclk,
+    g_demerge: FOR i in g_NLINKS_FARM_TOTL-1 downto 0 GENERATE
+        e_swb_data_path : entity work.swb_data_path
+        generic map (
+            g_LOOPUP_NAME           => "intRun2021",
+            g_ADDR_WIDTH            => 8,
+            g_NLINKS_DATA           => g_NLINKS_DATA,
+            LINK_FIFO_ADDR_WIDTH    => 8,
+            SWB_ID                  => x"01",
+            -- Data type: x"01" = pixel, x"02" = scifi, x"03" = tiles
+            DATA_TYPE               => x"01"--;
+        )
+        port map(
+            i_clk_156        => clk,
+            i_clk_250        => clk_fast,
+            
+            i_reset_n_156    => reset_n,
+            i_reset_n_250    => reset_n,
 
-        i_reset_n_156    => reset_n,
-        i_reset_n_250    => reset_n,
+            i_resets_n_156   => resets_n_156,
+            i_resets_n_250   => resets_n_250,
+            
+            i_rx             => rx,
+            i_rx_k           => rx_k,
+                
+            i_rmask_n        => mask_n(g_NLINKS_DATA - 1 downto 0),
 
-        i_resets_n_156   => resets_n_156,
-        i_resets_n_250   => resets_n_250,
+            i_writeregs_156  => writeregs_156,
+            i_writeregs_250  => writeregs_250,
 
-        i_rx             => (others => (others => '0')),
-        i_rx_k           => (others => (others => '0')),
-        i_rmask_n        => "1111111111",
+            o_counter_156    => open,
+            o_counter_250    => open,
 
-        i_writeregs_156  => writeregs_156,
-        i_writeregs_250  => writeregs_250,
+            i_dmamemhalffull => '0',
+            
+            o_farm_data      => farm_data(i),
+            o_farm_datak     => farm_datak(i),
 
-        o_counter_156    => open,
-        o_counter_250    => open,
-
-        i_dmamemhalffull => '0',
-
-        o_farm_data      => farm_data_pixel,
-        o_farm_data_valid=> farm_valid_pixel,
-
-        o_dma_wren       => open,
-        o_dma_done       => open,
-        o_endofevent     => open,
-        o_dma_data       => open--;
-    );
-
-    --! SWB Block Scifi
-    --! ------------------------------------------------------------------------
-    --! ------------------------------------------------------------------------
-    --! ------------------------------------------------------------------------
-    e_swb_scifi : entity work.swb_data_path
-    generic map (
-        g_NLINKS_TOTL           => 64,
-        g_NLINKS_FARM           => NLINKS,
-        g_NLINKS_DATA           => 4,
-        LINK_FIFO_ADDR_WIDTH    => 8,
-        TREE_w                  => 10,
-        TREE_r                  => 10,
-        SWB_ID                  => x"01",
-        -- Data type: x"01" = pixel, x"02" = scifi, x"03" = tiles
-        DATA_TYPE               => x"02"--;
-    )
-    port map(
-        i_clk_156        => clk_156,
-        i_clk_250        => dataclk,
-
-        i_reset_n_156    => reset_n,
-        i_reset_n_250    => reset_n,
-
-        i_resets_n_156   => resets_n_156,
-        i_resets_n_250   => resets_n_250,
-
-        i_rx             => (others => (others => '0')),
-        i_rx_k           => (others => (others => '0')),
-        i_rmask_n        => x"F",
-
-        i_writeregs_156  => writeregs_156,
-        i_writeregs_250  => writeregs_250,
-
-        o_counter_156    => open,
-        o_counter_250    => open,
-
-        i_dmamemhalffull => '0',
-
-        o_farm_data      => farm_data_scifi,
-        o_farm_data_valid=> farm_valid_scifi,
-
-        o_dma_wren       => open,
-        o_dma_done       => open,
-        o_endofevent     => open,
-        o_dma_data       => open--;
-    );
-
-    
-    gen_valid : FOR I in 0 to NLINKS - 1 GENERATE
-        farm_data_scifi_q(I) <= farm_data_scifi(I) when farm_valid_scifi(I) /= "00" else 
-                       x"000000BC";
-        farm_data_pixel_q(I) <= farm_data_pixel(I) when farm_valid_pixel(I) /= "00" else                   
-                       x"000000BC";
-        farm_datak_scifi_q(I) <= "0001" when farm_valid_scifi(I) = "10" else
-                                 "0001" when farm_valid_scifi(I) = "01" else
-                                 "0000" when farm_valid_scifi(I) = "11" else
-                                 "0001";
-        farm_datak_pixel_q(I) <= "0001" when farm_valid_pixel(I) = "10" else
-                                 "0001" when farm_valid_pixel(I) = "01" else
-                                 "0000" when farm_valid_pixel(I) = "11" else
-                                 "0001";
-    END GENERATE;
-
-    -- map links pixel
-    gen_map_links : FOR I in 0 to NLINKS - 1 GENERATE
-        rx(I)           <= farm_data_pixel_q(I);
-        rx_k(I)         <= farm_datak_pixel_q(I);
-        rx(I+NLINKS)    <= farm_data_scifi_q(I);
-        rx_k(I+NLINKS)  <= farm_datak_scifi_q(I);
+            o_dma_wren       => open,
+            o_dma_done       => open,
+            o_endofevent     => open,
+            o_dma_data       => open--;
+        );
     END GENERATE;
 
     e_farm_link_to_fifo : entity work.farm_link_to_fifo
     generic map (
-        g_NLINKS_SWB_TOTL   => NLINKS_TOTL,
-        N_PIXEL             => NLINKS,
-        N_SCIFI             => NLINKS--,
+        g_LOOPUP_NAME       => g_LOOPUP_NAME,
+        g_NLINKS_SWB_TOTL   => g_NLINKS_TOTL,
+        N_PIXEL             => g_NLINKS_PIXEL,
+        N_SCIFI             => g_NLINKS_SCIFI,
+        LINK_FIFO_ADDR_WIDTH=> LINK_FIFO_ADDR_WIDTH--,
     )
     port map (
-        i_rx                => rx,
-        i_rx_k              => rx_k,
+        --! link data in
+        i_rx                => farm_data,
+        i_rx_k              => farm_datak,
+        
+        --! link data out
+        o_tx                => open,
+        o_tx_k              => open,
 
-        -- pixel data
-        o_pixel             => pixel_data,
-        o_empty_pixel       => pixel_empty,
-        i_ren_pixel         => pixel_ren,
-        o_error_pixel       => open,
-
-        -- scifi data
-        o_scifi             => scifi_data,
-        o_empty_scifi       => scifi_empty,
-        i_ren_scifi         => scifi_ren,
-        o_error_scifi       => open,
-
-        --! error counters
-        --! 0: fifo f_almost_full
-        --! 1: fifo f_wrfull
-        --! 2: # of skip event
-        --! 3: # of events
-        o_counter           => open, -- out work.util.slv32_array_t(4 * g_NLINKS_SWB_TOTL - 1 downto 0);
-
-        i_clk_250_link      => dataclk,
-        i_reset_n_250_link  => reset_n,
-
-        i_clk_250           => dataclk,  -- should be DDR clk
-        i_reset_n_250       => reset_n--,
+        --! data out
+        o_data              => aligned_data,
+        o_empty             => aligned_empty,
+        i_ren               => aligned_ren,
+        o_shop              => aligned_shop,
+        o_sop               => aligned_sop,
+        o_eop               => aligned_eop,
+        o_hit               => aligned_hit,
+        o_t0                => aligned_t0,
+        o_t1                => aligned_t1,
+        o_error             => aligned_error,
+    
+        --! status counters
+        --! (g_NLINKS_DATA*5)-1 downto 0 -> link to fifo counters
+        --! (g_NLINKS_DATA*4)+(g_NLINKS_DATA*5)-1 downto (g_NLINKS_DATA*5) -> link align counters
+        o_counter           => counter_link_to_fifo,
+        
+        i_clk_250_link      => i_clk_250_link,
+        i_reset_n_250_link  => i_reset_n_250_link,
+        
+        i_clk_250           => i_clk_250_pcie,
+        i_reset_n_250       => i_resets_n_pcie(RESET_BIT_FARM_DATA_PATH)--,
     );
-
-
-
-
+    
     e_farm_midas_event_builder : entity work.farm_midas_event_builder
     generic map (
         g_NLINKS_SWB_TOTL => 16,
@@ -419,15 +349,14 @@ begin
         B_mem_read		=> B_mem_read,
         B_mem_q			=> B_mem_q,
         B_mem_q_valid	=> B_mem_q_valid
-	);
+    );
 
     e_ddr3_a : entity work.ip_ram
     generic map (
         ADDR_WIDTH_A    => 9,
         ADDR_WIDTH_B    => 9,
         DATA_WIDTH_A    => 512,
-        DATA_WIDTH_B    => 512,
-        DEVICE          => "Arria 10"--,
+        DATA_WIDTH_B    => 512--,
     )
     port map (
         address_a       => A_mem_addr(8 downto 0),
@@ -447,8 +376,7 @@ begin
         ADDR_WIDTH_A    => 9,
         ADDR_WIDTH_B    => 9,
         DATA_WIDTH_A    => 512,
-        DATA_WIDTH_B    => 512,
-        DEVICE          => "Arria 10"--,
+        DATA_WIDTH_B    => 512--,
     )
     port map (
         address_a       => B_mem_addr(8 downto 0),
@@ -463,99 +391,96 @@ begin
         q_b             => B_mem_q--,
     );
 
+    -- Memready
+    process begin
+        A_mem_ready <= '0';
+        B_mem_ready <= '0';
+        wait for A_mem_clk_period * 25;
+        A_mem_ready <= '1';
+        B_mem_ready <= '1';
+        wait for A_mem_clk_period * 300;
+        A_mem_ready <= '0';
+        B_mem_ready <= '0';
+        wait for A_mem_clk_period;
+        A_mem_ready <= '1';
+        B_mem_ready <= '1';
+        wait for A_mem_clk_period * 250;
+        A_mem_ready <= '0';
+        B_mem_ready <= '0';
+        wait for A_mem_clk_period;
+        A_mem_ready <= '1';
+        B_mem_ready <= '1';
+        wait for A_mem_clk_period * 600;
+    end process;
 
-	-- Memready
-	process begin
-		A_mem_ready <= '0';
-		B_mem_ready <= '0';
-		wait for A_mem_clk_period * 25;
-		A_mem_ready <= '1';
-		B_mem_ready <= '1';
-		wait for A_mem_clk_period * 300;
-		A_mem_ready <= '0';
-		B_mem_ready <= '0';
-		wait for A_mem_clk_period;
-		A_mem_ready <= '1';
-		B_mem_ready <= '1';
-		wait for A_mem_clk_period * 250;
-		A_mem_ready <= '0';
-		B_mem_ready <= '0';
-		wait for A_mem_clk_period;
-		A_mem_ready <= '1';
-		B_mem_ready <= '1';
-		wait for A_mem_clk_period * 600;
-	end process;
+    A_mem_calibrated <= '1';
+    B_mem_calibrated <= '1';
 
-	A_mem_calibrated <= '1';
-	B_mem_calibrated <= '1';
+    -- Request generation
+    process begin
+    req_en_A <= '0';
+    wait for pcieclk_period;-- * 26500;
+    req_en_A <= '1';
+    ts_req_num <= x"00000008";
+    ts_req_A <= x"04030201";--"00010000";
+    wait for pcieclk_period;
+    req_en_A <= '1';
+    ts_req_A <= x"0B0A0906";--x"00030002";
+    wait for pcieclk_period;
+    req_en_A <= '0';
+    wait for pcieclk_period;
+    req_en_A <= '0';
+    tsblock_done	<= (others => '0');
+    end process;
 
-	-- Request generation
-	process begin
-	req_en_A <= '0';
-	wait for pcieclk_period;-- * 26500;
-	req_en_A <= '1';
-	ts_req_num <= x"00000008";
-	ts_req_A <= x"04030201";--"00010000";
-	wait for pcieclk_period;
-	req_en_A <= '1';
-	ts_req_A <= x"0B0A0906";--x"00030002";
-	wait for pcieclk_period;
-	req_en_A <= '0';
-	wait for pcieclk_period;
-	req_en_A <= '0';
-	tsblock_done	<= (others => '0');
-	end process;
+    -- Memory A simulation
+    process(A_mem_clk, reset_n)
+    begin
+    if(reset_n <= '0') then
+        A_mem_q_valid 	<= '0';
+        A_mem_read_del1 <= '0';
+        A_mem_read_del2 <= '0';
+        A_mem_read_del3 <= '0';
+        A_mem_read_del4 <= '0';
+    elsif(A_mem_clk'event and A_mem_clk = '1') then
+        A_mem_read_del1 <= A_mem_read;
+        A_mem_read_del2 <= A_mem_read_del1;
+        A_mem_read_del3	<= A_mem_read_del2;
+        A_mem_read_del4	<= A_mem_read_del3;
+        A_mem_q_valid   <= A_mem_read_del4;
 
+        A_mem_addr_del1 <= A_mem_addr;
+        A_mem_addr_del2 <= A_mem_addr_del1;
+        A_mem_addr_del3	<= A_mem_addr_del2;
+        A_mem_addr_del4	<= A_mem_addr_del3;
+    --  A_mem_q		<= (others => '0');
+    --  A_mem_q(25 downto 0)  <= A_mem_addr_del4;
+    end if;
+    end process;
 
-	-- Memory A simulation
-	process(A_mem_clk, reset_n)
-	begin
-	if(reset_n <= '0') then
-		A_mem_q_valid 	<= '0';
-		A_mem_read_del1 <= '0';
-		A_mem_read_del2 <= '0';
-		A_mem_read_del3 <= '0';
-		A_mem_read_del4 <= '0';
-	elsif(A_mem_clk'event and A_mem_clk = '1') then
-		A_mem_read_del1 <= A_mem_read;
-		A_mem_read_del2 <= A_mem_read_del1;
-		A_mem_read_del3	<= A_mem_read_del2;
-		A_mem_read_del4	<= A_mem_read_del3;
-		A_mem_q_valid   <= A_mem_read_del4;
+    -- Memory B simulation
+    process(B_mem_clk, reset_n)
+    begin
+    if(reset_n <= '0') then
+        B_mem_q_valid 	<= '0';
+        B_mem_read_del1 <= '0';
+        B_mem_read_del2 <= '0';
+        B_mem_read_del3 <= '0';
+        B_mem_read_del4 <= '0';
+    elsif(B_mem_clk'event and B_mem_clk = '1') then
+        B_mem_read_del1 <= B_mem_read;
+        B_mem_read_del2 <= B_mem_read_del1;
+        B_mem_read_del3	<= B_mem_read_del2;
+        B_mem_read_del4	<= B_mem_read_del3;
+        B_mem_q_valid   <= B_mem_read_del4;
 
-		A_mem_addr_del1 <= A_mem_addr;
-		A_mem_addr_del2 <= A_mem_addr_del1;
-		A_mem_addr_del3	<= A_mem_addr_del2;
-		A_mem_addr_del4	<= A_mem_addr_del3;
--- 		A_mem_q		<= (others => '0');
--- 		A_mem_q(25 downto 0)  <= A_mem_addr_del4;
-	end if;
-	end process;
-
-
-	-- Memory B simulation
-	process(B_mem_clk, reset_n)
-	begin
-	if(reset_n <= '0') then
-		B_mem_q_valid 	<= '0';
-		B_mem_read_del1 <= '0';
-		B_mem_read_del2 <= '0';
-		B_mem_read_del3 <= '0';
-		B_mem_read_del4 <= '0';
-	elsif(B_mem_clk'event and B_mem_clk = '1') then
-		B_mem_read_del1 <= B_mem_read;
-		B_mem_read_del2 <= B_mem_read_del1;
-		B_mem_read_del3	<= B_mem_read_del2;
-		B_mem_read_del4	<= B_mem_read_del3;
-		B_mem_q_valid   <= B_mem_read_del4;
-
-		B_mem_addr_del1 <= B_mem_addr;
-		B_mem_addr_del2 <= B_mem_addr_del1;
-		B_mem_addr_del3	<= B_mem_addr_del2;
-		B_mem_addr_del4	<= B_mem_addr_del3;
--- 		B_mem_q		<= (others => '0');
--- 		B_mem_q(25 downto 0)  <= B_mem_addr_del4;
-	end if;
-	end process;
+        B_mem_addr_del1 <= B_mem_addr;
+        B_mem_addr_del2 <= B_mem_addr_del1;
+        B_mem_addr_del3	<= B_mem_addr_del2;
+        B_mem_addr_del4	<= B_mem_addr_del3;
+    --  B_mem_q		<= (others => '0');
+    --  B_mem_q(25 downto 0)  <= B_mem_addr_del4;
+    end if;
+    end process;
 
 end architecture;

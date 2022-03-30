@@ -104,10 +104,6 @@ begin
         rdreq           => i_board_dac_ren,
         q               => o_board_dac_data,
 
-        almost_empty    => open,
-        almost_full     => open,
-        usedw           => open,
-        
         full            => open,
         wrreq           => board_dac_we,
         data            => board_dac_data,
@@ -126,10 +122,6 @@ begin
         rdreq           => board_dac_re,
         q               => o_reg_rdata,
 
-        almost_empty    => open,
-        almost_full     => open,
-        usedw           => open,
-        
         full            => open,
         wrreq           => i_board_dac_we,
         data            => i_board_dac_data,

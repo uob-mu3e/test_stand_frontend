@@ -55,25 +55,23 @@ constant data_all_one : std_logic_vector(q'range) := (others => '1');
 
 begin
 
-i_ram: entity work.ip_ram
-    generic map(
-        ADDR_WIDTH_A => ADDR_WIDTH,
-        ADDR_WIDTH_B => ADDR_WIDTH,
-        DATA_WIDTH_A => DATA_WIDTH,
-        DATA_WIDTH_B => DATA_WIDTH
+    e_ram : entity work.ip_ram_2rw
+    generic map (
+        g_DATA0_WIDTH => waddr'length,
+        g_ADDR0_WIDTH => wdata'length,
+        g_DATA1_WIDTH => raddr_in'length,
+        g_ADDR1_WIDTH => q_out'length--,
     )
-    port map
-    (
-        address_a   => raddr_in,
-        address_b   => waddr,
-        clock_a     => rclk,
-        clock_b     => wclk,
-        data_a      => (others => '0'),
-        data_b      => wdata,
-        wren_a      => '0',
-        wren_b      => we,
-        q_a         => q_out,
-        q_b         => q
+    port map (
+        i_addr0     => waddr,
+        i_wdata0    => wdata,
+        i_we0       => we,
+        o_rdata0    => q,
+        i_clk0      => wclk,
+
+        i_addr1     => raddr_in,
+        o_rdata1    => q_out,
+        i_clk1      => rclk--,
     );
 
     -- write state machine

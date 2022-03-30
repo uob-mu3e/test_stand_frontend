@@ -130,35 +130,18 @@ EQUIPMENT equipment[] = {
      "", "", ""} ,
     read_cr_event,              /* readout routine */
    },
-
-    {"Links",              /* equipment name */
-     {103, 0,                     /* event ID, trigger mask */
-      "SYSTEM",                  /* event buffer */
-      EQ_PERIODIC,               /* equipment type */
-      0,                         /* event source */
-      "MIDAS",                   /* format */
-      TRUE,                      /* enabled */
-      RO_RUNNING | RO_STOPPED | RO_ODB,        /* read while running and stopped but not at transitions and update ODB */
-      10000,                     /* read every 10 sec */
-      0,                         /* stop run after this event limit */
-      0,                         /* number of sub events */
-      1,                         /* log history every event */
-      "", "", ""} ,
-     read_link_event,              /* readout routine */
-    },
-
    {""}
 };
 
 
 /*-- Dummy routines ------------------------------------------------*/
 
-INT poll_event(INT source, INT count, BOOL test)
+INT poll_event(INT , INT , BOOL )
 {
    return 1;
 }
 
-INT interrupt_configure(INT cmd, INT source, POINTER_T adr)
+INT interrupt_configure(INT , INT , POINTER_T )
 {
    return 1;
 }
@@ -195,7 +178,7 @@ INT frontend_init()
             }else{
                 cb = new clockboard(ip, port);
             }
-        #endif;
+        #endif
     #endif
 
    if(!cb->isConnected())
@@ -252,7 +235,7 @@ INT frontend_loop()
 
 /*-- Begin of Run --------------------------------------------------*/
 
-INT begin_of_run(INT run_number, char *error)
+INT begin_of_run(INT, char *)
 {
     // set equipment status for status web page
     set_equipment_status("Clock Reset", "Starting run", "yellowLight");
@@ -264,9 +247,10 @@ INT begin_of_run(INT run_number, char *error)
    return CM_SUCCESS;
 }
 
+
 /*-- End of Run ----------------------------------------------------*/
 
-INT end_of_run(INT run_number, char *error)
+INT end_of_run(INT, char *)
 {
 
    cb->write_command("End Run");
@@ -276,29 +260,29 @@ INT end_of_run(INT run_number, char *error)
 
 /*-- Pause Run -----------------------------------------------------*/
 
-INT pause_run(INT run_number, char *error)
+INT pause_run(INT, char *)
 {
    return CM_SUCCESS;
 }
 
 /*-- Resume Run ----------------------------------------------------*/
 
-INT resume_run(INT run_number, char *error)
+INT resume_run(INT, char *)
 {
    return CM_SUCCESS;
 }
 
 /*--- Read Clock and Reset Event to be put into data stream --------*/
 
-INT read_cr_event(char *pevent, INT off [[maybe_unused]])
+INT read_cr_event(char *pevent, INT)
 {
 #ifdef NO_CLOCK_BOX
         return 0;
-#endif;
+#endif
 
 #ifdef A10_EMULATED_CLOCK_BOX
     return 0;
-#endif;
+#endif
 
     if(!cb->isConnected()){
         // terminate!
@@ -350,7 +334,7 @@ INT read_cr_event(char *pevent, INT off [[maybe_unused]])
                    *pdata++ = -1.0;
                }
            }
-       } else {
+       } else { 
            *pdata++ = -1.0;
            *pdata++ = -1.0;
            for(uint8_t j=0;j < clockboard::MAXFIREFLYPERDAUGTHER; j++){
@@ -382,16 +366,11 @@ void cr_settings_changed(odb & o)
 
    BOOL addressed = false;
 
-    if (name == "Active") {
-        bool value = o;
-        cm_msg(MINFO, "cr_settings_changed", "Set active to %d", value);
-        // TODO: propagate to hardware
-    }
-
     if (name == "RX_MASK") {
       int value = o;
       cm_msg(MINFO, "cr_settings_changed", "Set RX_MASK to %x", value);
       cb->disable_rx_channels(value);
+      return;
    }
 
    if (name == "TX_MASK") {
@@ -400,37 +379,44 @@ void cr_settings_changed(odb & o)
             cm_msg(MINFO, "cr_settings_changed", "Set TX_MASK[%i] to %x", i, value[i]);
             cb->disable_tx_channels(i/3,i%3,value[i]);
         }
+        return;
    }
 
     if (name == "TX_CLK_MASK") {
       int value = o;
       cm_msg(MINFO, "cr_settings_changed", "Set TX_CLK_MASK to %x", value);
       cb->disable_tx_clk_channels(value);
+      return;
    }
 
     if (name == "TX_RST_MASK") {
       int value = o;
       cm_msg(MINFO, "cr_settings_changed", "Set TX_RST_MASK to %x", value);
       cb->disable_tx_rst_channels(value);
+      return;
    }
 
     if (name == "TX_CLK_INVERT_MASK") {
       int value = o;
       cm_msg(MINFO, "cr_settings_changed", "Set TX_CLK_INVERT_MASK to %x", value);
       cb->invert_tx_clk_channels(value);
+      return;
    }
 
     if (name == "TX_RST_INVERT_MASK") {
       int value = o;
       cm_msg(MINFO, "cr_settings_changed", "Set TX_RST_INVERT_MASK to %x", value);
       cb->invert_tx_rst_channels(value);
+      return;
    }
 
     if (name == "Addressed") {
       addressed = o;
       cm_msg(MINFO, "cr_settings_changed", "Set addressed to %d", addressed);
       // TODO: propagate to hardware
+      return;
    }
+
 
    auto it = cb->reset_protocol.commands.find(name);
 
@@ -453,7 +439,8 @@ void cr_settings_changed(odb & o)
                 cb->write_command(name,0,address);
               else
                  cb->write_command(name);
-              o = false; //TODO: Check if this works...
+              o = false; 
+              return;
            }
        } else {
            // Run prepare needs the run number
@@ -467,7 +454,8 @@ void cr_settings_changed(odb & o)
                     cb->write_command(name,run,address);
                  else
                     cb->write_command(name,run);
-                 o = false; //TODO: Check if this works...
+                 o = false; 
+                 return;
               }
            } else {
                // Take the payload from the payload ODB field
@@ -480,7 +468,8 @@ void cr_settings_changed(odb & o)
                        cb->write_command(name,payload,address);
                      else
                        cb->write_command(name,payload);
-                    o = false; //TODO: Check if this works...
+                    o = false; 
+                    return;
                }
            }
        }
@@ -489,15 +478,10 @@ void cr_settings_changed(odb & o)
 
 void link_settings_changed(odb & o)
 {
-
+    // TODO: Is this needed??? Currently diasbled
    std::string name = o.get_name();
 
-   if (name == "SwitchingBoardMask") {
-      vector<INT> value = o;
-      cm_msg(MINFO, "link_settings_changed", "Set Switching Board Mask to %d %d %d %d",
-             value[0], value[1], value[2], value[3]);
-   }
-
+ 
     if (name == "LinkMask") {
       vector<INT> value = o;
       cm_msg(MINFO, "link_settings_changed", "Setting Link Board Mask");
@@ -532,7 +516,7 @@ void prepare_run_on_request(odb & o){
 
 
 
-    odb a("/Equipment/Links/Settings/SwitchingBoardMask");
+    odb a("/Equipment/Clock Reset/Settings/SwitchingBoardMask");
     vector<int> active = a;
 
     bool allok = true;
@@ -541,7 +525,7 @@ void prepare_run_on_request(odb & o){
         printf("%i : %i : %i\n", i, request[i], active[i]);
         allok = allok && ((request[i] > 0) || (active[i] == 0));
         notalloff = notalloff || active[i];
-    }
+     }
 
     if(!notalloff) return;
 
@@ -569,7 +553,6 @@ void prepare_run_on_request(odb & o){
 void setup_odb(){
 
     odb settings = {
-        {"Active" , true},
         {"IP", "192.168.0.220"},
         {"Port", 50001},
         {"N_READBACK", 4},
@@ -580,6 +563,8 @@ void setup_odb(){
         {"RX_MASK", 0},
         {"TX_MASK", std::array<int,clockboard::MAXFIREFLY>{}},
         {"TX_INVERT_MASK",std::array<int,clockboard::MAXFIREFLY>{}},
+        {"SwitchingBoardMask", std::array<int,MAX_N_SWITCHINGBOARDS>{}},
+        {"SwitchingBoardNames", {"Central", "Recurl US", "Recurl DS", "Fibres"}},
         {"Run Prepare", false},
         {"Sync", false},
         {"Start Run", false},
@@ -637,7 +622,6 @@ void setup_odb(){
              settings["Names CRT1"][daughterstartindex + i*ndaughtervariables +  2 + j*nffvariables +2] = s;
          }
      }
-    //cout << "Dump: " <<  settings.dump() << endl;
 
     settings.connect("/Equipment/Clock Reset/Settings", true);
 
@@ -648,38 +632,23 @@ void setup_odb(){
     };
     variables.connect("/Equipment/Clock Reset/Variables");
 
-    odb linksettings = {
-        {"SwitchingBoardMask", std::array<int,MAX_N_SWITCHINGBOARDS>{}},
-        {"SwitchingBoardNames", {"Central", "Recurl US", "Recurl DS", "Fibres"}},
-        {"LinkMask", std::array<int,MAX_N_FRONTENDBOARDS>{}},
-        {"FrontEndBoardType", std::array<int,MAX_N_FRONTENDBOARDS>{}},
-        {"FrontEndBoardNames", std::array<std::string,MAX_N_FRONTENDBOARDS>{}}
-    };
-    linksettings.connect("/Equipment/Links/Settings");
-
-    odb linkvariables = {
-       {"SwitchingBoardStatus", std::array<int,MAX_N_SWITCHINGBOARDS>{}},
-       {"RXLinkStatus", std::array<int,MAX_N_FRONTENDBOARDS>{}},
-       {"TXLinkStatus", std::array<int,MAX_N_FRONTENDBOARDS>{}}
-    };
-    linkvariables.connect("/Equipment/Links/Variables");
 
     odb runtransitions;
     runtransitions.connect("/Equipment/Clock Reset/Run Transitions");
     runtransitions["Request Run Prepare"] = std::array<int, MAX_N_SWITCHINGBOARDS>{};
+    
 
     odb custom;
     custom.connect("/Custom");
     custom["Clock and Reset"] = "cr.html";
-    custom["Links"] = "links.html";
 }
 
 void setup_watches(){
     odb crodb("/Equipment/Clock Reset/Settings");
     crodb.watch(cr_settings_changed);
 
-    odb linkodb("/Equipment/Links/Settings");
-    linkodb.watch(link_settings_changed);
+   // odb linkodb("/Equipment/Links/Settings");
+   // linkodb.watch(link_settings_changed);
 
     odb rrp("/Equipment/Clock Reset/Run Transitions/Request Run Prepare");
     rrp.watch(prepare_run_on_request);

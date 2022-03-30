@@ -189,7 +189,7 @@ begin
             end process;
 
             data_0(i)  <=   tree_padding                                            when merger_finish(i) = '0' and merge_state = merge_hits and eop_wait(i) = '1' else
-                            work.util.link_36_to_std(i) & i_rdata(i)(31 downto 0)   when merger_finish(i) = '0' and merge_state = merge_hits else
+                            work.mudaq.link_36_to_std(i) & i_rdata(i)(31 downto 0)   when merger_finish(i) = '0' and merge_state = merge_hits else
                             tree_padding                                            when merger_finish(i) = '1' and merge_state = merge_hits else
                             (others => '0');
             wrreq_0(i) <= '1' when merge_state = merge_hits and i_rempty(i) = '0' and wrfull_0(i) = '0' else '0';
@@ -197,9 +197,7 @@ begin
 --            e_link_fifo : entity work.ip_scfifo
 --            generic map(
 --                ADDR_WIDTH      => TREE_DEPTH_w,
---                DATA_WIDTH      => write_width(0),
---                RAM_OUT_REG     => "ON",
---                DEVICE          => "Arria 10"--,
+--                DATA_WIDTH      => write_width(0)--,
 --            )
 --            port map (
 --                sclr    => reset_0(i),
@@ -211,23 +209,25 @@ begin
 --                empty   => rdempty_0(i),
 --                full    => wrfull_0(i)--,
 --            );
-            
-            e_link_fifo : entity work.ip_dcfifo
+
+            e_link_fifo : entity work.ip_dcfifo_v2
             generic map(
-                ADDR_WIDTH  => TREE_DEPTH_w,
-                DATA_WIDTH  => write_width(0),
-                DEVICE      => "Arria 10"--,
+                g_ADDR_WIDTH => TREE_DEPTH_w,
+                g_DATA_WIDTH => write_width(0),
+                g_RREG_N => 1--,
             )
             port map (
-                data        => data_0(i),
-                wrreq       => wrreq_0(i),
-                rdreq       => rdreq_0(i),
-                wrclk       => i_clk,
-                rdclk       => i_clk,
-                q           => q_0(i),
-                rdempty     => rdempty_0(i),
-                wrfull      => wrfull_0(i),
-                aclr        => reset_0(i)--,
+                i_wdata     => data_0(i),
+                i_we        => wrreq_0(i),
+                o_wfull     => wrfull_0(i),
+                i_wclk      => i_clk,
+
+                o_rdata     => q_0(i),
+                i_rack      => rdreq_0(i),
+                o_rempty    => rdempty_0(i),
+                i_rclk      => i_clk,
+
+                i_reset_n   => not reset_0(i)--;
             );
 
         END GENERATE;
@@ -579,7 +579,7 @@ begin
                 end if;
 
             -- TODO: Change this to one cycle
-            -- NOTE: at the moment we wait here a view cycles to write the 
+            -- NOTE: at the moment we wait here a view cycles to write the
             -- SubHeader to the 256 bit out
             when wait_for_sh_written =>
                 header_trailer_we <= "01";

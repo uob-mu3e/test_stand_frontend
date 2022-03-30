@@ -1,0 +1,27 @@
+#
+
+set_global_assignment -name SOURCE_TCL_SCRIPT_FILE assignments/DE5a_Net_DDR4.tcl
+
+set_global_assignment -name VHDL_FILE top.vhd
+set_global_assignment -name SDC_FILE top.sdc
+
+set_global_assignment -name VHDL_FILE a10/a10_block.vhd
+set_global_assignment -name VHDL_FILE a10/farm_aligne_link.vhd
+set_global_assignment -name VHDL_FILE a10/farm_block.vhd
+set_global_assignment -name VHDL_FILE a10/farm_data_path.vhd
+set_global_assignment -name VHDL_FILE a10/farm_link_to_fifo.vhd
+set_global_assignment -name VHDL_FILE a10/farm_midas_event_builder.vhd
+set_global_assignment -name VHDL_FILE a10/pcie_register_mapping.vhd
+set_global_assignment -name VHDL_FILE a10/chip_lookup.vhd
+set_global_assignment -name VHDL_FILE a10/chip_lookup_int_2021.vhd
+set_global_assignment -name VHDL_FILE a10/chip_lookup_edm_2021.vhd
+set_global_assignment -name VHDL_FILE a10/link_to_fifo_32.vhd
+
+set_global_assignment -name QIP_FILE ../../common/firmware/registers/include.qip
+
+set_global_assignment -name QIP_FILE a10/include.qip
+set_global_assignment -name QIP_FILE a10/ddr4/include.qip
+set_global_assignment -name QIP_FILE a10/pcieapp/include.qip
+set_global_assignment -name QIP_FILE a10/xcvr/include.qip
+
+set_global_assignment -name QIP_FILE util/include.qip

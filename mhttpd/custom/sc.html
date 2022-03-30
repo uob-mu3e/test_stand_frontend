@@ -10,13 +10,13 @@
             var table = document.getElementById("read_mem_table");
             table.innerHTML = "";
 
-            mjsonrpc_db_get_value("/Equipment/Switching/Variables/RM_LENGTH").then(function(rpc) {
+            mjsonrpc_db_get_value("/Equipment/SwitchingCentral/Variables/RM_LENGTH").then(function(rpc) {
                 var req    = rpc.request;               // reference to the rpc request
                 var id     = rpc.id;                    // rpc response id (should be same as req.id)
                 var result = rpc.result;                // rpc response result
                 var WM_LENGTH_DATA = result.data[0];    // javascript object representing the ODB WM_LENGTH structure
                 console.log(WM_LENGTH_DATA);
-                mjsonrpc_db_get_value("/Equipment/Switching/Variables/RM_DATA").then(function(rpc) {
+                mjsonrpc_db_get_value("/Equipment/SwitchingCentral/Variables/RM_DATA").then(function(rpc) {
                     var req    = rpc.request;            // reference to the rpc request
                     var id     = rpc.id;                 // rpc response id (should be same as req.id)
                     var result = rpc.result;             // rpc response result
@@ -47,13 +47,13 @@
             var table = document.getElementById("write_mem_table");
             table.innerHTML = "";
 
-            mjsonrpc_db_get_value("/Equipment/Switching/Variables/WM_LENGTH").then(function(rpc) {
+            mjsonrpc_db_get_value("/Equipment/SwitchingCentral/Variables/WM_LENGTH").then(function(rpc) {
                 var req    = rpc.request;               // reference to the rpc request
                 var id     = rpc.id;                    // rpc response id (should be same as req.id)
                 var result = rpc.result;                // rpc response result
                 var WM_LENGTH_DATA = result.data[0];    // javascript object representing the ODB WM_LENGTH structure
                 console.log(WM_LENGTH_DATA);
-                mjsonrpc_db_get_value("/Equipment/Switching/Variables/WM_DATA").then(function(rpc) {
+                mjsonrpc_db_get_value("/Equipment/SwitchingCentral/Variables/WM_DATA").then(function(rpc) {
                     var req    = rpc.request;            // reference to the rpc request
                     var id     = rpc.id;                 // rpc response id (should be same as req.id)
                     var result = rpc.result;             // rpc response result
@@ -116,23 +116,23 @@
                         <td width="100px">
                             <input type="checkbox"
                                    name="modbcheckbox"
-                                   data-odb-path="/Equipment/Switching/Settings/Active" />
+                                   data-odb-path="/Equipment/SwitchingCentral/Common/Enabled" />
                         </td>
                     </tr>
 
                     <tr align="center">
                         <td id="systemdelay" align="center" class="mgreencolor">Delay:</td>
-                        <td name="modbvalue" data-odb-path="/Equipment/Switching/Settings/Delay" data-odb-editable="1"></td>
+                        <td name="modbvalue" data-odb-path="/Equipment/SwitchingCentral/Settings/Delay" data-odb-editable="1"></td>
                     </tr>
 
                     <tr align="center">
                         <td> <button name="modbbutton" class="mbutton"
-                                data-odb-path="/Equipment/Switching/Settings/Reset SC Master"
+                                data-odb-path="/Equipment/SwitchingCentral/Commands/Reset SC Master"
                                 data-odb-value="1">
                             Reset SC Master
                         </button>
                         <button name="modbbutton" class="mbutton"
-                                data-odb-path="/Equipment/Switching/Settings/Reset SC Slave"
+                                data-odb-path="/Equipment/SwitchingCentral/Commands/Reset SC Slave"
                                 data-odb-value="1">
                             Reset SC Slave
                         </button>
@@ -141,12 +141,12 @@
 
                     <tr align="center">
                         <td> <button name="modbbutton" class="mbutton"
-                                data-odb-path="/Equipment/Switching/Settings/Clear WM"
+                                data-odb-path="/Equipment/SwitchingCentral/Commands/Clear WM"
                                 data-odb-value="1">
                             Clear WM
                         </button>
                         <button name="modbbutton" class="mbutton"
-                                data-odb-path="/Equipment/Switching/Settings/Read MALIBU File"
+                                data-odb-path="/Equipment/SwitchingCentral/Commands/Read MALIBU File"
                                 data-odb-value="1">
                             Read MALIBU File
                         </button>
@@ -154,23 +154,23 @@
                     </tr>
                     <tr align="center">
                         <button name="modbbutton" class="mbutton"
-                                data-odb-path="/Equipment/Switching/Settings/power MALIBU"
+                                data-odb-path="/Equipment/SwitchingCentral/Commands/power MALIBU"
                                 data-odb-value="1">
                            power MALIBU
                         </button>
                     </tr>
                     <tr>
                         <td>PCIe MEM Start</td>
-                        <td name="modbvalue" data-odb-editable="1" data-format="x" data-odb-path="/Equipment/Switching/Variables/PCIE_MEM_START"></td>
+                        <td name="modbvalue" data-odb-editable="1" data-format="x" data-odb-path="/Equipment/SwitchingCentral/Variables/PCIE_MEM_START"></td>
                     </tr>
                     <tr>
                         <td><button name="modbbutton" class="mbutton"
-                                data-odb-path="/Equipment/Switching/Settings/Last RM ADD"
+                                data-odb-path="/Equipment/SwitchingCentral/Commands/Last RM ADD"
                                 data-odb-value="1">
                             Last RM ADD
                         </button>
                         </td>
-                        <td name="modbvalue" data-odb-path="/Equipment/Switching/Variables/LAST_RM_ADD" data-odb-editable="1"></td>
+                        <td name="modbvalue" data-odb-path="/Equipment/SwitchingCentral/Variables/LAST_RM_ADD" data-odb-editable="1"></td>
                     </tr>
                 </table>
             </td>
@@ -186,7 +186,7 @@
                     <tr>
                         <th>
                             <button name="modbbutton" class="mbutton"
-                                    data-odb-path="/Equipment/Switching/Settings/Read"
+                                    data-odb-path="/Equipment/SwitchingCentral/Commands/Read"
                                     data-odb-value="1">
                                 Read
                             </button>
@@ -194,15 +194,15 @@
                     </tr>
                     <tr>
                         <td>FPGA_ID</td>
-                        <td name="modbvalue" data-odb-editable="1" data-format="x" data-odb-path="/Equipment/Switching/Variables/FPGA_ID_READ"></td>
+                        <td name="modbvalue" data-odb-editable="1" data-format="x" data-odb-path="/Equipment/SwitchingCentral/Variables/FPGA_ID_READ"></td>
                     </tr>
                     <tr>
                         <td>Start Add.</td>
-                        <td name="modbvalue" data-odb-editable="1" data-format="x" data-odb-path="/Equipment/Switching/Variables/START_ADD_READ"></td>
+                        <td name="modbvalue" data-odb-editable="1" data-format="x" data-odb-path="/Equipment/SwitchingCentral/Variables/START_ADD_READ"></td>
                     </tr>
                     <tr>
                         <td>Length</td>
-                        <td name="modbvalue" data-odb-editable="1" data-format="x" data-odb-path="/Equipment/Switching/Variables/LENGTH_READ"></td>
+                        <td name="modbvalue" data-odb-editable="1" data-format="x" data-odb-path="/Equipment/SwitchingCentral/Variables/LENGTH_READ"></td>
                     </tr>
                 </table>
             </td>
@@ -219,7 +219,7 @@
                     <tr>
                         <th>
                             <button name="modbbutton" class="mbutton"
-                                    data-odb-path="/Equipment/Switching/Settings/Write"
+                                    data-odb-path="/Equipment/SwitchingCentral/Commands/Write"
                                     data-odb-value="1">
                                 Write
                             </button>
@@ -229,17 +229,17 @@
                     </tr>
                     <tr>
                         <td>FPGA_ID</td>
-                        <td name="modbvalue" data-odb-editable="1" data-format="x" data-odb-path="/Equipment/Switching/Variables/FPGA_ID_WRITE"></td>
+                        <td name="modbvalue" data-odb-editable="1" data-format="x" data-odb-path="/Equipment/SwitchingCentral/Variables/FPGA_ID_WRITE"></td>
                     </tr>
                     <tr>
                         <td>Start Add.</td>
-                        <td name="modbvalue" data-odb-editable="1" data-format="x" data-odb-path="/Equipment/Switching/Variables/START_ADD_WRITE"></td>
+                        <td name="modbvalue" data-odb-editable="1" data-format="x" data-odb-path="/Equipment/SwitchingCentral/Variables/START_ADD_WRITE"></td>
                     </tr>
 
                     <tr>
                         <th>
                             <button name="modbbutton" class="mbutton"
-                                    data-odb-path="/Equipment/Switching/Settings/Single Write"
+                                    data-odb-path="/Equipment/SwitchingCentral/Commands/Single Write"
                                     data-odb-value="1">
                                 Single Write
                             </button>
@@ -247,15 +247,15 @@
                     </tr>
                     <tr>
                         <td>FPGA_ID</td>
-                        <td name="modbvalue" data-odb-editable="1" data-format="x" data-odb-path="/Equipment/Switching/Variables/FPGA_ID_WRITE"></td>
+                        <td name="modbvalue" data-odb-editable="1" data-format="x" data-odb-path="/Equipment/SwitchingCentral/Variables/FPGA_ID_WRITE"></td>
                     </tr>
                     <tr>
                         <td>Start Add.</td>
-                        <td name="modbvalue" data-odb-editable="1" data-format="x" data-odb-path="/Equipment/Switching/Variables/START_ADD_WRITE"></td>
+                        <td name="modbvalue" data-odb-editable="1" data-format="x" data-odb-path="/Equipment/SwitchingCentral/Variables/START_ADD_WRITE"></td>
                     </tr>
                     <tr>
                         <td>Data</td>
-                        <td name="modbvalue" data-odb-editable="1" data-format="x" data-odb-path="/Equipment/Switching/Variables/SINGLE_DATA_WRITE"></td>
+                        <td name="modbvalue" data-odb-editable="1" data-format="x" data-odb-path="/Equipment/SwitchingCentral/Variables/SINGLE_DATA_WRITE"></td>
                     </tr>
                 </table>
             </td>
@@ -283,13 +283,13 @@
                                 Load RM Mem
                             </button>
                             <button name="modbbutton" class="mbutton"
-                                        data-odb-path="/Equipment/Switching/Settings/Read RM"
+                                        data-odb-path="/Equipment/SwitchingCentral/Commands/Read RM"
                                     data-odb-value="1">
                                 Read Memory
                             </button>
                         </td>
-                        <td name="modbvalue" data-odb-editable="1" data-format="x" data-odb-path="/Equipment/Switching/Variables/RM_START_ADD"></td>
-                        <td name="modbvalue" data-odb-editable="1" data-format="x" data-odb-path="/Equipment/Switching/Variables/RM_LENGTH"></td>
+                        <td name="modbvalue" data-odb-editable="1" data-format="x" data-odb-path="/Equipment/SwitchingCentral/Variables/RM_START_ADD"></td>
+                        <td name="modbvalue" data-odb-editable="1" data-format="x" data-odb-path="/Equipment/SwitchingCentral/Variables/RM_LENGTH"></td>
                     </tr>
                 </table>
 
@@ -330,13 +330,13 @@
                                 Load WM Mem
                             </button>
                             <button name="modbbutton" id="readWMButton" class="mbutton"
-                                    data-odb-path="/Equipment/Switching/Settings/Read WM"
+                                    data-odb-path="/Equipment/SwitchingCentral/Commands/Read WM"
                                     data-odb-value="1">
                                 Write Memory
                             </button>
                         </td>
-                        <td name="modbvalue" data-odb-editable="1" data-format="x" data-odb-path="/Equipment/Switching/Variables/WM_START_ADD"></td>
-                        <td name="modbvalue" id="WM_LENGTH" data-odb-editable="1" data-format="x" data-odb-path="/Equipment/Switching/Variables/WM_LENGTH"></td>
+                        <td name="modbvalue" data-odb-editable="1" data-format="x" data-odb-path="/Equipment/SwitchingCentral/Variables/WM_START_ADD"></td>
+                        <td name="modbvalue" id="WM_LENGTH" data-odb-editable="1" data-format="x" data-odb-path="/Equipment/SwitchingCentral/Variables/WM_LENGTH"></td>
                     </tr>
                 </table>
 
