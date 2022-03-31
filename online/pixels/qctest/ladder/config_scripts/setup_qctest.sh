@@ -1,6 +1,6 @@
 # Author J. Guzman-Funck, March 2022, Cosmic Run. jose.guzman-funck19@imperial.ac.uk || pepe.guzmanfunck@gmail.com
 
-# Power suppliers configuration
+# Power suppliers configuration. TODO: add this to all available hamegs
 odbedit -d /Equipment/HAMEG0/Common/ -c "set Period 500"
 
 
