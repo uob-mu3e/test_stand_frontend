@@ -38,15 +38,15 @@ struct mupix_t {
 
     void test_tdacs() {
 
-        printf("test tdacs mask");
+        printf("test tdacs both");
 
-        for(int i = 0; i<120; i++) {
+        for(int i = 0; i<100; i++) {
             sc->ram->data[MP_CTRL_TDAC_START_REGISTER_W]=0x0;
 		}
-        for(int i = 120; i<130; i++) {
+        for(int i = 100; i<300; i++) {
             sc->ram->data[MP_CTRL_TDAC_START_REGISTER_W]=0xFFFFFFFF;
 		}
-        for(int i = 130; i<513; i++) {
+        for(int i = 300; i<513; i++) {
             sc->ram->data[MP_CTRL_TDAC_START_REGISTER_W]=0x0;
 		}
 
@@ -54,12 +54,27 @@ struct mupix_t {
 
     void test_tdacs2() {
 
-        printf("test tdacs no mask");
+        printf("test tdacs mask");
 
         for(int i = 0; i<513; i++) {
             sc->ram->data[MP_CTRL_TDAC_START_REGISTER_W]=0x0;
 		}
 
+    }
+
+    void test_tdacs3() {
+
+        printf("test tdacs no mask");
+
+        for(int i = 0; i<513; i++) {
+            sc->ram->data[MP_CTRL_TDAC_START_REGISTER_W]=0xFFFFFFFF;
+		}
+
+    }
+
+    void test_tdac_pattern() {
+        printf("test tdac pattern");
+        sc->ram->data[MP_CTRL_RUN_TEST_REGISTER_W]=0x1;
     }
     
     void test_write_all(bool maskPixel) {
@@ -159,11 +174,17 @@ struct mupix_t {
             case 'a':
                 mupix_write_all_off();
                 break;
-	        case 't':
+	        case 'b':
                 test_tdacs();
 		        break;
-	        case 'z':
+	        case 'm':
                 test_tdacs2();
+		        break;
+            case 'n':
+                test_tdacs3();
+		        break;
+            case 'p':
+                test_tdac_pattern();
 		        break;
             case '1':
                 value = 0x0;
