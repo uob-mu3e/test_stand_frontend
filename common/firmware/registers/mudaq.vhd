@@ -44,18 +44,18 @@ package mudaq is
 
 
     --! time merger tree constants
-    constant IDEL : std_logic_vector(3 downto 0)    := x"0";
-    constant ONEMASK : std_logic_vector(3 downto 0) := x"1";
-    constant WAITING : std_logic_vector(3 downto 0) := x"2";
-    constant HEADER : std_logic_vector(3 downto 0)  := x"3";
-    constant TS0 : std_logic_vector(3 downto 0)     := x"4";
-    constant TS1 : std_logic_vector(3 downto 0)     := x"5";
-    constant SHEADER : std_logic_vector(3 downto 0) := x"6";
-    constant HIT : std_logic_vector(3 downto 0)     := x"7";
-    constant ONEHIT : std_logic_vector(3 downto 0)  := x"8";
-    constant TRAILER : std_logic_vector(3 downto 0) := x"9";
-    constant ONEERROR : std_logic_vector(3 downto 0) := x"a";
-    type N_LINKS_TREE_t is array (3 downto 0) of integer;
+    constant SWB_IDLE : std_logic_vector(3 downto 0)    := x"0";
+    constant ONEMASK : std_logic_vector(3 downto 0)     := x"1";
+    constant WAITING : std_logic_vector(3 downto 0)     := x"2";
+    constant HEADER : std_logic_vector(3 downto 0)      := x"3";
+    constant TS0 : std_logic_vector(3 downto 0)         := x"4";
+    constant TS1 : std_logic_vector(3 downto 0)         := x"5";
+    constant SHEADER : std_logic_vector(3 downto 0)     := x"6";
+    constant HIT : std_logic_vector(3 downto 0)         := x"7";
+    constant ONEHIT : std_logic_vector(3 downto 0)      := x"8";
+    constant TRAILER : std_logic_vector(3 downto 0)     := x"9";
+    constant ONEERROR : std_logic_vector(3 downto 0)    := x"a";
+    type N_LINKS_TREE_t is array (3 downto 0) of positive;
     constant N_LINKS_TREE : N_LINKS_TREE_t := (1, 2, 4, 8);
 
 

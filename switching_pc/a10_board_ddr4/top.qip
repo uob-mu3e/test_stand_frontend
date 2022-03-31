@@ -7,29 +7,11 @@ set_global_assignment -name SDC_FILE top.sdc
 
 set_global_assignment -name QIP_FILE util/include.qip
 
-set_global_assignment -name VHDL_FILE a10/a10_block.vhd
+set_global_assignment -name QIP_FILE a10/include.qip
 set_global_assignment -name QIP_FILE a10/xcvr/include.qip
-
 set_global_assignment -name QIP_FILE a10/pcieapp/include.qip
-
-set_global_assignment -name VHDL_FILE a10/pcie_register_mapping.vhd
-set_global_assignment -name VHDL_FILE a10/dma_evaluation.vhd
-
-set_global_assignment -name VHDL_FILE a10/a10_reset_link.vhd
-set_global_assignment -name VHDL_FILE a10/a10_block.vhd
-set_global_assignment -name VHDL_FILE a10/swb_block.vhd
-set_global_assignment -name VHDL_FILE a10/swb_stream_merger.vhd
-set_global_assignment -name VHDL_FILE a10/pcie_register_mapping.vhd
-set_global_assignment -name VHDL_FILE a10/swb_data_path.vhd
-set_global_assignment -name VHDL_FILE a10/link_to_fifo_32.vhd
-set_global_assignment -name VHDL_FILE a10/swb_time_merger.vhd
-set_global_assignment -name VHDL_FILE a10/time_merger_v4.vhd
-set_global_assignment -name VHDL_FILE a10/time_merger_tree_fifo_32_v3.vhd
-set_global_assignment -name VHDL_FILE a10/swb_midas_event_builder.vhd
-set_global_assignment -name VHDL_FILE a10/swb_readout_counters.vhd
-set_global_assignment -name VHDL_FILE a10/chip_lookup.vhd
-set_global_assignment -name VHDL_FILE a10/chip_lookup_int_2021.vhd
-set_global_assignment -name VHDL_FILE a10/chip_lookup_edm_2021.vhd
+set_global_assignment -name QIP_FILE a10/swb/include.qip
+set_global_assignment -name QIP_FILE a10/link/include.qip
 
 set_global_assignment -name QIP_FILE ../../common/firmware/registers/include.qip
-set_global_assignment -name QIP_FILE a10/include.qip
+

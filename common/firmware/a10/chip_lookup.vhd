@@ -6,6 +6,7 @@
 library ieee;
 use ieee.std_logic_1164.all;
 
+
 entity chip_lookup is
 generic (
     g_LOOPUP_NAME : string := "intRun2021"--;
@@ -14,6 +15,7 @@ port (
     i_fpgaID    : in   std_logic_vector (5 downto 0);
     i_chipID    : in   std_logic_vector (3 downto 0);
     o_chipID    : out  std_logic_vector (6 downto 0)--;
+	
 );
 end entity;
 

@@ -112,7 +112,7 @@ void set_feb_enable(uint64_t enablebits);
 uint64_t get_runstart_ack();
 uint64_t get_runend_ack();
 void print_ack_state();
-uint32_t read_counters(uint32_t write_value);
+uint32_t read_counters(mudaq::MudaqDevice * mu, uint32_t write_value, uint8_t link, uint8_t detector, uint8_t type, uint8_t treeLayer);
 
 void setup_odb();
 void setup_watches();
@@ -254,7 +254,7 @@ void setup_odb(){
             {"Sorter Delay", zeroarr},
             // For this, switch_id has to be known at compile time (calls for a preprocessor macro or some constexpr magic, I guess)
             {namestr.c_str(), std::array<std::string, per_fe_SSFE_size*N_FEBS[switch_id]>()},
-            {cntnamestr.c_str(), std::array<std::string, num_swb_counters_per_feb*N_FEBS[switch_id]+4>()},
+            {cntnamestr.c_str(), std::array<std::string, num_swb_counters_per_feb * N_FEBS[switch_id] + num_swb_counters_data_path + num_swb_counters_per_tree_layer * num_swb_tree_layers + num_swb_counters_node_total>()},
             {sorternamestr.c_str(), std::array<std::string, per_fe_SSSO_size*N_FEBS[switch_id]>()}
     };
 
@@ -322,7 +322,7 @@ void setup_odb(){
             {"Merger Timeout All FEBs", 0},
 
             {bankname.c_str(), std::array<float, per_fe_SSFE_size*N_FEBS[switch_id]>{}},
-            {cntbankname.c_str(), std::array<int, num_swb_counters_per_feb*N_FEBS[switch_id]+4>()},
+            {cntbankname.c_str(), std::array<int, num_swb_counters_per_feb * N_FEBS[switch_id] + num_swb_counters_data_path + num_swb_counters_per_tree_layer * num_swb_tree_layers + num_swb_counters_node_total>()},
             {sorterbankname.c_str(), std::array<int, per_fe_SSSO_size*N_FEBS[switch_id]>{}}
     };
 
@@ -379,7 +379,6 @@ void setup_odb(){
 
     // add custom pages to ODB
     odb custom("/Custom");
-    custom["Switching&"] = "sc.html";
     custom["Links"] = "links.html";
     custom["Febs&"] = "febs.html";
     custom["DAQcounters&"] = "daqcounters.html";
@@ -864,19 +863,24 @@ DWORD * fill_SSCN(DWORD * pdata)
     std::bitset<64> cur_link_active_from_odb = feblist->getLinkMask();
 
     // first read general counters
-    *pdata++ = read_counters(SWB_STREAM_FIFO_FULL_PIXEL_CNT);
-    *pdata++ = read_counters(SWB_BANK_BUILDER_IDLE_NOT_HEADER_PIXEL_CNT);
-    *pdata++ = read_counters(SWB_BANK_BUILDER_RAM_FULL_PIXEL_CNT);
-    *pdata++ = read_counters(SWB_BANK_BUILDER_TAG_FIFO_FULL_PIXEL_CNT);
+    *pdata++ = read_counters(mup, SWB_STREAM_FIFO_FULL_CNT, 0, 0, 1, 0);
+    *pdata++ = read_counters(mup, SWB_STREAM_DEBUG_FIFO_ALFULL_CNT, 0, 0, 1, 0);
+    *pdata++ = read_counters(mup, SWB_BANK_BUILDER_IDLE_NOT_HEADER_CNT, 0, 0, 1, 0);
+    *pdata++ = read_counters(mup, SWB_BANK_BUILDER_SKIP_EVENT_CNT, 0, 0, 1, 0);
+    *pdata++ = read_counters(mup, SWB_BANK_BUILDER_EVENT_CNT, 0, 0, 1, 0);
+    *pdata++ = read_counters(mup, SWB_BANK_BUILDER_TAG_FIFO_FULL_CNT, 0, 0, 1, 0);
+    *pdata++ = read_counters(mup, SWB_EVENTS_TO_FARM_CNT, 0, 0, 1, 0);
+    *pdata++ = read_counters(mup, SWB_MERGER_DEBUG_FIFO_ALFULL_CNT, 0, 0, 1, 0);
 
+    // now we read the link counters
     for(uint32_t i=0; i < N_FEBS[switch_id]; i++){
-        
+        // set the link id
         *pdata++ = i;
-        *pdata++ = (cur_link_active_from_odb.test(i) == 1 ? (read_counters(SWB_LINK_FIFO_ALMOST_FULL_PIXEL_CNT | (i << 8))) : 0);
-        *pdata++ = (cur_link_active_from_odb.test(i) == 1 ? (read_counters(SWB_LINK_FIFO_FULL_PIXEL_CNT | (i << 8))) : 0);
-        *pdata++ = (cur_link_active_from_odb.test(i) == 1 ? (read_counters(SWB_SKIP_EVENT_PIXEL_CNT | (i << 8))) : 0);
-        *pdata++ = (cur_link_active_from_odb.test(i) == 1 ? (read_counters(SWB_EVENT_PIXEL_CNT | (i << 8))) : 0);
-        *pdata++ = (cur_link_active_from_odb.test(i) == 1 ? (read_counters(SWB_SUB_HEADER_PIXEL_CNT | (i << 8))) : 0);
+        *pdata++ = (cur_link_active_from_odb.test(i) == 1 ? read_counters(mup, SWB_LINK_FIFO_ALMOST_FULL_CNT, i, 0, 0, 0) : 0);
+        *pdata++ = (cur_link_active_from_odb.test(i) == 1 ? read_counters(mup, SWB_LINK_FIFO_FULL_CNT, i, 0, 0, 0) : 0);
+        *pdata++ = (cur_link_active_from_odb.test(i) == 1 ? read_counters(mup, SWB_SKIP_EVENT_CNT, i, 0, 0, 0) : 0);
+        *pdata++ = (cur_link_active_from_odb.test(i) == 1 ? read_counters(mup, SWB_EVENT_CNT, i, 0, 0, 0) : 0);
+        *pdata++ = (cur_link_active_from_odb.test(i) == 1 ? read_counters(mup, SWB_SUB_HEADER_CNT, i, 0, 0, 0) : 0);
         if(feblist->getFEBatPort(i)){
             auto feb = feblist->getFEBatPort(i).value();
             if(feb.GetLinkStatus().LinkIsOK()){
@@ -894,6 +898,20 @@ DWORD * fill_SSCN(DWORD * pdata)
             *pdata++ = 0;
         }
     }
+
+    // read merger counters
+    for ( int layer = 0; layer < num_swb_tree_layers; layer++ ) {
+        // set tree layer
+        *pdata++ = layer;
+        for ( int nodes = 0; nodes < out_nodes_per_tree_layer[layer]; nodes++ ) {
+            // set tree nodes
+            *pdata++ = nodes;
+            *pdata++ = read_counters(mup, SWB_MERGER_HEADER_CNT, nodes, 0, 2, layer);
+            *pdata++ = read_counters(mup, SWB_MERGER_SHEADER_CNT, nodes, 0, 2, layer);
+            *pdata++ = read_counters(mup, SWB_MERGER_HIT_CNT, nodes, 0, 2, layer);
+        }
+    }
+
     return pdata;
 }
 
@@ -922,9 +940,8 @@ DWORD * fill_SSPL(DWORD * pdata)
 {
     *pdata++ = mup->read_register_ro(CNT_PLL_156_REGISTER_R);
     *pdata++ = mup->read_register_ro(CNT_PLL_250_REGISTER_R);
-    //TODO: Uncomment once registers are defined
-    *pdata++ = 0;//mup->read_register_ro(LINK_LOCKED_LOW_REGISTER_R);
-    *pdata++ = 0;//mup->read_register_ro(LINK_LOCKED_HIGH_REGISTER_R);
+    *pdata++ = mup->read_register_ro(LINK_LOCKED_LOW_REGISTER_R);
+    *pdata++ = mup->read_register_ro(LINK_LOCKED_HIGH_REGISTER_R);
 
     return pdata;
 }
@@ -1321,9 +1338,49 @@ void print_ack_state(){
 }
 
 // -- Helper functions
-uint32_t read_counters(uint32_t write_value)
+uint32_t read_counters(mudaq::MudaqDevice * mu, uint32_t write_value, uint8_t link, uint8_t detector, uint8_t type, uint8_t treeLayer)
 {
-    mup->write_register(SWB_COUNTER_REGISTER_W, write_value);
-    return mup->read_register_ro(SWB_COUNTER_REGISTER_R);
-}
+    // write_value: counter one wants to read
+    // link:        addrs for link specific counters
+    // detector:    for readout, 0=PIXEL US, 1=PIXEL DS, 2=SCIFI
+    // type:        0=link, 1=datapath, 2=tree
+    // layer:       layer of the tree 0, 1 or 2
 
+    // counter range for each sub detector
+    // 0 to 7:
+    //      e_stream_fifo full
+    //      e_debug_stream_fifo almost full
+    //      bank_builder_idle_not_header
+    //      bank_builder_skip_event_dma
+    //      bank_builder_event_dma
+    //      bank_builder_tag_fifo_full
+    //      events send to the farm
+    //      e_debug_time_merger_fifo almost full
+    // 8 to 3 * (1 + 2 + 4):
+    //      tree layer0: 8 to 3 * 4
+    //      tree layer1: 8 + 3 * 4 to 3 * 4 + 3 * 2
+    //      tree layer2: 8 + 3 * 4 + 3 * 2 to 3 * 4 + 3 * 2 + 3 * 1
+    //          layerN link output: # HEADER, SHEADER, HIT
+    // 8 + 3 * (1 + 2 + 4) to 8 + 3 * (1 + 2 + 4) + NLINKS * 5:
+    //      fifo almost_full
+    //      fifo wrfull
+    //      # of skip event
+    //      # of events
+    //      # of sub header
+
+    // link counters
+    if ( type == 0 ) {
+        write_value += SWB_DATAPATH_CNT + SWB_TREE_CNT * (SWB_LAYER0_OUT_CNT + SWB_LAYER1_OUT_CNT + SWB_LAYER2_OUT_CNT) + link * SWB_LINK_CNT;
+    // tree counters
+    } else if ( type == 2 ) {
+        uint32_t treeLinkOffset[3] = { 0, 4, 6 };
+        write_value += SWB_DATAPATH_CNT + SWB_TREE_CNT * (treeLinkOffset[treeLayer] + link);
+        //printf("write_value %d, link %d, treeLinkOffset[treeLayer] %d\n", write_value, link, treeLinkOffset[treeLayer]);
+    }
+
+    // TODO: add detector
+    //write_value += detector * SWB_DATAPATH_CNT + SWB_TREE_CNT * (SWB_LAYER0_OUT_CNT + SWB_LAYER1_OUT_CNT + SWB_LAYER2_OUT_CNT) + link * SWB_LINK_CNT
+
+    mu->write_register(SWB_COUNTER_REGISTER_W, write_value);
+    return mu->read_register_ro(SWB_COUNTER_REGISTER_R);
+}

@@ -1,8 +1,8 @@
 #
 
 create_clock -period  "50.000000 MHz" [get_ports CLK_50_B2J]
-create_clock -period "266.667000 MHz" [get_ports DDR3A_REFCLK_p]
-create_clock -period "266.667000 MHz" [get_ports DDR3B_REFCLK_p]
+create_clock -period "300.000000 MHz" [get_ports DDR3A_REFCLK_p]
+create_clock -period "300.000000 MHz" [get_ports DDR3B_REFCLK_p]
 create_clock -period "125.000000 MHz" [get_ports SMA_CLKIN]
 create_clock -period "100.000000 MHz" [get_ports PCIE_REFCLK_p]
 
