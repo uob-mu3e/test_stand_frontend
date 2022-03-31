@@ -6,6 +6,12 @@
     # Input from MIDAS: DACScan Input/Outputs -- IV Input/Outputs -- Lov voltage Output
     # Output single chip: to be done
     # Output ladder: the total score for the ladder and a breakthrough evaluation in array format, one netry for each test done
+    #
+    #
+    # TODO
+    # - Make sure that all info including inputs is saved. Maybe copy all input and outputs in each ladder folder
+    #   and then do the actual evaluation
+    #
 #############################################################################################################################
 
 
@@ -27,10 +33,10 @@ PARAM ladderID, "Ladder identification number"
 CAT Eval_output, $path_Eval, "/Ladders/", $ladderID
 ODBCREATE $Eval_output, INT8, 4
 
-#ODBSET $Eval_output[1],0
-#ODBSET $Eval_output[2],0
-#ODBSET $Eval_output[3],0
-#ODBSET $Eval_output[4],0
+# ODBSET $Eval_output[1], 0
+# ODBSET $Eval_output[2], 0
+# ODBSET $Eval_output[3], 0
+# ODBSET $Eval_output[4], 0
 
 # INITIALIZE TEST OUTCOMES WITH "0" (test not passed yet)
 TEST_chip_config =0
@@ -122,15 +128,16 @@ ENDIF
 # Should have a linear increase
 # 
 # TODO:
-# - Would be nice to be able to 
+# - Would be nice to be able to know what mupix fails
+# - Check what to do with empty values
 #
 
-CAT path_DAC_input,  $path_root,"/DACScan/Input/VPDAC"
-CAT path_DAC_output, $path_root,"/DACScan/Output/VPDAC/"
+CAT path_VPDAC_input,  $path_root,"/DACScan/Input/VPDAC"
+CAT path_VPDAC_output, $path_root,"/DACScan/Output/VPDAC/"
 
 
 # Nr.of steps in VPDAC
-ODBSUBDIR $path_DAC_input
+ODBSUBDIR $path_VPDAC_input
     ODBGET start_value, vpdac_start
     ODBGET stop_value, vpdac_stop
     ODBGET step, vpdac_step
@@ -150,7 +157,7 @@ chip = 0
 
 LOOP i, $chips
     # Append this path till I say so
-    CAT path_VPDAC, $path_DAC_output, $chip
+    CAT path_VPDAC, $path_VPDAC_output, $chip
 
     ODBSUBDIR $path_VPDAC
         control_flag_2 = $VPDAC_steps
@@ -198,7 +205,66 @@ ENDIF
 
 ###################################### LADDER ref_Vss TEST ##########################################
 #
-# We need a plateau in the working region --> plateau around 190 +/- 30 
+# We need a plateau in the working region --> plateau around 190 +/- 30. I have 32 ref_Vss values. 
+# Same idea as in previous test but now the gradient needs to be near zero... Empty values are zero
 #
 #
-    
+
+# For each mupix, check gradient increase in curernt as a function of the ref_Vss values. To do that navigate
+# through each mupix, then thorugh each buffer, check what positions actually have a value different to zero.
+# Check gradient increase in N-1 steps, if increase is bigger than min_gradient 
+
+# Paths
+CAT path_ref_Vss_input, $path_root, "DACScan/Input/ref_Vss"
+CAT path_ref_Vss_output, "/DACScan/Output/ref_Vss"
+
+# Run through full lader 
+chips = 6
+flag_chips_ref_Vss = $chips
+
+buffer_size = 32
+
+# TODO change. Check with Luigi
+max_allowed_change = 0.1
+gradient_target = 0
+
+# TODO. Change if necessary
+next_chip = 263
+
+chip = 0
+LOOP i, $chips
+    LOOP j, $buffer_size-1
+        CAT path_next_current, $path_ref_Vss_output, "/", $chip, "/ref_Vss_current[$j]"
+        ODBGET $path_next_current, next_current
+        
+        # Check if filters works
+        IF $next_value != 0
+            CAT path_next_value, $path_ref_Vss_output, "/", $chip, "/ref_Vss_values[$j]"
+            CAT path_this_current, $path_ref_Vss_output, "/", $chip, "/ref_Vss_current[$j-1]"
+            CAT path_this_value, $path_ref_Vss_output, "/", $chip, "/ref_Vss_values[$j-1]"
+
+            ODBGET $path_this_current, this_current
+            ODBGET $path_next_value, next_value
+            ODBGET $path_this_value, this_value
+
+            gradient = ($next_current - $this_current) / ($next_value - this_value)
+
+            IF abs($gradient-$gradient_target) > max_allowed_change
+                # Failed test. Substract one. Exit loop
+                flag_chips_ref_Vss = $flag_chips_ref_Vss - 1
+                GOTO $next_chip
+            ENDIF
+        ELSE
+            # No more values to be checked
+            GOTO $next_chip
+        ENDIF
+    ENDLOOP
+
+    chip = $i
+ENDLOOP
+
+# Check if ladder passed test
+IF flag_chips_ref_Vss != $chips
+    # Flag test as failed
+    TEST_refVss = 0
+ENDIF
