@@ -91,7 +91,6 @@ ODBSET /Equipment/KEITHLEY0/Variables/Set State, 1
 WAIT SECONDS, 2
 
 
-# Looping starts at 1
 
 LOOP i, $num_steps
     # Set voltage array in Output

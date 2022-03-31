@@ -1,0 +1,204 @@
+#############################################################################################################################       
+    # Authors A. Loreti, March 2022, cosmic run. andrea.loreti@physics.ox.ac.uk
+    #         J. Guzman-Funck, March 2022, cosmic run. jose.guzman-funck19@imperial.ac.uk || pepe.guzmanfunck@gmail.com
+    # Summary: Eval evaluates the quality of the Ladder
+    # User input: ladder ID 
+    # Input from MIDAS: DACScan Input/Outputs -- IV Input/Outputs -- Lov voltage Output
+    # Output single chip: to be done
+    # Output ladder: the total score for the ladder and a breakthrough evaluation in array format, one netry for each test done
+#############################################################################################################################
+
+
+
+# MAIN PATH TO MIDAS LADDER QUALITY CONTROL DIRECTORY
+path_root = "/Equipment/Mupix/QCTests/Ladder"
+
+# MAKE NEW KEY IN THE EVAL DIRECTORY WITH LADDER ID NUMBER IN IT
+# The new key is a vector that stores evaluation outcomes for this ladder. Possible outcomes 0 (failed) 1(passed)
+#
+# TODO 
+# - Check how to handle upstream, downstream
+# - Check how to handle IDs 
+# - Implement inmediate test failing if some specific tests fail: IV_curve, LV_power_ON
+#
+
+CAT path_Eval, $path_root, "/Eval"
+PARAM ladderID, "Ladder identification number"
+CAT Eval_output, $path_Eval, "/Ladders/", $ladderID
+ODBCREATE $Eval_output, INT8, 4
+
+#ODBSET $Eval_output[1],0
+#ODBSET $Eval_output[2],0
+#ODBSET $Eval_output[3],0
+#ODBSET $Eval_output[4],0
+
+# INITIALIZE TEST OUTCOMES WITH "0" (test not passed yet)
+TEST_chip_config =0
+TEST_IV=0
+TEST_VPDAC=0
+TEST_refVss=0
+
+# TEST_IV = 0 
+# TEST_LV_power_ON = 0 
+# TEST_DAC_scan = 0 
+# TEST_link_qual = 0 
+
+# CONTROL VALUES 
+#
+# Ladder are 200 Ohm m or 20 Ohm m??
+#
+_brkdwnV_min = 10
+_brkdwnV_max = 25
+_min_config_current = 0.4
+_VPDAC_gradient_min = -1
+_VPDAC_gradient_max = 1
+
+# Test sequence -->
+#
+#   (current) IV_curve --> LV_power_ON --> DAC_scan --> link_quali
+#
+#   (proposed) 
+#
+#
+
+###################################### LV POWER ON TEST ##########################################
+# TODO:
+# - Output working chips.
+# - Ladder test would fail but we can still output stuff about working chips. Discuss with Luigi to what extent this is interesting 
+#
+
+control_flag = 6
+
+LOOP i,6
+    CAT path_chip_config, $path_root, "/LVPowerOn/Output/current_increase[$i-1]"
+    ODBGET $path_chip_config, chip_config_current
+
+    IF $chip_config_current < $_min_config_current
+        control_flag = $control_flag -1
+    ENDIF
+ENDLOOP
+
+# Test passed
+IF $control_flag==6
+    TEST_chip_config=1
+ENDIF
+
+# ODBSET $Eval_output[1], $TEST_chip_config
+
+
+###################################### LADDER IV TEST ##########################################
+CAT path_IV_input, $path_root,"/IV/Input"
+CAT path_IV_output, $path_root,"/IV/Output"
+
+# Initialize variables before loop
+this_current = 0
+this_V = 0
+
+# Loop index
+LOOP i,32
+    ODBGET $path_IV_output/Current[$i-1], this_current
+    ODBGET $path_IV_output/Voltage[$i-1], this_V
+
+    ODBGET /Equipment/Mupix/QCTests/Ladder/IV/Input/current_limit, max_current
+
+    # We have exceeded max current. TODO. check goto
+    IF $this_current>$max_current
+        GOTO 110
+    ENDIF
+ENDLOOP
+
+# Test passed 
+IF $this_V > $_brkdwnV_min
+    IF $this_V < $_brkdwnV_max
+        TEST_IV = 1
+    ENDIF
+ENDIF
+
+#ODBSET $Eval_output[2],$TEST_IV
+
+
+###################################### LADDER VPDAC TEST ##########################################
+# 
+# Should have a linear increase
+# 
+# TODO:
+# - Would be nice to be able to 
+#
+
+CAT path_DAC_input,  $path_root,"/DACScan/Input/VPDAC"
+CAT path_DAC_output, $path_root,"/DACScan/Output/VPDAC/"
+
+
+# Nr.of steps in VPDAC
+ODBSUBDIR $path_DAC_input
+    ODBGET start_value, vpdac_start
+    ODBGET stop_value, vpdac_stop
+    ODBGET step, vpdac_step
+    VPDAC_steps = (($vpdac_stop-$vpdac_start) / $vpdac_step) + 1 
+ENDODBSUBDIR
+
+
+# Nr of chips
+chips = 6
+
+# Control_flag: 6 if ladder passed test, smaller than 6 otherwise
+control_flag_1 = $chips
+
+# This chip
+chip = 0
+
+
+LOOP i, $chips
+    # Append this path till I say so
+    CAT path_VPDAC, $path_DAC_output, $chip
+
+    ODBSUBDIR $path_VPDAC
+        control_flag_2 = $VPDAC_steps
+        j_ = 0
+        LOOP j, $VPDAC_steps/2
+            ODBGET VPDAC_values[$j_], VPDAC_val_0
+            ODBGET VPDAC_current[$j_], VPDAC_cur_0
+            ODBGET VPDAC_values[$j], VPDAC_val_1
+            ODBGET VPDAC_current[$j], VPDAC_cur_1
+
+            control_flag_2 = $VPDAC_steps
+
+            IF $VPDAC_val_1 != $VPDAC_val_0
+                gradient = ($VPDAC_cur_1 - $VPDAC_cur_0)/($VPDAC_val_1 - $VPDAC_val_0)
+
+                # TODO check if < and > logic is correctly put here
+                IF $gradient < $_VPDAC_gradient_min
+                    IF $gradient > $_VPDAC_gradient_max
+                        control_flag_2 = $control_flag_2 -1
+                    ENDIF
+                ENDIF
+            ELSE 
+                control_flag_2 = $control_flag_2 -1
+            ENDIF
+
+            j_=$j
+        ENDLOOP
+
+        # Test for this chip passed 
+        IF $control_flag_2 < $VPDAC_steps
+            control_flag_1 = $control_flag_1 -1
+        ENDIF
+
+        chip = $i
+    ENDODBSUBDIR
+ENDLOOP
+
+
+# Test for ladder passed 
+IF $control_flag_1==$chips
+    TEST_VPDAC=1
+ENDIF
+#ODBSET $Eval_output[2], $TEST_VPDAC
+
+
+###################################### LADDER ref_Vss TEST ##########################################
+#
+# We need a plateau in the working region --> plateau around 190 +/- 30 
+#
+#
+    
