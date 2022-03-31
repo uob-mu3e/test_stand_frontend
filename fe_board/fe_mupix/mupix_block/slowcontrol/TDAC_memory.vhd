@@ -40,7 +40,7 @@ architecture RTL of tdac_memory is
 
     constant N_PAGES : integer := 8; -- TODO -- N_PAGES: how many blocks can we store with the memory that we have 
 
-    constant PAGE_SIZE : integer := 512; --TODO: increase when done with simultations (calc from N_PAGES_PER_CHIP)
+    constant PAGE_SIZE : integer := 512/4; --TODO: increase when done with simultations (calc from N_PAGES_PER_CHIP)
     
 
     type TDAC_page_type is record
@@ -61,13 +61,17 @@ architecture RTL of tdac_memory is
 
     signal current_page_addr    : std_logic_vector(PAGE_ADDR_WIDTH_g-1 downto 0);
     signal addr_in_current_page : std_logic_vector(ADDR_WIDTH_g-PAGE_ADDR_WIDTH_g-1 downto 0);
-    signal addr_converted       : std_logic_vector(ADDR_WIDTH_g-PAGE_ADDR_WIDTH_g-1 downto 0);
+    type pix_addr_in_current_page_t is array( natural range <>) of std_logic_vector(8 downto 0);
+    signal pix_addr_in_current_page : pix_addr_in_current_page_t(3 downto 0);
+    type addr_converted_t       is array( natural range <>) of std_logic_vector(ADDR_WIDTH_g-PAGE_ADDR_WIDTH_g-1 downto 0);
+    signal addr_converted       : addr_converted_t(3 downto 0);
 
     signal ram_we               : std_logic;
-    signal ram_wdata            : std_logic_vector(31 downto 0);
-    signal ram_waddr            : std_logic_vector(ADDR_WIDTH_g-1 downto 0);
+    signal ram_wdata            : reg8array(3 downto 0);
+    type ram_waddr_t            is array( natural range <>) of std_logic_vector(ADDR_WIDTH_g-1 downto 0);
+    signal ram_waddr            : ram_waddr_t(3 downto 0);
     signal ram_raddr            : std_logic_vector(ADDR_WIDTH_g-1 downto 0);
-    signal ram_rdata            : std_logic_vector(31 downto 0);
+    signal ram_rdata            : reg8array(3 downto 0);
 
     subtype page_id_type        is integer range 0 to N_PAGES_PER_CHIP-1;
     type page_id_array_type     is array( natural range <>) of page_id_type;
@@ -92,9 +96,17 @@ architecture RTL of tdac_memory is
 
 begin
 
-    ram_waddr           <= current_page_addr & addr_converted;--& addr_in_current_page;
     ram_we              <= i_we;
-    ram_wdata           <= i_data;
+    genram_in: for I in 0 to 3 generate
+        ram_waddr(I)                <= "00" & current_page_addr & addr_converted(I)(8 downto 2);--& addr_in_current_page;
+        ram_wdata(I)                <= i_data(I*8+7 downto I*8);
+    end generate;
+
+    -- physical row addr's, to be converted into digital row addr's before writing to mem
+    pix_addr_in_current_page(0)    <= addr_in_current_page(6 downto 0) & "00";
+    pix_addr_in_current_page(1)    <= addr_in_current_page(6 downto 0) & "01";
+    pix_addr_in_current_page(2)    <= addr_in_current_page(6 downto 0) & "10";
+    pix_addr_in_current_page(3)    <= addr_in_current_page(6 downto 0) & "11";
 
     process (i_clk, i_reset_n) is
         variable n_free : integer range 0 to N_PAGES;
@@ -265,29 +277,34 @@ begin
 
     -- select the bits that we currently need
     genwdata: for I in 0 to 3 generate
-        o_tdac_dpf_wdata(I)<= ram_rdata(7+I+TDAC_page_array(read_page).bit_in_tdac);
+        o_tdac_dpf_wdata(I)<= ram_rdata(I)(TDAC_page_array(read_page).bit_in_tdac);
     end generate;
 
     ram_raddr <= std_logic_vector(to_unsigned(read_page,PAGE_ADDR_WIDTH_g)) & TDAC_page_array(read_page).addr;
 
-    ram_1r1w_inst: entity work.ram_1r1w -- TODO: use ip
+    -- we need to split the ram in 4 parts to be able to do row conversion on each individual byte on the write side 
+    genram: for I in 0 to 3 generate
+    ram_1r1w_inst: entity work.ram_1r1w
       generic map (
-        g_DATA_WIDTH       => 32,
+        g_DATA_WIDTH       => 8,
         g_ADDR_WIDTH       => ADDR_WIDTH_g--,
       )
       port map (
         i_raddr => ram_raddr,
-        o_rdata => ram_rdata,
+        o_rdata => ram_rdata(I),
         i_rclk  => i_clk,
         i_waddr => ram_waddr,
-        i_wdata => ram_wdata,
+        i_wdata => ram_wdata(I),
         i_we    => ram_we,
         i_wclk  => i_clk
       );
-    
+
     convert_col_row: entity work.convert_col_row_reverse
       port map(
-        i_addr => addr_in_current_page,
-        o_addr => addr_converted--,
+        i_addr => pix_addr_in_current_page(I),
+        o_addr => addr_converted(I)--,
       );
+    
+    end generate;
+    
 end RTL;
