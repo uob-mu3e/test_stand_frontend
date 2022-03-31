@@ -61,6 +61,7 @@ architecture RTL of tdac_memory is
 
     signal current_page_addr    : std_logic_vector(PAGE_ADDR_WIDTH_g-1 downto 0);
     signal addr_in_current_page : std_logic_vector(ADDR_WIDTH_g-PAGE_ADDR_WIDTH_g-1 downto 0);
+    signal addr_converted       : std_logic_vector(ADDR_WIDTH_g-PAGE_ADDR_WIDTH_g-1 downto 0);
 
     signal ram_we               : std_logic;
     signal ram_wdata            : std_logic_vector(31 downto 0);
@@ -91,7 +92,7 @@ architecture RTL of tdac_memory is
 
 begin
 
-    ram_waddr           <= current_page_addr & addr_in_current_page;
+    ram_waddr           <= current_page_addr & addr_converted;--& addr_in_current_page;
     ram_we              <= i_we;
     ram_wdata           <= i_data;
 
@@ -282,5 +283,11 @@ begin
         i_wdata => ram_wdata,
         i_we    => ram_we,
         i_wclk  => i_clk
+      );
+    
+    convert_col_row: entity work.convert_col_row_reverse
+      port map(
+        i_addr => addr_in_current_page,
+        o_addr => addr_converted--,
       );
 end RTL;
