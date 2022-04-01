@@ -43,8 +43,6 @@ PARAM ref_Vss_start, "ref_Vss start"
 PARAM ref_Vss_step, "ref_Vss step"
 PARAM ref_Vss_stop, "ref_Vss stop"
 
-#Selects upstream or downstream chips
-PARAM select_UD, "UPstream(-1) DOWNstream(2) chips"
 
 SET num_ref_Vss_steps, (($ref_Vss_stop-$ref_Vss_start) / $ref_Vss_step) + 1 
 
@@ -74,7 +72,7 @@ ODBSET /Equipment/KEITHLEY0/Variables/Set State, 1
 # To each chip
 LOOP i, 3
     # Turn on chip i. This is downstream
-    SET i_, $i+$select_UD
+    SET i_, $i-1
 
     CAT path_to_bias, /Equipment/Mupix/Settings/BIASDACS/, $i_, /BiasBlock_On
     CAT path_to_vpdac, /Equipment/Mupix/Settings/BIASDACS/, $i_, /VPDAC

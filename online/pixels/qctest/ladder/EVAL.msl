@@ -11,6 +11,8 @@
     # TODO
     # - Make sure that all info including inputs is saved. Maybe copy all input and outputs in each ladder folder
     #   and then do the actual evaluation
+    # - See how to input params: from ODB, as PARAMs, both.
+    # - Solve all TODOs in file    
     #
 #############################################################################################################################
 
@@ -26,31 +28,25 @@ path_root = "/Equipment/Mupix/QCTests/Ladder"
 # - Check how to handle upstream, downstream
 # - Check how to handle IDs 
 # - Implement inmediate test failing if some specific tests fail: IV_curve, LV_power_ON
-#
+# - Make sure scoring is consistent (if you assume tests have to be tested --> make sure you fail them when it is required and 
+#   not the other way around)
 
 CAT path_Eval, $path_root, "/Eval"
 PARAM ladderID, "Ladder identification number"
 CAT Eval_output, $path_Eval, "/Ladders/", $ladderID
-ODBCREATE $Eval_output, INT8, 4
 
-# ODBSET $Eval_output[1], 0
-# ODBSET $Eval_output[2], 0
-# ODBSET $Eval_output[3], 0
-# ODBSET $Eval_output[4], 0
 
 # INITIALIZE TEST OUTCOMES WITH "0" (test not passed yet)
-TEST_chip_config =0
-TEST_IV=0
-TEST_VPDAC=0
-TEST_refVss=0
+# TODO check all variables are used correclty
+TEST_chip_config = 0
+TEST_IV = 0
+TEST_VPDAC = 0
+TEST_refVss = 0
+TEST_link_qual = 0
 
-# TEST_IV = 0 
-# TEST_LV_power_ON = 0 
-# TEST_DAC_scan = 0 
-# TEST_link_qual = 0 
 
 # CONTROL VALUES 
-#
+# TODO: ask
 # Ladder are 200 Ohm m or 20 Ohm m??
 #
 _brkdwnV_min = 10
@@ -59,13 +55,61 @@ _min_config_current = 0.4
 _VPDAC_gradient_min = -1
 _VPDAC_gradient_max = 1
 
-# Test sequence -->
-#
-#   (current) IV_curve --> LV_power_ON --> DAC_scan --> link_quali
-#
-#   (proposed) 
-#
-#
+# 
+# ############################### Copy input and results to eval ###################################
+# / Equipment / Mupix / QCTests / Ladder / IV / Input / current_limit	
+# start_voltage	
+# step_voltage	
+# fine_step_voltage	
+# stop_voltage
+# 
+# / Equipment / Mupix / QCTests / Ladder / IV / Output /
+# Voltage [32]
+# Current [32]
+# V
+# 
+# / Equipment / Mupix / QCTests / Ladder / LVPowerOn / Input /
+# 
+# / Equipment / Mupix / QCTests / Ladder / LVPowerOn / Output / 
+# current_increase [3] # TODO should be changed to 6 to give support to half ladders
+# 
+# / Equipment / Mupix / QCTests / Ladder / DACScan / Input /
+# HV_voltage
+# HV_curr_limit
+# 
+#  / Equipment / Mupix / QCTests / Ladder / DACScan / Input / VPDAC /
+# start_value	
+# step	
+# stop_value
+# 
+# / Equipment / Mupix / QCTests / Ladder / DACScan / Input / ref_Vss / 
+# start_value	
+# step	
+# stop_value
+# 
+# / Equipment / Mupix / QCTests / Ladder / DACScan / Output / VPDAC / $chip /
+# VPDAC_values [10]
+# VPDAC_current [10]
+# 
+# / Equipment / Mupix / QCTests / Ladder / DACScan / Output / ref_Vss / $chip /
+# ref_Vss_values [32]
+# ref_Vss_current [32]
+# 
+#  / Equipment / Mupix / QCTests / Ladder / LINKQUALIcheck / Input /
+# HV_voltage
+# HV_curr_limit
+# start_magic_value_VPVCO
+# stop_magic_value_VPVCO
+# waiting_time
+# 
+# #TODO this needs to be updated in the future to give support to saving all error_rates for all magic parameters
+# / Equipment / Mupix / QCTests / Ladder / LINKQUALIcheck / Output / $chip
+# VPVCO	
+# VNVCO	
+# ErrorRate
+
+
+
 
 ###################################### LV POWER ON TEST ##########################################
 # TODO:
@@ -268,3 +312,39 @@ IF flag_chips_ref_Vss != $chips
     # Flag test as failed
     TEST_refVss = 0
 ENDIF
+
+
+###################################### LADDER link_quali TEST ##########################################
+#
+# Link quality will check if the rate is good enough.
+#
+#
+
+# Paths
+CAT path_error_rate, $path_root, "/LINKQUALIcheck/Output/"
+
+# Params
+error_threshold = 10
+
+# Variables
+chips = 6
+flag_link_quali_chips = $chips
+chip = 0
+
+
+LOOP i, $chips
+    CAT this_path, $path_error_rate, $chip
+    ODBGET $this_path/ErrorRate, this_error_rate
+
+    IF this_error_rate > error_threshold
+        flag_link_quali_chips = $flag_link_quali_chips - 1 
+    ENDIF
+ENDLOOP 
+
+IF flag_link_quali_chips != &chips
+    TEST_link_qual = 0
+ENDIF
+
+
+# TODO: complete scoring system
+# Scoring system defined in: 

@@ -12,8 +12,7 @@ LOOP k, 32
     ODBSET /Equipment/Mupix/QCTests/Ladder/IV/Output/Current[$k-1], 0
 ENDLOOP
 
-
-
+PARAM ladder_id, "Ladder ID"
 PARAM current_limit, "Current limit (Amps)"
 PARAM start_voltage, "Starting voltage"
 PARAM step_size, "Voltage increment"
@@ -51,6 +50,7 @@ IF $step_size % $fine_step_size != 0
     GOTO $end
 ENDIF
 
+# TODO: add checks for ladder_id and configuration
 
 
 # Calculation of num_steps without taking into account the fine steps of last interval
@@ -67,6 +67,7 @@ ENDIF
 
 
 # Save values into ODB
+ODBSET /Equipment/Mupix/QCTests/Ladder/current_ladder_id, $ladder_id
 
 ODBSUBDIR /Equipment/Mupix/QCTests/Ladder/IV/Input
     ODBSET current_limit, $current_limit

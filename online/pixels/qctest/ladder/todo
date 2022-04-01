@@ -1,9 +1,0 @@
-All:
- - Check if US/DS approach currently works
- - LVPowerOn --> check if ladder_id and config needs to be saved as input. Probably lader config has to be saved. Maybe ladder_id_US and ladder_id_DS to be checked afterwards
- - Solve all todo's from each file
-
-IV --> add US/DS support
-LVPowerOn --> add UP/DS support
-link_qual --> save error rates as a function of VPVCO and VNVCO magic values
-link_qual --> add PARAM to ask user to provide number of seconds (ask Luigi)

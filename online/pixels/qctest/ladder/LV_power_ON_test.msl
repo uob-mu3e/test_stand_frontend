@@ -29,7 +29,7 @@ ENDIF
 
 # Turn off all
 LOOP i, 3
-    SET i_, i+2
+    SET i_, i
     CAT path_to_bias, /Equipment/Mupix/Settings/BIASDACS/, $i_, /BiasBlock_On
     ODBSET $path_to_bias, 0
     ODBSET /Equipment/Switching/Settings/MupixChipToConfigure, $i_
@@ -43,7 +43,7 @@ LOOP i, 3
     ODBGET /Equipment/HAMEG0/Variables/Current[1], init_current
     
     # Turn on chip i
-    SET i_, $i+2
+    SET i_, $i
     CAT path_to_bias, /Equipment/Mupix/Settings/BIASDACS/, $i_, /BiasBlock_On
     ODBSET $path_to_bias, 5
     ODBSET /Equipment/Switching/Settings/MupixChipToConfigure, $i_
