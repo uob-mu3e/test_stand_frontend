@@ -258,7 +258,7 @@ begin
             state_out       => rx_state((i+1)*2-1 downto i*2),
             disp_err        => rx_disperr(i),
 
-            reset_n =>      i_reset_n--,
+            reset_n         => i_reset_n--,
         );
 
 

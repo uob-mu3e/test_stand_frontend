@@ -281,6 +281,10 @@ begin
             scifi_int_syncres <= '1';
             scifi_int_syncres2 <= '1';
             sync_cnt <= sync_cnt + 1;
+        elsif ( run_state_125 /= RUN_STATE_SYNC ) then
+            scifi_int_syncres <= chip_reset_v(0);
+            scifi_int_syncres2 <= chip_reset_v(1);
+            sync_cnt <= 0;
         else
             scifi_int_syncres <= '0';
             scifi_int_syncres2 <= '0';

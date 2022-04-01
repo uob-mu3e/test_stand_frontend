@@ -61,16 +61,14 @@ port (
     i_upper_bnd                 : in  std_logic_vector(N_CC - 1 downto 0);
 
     --monitors
-    o_receivers_pll_lock        : out std_logic;    -- pll lock flag
-    o_receivers_dpa_lock        : out std_logic_vector(N_MODULES*N_ASICS-1 downto 0);			-- dpa lock flag per channel
+    o_receivers_pll_lock        : out std_logic; -- pll lock flag
+    o_receivers_dpa_lock        : out std_logic_vector(N_MODULES*N_ASICS-1 downto 0); -- dpa lock flag per channel
     o_receivers_ready           : out std_logic_vector(N_MODULES*N_ASICS-1 downto 0); -- receiver output ready flag
     o_frame_desync              : out std_logic_vector(1 downto 0);
 
     i_SC_reset_counters         : in  std_logic; --synchronous to i_clk_core
-    i_SC_counterselect          : in  std_logic_vector(6 downto 0); --select counter to be read out. 2..0: counter type selection. 6..3: counter channel selection
-    o_counter_numerator         : out std_logic_vector(31 downto 0); --gray encoded, different clock domains 
-    o_counter_denominator_low   : out std_logic_vector(31 downto 0);
-    o_counter_denominator_high  : out std_logic_vector(31 downto 0);
+    o_fifos_full                : out std_logic_vector(N_MODULES*N_ASICS-1 downto 0); -- mutrig store fifo full
+    o_counters                  : out work.util.slv32_array_t(10 * N_MODULES*N_ASICS-1 downto 0);
 
     i_reset_156_n               : in  std_logic;
     i_clk_156                   : in  std_logic;
@@ -134,8 +132,20 @@ architecture rtl of mutrig_datapath is
     signal s_B_buf_data_reg : std_logic_vector(33 downto 0);
     signal s_B_buf_wr       : std_logic;
 
-    -- monitoring signals TODO: connect as needed
-    signal s_fifos_full                 : t_vector;--elastic fifo full flags
+    -- Scifi Counters per ASIC N_ASICS_TOTAL
+    -- mutrig store:
+    --  0: s_eventcounter
+    --  1: s_timecounter low
+    --  2: s_timecounter high
+    --  3: s_crcerrorcounter
+    --  4: s_framecounter
+    --  5: s_prbs_wrd_cnt
+    --  6: s_prbs_err_cnt
+    -- rx
+    --  7: s_receivers_runcounter
+    --  8: s_receivers_errorcounter
+    --  9: s_receivers_synclosscounter
+    signal s_fifos_full                 : t_vector;
     signal s_eventcounter               : t_array_32b;
     signal s_timecounter                : t_array_64b;
     signal s_crcerrorcounter            : t_array_32b;
@@ -156,6 +166,21 @@ architecture rtl of mutrig_datapath is
     signal RC_all_done                  : std_logic_vector(0 downto 0) := (others => '0');
 
 begin
+
+    o_fifos_full <= s_fifos_full;
+    --! output counter
+    gen_counters : for i in 0 to N_ASICS_TOTAL-1 generate
+        o_counters(0+i*10) <= s_eventcounter(i);
+        o_counters(1+i*10) <= s_timecounter(0)(31 downto 0); -- take only the first one
+        o_counters(2+i*10) <= s_timecounter(0)(63 downto 32);
+        o_counters(3+i*10) <= s_crcerrorcounter(i);
+        o_counters(4+i*10) <= s_framecounter(i)(31 downto 0); -- we only take the low bits for now
+        o_counters(5+i*10) <= s_prbs_wrd_cnt(i)(31 downto 0); -- we only take the low bits for now
+        o_counters(6+i*10) <= s_prbs_err_cnt(i);
+        o_counters(7+i*10) <= s_receivers_runcounter(i);
+        o_counters(8+i*10) <= s_receivers_errorcounter(i);
+        o_counters(9+i*10) <= s_receivers_synclosscounter(i);
+    end generate;
 
     rst_sync_counter : entity work.reset_sync
     port map( i_reset_n => not i_SC_reset_counters, o_reset_n => s_SC_reset_counters_125_n, i_clk => i_clk_125);
@@ -299,99 +324,52 @@ begin
 
     end generate;
 
-        -- p_frec_busy_sync
-        process(i_clk_125)
-        begin
-        if rising_edge(i_clk_125) then
-            s_any_framegen_busy <= '0';
-            if ( i_SC_datagen_enable = '1' and unsigned(s_gen_busy) /= 0 ) then
-                s_any_framegen_busy <= '1';
-            end if;
-            if ( i_SC_datagen_enable='0' and unsigned(s_frec_busy) /= 0 ) then
-                s_any_framegen_busy <= '1';
-            end if;
-        end if;
-        end process;
-
-    g_buffer: for i in 0 to N_ASICS_TOTAL-1 generate begin
-
-    u_elastic_buffer : entity work.mutrig_store
-    port map(
-        i_clk_deser         => i_clk_125,
-        i_clk_rd            => i_clk_125,
-        i_reset             => i_rst_rx,
-        i_aclear            => i_rst_core,
-        i_event_data        => s_event_data(i),
-        i_event_ready       => s_event_ready(i),
-        i_new_frame         => s_new_frame(i),
-        i_frame_info_rdy    => s_frame_info_rdy(i),
-        i_end_of_frame      => s_end_of_frame(i),
-        i_frame_info        => s_frame_info(i),
-        i_frame_number      => s_frame_number(i),
-        i_crc_error         => s_crc_error(i),
-        --event data output inteface
-        o_fifo_data         => s_fifos_data(i),
-        o_fifo_empty        => s_fifos_empty(i),
-        i_fifo_rd           => s_fifos_rd(i),
-        --monitoring
-        o_fifo_full         => s_fifos_full(i),
-        i_reset_counters    => not s_SC_reset_counters_125_n,
-        o_eventcounter      => s_eventcounter(i),
-        o_timecounter       => s_timecounter(i),
-        o_crcerrorcounter   => s_crcerrorcounter(i),
-        o_framecounter      => s_framecounter(i),
-        o_prbs_wrd_cnt      => s_prbs_wrd_cnt(i),
-        o_prbs_err_cnt      => s_prbs_err_cnt(i),
-
-        i_SC_mask           => i_SC_mask_rx(i)
-    );
-    end generate;
-
-    p_counterselect: process (s_timecounter, s_eventcounter, s_crcerrorcounter, s_framecounter, s_prbs_err_cnt, s_prbs_wrd_cnt, s_receivers_errorcounter,s_receivers_runcounter, s_receivers_synclosscounter, i_SC_counterselect)
+    -- p_frec_busy_sync
+    process(i_clk_125)
     begin
-        o_counter_numerator         <= (others =>'0');
-        o_counter_denominator_high  <= (others =>'0');
-        o_counter_denominator_low   <= (others =>'0');
-
-        for i in 0 to N_ASICS_TOTAL-1 loop
-            case i_SC_counterselect(2 downto 0) is
-                when "000" =>
-                    if ( unsigned(i_SC_counterselect(6 downto 3)) = i ) then
-                        o_counter_numerator <= s_eventcounter(i);
-                    end if;
-                    --opt: always use first
-                    o_counter_denominator_high <= s_timecounter(0)(63 downto 32);
-                    o_counter_denominator_low  <= s_timecounter(0)(31 downto  0);
-                when "001" =>
-                    if ( unsigned(i_SC_counterselect(6 downto 3)) = i ) then
-                        o_counter_numerator <= s_crcerrorcounter(i);
-                        o_counter_denominator_high <= s_framecounter(i)(63 downto 32);
-                        o_counter_denominator_low  <= s_framecounter(i)(31 downto  0);
-                    end if;
-                when "010" =>
-                    if ( unsigned(i_SC_counterselect(6 downto 3)) = i ) then
-                        o_counter_numerator <= s_prbs_err_cnt(i);
-                        o_counter_denominator_high <= s_prbs_wrd_cnt(i)(63 downto 32);
-                        o_counter_denominator_low  <= s_prbs_wrd_cnt(i)(31 downto  0);
-                    end if;
-                when "011" =>
-                    if ( unsigned(i_SC_counterselect(6 downto 3)) = i ) then
-                        o_counter_numerator <= s_receivers_errorcounter(i);
-                        o_counter_denominator_high <= (others =>'0');
-                        o_counter_denominator_low  <= s_receivers_runcounter(i);
-                    end if;
-                when "100" =>
-                    if ( unsigned(i_SC_counterselect(6 downto 3)) = i ) then
-                        o_counter_numerator <= s_receivers_synclosscounter(i);
-                        o_counter_denominator_high <= (others =>'0');
-                        o_counter_denominator_low <= (others =>'0');
-                    end if;
-
-                when others =>
-            end case;
-        end loop;
+    if rising_edge(i_clk_125) then
+        s_any_framegen_busy <= '0';
+        if ( i_SC_datagen_enable = '1' and unsigned(s_gen_busy) /= 0 ) then
+            s_any_framegen_busy <= '1';
+        end if;
+        if ( i_SC_datagen_enable='0' and unsigned(s_frec_busy) /= 0 ) then
+            s_any_framegen_busy <= '1';
+        end if;
+    end if;
     end process;
 
+    g_buffer: for i in 0 to N_ASICS_TOTAL-1 generate begin
+        u_elastic_buffer : entity work.mutrig_store
+        port map(
+            i_clk_deser         => i_clk_125,
+            i_clk_rd            => i_clk_125,
+            i_reset             => i_rst_rx,
+            i_aclear            => i_rst_core,
+            i_event_data        => s_event_data(i),
+            i_event_ready       => s_event_ready(i),
+            i_new_frame         => s_new_frame(i),
+            i_frame_info_rdy    => s_frame_info_rdy(i),
+            i_end_of_frame      => s_end_of_frame(i),
+            i_frame_info        => s_frame_info(i),
+            i_frame_number      => s_frame_number(i),
+            i_crc_error         => s_crc_error(i),
+            --event data output inteface
+            o_fifo_data         => s_fifos_data(i),
+            o_fifo_empty        => s_fifos_empty(i),
+            i_fifo_rd           => s_fifos_rd(i),
+            --monitoring
+            o_fifo_full         => s_fifos_full(i),
+            i_reset_counters    => not s_SC_reset_counters_125_n,
+            o_eventcounter      => s_eventcounter(i),
+            o_timecounter       => s_timecounter(i),
+            o_crcerrorcounter   => s_crcerrorcounter(i),
+            o_framecounter      => s_framecounter(i),
+            o_prbs_wrd_cnt      => s_prbs_wrd_cnt(i),
+            o_prbs_err_cnt      => s_prbs_err_cnt(i),
+
+            i_SC_mask           => i_SC_mask_rx(i)
+        );
+    end generate;
 
     --mux between asic channels
     u_mux_A : entity work.framebuilder_mux

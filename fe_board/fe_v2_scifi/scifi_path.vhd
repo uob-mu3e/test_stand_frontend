@@ -78,12 +78,11 @@ architecture arch of scifi_path is
     signal ctrl_lapse_counter_reg       : std_logic_vector(31 downto 0);
 
     -- counters
-    signal s_cntreg_ctrl                : std_logic_vector(31 downto 0);
-    signal s_cntreg_num_g, s_cntreg_num : std_logic_vector(31 downto 0);
-    signal s_cntreg_denom_g, s_cntreg_denom_g_156 : std_logic_vector(63 downto 0);
-    signal s_cntreg_denom_b             : std_logic_vector(63 downto 0);
+    signal s_fifos_full                 : std_logic_vector(N_MODULES*N_ASICS-1 downto 0);
+    signal s_counters                   : work.util.slv32_array_t(10 * N_MODULES*N_ASICS-1 downto 0);
 
     -- registers controlled from midas
+    signal s_cntreg_ctrl                    : std_logic_vector(31 downto 0);
     signal s_dummyctrl_reg                  : std_logic_vector(31 downto 0);
     signal s_dpctrl_reg, s_dpctrl_rx_reg    : std_logic_vector(31 downto 0);
     signal s_subdet_reset_reg               : std_logic_vector(31 downto 0);
@@ -96,7 +95,6 @@ architecture arch of scifi_path is
     -- chip reset synchronization/shift
     signal s_chip_rst           : std_logic;
     signal s_chip_rst_shifted   : std_logic_vector(3 downto 0);
-    signal chip_rst_prev        : std_logic;
 
     signal fast_pll_clk         : std_logic;
 
@@ -249,13 +247,13 @@ begin
         i_reg_wdata                 => scifi_regs.wdata,
 
         -- inputs
-        i_cntreg_num                => work.util.gray2bin(s_cntreg_num_g),
-        i_cntreg_denom_b            => work.util.gray2bin(s_cntreg_denom_g),
+        i_counters                  => s_counters,
         i_rx_pll_lock               => rx_pll_lock,
         i_frame_desync              => frame_desync,
         i_rx_dpa_lock_reg           => rx_dpa_lock,
         i_rx_ready                  => rx_ready,
-        i_miso_transition_count     => std_logic_vector(to_unsigned(miso_transition_count,32)),
+        i_miso_transition_count     => std_logic_vector(to_unsigned(miso_transition_count, 32)),
+        i_fifos_full                => s_fifos_full,
 
         -- outputs
         o_cntreg_ctrl                   => s_cntreg_ctrl,
@@ -286,19 +284,9 @@ begin
         i_wclk  => i_clk_156--,
     );
 
-    -- FIXME: ref. clocks should not be used to drive logic
-    process(i_clk_ref_A)
-    begin
-    if rising_edge(i_clk_ref_A) then
-        chip_rst_prev <= i_run_state(RUN_STATE_BITPOS_SYNC);
-    end if;
-    end process;
-
-    -- s_chip_rst <= s_subdet_reset_reg(0) or i_run_state(RUN_STATE_BITPOS_SYNC); --TODO: remove register, replace by generic reset from resetsys
-    s_chip_rst <= i_run_state(RUN_STATE_BITPOS_SYNC) and not chip_rst_prev; --TODO: remove register, replace by generic reset from resetsys
-
-    s_datapath_rst <= (not i_reset_125_n) or s_subdet_reset_reg(1) or i_run_state(RUN_STATE_BITPOS_PREP); --TODO: remove register, replace by generic reset from resetsys
-    s_lvds_rx_rst <= (not i_reset_125_n) or s_subdet_reset_reg(2)  or i_run_state(RUN_STATE_BITPOS_RESET);--TODO: remove register, replace by generic reset from resetsys
+    s_chip_rst      <= (not i_reset_125_n) or s_subdet_reset_reg(0) or i_run_state(RUN_STATE_BITPOS_SYNC);
+    s_datapath_rst  <= (not i_reset_125_n) or s_subdet_reset_reg(1) or i_run_state(RUN_STATE_BITPOS_PREP);
+    s_lvds_rx_rst   <= (not i_reset_125_n) or s_subdet_reset_reg(2) or i_run_state(RUN_STATE_BITPOS_RESET);
 
     rst_sync_dprst : entity work.reset_sync
     port map( i_reset_n => not s_datapath_rst, o_reset_n => s_datapath_rst_n, i_clk => i_clk_125);
@@ -306,23 +294,23 @@ begin
     rst_sync_lvdsrst : entity work.reset_sync
     port map( i_reset_n => not s_lvds_rx_rst, o_reset_n => s_lvds_rx_rst_n, i_clk => i_clk_125);
 
-    u_resetshift: entity work.clockalign_block
-    generic map ( CLKDIV => 2 )
-    port map (
-        i_clk_config    => i_clk_156,
-        i_rst           => not i_reset_156_n,
-
-        i_pll_clk       => i_clk_125,
-        i_pll_arst      => not i_reset_125_n,
-
-        i_flag          => s_subdet_resetdly_reg_written,
-        i_data          => s_subdet_resetdly_reg,
-
-        i_sig           => s_chip_rst,
-        o_sig           => s_chip_rst_shifted,
-        o_pll_clk(0)    => o_fast_pll_clk
-    );
-    o_chip_reset <= (others =>s_chip_rst_shifted(0)); --s_chip_rst_shifted(N_MODULES-1 downto 0);TODO: fix this !!
+    --u_resetshift: entity work.clockalign_block
+    --generic map ( CLKDIV => 2 )
+    --port map (
+    --    i_clk_config    => i_clk_156,
+    --    i_rst           => not i_reset_156_n,
+--
+    --    i_pll_clk       => i_clk_125,
+    --    i_pll_arst      => not i_reset_125_n,
+--
+    --    i_flag          => s_subdet_resetdly_reg_written,
+    --    i_data          => s_subdet_resetdly_reg,
+--
+    --    i_sig           => s_chip_rst,
+    --    o_sig           => s_chip_rst_shifted,
+    --    o_pll_clk(0)    => o_fast_pll_clk
+    --);
+    o_chip_reset <= (others => s_chip_rst);--; (others =>s_chip_rst_shifted(0)); --s_chip_rst_shifted(N_MODULES-1 downto 0);TODO: fix this !!
 
     e_mutrig_datapath : entity work.mutrig_datapath
     generic map (
@@ -375,10 +363,8 @@ begin
         o_frame_desync              => frame_desync,
 
         i_SC_reset_counters         => s_cntreg_ctrl(15),
-        i_SC_counterselect          => s_cntreg_ctrl(6 downto 0),
-        o_counter_numerator         => s_cntreg_num_g,
-        o_counter_denominator_low   => s_cntreg_denom_g(31 downto 0),
-        o_counter_denominator_high  => s_cntreg_denom_g(63 downto 32),
+        o_fifos_full                => s_fifos_full,
+        o_counters                  => s_counters,
 
         i_reset_156_n               => i_reset_156_n,
         i_clk_156                   => i_clk_156,
