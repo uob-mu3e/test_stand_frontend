@@ -16,7 +16,9 @@ generic (
     g_LOOPUP_NAME        : string := "intRun2021";
     is_FARM              : boolean := false;
     SKIP_DOUBLE_SUB      : boolean := false;
-    LINK_FIFO_ADDR_WIDTH : positive := 10--;
+    LINK_FIFO_ADDR_WIDTH : positive := 10;
+    -- Data type: "00" = pixel, "01" = scifi, "10" = tiles
+    DATA_TYPE            : std_logic_vector(1 downto 0)    := "00"--;
 );
 port (
     i_rx            : in  work.mu3e.link_t;
@@ -141,7 +143,11 @@ begin
                     cnt_sub <= cnt_sub + '1';
                 -- write hit on swb
                 elsif ( not is_FARM ) then
-                    rx.data <= i_rx.data(31 downto 28) & chipID & i_rx.data(21 downto 1); -- hit
+                    if ( DATA_TYPE = "00" ) then
+                        rx.data <= i_rx.data(31 downto 28) & chipID & i_rx.data(21 downto 1); -- pixel hit
+                    else
+                        rx.data <= i_rx.data; -- scifi hit
+                    end if;
                     rx.dthdr <= '1';
                 -- check for sub header on the farm
                 elsif ( i_rx.data(27 downto 21) = "1111111" and i_rx.datak = "0000" and is_FARM ) then

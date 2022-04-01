@@ -244,24 +244,18 @@ int main(int argc, char *argv[]) {
     if (atoi(argv[5]) == 0) set_pixel = 1;
 
     uint32_t readout_state_regs = 0;
-    // use stream merger to readout links
-    if ( atoi(argv[1]) == 0 ) mu.write_register(mask_n_add, strtol(argv[4], NULL, 16));
-    if ( atoi(argv[1]) == 0 ) mu.write_register(SWB_READOUT_STATE_REGISTER_W, 0x42 | (set_pixel << 7));
-    // use stream merger to readout datagen
-    if ( atoi(argv[1]) == 2 ) mu.write_register(mask_n_add, strtol(argv[4], NULL, 16));
-    if ( atoi(argv[1]) == 2 ) mu.write_register(SWB_READOUT_STATE_REGISTER_W, 0x3 | (set_pixel << 7));
-    // use time merger to readout datagen
-    if ( atoi(argv[1]) == 3 ) {
-        mu.write_register(mask_n_add, strtol(argv[4], NULL, 16));
-        readout_state_regs = SET_USE_BIT_GEN_LINK(readout_state_regs);
-        readout_state_regs = SET_USE_BIT_MERGER(readout_state_regs);
-        readout_state_regs = SET_USE_BIT_PIXEL_DS(readout_state_regs);
-        //readout_state_regs = SET_USE_BIT_TEST_ERROR(readout_state_regs);
-        mu.write_register(SWB_READOUT_STATE_REGISTER_W, readout_state_regs); 
-    }
-    // use time merger to readout links
-    if ( atoi(argv[1]) == 4 ) mu.write_register(mask_n_add, strtol(argv[4], NULL, 16));
-    if ( atoi(argv[1]) == 4 ) mu.write_register(SWB_READOUT_STATE_REGISTER_W, 0x44| (set_pixel << 7));
+    if (atoi(argv[5]) == 1) readout_state_regs = SET_USE_BIT_SCIFI(readout_state_regs);
+    if (atoi(argv[5]) == 0) readout_state_regs = SET_USE_BIT_PIXEL_DS(readout_state_regs);
+    // set mask bits
+    mu.write_register(mask_n_add, strtol(argv[4], NULL, 16));
+    // use stream merger
+    if ( atoi(argv[1]) == 0 or atoi(argv[1]) == 2 ) readout_state_regs = SET_USE_BIT_STREAM(readout_state_regs);
+    // use datagen
+    if ( atoi(argv[1]) == 2 or atoi(argv[1]) == 3 ) readout_state_regs = SET_USE_BIT_GEN_LINK(readout_state_regs);
+    // use time merger
+    if ( atoi(argv[1]) == 4 or atoi(argv[1]) == 3 ) readout_state_regs = SET_USE_BIT_MERGER(readout_state_regs);
+    // write regs
+    mu.write_register(SWB_READOUT_STATE_REGISTER_W, readout_state_regs);
 
     char cmd;
     usleep(10);
@@ -292,8 +286,8 @@ int main(int argc, char *argv[]) {
                 // wait for requested data
                 while ( (mu.read_register_ro(EVENT_BUILD_STATUS_REGISTER_R) & 1) == 0 ) {
                     if ( cnt_loop == 100000 ) {
-                        cout << hex << "0x" << mu.read_register_ro(DMA_CNT_WORDS_REGISTER_R) << endl;
-                        for(int i=0; i < 100; i++) cout << hex << "0x" <<  dma_buf[mu.last_endofevent_addr() * 8 - 1 + i] << " "; cout << endl;
+                        //cout << hex << "0x" << mu.read_register_ro(DMA_CNT_WORDS_REGISTER_R) << endl;
+                        //for(int i=0; i < 100; i++) cout << hex << "0x" <<  dma_buf[mu.last_endofevent_addr() * 8 - 1 + i] << " "; cout << endl;
                         cnt_loop = 0;
                     }
                     cnt_loop = cnt_loop + 1;

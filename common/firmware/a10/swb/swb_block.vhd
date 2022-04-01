@@ -346,39 +346,39 @@ begin
     --! ------------------------------------------------------------------------
     --! ------------------------------------------------------------------------
     --! ------------------------------------------------------------------------
---    e_swb_data_path_pixel_scifi : entity work.swb_data_path
---    generic map (
---        g_LOOPUP_NAME           => "intRun2021",
---        g_ADDR_WIDTH            => 11,
---        g_NLINKS_DATA           => g_NLINKS_DATA_SCIFI,
---        LINK_FIFO_ADDR_WIDTH    => 13,
---        SWB_ID                  => SWB_ID,
---        -- Data type: "00" = pixel, "01" = scifi, "10" = tiles
---        DATA_TYPE               => "01"--,
---    )
---    port map (
---        -- clk and reset signals
---        i_clk               => i_clk,
---        i_reset_n           => i_resets_n(RESET_BIT_DATA_PATH),
---        i_resets_n          => i_resets_n,
---
---        -- link inputs
---        i_rx                => rx_data_scifi,
---        i_rmask_n           => scifi_mask_n,
---
---        i_writeregs         => i_writeregs,
---
---        o_counter           => counter_swb_data_scifi,
---
---        i_dmamemhalffull    => i_dmamemhalffull,
---
---        o_farm_data         => scifi_farm_data(0),
---
---        o_dma_wren          => scifi_dma_wren(0),
---        o_dma_cnt_words     => scifi_dma_cnt_words(0),
---        o_dma_done          => scifi_dma_done(0),
---        o_endofevent        => scifi_dma_endofevent(0),
---        o_dma_data          => scifi_dma_data(0)--;
---    );
+    e_swb_data_path_pixel_scifi : entity work.swb_data_path
+    generic map (
+        g_LOOPUP_NAME           => "intRun2021",
+        g_ADDR_WIDTH            => 11,
+        g_NLINKS_DATA           => g_NLINKS_DATA_SCIFI,
+        LINK_FIFO_ADDR_WIDTH    => 13,
+        SWB_ID                  => SWB_ID,
+        -- Data type: "00" = pixel, "01" = scifi, "10" = tiles
+        DATA_TYPE               => "01"--,
+    )
+    port map (
+        -- clk and reset signals
+        i_clk               => i_clk,
+        i_reset_n           => i_resets_n(RESET_BIT_DATA_PATH),
+        i_resets_n          => i_resets_n,
+
+        -- link inputs
+        i_rx                => rx_data_scifi(g_NLINKS_DATA_SCIFI-1 downto 0),
+        i_rmask_n           => scifi_mask_n(g_NLINKS_DATA_SCIFI-1 downto 0),
+
+        i_writeregs         => i_writeregs,
+
+        o_counter           => counter_swb_data_scifi,
+
+        i_dmamemhalffull    => i_dmamemhalffull,
+
+        o_farm_data         => scifi_farm_data(0),
+
+        o_dma_wren          => scifi_dma_wren(0),
+        o_dma_cnt_words     => scifi_dma_cnt_words(0),
+        o_dma_done          => scifi_dma_done(0),
+        o_endofevent        => scifi_dma_endofevent(0),
+        o_dma_data          => scifi_dma_data(0)--;
+    );
 
 end architecture;

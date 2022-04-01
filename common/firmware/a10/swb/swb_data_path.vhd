@@ -18,13 +18,13 @@ use work.mudaq.all;
 
 entity swb_data_path is
 generic (
-    g_LOOPUP_NAME : string := "intRun2021";
-    g_ADDR_WIDTH : positive := 11;
-    g_NLINKS_DATA : positive := 8;
-    LINK_FIFO_ADDR_WIDTH : positive := 10;
-    SWB_ID : std_logic_vector(7 downto 0) := x"01";
+    g_LOOPUP_NAME                               : string := "intRun2021";
+    g_ADDR_WIDTH                                : positive := 11;
+    g_NLINKS_DATA                               : positive := 8;
+    LINK_FIFO_ADDR_WIDTH                        : positive := 10;
+    SWB_ID : std_logic_vector(7 downto 0)       := x"01";
     -- Data type: "00" = pixel, "01" = scifi, "10" = tiles
-    DATA_TYPE : std_logic_vector(1 downto 0) := "00"--;
+    DATA_TYPE : std_logic_vector(1 downto 0)    := "00"--;
 );
 port(
     -- clk and reset signals
@@ -207,6 +207,7 @@ begin
             g_LOOPUP_NAME        => g_LOOPUP_NAME,
             is_FARM              => false,
             SKIP_DOUBLE_SUB      => false,
+            DATA_TYPE            => DATA_TYPE,
             LINK_FIFO_ADDR_WIDTH => LINK_FIFO_ADDR_WIDTH--,
         )
         port map (

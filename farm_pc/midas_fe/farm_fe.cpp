@@ -408,8 +408,8 @@ INT begin_of_run(INT run_number, char *error)
         cm_msg(MINFO,"farm_fe", "Use Stream Merger");
         readout_state_regs = SET_USE_BIT_STREAM(readout_state_regs);
     }
-    cm_msg(MINFO,"farm_fe", "WARNING: For now just use US Pixel data");
-    readout_state_regs = SET_USE_BIT_PIXEL_US(readout_state_regs);
+    cm_msg(MINFO,"farm_fe", "WARNING: For now just use DS Pixel data");
+    readout_state_regs = SET_USE_BIT_PIXEL_DS(readout_state_regs);
     // write readout register
     mu.write_register(SWB_READOUT_STATE_REGISTER_W, readout_state_regs);
 
