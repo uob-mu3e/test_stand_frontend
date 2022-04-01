@@ -863,6 +863,8 @@ DWORD * fill_SSCN(DWORD * pdata)
     std::bitset<64> cur_link_active_from_odb = feblist->getLinkMask();
 
     // first read general counters
+    *pdata++ = mup->read_register_ro(GLOBAL_TS_LOW_REGISTER_R);
+    *pdata++ = mup->read_register_ro(GLOBAL_TS_HIGH_REGISTER_R);
     *pdata++ = read_counters(mup, SWB_STREAM_FIFO_FULL_CNT, 0, 0, 1, 0);
     *pdata++ = read_counters(mup, SWB_STREAM_DEBUG_FIFO_ALFULL_CNT, 0, 0, 1, 0);
     *pdata++ = read_counters(mup, SWB_BANK_BUILDER_IDLE_NOT_HEADER_CNT, 0, 0, 1, 0);

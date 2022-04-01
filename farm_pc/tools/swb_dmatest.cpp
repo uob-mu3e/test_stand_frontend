@@ -234,7 +234,7 @@ int main(int argc, char *argv[]) {
     mu.write_register(GET_N_DMA_WORDS_REGISTER_W, max_requested_words / (256/32));
 
     // setup datagen
-    mu.write_register(DATAGENERATOR_DIVIDER_REGISTER_W, 0x10);
+    mu.write_register(DATAGENERATOR_DIVIDER_REGISTER_W, 0x130);
 
     uint32_t mask_n_add;
     if (atoi(argv[5]) == 1) mask_n_add = SWB_LINK_MASK_SCIFI_REGISTER_W;
