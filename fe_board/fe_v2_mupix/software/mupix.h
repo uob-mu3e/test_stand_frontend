@@ -40,20 +40,14 @@ struct mupix_t {
 
         printf("test tdacs both");
 
-        for(int i = 0; i<50; i++) {
-            sc->ram->data[MP_CTRL_TDAC_START_REGISTER_W]=0x0;
-        }
-        for(int i = 50; i<100; i++) {
+        for(int i = 0; i<24; i++) {
             sc->ram->data[MP_CTRL_TDAC_START_REGISTER_W]=0xFFFFFFFF;
         }
-        for(int i = 100; i<300; i++) {
+        //for(int i = 30; i<40; i++) {
             sc->ram->data[MP_CTRL_TDAC_START_REGISTER_W]=0x0;
-        }
-        for(int i = 300; i<350; i++) {
+        //}
+        for(int i = 25; i<128; i++) {
             sc->ram->data[MP_CTRL_TDAC_START_REGISTER_W]=0xFFFFFFFF;
-        }
-        for(int i = 350; i<513; i++) {
-            sc->ram->data[MP_CTRL_TDAC_START_REGISTER_W]=0x0;
         }
 
     }
@@ -62,7 +56,7 @@ struct mupix_t {
 
         printf("test tdacs mask");
 
-        for(int i = 0; i<513; i++) {
+        for(int i = 0; i<128; i++) {
             sc->ram->data[MP_CTRL_TDAC_START_REGISTER_W]=0x0;
 		}
 
@@ -72,7 +66,7 @@ struct mupix_t {
 
         printf("test tdacs no mask");
 
-        for(int i = 0; i<513; i++) {
+        for(int i = 0; i<128; i++) {
             sc->ram->data[MP_CTRL_TDAC_START_REGISTER_W]=0xFFFFFFFF;
 		}
 

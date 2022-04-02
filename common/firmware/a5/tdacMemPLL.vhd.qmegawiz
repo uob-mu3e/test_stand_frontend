@@ -1,0 +1,8 @@
+-- megafunction wizard: %Altera PLL v18.0%
+-- GENERATION: XML
+-- Retrieval info: <instance entity-name="altera_pll" version="18.0" >
+-- Retrieval info: 	<generic name="device_family" value="Arria V" />
+-- Retrieval info: 	<generic name="gui_reference_clock_frequency" value="156.25" />
+-- Retrieval info: 	<generic name="gui_output_clock_frequency0" value="312.5" />
+-- Retrieval info: </instance>
+-- IPFS_FILES : tdacmemPLL.vho
