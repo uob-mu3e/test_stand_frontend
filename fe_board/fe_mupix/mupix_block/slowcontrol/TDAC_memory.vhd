@@ -15,7 +15,7 @@ entity tdac_memory is
     generic( 
         N_CHIPS_g                 : positive := 4;
         PAGE_ADDR_WIDTH_g         : positive := 3;
-        ADDR_WIDTH_g              : positive := 12--;
+        ADDR_WIDTH_g              : positive := 10--;
     );
     port(
         i_clk               : in  std_logic;
@@ -34,13 +34,22 @@ end entity tdac_memory;
 
 architecture RTL of tdac_memory is
 
+    component tdacMemPLL is
+        port (
+            refclk   : in  std_logic ; -- clk
+            rst      : in  std_logic ; -- reset
+            outclk_0 : out std_logic;        -- clk
+            locked   : out std_logic         -- export
+        );
+    end component tdacMemPLL;
+
     constant N_PAGES_PER_CHIP : integer := 4;     -- divide tune dacs of 1 Chip into N_PAGES_PER_CHIP blocks
     constant N_COLS_PER_PAGE  : integer := 128/N_PAGES_PER_CHIP;
 
 
     constant N_PAGES : integer := 8; -- TODO -- N_PAGES: how many blocks can we store with the memory that we have 
 
-    constant PAGE_SIZE : integer := 512/4; --TODO: increase when done with simultations (calc from N_PAGES_PER_CHIP)
+    constant PAGE_SIZE : integer := 128; --TODO: increase when done with simultations (calc from N_PAGES_PER_CHIP)
     
 
     type TDAC_page_type is record
@@ -63,10 +72,10 @@ architecture RTL of tdac_memory is
     signal addr_in_current_page : std_logic_vector(ADDR_WIDTH_g-PAGE_ADDR_WIDTH_g-1 downto 0);
     type pix_addr_in_current_page_t is array( natural range <>) of std_logic_vector(8 downto 0);
     signal pix_addr_in_current_page : pix_addr_in_current_page_t(3 downto 0);
-    type addr_converted_t       is array( natural range <>) of std_logic_vector(ADDR_WIDTH_g-PAGE_ADDR_WIDTH_g-1 downto 0);
+    type addr_converted_t       is array( natural range <>) of std_logic_vector(8 downto 0);
     signal addr_converted       : addr_converted_t(3 downto 0);
 
-    signal ram_we               : std_logic;
+    signal ram_we               : std_logic_vector(3 downto 0);
     signal ram_wdata            : reg8array(3 downto 0);
     type ram_waddr_t            is array( natural range <>) of std_logic_vector(ADDR_WIDTH_g-1 downto 0);
     signal ram_waddr            : ram_waddr_t(3 downto 0);
@@ -92,15 +101,42 @@ architecture RTL of tdac_memory is
     signal read_page             : integer range 0 to N_PAGES-1;
     signal page_finished         : boolean;
 
+    signal memwriteclk           : std_logic;
+    signal fifo_in_wdata         : std_logic_vector(31 downto 0);
+    signal fifo_in_page_addr     : std_logic_vector(PAGE_ADDR_WIDTH_g-1 downto 0);
+    signal fifo_in_waddr         : std_logic_vector(9*4-1 downto 0);
+    signal fifo_out_wdata        : std_logic_vector(31 downto 0);
+    signal fifo_out_page_addr    : std_logic_vector(PAGE_ADDR_WIDTH_g-1 downto 0);
+    signal fifo_out_waddr        : std_logic_vector(9*4-1 downto 0);
+    
+    signal wdata_buf        : std_logic_vector(31 downto 0);
+    signal page_addr_buf    : std_logic_vector(PAGE_ADDR_WIDTH_g-1 downto 0);
+    signal waddr_buf        : std_logic_vector(9*4-1 downto 0);
 
+    signal fifo_re               : std_logic;
+    signal sync_fifo_empty       : std_logic;
+    
+    signal read_buf              : std_logic;
 
 begin
 
-    ram_we              <= i_we;
-    genram_in: for I in 0 to 3 generate
-        ram_waddr(I)                <= "00" & current_page_addr & addr_converted(I)(8 downto 2);--& addr_in_current_page;
-        ram_wdata(I)                <= i_data(I*8+7 downto I*8);
-    end generate;
+    --ram_we              <= i_we;
+    --genram_in: for I in 0 to 3 generate
+    --    ram_waddr(I)                <= current_page_addr & addr_converted(I)(8 downto 2);--& addr_in_current_page;
+    --    ram_wdata(I)                <= i_data(I*8+7 downto I*8);
+    --end generate;
+
+    fifo_in_page_addr <= current_page_addr;
+    
+    fifo_in_wdata(7 downto 0)   <= i_data( 7 downto  0);
+    fifo_in_wdata(15 downto 8)  <= i_data(23 downto 16) when (addr_converted(2)(1 downto 0) /= addr_converted(0)(1 downto 0)) else i_data(31 downto 24);
+    fifo_in_wdata(23 downto 16) <= i_data(15 downto  8);
+    fifo_in_wdata(31 downto 24) <= i_data(31 downto 24) when (addr_converted(2)(1 downto 0) /= addr_converted(0)(1 downto 0)) else i_data(23 downto 16);
+
+    fifo_in_waddr(8  downto  0) <= addr_converted(0);
+    fifo_in_waddr(17 downto  9) <= addr_converted(2) when (addr_converted(2)(1 downto 0) /= addr_converted(0)(1 downto 0)) else addr_converted(3);
+    fifo_in_waddr(26 downto 18) <= addr_converted(1);
+    fifo_in_waddr(35 downto 27) <= addr_converted(3) when (addr_converted(2)(1 downto 0) /= addr_converted(0)(1 downto 0)) else addr_converted(2);
 
     -- physical row addr's, to be converted into digital row addr's before writing to mem
     pix_addr_in_current_page(0)    <= addr_in_current_page(6 downto 0) & "00";
@@ -275,6 +311,96 @@ begin
         end if;
     end process;
 
+    e_tdacMemPLL: component tdacMemPLL
+    port map (
+        refclk   => i_clk,
+        rst      => not i_reset_n,
+        outclk_0 => memwriteclk,
+        locked   => open--,
+    );
+
+    sync_fifo_cnt : entity work.ip_dcfifo
+    generic map(
+        ADDR_WIDTH  => 4,
+        DATA_WIDTH  => 32+PAGE_ADDR_WIDTH_g+36,
+        SHOWAHEAD   => "ON",
+        OVERFLOW    => "ON",
+        REGOUT      => 0,
+        DEVICE      => "Arria V"--,
+    )
+    port map(
+        aclr            => '0',
+        data            => fifo_in_page_addr & fifo_in_waddr & fifo_in_wdata,
+        rdclk           => memwriteclk,
+        rdreq           => fifo_re,
+        rdempty         => sync_fifo_empty,
+        wrclk           => i_clk,
+        wrreq           => i_we,
+        q(31 downto 0)                              => fifo_out_wdata,
+        q(35 + 32 downto 32)                        => fifo_out_waddr,
+        q(PAGE_ADDR_WIDTH_g-1+36+32 downto 36+32)   => fifo_out_page_addr--,
+    );
+
+    process(memwriteclk)
+    begin
+    if(rising_edge(memwriteclk)) then
+        fifo_re <= '0';
+        ram_we <= (others => '0');
+        read_buf        <= '0';
+        if(sync_fifo_empty='0' and fifo_re = '0') then 
+            fifo_re         <= '1';
+            read_buf        <= '1';
+            wdata_buf       <= fifo_out_wdata;
+            page_addr_buf   <= fifo_out_page_addr;
+            waddr_buf       <= fifo_out_waddr;
+    
+            for i in 0 to 1 loop
+                case fifo_out_waddr(1+I*9 downto 0+I*9) is
+                    when "00" =>
+                        ram_we(0)    <= '1';
+                        ram_waddr(0) <= fifo_out_page_addr & fifo_out_waddr(8+I*9 downto 2+I*9);
+                        ram_wdata(0) <= fifo_out_wdata(7+I*8 downto 0+I*8);
+                    when "01" =>
+                        ram_we(1)    <= '1';
+                        ram_waddr(1) <= fifo_out_page_addr & fifo_out_waddr(8+I*9 downto 2+I*9);
+                        ram_wdata(1) <= fifo_out_wdata(7+I*8 downto 0+I*8);
+                    when "10" =>
+                        ram_we(2)    <= '1';
+                        ram_waddr(2) <= fifo_out_page_addr & fifo_out_waddr(8+I*9 downto 2+I*9);
+                        ram_wdata(2) <= fifo_out_wdata(7+I*8 downto 0+I*8);
+                    when "11" =>
+                        ram_we(3)    <= '1';
+                        ram_waddr(3) <= fifo_out_page_addr & fifo_out_waddr(8+I*9 downto 2+I*9);
+                        ram_wdata(3) <= fifo_out_wdata(7+I*8 downto 0+I*8);
+                end case;
+             end loop;
+        elsif read_buf = '1' then
+            for i in 2 to 3 loop
+                case waddr_buf(1+I*9 downto 0+I*9) is
+                    when "00" =>
+                        ram_we(0)    <= '1';
+                        ram_waddr(0) <= page_addr_buf & waddr_buf(8+I*9 downto 2+I*9);
+                        ram_wdata(0) <= wdata_buf(7+I*8 downto 0+I*8);
+                    when "01" =>
+                        ram_we(1)    <= '1';
+                        ram_waddr(1) <= page_addr_buf & waddr_buf(8+I*9 downto 2+I*9);
+                        ram_wdata(1) <= wdata_buf(7+I*8 downto 0+I*8);
+                    when "10" =>
+                        ram_we(2)    <= '1';
+                        ram_waddr(2) <= page_addr_buf & waddr_buf(8+I*9 downto 2+I*9);
+                        ram_wdata(2) <= wdata_buf(7+I*8 downto 0+I*8);
+                    when "11" =>
+                        ram_we(3)    <= '1';
+                        ram_waddr(3) <= page_addr_buf & waddr_buf(8+I*9 downto 2+I*9);
+                        ram_wdata(3) <= wdata_buf(7+I*8 downto 0+I*8);
+                end case;
+             end loop;
+        end if;
+    end if;
+    end process;
+
+
+
     -- select the bits that we currently need
     genwdata: for I in 0 to 3 generate
         o_tdac_dpf_wdata(I)<= ram_rdata(I)(TDAC_page_array(read_page).bit_in_tdac);
@@ -293,18 +419,19 @@ begin
         i_raddr => ram_raddr,
         o_rdata => ram_rdata(I),
         i_rclk  => i_clk,
-        i_waddr => ram_waddr,
+        i_waddr => ram_waddr(I),
         i_wdata => ram_wdata(I),
-        i_we    => ram_we,
-        i_wclk  => i_clk
+        i_we    => ram_we(I),
+        i_wclk  => memwriteclk
       );
 
+     -- addr_converted(I) <= pix_addr_in_current_page(I);
     convert_col_row: entity work.convert_col_row_reverse
       port map(
         i_addr => pix_addr_in_current_page(I),
         o_addr => addr_converted(I)--,
-      );
-    
+    );
+
     end generate;
     
 end RTL;
