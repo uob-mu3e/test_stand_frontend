@@ -185,34 +185,36 @@ begin
     rst_sync_counter : entity work.reset_sync
     port map( i_reset_n => not i_SC_reset_counters, o_reset_n => s_SC_reset_counters_125_n, i_clk => i_clk_125);
 
-    u_rxdeser: entity work.receiver_block
-    generic map(
-        IS_SCITILE      => IS_SCITILE,
-        NINPUT          => N_ASICS_TOTAL,
-        LVDS_PLL_FREQ   => LVDS_PLL_FREQ,
-        LVDS_DATA_RATE  => LVDS_DATA_RATE,
-        INPUT_SIGNFLIP  => INPUT_SIGNFLIP--,
-    )
-    port map(
-        rx_in               => i_stic_txd,
-        rx_inclock_A        => i_refclk_125_A,
-        rx_inclock_B        => i_refclk_125_B,
+    -- synthesis read_comments_as_HDL on
+    -- u_rxdeser: entity work.receiver_block
+    -- generic map(
+    --     IS_SCITILE      => IS_SCITILE,
+    --     NINPUT          => N_ASICS_TOTAL,
+    --     LVDS_PLL_FREQ   => LVDS_PLL_FREQ,
+    --     LVDS_DATA_RATE  => LVDS_DATA_RATE,
+    --     INPUT_SIGNFLIP  => INPUT_SIGNFLIP--,
+    -- )
+    -- port map(
+    --     rx_in               => i_stic_txd,
+    --     rx_inclock_A        => i_refclk_125_A,
+    --     rx_inclock_B        => i_refclk_125_B,
 
-        rx_state            => s_receivers_state,
-        rx_ready            => s_receivers_ready,
-        pll_locked          => o_receivers_pll_lock,
-        rx_dpa_locked_out   => o_receivers_dpa_lock,
-        rx_runcounter       => s_receivers_runcounter,
-        rx_errorcounter     => s_receivers_errorcounter,
-        rx_synclosscounter  => s_receivers_synclosscounter,
-        reset_n_errcnt      => s_SC_reset_counters_125_n,
+    --     rx_state            => s_receivers_state,
+    --     rx_ready            => s_receivers_ready,
+    --     pll_locked          => o_receivers_pll_lock,
+    --     rx_dpa_locked_out   => o_receivers_dpa_lock,
+    --     rx_runcounter       => s_receivers_runcounter,
+    --     rx_errorcounter     => s_receivers_errorcounter,
+    --     rx_synclosscounter  => s_receivers_synclosscounter,
+    --     reset_n_errcnt      => s_SC_reset_counters_125_n,
 
-        o_rx_data           => s_receivers_data,
-        o_rx_datak          => s_receivers_data_isk,
+    --     o_rx_data           => s_receivers_data,
+    --     o_rx_datak          => s_receivers_data_isk,
 
-        i_reset_n           => not i_rst_rx,
-        i_clk               => i_clk_125--,
-    );
+    --     i_reset_n           => not i_rst_rx,
+    --     i_clk               => i_clk_125--,
+    -- );
+    -- synthesis read_comments_as_HDL off
 
     o_receivers_ready <= s_receivers_ready;
 
@@ -372,7 +374,7 @@ begin
     end generate;
 
     --mux between asic channels
-    u_mux_A : entity work.framebuilder_mux
+    u_mux_A : entity work.framebuilder_mux_v2
     generic map( 
         N_INPUTS => N_ASICS,
         N_INPUTID_BITS => 4,
@@ -399,7 +401,7 @@ begin
     );
 
     gen_dual_mux : if( N_MODULES > 1 ) generate
-        u_mux_B : entity work.framebuilder_mux
+        u_mux_B : entity work.framebuilder_mux_v2
         generic map(
             N_INPUTS => N_ASICS,
             N_INPUTID_BITS => 4,

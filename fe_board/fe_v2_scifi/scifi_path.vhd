@@ -1,6 +1,7 @@
 library ieee;
 use ieee.std_logic_1164.all;
 use ieee.numeric_std.all;
+use ieee.std_logic_unsigned.all;
 
 use work.mudaq.all;
 
@@ -107,9 +108,10 @@ architecture arch of scifi_path is
     signal scl_ena  : std_logic;
     signal scl_in   : std_logic;
     signal scl_out  : std_logic;
+    signal doNotCompileAway : std_logic_vector(4 downto 0);
 
     -- transition counts spi
-    signal miso_transition_count    : integer;
+    signal miso_transition_count    : std_logic_vector(31 downto 0);
     signal miso_156                 : std_logic;
     signal miso_156_last            : std_logic;
     signal iram                     : work.util.rw_t;
@@ -121,6 +123,7 @@ begin
 --- do not compile away stuff for pinout test
 --------------------------------------------------------------------
 
+    doNotCompileAway <= i_cec & i_spi_miso & i_i2c_int & scl_in & sda_in;
     dnca: entity work.doNotCompileAwayMux
     generic map (
         WIDTH_g   => 4--,
@@ -128,7 +131,7 @@ begin
     port map (
         i_clk               => i_clk_156,
         i_reset_n           => i_reset_156_n,
-        i_doNotCompileAway  => i_cec & i_spi_miso & i_i2c_int & scl_in & sda_in,
+        i_doNotCompileAway  => doNotCompileAway,
         o_led               => o_test_led(0)--,
     );
 
@@ -136,21 +139,23 @@ begin
     o_spi_scl   <= not i_reset_156_n;
     o_spi_mosi  <= not i_reset_156_n;
 
-    buf1: entity work.ip_iobuf
-    port map(
-        datain(0)   => sda_out,
-        oe(0)       => sda_ena,
-        dataout(0)  => sda_in,
-        dataio(0)   => io_i2c_sda--,
-    );
+    -- synthesis read_comments_as_HDL on
+    -- buf1: entity work.ip_iobuf
+    -- port map(
+    --     datain(0)   => sda_out,
+    --     oe(0)       => sda_ena,
+    --     dataout(0)  => sda_in,
+    --     dataio(0)   => io_i2c_sda--,
+    -- );
 
-    buf2: entity work.ip_iobuf
-    port map(
-        datain(0)   => scl_out,
-        oe(0)       => scl_ena,
-        dataout(0)  => scl_in,
-        dataio(0)   => io_i2c_scl--,
-    );
+    -- buf2: entity work.ip_iobuf
+    -- port map(
+    --     datain(0)   => scl_out,
+    --     oe(0)       => scl_ena,
+    --     dataout(0)  => scl_in,
+    --     dataio(0)   => io_i2c_scl--,
+    -- );
+    -- synthesis read_comments_as_HDL off
 
     process(i_clk_156)
     begin
@@ -179,14 +184,14 @@ begin
     process(i_clk_156, i_reset_156_n)
     begin
     if ( i_reset_156_n /= '1' ) then
-            miso_transition_count <= 0;
+            miso_transition_count <= (others => '0');
             miso_156 <= '0';
             miso_156_last <= '0';
     elsif rising_edge(i_clk_156) then
             miso_156 <= i_spi_miso;
             miso_156_last <= miso_156;
             if(miso_156 /= miso_156_last) then
-                miso_transition_count <= miso_transition_count + 1;
+                miso_transition_count <= miso_transition_count + '1';
             end if;
     end if;
     end process;
@@ -207,7 +212,7 @@ begin
 
     ---- REGISTER MAPPING ----
 
-    e_lvl1_sc_node: entity work.sc_node
+    e_lvl1_sc_node : entity work.sc_node
       generic map (
         SLAVE1_ADDR_MATCH_g => "00--------------"--,
       )
@@ -234,7 +239,7 @@ begin
         i_clk           => i_clk_156--,
     );
 
-    e_scifi_reg_mapping : work.scifi_reg_mapping
+    e_scifi_reg_mapping : entity work.scifi_reg_mapping
     generic map (
         N_MODULES => N_MODULES,
         N_ASICS   => N_ASICS--,
@@ -252,7 +257,7 @@ begin
         i_frame_desync              => frame_desync,
         i_rx_dpa_lock_reg           => rx_dpa_lock,
         i_rx_ready                  => rx_ready,
-        i_miso_transition_count     => std_logic_vector(to_unsigned(miso_transition_count, 32)),
+        i_miso_transition_count     => miso_transition_count,
         i_fifos_full                => s_fifos_full,
 
         -- outputs

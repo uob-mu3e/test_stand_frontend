@@ -47,21 +47,21 @@ architecture RTL of stic_dummy_data is
 begin
 
 
-o_busy <= '0' when (p_state=fs_idle or p_state=fs_wait) else '1';
+o_busy <= '0' when ( p_state = fs_idle or p_state = fs_wait ) else '1';
 
 fsm_comb : process(p_state, i_cnt, i_fast, i_enable, p_wait_cnt, p_event_cnt, p_frame_number, p_event_data)
 begin
-	n_state <= p_state;
+	n_state 		<= p_state;
 
-	n_event_cnt      <= p_event_cnt;
-	n_wait_cnt <= std_logic_vector(unsigned(p_wait_cnt)-1);
+	n_event_cnt     <= p_event_cnt;
+	n_wait_cnt 		<= std_logic_vector(unsigned(p_wait_cnt)-1);
 
-	n_event_ready    <= '0';
-	n_end_of_frame   <= '0';
-	n_new_frame      <= '0';
-	n_frame_info_rdy <= '0';
-	n_frame_number   <= p_frame_number;
-	n_event_data     <= p_event_data;
+	n_event_ready   <= '0';
+	n_end_of_frame  <= '0';
+	n_new_frame     <= '0';
+	n_frame_info_rdy<= '0';
+	n_frame_number  <= p_frame_number;
+	n_event_data    <= p_event_data;
 
 	case p_state is
 		when fs_idle =>
@@ -132,41 +132,39 @@ end process;
 
 -------------------------------------------------------------------------------
 
-fsm_syn : process (i_clk)
+	fsm_syn : process (i_clk, i_reset)
 	begin
-	if rising_edge(i_clk) then
-		if i_reset = '1' then -- sync to slow (50MHz)
-			p_state          <= fs_idle;
-			p_event_ready    <= '0';
-			p_end_of_frame   <= '0';
-			p_new_frame      <= '0';
-			p_frame_info_rdy <= '0';
-			p_frame_number   <= (others=>'0');
-			p_event_data     <= (others =>'0');
-		else
-			p_state <= n_state;
-			p_event_ready    <= n_event_ready;
-			p_end_of_frame   <= n_end_of_frame;
-			p_new_frame      <= n_new_frame;
-			p_frame_number   <= n_frame_number;
-			p_frame_info_rdy <= n_frame_info_rdy;
-			p_event_data     <= n_event_data;
-		end if;
+	if ( i_reset = '1' ) then
+		p_state          <= fs_idle;
+		p_event_ready    <= '0';
+		p_end_of_frame   <= '0';
+		p_new_frame      <= '0';
+		p_frame_info_rdy <= '0';
+		p_frame_number   <= (others=>'0');
+		p_event_data     <= (others =>'0');
+		--
+	elsif rising_edge(i_clk) then
+		p_state 		 <= n_state;
+		p_event_ready    <= n_event_ready;
+		p_end_of_frame   <= n_end_of_frame;
+		p_new_frame      <= n_new_frame;
+		p_frame_number   <= n_frame_number;
+		p_frame_info_rdy <= n_frame_info_rdy;
+		p_event_data     <= n_event_data;
 		p_event_cnt      <= n_event_cnt;
 		p_wait_cnt       <= n_wait_cnt;
 	end if;
-
-end process fsm_syn;	
+	end process fsm_syn;
 
 -------------------------------------------------------------------------------
 
-o_event_data     <= p_event_data;
-o_event_ready    <= p_event_ready;
-o_end_of_frame   <= p_end_of_frame;
-o_frame_number   <= p_frame_number;
-o_frame_info     <= '1' & i_fast & "0000" & i_cnt;
-o_new_frame	    <= p_new_frame;
-o_frame_info_rdy <= p_frame_info_rdy;
+	o_event_data     	<= p_event_data;
+	o_event_ready    	<= p_event_ready;
+	o_end_of_frame   	<= p_end_of_frame;
+	o_frame_number   	<= p_frame_number;
+	o_frame_info     	<= '1' & i_fast & "0000" & i_cnt;
+	o_new_frame	    	<= p_new_frame;
+	o_frame_info_rdy 	<= p_frame_info_rdy;
 	
 end RTL;
 

@@ -146,14 +146,14 @@ begin
             end if;
 
             --want to write hit data and fifo almost full, drop it (keeping flag)
-            if( s_fifofull_almost='1' and i_end_of_frame='0' and i_frame_info_rdy='0' ) then
-                s_event_ready<='0';
-                s_have_dropped<='1';
+            if ( s_fifofull_almost = '1' and i_end_of_frame = '0' and i_frame_info_rdy = '0' ) then
+                s_event_ready <= '0';
+                s_have_dropped<= '1';
             end if;
 
             --release have-dropped flag when seeing trailer
-            if ( i_end_of_frame='1' ) then
-                s_have_dropped<='0';
+            if ( i_end_of_frame = '1' ) then
+                s_have_dropped <= '0';
             end if;
 
             --channel masked, drop any data
@@ -163,10 +163,10 @@ begin
         end if;
 
         --selection of output data
-        if(i_end_of_frame = '1' ) then -- the MSB of the event data is '0' for frame info data
+        if ( i_end_of_frame = '1' ) then -- the MSB of the event data is '0' for frame info data
             ----------- TRAILER -----------
             s_full_event_data <= "0000" & "11" & X"0000000"&"000"& s_have_dropped & i_frame_info(11) & i_crc_error & i_frame_number; -- identifier, hit-dropped-flag, l2 overflow, crc_error, frame id
-        elsif i_frame_info_rdy= '1' then -- by defenition the first thing that happens
+        elsif ( i_frame_info_rdy= '1' ) then -- by defenition the first thing that happens
             ----------- HEADER -----------
             s_full_event_data <= "0000" & "10" & X"00000000" & "00" & i_frame_number;
         elsif ( i_event_ready = '1' ) then		-- the MSB of the event data is '1' for event data)
@@ -174,9 +174,9 @@ begin
             --note: eflag reshuffled to have consistent position of this bit independent of data type
             -- identifier, short event flag, event data (cn,tbh,tcc,tf,ef,ebh,ecc,ef)
             if(i_frame_info(14)='1') then --short event
-                s_full_event_data <= "0000" & "00" &"0"& i_frame_info(14)  & i_event_data(47 downto 21) & i_event_data(21 downto 1);
+                s_full_event_data <= "0000" & "00" & "0" & i_frame_info(14)  & i_event_data(47 downto 21) & i_event_data(21 downto 1);
             else
-                s_full_event_data <= "0000" & "00" &"0"& i_frame_info(14)  & i_event_data(47 downto 22) & i_event_data(0) & i_event_data(21 downto 1);
+                s_full_event_data <= "0000" & "00" & "0" & i_frame_info(14)  & i_event_data(47 downto 22) & i_event_data(0) & i_event_data(21 downto 1);
             end if;
         end if;
     end if;
