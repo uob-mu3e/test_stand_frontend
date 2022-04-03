@@ -106,6 +106,10 @@ int MupixFEB::ConfigureASICs(){
         feb_sc.FEB_write(feb, MP_LVDS_LINK_MASK2_REGISTER_W, (uint32_t) FEBsSettings["MP_LVDS_LINK_MASK2"]);
     }
     
+
+    feb_sc.FEB_write(FEB, MP_CTRL_SPI_ENABLE_REGISTER_W, 0x00000001);
+    feb_sc.FEB_write(FEB, MP_CTRL_SLOW_DOWN_REGISTER_W, 0x0000000F);
+
     // configure each asic
     int status = mupix::midasODB::MapForEachASIC(pixel_odb_prefix, [this](mupix::MupixConfig* config, uint32_t asic){
 //                 if ( asic != 3 ) return 0;
@@ -169,60 +173,11 @@ int MupixFEB::ConfigureASICs(){
                 std::cout<<std::hex<<payload.at(j)<<std::endl;
             }
 
-            // ToDo: Col Test Tdac bits from file
-            for(int i=0; i<85; i++){
-                payload.push_back(0x00000000);
-            }
-
-            // mask all chips but not this one
-            // TODO: make this correct
-            uint32_t chip_select_mask = 0xfff; //all chips masked (12 times 1)
+            //uint32_t chip_select_mask = 0xfff; //all chips masked (12 times 1)
             uint16_t pos = ASICid_from_ID(asic);
             bool isTelescope = false; // TODO: make this somehow dynamic for the telescope setup
-	        if ( asic == 3 && isTelescope ) pos = 3;
-            chip_select_mask &= ((~0x1u) << pos);
-            printf("chip_select_mask %04x\n", chip_select_mask);
-            for (int i = 0; i < pos; ++i)
-                chip_select_mask |= (0x1 << i);
+            rpc_status = feb_sc.FEB_write(FEB, MP_CTRL_COMBINED_START_REGISTER_W + asic, payload,true);
 
-            if (MupixChipToConfigure == 0)
-            {
-                chip_select_mask = 0xfffffdff;
-            }
-            else if (MupixChipToConfigure == 1)
-            {
-                chip_select_mask = 0xfffffbff;
-            }
-            if (MupixChipToConfigure == 2)
-            {
-                chip_select_mask = 0xfffff7ff;
-            }//TOFIX: why has it changed?
-            printf("chip_select_mask %04x\n", chip_select_mask);
-
-            // check if FEB is busy
-            rpc_status=FEB_REPLY_SUCCESS;
-            feb_sc.FEB_read(FEB, MP_CTRL_SPI_BUSY_REGISTER_R, spi_busy);
-            while(spi_busy==1 && count < limit){
-                sleep(1);
-                feb_sc.FEB_read(FEB,MP_CTRL_SPI_BUSY_REGISTER_R,spi_busy);
-                count++;
-                cm_msg(MINFO, "MupixFEB", "Mupix config spi busy .. waiting");
-            }
-
-            if (count == limit) {
-                std::cout<<"Timeout"<<std::endl;
-                cm_msg(MERROR, "setup_mupix", "FEB Mupix SPI timeout");
-            } else { // do the SPI writing 
-                // TODO: make this correct
-                feb_sc.FEB_write(FEB, MP_CTRL_CHIP_MASK_REGISTER_W, chip_select_mask); //
-                // TODO: include headers for addr.
-                feb_sc.FEB_write(FEB, MP_CTRL_SLOW_DOWN_REGISTER_W, 0x0000000F); // SPI slow down reg
-                feb_sc.FEB_write(FEB, MP_CTRL_ENABLE_REGISTER_W, 0x00000FC0); // reset Mupix config fifos
-                feb_sc.FEB_write(FEB, MP_CTRL_ENABLE_REGISTER_W, 0x00000000);
-                feb_sc.FEB_write(FEB, MP_CTRL_INVERT_REGISTER_W, 0x00000003); // idk, have to look it up
-                // We now only write the default configuration for testing
-                rpc_status = feb_sc.FEB_write(FEB, MP_CTRL_ALL_REGISTER_W, payload,true);
-            }
         } catch(std::exception& e) {
             cm_msg(MERROR, "setup_mupix", "Communication error while configuring MuPix %d: %s", asic, e.what());
             set_equipment_status(equipment_name.c_str(), "SB-FEB Communication error", "red");
@@ -247,7 +202,8 @@ int MupixFEB::ConfigureASICs(){
             // {"5": ["0x0", "0x0", "0x0", "0x0", ...],
             // from the key we get the col value for the masking by 6*key+6
             // the row values for the masking (512 bits) are stored in 32b words in the json file
-            
+            /*
+
             for (auto it = GetTDACsJSON().at(asic).begin(); it != GetTDACsJSON().at(asic).end(); it++) {
                 std::cout << "KEY: " << it->first << "\n";
                 // check if FEB is busy
@@ -291,6 +247,35 @@ int MupixFEB::ConfigureASICs(){
                     feb_sc.FEB_write(FEB,MP_CTRL_ENABLE_REGISTER_W,0x0);
                 }
             }
+            */
+
+            // code above needs changes 
+            // Tdac writing for this chip would work like this:
+            for(int doublecol = 0; doublecol<128; doublecol++) {
+                // todo: check for mem space somewhere
+                for(int i = 0; i<128; i++) {
+                    feb_sc.FEB_write(FEB, MP_CTRL_TDAC_START_REGISTER_W + asic]=0xFFFFFFFF; // 0 is mask FF is no mask
+                }
+            }
+            // or as a nonincremeting write of more words at the same time
+            // order: 
+            /*
+                col 0 -> 255, starting with col 0, physical col addr. 
+                row 0 -> row 255 for each col, starting with row0, physical row addr.
+
+                example:
+                start with col 0 ..
+                (32 bit)  : [8 bit tdac, 8 bit tdac, 8 bit tdac, 8 bit tdac]
+                word 0    : [row 3     , row 2     , row 1     , row 0     ]
+                word 1    : [row 7     , row 6     , row 5     , row 4     ]
+                word 2    : [row 11    , row 10    , row 9     , row 8     ]
+                ...
+                word 63   : [row 255   , row 254   , row253    , row 252   ]
+                now col 1 ..
+                word 64   : [row 3     , row 2     , row 1     , row 0     ]
+                ...
+            */
+
         }
 
         // reset lvds links
