@@ -4,6 +4,7 @@
 
 HMP4040Driver::HMP4040Driver()
 {
+
 }
 
 
@@ -14,7 +15,7 @@ HMP4040Driver::~HMP4040Driver()
 
 HMP4040Driver::HMP4040Driver(std::string n, EQUIPMENT_INFO* inf) : PowerDriver(n,inf) 
 {
-	std::cout << " HMP4040 HAMEG driver with " << instrumentID.size() << " channels instantiated " << std::endl;
+    std::cout << " HMP4040 HAMEG driver with " << instrumentID.size() << " channels instantiated " << std::endl;
 }
 
 
@@ -53,19 +54,19 @@ INT HMP4040Driver::Init()
 	//global reset if requested
 	if( settings["Global Reset On FE Start"] == true)
 	{
-		cmd = "*RST\n";
+        cmd = GenerateCommand(COMMAND_TYPE::Reset, 0);
 		if( !client->Write(cmd) ) cm_msg(MERROR, "Init HAMEG supply ... ", "could not global reset %s", ip.c_str());
 		else cm_msg(MINFO,"power_fe","Init global reset of %s",ip.c_str());
 	}
 	std::this_thread::sleep_for(std::chrono::milliseconds(client->GetWaitTime()));
 	
 	//beep
-	cmd="SYST:BEEP\n";
+    cmd=GenerateCommand(COMMAND_TYPE::Beep, 0);
 	if( !client->Write(cmd) ) cm_msg(MERROR, "Init HAMEG supply ... ", "could not beep %s", ip.c_str());
 	std::this_thread::sleep_for(std::chrono::milliseconds(client->GetWaitTime()));
 	
 	//clear error an status registers
-	//cmd = "*CLS\n";
+    //cmd = GenerateCommend(COMMAND_TYPE:ClearStatus, 0);
 	//if( !client->Write(cmd) ) cm_msg(MERROR, "Init HAMEG supply ... ", "could perform global clear %s", ip.c_str());
 	//else cm_msg(MINFO,"power_fe","Global CLS of %s",ip.c_str());
 	//std::this_thread::sleep_for(std::chrono::milliseconds(client->GetWaitTime()));
@@ -95,7 +96,7 @@ INT HMP4040Driver::Init()
 								
 	std::cout << "ID code: " << idCode << std::endl;
 								
-	//client->FlushQueu();
+    //client->FlushQueu();
 		
 	//read channels
 	for(int i = 0; i<nChannels; i++ ) 
@@ -144,7 +145,7 @@ INT HMP4040Driver::Init()
 
 
 
-bool HMP4040Driver::AskPermissionToTurnOn(int channel) //extra check whether it is safe to tunr on supply;
+bool HMP4040Driver::AskPermissionToTurnOn(int ) //extra check whether it is safe to tunr on supply;
 {
 	return true;
 }
@@ -213,6 +214,50 @@ void HMP4040Driver::ReadESRChanged()
 		settings["ESR"] = ReadESR(-1,err);		
 		settings["Read ESR"]=false;
 	}
+}
+
+
+std::string HMP4040Driver::GenerateCommand(COMMAND_TYPE cmdt, float val)
+{
+    if (cmdt == COMMAND_TYPE::SetCurrent) {
+        return "CURR "+std::to_string(val)+"\n";
+    } else if (cmdt == COMMAND_TYPE::Reset){
+        return "*RST\n";
+    } else if (cmdt == COMMAND_TYPE::Beep){
+        return "SYST:BEEP\n";
+    } else if (cmdt == COMMAND_TYPE::CLearStatus){
+        return "*CLS\n";
+    } else if (cmdt == COMMAND_TYPE::SelectChannel){
+        int ch = (int)val;
+        return "INST:NSEL " + std::to_string(ch)+ "\n";
+    } else if (cmdt == COMMAND_TYPE::OPC){
+        return "*OPC?\n";
+    } else if (cmdt == COMMAND_TYPE::ReadErrorQueue){
+        return "SYST:ERR?\n";
+    } else if (cmdt == COMMAND_TYPE::ReadESR){
+        return "*ESR?\n";
+    } else if (cmdt == COMMAND_TYPE::ReadQCGE) {
+        return "STAT:QUES?\n";
+    } else if (cmdt == COMMAND_TYPE::ReadState) {
+        return "OUTP:STAT?\n";
+    } else if (cmdt == COMMAND_TYPE::ReadVoltage) {
+        return "MEAS:VOLT?\n"; //What is the difference between ReadVoltage and ReadSetVoltage
+    } else if (cmdt == COMMAND_TYPE::ReadSetVoltage) {
+        return "VOLT?\n"; //What is the difference between ReadVoltage and ReadSetVoltage
+    } else if (cmdt == COMMAND_TYPE::ReadCurrent){
+        return "MEAS:CURR?\n";
+    } else if (cmdt == COMMAND_TYPE::ReadCurrentLimit){
+        return "CURR?\n";
+    } else if(cmdt == COMMAND_TYPE::ReadOVPLevel){
+        return "VOLT:PROT:LEV?\n";
+    } else if (cmdt == COMMAND_TYPE::SetState){
+        int ch = (int)val;
+        return "OUTP:STAT " + std::to_string(ch) + "\n";
+    } else if (cmdt == COMMAND_TYPE::SetVoltage) {
+        return "VOLT "+std::to_string(val)+"\n";
+    } else if (cmdt == COMMAND_TYPE::SetOVPLevel){
+        return "VOLT:PROT:LEV "+std::to_string(val)+"\n";
+    }
 }
 
 

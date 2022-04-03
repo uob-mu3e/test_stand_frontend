@@ -136,15 +136,14 @@ begin
         stateout			=> open
     );
 
-	wram : entity work.ip_ram
+    wram : entity work.ip_ram
     generic map(
         ADDR_WIDTH_A => 8,
         ADDR_WIDTH_B => 8,
         DATA_WIDTH_A => 32,
-        DATA_WIDTH_B => 32,
-        OUTDATA_REG_A => "UNREGISTERED"--,
+        DATA_WIDTH_B => 32--,
     )
-  	port map (
+    port map (
         address_a => writememaddr(7 downto 0),
         address_b => memaddr(7 downto 0),
         clock_a => clk,
@@ -155,15 +154,14 @@ begin
         wren_b => '0',
         q_a => open,
         q_b => writememdata_out--,
-  	);
+    );
 
      rram : entity work.ip_ram
      generic map(
            ADDR_WIDTH_A => 8,
            ADDR_WIDTH_B => 8,
            DATA_WIDTH_A => 32,
-           DATA_WIDTH_B => 32,
-           OUTDATA_REG_A => "UNREGISTERED"--,
+           DATA_WIDTH_B => 32--,
      )
      port map (
            address_a => mem_addr_out_slave(7 downto 0),

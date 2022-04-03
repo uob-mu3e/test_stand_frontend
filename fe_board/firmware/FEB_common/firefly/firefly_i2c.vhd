@@ -9,26 +9,26 @@ use ieee.std_logic_unsigned.all;
 use work.firefly_constants.all;
 
 ENTITY firefly_i2c is 
-    generic(
-        I2C_DELAY_g             : positive := 50000000--;
-    );
-    PORT(
-        i_clk :             in  std_logic;
-        i_reset_n :         in  std_logic;
+generic (
+    I2C_DELAY_g             : positive := 50000000--;
+);
+port (
+    i_clk :             in  std_logic;
+    i_reset_n :         in  std_logic;
 
-        --I2C
-        i_i2c_enable            : in    std_logic;
-        o_Mod_Sel_n             : out   std_logic_vector(1 downto 0);
-        io_scl                  : inout std_logic;
-        io_sda                  : inout std_logic;
-        i_int_n                 : in    std_logic_vector(1 downto 0);
-        i_modPrs_n              : in    std_logic_vector(1 downto 0);
+    --I2C
+    i_i2c_enable            : in    std_logic;
+    o_Mod_Sel_n             : out   std_logic_vector(1 downto 0);
+    io_scl                  : inout std_logic;
+    io_sda                  : inout std_logic;
+    i_int_n                 : in    std_logic_vector(1 downto 0);
+    i_modPrs_n              : in    std_logic_vector(1 downto 0);
 
-        o_pwr                   : out   std_logic_vector(127 downto 0); -- RX optical power in mW
-        o_temp                  : out   std_logic_vector(15 downto 0);  -- temperature in °C
-		  o_alarm					  : out   std_logic_vector(63 downto 0);  -- latched alarm bits
-		  o_vcc						  : out   std_logic_vector(31 downto 0)--;  -- operating voltagein units of 100 uV
-    );
+    o_pwr                   : out   std_logic_vector(127 downto 0); -- RX optical power in mW
+    o_temp                  : out   std_logic_vector(15 downto 0);  -- temperature in °C
+    o_alarm                 : out   std_logic_vector(63 downto 0);  -- latched alarm bits
+    o_vcc                   : out   std_logic_vector(31 downto 0)--;  -- operating voltagein units of 100 uV
+);
 END ENTITY;
 
 architecture rtl of firefly_i2c is

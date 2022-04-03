@@ -1,12 +1,24 @@
 #!/bin/bash
-set -eux
+set -euf
+
+if [ $# -eq 0 ] ; then
+    echo "Usage: $0 entity_tb [entity.vhd]..."
+    echo "    or $0 entity_tb.vhd [entity.vhd]..."
+    exit
+fi
 
 TB="$1"
-shift
+
+# get testbench name from first .vhd input
+if [[ "$TB" == *.vhd ]] ; then
+    TB=$(basename -s .vhd -- "$TB")
+else
+    shift
+fi
 
 SRC=()
 for arg in "$@" ; do
-    arg=$(readlink -f -- "$arg")
+    arg=$(realpath -s --relative-to=.cache -- "$arg")
     SRC+=("$arg")
 done
 

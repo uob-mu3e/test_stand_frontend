@@ -7,6 +7,7 @@ LIBRARY altera_mf;
 USE altera_mf.altera_mf_components.all;
 
 use work.mudaq.all;
+use work.feb_sc_registers.all;
 
 entity flashprogramming_block is
     port(
@@ -138,16 +139,15 @@ elsif ( clk100'event and clk100 = '1' ) then
     arria_write_req_last            <= control(0);
     spiflash_to_fifo_we 	     	<= '0';
       
+    status(PROGRAMMING_STATUS_BIT_ARRIAWRITING) <= arriawriting;
+    status(PROGRAMMING_STATUS_BIT_SPI_BUSY) <= spi_busy;
+    status(PROGRAMMING_STATUS_BIT_FIFO_FULL) <= spiflashfifo_full;
+    status(PROGRAMMING_STATUS_BIT_FIFO_EMPTY) <= spiflashfifo_empty;
 
-    status(0) <= arriawriting;
-    status(1) <= spi_busy;
-    status(15) <= spiflashfifo_full;
-    status(14) <= spiflashfifo_empty;
-
-    status(16)              <= fpga_conf_done;
-    status(17)              <= fpga_nstatus;
-    status(18)              <= fpp_timeout;
-    status(19)              <= fpp_crcerror;
+    status(PROGRAMMING_STATUS_BIT_CONF_DONE)              <= fpga_conf_done;
+    status(PROGRAMMING_STATUS_BIT_NSTATUS)              <= fpga_nstatus;
+    status(PROGRAMMING_STATUS_BIT_TIMEOUT)              <= fpp_timeout;
+    status(PROGRAMMING_STATUS_BIT_CRCERROR)              <= fpp_crcerror;
     status(23 downto 20)    <= (others => '0');    
     status(31 downto 24)    <= fpp_debug;
 
@@ -250,7 +250,7 @@ elsif ( clk100'event and clk100 = '1' ) then
             spiflashstate <= arriawriting7;
             spi_strobe_arria        <= '0';
         elsif(spi_byte_ready = '1' and spi_flash_data_from_flash_int(1) = '0') then
-            spiflashstate <= arriawriting5;  -- try setting write enable again
+            spiflashstate <= arriawriting5;  -- try setting write enable again (note tha this is a potential endless loop, maybe we should drop that?)
             spi_strobe_arria        <= '0';
         end if;
     when arriawriting7 => -- make sure spi is ready again
@@ -373,6 +373,7 @@ port map(
 );
 
 programming_if : entity work.fpp_programmer
+generic map(COMPRESSION => true)
 port map(
     -- clk & reset
     reset_n             => reset_n,

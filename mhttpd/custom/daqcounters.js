@@ -259,7 +259,7 @@ function generateSorterTable(table, counters, fractions, inside){
 
     let cell92 = row9.insertCell();
     cell92.setAttribute("name","modbvalue");
-    cell92.setAttribute("data-odb-path","/Equipment/Switching/Settings/Sorter Delay[0]");
+    cell92.setAttribute("data-odb-path","/Equipment/SwitchingCentral/Settings/Sorter Delay[0]");
     cell92.setAttribute("data-odb-editable","1");
 
     let cell93 = row9.insertCell();
@@ -361,19 +361,19 @@ function init(){
     }
 
 
-    mjsonrpc_db_get_values(["/Equipment/Switching/Variables/SCSO"]).then(function(rpc) {
+    mjsonrpc_db_get_values(["/Equipment/SwitchingCentral/Variables/SCSO"]).then(function(rpc) {
         update_scso(rpc.result.data[0]);
      }).catch(function(error) {
         mjsonrpc_error_alert(error);
      });
 
-    mjsonrpc_db_get_values(["/Equipment/Switching/Variables/SCCN"]).then(function(rpc) {
+    mjsonrpc_db_get_values(["/Equipment/SwitchingCentral/Variables/SCCN"]).then(function(rpc) {
         update_sccn(rpc.result.data[0]);
      }).catch(function(error) {
         mjsonrpc_error_alert(error);
      });
 
-    mjsonrpc_db_get_values(["/Equipment/Mupix/Variables/PSLL"]).then(function(rpc) {
+    mjsonrpc_db_get_values(["/Equipment/PixelsCentral/Variables/PSLL"]).then(function(rpc) {
         update_psll(rpc.result.data[0]);
      }).catch(function(error) {
         mjsonrpc_error_alert(error);
@@ -423,7 +423,7 @@ function update_sccn(valuex){
     }
 }
 
-function update_psll(valuex){
+function update_psls(valuex){
     var value = valuex;
     if(typeof valuex === 'string')
         value = JSON.parse(valuex);
@@ -436,24 +436,24 @@ function update_psll(valuex){
                 if ( i >= 1 && i <= 4 ) {
                     if ( i === 1 ) {
                         // RX READY
-                        mupixlvdsstatus[i+feb*36*7+lvds*7].nodeValue = ((value[1+feb*36*4+lvds*4] >> 31) & 0x1).toString(16);
+                        mupixlvdsstatus[i+feb*36*7+lvds*7].nodeValue = ((value[2 + feb*2 + feb*36*6+lvds*6] >> 31) & 0x1).toString(16);
                     }
                     if ( i === 2 ) {
                         // RX STATE
-                        mupixlvdsstatus[i+feb*36*7+lvds*7].nodeValue = ((value[1+feb*36*4+lvds*4] >> 29) & 0x3).toString(16);
+                        mupixlvdsstatus[i+feb*36*7+lvds*7].nodeValue = ((value[2 + feb*2 + feb*36*6+lvds*6] >> 29) & 0x3).toString(16);
                     }
                     if ( i === 3 ) {
                         // PLL LOCK
-                        mupixlvdsstatus[i+feb*36*7+lvds*7].nodeValue = ((value[1+feb*36*4+lvds*4] >> 28) & 0x1).toString(16);
+                        mupixlvdsstatus[i+feb*36*7+lvds*7].nodeValue = ((value[2 + feb*2 + feb*36*6+lvds*6] >> 28) & 0x1).toString(16);
                     }
                     if ( i === 4 ) {
                         // DISP ERROR
-                        mupixlvdsstatus[i+feb*36*7+lvds*7].nodeValue = (value[1+feb*36*4+lvds*4] & 0x0FFFFFFF).toString(16);
+                        mupixlvdsstatus[i+feb*36*7+lvds*7].nodeValue = (value[2 + feb*2 + feb*36*6+lvds*6] & 0x0FFFFFFF).toString(16);
                     }
                 } else if ( i > 4){
-                    mupixlvdsstatus[i+feb*36*7+lvds*7].nodeValue = value[i-3+feb*36*4+lvds*4];
+                    mupixlvdsstatus[i+feb*36*7+lvds*7].nodeValue = value[i-2 + feb*2 + feb*36*6 + lvds*6];
                 } else {
-                    mupixlvdsstatus[i+feb*36*7+lvds*7].nodeValue = (value[i+feb*36*4+lvds*4]);
+                    mupixlvdsstatus[i+feb*36*7+lvds*7].nodeValue = (value[feb*2 + feb*36*6 + lvds*6]);
                 }
             }
         }

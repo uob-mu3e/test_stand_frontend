@@ -5,7 +5,7 @@ use ieee.std_logic_misc.all;
 
 
 
-entity tb_time_merger is 
+entity tb_time_merger is
 end entity;
 
 
@@ -13,7 +13,7 @@ architecture TB of tb_time_merger is
 
     -- Input from merging (first board) or links (subsequent boards)
     signal clk, clk_fast, reset_n : std_logic;
-    
+
     -- links and datageneration
     constant ckTime: 		time	:= 10 ns;
     constant ckTime_fast: 		time	:= 8 ns;
@@ -25,7 +25,7 @@ architecture TB of tb_time_merger is
     signal gen_link : std_logic_vector(35 downto 0);
     signal gen_link_valid : std_logic_vector(1 downto 0);
     signal gen_link_k, gen_link_k_reg : work.util.slv4_array_t(1 downto 0);
-    
+
     -- signals
     signal rx_q : work.util.slv34_array_t(g_NLINKS_DATA-1 downto 0) := (others => (others => '0'));
     signal rx_ren, rx_rdempty, sop, shop, eop, link_mask_n : std_logic_vector(g_NLINKS_DATA-1 downto 0) := (others => '0');
@@ -44,7 +44,7 @@ begin
         clk <= '1';
         wait for ckTime/2;
     end process;
-    
+
     ckProcfast: process
     begin
         clk_fast <= '0';
@@ -78,7 +78,6 @@ begin
             --go_to_trailer => 4--,
         --)
     --port map (
-        --i_reset_n           => reset_n,
         --enable_pix          => '1',
         --i_dma_half_full     => '0',
         --random_seed         => (others => '1'),
@@ -89,7 +88,9 @@ begin
         --delay               => (others => '0'),
         --slow_down           => slow_down_0,
         --state_out           => open,
-        --clk                 => clk--,
+
+        --i_reset_n           => reset_n,
+        --i_clk               => clk--,
     --);
 
     --e_data_gen_1 : entity work.data_generator_a10
@@ -98,7 +99,6 @@ begin
             --go_to_trailer => 4--,
         --)
     --port map (
-        --i_reset_n           => reset_n,
         --enable_pix          => '1',
         --i_dma_half_full     => '0',
         --random_seed         => (others => '1'),
@@ -109,21 +109,23 @@ begin
         --delay               => x"0002",
         --slow_down           => slow_down_1,
         --state_out           => open,
-        --clk                 => clk--,
+
+        --i_reset_n           => reset_n,
+        --i_clk               => clk--,
     --);
-    
+
     process
     begin
         counter_int <= (others => '0');
         wait until ( reset_n = '1' );
-        
+
         for i in 0 to 80000 loop
             wait until rising_edge(clk);
             counter_int <= counter_int + 1;
         end loop;
         wait;
     end process;
-    
+
     e_data_gen : entity work.mp_sorter_datagen
     generic map (
         send_header_trailer => '1'--,
@@ -141,7 +143,7 @@ begin
         o_datak                   => gen_link_k(0)--,
         --,
     );
-    
+
     e_feb0 : entity work.f0_sim
     port map (
         clk         => clk,
@@ -149,7 +151,7 @@ begin
         datak_feb0  => gen_link_k_reg(0),
         reset_n     => reset_n--,
     );
-    
+
     e_feb1 : entity work.f1_sim
     port map (
         clk         => clk,
@@ -157,12 +159,12 @@ begin
         datak_feb1  => gen_link_k_reg(1),
         reset_n     => reset_n--,
     );
-    
+
     --gen_link_reg(0) <=  x"000000BC" when gen_link_valid(0) = '0' else gen_link(31 downto 0);
     --gen_link_k_reg(0) <= "0001" when gen_link_valid(0) = '0' else gen_link_k(0);
 
     --gen_link_fifos : FOR i in 0 to g_NLINKS_DATA - 1 GENERATE
-        
+
         e_link_to_fifo_32 : entity work.link_to_fifo_32
         generic map (
             LINK_FIFO_ADDR_WIDTH => 8--;
@@ -170,24 +172,24 @@ begin
         port map (
             i_rx            => gen_link_reg(0),
             i_rx_k          => gen_link_k_reg(0),
-            
+
             o_q             => rx_q(0),
             i_ren           => rx_ren(0),
             o_rdempty       => rx_rdempty(0),
 
             o_counter       => open,
-            
+
             i_reset_n_156   => reset_n,
             i_clk_156       => clk,
 
             i_reset_n_250   => reset_n,
             i_clk_250       => clk_fast--;
         );
-  
+
         sop(0)  <= '1' when rx_q(0)(33 downto 32) = "10" else '0';
-        shop(0) <= '1' when rx_q(0)(33 downto 32) = "11" else '0'; 
+        shop(0) <= '1' when rx_q(0)(33 downto 32) = "11" else '0';
         eop(0)  <= '1' when rx_q(0)(33 downto 32) = "01" else '0';
-        
+
         e_link_to_fifo_32_2 : entity work.link_to_fifo_32
         generic map (
             LINK_FIFO_ADDR_WIDTH => 8--;
@@ -195,26 +197,26 @@ begin
         port map (
             i_rx            => gen_link_reg(1),
             i_rx_k          => gen_link_k_reg(1),
-            
+
             o_q             => rx_q(1),
             i_ren           => rx_ren(1),
             o_rdempty       => rx_rdempty(1),
 
             o_counter       => open,
-            
+
             i_reset_n_156   => reset_n,
             i_clk_156       => clk,
 
             i_reset_n_250   => reset_n,
             i_clk_250       => clk_fast--;
         );
-  
+
         sop(1)  <= '1' when rx_q(1)(33 downto 32) = "10" else '0';
-        shop(1) <= '1' when rx_q(1)(33 downto 32) = "11" else '0'; 
+        shop(1) <= '1' when rx_q(1)(33 downto 32) = "11" else '0';
         eop(1)  <= '1' when rx_q(1)(33 downto 32) = "01" else '0';
 
     --END GENERATE gen_link_fifos;
-    
+
     link_mask_n(3 downto 0) <= x"3";
 
     --e_time_merger : entity work.time_merger_v2
@@ -235,18 +237,18 @@ begin
         --i_link                  => 1, -- which link should be taken to check ts etc.
         --i_mask_n                => link_mask_n,
         --o_rack                  => rx_ren,
-        
+
         --output stream
         --o_rdata                 => open,
         --i_ren                   => not rempty,
         --o_empty                 => rempty,
-        
+
         --error outputs
         --o_error_pre             => open,
         --o_error_sh              => open,
         --o_error_gtime           => open,
         --o_error_shtime          => open,
-        
+
         --i_reset_n               => reset_n,
         --i_clk                   => clk_fast--,
     --);

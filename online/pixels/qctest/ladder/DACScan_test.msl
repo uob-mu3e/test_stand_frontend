@@ -1,0 +1,141 @@
+# Author J. Guzman-Funck, March 2022, Cosmic Run. jose.guzman-funck19@imperial.ac.uk || pepe.guzmanfunck@gmail.com
+#
+# DACScan test
+#
+# TODO
+# 1. Make it more flexible to be integrated in more flexible scanning interface
+# 2. Implement upstream / downstream
+# 3. Check for compatible params
+# 4. Implement version with default values
+# 5. Check buffer size
+# 6. Power channel as parameter?
+#
+
+
+# Get values
+# Configure power
+# To each mupix:
+# Turn on
+# Loop over each value and each dac
+# Record current
+
+
+
+# Process input parameters
+PARAM hv_voltage, "HV voltage"
+PARAM hv_curr_limit, "HV current limit"
+ODBSET /Equipment/Mupix/QCTests/Ladder/DACScan/Input/HV_voltage, $hv_voltage
+ODBSET /Equipment/Mupix/QCTests/Ladder/DACScan/Input/HV_curr_limit, $hv_curr_limit
+
+PARAM vpdac_start, "VPDAC start"
+PARAM vpdac_step, "VPDAC step"
+PARAM vpdac_stop, "VPDAC stop"
+
+SET num_VPDAC_steps, (($vpdac_stop-$vpdac_start) / $vpdac_step) + 1 
+
+
+ODBSET /Equipment/Mupix/QCTests/Ladder/DACScan/Input/VPDAC/start_value, $vpdac_start 
+ODBSET /Equipment/Mupix/QCTests/Ladder/DACScan/Input/VPDAC/step, $vpdac_step
+ODBSET /Equipment/Mupix/QCTests/Ladder/DACScan/Input/VPDAC/stop_value, $vpdac_stop
+
+
+PARAM ref_Vss_start, "ref_Vss start"
+PARAM ref_Vss_step, "ref_Vss step"
+PARAM ref_Vss_stop, "ref_Vss stop"
+
+#Selects upstream or downstream chips
+PARAM select_UD, "UPstream(-1) DOWNstream(2) chips"
+
+SET num_ref_Vss_steps, (($ref_Vss_stop-$ref_Vss_start) / $ref_Vss_step) + 1 
+
+
+ODBSET /Equipment/Mupix/QCTests/Ladder/DACScan/Input/ref_Vss/start_value, $ref_Vss_start 
+ODBSET /Equipment/Mupix/QCTests/Ladder/DACScan/Input/ref_Vss/step, $ref_Vss_step
+ODBSET /Equipment/Mupix/QCTests/Ladder/DACScan/Input/ref_Vss/stop_value, $ref_Vss_stop
+
+
+
+# Configure power
+
+# LV. Hameg. Check if channel 2 is off and if it is turn on
+ODBGET /Equipment/HAMEG0/Variables/State[1], now_state_hameg_channel
+
+IF $now_state_hameg_channel == 0
+    ODBSET /Equipment/HAMEG0/Variables/Set State[1], 1
+    WAIT 10
+ENDIF
+
+# HV. Keithley
+ODBSET /Equipment/KEITHLEY0/Variables/Current Limit, $hv_curr_limit
+ODBSET /Equipment/KEITHLEY0/Variables/Demand Voltage, -1*abs($hv_voltage)
+ODBSET /Equipment/KEITHLEY0/Variables/Set State, 1
+
+
+# To each chip
+LOOP i, 3
+    # Turn on chip i. This is downstream
+    SET i_, $i+$select_UD
+
+    CAT path_to_bias, /Equipment/Mupix/Settings/BIASDACS/, $i_, /BiasBlock_On
+    CAT path_to_vpdac, /Equipment/Mupix/Settings/BIASDACS/, $i_, /VPDAC
+    CAT path_to_ref_Vss, /Equipment/Mupix/Settings/VDACS/, $i_, /ref_Vss
+    CAT path_to_vpdac_output, /Equipment/Mupix/QCTests/Ladder/DACScan/Output/VPDAC/, $i_
+    CAT path_to_ref_Vss_output, /Equipment/Mupix/QCTests/Ladder/DACScan/Output/ref_Vss/, $i_
+
+    ODBGET $path_to_vpdac, default_vpdac_value
+    ODBGET $path_to_ref_Vss, default_ref_vss_value
+
+    # Turn on mupix i
+    ODBSET $path_to_bias, 5
+
+    # Loop over VPDAC values. Values gotten from PARAM
+    LOOP j, $num_VPDAC_steps
+
+        ODBSET $path_to_vpdac, ($j-1)*$vpdac_step + $vpdac_start
+        ODBSET /Equipment/Switching/Settings/MupixChipToConfigure, $i_
+        ODBSET /Equipment/Switching/Settings/MupixConfig, 1
+
+        WAIT 3
+
+        ODBGET /Equipment/HAMEG0/Variables/Current[1], current
+        CAT path_to_vpdac_output_value, /Equipment/Mupix/QCTests/Ladder/DACScan/Output/VPDAC/, $i_, /VPDAC_values[$j-1]
+        ODBSET $path_to_vpdac_output_value, ($j-1)*$vpdac_step + $vpdac_start
+        CAT path_to_vpdac_output_current, /Equipment/Mupix/QCTests/Ladder/DACScan/Output/VPDAC/, $i_, /VPDAC_current[$j-1]
+        ODBSET $path_to_vpdac_output_current, $current
+
+    ENDLOOP
+
+    WAIT 1
+    # Set VPDAC back to the starting value
+    ODBSET $path_to_vpdac, $default_vpdac_value
+
+    # Loop over ref_Vss values. Values gotten from PARAM
+    SET index_k, 0
+    LOOP k, $num_ref_Vss_steps
+        ODBSET $path_to_ref_Vss, ($k-1)*$ref_Vss_step + $ref_Vss_start
+        ODBSET /Equipment/Switching/Settings/MupixConfig, 1
+
+        WAIT 3
+
+        ODBGET /Equipment/HAMEG0/Variables/Current[1], current
+        CAT path_to_ref_Vss_output_value, /Equipment/Mupix/QCTests/Ladder/DACScan/Output/ref_Vss/, $i_, /ref_Vss_values[$index_k]
+        ODBSET $path_to_ref_Vss_output_value, ($k-1)*$ref_Vss_step + $ref_Vss_start
+
+        CAT path_to_ref_Vss_output_current, /Equipment/Mupix/QCTests/Ladder/DACScan/Output/ref_Vss/, $i_, /ref_Vss_current[$index_k]
+        ODBSET $path_to_ref_Vss_output_current, $current
+
+        SET index_k, $k
+    ENDLOOP
+
+    ODBSET $path_to_ref_Vss, $default_ref_vss_value
+    ODBSET $path_to_bias, 0
+    ODBSET /Equipment/Mupix/Settings/BIASDACS/*/BiasBlock_On, 0
+    ODBSET /Equipment/Switching/Settings/MupixChipToConfigure, $i_  
+    ODBSET /Equipment/Switching/Settings/MupixConfig, 1
+
+    WAIT SECONDS, 3
+ENDLOOP
+
+
+# Turn off HV
+ODBSET /Equipment/KEITHLEY0/Variables/Set State, 0

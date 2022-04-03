@@ -31,7 +31,7 @@ package mudaq is
     constant K27_7 : std_logic_vector(7 downto 0) := X"FB";
     constant K29_7 : std_logic_vector(7 downto 0) := X"FD";
     constant K30_7 : std_logic_vector(7 downto 0) := X"FE";
-    
+
 
     --! data path farm types
     subtype dataplusts_type is std_logic_vector(519 downto 0);
@@ -43,16 +43,20 @@ package mudaq is
     constant tszero : tsrange_type := (others => '0');
 
 
-    --! data path swb types
-    constant tree_padding   : std_logic_vector(37 downto 0) := "11" & x"FFFFFFFFF";
-    constant tree_paddingk  : std_logic_vector(37 downto 0) := "11" & x"EEEEEEEEE";
-    constant tree_zero      : std_logic_vector(37 downto 0) := "00" & x"000000000";
-    constant pre_marker     : std_logic_vector(5 downto 0)  := "110000";
-    constant sh_marker      : std_logic_vector(5 downto 0)  := "110001";
-    constant tr_marker      : std_logic_vector(5 downto 0)  := "110010";
-    constant ts1_marker     : std_logic_vector(5 downto 0)  := "110011";
-    constant ts2_marker     : std_logic_vector(5 downto 0)  := "110100";
-    constant err_marker     : std_logic_vector(5 downto 0)  := "110101";
+    --! time merger tree constants
+    constant SWB_IDLE : std_logic_vector(3 downto 0)    := x"0";
+    constant ONEMASK : std_logic_vector(3 downto 0)     := x"1";
+    constant WAITING : std_logic_vector(3 downto 0)     := x"2";
+    constant HEADER : std_logic_vector(3 downto 0)      := x"3";
+    constant TS0 : std_logic_vector(3 downto 0)         := x"4";
+    constant TS1 : std_logic_vector(3 downto 0)         := x"5";
+    constant SHEADER : std_logic_vector(3 downto 0)     := x"6";
+    constant HIT : std_logic_vector(3 downto 0)         := x"7";
+    constant ONEHIT : std_logic_vector(3 downto 0)      := x"8";
+    constant TRAILER : std_logic_vector(3 downto 0)     := x"9";
+    constant ONEERROR : std_logic_vector(3 downto 0)    := x"a";
+    type N_LINKS_TREE_t is array (3 downto 0) of positive;
+    constant N_LINKS_TREE : N_LINKS_TREE_t := (1, 2, 4, 8);
 
 
     --! FEB - SWB protocol
@@ -228,4 +232,58 @@ package mudaq is
     constant COMMAND_PROG_SECURITY_REGISTERS    : std_logic_vector(7 downto 0) := X"42";
     constant COMMAND_READ_SECURITY_REGISTERS    : std_logic_vector(7 downto 0) := X"42";
 
+   function link_36_to_std (
+        i : in  integer--;
+    ) return std_logic_vector;
+
 end package;
+
+package body mudaq is
+
+    function link_36_to_std (
+        i : in  integer--;
+    ) return std_logic_vector is
+    begin
+        case i is
+        when  0 => return "000000";
+        when  1 => return "000001";
+        when  2 => return "000010";
+        when  3 => return "000011";
+        when  4 => return "000100";
+        when  5 => return "000101";
+        when  6 => return "000110";
+        when  7 => return "000111";
+        when  8 => return "001000";
+        when  9 => return "001001";
+        when 10 => return "001010";
+        when 11 => return "001011";
+        when 12 => return "001100";
+        when 13 => return "001101";
+        when 14 => return "001110";
+        when 15 => return "001111";
+        when 16 => return "010000";
+        when 17 => return "010001";
+        when 18 => return "010010";
+        when 19 => return "010011";
+        when 20 => return "010100";
+        when 21 => return "010101";
+        when 22 => return "010110";
+        when 23 => return "010111";
+        when 24 => return "011000";
+        when 25 => return "011001";
+        when 26 => return "011010";
+        when 27 => return "011011";
+        when 28 => return "011100";
+        when 29 => return "011101";
+        when 30 => return "011110";
+        when 31 => return "011111";
+        when 32 => return "100000";
+        when 33 => return "100001";
+        when 34 => return "100010";
+        when 35 => return "100011";
+        when others =>
+            return "111111";
+        end case;
+    end function;
+
+end package body;

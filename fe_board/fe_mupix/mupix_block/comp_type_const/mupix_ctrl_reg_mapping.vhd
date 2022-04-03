@@ -8,7 +8,6 @@ use work.mupix_registers.all;
 use work.mupix.all;
 use work.mudaq.all;
 
-
 entity mupix_ctrl_reg_mapping is
 generic( 
     N_CHIPS_PER_SPI_g       : positive := 3;

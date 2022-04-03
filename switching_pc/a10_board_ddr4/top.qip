@@ -1,0 +1,17 @@
+#
+
+set_global_assignment -name SOURCE_TCL_SCRIPT_FILE assignments/DE5a_Net_DDR4.tcl
+
+set_global_assignment -name VHDL_FILE top.vhd
+set_global_assignment -name SDC_FILE top.sdc
+
+set_global_assignment -name QIP_FILE util/include.qip
+
+set_global_assignment -name QIP_FILE a10/include.qip
+set_global_assignment -name QIP_FILE a10/xcvr/include.qip
+set_global_assignment -name QIP_FILE a10/pcieapp/include.qip
+set_global_assignment -name QIP_FILE a10/swb/include.qip
+set_global_assignment -name QIP_FILE a10/link/include.qip
+
+set_global_assignment -name QIP_FILE ../../common/firmware/registers/include.qip
+

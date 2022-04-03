@@ -10,7 +10,7 @@ USE altera_mf.altera_mf_components.all;
 
 entity fe_block_v2 is
 generic (
-    feb_mapping : work.util.natural_array_t(3 downto 0) := (3,2,1,0);
+    feb_mapping : integer_vector(3 downto 0) := (3,2,1,0);
     PHASE_WIDTH_g : positive := 16;
     NIOS_CLK_MHZ_g : real;
     N_LINKS : positive := 1;
@@ -554,7 +554,7 @@ begin
         i_en            => work.util.to_std_logic(run_state_156 = RUN_STATE_LINK_TEST),
         o_lsfr          => linktest_data,
         o_datak         => linktest_datak,
-        reset_n         => reset_156_n,
+        i_reset_n       => reset_156_n,
         i_clk           => i_clk_156--,
     );
 

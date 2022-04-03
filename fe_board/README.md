@@ -14,7 +14,7 @@ _TODO_
 
 ## make
 
- - set `QUARTUS_ROOTDIR` in `util/altera/quartus.sh`
- - `source util/altera/quartus.sh`
+ - set `QUARTUS_ROOTDIR` in `util/quartus/quartus.sh`
+ - `source util/quartus/quartus.sh`
  - `make`
  - `make flow` or open project in quartus and compile

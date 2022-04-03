@@ -6,7 +6,7 @@ IPs := \
     $(wildcard a5/*.vhd.qmegawiz) \
     nios.tcl
 
-include util/altera/makefile.mk
+include util/quartus/makefile.mk
 
 output_files/top.rbf : output_files/top.sof
 	quartus_cpf -c $< $@

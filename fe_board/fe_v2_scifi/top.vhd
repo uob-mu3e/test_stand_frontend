@@ -427,4 +427,5 @@ begin
     FPGA_Test(0) <= transceiver_pll_clock(0);
     FPGA_Test(1) <= lvds_firefly_clk;
     FPGA_Test(2) <= clk_125_top;
-end rtl;
+
+end architecture;

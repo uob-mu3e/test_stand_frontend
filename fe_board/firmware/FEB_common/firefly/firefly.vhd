@@ -28,45 +28,44 @@ use ieee.numeric_std.all;
 use ieee.std_logic_1164.all;
 use ieee.std_logic_unsigned.all;
 
-
 entity firefly is
-    generic(
-        I2C_DELAY_g             : positive := 50000000--;
-    );
-    port(
-        i_clk                   : in    std_logic;
-        i_sysclk                : in    std_logic;
-        i_clk_i2c               : in    std_logic;
-        o_clk_reco              : out   std_logic;
-        i_clk_lvds              : in    std_logic;
-        i_reset_n               : in    std_logic;
-        i_reset_156_n           : in    std_logic;
-        i_reset_125_rx_n        : in    std_logic;
-        i_lvds_align_reset_n    : in    std_logic;
+generic (
+    I2C_DELAY_g             : positive := 50000000--;
+);
+port (
+    i_clk                   : in    std_logic;
+    i_sysclk                : in    std_logic;
+    i_clk_i2c               : in    std_logic;
+    o_clk_reco              : out   std_logic;
+    i_clk_lvds              : in    std_logic;
+    i_reset_n               : in    std_logic;
+    i_reset_156_n           : in    std_logic;
+    i_reset_125_rx_n        : in    std_logic;
+    i_lvds_align_reset_n    : in    std_logic;
 
-        --rx
-        i_data_fast_serial      : in    std_logic_vector(      3 downto 0);
-        o_data_fast_parallel    : out   std_logic_vector(32*3+31 downto 0);
-        o_datak                 : out   std_logic_vector( 4*3+ 3 downto 0);
+    --rx
+    i_data_fast_serial      : in    std_logic_vector(      3 downto 0);
+    o_data_fast_parallel    : out   std_logic_vector(32*3+31 downto 0);
+    o_datak                 : out   std_logic_vector( 4*3+ 3 downto 0);
 
-        --tx
-        o_data_fast_serial      : out   std_logic_vector(      7 downto 0);
-        i_data_fast_parallel    : in    std_logic_vector(32*7+31 downto 0);
-        i_datak                 : in    std_logic_vector( 4*7+ 3 downto 0);
+    --tx
+    o_data_fast_serial      : out   std_logic_vector(      7 downto 0);
+    i_data_fast_parallel    : in    std_logic_vector(32*7+31 downto 0);
+    i_datak                 : in    std_logic_vector( 4*7+ 3 downto 0);
 
-        --lvds rx
-        i_data_lvds_serial      : in    std_logic_vector(1 downto 0);
-        o_data_lvds_parallel    : out   std_logic_vector(15 downto 0);
-        o_lvds_ready            : out   std_logic;
+    --lvds rx
+    i_data_lvds_serial      : in    std_logic_vector(1 downto 0);
+    o_data_lvds_parallel    : out   std_logic_vector(15 downto 0);
+    o_lvds_ready            : out   std_logic;
 
-        --I2C
-        i_i2c_enable            : in    std_logic;
-        o_Mod_Sel_n             : out   std_logic_vector(1 downto 0);
-        o_Rst_n                 : out   std_logic_vector(1 downto 0);
-        io_scl                  : inout std_logic;
-        io_sda                  : inout std_logic;
-        i_int_n                 : in    std_logic_vector(1 downto 0);
-        i_modPrs_n              : in    std_logic_vector(1 downto 0);
+    --I2C
+    i_i2c_enable            : in    std_logic;
+    o_Mod_Sel_n             : out   std_logic_vector(1 downto 0);
+    o_Rst_n                 : out   std_logic_vector(1 downto 0);
+    io_scl                  : inout std_logic;
+    io_sda                  : inout std_logic;
+    i_int_n                 : in    std_logic_vector(1 downto 0);
+    i_modPrs_n              : in    std_logic_vector(1 downto 0);
 
         i_reg_add               : in  std_logic_vector(15 downto 0);
         i_reg_re                : in  std_logic;
@@ -74,18 +73,16 @@ entity firefly is
         i_reg_we                : in  std_logic;
         i_reg_wdata             : in  std_logic_vector(31 downto 0);
 
-        o_testclkout            : out   std_logic;
-        o_testout               : out   std_logic;
+    o_testclkout            : out   std_logic;
+    o_testout               : out   std_logic;
 
-        -- outputs to slow control
-        o_pwr                   : out   std_logic_vector(127 downto 0); -- RX optical power in mW
-        o_temp                  : out   std_logic_vector(15 downto 0);  -- temperature in °C
-        o_alarm                 : out   std_logic_vector(63 downto 0);  -- latched alarm bits
-        o_vcc                   : out   std_logic_vector(31 downto 0)--;  -- operating voltagein units of 100 uV
-
-    );
-end entity firefly;
-
+    -- outputs to slow control
+    o_pwr                   : out   std_logic_vector(127 downto 0); -- RX optical power in mW
+    o_temp                  : out   std_logic_vector(15 downto 0);  -- temperature in °C
+    o_alarm                 : out   std_logic_vector(63 downto 0);  -- latched alarm bits
+    o_vcc                   : out   std_logic_vector(31 downto 0)--;  -- operating voltagein units of 100 uV
+);
+end entity;
 
 architecture rtl of firefly is
 
@@ -531,7 +528,6 @@ firefly_reg_mapping_inst: entity work.firefly_reg_mapping
         DATA_WIDTH  => 8,
         SHOWAHEAD   => "OFF",
         OVERFLOW    => "ON",
-        REGOUT      => 0,
         DEVICE      => "Arria V"--,
     )
     port map(
@@ -545,15 +541,13 @@ firefly_reg_mapping_inst: entity work.firefly_reg_mapping
     );
 
     sync_fifo2 : entity work.ip_dcfifo
-    generic map(
+    generic map (
         ADDR_WIDTH  => 4,
         DATA_WIDTH  => 220,
         SHOWAHEAD   => "OFF",
-        OVERFLOW    => "ON",
-        REGOUT      => 0,
         DEVICE      => "Arria V"--,
     )
-    port map(
+    port map (
         aclr            => not i_lvds_align_reset_n,--'0',
         data            =>  disperr
                             & errdetect & syncstatus
@@ -576,15 +570,13 @@ firefly_reg_mapping_inst: entity work.firefly_reg_mapping
     );
 
     sync_fifo3 : entity work.ip_dcfifo
-    generic map(
+    generic map (
         ADDR_WIDTH  => 2,
         DATA_WIDTH  => 280,
         SHOWAHEAD   => "OFF",
-        OVERFLOW    => "ON",
-        REGOUT      => 0,
         DEVICE      => "Arria V"--,
     )
-    port map(
+    port map (
         aclr            => '0',
         data            =>  alarms & vcc
                             & tx_ready & rx_ready
@@ -614,15 +606,13 @@ firefly_reg_mapping_inst: entity work.firefly_reg_mapping
     o_alarm <= av_alarms;
 
     sync_fifo4 : entity work.ip_dcfifo
-    generic map(
+    generic map (
         ADDR_WIDTH  => 2,
         DATA_WIDTH  => 9,
         SHOWAHEAD   => "OFF",
-        OVERFLOW    => "ON",
-        REGOUT      => 0,
         DEVICE      => "Arria V"--,
     )
-    port map(
+    port map (
         aclr            => '0',
         data            => lvds_8b10b_out_in_clk125_global & lvds_o_ready,
         rdclk           => i_clk,
@@ -632,4 +622,5 @@ firefly_reg_mapping_inst: entity work.firefly_reg_mapping
         q(0)            => av_locked(6),
         q(8 downto 1)   => av_lvds_data--,
     );
-end rtl;
+
+end architecture;

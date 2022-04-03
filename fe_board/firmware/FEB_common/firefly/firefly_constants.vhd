@@ -46,4 +46,4 @@ constant ADDR_RX_PWR        : RX_PWR_TYPE         := (RX1_PWR1, RX1_PWR2, RX2_PW
 
 
 
-end package firefly_constants;
+end package;
