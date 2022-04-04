@@ -171,12 +171,12 @@ begin
             s_full_event_data <= "0000" & "10" & X"00000000" & "00" & i_frame_number;
         elsif ( i_event_ready = '1' ) then		-- the MSB of the event data is '1' for event data)
             -----------  DATA  -----------
-            --note: eflag reshuffled to have consistent position of this bit independent of data type
+            -- note: eflag reshuffled to have consistent position of this bit independent of data type
             -- identifier, short event flag, event data (cn,tbh,tcc,tf,ef,ebh,ecc,ef)
             if(i_frame_info(14)='1') then --short event
-                s_full_event_data <= "0000" & "00" & "0" & i_frame_info(14)  & i_event_data(47 downto 21) & i_event_data(21 downto 1);
+                s_full_event_data <= "0000" & "00" & "0" & i_frame_info(14) & i_event_data(47 downto 21) & i_event_data(21 downto 1);
             else
-                s_full_event_data <= "0000" & "00" & "0" & i_frame_info(14)  & i_event_data(47 downto 22) & i_event_data(0) & i_event_data(21 downto 1);
+                s_full_event_data <= "0000" & "00" & "0" & i_frame_info(14) & i_event_data(47 downto 22) & i_event_data(0) & i_event_data(21 downto 1);
             end if;
         end if;
     end if;

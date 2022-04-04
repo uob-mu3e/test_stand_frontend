@@ -20,22 +20,21 @@ port (
 	o_end_of_frame   : out std_logic;                                        -- end of frame: new_frame_info
 	o_frame_number   : out std_logic_vector(15 downto 0);                    -- counter
 	o_frame_info     : out std_logic_vector(15 downto 0);                    -- frame_flags(6) + frame_length(10)
-	o_new_frame	   : out std_logic;                                        -- begin of new frame
+	o_new_frame	   	 : out std_logic;                                        -- begin of new frame
 	o_frame_info_rdy : out std_logic;
 	o_busy           : out std_logic					--currently transmitting frame, do not cut off
 );
 end stic_dummy_data;
 
 
-architecture RTL of stic_dummy_data is
+architecture rtl of stic_dummy_data is
 
   type fsm_state is (fs_idle, fs_new_frame, fs_new_word, fs_end_of_frame, fs_wait);
   signal p_state, n_state : fsm_state;
 
-  signal n_event_cnt, p_event_cnt       : std_logic_vector( 9 downto 0);
+  signal n_event_cnt, p_event_cnt, s_cnt: std_logic_vector( 9 downto 0);
   signal n_wait_cnt, p_wait_cnt         : std_logic_vector(10 downto 0);
-  
-  
+
   signal n_event_ready, p_event_ready       : std_logic;
   signal n_end_of_frame, p_end_of_frame     : std_logic;
   signal n_new_frame, p_new_frame           : std_logic;
@@ -49,7 +48,10 @@ begin
 
 o_busy <= '0' when ( p_state = fs_idle or p_state = fs_wait ) else '1';
 
-fsm_comb : process(p_state, i_cnt, i_fast, i_enable, p_wait_cnt, p_event_cnt, p_frame_number, p_event_data)
+s_cnt <= 	i_cnt(9 downto 2) & i_cnt(0) & '0' when i_fast = '0' else
+			i_cnt;
+
+fsm_comb : process(p_state, s_cnt, i_fast, i_enable, p_wait_cnt, p_event_cnt, p_frame_number, p_event_data)
 begin
 	n_state 		<= p_state;
 
@@ -82,10 +84,10 @@ begin
 				else
 					n_wait_cnt <= "00000000011"; -- 3 bytes
 				end if;
-				if(unsigned(i_cnt) = 0) then
+				if(unsigned(s_cnt) = 0) then
 					n_state <= fs_end_of_frame;
 				else
-					n_event_cnt <= i_cnt - 1;
+					n_event_cnt <= s_cnt - 1;
 					n_state <= fs_new_word;
 				end if;
 			end if;
@@ -166,5 +168,5 @@ end process;
 	o_new_frame	    	<= p_new_frame;
 	o_frame_info_rdy 	<= p_frame_info_rdy;
 	
-end RTL;
+end architecture;
 

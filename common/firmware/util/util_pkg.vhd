@@ -227,7 +227,11 @@ package util is
         crc  : std_logic_vector(31 downto 0)--;
     ) return std_logic_vector;
 
-
+   function one_hot_to_index (
+        one_hot : std_logic_vector;
+        len_hot : natural;
+        len_idx : natural--;
+    ) return natural;
 
     function count_bits_4 (
         data : std_logic_vector(3 downto 0)--;
@@ -687,6 +691,34 @@ package body util is
     end function;
 
 
+    -- one hot to index calculate; assuming LEN_HOT = 2 ** LEN_IDX
+    -- https://stackoverflow.com/questions/57269302/how-can-i-get-the-index-of-a-one-hot-encoded-vector-without-using-a-for-loop
+    function one_hot_to_index (
+        one_hot : std_logic_vector;
+        len_hot : natural;
+        len_idx : natural--;
+    ) return natural is
+        variable mask_v : std_logic_vector(len_hot - 1 downto 0);
+        variable res_v  : std_logic_vector(len_idx - 1 downto 0);
+    begin
+    for i in 0 to len_idx - 1 loop
+        -- generate mask
+        for j in 0 to len_hot - 1 loop
+            if ((j / (2 ** i)) mod 2) = 0 then
+                mask_v(j) := '0';
+            else
+                mask_v(j) := '1';
+            end if;
+        end loop;
+        -- apply mask and generate bit in index
+        if unsigned(one_hot and mask_v) = 0 then
+            res_v(i) := '0';
+        else
+            res_v(i) := '1';
+        end if;
+    end loop;
+    return to_integer(unsigned(res_v));
+    end function;
 
     function count_bits_4 (
         data : std_logic_vector(3 downto 0)--;

@@ -328,8 +328,8 @@ begin
         LVDS_DATA_RATE => LVDS_DATA_RATE,
         INPUT_SIGNFLIP => INPUT_SIGNFLIP,
         GEN_DUMMIES => TRUE,
-        C_CHANNELNO_PREFIX_A => "00",
-        C_CHANNELNO_PREFIX_B => "01"--,
+        C_ASICNO_PREFIX_A => "00",
+        C_ASICNO_PREFIX_b => "01"--,
     )
     port map (
         i_rst_core      => not s_datapath_rst_n,

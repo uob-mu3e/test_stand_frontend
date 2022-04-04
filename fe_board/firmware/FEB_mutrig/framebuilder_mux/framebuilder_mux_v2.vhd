@@ -14,15 +14,17 @@ use ieee.std_logic_unsigned.all;
 use ieee.numeric_std.all;
 
 use work.mutrig.all;
+use work.mudaq.all;
 
 
 entity framebuilder_mux_v2 is
 generic(
+    -- num of input links
     N_INPUTS : integer;
-    --total length of chip number field that will be appended in the data
-    N_INPUTID_BITS : integer;
+    -- sqrt(N_INPUTS)
+    N_INPUTS_INDEX : integer;
     --use prefix value as the first bits (MSBs) of the chip number field. Leave empty to append nothing and use all bits from Input # numbering
-    C_CHANNELNO_PREFIX : std_logic_vector := ""--; 
+    C_ASICNO_PREFIX : std_logic_vector := ""--;
 );
 port (
     --event data inputs interface
@@ -80,13 +82,22 @@ architecture rtl of framebuilder_mux_v2 is
     -- output words
     signal w_t0, w_t1, w_trailer, w_hit : std_logic_vector(33 downto 0);
     signal s_sel_data : std_logic_vector(55 downto 0);
-    signal s_chnum : std_logic_vector(N_INPUTID_BITS-1 downto 0);
+    signal s_asicnum : std_logic_vector(3 downto 0);
 
     -- one hot signal indicating current active input stream
     signal index, index_last : std_logic_vector(N_INPUTS-1 downto 0) := (0 => '1', others => '0');
-    signal hit_valid, t_was_written : std_logic;
+    signal last_hit_type : std_logic_vector(1 downto 0);
+    signal s_sel_index : natural;
 
 begin
+
+    --! input erros
+    assert ( true
+        and ( (not ( N_INPUTS = 4 ) and not ( N_INPUTS_INDEX = 2 )) or
+              (not ( N_INPUTS = 16 ) and not ( N_INPUTS_INDEX = 4 )) )
+    ) report "framebuilder_mux_v2"
+        & "N_INPUTS_INDEX needs to be sqrt(N_INPUTS) see work.util.one_hot_to_index"
+    severity failure;
 
     --! generate busy signal for run end
     o_busy <= '1' when unsigned(i_rempty) /= 0 and rd_state /= IDLE else '0';
@@ -140,12 +151,12 @@ begin
 
     -- generate write signal
     o_wen <= '1' when rd_state = HEADER or rd_state = T1 or rd_state = TRAILER else
-             '1' when work.util.or_reduce(o_ren) = '1' and rd_state = HIT and hit_valid = '1' else
+             '1' when work.util.or_reduce(o_ren) = '1' and rd_state = HIT else
              '0';
 
     -- generate read signal
              -- do not read when we are in reset or the output is full
-    o_ren <= (others => '0') when hit_valid = '0' or i_wfull = '1' or i_reset_n = '0' or rd_state = WAITING else
+    o_ren <= (others => '0') when i_wfull = '1' or i_reset_n = '0' or rd_state = WAITING else
              -- read when when we are in state header, t1 or trailer
              (others => '1') when rd_state = HEADER or rd_state = T1 or rd_state = TRAILER else
              -- read from inputs which dont have a header
@@ -155,54 +166,62 @@ begin
 
     -- generate output data
     -- header word
-    w_t0(33 downto 32)  <= "10";                                --identifier (type header)
-    w_t0(31 downto 0)   <= s_global_timestamp(47 downto 16);    --global timestamp
+    w_t0(33 downto 32)  <= MERGER_FIFO_PAKET_START_MARKER(1 downto 0);  --identifier (type header)
+    w_t0(31 downto 0)   <= s_global_timestamp(47 downto 16);            --global timestamp
     -- t1 word
-    w_t1(33 downto 32)      <= "00";                            --identifier (is a payload : type data)
-    w_t1(31 downto 16)      <= s_global_timestamp(15 downto 0); --global timestamp
-    w_t1(15)                <= l_frameid_nonsync;               --frameID nonsync
-    w_t1(14 downto 0)       <= l_common_data(14 downto 0);      --frameID
+    w_t1(33 downto 32)      <= MERGER_FIFO_PAKET_T1_MARKER(1 downto 0); --identifier for t1
+    w_t1(31 downto 16)      <= s_global_timestamp(15 downto 0);         --global timestamp
+    w_t1(15)                <= l_frameid_nonsync;                       --frameID nonsync
+    w_t1(14 downto 0)       <= l_common_data(14 downto 0);              --frameID
     -- trailer word
-    w_trailer(33 downto 32)  <= "11";                    --identifier for header
-    w_trailer(31 downto 3)   <= (others => '0');         --filler
-    w_trailer(2)             <= l_any_asic_hitdropped;   --fpga fifo overflow flag
-    w_trailer(1)             <= l_any_asic_overflow;     --asic fifo overflow flag
-    w_trailer(0)             <= l_any_crc_err;           --crc error flag
+    w_trailer(33 downto 32)  <= MERGER_FIFO_PAKET_END_MARKER(1 downto 0);   --identifier for trailer
+    w_trailer(31 downto 3)   <= (others => '0');                            --filler
+    w_trailer(2)             <= l_any_asic_hitdropped;                      --fpga fifo overflow flag
+    w_trailer(1)             <= l_any_asic_overflow;                        --asic fifo overflow flag
+    w_trailer(0)             <= l_any_crc_err;                              --crc error flag
     -- hit word
     w_hit(33 downto 32) <= "00";                        --identifier: data T part
-    w_hit(31 downto 28) <= s_chnum;                     -- asic number
-    w_hit(27)           <= s_sel_data(48);              -- type (0=TPART, 1=EPART)
+    w_hit(31 downto 28) <= s_asicnum;                   -- asic number
+    w_hit(27)           <= s_sel_data(48);              -- type (1=TPART, 0=EPART)
     w_hit(26 downto 22) <= s_sel_data(47 downto 43);    -- event data: chnum
     w_hit(21 downto 0)  <= s_sel_data(42 downto 21) when s_sel_data(48) = '0' else --T event data: ttime, eflag
-                           s_sel_data(20 downto 0) & s_sel_data(21);               --E event data: etime,eflag(redun)
+                           s_sel_data(20 downto 0) & s_sel_data(21);               --E event data: etime, eflag(redun)
 
     o_data <=   w_t0 when rd_state = HEADER else
                 w_t1 when rd_state = T1 else
                 w_trailer when rd_state = TRAILER else
                 w_hit;
-                
-    gen_sel_data : FOR i in 0 to N_INPUTS - 1 GENERATE
-        s_sel_data <= i_data(i) when index_last(i) = '1' else (others => '0');
-        s_chnum    <= C_CHANNELNO_PREFIX & std_logic_vector(to_unsigned(i, s_chnum'length-C_CHANNELNO_PREFIX'length)) when index_last(i) = '1' else (others => '0');
-        hit_valid <= '1' when index_last(i) = '1' else '0';
-    END GENERATE;
-    
-    index <= index_last when s_sel_data(48) = '0' and t_was_written = '0' and rd_state = HIT else
-             work.util.round_robin_next(index_last, not (i_rempty or not i_mask)) when rd_state = HIT else
-             (others => '0');
+
+    --! select data from current index
+    s_sel_index<= work.util.one_hot_to_index(index, N_INPUTS, N_INPUTS_INDEX);
+    s_sel_data <= i_data(s_sel_index);
+    s_asicnum  <=   C_ASICNO_PREFIX & "00" when s_sel_index = 0 else
+                    C_ASICNO_PREFIX & "01" when s_sel_index = 1 else
+                    C_ASICNO_PREFIX & "10" when s_sel_index = 2 else
+                    C_ASICNO_PREFIX & "11" when s_sel_index = 3 else
+                    (others => '0');
+
+    -- TODO: add long mode index_last when last_hit_tpart = '0' and rd_state = HIT else
+    index <=    work.util.round_robin_next(index_last, not (i_rempty or i_mask or l_header or l_trailer)) when rd_state = HIT and last_hit_type = "00" else
+                index_last when rd_state = HIT and last_hit_type = "01" else -- last hit was epart so we read now the tpart
+                (0 => '1', others => '0');
 
     process(i_clk, i_reset_n)
     begin
     if ( i_reset_n /= '1' ) then
         index_last      <= (0 => '1', others => '0');
-        t_was_written   <= '0';
+        last_hit_type  <= (others => '0');
         rd_state_last   <= IDLE;
         --
     elsif rising_edge(i_clk) then
         index_last <= index;
-        t_was_written <= '0';
-        if ( s_sel_data(48) = '0' and rd_state = HIT ) then
-            t_was_written <= '1';
+        if ( rd_state = HIT ) then
+            if ( last_hit_type = "01" and i_rempty(s_sel_index) = '0' ) then
+                last_hit_type  <= (others => '0');
+            -- we have a epart hit
+            elsif ( last_hit_type = "00" and s_sel_data(48) = '0') then
+                last_hit_type <= "01";
+            end if;
         end if;
         if ( rd_state /= WAITING ) then
             rd_state_last <= rd_state;

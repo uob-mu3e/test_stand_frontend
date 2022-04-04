@@ -23,8 +23,8 @@ generic(
     LVDS_DATA_RATE      : real := 1250.0;
     GEN_DUMMIES         : boolean := TRUE;
     INPUT_SIGNFLIP : std_logic_vector(31 downto 0):=x"00000000";
-    C_CHANNELNO_PREFIX_A: std_logic_vector:=""; --use prefix value as the first bits (MSBs) of the chip number field. Leave empty to append nothing and use all bits from Input # numbering
-    C_CHANNELNO_PREFIX_B: std_logic_vector:=""
+    C_ASICNO_PREFIX_A: std_logic_vector:=""; --use prefix value as the first bits (MSBs) of the chip number field. Leave empty to append nothing and use all bits from Input # numbering
+    C_ASICNO_PREFIX_B: std_logic_vector:=""
     --(e.g. Tiles,  one module with up to 16 ASICs, PREFIX="")
     --(e.g. Fibers, two modules with up to 4 ASICs each, PREFIX="00" ; "01" for A and B )
 );
@@ -377,8 +377,9 @@ begin
     u_mux_A : entity work.framebuilder_mux_v2
     generic map( 
         N_INPUTS => N_ASICS,
-        N_INPUTID_BITS => 4,
-        C_CHANNELNO_PREFIX => C_CHANNELNO_PREFIX_A
+        -- NOTE: N_INPUTS_INDEX = sqrt(N_ASICS)
+        N_INPUTS_INDEX => 2,
+        C_ASICNO_PREFIX => C_ASICNO_PREFIX_A--,
     )
     port map(
         --event data inputs interface
@@ -403,8 +404,9 @@ begin
         u_mux_B : entity work.framebuilder_mux_v2
         generic map(
             N_INPUTS => N_ASICS,
-            N_INPUTID_BITS => 4,
-            C_CHANNELNO_PREFIX => C_CHANNELNO_PREFIX_B
+            -- NOTE: N_INPUTS_INDEX = sqrt(N_ASICS)
+            N_INPUTS_INDEX => 2,
+            C_ASICNO_PREFIX => C_ASICNO_PREFIX_B--,
         )
         port map(
             --event data inputs interface

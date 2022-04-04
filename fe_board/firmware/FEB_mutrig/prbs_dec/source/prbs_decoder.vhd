@@ -175,9 +175,9 @@ begin
 			s_A_data_bypass_1 <= s_A_data_bypass_2;
 			s_A_data_bypass_0 <= s_A_data_bypass_1;
 
-			--scan input data for header or trailer, to be bypassed
+			--scan input data for header, timestamp 1 or trailer, to be bypassed
 			s_A_select_bypass_2 <=i_A_data(33);
-			if(i_A_data(33 downto 32)="10") then
+			if ( i_A_data(33 downto 32) = "10" or i_A_data(33 downto 32) = "11" or i_A_data(33 downto 32) = "01" ) then
 				s_A_is_header_3 <='1';
 			else
 				s_A_is_header_3 <='0';
@@ -197,9 +197,9 @@ begin
 			s_B_data_bypass_1 <= s_B_data_bypass_2;
 			s_B_data_bypass_0 <= s_B_data_bypass_1;
 
-			--scan input data for header or trailer, to be bypassed
+			--scan input data for header, timestamp 1 or trailer, to be bypassed
 			s_B_select_bypass_2 <=i_B_data(33);
-			if(i_B_data(33 downto 32)="10") then
+			if ( i_B_data(33 downto 32) = "10" or i_B_data(33 downto 32) = "11" or i_B_data(33 downto 32) = "01" ) then
 				s_B_is_header_3 <='1';
 			else
 				s_B_is_header_3 <='0';
