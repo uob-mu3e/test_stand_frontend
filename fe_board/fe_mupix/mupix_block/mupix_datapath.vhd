@@ -168,9 +168,6 @@ architecture rtl of mupix_datapath is
     signal ena3_counter             : std_logic_vector(31 downto 0);
     signal ena4_counter             : std_logic_vector(31 downto 0);
 
-    signal ena3_counter             : std_logic_vector(31 downto 0);
-    signal ena4_counter             : std_logic_vector(31 downto 0);
-
 begin
 
     process(i_clk156)

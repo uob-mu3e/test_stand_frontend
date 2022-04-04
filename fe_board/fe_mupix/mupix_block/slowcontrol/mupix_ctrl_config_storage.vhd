@@ -225,7 +225,8 @@ begin
             N_BITS_ACTUAL_g => MP_CONFIG_REGS_LENGTH(5),
             WDATA_WIDTH_g  => 4,
             RDATA1_WIDTH_g => 1,
-            RDATA2_WIDTH_g => 2 -- same here
+            RDATA2_WIDTH_g => 2, -- same here
+            IS_TDAC_DPF_g => true
           )
           port map (
             i_clk     => i_clk,
