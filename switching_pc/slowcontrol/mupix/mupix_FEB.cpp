@@ -104,11 +104,10 @@ int MupixFEB::ConfigureASICs(){
         odb FEBsSettings(pixel_odb_prefix + "/Settings/FEBS/" + std::to_string(feb.GetLinkID()));
         feb_sc.FEB_write(feb, MP_LVDS_LINK_MASK_REGISTER_W, (uint32_t) FEBsSettings["MP_LVDS_LINK_MASK"]);
         feb_sc.FEB_write(feb, MP_LVDS_LINK_MASK2_REGISTER_W, (uint32_t) FEBsSettings["MP_LVDS_LINK_MASK2"]);
+        feb_sc.FEB_write(feb, MP_CTRL_SPI_ENABLE_REGISTER_W, 0x00000001);
+        feb_sc.FEB_write(feb, MP_CTRL_SLOW_DOWN_REGISTER_W, 0x0000000F);
     }
     
-
-    feb_sc.FEB_write(FEB, MP_CTRL_SPI_ENABLE_REGISTER_W, 0x00000001);
-    feb_sc.FEB_write(FEB, MP_CTRL_SLOW_DOWN_REGISTER_W, 0x0000000F);
 
     // configure each asic
     int status = mupix::midasODB::MapForEachASIC(pixel_odb_prefix, [this](mupix::MupixConfig* config, uint32_t asic){
@@ -254,7 +253,7 @@ int MupixFEB::ConfigureASICs(){
             for(int doublecol = 0; doublecol<128; doublecol++) {
                 // todo: check for mem space somewhere
                 for(int i = 0; i<128; i++) {
-                    feb_sc.FEB_write(FEB, MP_CTRL_TDAC_START_REGISTER_W + asic]=0xFFFFFFFF; // 0 is mask FF is no mask
+                    feb_sc.FEB_write(FEB, MP_CTRL_TDAC_START_REGISTER_W + asic,0xFFFFFFFF); // 0 is mask FF is no mask
                 }
             }
             // or as a nonincremeting write of more words at the same time

@@ -2,7 +2,7 @@
 
 print("generating lookup table for reverse col row transformation")
 print("https://www.physi.uni-heidelberg.de/Forschung/he/mu3e/restricted/notes/Mu3e-Note-0052-MuPix10_Documentation.pdf")
-  
+
 def convert(col,row):
   invrow = 0;
   newcol = 0;
@@ -24,23 +24,23 @@ def convert(col,row):
       newrow += 119;
       if (255-invrow)%2 == 1:
           newrow += 66;
-  else : 
+  else :
       newrow = (124-invrow)/2;
       newrow += 125;
       if (124-invrow)%2 == 0:
           newrow += 62;
-  
-          
 
-  # firmware gets the physical col row as input 
+
+
+  # firmware gets the physical col row as input
   # and wants to know the location in memory (= digital addr.) where it should write it to.
-  # print(col, row, newcol ,newrow);
-  print('when x"' + str(hex(newcol*250 + newrow)).replace('0x', '') + '" => mem_addr <= x"' + str(hex(row)).replace('0x', '') + '";')
-  
+  print(col, row, newcol ,newrow);
+  # print('when x"' + str(hex(newcol*250 + newrow)).replace('0x', '') + '" => mem_addr <= x"' + str(hex(row)).replace('0x', '') + '";')
+
   #if newcol*250 + newrow == 0x135:
   #    print("here");
   #    print(col, row, newcol ,newrow, invrow);
-  
+
 
 for col in range(0, 1):
     for row in range(11, 512):
