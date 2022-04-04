@@ -147,6 +147,7 @@ void SMB_t::menu_SMB_main() {
         printf("  [8] => data\n");
         printf("  [9] => monitor test\n");
         printf("  [a] => counters\n");
+        printf("  [m] => set mask to 1100\n");
         printf("  [s] => get slow control registers\n");
         printf("  [d] => get datapath status\n");
         printf("  [f] => dummy generator settings\n");
@@ -243,7 +244,7 @@ void SMB_t::menu_SMB_main() {
             case 'r':
                 menu_reset();
             case 'm':
-                sc.ram->data[SCIFI_CTRL_DP_REGISTER_W] = 0x4000FFFC;
+                sc.ram->data[SCIFI_CTRL_DP_REGISTER_W] = 0x000000FC;
                 break;
             case 'q':
                 return;

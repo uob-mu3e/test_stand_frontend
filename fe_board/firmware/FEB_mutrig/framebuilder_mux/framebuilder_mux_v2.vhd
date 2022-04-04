@@ -141,7 +141,8 @@ begin
     l_frameid_nonsync       <= '1' when work.util.or_reduce(l_frameid_nonsync_all) = '1' else '0';
 
     -- readout state
-    rd_state <= WAITING when i_wfull = '1' else
+    rd_state <= IDLE    when i_reset_n /= '1' or  else
+                WAITING when i_wfull = '1' else
                 HEADER  when l_all_header = '1' and (rd_state_last = IDLE or rd_state_last = TRAILER) else
                 T1      when rd_state_last = HEADER else
                 TRAILER when (rd_state_last = T1 or rd_state_last = HIT) and l_all_trailer = '1' else
@@ -156,7 +157,7 @@ begin
 
     -- generate read signal
              -- do not read when we are in reset or the output is full
-    ren   <= (others => '0') when i_wfull = '1' or i_reset_n = '0' or rd_state = WAITING else
+    ren   <= (others => '0') when i_wfull = '1' or i_reset_n /= '1' or rd_state = WAITING else
              -- read when when we are in state header, t1 or trailer
              (others => '1') when rd_state = HEADER or rd_state = T1 or rd_state = TRAILER else
              -- read from inputs which dont have a header

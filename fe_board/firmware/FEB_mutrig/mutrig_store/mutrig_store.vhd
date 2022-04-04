@@ -46,20 +46,20 @@ end entity;
 
 architecture rtl of mutrig_store is
 
-signal crcerror             : std_logic;
-signal s_full_event_data    : std_logic_vector(55 downto 0);
-signal s_event_ready        : std_logic;
+    signal crcerror             : std_logic;
+    signal s_full_event_data    : std_logic_vector(55 downto 0);
+    signal s_event_ready        : std_logic;
 
---fifo clear from core, synced to rxclk
-signal s_clear_rxclk_n      : std_logic;
+    -- fifo clear from core, synced to rxclk
+    signal s_clear_rxclk_n      : std_logic;
 
--- fifo
-signal s_fifofull                 : std_logic;
-signal s_fifoused, s_fifoused_reg : std_logic_vector(7 downto 0);
+    -- fifo
+    signal s_fifofull : std_logic;
+    signal s_fifoused : std_logic_vector(7 downto 0);
 
-signal s_fifofull_almost : std_logic;
---save data loss implementation
-signal s_have_dropped    : std_logic;
+    signal s_fifofull_almost : std_logic;
+    -- save data loss implementation
+    signal s_have_dropped    : std_logic;
 
 begin
 
@@ -125,58 +125,62 @@ begin
         i_clk => i_clk_deser--,
     );
 
-    pro_mux_event_data : process(i_clk_deser)
+    pro_mux_event_data : process(i_clk_deser, i_reset)
     begin
-    if rising_edge(i_clk_deser) then
-        s_fifoused_reg <= s_fifoused;
-        if(s_fifoused_reg(7 downto 3)="1111") then
+    if ( i_reset = '1' ) then
+        s_fifofull_almost   <= '0';
+        s_have_dropped      <='0';
+        s_event_ready       <= '0';
+        s_full_event_data   <= (others => '0');
+        --
+    elsif rising_edge(i_clk_deser) then
+        if( s_fifoused(7) = '1' ) then
             s_fifofull_almost <= '1';
         else
             s_fifofull_almost <= '0';
         end if;
 
-        if i_reset = '1' then
-            s_have_dropped  <='0';
-            s_event_ready   <= '0';
+        if ( (i_event_ready = '1' or i_end_of_frame = '1' or i_frame_info_rdy = '1') and s_fifofull = '0' and i_SC_mask = '0') then
+            s_event_ready <= '1';
         else
-            if ( (i_event_ready = '1' or i_end_of_frame = '1' or i_frame_info_rdy = '1') and s_fifofull = '0' and i_SC_mask = '0') then
-                s_event_ready <= '1';
-            else
-                s_event_ready <= '0';
-            end if;
+            s_event_ready <= '0';
+        end if;
 
-            --want to write hit data and fifo almost full, drop it (keeping flag)
-            if ( s_fifofull_almost = '1' and i_end_of_frame = '0' and i_frame_info_rdy = '0' ) then
-                s_event_ready <= '0';
-                s_have_dropped<= '1';
-            end if;
+        --want to write hit data and fifo almost full, drop it (keeping flag)
+        if ( s_fifofull_almost = '1' and i_end_of_frame = '0' and i_frame_info_rdy = '0' ) then
+            s_event_ready <= '0';
+            s_have_dropped<= '1';
+        end if;
 
-            --release have-dropped flag when seeing trailer
-            if ( i_end_of_frame = '1' ) then
-                s_have_dropped <= '0';
-            end if;
+        --release have-dropped flag when seeing trailer
+        if ( i_end_of_frame = '1' ) then
+            s_have_dropped <= '0';
+        end if;
 
-            --channel masked, drop any data
-            if ( i_SC_mask='1' ) then
-                s_event_ready <= '0';
-            end if;
+        --channel masked, drop any data
+        if ( i_SC_mask='1' ) then
+            s_event_ready <= '0';
         end if;
 
         --selection of output data
         if ( i_end_of_frame = '1' ) then -- the MSB of the event data is '0' for frame info data
             ----------- TRAILER -----------
-            s_full_event_data <= "0000" & "11" & X"0000000"&"000"& s_have_dropped & i_frame_info(11) & i_crc_error & i_frame_number; -- identifier, hit-dropped-flag, l2 overflow, crc_error, frame id
+            --                   4bit - & 2bit identifier   & filler           & hit-dropped-flag & 1bit l2 overflow & 1bit crc_error   & frame id
+            s_full_event_data <= "0000" & "11"              & X"0000000"&"000" & s_have_dropped   & i_frame_info(11) & i_crc_error      & i_frame_number;
         elsif ( i_frame_info_rdy= '1' ) then -- by defenition the first thing that happens
             ----------- HEADER -----------
-            s_full_event_data <= "0000" & "10" & X"00000000" & "00" & i_frame_number;
-        elsif ( i_event_ready = '1' ) then		-- the MSB of the event data is '1' for event data)
+            --                   4bit - & 2bit identifier   & filler             & frame id
+            s_full_event_data <= "0000" & "10"              & X"00000000" & "00" & i_frame_number;
+        elsif ( i_event_ready = '1' ) then -- the MSB of the event data is '1' for event data)
             -----------  DATA  -----------
             -- note: eflag reshuffled to have consistent position of this bit independent of data type
             -- identifier, short event flag, event data (cn,tbh,tcc,tf,ef,ebh,ecc,ef)
             if(i_frame_info(14)='1') then --short event
-                s_full_event_data <= "0000" & "00" & "0" & i_frame_info(14) & i_event_data(47 downto 21) & i_event_data(21 downto 1);
+                --                   4bit - & 2bit identifier   & filler    & hit type         & event data
+                s_full_event_data <= "0000" & "00"              & "0"       & i_frame_info(14) & i_event_data(47 downto 21) & i_event_data(21 downto 1);
             else
-                s_full_event_data <= "0000" & "00" & "0" & i_frame_info(14) & i_event_data(47 downto 22) & i_event_data(0) & i_event_data(21 downto 1);
+                --                   4bit - & 2bit identifier   & filler    & hit type         & event data
+                s_full_event_data <= "0000" & "00"              & "0"       & i_frame_info(14) & i_event_data(47 downto 22) & i_event_data(0) & i_event_data(21 downto 1);
             end if;
         end if;
     end if;
