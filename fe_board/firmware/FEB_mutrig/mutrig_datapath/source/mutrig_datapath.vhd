@@ -100,15 +100,20 @@ architecture rtl of mutrig_datapath is
 
     -- frame_rcv/datagen - fifo: fifo side, frame-receiver side, dummy datagenerator side
     signal s_crc_error: t_vector;
-    signal s_frame_number,   s_rec_frame_number,   s_gen_frame_number   : t_array_16b;
-    signal s_frame_info,     s_rec_frame_info,     s_gen_frame_info     : t_array_16b;
-    signal s_new_frame,      s_rec_new_frame,      s_gen_new_frame      : t_vector;
-    signal s_frame_info_rdy, s_rec_frame_info_rdy, s_gen_frame_info_rdy : t_vector;
-    signal s_event_data,     s_rec_event_data,     s_gen_event_data     : t_array_48b;
-    signal s_event_ready,    s_rec_event_ready,    s_gen_event_ready    : t_vector;
-    signal s_end_of_frame,   s_rec_end_of_frame,   s_gen_end_of_frame   : t_vector;
-    signal s_frec_busy, s_gen_busy  : t_vector;
+    signal s_frame_number,   s_rec_frame_number      : t_array_16b;
+    signal s_frame_info,     s_rec_frame_info        : t_array_16b;
+    signal s_new_frame,      s_rec_new_frame         : t_vector;
+    signal s_frame_info_rdy, s_rec_frame_info_rdy    : t_vector;
+    signal s_event_data,     s_rec_event_data        : t_array_48b;
+    signal s_event_ready,    s_rec_event_ready       : t_vector;
+    signal s_end_of_frame,   s_rec_end_of_frame      : t_vector;
+    signal s_frec_busy                               : t_vector;
     signal s_any_framegen_busy : std_logic;
+
+    -- data generator
+    signal s_gen_event_data : std_logic_vector(47 downto 0);
+    signal s_gen_frame_number, s_gen_frame_info : std_logic_vector(15 downto 0);
+    signal s_gen_event_ready, s_gen_end_of_frame, s_gen_new_frame, s_gen_frame_info_rdy, s_gen_busy : std_logic;
 
     --fifo - frame collector mux
     signal s_fifos_empty    : std_logic_vector(N_ASICS_TOTAL-1 downto 0):=(others =>'1');
@@ -162,8 +167,9 @@ architecture rtl of mutrig_datapath is
     signal CC_corrected_B : std_logic_vector(N_CC - 1 downto 0);
 
     -- signals for inputs / outputs
-    signal fifo_data                    : std_logic_vector(N_LINKS*36-1 downto 0);
-    signal RC_all_done                  : std_logic_vector(0 downto 0) := (others => '0');
+    signal fifo_data, sync_fifo_data        : std_logic_vector(N_LINKS*36-1 downto 0);
+    signal RC_all_done                      : std_logic_vector(0 downto 0) := (others => '0');
+    signal sync_fifo_read, sync_fifo_empty  : std_logic_vector(N_LINKS-1 downto 0);
 
 begin
 
@@ -256,7 +262,27 @@ begin
     end if;
     end process;
 
-        gen_frame: for i in 0 to N_ASICS_TOTAL-1 generate begin
+    -- data generator
+    u_data_dummy : entity work.stic_dummy_data
+    port map (
+        i_reset             => i_rst_rx,
+        i_clk               => i_clk_125,
+        --configuration
+        i_enable            => i_SC_datagen_enable and i_RC_may_generate,
+        i_fast              => i_SC_datagen_shortmode,
+        i_cnt               => i_SC_datagen_count,
+        -- to mutrig-store instance
+        o_frame_number      => s_gen_frame_number,
+        o_frame_info        => s_gen_frame_info,
+        o_frame_info_rdy    => s_gen_frame_info_rdy,
+        o_new_frame         => s_gen_new_frame,
+        o_event_data        => s_gen_event_data,
+        o_event_ready       => s_gen_event_ready,
+        o_end_of_frame      => s_gen_end_of_frame,
+        o_busy              => s_gen_busy--,
+    );
+
+    gen_frame: for i in 0 to N_ASICS_TOTAL-1 generate begin
             u_frame_rcv : entity work.frame_rcv
             generic map(
                 EVENT_DATA_WIDTH        => 48,
@@ -283,46 +309,40 @@ begin
                 o_crc_error         => s_crc_error(i),
                 o_crc_err_count     => open
             );
-            gen_dummy : if GEN_DUMMIES generate begin
-                --data generator
-                u_data_dummy : entity work.stic_dummy_data
-                    port map (
-                        i_reset             => i_rst_rx,
-                        i_clk               => i_clk_125,
-                        --configuration
-                        i_enable            => i_SC_datagen_enable and i_RC_may_generate,
-                        i_fast              => i_SC_datagen_shortmode,
-                        i_cnt               => i_SC_datagen_count,
-                        -- to mutrig-store instance
-                        o_frame_number      => s_gen_frame_number(i),
-                        o_frame_info        => s_gen_frame_info(i),
-                        o_frame_info_rdy    => s_gen_frame_info_rdy(i),
-                        o_new_frame         => s_gen_new_frame(i),
-                        o_event_data        => s_gen_event_data(i),
-                        o_event_ready       => s_gen_event_ready(i),
-                        o_end_of_frame      => s_gen_end_of_frame(i),
-                        o_busy              => s_gen_busy(i)
-                    );
 
-                --multiplex between physical and generated data sent to the elastic buffers. Use busy from datagenerator to ensure safe takeover
-                s_frame_number(i)       <= s_gen_frame_number(i)    when (i_SC_datagen_enable='1' or s_gen_busy(i)='1') else s_rec_frame_number(i);
-                s_frame_info(i)         <= s_gen_frame_info(i)      when (i_SC_datagen_enable='1' or s_gen_busy(i)='1') else s_rec_frame_info(i);
-                s_frame_info_rdy(i)     <= s_gen_frame_info_rdy(i)  when (i_SC_datagen_enable='1' or s_gen_busy(i)='1') else s_rec_frame_info_rdy(i);
-                s_new_frame(i)          <= s_gen_new_frame(i)       when (i_SC_datagen_enable='1' or s_gen_busy(i)='1') else s_rec_new_frame(i);
-                s_event_data(i)         <= s_gen_event_data(i)      when (i_SC_datagen_enable='1' or s_gen_busy(i)='1') else s_rec_event_data(i);
-                s_event_ready(i)        <= s_gen_event_ready(i)     when (i_SC_datagen_enable='1' or s_gen_busy(i)='1') else s_rec_event_ready(i);
-                s_end_of_frame(i)       <= s_gen_end_of_frame(i)    when (i_SC_datagen_enable='1' or s_gen_busy(i)='1') else s_rec_end_of_frame(i);
-            end generate;
-
-            gen_dummy_not : if not GEN_DUMMIES generate begin
-                s_frame_number(i)   <= s_rec_frame_number(i);
-                s_frame_info(i)     <= s_rec_frame_info(i);
-                s_frame_info_rdy(i) <= s_rec_frame_info_rdy(i);
-                s_new_frame(i)      <= s_rec_new_frame(i);
-                s_event_data(i)     <= s_rec_event_data(i);
-                s_event_ready(i)    <= s_rec_event_ready(i);
-                s_end_of_frame(i)   <= s_rec_end_of_frame(i);
-            end generate;
+            -- multiplex between physical and generated data sent to the elastic buffers
+            process(i_clk_125, i_reset_125_n)
+            begin
+            if ( i_reset_125_n /= '1' ) then
+                s_frame_number(i)   <= (others => '0');
+                s_frame_info(i)     <= (others => '0');
+                s_event_data(i)     <= (others => '0');
+                s_event_ready(i)    <= '0';
+                s_frame_info_rdy(i) <= '0';
+                s_new_frame(i)      <= '0';
+                s_end_of_frame(i)   <= '0';
+                --
+            elsif ( rising_edge(i_clk_125) ) then
+                -- use busy from datagenerator to ensure safe takeover
+                if ( i_SC_datagen_enable = '1' or s_gen_busy = '1' ) then
+                    s_frame_number(i)   <= s_gen_frame_number;
+                    s_frame_info(i)     <= s_gen_frame_info;
+                    s_event_data(i)     <= s_gen_event_data;
+                    s_event_ready(i)    <= s_gen_event_ready;
+                    s_frame_info_rdy(i) <= s_gen_frame_info_rdy;
+                    s_new_frame(i)      <= s_gen_new_frame;
+                    s_end_of_frame(i)   <= s_gen_end_of_frame;
+                else
+                    s_frame_number(i)   <= s_rec_frame_number(i);
+                    s_frame_info(i)     <= s_rec_frame_info(i);
+                    s_event_data(i)     <= s_rec_event_data(i);
+                    s_event_ready(i)    <= s_rec_event_ready(i);
+                    s_frame_info_rdy(i) <= s_rec_frame_info_rdy(i);
+                    s_new_frame(i)      <= s_rec_new_frame(i);
+                    s_end_of_frame(i)   <= s_rec_end_of_frame(i);
+                end if;
+            end if;
+            end process;
 
     end generate;
 
@@ -331,7 +351,7 @@ begin
     begin
     if rising_edge(i_clk_125) then
         s_any_framegen_busy <= '0';
-        if ( i_SC_datagen_enable = '1' and unsigned(s_gen_busy) /= 0 ) then
+        if ( i_SC_datagen_enable = '1' and s_gen_busy /= '0' ) then
             s_any_framegen_busy <= '1';
         end if;
         if ( i_SC_datagen_enable='0' and unsigned(s_frec_busy) /= 0 ) then
@@ -469,14 +489,18 @@ begin
         o_wfull     => open,
         i_wclk      => i_clk_125,
 
-        o_rdata     => o_fifo_data(35 downto 0),
-        i_rack      => '1',
-        o_rempty_n  => o_fifo_wr(0),
+        o_rdata     => sync_fifo_data(35 downto 0),
+        i_rack      => sync_fifo_read(0),
+        o_rempty    => sync_fifo_empty(0),
         i_rclk      => i_clk_156,
 
         i_reset_n   => i_reset_156_n--,
     );
 
+    o_fifo_data(35 downto 0)    <= sync_fifo_data(35 downto 0) when sync_fifo_empty(0) = '0' else (others => '0');
+    sync_fifo_read(0)           <= '1' when sync_fifo_empty(0) = '0' else '0';
+    o_fifo_wr(0)                <= '1' when sync_fifo_empty(0) = '0' else '0';
+    
     --to common fifo buffer:
     fifo_data(35 downto 0) <=
         "00" & s_A_buf_data(33 downto 21) & CC_corrected_A(14 downto 0) & s_A_buf_data(5 downto 0) when ( s_A_buf_data(33 downto 32) = "00" ) else
@@ -501,13 +525,17 @@ begin
             o_wfull     => open,
             i_wclk      => i_clk_125,
 
-            o_rdata     => o_fifo_data(71 downto 36),
-            i_rack      => '1',
-            o_rempty_n  => o_fifo_wr(1),
+            o_rdata     => sync_fifo_data(71 downto 36),
+            i_rack      => sync_fifo_read(1),
+            o_rempty_n  => sync_fifo_empty(1),
             i_rclk      => i_clk_156,
 
             i_reset_n   => i_reset_156_n--,
         );
+
+        o_fifo_data(71 downto 36)   <= sync_fifo_data(71 downto 36) when sync_fifo_empty(1) = '0' else (others => '0');
+        sync_fifo_read(1)           <= '1' when sync_fifo_empty(1) = '0' else '0';
+        o_fifo_wr(1)                <= '1' when sync_fifo_empty(1) = '0' else '0';
 
         fifo_data(71 downto 36) <=
             "00" & s_B_buf_data(33 downto 21) & CC_corrected_B(14 downto 0) & s_B_buf_data(5 downto 0) when ( s_B_buf_data(33 downto 32) = "00" ) else

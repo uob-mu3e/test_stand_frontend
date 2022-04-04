@@ -175,7 +175,7 @@ begin
             -----------  DATA  -----------
             -- note: eflag reshuffled to have consistent position of this bit independent of data type
             -- identifier, short event flag, event data (cn,tbh,tcc,tf,ef,ebh,ecc,ef)
-            if(i_frame_info(14)='1') then --short event
+            if ( i_frame_info(14)='1' ) then --short event
                 --                   4bit - & 2bit identifier   & filler    & hit type         & event data
                 s_full_event_data <= "0000" & "00"              & "0"       & i_frame_info(14) & i_event_data(47 downto 21) & i_event_data(21 downto 1);
             else

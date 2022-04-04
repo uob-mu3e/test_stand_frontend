@@ -145,7 +145,7 @@ begin
                 WAITING when i_wfull = '1' else
                 HEADER  when l_all_header = '1' and (rd_state_last = IDLE or rd_state_last = TRAILER) else
                 T1      when rd_state_last = HEADER else
-                TRAILER when (rd_state_last = T1 or rd_state_last = HIT) and l_all_trailer = '1' else
+                TRAILER when l_all_trailer = '1' and (rd_state_last = T1 or rd_state_last = HIT) else
                 HIT     when rd_state_last = T1 or rd_state_last = HIT else
                 IDLE    when l_all_header = '0' else
                 WAITING;
@@ -158,8 +158,8 @@ begin
     -- generate read signal
              -- do not read when we are in reset or the output is full
     ren   <= (others => '0') when i_wfull = '1' or i_reset_n /= '1' or rd_state = WAITING else
-             -- read when when we are in state header, t1 or trailer
-             (others => '1') when rd_state = HEADER or rd_state = T1 or rd_state = TRAILER else
+             -- read when when we are in state header or trailer
+             (others => '1') when rd_state = HEADER or rd_state = TRAILER else
              -- read from inputs which dont have a header
              not l_header    when rd_state = IDLE else
              -- read from the current merged asic
