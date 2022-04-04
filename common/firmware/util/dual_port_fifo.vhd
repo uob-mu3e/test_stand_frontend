@@ -21,7 +21,8 @@ entity dual_port_fifo is
         N_BITS_ACTUAL_g         : positive := 2047; -- TODO find more elegant solution
         WDATA_WIDTH_g           : positive := 32;
         RDATA1_WIDTH_g          : positive := 32;
-        RDATA2_WIDTH_g          : positive := 32
+        RDATA2_WIDTH_g          : positive := 32;
+        IS_TDAC_DPF_g           : boolean  := false--;
     );
     port(
         i_clk               : in  std_logic;
@@ -55,43 +56,42 @@ begin
     o_empty <= '1' when (bits_used = 0 or (i_re1 = '1' and bits_used - RDATA1_WIDTH_g <= 0) or (i_re2 = '1' and bits_used - RDATA2_WIDTH_g <=0)) else '0';
 
     process(i_clk, i_reset_n)
-        --variable N_used_change : integer;-- range -(RDATA1_WIDTH_g+RDATA2_WIDTH_g) to (RDATA1_WIDTH_g+RDATA2_WIDTH_g+WDATA_WIDTH_g);
     begin
     if(i_reset_n = '0') then 
         shift_reg       <= (others => '0');
         bits_used       <= 0;
     elsif(rising_edge(i_clk))then
-        --N_used_change   := 0;
 
         if(i_re1 = '1') then
             shift_reg(N_BITS_g-1-RDATA1_WIDTH_g downto 0) <= shift_reg(N_BITS_g-1 downto RDATA1_WIDTH_g);
             shift_reg(N_BITS_g-1 downto N_BITS_g-RDATA1_WIDTH_g) <= (others => '0');
             bits_used <= bits_used - RDATA1_WIDTH_g;
-            --N_used_change := - RDATA1_WIDTH_g;
         elsif(i_re2 = '1') then
             shift_reg(N_BITS_g-1-RDATA2_WIDTH_g downto 0) <= shift_reg(N_BITS_g-1 downto RDATA2_WIDTH_g);
             shift_reg(N_BITS_g-1 downto N_BITS_g-RDATA2_WIDTH_g) <= (others => '0');
             bits_used <= bits_used - RDATA2_WIDTH_g;
-            --N_used_change := N_used_change - RDATA2_WIDTH_g;
         elsif(i_we = '1') then
-            shift_reg(N_BITS_g-1 downto N_BITS_g-WDATA_WIDTH_g) <= i_wdata;
-            shift_reg(N_BITS_g-1-WDATA_WIDTH_g downto 0) <= shift_reg(N_BITS_g-1 downto WDATA_WIDTH_g);
+            if(IS_TDAC_DPF_g = false) then 
+                shift_reg(N_BITS_g-1 downto N_BITS_g-WDATA_WIDTH_g) <= i_wdata;
+                shift_reg(N_BITS_g-1-WDATA_WIDTH_g downto 0) <= shift_reg(N_BITS_g-1 downto WDATA_WIDTH_g);
+            else
+                -- this is the by far easiest point to do tdac row conversion to digital addresses
+                for I in 508 to 511 loop
+                    shift_reg(tdac_conversion_index(I)) <= i_wdata(I-508);
+                end loop;
+                for I in 0 to 507 loop
+                    shift_reg(tdac_conversion_index(I)) <= shift_reg(tdac_conversion_index(I+4));
+                end loop;
+                -- tdac row conversion done ...
+
+            end if;
 
             if(bits_used + WDATA_WIDTH_g < N_BITS_ACTUAL_g) then 
                 bits_used <= bits_used + WDATA_WIDTH_g;
             else
                 bits_used <= N_BITS_ACTUAL_g;
             end if;
-            --N_used_change := N_used_change + WDATA_WIDTH_g;
         end if;
-
-        -- if(bits_used + N_used_change >= N_BITS_g) then
-        --      bits_used <= N_BITS_g;
-        -- elsif(bits_used + N_used_change <= 0) then
-        --     bits_used <= 0;
-        -- else
-        --     bits_used <= bits_used + N_used_change;
-        -- end if;
     end if;
     end process;
 

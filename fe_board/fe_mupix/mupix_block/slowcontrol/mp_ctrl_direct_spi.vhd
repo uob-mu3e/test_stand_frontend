@@ -73,8 +73,7 @@ begin
     generic map (
         ADDR_WIDTH        => DIRECT_SPI_FIFO_SIZE_g,
         DATA_WIDTH        => 32,
-        SHOWAHEAD         => "OFF",
-        REGOUT            => 0--,
+        SHOWAHEAD         => "OFF"--,
     )
     port map (
         clock        => i_clk,
