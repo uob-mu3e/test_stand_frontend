@@ -381,23 +381,22 @@ begin
         C_CHANNELNO_PREFIX => C_CHANNELNO_PREFIX_A
     )
     port map(
-        i_coreclk           => i_clk_125,
-        i_rst               => i_rst_core,
-        i_timestamp_clk     => i_ts_clk,
-        i_timestamp_rst     => i_ts_rst,
         --event data inputs interface
-        i_source_data       => s_fifos_data(N_ASICS-1 downto 0),
-        i_source_empty      => s_fifos_empty(N_ASICS-1 downto 0),
-        o_source_rd         => s_fifos_rd(N_ASICS-1 downto 0),
+        i_data       => s_fifos_data(N_ASICS-1 downto 0),
+        i_rempty     => s_fifos_empty(N_ASICS-1 downto 0),
+        o_ren        => s_fifos_rd(N_ASICS-1 downto 0),
         --event data output interface to big buffer storage
-        o_sink_data         => s_A_buf_predec_data,
-        i_sink_full         => s_A_buf_predec_full,
-        o_sink_wr           => s_A_buf_predec_wr,
+        o_data       => s_A_buf_predec_data,
+        i_wfull      => s_A_buf_predec_full,
+        o_wen        => s_A_buf_predec_wr,
         --monitoring, errors, slow control
-        o_busy              => s_A_mux_busy,
-        o_sync_error        => o_frame_desync(0),
-        i_SC_mask           => i_SC_mask(N_ASICS-1 downto 0),
-        i_SC_nomerge        => '0'--,
+        o_busy       => s_A_mux_busy,
+        o_sync_error => o_frame_desync(0),
+        i_mask       => i_SC_mask(N_ASICS-1 downto 0),
+        -- reset / clk
+        i_ts_reset_n => not i_ts_rst,
+        i_clk        => i_clk_125,
+        i_reset_n    => not i_rst_core--,
     );
 
     gen_dual_mux : if( N_MODULES > 1 ) generate
@@ -408,23 +407,22 @@ begin
             C_CHANNELNO_PREFIX => C_CHANNELNO_PREFIX_B
         )
         port map(
-            i_coreclk           => i_clk_125,
-            i_rst               => i_rst_core,
-            i_timestamp_clk     => i_ts_clk,
-            i_timestamp_rst     => i_ts_rst,
             --event data inputs interface
-            i_source_data       => s_fifos_data(N_ASICS_TOTAL-1 downto N_ASICS),
-            i_source_empty      => s_fifos_empty(N_ASICS_TOTAL-1 downto N_ASICS),
-            o_source_rd         => s_fifos_rd(N_ASICS_TOTAL-1 downto N_ASICS),
+            i_data       => s_fifos_data(N_ASICS_TOTAL-1 downto N_ASICS),
+            i_rempty     => s_fifos_empty(N_ASICS_TOTAL-1 downto N_ASICS),
+            o_ren        => s_fifos_rd(N_ASICS_TOTAL-1 downto N_ASICS),
             --event data output interface to big buffer storage
-            o_sink_data         => s_B_buf_predec_data,
-            i_sink_full         => s_B_buf_predec_full,
-            o_sink_wr           => s_B_buf_predec_wr,
+            o_data       => s_B_buf_predec_data,
+            i_wfull      => s_B_buf_predec_full,
+            o_wen        => s_B_buf_predec_wr,
             --monitoring, errors, slow control
-            o_busy              => s_B_mux_busy,
-            o_sync_error        => o_frame_desync(1),
-            i_SC_mask           => i_SC_mask(N_ASICS_TOTAL-1 downto N_ASICS),
-            i_SC_nomerge        => '0'--,
+            o_busy       => s_B_mux_busy,
+            o_sync_error => o_frame_desync(0),
+            i_mask       => i_SC_mask(N_ASICS_TOTAL-1 downto N_ASICS),
+            -- reset / clk
+            i_ts_reset_n => not i_ts_rst,
+            i_clk        => i_clk_125,
+            i_reset_n    => not i_rst_core--,
         );
     end generate;
 
