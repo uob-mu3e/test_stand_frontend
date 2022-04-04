@@ -1,10 +1,33 @@
 # Author J. Guzman-Funck, March 2022, Cosmic Run. jose.guzman-funck19@imperial.ac.uk || pepe.guzmanfunck@gmail.com
 
+
+# Generate output and temporal folder
+cd ..
+DIR="${PWD}/output/temp"
+if [ -d "$DIR" ]; then
+        echo "Directories exist already"
+    else
+        mkdir output
+        cd output
+        mkdir temp
+        cd ..
+        echo "Creating temporal and output directories"
+fi
+
+
 # Power suppliers configuration. TODO: add this to all available hamegs
 odbedit -d /Equipment/HAMEG0/Common/ -c "set Period 500"
+odbedit -d /Equipment/HAMEG0/Common/ -c "set Period 500"
+odbedit -d /Equipment/HAMEG1/Common/ -c "set Period 500"
+odbedit -d /Equipment/HAMEG2/Common/ -c "set Period 500"
+odbedit -d /Equipment/HAMEG3/Common/ -c "set Period 500"
+odbedit -d /Equipment/HAMEG4/Common/ -c "set Period 500"
+odbedit -d /Equipment/HAMEG5/Common/ -c "set Period 500"
+odbedit -d /Equipment/HAMEG6/Common/ -c "set Period 500"
+odbedit -d /Equipment/HAMEG7/Common/ -c "set Period 500"
 
-
-odbedit -d /Sequencer/State -c "set Path ${PWD\%\/\*}"
+# ${PWD\%\/\*}
+odbedit -d /Sequencer/State -c "set Path ${PWD}"
 
 odbedit -d /Equipment/Mupix/ -c "mkdir QCTests"
 odbedit -d /Equipment/Mupix/QCTests -c "mkdir Ladder"
