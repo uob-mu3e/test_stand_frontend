@@ -78,6 +78,7 @@ architecture RTL of mupix_ctrl is
     signal tdac_we                      : std_logic := '0';
 
     signal run_test                     : std_logic;
+    signal n_free_pages                 : reg32;
 
 begin
 
@@ -130,7 +131,9 @@ begin
         o_mp_direct_spi_data_wr     => sc_to_direct_spi_wr,
         i_mp_direct_spi_busy        => mp_direct_spi_busy,
         o_mp_ctrl_direct_spi_enable => mp_ctrl_direct_spi_ena,
-        o_mp_ctrl_spi_enable        => mp_ctrl_spi_ena--,
+        o_mp_ctrl_spi_enable        => mp_ctrl_spi_ena,
+
+        i_n_free_pages              => n_free_pages--,
     );
 
     ------------------------------------------------------
@@ -163,7 +166,9 @@ begin
 
         --connections to SPI and custom protocol writing
         o_data             => signals_from_storage,
-        i_read             => signals_to_storage
+        i_read             => signals_to_storage,
+
+        o_n_free_pages     => n_free_pages--,
       );
 
 

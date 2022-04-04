@@ -278,7 +278,7 @@ void setup_odb(){
             {"Last RM ADD", false},
             {"MupixConfig", false},
             {"MupixChipToConfigure", 999}, // 999 means all
-            {"MupixSetTDACConfig", false},
+            {"MupixTDACConfig", false},
             {"MupixBoard", false},
             {"Sorter Zero Suppression Mupix", false},
             {"SciFiConfig", false},
@@ -1238,6 +1238,14 @@ void sc_settings_changed(odb o)
     }
     if (name == "MupixConfig" && o) {
           int status=mupixfeb->ConfigureASICs();
+          if(status!=SUCCESS){ 
+         	//TODO: what to do? 
+          }
+      o = false;
+      return;
+    }
+    if (name == "MupixTDACConfig" && o) {
+          int status=mupixfeb->ConfigureTDACs();
           if(status!=SUCCESS){ 
          	//TODO: what to do? 
           }

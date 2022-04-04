@@ -100,9 +100,6 @@ int setup_db(std::string prefix, MupixFEB & FEB_interface, int switch_id, bool i
         settings_febs.connect(prefix +  "/Settings/FEBS/" + to_string(i), write_defaults);
     }
 
-    // load tdac json from ODB into feb_interface
-    FEB_interface.SetTDACs();
-
     // PSLS Bank setup
     /* Default values for /Equipment/Mupix/Settings */
     // TODO: Get rid of N_FEBS_MUPIX_INT_2021

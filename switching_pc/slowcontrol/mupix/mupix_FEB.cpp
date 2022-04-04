@@ -22,6 +22,7 @@ using namespace mu3e::daq;
 #include "mupix_midasodb.h"
 #include <thread>
 #include <chrono>
+#include <vector>
 
 #include <iostream>
 #include <fstream>
@@ -59,43 +60,10 @@ uint16_t MupixFEB::GetNumASICs() const {
     return febs.size()*ASICsPerFEB();
 }
 
-void MupixFEB::SetTDACs() {
-
-    for (int asic = 0; asic < GetNumASICs(); asic++) {
-        odb TDACsSettings(pixel_odb_prefix + "/Settings/TDACs/" + std::to_string(asic));
-        std::string TDACFILE = TDACsSettings["TDACFILE"];
-        std::ifstream data(TDACFILE);
-        std::string line;
-        std::map<std::string, std::vector<uint32_t>> parsedCsv;
-        bool firstLine = true;
-        while ( std::getline(data, line) )
-        {
-            if (firstLine) {
-                firstLine = false;
-            } else {
-                std::stringstream lineStream(line);
-                std::string cell;
-                std::vector<uint32_t> parsedRow;
-                std::string firstValue = "-999";
-                while(std::getline(lineStream, cell, ','))
-                {
-                    if ( firstValue == "-999" ) {
-                        firstValue = cell;
-                    } else {
-                        parsedRow.push_back(std::stoi(cell));
-                    }
-                }
-                parsedCsv.insert(std::pair<std::string, std::vector<uint32_t>>(firstValue, parsedRow));
-            }
-        }
-        TDACsJSON.push_back(parsedCsv);
-    }   
-}
-
 //ASIC configuration:
 //Configure all asics under prefix (e.g. prefix="/Equipment/Mupix")
 int MupixFEB::ConfigureASICs(){
-    
+
     printf("MupixFEB::ConfigureASICs()\n");
     cm_msg(MINFO, "MupixFEB" , "Configuring sensors under prefix %s/Settings/ASICs/", pixel_odb_prefix.c_str());
 
@@ -107,7 +75,6 @@ int MupixFEB::ConfigureASICs(){
         feb_sc.FEB_write(feb, MP_CTRL_SPI_ENABLE_REGISTER_W, 0x00000001);
         feb_sc.FEB_write(feb, MP_CTRL_SLOW_DOWN_REGISTER_W, 0x0000000F);
     }
-    
 
     // configure each asic
     int status = mupix::midasODB::MapForEachASIC(pixel_odb_prefix, [this](mupix::MupixConfig* config, uint32_t asic){
@@ -119,7 +86,6 @@ int MupixFEB::ConfigureASICs(){
         // get settings from ODB for TDACs 
         // TODO: Has to move!!!
         odb swbSettings(odb_prefix + "/Settings");
-        bool useTDACs = swbSettings["MupixSetTDACConfig"];
         uint32_t MupixChipToConfigure = swbSettings["MupixChipToConfigure"];
         if ( MupixChipToConfigure != 999 && asic != MupixChipToConfigure ) {
             printf(" [skipped]\n");
@@ -189,74 +155,24 @@ int MupixFEB::ConfigureASICs(){
             cm_msg(MERROR, "setup_mupix", "MuPix configuration error for ASIC %i", asic);
             return FE_ERR_HW;//note: return of lambda function
         }
-      
-        // check if we also want to write the TDACs
-        if (useTDACs) {
-            std::cout << "Write TDACs" << "\n";
-            uint32_t curNBits = 0;
-            uint32_t curWord = 0;
-            // loop over keys of the tdacs dict for the current asic
-            // {"0": ["0x0", "0x0", "0x0", "0x0", ...],
-            // {"1": ["0x0", "0x0", "0x0", "0x0", ...],
-            // {"5": ["0x0", "0x0", "0x0", "0x0", ...],
-            // from the key we get the col value for the masking by 6*key+6
-            // the row values for the masking (512 bits) are stored in 32b words in the json file
-            /*
 
-            for (auto it = GetTDACsJSON().at(asic).begin(); it != GetTDACsJSON().at(asic).end(); it++) {
-                std::cout << "KEY: " << it->first << "\n";
-                // check if FEB is busy
-                feb_sc.FEB_read(FEB, MP_CTRL_SPI_BUSY_REGISTER_R, spi_busy);
-                count = 0;
-                while ( spi_busy==1 && count < limit ) {
-                    sleep(1);
-                    feb_sc.FEB_read(FEB, MP_CTRL_SPI_BUSY_REGISTER_R, spi_busy);
-                    count++;
-                    cm_msg(MINFO, "MupixFEB", "Mupix config spi busy .. waiting");
-                }
-                if (count == limit) {
-                    std::cout << "Timeout" << std::endl;
-                    cm_msg(MERROR, "setup_mupix", "FEB Mupix SPI timeout for TDAC writing");
-                } else {
-                    // first we write the row values from the value
-                    for ( uint32_t v : it->second ) {
-                        std::cout << "VALUE: " << v << "\n";
-                        feb_sc.FEB_write(FEB, MP_CTRL_TDAC_REGISTER_W, v);
-                    }
-                    feb_sc.FEB_write(FEB, MP_CTRL_ENABLE_REGISTER_W, reg_setBit(0x0,WR_TDAC_BIT,true));
-                    feb_sc.FEB_write(FEB,MP_CTRL_ENABLE_REGISTER_W,0x0);
-                    
-                    // now we write the 128*7b col values where we write on col (key) at the time
-                    curWord = 0;
-                    curNBits = 0;
-                    for ( int i = 0; i <= 127; i++ ) {
-                        for ( int b = 0; b < 7; b++ ) {
-                            curNBits++;
-                            if (b == 6 && it->first == std::to_string(i)) {
-                                curWord = curWord | (1 << curNBits);
-                            }
-                            if (curNBits == 32) {
-                                feb_sc.FEB_write(FEB, MP_CTRL_COL_REGISTER_W, curWord);
-                                curWord = 0;
-                                curNBits = 0;
-                            }
-                        }
-                    }
-                    feb_sc.FEB_write(FEB, MP_CTRL_ENABLE_REGISTER_W, reg_setBit(0x0,WR_COL_BIT,true));
-                    feb_sc.FEB_write(FEB,MP_CTRL_ENABLE_REGISTER_W,0x0);
-                }
-            }
-            */
+        // reset lvds links
+        feb_sc.FEB_write(FEB, MP_RESET_LVDS_N_REGISTER_W, 0x0);
+        feb_sc.FEB_write(FEB, MP_RESET_LVDS_N_REGISTER_W, 0x1);
 
-            // code above needs changes 
-            // Tdac writing for this chip would work like this:
-            for(int doublecol = 0; doublecol<128; doublecol++) {
-                // todo: check for mem space somewhere
-                for(int i = 0; i<128; i++) {
-                    feb_sc.FEB_write(FEB, MP_CTRL_TDAC_START_REGISTER_W + asic,0xFFFFFFFF); // 0 is mask FF is no mask
-                }
-            }
-            // or as a nonincremeting write of more words at the same time
+        sleep(2);
+        
+        return FE_SUCCESS;//note: return of lambda function
+    });//MapForEach
+
+    return status; //status of foreach function, SUCCESS when no error.
+}
+
+    // TODO after cosmic run: check how fast this is, improve it
+int MupixFEB::ConfigureTDACs(){
+
+            // Tdac writing for a chip would work like this:
+            // write 32 bit words, 4* 8bit tdac in each word
             // order: 
             /*
                 col 0 -> 255, starting with col 0, physical col addr. 
@@ -274,19 +190,70 @@ int MupixFEB::ConfigureASICs(){
                 word 64   : [row 3     , row 2     , row 1     , row 0     ]
                 ...
             */
+    printf("MupixFEB::ConfigureTDACs()\n");
+    cm_msg(MINFO, "MupixFEB" , "Configuring TDACS");
+    std::vector<uint32_t> test;
+    std::vector<std::vector<uint8_t>> pages_remaining; // vector of FEBs containing vector of sensors, containing number of remaining pages until that sensor is configured
 
+    // what is the best way to do this ? .. this looks ugly
+    std::vector<std::vector<std::vector<std::vector<uint32_t>>>> tdac_pages; // vector of FEBs containing a vector of sensors, containing a vector of pages containing a vector of tdac values of that page
+    std::vector<uint8_t> pages_remaining_this_chip;
+    uint8_t N_PAGES_PER_CHIP;
+    uint8_t current_page = 0;
+    uint32_t N_free_pages = 0;
+    bool allDone = false;
+    uint16_t N_CHIPS = 0;
+    uint16_t internal_febID = 0;
+
+    // preparation loop
+    for (auto feb : febs){
+        // set all febs to use spi with a slow down of F
+        feb_sc.FEB_write(feb, MP_CTRL_SPI_ENABLE_REGISTER_W, 0x00000001);
+        feb_sc.FEB_write(feb, MP_CTRL_SLOW_DOWN_REGISTER_W, 0x0000000F);
+        // run configuration init    (TODO: seperate config init from writing 0 to all tdacs in firmware)
+        feb_sc.FEB_write(feb, MP_CTRL_RESET_REGISTER_W, 0x00000001);
+
+        N_CHIPS = ASICsPerFEB();
+        N_PAGES_PER_CHIP=128; // will this be the same for all febs ( -> get from firmware constants) or not (-> read register from FEB) ?
+        for(uint32_t i = 0; i < N_CHIPS; i++){
+            pages_remaining_this_chip.push_back(N_PAGES_PER_CHIP);
+            // load all tdacs from file here ?
         }
+        pages_remaining.push_back(pages_remaining_this_chip);
+        pages_remaining_this_chip.clear();
 
-        // reset lvds links
-        feb_sc.FEB_write(FEB, MP_RESET_LVDS_N_REGISTER_W, 0x0);
-        feb_sc.FEB_write(FEB, MP_RESET_LVDS_N_REGISTER_W, 0x1);
 
-        sleep(2);
-        
-        return FE_SUCCESS;//note: return of lambda function
-    });//MapForEach
+    }
 
-    return status; //status of foreach function, SUCCESS when no error.
+    while (! allDone){
+        internal_febID = 0;
+        allDone = false;
+
+        for (auto feb : febs){
+
+            // get number of free tdac pages for this feb
+            feb_sc.FEB_read(feb,MP_CTRL_N_FREE_PAGES_REGISTER_R, N_free_pages);
+
+            // while the feb has space left ..
+            while(!allDone && N_free_pages > 0){
+                // Write one page for every chip
+                allDone = true;
+                for (int chip = 0; chip<pages_remaining.at(internal_febID).size(); chip++){
+                    if (pages_remaining.at(internal_febID).at(chip) != 0){
+                        allDone = false;
+                        if(N_free_pages > 0){
+                            current_page = N_PAGES_PER_CHIP-pages_remaining.at(internal_febID)[chip];
+                            pages_remaining.at(internal_febID)[chip] = pages_remaining.at(internal_febID)[chip] - 1;
+                            feb_sc.FEB_write(feb, MP_CTRL_TDAC_START_REGISTER_W + chip, tdac_pages.at(internal_febID).at(chip).at(current_page), true, false);
+                            N_free_pages--;
+                        } else {break;}
+                    }
+                }
+                if(allDone) break;
+            }
+            internal_febID++;
+        }
+    }
 }
 
 //MIDAS callback function for FEB register Setter functions
