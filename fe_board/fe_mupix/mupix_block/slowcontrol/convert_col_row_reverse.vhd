@@ -27,7 +27,6 @@ begin
     process (addr) is
     begin
         case addr is  
-            when x"135" => mem_addr <= x"00b";
             when x"0fa" => mem_addr <= x"00c";
             when x"136" => mem_addr <= x"00d";
             when x"0fb" => mem_addr <= x"00e";
@@ -146,7 +145,7 @@ begin
             when x"16f" => mem_addr <= x"07f";
             when x"134" => mem_addr <= x"080";
             when x"170" => mem_addr <= x"081";
-            --when x"135" => mem_addr <= x"082"; -- Why does this show up again ?
+            when x"135" => mem_addr <= x"082";
             when x"03e" => mem_addr <= x"083";
             when x"000" => mem_addr <= x"084";
             when x"03f" => mem_addr <= x"085";

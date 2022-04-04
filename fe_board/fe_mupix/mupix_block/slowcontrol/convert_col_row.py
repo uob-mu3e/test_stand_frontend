@@ -34,15 +34,10 @@ def convert(col,row):
 
   # firmware gets the physical col row as input
   # and wants to know the location in memory (= digital addr.) where it should write it to.
-  print(col, row, newcol ,newrow);
-  # print('when x"' + str(hex(newcol*250 + newrow)).replace('0x', '') + '" => mem_addr <= x"' + str(hex(row)).replace('0x', '') + '";')
-
-  #if newcol*250 + newrow == 0x135:
-  #    print("here");
-  #    print(col, row, newcol ,newrow, invrow);
-
+  # print(col, row, newcol ,newrow);
+  print('when x"' + str(hex(newcol*250 + newrow)).replace('0x', '') + '" => mem_addr <= x"' + str(hex(row)).replace('0x', '') + '";')
 
 for col in range(0, 1):
-    for row in range(11, 512):
+    for row in range(12, 512):
         convert(col,row)
 
