@@ -141,7 +141,7 @@ begin
     l_frameid_nonsync       <= '1' when work.util.or_reduce(l_frameid_nonsync_all) = '1' else '0';
 
     -- readout state
-    rd_state <= IDLE    when i_reset_n /= '1' or  else
+    rd_state <= IDLE    when i_reset_n /= '1' else
                 WAITING when i_wfull = '1' else
                 HEADER  when l_all_header = '1' and (rd_state_last = IDLE or rd_state_last = TRAILER) else
                 T1      when rd_state_last = HEADER else
