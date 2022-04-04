@@ -182,15 +182,20 @@ begin
         usedw           => usedw_data_fifo--,
     );
     
+                     -- we read when we are in running and the fifo is not empty
     data_read_req <= '1' when ( run_state = RUN_STATE_RUNNING or run_state = RUN_STATE_TERMINATING ) and
                                 merger_state = sending_data and data_fifo_empty = '0' else
-                     '0' when merger_timeout_counter = 10000 else
-                     '0' when ( run_state = RUN_STATE_IDLE or run_state = RUN_STATE_OUT_OF_DAQ ) and
-                                merger_state = idle and slowcontrol_fifo_empty = '1' else
+                     -- we dont read if the fifo is empty
+                     '0' when ( run_state = RUN_STATE_RUNNING or run_state = RUN_STATE_TERMINATING ) and
+                                merger_state = sending_data and data_fifo_empty = '1' else
+                     -- the first word is the t0 so we dont read to add the header infront
                      '0' when ( run_state = RUN_STATE_RUNNING or run_state = RUN_STATE_TERMINATING ) and
                                 merger_state = idle and data_fifo_empty = '0' else
-                     '0' when ( run_state = RUN_STATE_RUNNING or run_state = RUN_STATE_TERMINATING ) and
-                                merger_state = sending_data and data_fifo_empty = '0' else
+                     -- we dont read when we are in the timeout
+                     '0' when merger_timeout_counter = 10000 else
+                     -- in idle we make sure that the read request for the data fifo is zero
+                     '0' when ( run_state = RUN_STATE_IDLE or run_state = RUN_STATE_OUT_OF_DAQ ) and
+                                merger_state = idle and slowcontrol_fifo_empty = '1' else
                      '0';
 
     e_common_fifo_sc: entity work.ip_scfifo
