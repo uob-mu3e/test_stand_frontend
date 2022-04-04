@@ -274,24 +274,9 @@ int main(int argc, char *argv[]) {
         case '1':
             // start dma
             mu.enable_continous_readout(0);
-            for(int i=0; i < 8; i++)
-                cout << hex << "0x" <<  dma_buf[i] << " ";
-            cout << endl;
-
             if (atoi(argv[3]) == 1) {
-                for(int i=0; i < 8; i++)
-                    cout << hex << "0x" <<  dma_buf[i+8] << " ";
-                cout << endl;
-                int cnt_loop = 0;
                 // wait for requested data
-                while ( (mu.read_register_ro(EVENT_BUILD_STATUS_REGISTER_R) & 1) == 0 ) {
-                    if ( cnt_loop == 100000 ) {
-                        //cout << hex << "0x" << mu.read_register_ro(DMA_CNT_WORDS_REGISTER_R) << endl;
-                        //for(int i=0; i < 100; i++) cout << hex << "0x" <<  dma_buf[mu.last_endofevent_addr() * 8 - 1 + i] << " "; cout << endl;
-                        cnt_loop = 0;
-                    }
-                    cnt_loop = cnt_loop + 1;
-                }
+                while ( (mu.read_register_ro(EVENT_BUILD_STATUS_REGISTER_R) & 1) == 0 ) { }
             }
 
             if ( atoi(argv[3]) != 1) {
@@ -302,6 +287,11 @@ int main(int argc, char *argv[]) {
             }
             // stop dma
             mu.disable();
+            
+            for(int i=8; i < 20; i++)
+                cout << hex << "0x" <<  dma_buf[i] << " ";
+            cout << endl;
+
             break;
         case '2':
             cout << "Last Word in buffer: 0x" << hex << dma_buf[mu.last_endofevent_addr() * 8 - 1] << endl;

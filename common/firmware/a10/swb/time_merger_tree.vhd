@@ -136,13 +136,13 @@ begin
         );
 
         mupix_data : IF DATA_TYPE = "00" GENERATE
-            a(i)    <= i_data(i).data(31 downto 28) when i_mask_n(i) = '1' else (others => '1');
-            b(i)    <= i_data(i+size).data(31 downto 28) when i_mask_n(i+size) = '1' else (others => '1');
+            a(i)    <= i_data(i).data(31 downto 28) when mask_n(i) = '1' else (others => '1');
+            b(i)    <= i_data(i+size).data(31 downto 28) when mask_n(i+size) = '1' else (others => '1');
         END GENERATE;
         
         scifi_data : IF DATA_TYPE = "01" GENERATE
-            a(i)    <= i_data(i).data(9 downto 6) when i_mask_n(i) = '1' else (others => '1');
-            b(i)    <= i_data(i+size).data(9 downto 6) when i_mask_n(i+size) = '1' else (others => '1');
+            a(i)    <= i_data(i).data(9 downto 6) when mask_n(i) = '1' else (others => '1');
+            b(i)    <= i_data(i+size).data(9 downto 6) when mask_n(i+size) = '1' else (others => '1');
         END GENERATE;
 
         a_h(i)      <= i_data(i);
