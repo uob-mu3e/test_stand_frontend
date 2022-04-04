@@ -1,0 +1,77 @@
+{
+  "/MIDAS version" : "2.1",
+  "/MIDAS git revision" : "Thu Mar 31 17:00:56 2022 -0700 - midas-2020-08-a-722-g5f0fea85-dirty on branch develop",
+  "/filename" : "/home/labor/Desktop/Pepe/online/online/pixels/qctest/ladder/output/temp/_current_dac_scan.json",
+  "/ODB path" : "/Equipment/Mupix/QCTests/Ladder/DACScan",
+
+  "Input" : {
+    "HV_voltage/key" : { "type" : 10, "access_mode" : 7, "last_written" : 1649087788 },
+    "HV_voltage" : 0,
+    "HV_curr_limit/key" : { "type" : 10, "access_mode" : 7, "last_written" : 1649087788 },
+    "HV_curr_limit" : 0,
+    "VPDAC" : {
+      "start_value/key" : { "type" : 7, "access_mode" : 7, "last_written" : 1649087788 },
+      "start_value" : 0,
+      "step/key" : { "type" : 7, "access_mode" : 7, "last_written" : 1649087788 },
+      "step" : 0,
+      "stop_value/key" : { "type" : 7, "access_mode" : 7, "last_written" : 1649087788 },
+      "stop_value" : 0
+    },
+    "ref_Vss" : {
+      "start_value/key" : { "type" : 7, "access_mode" : 7, "last_written" : 1649087788 },
+      "start_value" : 0,
+      "step/key" : { "type" : 7, "access_mode" : 7, "last_written" : 1649087788 },
+      "step" : 0,
+      "stop_value/key" : { "type" : 7, "access_mode" : 7, "last_written" : 1649087788 },
+      "stop_value" : 0
+    }
+  },
+  "Output" : {
+    "VPDAC" : {
+      "0" : {
+        "VPDAC_values/key" : { "type" : 10, "num_values" : 10, "access_mode" : 7, "last_written" : 1649087788 },
+        "VPDAC_values" : [ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 ],
+        "VPDAC_current/key" : { "type" : 10, "num_values" : 10, "access_mode" : 7, "last_written" : 1649087788 },
+        "VPDAC_current" : [ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 ]
+      },
+      "1" : {
+        "VPDAC_values/key" : { "type" : 10, "num_values" : 10, "access_mode" : 7, "last_written" : 1649087788 },
+        "VPDAC_values" : [ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 ],
+        "VPDAC_current/key" : { "type" : 10, "num_values" : 10, "access_mode" : 7, "last_written" : 1649087788 },
+        "VPDAC_current" : [ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 ]
+      },
+      "2" : {
+        "VPDAC_values/key" : { "type" : 10, "num_values" : 10, "access_mode" : 7, "last_written" : 1649087788 },
+        "VPDAC_values" : [ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 ],
+        "VPDAC_current/key" : { "type" : 10, "num_values" : 10, "access_mode" : 7, "last_written" : 1649087788 },
+        "VPDAC_current" : [ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 ]
+      }
+    },
+    "ref_Vss" : {
+      "0" : {
+        "ref_Vss_values/key" : { "type" : 10, "num_values" : 32, "access_mode" : 7, "last_written" : 1649087788 },
+        "ref_Vss_values" : [ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 ],
+        "ref_Vss_current/key" : { "type" : 10, "num_values" : 32, "access_mode" : 7, "last_written" : 1649087788 },
+        "ref_Vss_current" : [ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 ]
+      },
+      "1" : {
+        "ref_Vss_values/key" : { "type" : 10, "num_values" : 32, "access_mode" : 7, "last_written" : 1649087788 },
+        "ref_Vss_values" : [ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 ],
+        "ref_Vss_current/key" : { "type" : 10, "num_values" : 32, "access_mode" : 7, "last_written" : 1649087788 },
+        "ref_Vss_current" : [ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 ]
+      },
+      "2" : {
+        "ref_Vss_values/key" : { "type" : 10, "num_values" : 32, "access_mode" : 7, "last_written" : 1649087788 },
+        "ref_Vss_values" : [ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 ],
+        "ref_Vss_current/key" : { "type" : 10, "num_values" : 32, "access_mode" : 7, "last_written" : 1649087788 },
+        "ref_Vss_current" : [ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 ]
+      }
+    }
+  },
+  "half_ladder_id/key" : { "type" : 7, "access_mode" : 7, "last_written" : 1649087788 },
+  "half_ladder_id" : 0,
+  "hameg_id/key" : { "type" : 7, "access_mode" : 7, "last_written" : 1649087788 },
+  "hameg_id" : 0,
+  "channel/key" : { "type" : 7, "access_mode" : 7, "last_written" : 1649087788 },
+  "channel" : 0
+}

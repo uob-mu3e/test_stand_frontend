@@ -3,12 +3,7 @@
 # DACScan test
 #
 # TODO
-# 1. Make it more flexible to be integrated in more flexible scanning interface
-# 2. Implement upstream / downstream
-# 3. Check for compatible params
-# 4. Implement version with default values
-# 5. Check buffer size
-# 6. Power channel as parameter?
+# - Make it more flexible to be integrated in more flexible scanning interface
 #
 
 
@@ -20,8 +15,67 @@
 # Record current
 
 
+# TODO. Check
+end = 206
+
+
+
+# Empty output buffers at startup
+
+chip = 0
+
+LOOP i, 3
+    CAT buffer_vpdac_path, /Equipment/Mupix/QCTests/Ladder/DACScan/Output/VPDAC/, $chip
+    CAT buffer_refVss_path, /Equipment/Mupix/QCTests/Ladder/DACScan/Output/ref_Vss/, $chip
+    
+    # TODO test
+    LOOP j, 10
+        ODBSET $buffer_vpdac_path/VPDAC_values[$j-1], 0
+        ODBSET $buffer_refVss_path/VPDAC_current[$j-1], 0
+        
+    ENDLOOP 
+
+    LOOP j, 32
+        ODBSET $buffer_vpdac_path/ref_Vss_values[$j-1], 0
+        ODBSET $buffer_refVss_path/ref_Vss_current[$j-1], 0
+    ENDLOOP
+    chip = $i
+ENDLOOP
+
+
 
 # Process input parameters
+PARAM half_ladder_id, "Half ladder ID"
+PARAM hameg_id, "HAMEG ID"
+PARAM channel, "HAMEG Channel"
+
+
+ODBGET /Equipment/Mupix/QCTests/Ladder/half_ladder_id, _g_half_ladder_id
+IF $_g_half_ladder_id != half_ladder_id
+    MESSAGE "Input half_ladder_id at DAC Scan Test different than the one inputed previously", 0
+ENDIF
+
+ODBGET /Equipment/Mupix/QCTests/Ladder/half_ladder_id, _g_hameg_id
+IF $_g_hameg_id != hameg_id
+    MESSAGE "Input hameg_id at DAC Scan Test different than the one inputed previously", 0
+ENDIF
+
+ODBGET /Equipment/Mupix/QCTests/Ladder/half_ladder_id, _g_channel
+IF $_g_channel != channel
+    MESSAGE "Input channel at DAC Scan Test different than the one inputed previously", 0
+ENDIF
+
+
+ODBSET /Equipment/Mupix/QCTests/Ladder/DACScan/half_ladder_id, $half_ladder_id
+ODBSET /Equipment/Mupix/QCTests/Ladder/DACScan/hameg_id, $hameg_id
+ODBSET /Equipment/Mupix/QCTests/Ladder/DACScan/channel, $channel
+
+
+CAT power_get_state_path, /Equipment/HAMEG, $hameg_id, /Variables/State[, $channel,]
+CAT power_set_state_path, /Equipment/HAMEG, $hameg_id, /Variables/Set State[, $channel,]
+CAT power_get_current_path, /Equipment/HAMEG, $hameg_id, /Variables/Current[, $channel,]
+
+
 PARAM hv_voltage, "HV voltage"
 PARAM hv_curr_limit, "HV current limit"
 ODBSET /Equipment/Mupix/QCTests/Ladder/DACScan/Input/HV_voltage, $hv_voltage
@@ -31,7 +85,7 @@ PARAM vpdac_start, "VPDAC start"
 PARAM vpdac_step, "VPDAC step"
 PARAM vpdac_stop, "VPDAC stop"
 
-SET num_VPDAC_steps, (($vpdac_stop-$vpdac_start) / $vpdac_step) + 1 
+num_VPDAC_steps = (($vpdac_stop-$vpdac_start) / $vpdac_step) + 1 
 
 
 ODBSET /Equipment/Mupix/QCTests/Ladder/DACScan/Input/VPDAC/start_value, $vpdac_start 
@@ -44,7 +98,7 @@ PARAM ref_Vss_step, "ref_Vss step"
 PARAM ref_Vss_stop, "ref_Vss stop"
 
 
-SET num_ref_Vss_steps, (($ref_Vss_stop-$ref_Vss_start) / $ref_Vss_step) + 1 
+num_ref_Vss_steps = (($ref_Vss_stop-$ref_Vss_start) / $ref_Vss_step) + 1 
 
 
 ODBSET /Equipment/Mupix/QCTests/Ladder/DACScan/Input/ref_Vss/start_value, $ref_Vss_start 
@@ -53,13 +107,26 @@ ODBSET /Equipment/Mupix/QCTests/Ladder/DACScan/Input/ref_Vss/stop_value, $ref_Vs
 
 
 
+# Check if buffers are big enough. VPDAC buffer size: 10. ref_Vss buffer size: 32
+IF $num_VPDAC_steps > 10
+    MESSAGE "VPDAC buffer too small for run. Increase buffer size or increase steps", 1
+    GOTO $end
+ENDIF
+
+IF $num_ref_Vss_steps > 32
+    MESSAGE "ref_Vss buffer too small for run. Increase buffer size or increase steps", 1
+    GOTO $end
+ENDIF
+
+
+
 # Configure power
 
 # LV. Hameg. Check if channel 2 is off and if it is turn on
-ODBGET /Equipment/HAMEG0/Variables/State[1], now_state_hameg_channel
+ODBGET $power_get_state_path, now_state_hameg_channel
 
 IF $now_state_hameg_channel == 0
-    ODBSET /Equipment/HAMEG0/Variables/Set State[1], 1
+    ODBSET $power_set_state_path, 1
     WAIT 10
 ENDIF
 
@@ -72,7 +139,7 @@ ODBSET /Equipment/KEITHLEY0/Variables/Set State, 1
 # To each chip
 LOOP i, 3
     # Turn on chip i. This is downstream
-    SET i_, $i-1
+    i_ = $i-1
 
     CAT path_to_bias, /Equipment/Mupix/Settings/BIASDACS/, $i_, /BiasBlock_On
     CAT path_to_vpdac, /Equipment/Mupix/Settings/BIASDACS/, $i_, /VPDAC
@@ -95,7 +162,7 @@ LOOP i, 3
 
         WAIT 3
 
-        ODBGET /Equipment/HAMEG0/Variables/Current[1], current
+        ODBGET $power_get_current_path, current
         CAT path_to_vpdac_output_value, /Equipment/Mupix/QCTests/Ladder/DACScan/Output/VPDAC/, $i_, /VPDAC_values[$j-1]
         ODBSET $path_to_vpdac_output_value, ($j-1)*$vpdac_step + $vpdac_start
         CAT path_to_vpdac_output_current, /Equipment/Mupix/QCTests/Ladder/DACScan/Output/VPDAC/, $i_, /VPDAC_current[$j-1]
@@ -108,21 +175,21 @@ LOOP i, 3
     ODBSET $path_to_vpdac, $default_vpdac_value
 
     # Loop over ref_Vss values. Values gotten from PARAM
-    SET index_k, 0
+    index_k = 0
     LOOP k, $num_ref_Vss_steps
         ODBSET $path_to_ref_Vss, ($k-1)*$ref_Vss_step + $ref_Vss_start
         ODBSET /Equipment/Switching/Settings/MupixConfig, 1
 
         WAIT 3
 
-        ODBGET /Equipment/HAMEG0/Variables/Current[1], current
+        ODBGET $power_get_current_path, current
         CAT path_to_ref_Vss_output_value, /Equipment/Mupix/QCTests/Ladder/DACScan/Output/ref_Vss/, $i_, /ref_Vss_values[$index_k]
         ODBSET $path_to_ref_Vss_output_value, ($k-1)*$ref_Vss_step + $ref_Vss_start
 
         CAT path_to_ref_Vss_output_current, /Equipment/Mupix/QCTests/Ladder/DACScan/Output/ref_Vss/, $i_, /ref_Vss_current[$index_k]
         ODBSET $path_to_ref_Vss_output_current, $current
 
-        SET index_k, $k
+        index_k = $k
     ENDLOOP
 
     ODBSET $path_to_ref_Vss, $default_ref_vss_value

@@ -1,27 +1,13 @@
 All:
- - Check if US/DS approach currently works
- - LVPowerOn --> check if ladder_id and config needs to be saved as input. Probably lader config has to be saved. Maybe ladder_id_US and ladder_id_DS to be checked afterwards
- - Solve all todo's from each file
  - Add id convertor
- - Generate files with default parameters
- - Add controls for input parameters
- - Change name of tests in ODB
- - Homogeneizar todas las variables y paths
- - Default config saved --> added
- - Scripts to work with default config
- - Update everything to new plan
-
-IV --> add US/DS support
-LVPowerOn --> add UP/DS support. Done. Needs checking
-DACScan --> add checks for input params: buffer sizes...
-link_qual --> save error rates as a function of VPVCO and VNVCO magic values. Done. Needs checking
-link_qual --> add PARAM to ask user to provide number of seconds (ask Luigi). Added support. Need to ask Luigi
-link_qual --> implement UP/DS. Done. Needs checking
+ - Add script that calls the rest of scripts automatizing everything further
+ - Add more controls for input param in tests
+ - Change name of tests in ODB to sth nicer
+ - Same naming style for everything
+ - Same coding style for every file
+ - Add comments to all files
+ - Add README, descriptions...
 
 
 
-CHANGE OF PLANS: no more UP/DS
 
-input: ladder_id, hameg_id, channel
-chips: 0 + ladder_id * 3, 1 + ladder_id * 3, 2 + ladder_id * 3
-in each eval, save starting_chip number
