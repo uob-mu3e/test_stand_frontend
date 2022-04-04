@@ -162,7 +162,8 @@ begin
              -- read from inputs which dont have a header
              not l_header    when rd_state = IDLE else
              -- read from the current merged asic
-             not i_rempty and index;
+             index and (not (i_rempty or i_mask or l_header or l_trailer)) when rd_state = HIT else
+             (others => '0');
     o_ren <= ren;
 
     -- generate output data

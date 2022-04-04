@@ -81,7 +81,8 @@ begin
             -- disable the PRBS decoder
             when "0011" =>
                 scifi_reg.addr(15 downto 0) <= std_logic_vector(to_unsigned(SCIFI_CTRL_DP_REGISTER_W, 16));
-                scifi_reg.wdata(31)         <= '1';
+                scifi_reg.wdata(31)         <= '1';      -- i_SC_disable_dec PRBS
+                scifi_reg.wdata(3 downto 0) <= "0100";   -- mask inputs
                 scifi_reg.we                <= '1';
                 reset_state <= "0100";
             
