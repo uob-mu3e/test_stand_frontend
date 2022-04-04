@@ -653,6 +653,9 @@ INT read_stream_thread(void *param) {
         // copy data
         memcpy(pdata, const_cast<uint32_t*>(dma_buf), size_dma_buf);
 
+	// gpu code send data to gpu
+
+
         // increment write pointer of ring buffer
         rb_increment_wp(rbh, size_dma_buf); // in byte length         
         

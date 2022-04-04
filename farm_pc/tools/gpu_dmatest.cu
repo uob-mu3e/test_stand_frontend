@@ -21,6 +21,14 @@
 #include <string.h>
 #include "timer.cpp"
 
+#include "midas.h"
+#include "mfe.h"
+#include "msystem.h"
+
+#include <bits/stdc++.h>
+
+#include "gpu_variables.h"
+
 #include <fcntl.h>
 
 #include "mudaq_device.h"
@@ -62,18 +70,105 @@ inline void gpuAssert(cudaError_t code, const char *file, int line, bool abort=t
    }
 }
 
+// device variable to store the counts
+__device__ uint32_t Evecnt;
+__device__ uint32_t Hitcnt;
+__device__ uint32_t Overflowcnt;
+__device__ uint32_t bank_data;
+
+// device function to get counted values
+__device__ uint32_t Get_EventCount() { return Evecnt; }
+__device__ uint32_t Get_HitCount() { return Hitcnt; }
+__device__ uint32_t Get_SubHeaderOverFlow() { return Overflowcnt; }
+__device__ uint32_t Get_BankData() { return bank_data; }
+
+// device function for Counters in the GPU
+__device__ void Counter(uint32_t i, uint32_t *db, uint32_t endofevent) {
+
+    uint32_t hpos = 0;
+    uint32_t hitcnt = 0;
+    uint32_t sbovcnt = 0;
+
+    uint32_t eventlength = db[i+3]/4+3;
+    uint32_t datasize = db[i+8]/4;
+    int h;
+    int sh;
+    if (db[i] == 0x00000001 and db[i+eventlength+1] == 0x00000001) {
+
+        for (int j = 0; j < datasize; j++) {
+            hpos = i+13+j;
+
+            for (int b = (32-6); b < 32; ++b) {
+                if ( (db[hpos] >> b) & 1) h = 1;
+                else {
+                    h = 0;
+                    break;
+                }
+            }
+
+        if (h != 1) {
+            if (db[hpos] == 0xAFFEAFFE or db[hpos] == 0xFC00009C) break;
+            hitcnt++;
+        }
+        else {
+            for (int ovr = 0; ovr < (32-16); ++ovr) {
+                if ( (db[hpos] >> ovr) & 1){
+                    sh = 1;
+                    break;
+                }
+                else sh = 0;
+            }
+            if (sh) sbovcnt++;
+        }
+    }
+    atomicAdd(&Evecnt, 1);
+    atomicAdd(&Hitcnt, hitcnt);
+    atomicAdd(&Overflowcnt, sbovcnt);
+    atomicAdd(&bank_data, datasize);
+    }
+}
+
 // Kernel definition
-__global__ void gpu_pass(uint32_t *dest, uint32_t *src, size_t n)
+__global__ void gpu_counters(uint32_t *dest, uint32_t *src, uint32_t Endofevent, uint32_t* evt, uint32_t* hit, uint32_t* sub_ovr, uint32_t* bnkd, size_t n)
 {
     /*int blockid = (gridDim.x * blockIdx.y) + blockIdx.x;  // Block Id
     int i = (blockid * (blockDim.x * blockDim.y)) + (threadIdx.y * blockDim.x) + threadIdx.x; // Thread Index */
 
-    int i = (blockIdx.x * blockDim.x) + threadIdx.x; // Thread Index
-    if (i < n)  {
-    dest[i] = src[i] + 1;
-    }
-}
+    uint32_t event_counter = 0;
+    uint32_t hit_counter = 0;
+    uint32_t subhead_ovrflow = 0;
+    uint32_t total_bankdata = 0;
 
+    uint32_t thread_idx = (blockIdx.x * blockDim.x) + threadIdx.x; // Thread Index
+    uint32_t n_threads_per_grid = blockDim.x * gridDim.x;
+
+    for (int i = thread_idx; i < n; i += n_threads_per_grid) {
+        dest[i] = src[i] + 1;
+    }
+
+   //event_serial = Serial_EventCount(src, Endofevent);
+   if (thread_idx == 0) {
+       Counter(thread_idx, src, Endofevent);
+   }
+    else if (src[thread_idx] == 0x00000001 and (src[thread_idx-1] == 0xAFFEAFFE or src[thread_idx-1] == 0xFC00009C)) {
+        Counter(thread_idx, src, Endofevent);
+    }
+    else {
+        event_counter = 0;
+    }
+
+    event_counter = Get_EventCount();
+    hit_counter = Get_HitCount();
+    subhead_ovrflow = Get_SubHeaderOverFlow();
+    total_bankdata = Get_BankData();
+    //printf("i %d count: %d \n", thread_idx, event_counter);
+    uint32_t reminder = total_bankdata - hit_counter;
+
+    *evt = event_counter;
+    *hit = hit_counter;
+    *sub_ovr = subhead_ovrflow;
+    *bnkd = reminder;
+}
 
 int main(int argc, char *argv[])
 {
@@ -224,6 +319,19 @@ int main(int argc, char *argv[])
     uint32_t *A, *B;          // Host variables
     uint32_t *d_A, *d_B;      // Device variables
 
+    // Event variables
+    uint32_t *h_evt;
+    uint32_t *d_evt;
+    // Hit variables
+    uint32_t *h_hit;
+    uint32_t *d_hit;
+    // SubHeader Overflow variables
+    uint32_t *h_subovr;
+    uint32_t *d_subovr;
+    // bankdatasize variables
+    uint32_t *h_bnkd;
+    uint32_t *d_bnkd;
+
     // set size in cpu ram
 
     /*A = (uint32_t*)malloc(size*sizeof(uint32_t));
@@ -232,11 +340,22 @@ int main(int argc, char *argv[])
     cudaHostAlloc((void **) &A, dma_buf_nwords*sizeof(uint32_t), cudaHostAllocWriteCombined);
     cudaHostAlloc((void **) &B, dma_buf_nwords*sizeof(uint32_t), cudaHostAllocWriteCombined);
 
+    //cudaHostAlloc((void **) &h_evt, sizeof(uint32_t), cudaHostAllocWriteCombined);
+    h_evt = (uint32_t*)malloc(sizeof(uint32_t));
+    h_hit = (uint32_t*)malloc(sizeof(uint32_t));
+    h_subovr = (uint32_t*)malloc(sizeof(uint32_t));
+    h_bnkd = (uint32_t*)malloc(sizeof(uint32_t));
+
     // set size in gpu ram
     cudaMalloc(&d_A, dma_buf_nwords*sizeof(uint32_t));
     cudaMalloc(&d_B, dma_buf_nwords*sizeof(uint32_t));
 
-    int test_loop = 100;
+    cudaMalloc(&d_evt, sizeof(uint32_t));
+    cudaMalloc(&d_hit, sizeof(uint32_t));
+    cudaMalloc(&d_subovr, sizeof(uint32_t));
+    cudaMalloc(&d_bnkd, sizeof(uint32_t));
+
+    //int test_loop = 100;
 
     Timer* t1 = new Timer();
     Timer* t2 = new Timer();
@@ -244,7 +363,7 @@ int main(int argc, char *argv[])
     Timer* t4 = new Timer();
 
     // start fpga to ram
-    for (int i = 0; i < test_loop; i++) {
+    //for (int i = 0; i < test_loop; i++) {
     t1->start("FPGA_to_RAM");
     mu.write_register(RESET_REGISTER_W, reset_regs);
     mu.write_register(RESET_REGISTER_W, 0x0);
@@ -252,9 +371,23 @@ int main(int argc, char *argv[])
     t1->stop("FPGA_to_RAM", 0);
     // end fpga to ram
 
-    //     for(int i=0; i < 8; i++)
-    //         cout << hex << "0x" <<  dma_buf[i] << " ";
-    //     cout << endl;
+//         for(int i=0; i < 8; i++)
+//             cout << hex << "0x" <<  dma_buf[i] << " ";
+//         cout << endl;
+
+    uint32_t endofevent = mu.read_register_ro(DMA_CNT_WORDS_REGISTER_R) * 8 - 1;    // replaced dma_buf_nwords
+    uint32_t dmabufnwords = mu.read_register_ro(DMA_CNT_WORDS_REGISTER_R) * 8 - 1;
+
+
+    // stop dma
+    mu.disable();
+    // stop readout
+    mu.write_register(DATAGENERATOR_DIVIDER_REGISTER_W, 0x0);
+    mu.write_register(SWB_READOUT_STATE_REGISTER_W, 0x0);
+    mu.write_register(SWB_LINK_MASK_PIXEL_REGISTER_W, 0x0);
+    mu.write_register(SWB_READOUT_LINK_REGISTER_W, 0x0);
+    mu.write_register(GET_N_DMA_WORDS_REGISTER_W, 0x0);
+    mu.write_register(RESET_REGISTER_W, reset_regs);
 
     //     if (atoi(argv[3]) == 1) {
     //         for(int i=0; i < 8; i++)
@@ -277,6 +410,7 @@ int main(int argc, char *argv[])
     //         }
     //     }
 
+
     // start RAM to GPU copy
     t2->start("RAM_to_GPU");
     cudaMemcpy(d_A, const_cast<uint32_t*>(dma_buf), dma_buf_nwords*sizeof(uint32_t), cudaMemcpyHostToDevice);
@@ -293,21 +427,121 @@ int main(int argc, char *argv[])
     t3->start("GPU calc");
     //...
     // Kernel invocation with N threads
-    gpu_pass<<<numBlocks, threadsPerBlock>>>(d_B, d_A, dma_buf_nwords);  // <<<Blocks [(B+(N-1))/N], No. of threads per Block>>>
+    gpu_counters<<<numBlocks, threadsPerBlock>>>(d_B, d_A, endofevent, d_evt, d_hit, d_subovr, d_bnkd, dma_buf_nwords);  // <<<Blocks [(B+(N-1))/N], No. of threads per Block>>>
     //...
     // end GPU calc
     t3->stop("GPU calc", 0);
 
+    cudaMemcpy(h_evt, d_evt, sizeof(uint32_t), cudaMemcpyDeviceToHost);
+    cudaMemcpy(h_hit, d_hit, sizeof(uint32_t), cudaMemcpyDeviceToHost);
+    cudaMemcpy(h_subovr, d_subovr, sizeof(uint32_t), cudaMemcpyDeviceToHost);
+    cudaMemcpy(h_bnkd, d_bnkd, sizeof(uint32_t), cudaMemcpyDeviceToHost);
+    
+    uint32_t EventCount = *h_evt;
+    uint32_t Hit        = *h_hit;
+    uint32_t SubOvr     = *h_subovr;
+    uint32_t Reminder   = *h_bnkd; 
+
+    cout << "Event Count GPU" << "\t" << EventCount << endl;
+    cout << "Hit Count GPU" << "\t" << Hit << endl;
+    cout << "SubHeader Overflow Count GPU" << "\t" << SubOvr << endl;
+    cout << "Reminder Count GPU" << "\t" << Reminder << endl;
+
+    Set_EventCount(EventCount);
+    Set_Hits(Hit);
+    Set_SubHeaderOvrflw(SubOvr);
+    Set_Reminders(Reminder);
+	
     // start GPU to RAM copy
     t4->start("GPU_to_RAM");
     cudaMemcpy(B, d_B, dma_buf_nwords*sizeof(uint32_t), cudaMemcpyDeviceToHost);
     // end GPU to RAM copy
     t4->stop("GPU_to_RAM", 0);
+   // }
+
+    /*ofstream hitfile;
+    hitfile.open("Bank_Data.txt");
+    if ( !hitfile ) {
+      cout << "Could not open file " << endl;
+      return -1;
+    }*/
+
+    //Counter Loop in the CPU
+    uint32_t cnter = 0;
+    uint32_t evlen = 0;
+    uint32_t tothits = 0;
+    uint32_t totsbovr = 0;
+    uint32_t totbnkd = 0;
+
+    int i = 0;
+    while (i < endofevent) {
+
+        evlen = dma_buf[i+3]/4+3;
+
+        if (dma_buf[i] == 0x00000001 and dma_buf[i+evlen+1] == 0x00000001) cnter++;
+
+        uint32_t datasize = dma_buf[i+8]/4;
+        uint32_t hitcnt = 0;
+        uint32_t sbovcnt = 0;
+        uint32_t bnkd = 0;
+        int hpos = 0;
+
+        for (int j = 0; j < datasize; j++) {
+
+            hpos = i+13+j;
+            int sh;
+            int so;
+
+            for (int sb = (32-6); sb < 32; ++sb) {
+                if ( (dma_buf[hpos] >> sb) & 1) so = 1;
+                else {
+                    so = 0;
+                    break;
+                }
+            }
+
+            if (so) {
+
+                for (int ovr = 0; ovr < (32-16); ++ovr) {
+                    if ( (dma_buf[hpos] >> ovr) & 1){
+                        sh = 1;
+                        break;
+                    }
+                    else sh = 0;
+                }
+                if (sh) sbovcnt++;
+            }
+            else {
+                if (dma_buf[hpos] == 0xAFFEAFFE or dma_buf[hpos] == 0xFC00009C) break;
+                hitcnt++;
+            }
+
+            bnkd = datasize;
+
+            /*bitset<32> val(dma_buf[hpos]);
+            std::stringstream sstream;
+            sstream << std::hex << dma_buf[hpos];
+            std::string result = sstream.str();*/
+
+            //hitfile << hpos << "\t" << "dma_buf in bitset:" << val << "\t" << "Totbnkd: " << totbnkd << "\t" << "Hit: " << hitcnt << "dma_buf in hex:" << result << "\n";
+
+            //"Hit: " << spechitcnt << "\t" << "TotHit: " << totspechits << "dma_buf in hex:" << result << "\n";
+        }
+        tothits += hitcnt;
+        totsbovr += sbovcnt;
+        totbnkd += bnkd;
+        i += evlen+1;
     }
+
+    //hitfile.close();
+    cout << "Event Count CPU" << "\t" << cnter << endl;
+    cout << "Hit Count CPU" << "\t" << tothits << endl;
+    cout << "SubHeader Overflow Count CPU" << "\t" << totsbovr << endl;
+    cout << "Reminder Count CPU" << "\t" << (totbnkd-tothits) << endl;
 
     // Test for the RAM of GPU copy
     uint32_t err_counter = 0;
-    for (int i = 0; i < size/sizeof(uint32_t); i++) {
+    for (int i = 0; i < dma_buf_nwords/sizeof(uint32_t); i++) {
     if(!(B[i] == dma_buf[i]+1)) {
     err_counter++;
     }
@@ -339,16 +573,6 @@ int main(int argc, char *argv[])
 
 
     cout << "start to write file" << endl;
-
-    // stop dma
-    mu.disable();
-    // stop readout
-    mu.write_register(DATAGENERATOR_DIVIDER_REGISTER_W, 0x0);
-    mu.write_register(SWB_READOUT_STATE_REGISTER_W, 0x0);
-    mu.write_register(SWB_LINK_MASK_PIXEL_REGISTER_W, 0x0);
-    mu.write_register(SWB_READOUT_LINK_REGISTER_W, 0x0);
-    mu.write_register(GET_N_DMA_WORDS_REGISTER_W, 0x0);
-    mu.write_register(RESET_REGISTER_W, reset_regs);
     
 	// write data
 
@@ -363,9 +587,11 @@ int main(int argc, char *argv[])
 
     cudaFree((void *)d_A);
     cudaFree((void *)d_B);
+    cudaFree((void *)d_evt);
 
     cudaFreeHost((void *)A);
     cudaFreeHost((void *)B);
+    cudaFreeHost((void *)h_evt);
 
     /*free((void *)A);
     free((void *)B);*/
