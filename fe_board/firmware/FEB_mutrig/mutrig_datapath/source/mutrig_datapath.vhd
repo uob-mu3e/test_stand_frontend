@@ -192,7 +192,7 @@ begin
     --     NINPUT          => N_ASICS_TOTAL,
     --     LVDS_PLL_FREQ   => LVDS_PLL_FREQ,
     --     LVDS_DATA_RATE  => LVDS_DATA_RATE,
-    --     INPUT_SIGNFLIP  => INPUT_SIGNFLIP--,
+    --     INPUT_SIGNFLIP  => INPUT_SIGNFLIP
     -- )
     -- port map(
     --     rx_in               => i_stic_txd,
@@ -212,7 +212,7 @@ begin
     --     o_rx_datak          => s_receivers_data_isk,
 
     --     i_reset_n           => not i_rst_rx,
-    --     i_clk               => i_clk_125--,
+    --     i_clk               => i_clk_125
     -- );
     -- synthesis read_comments_as_HDL off
 
@@ -419,7 +419,7 @@ begin
             o_wen        => s_B_buf_predec_wr,
             --monitoring, errors, slow control
             o_busy       => s_B_mux_busy,
-            o_sync_error => o_frame_desync(0),
+            o_sync_error => o_frame_desync(1),
             i_mask       => i_SC_mask(N_ASICS_TOTAL-1 downto N_ASICS),
             -- reset / clk
             i_ts_reset_n => not i_ts_rst,

@@ -145,7 +145,7 @@ begin
     --     datain(0)   => sda_out,
     --     oe(0)       => sda_ena,
     --     dataout(0)  => sda_in,
-    --     dataio(0)   => io_i2c_sda--,
+    --     dataio(0)   => io_i2c_sda
     -- );
 
     -- buf2: entity work.ip_iobuf
@@ -153,7 +153,7 @@ begin
     --     datain(0)   => scl_out,
     --     oe(0)       => scl_ena,
     --     dataout(0)  => scl_in,
-    --     dataio(0)   => io_i2c_scl--,
+    --     dataio(0)   => io_i2c_scl
     -- );
     -- synthesis read_comments_as_HDL off
 

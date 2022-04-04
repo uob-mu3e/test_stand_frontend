@@ -83,6 +83,7 @@ architecture rtl of framebuilder_mux_v2 is
     signal w_t0, w_t1, w_trailer, w_hit : std_logic_vector(33 downto 0);
     signal s_sel_data : std_logic_vector(55 downto 0);
     signal s_asicnum : std_logic_vector(3 downto 0);
+    signal ren : std_logic_vector(N_INPUTS-1 downto 0);
 
     -- one hot signal indicating current active input stream
     signal index, index_last : std_logic_vector(N_INPUTS-1 downto 0) := (0 => '1', others => '0');
@@ -93,8 +94,8 @@ begin
 
     --! input erros
     assert ( true
-        and ( (not ( N_INPUTS = 4 ) and not ( N_INPUTS_INDEX = 2 )) or
-              (not ( N_INPUTS = 16 ) and not ( N_INPUTS_INDEX = 4 )) )
+        and ( not ( N_INPUTS =  4 and N_INPUTS_INDEX = 2 ) or
+              not ( N_INPUTS = 16 and N_INPUTS_INDEX = 4 ) )
     ) report "framebuilder_mux_v2"
         & "N_INPUTS_INDEX needs to be sqrt(N_INPUTS) see work.util.one_hot_to_index"
     severity failure;
@@ -108,7 +109,7 @@ begin
     if ( i_ts_reset_n /= '1' ) then
         s_global_timestamp <= (others => '0');
     elsif rising_edge(i_clk) then
-        s_global_timestamp <= std_logic_vector(unsigned(s_global_timestamp) + 1);
+        s_global_timestamp <= s_global_timestamp + '1';
     end if;
     end process;
 
@@ -120,6 +121,8 @@ begin
         l_crc_err(i)    <= '1' when i_mask(i) = '0' and i_data(i)(16) = '1' else '0';
         l_asic_over(i)  <= '1' when i_mask(i) = '0' and i_data(i)(17) = '1' else '0';
         l_asic_drop(i)  <= '1' when i_mask(i) = '0' and i_data(i)(18) = '1' else '0';
+        -- check frameID
+        l_frameid_nonsync_all(i) <= '1' when l_all_header = '1' and i_mask(i) = '0' and i_data(i)(15 downto 0) /= l_common_data(15 downto 0) else '0';
     END GENERATE;
     l_all_header    <=  '0' when i_mask = (i_mask'range => '1') else
                         '1' when work.util.and_reduce(l_header) = '1' else
@@ -129,16 +132,13 @@ begin
                         '0';
 
     -- common data: 
-    -- TODO: find a candidate for common frame delimiter data (frameID)
+    -- TODO:    find a candidate for common frame delimiter data (frameID)
+    --          at the moment we always take input 0
     l_common_data           <= i_data(0);
     l_any_crc_err           <= '1' when work.util.or_reduce(l_crc_err) = '1' else '0';
     l_any_asic_overflow     <= '1' when work.util.or_reduce(l_asic_over) = '1' else '0';
     l_any_asic_hitdropped   <= '1' when work.util.or_reduce(l_asic_drop) = '1' else '0';
     l_frameid_nonsync       <= '1' when work.util.or_reduce(l_frameid_nonsync_all) = '1' else '0';
-
-    gen_check_frameID : FOR i in 0 to N_INPUTS - 1 GENERATE
-        l_frameid_nonsync_all(i) <= '1' when l_all_header = '1' and i_mask(i) = '0' and i_data(i)(15 downto 0) /= l_common_data(15 downto 0) else '0';
-    END GENERATE;
 
     -- readout state
     rd_state <= WAITING when i_wfull = '1' else
@@ -151,18 +151,19 @@ begin
 
     -- generate write signal
     o_wen <= '1' when rd_state = HEADER or rd_state = T1 or rd_state = TRAILER else
-             '1' when work.util.or_reduce(o_ren) = '1' and rd_state = HIT else
+             '1' when work.util.or_reduce(ren) = '1' and rd_state = HIT else
              '0';
 
     -- generate read signal
              -- do not read when we are in reset or the output is full
-    o_ren <= (others => '0') when i_wfull = '1' or i_reset_n = '0' or rd_state = WAITING else
+    ren   <= (others => '0') when i_wfull = '1' or i_reset_n = '0' or rd_state = WAITING else
              -- read when when we are in state header, t1 or trailer
              (others => '1') when rd_state = HEADER or rd_state = T1 or rd_state = TRAILER else
              -- read from inputs which dont have a header
              not l_header    when rd_state = IDLE else
              -- read from the current merged asic
              not i_rempty and index;
+    o_ren <= ren;
 
     -- generate output data
     -- header word
