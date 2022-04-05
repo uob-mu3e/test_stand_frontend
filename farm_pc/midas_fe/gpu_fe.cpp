@@ -19,6 +19,8 @@
 #include <sstream>
 #include <fstream>
 
+#include "gpu_variables.h"
+
 #include "mudaq_device.h"
 #include "mfe.h"
 #include "history.h"
@@ -89,6 +91,7 @@ INT interrupt_configure(INT cmd, INT source, POINTER_T adr);
 
 INT init_mudaq();
 
+
 /*-- Equipment list ------------------------------------------------*/
 
 EQUIPMENT equipment[] = {
@@ -147,12 +150,7 @@ INT frontend_init()
     //Set our transition sequence. The default is 500. Setting it
     // to 700 means we are called AFTER most other clients.
     cm_set_transition_sequence(TR_STOP, 700);
-   
-    gpu_eventcount = Get_EventCount();
-    gpu_hits = Get_Hits();
-    gpu_subovrflw = Get_SubHeaderOvrflw();
-    gpu_reminder = Get_Reminders();
-
+  
     return SUCCESS;
 }
 
@@ -280,7 +278,12 @@ INT poll_event(INT source, INT count, BOOL test)
  is available. If test equals TRUE, don't return. The test
  flag is used to time the polling */
 {
-   return SUCCESS;
+    gpu_eventcount = Get_EventCount();
+    gpu_hits = Get_Hits();
+    gpu_subovrflw = Get_SubHeaderOvrflw();
+    gpu_reminder = Get_Reminders();
+
+    return SUCCESS;
 }
 
 /*-- Interrupt configuration ---------------------------------------*/
