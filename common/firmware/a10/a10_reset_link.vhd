@@ -12,7 +12,7 @@ use work.a10_pcie_registers.all;
 
 entity a10_reset_link is
 generic (
-	g_XCVR2_CHANNELS    : integer := 0--;
+    g_XCVR2_CHANNELS    : integer := 0--;
 );
 port (
     o_xcvr_tx_data      : out   std_logic_vector(g_XCVR2_CHANNELS*8-1 downto 0) := (others => '0');
