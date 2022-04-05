@@ -32,7 +32,7 @@ port(
     i_clk            : in  std_logic;
     i_reset_n        : in  std_logic;
     i_resets_n       : in  std_logic_vector(31 downto 0);
-    
+
     -- link inputs
     i_rx             : in  work.mu3e.link_array_t(g_NLINKS_DATA-1 downto 0) := (others => work.mu3e.LINK_IDLE);
     i_rmask_n        : in  std_logic_vector(g_NLINKS_DATA-1 downto 0);
@@ -160,7 +160,7 @@ begin
         o_data              => gen_link_error,
         i_slow_down         => i_writeregs(DATAGENERATOR_DIVIDER_REGISTER_W),
         o_state             => open,
-        
+
         i_reset_n           => i_resets_n(RESET_BIT_DATAGEN),
         i_clk               => i_clk--,
     );
@@ -220,7 +220,6 @@ begin
 
             i_reset_n       => i_reset_n,
             i_clk           => i_clk--,
-
         );
 
     END GENERATE gen_link_fifos;

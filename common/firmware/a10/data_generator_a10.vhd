@@ -141,7 +141,8 @@ begin
         nEvent              <= (others => '0');
         col                 <= (others => '0');
         global_time         <= (others => '0');
-    elsif ( rising_edge(i_clk) ) then
+        --
+    elsif rising_edge(i_clk) then
         if ( i_enable = '1' and waiting = '0' ) then
 
             o_data <= work.mu3e.LINK_ZERO;

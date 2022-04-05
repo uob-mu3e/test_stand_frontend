@@ -3,26 +3,26 @@ use ieee.std_logic_1164.all;
 use ieee.numeric_std.all;
 
 entity spi_bp is
-    port(
-        ------ SPI
-        i_boardselect : in  std_logic;
-        i_SPI_csn   : in    std_logic;
-        i_SPI_clk   : in    std_logic;
-        i_SPI_mosi  : in    std_logic;
-        o_SPI_miso  : out std_logic;
-        o_SPI_miso_en : out std_logic; 
+port (
+    ------ SPI
+    i_boardselect : in  std_logic;
+    i_SPI_csn   : in    std_logic;
+    i_SPI_clk   : in    std_logic;
+    i_SPI_mosi  : in    std_logic;
+    o_SPI_miso  : out std_logic;
+    o_SPI_miso_en : out std_logic;
 
-        clk100       : in std_logic;
-        reset_n      : in std_logic;
-        addr         : out std_logic_vector(7 downto 0);
-        addroffset   : out std_logic_vector(7 downto 0); 
-        rw           : out std_logic;    
-        data_to_bp   : in std_logic_vector(31 downto 0);
-        next_data       : out std_logic;
-        word_from_bp    : out std_logic_vector(31 downto 0);
-        word_en         : out std_logic;
-        byte_from_bp    : out std_logic_vector(7 downto 0);
-        byte_en         : out std_logic 
+    clk100       : in std_logic;
+    reset_n      : in std_logic;
+    addr         : out std_logic_vector(7 downto 0);
+    addroffset   : out std_logic_vector(7 downto 0);
+    rw           : out std_logic;
+    data_to_bp   : in std_logic_vector(31 downto 0);
+    next_data       : out std_logic;
+    word_from_bp    : out std_logic_vector(31 downto 0);
+    word_en         : out std_logic;
+    byte_from_bp    : out std_logic_vector(7 downto 0);
+    byte_en         : out std_logic
 );
 end entity;
 
@@ -40,7 +40,7 @@ architecture RTL of spi_bp is
     signal bitcount : integer;
     signal addroffset_int : integer;
     signal haveread :std_logic;
-	
+
     signal boardselect_reg : std_logic;
 	signal csn_reg   : std_logic;
 	signal clk_reg 	: std_logic;
@@ -50,14 +50,14 @@ architecture RTL of spi_bp is
     constant BP_CMD_WRITE8 : std_logic_vector(7 downto 0) := X"11";
     constant BP_CMD_READ8  : std_logic_vector(7 downto 0) := X"21";
 
-	 
+
     begin
-    
+
     addroffset <= std_logic_vector(to_unsigned(addroffset_int, addroffset'length));
 
     process(clk100, reset_n)
     begin
-    if(reset_n = '0')then    
+    if(reset_n = '0')then
         o_SPI_miso      <= '0';
         spistate        <= idle;
         word_en         <= '0';
@@ -68,18 +68,18 @@ architecture RTL of spi_bp is
 	    csn_reg			<= '1';
         boardselect_reg <= '1';
         o_SPI_miso_en   <= '0';
-    elsif(clk100'event and clk100 = '1')then    
+    elsif(clk100'event and clk100 = '1')then
         word_en         <= '0';
         byte_en         <= '0';
         next_data       <= '0';
         o_SPI_miso_en   <= '0';
-		  
+
         boardselect_reg     <= i_boardselect;
 		csn_reg			    <= i_SPI_csn;
 		clk_reg			    <= i_SPI_clk;
-		mosi_reg			<= i_SPI_mosi;		  
+		mosi_reg			<= i_SPI_mosi;
         clklast             <= clk_reg;
-		  
+
         case spistate is
         when idle =>
             o_SPI_miso      <= '0';
@@ -117,8 +117,8 @@ architecture RTL of spi_bp is
                 else
                     spistate <= unsupported;
                 end if;
-            end if;    
-				
+            end if;
+
         when writing =>
             haveread <= '0';
             if(clklast = '0' and clk_reg = '1') then
@@ -126,7 +126,7 @@ architecture RTL of spi_bp is
                 datashiftregister(31 downto 1) <= datashiftregister(30 downto 0);
                 bitcount     <= bitcount +1;
                 haveread     <= '1';
-            end if;  
+            end if;
             if(haveread = '1' and bitcount mod 8 = 0 and bitcount > 0)then
                 byte_from_bp        <= datashiftregister(7 downto 0);
                 byte_en             <= '1';
@@ -142,7 +142,7 @@ architecture RTL of spi_bp is
         when waiting =>
             if(clklast = '0' and clk_reg = '1') then
                 bitcount     <= bitcount +1;
-            end if;   
+            end if;
             if(bitcount > 7) then
                 spistate    <= reading;
                 bitcount    <= 1;
@@ -151,7 +151,7 @@ architecture RTL of spi_bp is
                 o_SPI_miso_en           <= '1';
                 next_data               <= '1';
             end if;
-            
+
         when reading =>
             haveread <= '0';
             o_SPI_miso_en <= '1';
@@ -159,30 +159,30 @@ architecture RTL of spi_bp is
                 o_SPI_miso <= datareadshiftregister(30);
                 datareadshiftregister(31 downto 1) <= datareadshiftregister(30 downto 0);
                 bitcount     <= bitcount +1;
-                haveread        <= '1'; 
-            end if;    
+                haveread        <= '1';
+            end if;
 
             if(haveread = '1' and bitcount mod 32 = 0 and bitcount > 0)then
                 datareadshiftregister <= data_to_bp;
-                next_data         <= '1';        
+                next_data         <= '1';
             end if;
-			if(haveread = '1' and bitcount mod 32 = 1 and bitcount > 32) then	
+			if(haveread = '1' and bitcount mod 32 = 1 and bitcount > 32) then
                 addroffset_int    <= addroffset_int + 1;
             end if;
 
-        when unsupported =>    
+        when unsupported =>
 
 
         when others =>
 
             spistate        <= idle;
-    end case;    
+        end case;
 
-    if(boardselect_reg = '1') then
-        spistate    <= idle;
+        if(boardselect_reg = '1') then
+            spistate    <= idle;
+        end if;
+
     end if;
-
-end if;
-end process;         
+    end process;
 
 end architecture RTL;

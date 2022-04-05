@@ -23,11 +23,11 @@ generic (
 port (
     i_reset_n               : in std_logic;
     i_clk                   : in std_logic;
-    
+
     -- Control and status registers
     i_ddr_control           : in  std_logic_vector(31 downto 0);
     o_ddr_status            : out std_logic_vector(31 downto 0);
-    
+
     -- A interface
     o_A_ddr_calibrated      : out std_logic;
     o_A_ddr_ready           : out std_logic;
@@ -37,7 +37,7 @@ port (
     i_A_ddr_write           : in  std_logic;
     i_A_ddr_read            : in  std_logic;
     o_A_ddr_read_valid      : out std_logic;
-    
+
     -- B interface
     o_B_ddr_calibrated      : out std_logic;
     o_B_ddr_ready           : out std_logic;
@@ -215,21 +215,21 @@ begin
     port map(
         i_reset_n           => i_reset_n,
         i_clk               => i_clk,
-        
+
         -- Control and status registers
         i_ddr_control       => i_ddr_control(DDR_RANGE_A),
         o_ddr_status        => o_ddr_status(DDR_RANGE_A),
 
         o_ddr_calibrated    => o_A_ddr_calibrated,
         o_ddr_ready         => o_A_ddr_ready,
-        
+
         i_ddr_addr          => i_A_ddr_addr,
         i_ddr_data          => i_A_ddr_datain,
         o_ddr_data          => o_A_ddr_dataout,
         i_ddr_write         => i_A_ddr_write,
         i_ddr_read          => i_A_ddr_read,
         o_ddr_read_valid    => o_A_ddr_read_valid,
-        
+
         -- Error counters
         o_error             => A_errout,
 
@@ -252,21 +252,21 @@ begin
     port map(
         i_reset_n           => i_reset_n,
         i_clk               => i_clk,
-        
+
         -- Control and status registers
         i_ddr_control       => i_ddr_control(DDR_RANGE_B),
         o_ddr_status        => o_ddr_status(DDR_RANGE_B),
 
         o_ddr_calibrated    => o_B_ddr_calibrated,
         o_ddr_ready         => o_B_ddr_ready,
-        
+
         i_ddr_addr          => i_B_ddr_addr,
         i_ddr_data          => i_B_ddr_datain,
         o_ddr_data          => o_B_ddr_dataout,
         i_ddr_write         => i_B_ddr_write,
         i_ddr_read          => i_B_ddr_read,
         o_ddr_read_valid    => o_B_ddr_read_valid,
-        
+
         -- Error counters
         o_error             => B_errout,
 
