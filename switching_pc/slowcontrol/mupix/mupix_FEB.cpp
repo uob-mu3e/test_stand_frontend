@@ -169,7 +169,14 @@ int MupixFEB::ConfigureASICs(){
 void read_tdac_file(vector<uint32_t>& vec, std::string path) { 
   std::ifstream file;
   file.open(path);
-  file.read(reinterpret_cast<char*>(&vec[0]), 256*64*sizeof(uint32_t));
+  if(file.fail()){
+    cm_msg(MINFO, "MupixFEB" , "Could not find tdac file %s, proceeding with 0xFF for all tdacs", path.c_str());
+    for(int i = 0; i<256*64; i++){
+        vec.push_back(0xFFFFFFFF);
+    }
+  } else {
+    file.read(reinterpret_cast<char*>(&vec[0]), 256*64*sizeof(uint32_t));
+  }
   file.close();
 }
 
