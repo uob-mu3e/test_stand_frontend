@@ -15,22 +15,17 @@ use altera.altera_europa_support_lib.all;
 
 use work.mudaq.all;
 
-
-entity pcie_block is 
+entity pcie_block is
 generic (
     DMAMEMWRITEADDRSIZE : integer := 14;
-    DMAMEMREADADDRSIZE  : integer := 12;
-    DMAMEMWRITEWIDTH    : integer := 32;
+    DMAMEMREADADDRSIZE : integer := 12;
+    DMAMEMWRITEWIDTH : integer := 32;
     g_PCIE_X : positive := 8--;
 );
 port (
     o_writeregs_B       : out   reg32array_pcie;
     o_regwritten_B      : out   std_logic_vector(63 downto 0);
     i_clk_B             : in    std_logic := '0';
-
-    o_writeregs_C       : out   reg32array_pcie;
-    o_regwritten_C      : out   std_logic_vector(63 downto 0);
-    i_clk_C             : in    std_logic := '0';
 
     local_rstn          : in    std_logic;
     appl_rstn           : in    std_logic;
@@ -46,7 +41,7 @@ port (
     pcie_led_x4         : out   std_logic; --//User LED - Labeled x4
     pcie_led_x8         : out   std_logic; --//User LED - Labeled x8
     pcie_perstn         : in    std_logic; --//PCIe Reset
-    pcie_smbclk         : in    std_logic := '1'; --//SMBus Clock (TR=0)
+    pcie_smbclk         : in    std_logic := '0'; --//SMBus Clock (TR=0)
     pcie_smbdat         : inout std_logic; --//SMBus Data (TR=0)
     pcie_waken          : out   std_logic; --//PCIe Wake-Up (TR=0)
 
@@ -98,223 +93,219 @@ end entity;
 architecture RTL of pcie_block is
 
     -- reset and clock stuff
-    signal alive_cnt :  		STD_LOGIC_VECTOR (25 DOWNTO 0);
-    signal any_rstn :  			STD_LOGIC;
-    signal any_rstn_r :  		STD_LOGIC;
-    signal any_rstn_rr :  		STD_LOGIC;
-    signal pld_clk :			STD_LOGIC;
-    signal rsnt_cntn : 			STD_LOGIC_VECTOR (10 DOWNTO 0);
-    signal exits_r	:			STD_LOGIC;
-    signal srst :				STD_LOGIC;
-    signal app_rstn :			STD_LOGIC;
-    signal srst0 :				STD_LOGIC;
-    signal crst0 :				STD_LOGIC;
-    signal app_rstn0 :			STD_LOGIC;
-    
+    signal alive_cnt            : STD_LOGIC_VECTOR (25 DOWNTO 0);
+    signal any_rstn             : STD_LOGIC;
+    signal any_rstn_r           : STD_LOGIC;
+    signal any_rstn_rr          : STD_LOGIC;
+    signal pld_clk              : STD_LOGIC;
+    signal rsnt_cntn            : STD_LOGIC_VECTOR (10 DOWNTO 0);
+    signal exits_r              : STD_LOGIC;
+    signal srst                 : STD_LOGIC;
+    signal app_rstn             : STD_LOGIC;
+    signal srst0                : STD_LOGIC;
+    signal crst0                : STD_LOGIC;
+    signal app_rstn0            : STD_LOGIC;
+
     -- Receiver IF
-    signal rx_eqctrl_out :  	STD_LOGIC_VECTOR (3 DOWNTO 0);
-    signal rx_eqdcgain_out : 	STD_LOGIC_VECTOR (2 DOWNTO 0);
-    signal rx_mask0 :  			STD_LOGIC;
-    signal rx_st_bardec0 :  	STD_LOGIC_VECTOR (7 DOWNTO 0);
-    signal rx_st_be0 :  		STD_LOGIC_VECTOR (15 DOWNTO 0);
-    signal rx_st_data0 :  		STD_LOGIC_VECTOR (255 DOWNTO 0);
-    signal rx_st_empty0 :  		STD_LOGIC_vector(1 downto 0);
-    signal rx_st_eop0 :  		STD_LOGIC_vector(0 downto 0);
-    signal rx_st_sop0 :  		STD_LOGIC_vector(0 downto 0);
-    signal rx_stream_data0 :  	STD_LOGIC_VECTOR (81 DOWNTO 0);
-    signal rx_stream_data0_1 :  STD_LOGIC_VECTOR (81 DOWNTO 0);
-    signal rx_st_ready0 :  	STD_LOGIC;
-    signal rx_st_valid0 :  	STD_LOGIC_vector(0 downto 0);
-    
+    signal rx_eqctrl_out        : STD_LOGIC_VECTOR (3 DOWNTO 0);
+    signal rx_eqdcgain_out      : STD_LOGIC_VECTOR (2 DOWNTO 0);
+    signal rx_mask0             : STD_LOGIC;
+    signal rx_st_bardec0        : STD_LOGIC_VECTOR (7 DOWNTO 0);
+    signal rx_st_be0            : STD_LOGIC_VECTOR (15 DOWNTO 0);
+    signal rx_st_data0          : STD_LOGIC_VECTOR (255 DOWNTO 0);
+    signal rx_st_empty0         : STD_LOGIC_vector(1 downto 0);
+    signal rx_st_eop0           : STD_LOGIC_vector(0 downto 0);
+    signal rx_st_sop0           : STD_LOGIC_vector(0 downto 0);
+    signal rx_stream_data0      : STD_LOGIC_VECTOR (81 DOWNTO 0);
+    signal rx_stream_data0_1    : STD_LOGIC_VECTOR (81 DOWNTO 0);
+    signal rx_st_ready0         : STD_LOGIC;
+    signal rx_st_valid0         : STD_LOGIC_vector(0 downto 0);
+
     -- Transmitter IF
-    
-    signal tx_fifo_empty0 :  	STD_LOGIC_vector(0 downto 0);
-    signal tx_preemp_0t_out :  	STD_LOGIC_VECTOR (4 DOWNTO 0);
-    signal tx_preemp_1t_out :  	STD_LOGIC_VECTOR (4 DOWNTO 0);
-    signal tx_preemp_2t_out :  	STD_LOGIC_VECTOR (4 DOWNTO 0);
-    signal tx_st_data0 :  		STD_LOGIC_VECTOR (255 DOWNTO 0);
-    signal tx_st_empty0 :  		STD_LOGIC_vector(1 downto 0);
-    signal tx_st_eop0 :  		STD_LOGIC_vector(0 downto 0);
-    signal tx_st_sop0 :  		STD_LOGIC_vector(0 downto 0);
-    signal tx_stream_cred0 :  	STD_LOGIC_VECTOR (35 DOWNTO 0);
-    signal tx_stream_data0 :  	STD_LOGIC_VECTOR (74 DOWNTO 0);
-    signal tx_stream_data0_1 :  STD_LOGIC_VECTOR (74 DOWNTO 0);
-    signal tx_st_ready0 :  	STD_LOGIC;
-    signal tx_st_valid0 :  	STD_LOGIC_vector(0 downto 0);
-    signal tx_vodctrl_out :  	STD_LOGIC_VECTOR (2 DOWNTO 0);
-    
-    signal tx_cred_datafccp   : std_logic_vector(11 downto 0);   
-    signal tx_cred_datafcnp   : std_logic_vector(11 downto 0); 
-    signal tx_cred_datafcp    : std_logic_vector(11 downto 0); 
-    signal tx_cred_fchipcons  : std_logic_vector(5 downto 0);  
-    signal tx_cred_fcinfinite : std_logic_vector(5 downto 0); 
-    signal tx_cred_hdrfccp    : std_logic_vector(7 downto 0);
-    signal tx_cred_hdrfcnp    : std_logic_vector(7 downto 0); 
-    signal tx_cred_hdrfcp     : std_logic_vector(7 downto 0);
+
+    signal tx_fifo_empty0       : STD_LOGIC_vector(0 downto 0);
+    signal tx_preemp_0t_out     : STD_LOGIC_VECTOR (4 DOWNTO 0);
+    signal tx_preemp_1t_out     : STD_LOGIC_VECTOR (4 DOWNTO 0);
+    signal tx_preemp_2t_out     : STD_LOGIC_VECTOR (4 DOWNTO 0);
+    signal tx_st_data0          : STD_LOGIC_VECTOR (255 DOWNTO 0);
+    signal tx_st_empty0         : STD_LOGIC_vector(1 downto 0);
+    signal tx_st_eop0           : STD_LOGIC_vector(0 downto 0);
+    signal tx_st_sop0           : STD_LOGIC_vector(0 downto 0);
+    signal tx_stream_cred0      : STD_LOGIC_VECTOR (35 DOWNTO 0);
+    signal tx_stream_data0      : STD_LOGIC_VECTOR (74 DOWNTO 0);
+    signal tx_stream_data0_1    : STD_LOGIC_VECTOR (74 DOWNTO 0);
+    signal tx_st_ready0         : STD_LOGIC;
+    signal tx_st_valid0         : STD_LOGIC_vector(0 downto 0);
+    signal tx_vodctrl_out       : STD_LOGIC_VECTOR (2 DOWNTO 0);
+
+    signal tx_cred_datafccp     : std_logic_vector(11 downto 0);
+    signal tx_cred_datafcnp     : std_logic_vector(11 downto 0);
+    signal tx_cred_datafcp      : std_logic_vector(11 downto 0);
+    signal tx_cred_fchipcons    : std_logic_vector(5 downto 0);
+    signal tx_cred_fcinfinite   : std_logic_vector(5 downto 0);
+    signal tx_cred_hdrfccp      : std_logic_vector(7 downto 0);
+    signal tx_cred_hdrfcnp      : std_logic_vector(7 downto 0);
+    signal tx_cred_hdrfcp       : std_logic_vector(7 downto 0);
 
     -- LEDs
-    signal lane_active_led : 	STD_LOGIC_VECTOR (3 DOWNTO 0);
+    signal lane_active_led      : STD_LOGIC_VECTOR (3 DOWNTO 0);
 
     -- Test ports
-    signal test_in :  			STD_LOGIC_VECTOR (31 DOWNTO 0);
-    signal test_out_icm :  		STD_LOGIC_VECTOR (8 DOWNTO 0);
+    signal test_in              : STD_LOGIC_VECTOR (31 DOWNTO 0);
+    signal test_out_icm         : STD_LOGIC_VECTOR (8 DOWNTO 0);
 
     -- Interrupt stuff
-    signal app_int_ack :  	STD_LOGIC;
-    signal app_int_sts :  	STD_LOGIC;
-    signal app_msi_ack :  		STD_LOGIC;
-    signal app_msi_num :  		STD_LOGIC_VECTOR (4 DOWNTO 0);
-    signal app_msi_req :  		STD_LOGIC;
-    signal app_msi_tc :  		STD_LOGIC_VECTOR (2 DOWNTO 0);
-    signal pex_msi_num :  		STD_LOGIC_VECTOR (4 DOWNTO 0);
-    
+    signal app_int_ack          : STD_LOGIC;
+    signal app_int_sts          : STD_LOGIC;
+    signal app_msi_ack          : STD_LOGIC;
+    signal app_msi_num          : STD_LOGIC_VECTOR (4 DOWNTO 0);
+    signal app_msi_req          : STD_LOGIC;
+    signal app_msi_tc           : STD_LOGIC_VECTOR (2 DOWNTO 0);
+    signal pex_msi_num          : STD_LOGIC_VECTOR (4 DOWNTO 0);
+
     -- Completion stuff
-    signal cpl_err_icm : 		STD_LOGIC_VECTOR (6 DOWNTO 0);
-    signal cpl_pending : 		STD_LOGIC;		
+    signal cpl_err_icm          : STD_LOGIC_VECTOR (6 DOWNTO 0);
+    signal cpl_pending          : STD_LOGIC;
 
     -- LMI (Local Managment Interface)
-    signal lmi_ack :  			STD_LOGIC;
-    signal lmi_addr :  			STD_LOGIC_VECTOR (11 DOWNTO 0);
-    signal lmi_din :  			STD_LOGIC_VECTOR (31 DOWNTO 0);
-    signal lmi_dout :  			STD_LOGIC_VECTOR (31 DOWNTO 0);
-    signal lmi_rden :  			STD_LOGIC;
-    signal lmi_wren :  			STD_LOGIC;
+    signal lmi_ack              : STD_LOGIC;
+    signal lmi_addr             : STD_LOGIC_VECTOR (11 DOWNTO 0);
+    signal lmi_din              : STD_LOGIC_VECTOR (31 DOWNTO 0);
+    signal lmi_dout             : STD_LOGIC_VECTOR (31 DOWNTO 0);
+    signal lmi_rden             : STD_LOGIC;
+    signal lmi_wren             : STD_LOGIC;
 
     -- Power mamangement
-    signal pme_to_sr : 			STD_LOGIC;
+    signal pme_to_sr : STD_LOGIC;
 
     -- Configuration space
-    signal tl_cfg_add :  		STD_LOGIC_VECTOR (3 DOWNTO 0);
-    signal tl_cfg_ctl :  		STD_LOGIC_VECTOR (31 DOWNTO 0);
-    signal tl_cfg_ctl_wr :  	STD_LOGIC;
-    signal tl_cfg_sts :  		STD_LOGIC_VECTOR (52 DOWNTO 0);
-    signal tl_cfg_sts_wr :  	STD_LOGIC;
+    signal tl_cfg_add           : STD_LOGIC_VECTOR (3 DOWNTO 0);
+    signal tl_cfg_ctl           : STD_LOGIC_VECTOR (31 DOWNTO 0);
+    signal tl_cfg_ctl_wr        : STD_LOGIC;
+    signal tl_cfg_sts           : STD_LOGIC_VECTOR (52 DOWNTO 0);
+    signal tl_cfg_sts_wr        : STD_LOGIC;
 
     -- Link training
-    signal dl_ltssm :  			STD_LOGIC_VECTOR (4 DOWNTO 0);
-    signal dl_ltssm_r :  		STD_LOGIC_VECTOR (4 DOWNTO 0);
+    signal dl_ltssm             : STD_LOGIC_VECTOR (4 DOWNTO 0);
+    signal dl_ltssm_r           : STD_LOGIC_VECTOR (4 DOWNTO 0);
 
     -- Config registers decoded
-    signal cfg_busdev_icm :  	STD_LOGIC_VECTOR (12 DOWNTO 0);
-    signal cfg_devcsr_icm :  	STD_LOGIC_VECTOR (31 DOWNTO 0);
-    signal cfg_io_bas :  		STD_LOGIC_VECTOR (19 DOWNTO 0);
-    signal cfg_linkcsr_icm :  	STD_LOGIC_VECTOR (31 DOWNTO 0);
-    signal cfg_msicsr :  		STD_LOGIC_VECTOR (15 DOWNTO 0);
-    signal cfg_np_bas :  		STD_LOGIC_VECTOR (11 DOWNTO 0);
-    signal cfg_pr_bas :  		STD_LOGIC_VECTOR (43 DOWNTO 0);
-    signal cfg_prmcsr_icm :  	STD_LOGIC_VECTOR (31 DOWNTO 0);
+    signal cfg_busdev_icm       : STD_LOGIC_VECTOR (12 DOWNTO 0);
+    signal cfg_devcsr_icm       : STD_LOGIC_VECTOR (31 DOWNTO 0);
+    signal cfg_io_bas           : STD_LOGIC_VECTOR (19 DOWNTO 0);
+    signal cfg_linkcsr_icm      : STD_LOGIC_VECTOR (31 DOWNTO 0);
+    signal cfg_msicsr           : STD_LOGIC_VECTOR (15 DOWNTO 0);
+    signal cfg_np_bas           : STD_LOGIC_VECTOR (11 DOWNTO 0);
+    signal cfg_pr_bas           : STD_LOGIC_VECTOR (43 DOWNTO 0);
+    signal cfg_prmcsr_icm       : STD_LOGIC_VECTOR (31 DOWNTO 0);
 
-	-- Completion stuff after handling
-	signal cpl_err_in : 		STD_LOGIC_VECTOR (6 DOWNTO 0);
-	signal err_desc :  			STD_LOGIC_VECTOR (127 DOWNTO 0);
-	
-	-- Reconfig stuff after handling
-	signal data_valid : 		STD_LOGIC;
+    -- Completion stuff after handling
+    signal cpl_err_in           : STD_LOGIC_VECTOR (6 DOWNTO 0);
+    signal err_desc             : STD_LOGIC_VECTOR (127 DOWNTO 0);
 
-	-- Reset and link status
-	signal dlup : 			std_logic;
-	signal dlup_exit: 	std_logic;
- 	signal hotrst_exit: 	std_logic;
-	signal l2_exit:		std_logic;
-	signal currentspeed: std_logic_vector(1 downto 0);
-	signal lane_act:		std_logic_vector(3 downto 0);
-	signal serdes_pll_locked : std_logic;
+    -- Reconfig stuff after handling
+    signal data_valid           : STD_LOGIC;
 
-	-- Application
-	signal busy:				STD_LOGIC; 
-	signal regloopback : reg32array_pcie;
+    -- Reset and link status
+    signal dlup                 : std_logic;
+    signal dlup_exit            : std_logic;
+    signal hotrst_exit          : std_logic;
+    signal l2_exit              : std_logic;
+    signal currentspeed         : std_logic_vector(1 downto 0);
+    signal lane_act             : std_logic_vector(3 downto 0);
+    signal serdes_pll_locked    : std_logic;
 
-    signal application_reset_n: std_logic;
+    -- Application
+    signal busy                 : STD_LOGIC;
+    signal regloopback          : reg32array_pcie;
 
-    signal testbus :  			STD_LOGIC_VECTOR (127 DOWNTO 0);
+    signal application_reset_n  : std_logic;
+
+    signal testbus              : STD_LOGIC_VECTOR (127 DOWNTO 0);
 
 begin
 
-  any_rstn <= pcie_perstn and local_rstn;
+    any_rstn <= pcie_perstn and local_rstn;
 
-  test_in(31 DOWNTO 9)  <= "00000000000000000000000";
-  test_in(8 DOWNTO 5) 	<= "0101";
-  test_in(4 DOWNTO 0) 	<= "01000";
+    test_in(31 DOWNTO 9)  <= "00000000000000000000000";
+    test_in(8 DOWNTO 5) <= "0101";
+    test_in(4 DOWNTO 0) <= "01000";
 
-  pcie_fastclk_out <= pld_clk;
+    pcie_fastclk_out <= pld_clk;
 
-  --reset Synchronizer
-  process (pld_clk, any_rstn)
-  begin
+    --reset Synchronizer
+    process (pld_clk, any_rstn)
+    begin
     if any_rstn = '0' then
-      any_rstn_r <= std_logic'('1');
-      any_rstn_rr <= std_logic'('1');
+        any_rstn_r <= std_logic'('1');
+        any_rstn_rr <= std_logic'('1');
     elsif pld_clk'event and pld_clk = '1' then
-      any_rstn_r <= std_logic'('0');
-      any_rstn_rr <= any_rstn_r;
+        any_rstn_r <= std_logic'('0');
+        any_rstn_rr <= any_rstn_r;
     end if;
-  end process;
+    end process;
 
-  --reset counter
-  process (pld_clk, any_rstn_rr)
-  begin
+    --reset counter
+    process (pld_clk, any_rstn_rr)
+    begin
     if any_rstn_rr = '0' then
-      rsnt_cntn <= "00000000000";
+        rsnt_cntn <= "00000000000";
     elsif pld_clk'event and pld_clk = '1' then
-      if (local_rstn = '0' OR dlup_exit = '0' OR hotrst_exit = '0' OR l2_exit = '0') then 
+        if (local_rstn = '0' OR dlup_exit = '0' OR hotrst_exit = '0' OR l2_exit = '0') then
         rsnt_cntn <= "01111000000";
-      elsif rsnt_cntn /= "10000000000" then 
+        elsif rsnt_cntn /= "10000000000" then
         rsnt_cntn <= rsnt_cntn + '1';
-      end if;
+        end if;
     end if;
-  end process;
+    end process;
 
-  srst <= srst0;
+    srst <= srst0;
 
-  --sync and config reset
-  process (pld_clk, any_rstn_rr)
-  begin
+    --sync and config reset
+    process (pld_clk, any_rstn_rr)
+    begin
     if any_rstn_rr = '0' then
-      app_rstn0 <= '0';
-      srst0 <= '1';
-      crst0 <= '1';
+        app_rstn0 <= '0';
+        srst0 <= '1';
+        crst0 <= '1';
     elsif pld_clk'event and pld_clk = '1' then
-      if (exits_r = '1') then 
+        if (exits_r = '1') then
         srst0 <= '1';
         crst0 <= '1';
         app_rstn0 <= '0';
-      elsif rsnt_cntn = std_logic_vector'("10000000000") then 
+        elsif rsnt_cntn = std_logic_vector'("10000000000") then
         srst0 <= '0';
         crst0 <= '0';
         app_rstn0 <= '1';
-      end if;
+        end if;
     end if;
-  end process;
+    end process;
 
-  --sync and config reset pipeline
-  process (pld_clk, any_rstn_rr)
-  begin
+    --sync and config reset pipeline
+    process (pld_clk, any_rstn_rr)
+    begin
     if any_rstn_rr = '0' then
-      app_rstn <= '0';
+        app_rstn <= '0';
     elsif pld_clk'event and pld_clk = '1' then
-      app_rstn <= app_rstn0;
+        app_rstn <= app_rstn0;
     end if;
-  end process;
+    end process;
 
-  --LTSSM pipeline
-  process (pld_clk, any_rstn_rr)
-  begin
+    --LTSSM pipeline
+    process (pld_clk, any_rstn_rr)
+    begin
     if any_rstn_rr = '0' then
-      dl_ltssm_r <= std_logic_vector'("00000");
+        dl_ltssm_r <= std_logic_vector'("00000");
     elsif pld_clk'event and pld_clk = '1' then
-      dl_ltssm_r <= dl_ltssm;
+        dl_ltssm_r <= dl_ltssm;
     end if;
+    end process;
 
-  end process;
+    cpl_pending <= '0';
 
-
-
-  cpl_pending <= '0';
-  
-  pcie_led_x1 	<= lane_act(0);
-  pcie_led_x4 	<= lane_act(2);
-  pcie_led_x8 	<= lane_act(3);
-
+    pcie_led_x1 <= lane_act(0);
+    pcie_led_x4 <= lane_act(2);
+    pcie_led_x8 <= lane_act(3);
 
     generate_ip_pcie_x8_256 : if ( g_PCIE_X = 8 ) generate
     e_pcie_x8_256 : component work.cmp.ip_pcie_x8_256
@@ -496,113 +487,108 @@ begin
     );
     end generate;
 
--- Configuration bus decode
+    -- Configuration bus decode
     e_cfgbus : entity work.pcie_cfgbus
     port map (
-		reset_n			=> pcie_perstn,
-		pld_clk			=> pld_clk,
-		tl_cfg_add		=> tl_cfg_add,
-		tl_cfg_ctl		=> tl_cfg_ctl,
-		
-		cfg_busdev		=> cfg_busdev_icm,
-		cfg_dev_ctrl	=> open,
-		cfg_slot_ctrl	=> open,
-		cfg_link_ctrl	=> open,
-		cfg_prm_cmd		=> open,
-		cfg_msi_addr	=> open,
-		cfg_pmcsr		=> open,
-		cfg_msixcsr		=> open,
-		cfg_msicsr		=> open,
-		tx_ercgen		=> open,
-		rx_errcheck		=> open,
-		cfg_tcvcmap		=> open,
-		cfg_msi_data	=> open
+        reset_n         => pcie_perstn,
+        pld_clk         => pld_clk,
+        tl_cfg_add      => tl_cfg_add,
+        tl_cfg_ctl      => tl_cfg_ctl,
+
+        cfg_busdev      => cfg_busdev_icm,
+        cfg_dev_ctrl    => open,
+        cfg_slot_ctrl   => open,
+        cfg_link_ctrl   => open,
+        cfg_prm_cmd     => open,
+        cfg_msi_addr    => open,
+        cfg_pmcsr       => open,
+        cfg_msixcsr     => open,
+        cfg_msicsr      => open,
+        tx_ercgen       => open,
+        rx_errcheck     => open,
+        cfg_tcvcmap     => open,
+        cfg_msi_data    => open
     );
 
-
-	 application_reset_n <= '0' when local_rstn = '0' or appl_rstn = '0' else '1';
+    application_reset_n <= '0' when local_rstn = '0' or appl_rstn = '0' else '1';
 
     e_pcie_application : entity work.pcie_application
     generic map (
-			DMAMEMWRITEADDRSIZE => DMAMEMWRITEADDRSIZE,
-			DMAMEMREADADDRSIZE  => DMAMEMREADADDRSIZE,
-			DMAMEMWRITEWIDTH	=> DMAMEMWRITEWIDTH
+        DMAMEMWRITEADDRSIZE => DMAMEMWRITEADDRSIZE,
+        DMAMEMREADADDRSIZE  => DMAMEMREADADDRSIZE,
+        DMAMEMWRITEWIDTH    => DMAMEMWRITEWIDTH
     )
     port map (
         o_writeregs_B       => o_writeregs_B,
-		o_regwritten_B		=> o_regwritten_B,
+        o_regwritten_B      => o_regwritten_B,
         i_clk_B             => i_clk_B,
-		  
-		o_writeregs_C       => o_writeregs_C,
-		o_regwritten_C		=> o_regwritten_C,
-        i_clk_C             => i_clk_C,
 
-		local_rstn			=> application_reset_n,
-		refclk				=> pld_clk,
+        local_rstn          => application_reset_n,
+        refclk              => pld_clk,
 
-		-- to IF
-		tx_st_data0 		=> tx_st_data0,
-		tx_st_eop0 			=> tx_st_eop0(0),
-		tx_st_sop0 			=> tx_st_sop0(0),
-		tx_st_ready0 		=> tx_st_ready0,
-		tx_st_valid0 		=> tx_st_valid0(0),
-		tx_st_empty0 		=> tx_st_empty0,
-		
-		-- from Config
-		completer_id 		=> cfg_busdev_icm,
-		
-		-- from IF
-		rx_st_data0 		=> rx_st_data0,
-		rx_st_eop0 			=> rx_st_eop0(0),
-		rx_st_sop0 			=>	rx_st_sop0(0),
-		rx_st_ready0 		=> rx_st_ready0,
-		rx_st_valid0 		=> rx_st_valid0(0),
-		rx_bar0 			=> rx_st_bardec0,
-		
-		-- Interrupt stuff
-		app_msi_req			=> app_msi_req,
-		app_msi_tc			=> app_msi_tc,
-		app_msi_num			=> app_msi_num,
-		app_msi_ack			=> app_msi_ack,
-		
-		-- registers
-		writeregs 			=> writeregs,
-		regwritten			=> regwritten,
-		readregs 			=>	readregs,
-		
-			-- pcie writeable memory
-		writememclk		  	=> writememclk,
-		writememreadaddr 	=> writememreadaddr,
-		writememreaddata 	=> writememreaddata,
-		
-				-- pcie readable memory
-		readmem_data 		=> readmem_data,
-		readmem_addr 		=> readmem_addr,
-		readmemclk			=> readmemclk,
-		readmem_wren		=> readmem_wren,
-		readmem_endofevent  => readmem_endofevent,
-		
-						-- dma memory
-		dma_data 			=> dma_data,
-		dmamemclk			=> dmamemclk,
-		dmamem_wren			=> dmamem_wren,
-		dmamem_endofevent	=> dmamem_endofevent,
-		dmamemhalffull		=> dmamemhalffull,
-		
-					-- 2nd dma memory
-		dma2_data 			=> dma2_data,
-		dma2memclk			=> dma2memclk,
-		dma2mem_wren		=> dma2mem_wren,
-		dma2mem_endofevent	=> dma2mem_endofevent,
-		dma2memhalffull		=> dma2memhalffull,
-		
-				-- test ports  
-		testout				=> testout,
-		testin				=> testbus,
-		testout_ena			=> testout_ena,
-		pb_in					=> pb_in,
-		inaddr32_r			=> inaddr32_r,
-		inaddr32_w			=> inaddr32_w
-	);
+        -- to IF
+        o_tx_st_data0       => tx_st_data0,
+        o_tx_st_eop0        => tx_st_eop0(0),
+        o_tx_st_sop0        => tx_st_sop0(0),
+        i_tx_st_ready0      => tx_st_ready0,
+        o_tx_st_valid0      => tx_st_valid0(0),
+        o_tx_st_empty0      => tx_st_empty0,
+
+        -- from Config
+        completer_id        => cfg_busdev_icm,
+
+        -- from IF
+        rx_st_data0         => rx_st_data0,
+        rx_st_eop0          => rx_st_eop0(0),
+        rx_st_sop0          => rx_st_sop0(0),
+        rx_st_ready0        => rx_st_ready0,
+        rx_st_valid0        => rx_st_valid0(0),
+        rx_bar0             => rx_st_bardec0,
+
+        -- Interrupt stuff
+        app_msi_req         => app_msi_req,
+        app_msi_tc          => app_msi_tc,
+        app_msi_num         => app_msi_num,
+        app_msi_ack         => app_msi_ack,
+
+        -- registers
+        writeregs           => writeregs,
+        regwritten          => regwritten,
+        readregs            => readregs,
+
+        -- pcie writeable memory
+        writememclk         => writememclk,
+        writememreadaddr    => writememreadaddr,
+        writememreaddata    => writememreaddata,
+
+        -- pcie readable memory
+        readmem_data        => readmem_data,
+        readmem_addr        => readmem_addr,
+        readmemclk          => readmemclk,
+        readmem_wren        => readmem_wren,
+        readmem_endofevent  => readmem_endofevent,
+
+        -- dma memory
+        dma_data            => dma_data,
+        dmamemclk           => dmamemclk,
+        dmamem_wren         => dmamem_wren,
+        dmamem_endofevent   => dmamem_endofevent,
+        dmamemhalffull      => dmamemhalffull,
+
+        -- 2nd dma memory
+        dma2_data           => dma2_data,
+        dma2memclk          => dma2memclk,
+        dma2mem_wren        => dma2mem_wren,
+        dma2mem_endofevent  => dma2mem_endofevent,
+        dma2memhalffull     => dma2memhalffull,
+
+        -- test ports
+        testout             => testout,
+        testin              => testbus,
+        testout_ena         => testout_ena,
+        pb_in               => pb_in,
+        inaddr32_r          => inaddr32_r,
+        inaddr32_w          => inaddr32_w
+    );
 
 end architecture;

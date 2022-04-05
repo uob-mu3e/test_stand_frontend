@@ -67,11 +67,9 @@ struct mupix_t {
 
     void mupix_write_all_off(){
         
-        sc->ram->data[MP_CTRL_ENABLE_REGISTER_W]=0x0000000F; // set spi slow down
-        sc->ram->data[MP_CTRL_ENABLE_REGISTER_W]=0x00000FC0;// clear fifos
+        sc->ram->data[MP_CTRL_ENABLE_REGISTER_W]=0x00000FC0;
         sc->ram->data[MP_CTRL_ENABLE_REGISTER_W]=0x00000000;
         sc->ram->data[MP_CTRL_INVERT_REGISTER_W]=0x00000003;
-        sc->ram->data[MP_CTRL_CHIP_MASK_REGISTER_W]=0x00000000; // config mask write to all
         
         sc->ram->data[MP_CTRL_ALL_REGISTER_W]=0x2A000A03;
         sc->ram->data[MP_CTRL_ALL_REGISTER_W]=0xFA3F002F;
@@ -86,7 +84,8 @@ struct mupix_t {
         sc->ram->data[MP_CTRL_ALL_REGISTER_W]=0x00148000;
         sc->ram->data[MP_CTRL_ALL_REGISTER_W]=0x11802E00;
         for(int i = 0; i<85; i++){
-        sc->ram->data[MP_CTRL_ALL_REGISTER_W]=0x00000000;}
+            sc->ram->data[MP_CTRL_ALL_REGISTER_W]=0x00000000;
+        }
     }
     
     void test_write_all(bool maskPixel) {

@@ -145,7 +145,7 @@ INT HMP4040Driver::Init()
 
 
 
-bool HMP4040Driver::AskPermissionToTurnOn(int channel) //extra check whether it is safe to tunr on supply;
+bool HMP4040Driver::AskPermissionToTurnOn(int ) //extra check whether it is safe to tunr on supply;
 {
 	return true;
 }

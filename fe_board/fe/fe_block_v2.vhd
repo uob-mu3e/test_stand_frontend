@@ -10,7 +10,7 @@ USE altera_mf.altera_mf_components.all;
 
 entity fe_block_v2 is
 generic (
-    feb_mapping : work.util.natural_array_t(3 downto 0) := (3,2,1,0);
+    feb_mapping : integer_vector(3 downto 0) := (3,2,1,0);
     PHASE_WIDTH_g : positive := 16;
     NIOS_CLK_MHZ_g : real;
     N_LINKS : positive := 1;
@@ -201,9 +201,9 @@ architecture arch of fe_block_v2 is
     signal ffly_pwr                 : std_logic_vector(127 downto 0); -- RX optical power in mW
     signal ffly_temp                : std_logic_vector(15 downto 0);  -- temperature in °C
     signal ffly_alarm               : std_logic_vector(63 downto 0);  -- latched alarm bits
-    signal ffly_vcc                 : std_logic_vector(31 downto 0);  -- operating voltagein units of 100 uV 
-    
-    -- Max 10 SPI 
+    signal ffly_vcc                 : std_logic_vector(31 downto 0);  -- operating voltagein units of 100 uV
+
+    -- Max 10 SPI
     signal adc_reg                  : work.util.slv32_array_t(4 downto 0);
     signal max10_version            : reg32;
     signal max10_status             : reg32;
@@ -257,7 +257,7 @@ begin
     e_clk_125_hz : entity work.clkdiv
     generic map ( P => 125000000 )
     port map ( o_clk => o_clk_125_mon, i_reset_n => reset_125_n, i_clk => i_clk_125 );
-    
+
 
     -- SPI
     spi_si_miso <= '1' when ( (i_spi_si_miso or spi_si_ss_n) = (spi_si_ss_n'range => '1') ) else '0';
@@ -332,7 +332,7 @@ begin
         i_ffly_temp                 => ffly_temp,
         i_ffly_alarm                => ffly_alarm,
         i_ffly_vcc                  => ffly_vcc,
-        
+
         i_si45_intr_n               => i_si45_intr_n,
         i_si45_lol_n                => i_si45_lol_n,
 
@@ -531,15 +531,15 @@ begin
 
     process(i_clk_156)
     begin
-        if(rising_edge(i_clk_156)) then
-            if(i_data_bypass_we = '1') then
-                ffly_rx_data(127 downto 96) <= i_data_bypass;
-                ffly_rx_datak(15 downto 12) <= "0000";
-            else 
-                ffly_rx_data(127 downto 96) <= x"000000BC";
-                ffly_rx_datak(15 downto 12) <= "0001";
-            end if;
+    if rising_edge(i_clk_156) then
+        if(i_data_bypass_we = '1') then
+            ffly_rx_data(127 downto 96) <= i_data_bypass;
+            ffly_rx_datak(15 downto 12) <= "0000";
+        else
+            ffly_rx_data(127 downto 96) <= x"000000BC";
+            ffly_rx_datak(15 downto 12) <= "0001";
         end if;
+    end if;
     end process;
 
     --TODO: do we need two independent link test modules for both fibers?
@@ -554,7 +554,7 @@ begin
         i_en            => work.util.to_std_logic(run_state_156 = RUN_STATE_LINK_TEST),
         o_lsfr          => linktest_data,
         o_datak         => linktest_datak,
-        reset_n         => reset_156_n,
+        i_reset_n       => reset_156_n,
         i_clk           => i_clk_156--,
     );
 
@@ -677,7 +677,7 @@ begin
         i_clk               => i_nios_clk,
         i_reset_n           => nios_reset_n,
         i_clk_156           => i_clk_156,
-        
+
         -- Max10 SPI
         o_SPI_csn           => o_max10_spi_csn,
         o_SPI_clk           => o_max10_spi_sclk,
@@ -686,7 +686,7 @@ begin
         io_SPI_D1           => io_max10_spi_D1,
         io_SPI_D2           => io_max10_spi_D2,
         io_SPI_D3           => io_max10_spi_D3,
-    
+
         adc_reg             => adc_reg,
         o_max10_version     => max10_version,
         o_max10_status      => max10_status,

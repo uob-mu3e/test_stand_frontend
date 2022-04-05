@@ -24,6 +24,7 @@ generic (
     g_CLK_MHZ : real--;
 );
 port (
+    -- serial data
     i_data      : in    std_logic;
 
     o_rdata     : out   std_logic_vector(g_DATA_BITS-1 downto 0);
@@ -99,7 +100,7 @@ begin
 
     process(i_clk, i_reset_n)
     begin
-    if ( i_reset_n = '0' ) then
+    if ( i_reset_n /= '1' ) then
         we <= '0';
         cnt <= 0;
         state <= STATE_IDLE;

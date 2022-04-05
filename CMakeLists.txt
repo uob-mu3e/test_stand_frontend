@@ -27,7 +27,7 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
 add_compile_options(
-    "-Wpedantic" "-Wall" "-Wextra"
+    "-Wpedantic" "-Wall" "-Wextra" "-Wno-missing-field-initializers"
     "-Wformat=2"
 )
 
@@ -43,18 +43,6 @@ find_package(Doxygen 1.8)
 message("here we set GLVND to default (https://cmake.org/cmake/help/git-stage/policy/CMP0072.html)")
 set(OpenGL_GL_PREFERENCE GLVND)
 find_package(OpenGL)
-
-find_package(CUDA)
-
-if (CUDA_FOUND)
-    message("-- CUDA ${CUDA_VERSION_MAJOR}.${CUDA_VERSION_MINOR} was found at ${CUDA_TOOLKIT_ROOT_DIR}")
-    list(APPEND CUDA_NVCC_FLAGS "-DVERBOSE;-g;-std=c++17")
-    set(CMAKE_CUDA_FLAGS "${CMAKE_CUDA_FLAGS} -std=-c++17")
-    #list(APPEND CUDA_NVCC_FLAGS "-arch=compute_30;-DVERBOSE;-g")
-    include_directories(${CUDA_TOOLKIT_ROOT_DIR}/include)
-endif(CUDA_FOUND)
-
-set(CUDA_HOST_COMPILER clang++)
 
 set(LIBMUDAQ_DIR ${PROJECT_SOURCE_DIR}/common/libmudaq)
 set(LIBMUPIX_DIR ${PROJECT_SOURCE_DIR}/common/libmupix)
@@ -138,9 +126,6 @@ install(FILES ${CMAKE_CURRENT_BINARY_DIR}/make_links.sh DESTINATION ./)
 
 configure_file(setup_odb.sh.in setup_odb.sh @ONLY)
 install(FILES ${CMAKE_CURRENT_BINARY_DIR}/setup_odb.sh DESTINATION ./)
-
-configure_file(setup_mhttpd.sh.in setup_mhttpd.sh @ONLY)
-install(FILES ${CMAKE_CURRENT_BINARY_DIR}/setup_mhttpd.sh DESTINATION ./)
 
 configure_file(start_daq.sh.in start_daq.sh @ONLY)
 install(FILES ${CMAKE_CURRENT_BINARY_DIR}/start_daq.sh DESTINATION bin

@@ -1,3 +1,4 @@
+
 JedecChain;
     FileRevision(JESD32A);
     DefaultMfr(6E);

@@ -28,7 +28,7 @@ ENTITY data_merger is
 GENERIC (
     FIFO_ADDR_WIDTH             : positive := 10;
     N_LINKS                     : positive := 1;
-    feb_mapping                 : work.util.natural_array_t(3 downto 0)--;
+    feb_mapping                 : integer_vector(3 downto 0)--;
 );
 PORT (
     clk                         : in    std_logic; -- 156.25 clk input
@@ -71,14 +71,14 @@ architecture rtl of data_merger is
     constant K284                               : std_logic_vector(7 downto 0) :=x"9c";
     constant K284_datak                         : std_logic_vector(3 downto 0) := "0001";
     constant K307                               : std_logic_vector(7 downto 0) := x"fe";
-    
+
     signal   terminated                         : std_logic_vector(   N_LINKS-1 downto 0);
     signal   data_out                           : std_logic_vector(32*N_LINKS-1 downto 0);
     signal   data_is_k                          : std_logic_vector(4 *N_LINKS-1 downto 0);
     signal   rate_counter                       : unsigned(31 downto 0);
     signal   time_counter                       : unsigned(31 downto 0);
 
-BEGIN 
+BEGIN
 
 o_terminated    <= and_reduce(terminated);
 
@@ -92,17 +92,17 @@ end generate;
 
     process(clk)
     begin
-        if rising_edge(clk) then
-            if (time_counter > x"9502f90") then
-                o_rate_count    <= std_logic_vector(x"9502f90" * N_LINKS - rate_counter + 1)(31 downto 0);
-                time_counter    <= (others => '0');
-                rate_counter    <= (others => '0');
-            else
-					 -- overflow can not happen here
-                rate_counter    <= rate_counter + to_unsigned(work.util.count_bits(data_is_k), 32);
-                time_counter    <= time_counter + 1;
-            end if;
+    if rising_edge(clk) then
+        if (time_counter > x"9502f90") then
+            --o_rate_count    <= std_logic_vector(x"9502f90" * N_LINKS - rate_counter + 1)(31 downto 0);
+            time_counter    <= (others => '0');
+            rate_counter    <= (others => '0');
+        else
+            -- overflow can not happen here
+            rate_counter    <= rate_counter + to_unsigned(work.util.count_bits(data_is_k), 32);
+            time_counter    <= time_counter + 1;
         end if;
+    end if;
     end process;
 
 g_merger: for i in N_LINKS-1 downto 0 generate
@@ -119,18 +119,18 @@ g_merger: for i in N_LINKS-1 downto 0 generate
     signal data_in_slowcontrol                  : std_logic_vector(35 downto 0);
     signal data_read_req                        : std_logic;
     signal slowcontrol_read_req                 : std_logic;
-    
+
     signal data_write_req_checked               : std_logic;
     signal i_data_in_checked                    : std_logic_vector(35 downto 0);
     signal slowcontrol_write_req_checked        : std_logic;
     signal i_data_in_slowcontrol_checked        : std_logic_vector(35 downto 0);
-    
+
     signal usedw_data_fifo                      : std_logic_vector(FIFO_ADDR_WIDTH-1 downto 0);
     signal usedw_slowcontrol_fifo               : std_logic_vector(FIFO_ADDR_WIDTH-1 downto 0);
     signal data_fifo_reset                      : std_logic;
 
     ---------------begin data merger------------------------
-begin 
+begin
 
     e_data_overflow_check: entity work.overflow_check -- TODO: counter how often, stop run etc when overflow
     generic map(
@@ -168,7 +168,6 @@ begin
         ADDR_WIDTH      => FIFO_ADDR_WIDTH,
         DATA_WIDTH      => 36,
         SHOWAHEAD       => "ON",
-        REGOUT          => 0,
         DEVICE          => "Stratix IV"--,
     )
     port map (
@@ -176,21 +175,18 @@ begin
         sclr            => data_fifo_reset,
         data            => i_data_in_checked,
         wrreq           => data_write_req_checked,
-        full            => open,
         almost_full     => o_fifos_almost_full(i),
         empty           => data_fifo_empty,
         q               => data_in,
         rdreq           => data_read_req,
-        almost_empty    => open,
         usedw           => usedw_data_fifo--,
     );
-    
+
     e_common_fifo_sc: entity work.ip_scfifo
     generic map(
         ADDR_WIDTH      => FIFO_ADDR_WIDTH,
         DATA_WIDTH      => 36,
         SHOWAHEAD       => "ON",
-        REGOUT          => 0,
         DEVICE          => "Stratix IV"--,
     )
     port map (
@@ -199,11 +195,9 @@ begin
         data            => i_data_in_slowcontrol_checked,
         wrreq           => slowcontrol_write_req_checked,
         full            => open,
-        almost_full     => open,
         empty           => slowcontrol_fifo_empty,
         q               => data_in_slowcontrol,
         rdreq           => slowcontrol_read_req,
-        almost_empty    => open,
         usedw           => usedw_slowcontrol_fifo--,
     );
 
@@ -494,4 +488,5 @@ begin
     end process;
 
 end generate;
+
 end architecture;

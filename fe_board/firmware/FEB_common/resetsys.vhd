@@ -42,7 +42,7 @@ architecture rtl of resetsys is
 
     -- terminated signal in sync to clk_125_rx of state controller:
     signal terminated_125_rx            : std_logic;
-    
+
     signal state_125_rx                 : run_state_t;
     signal state_controller_in          : std_logic_vector(7 downto 0);
     signal reset_bypass_125_rx          : std_logic_vector(11 downto 0);
@@ -60,43 +60,44 @@ BEGIN
     begin
     if rising_edge(i_clk_125_rx) then
         case reset_bypass_state is
-            when "000" =>
-                -- idle, use genesis
-                if(i_data_ready='1' and reset_bypass_125_rx(RESET_BYPASS_BIT_ENABLE)='0') then
-                    state_controller_in     <= i_data_125_rx;
-                else
-                    state_controller_in     <= x"BC";
-                    if(reset_bypass_request = '1') then -- bypass request
-                        reset_bypass_state  <= "001";
-                    end if;
+        when "000" =>
+            -- idle, use genesis
+            if(i_data_ready='1' and reset_bypass_125_rx(RESET_BYPASS_BIT_ENABLE)='0') then
+                state_controller_in     <= i_data_125_rx;
+            else
+                state_controller_in     <= x"BC";
+                if(reset_bypass_request = '1') then -- bypass request
+                    reset_bypass_state  <= "001";
                 end if;
+            end if;
 
-            when "001" =>
-                state_controller_in     <= reset_bypass_125_rx(RESET_BYPASS_RANGE);
-                reset_bypass_state      <= "010";
-                
-            when "010" =>
-                state_controller_in     <= reset_bypass_payload_125_rx(31 downto 24);
-                reset_bypass_state      <= "011";
-            when "011" =>
-                state_controller_in     <= reset_bypass_payload_125_rx(23 downto 16);
-                reset_bypass_state      <= "100";
-            when "100" =>
-                state_controller_in     <= reset_bypass_payload_125_rx(15 downto 8);
-                reset_bypass_state      <= "101";
-            when "101" =>
-                state_controller_in     <= reset_bypass_payload_125_rx(7 downto 0);
-                reset_bypass_state      <= "000";
-            when others => reset_bypass_state      <= "000";
+        when "001" =>
+            state_controller_in     <= reset_bypass_125_rx(RESET_BYPASS_RANGE);
+            reset_bypass_state      <= "010";
+
+        when "010" =>
+            state_controller_in     <= reset_bypass_payload_125_rx(31 downto 24);
+            reset_bypass_state      <= "011";
+        when "011" =>
+            state_controller_in     <= reset_bypass_payload_125_rx(23 downto 16);
+            reset_bypass_state      <= "100";
+        when "100" =>
+            state_controller_in     <= reset_bypass_payload_125_rx(15 downto 8);
+            reset_bypass_state      <= "101";
+        when "101" =>
+            state_controller_in     <= reset_bypass_payload_125_rx(7 downto 0);
+            reset_bypass_state      <= "000";
+        when others => reset_bypass_state      <= "000";
         end case;
     end if;
     end process;
 
-    e_edge_detector : entity work.edge_detector
-    PORT MAP(
-        clk         => i_clk_125_rx,
-        signal_in   => reset_bypass_125_rx(RESET_BYPASS_BIT_REQUEST),
-        output      => reset_bypass_request--,
+    e_edge_detector : entity work.edge_det
+    generic map ( EDGE => +1 )
+    port map (
+        i_d(0) => reset_bypass_125_rx(RESET_BYPASS_BIT_REQUEST),
+        o_q(0) => reset_bypass_request,
+        i_clk => i_clk_125_rx--,
     );
 
     -- sync terminated to 125 clk of state controller
@@ -153,12 +154,12 @@ BEGIN
 ------------------------------------------
 -- M.Mueller:   connecting a reset signal to some of the sync-fifos leads to timing violations from o_rdata
 --              maybe we should switch them to non-Showahead Fifos
---              i se no reason to reset them here. 
+--              i se no reason to reset them here.
 --              using reset_n=1 for now ...
 
     e_fifo_sync : entity work.fifo_sync
     generic map (
-        RDATA_RESET_g => RUN_STATE_IDLE--,
+        g_RDATA_RESET => RUN_STATE_IDLE--,
     )
     port map (
         o_rdata     => o_state_156,
@@ -172,7 +173,7 @@ BEGIN
 
     e_fifo_sync2 : entity work.fifo_sync
     generic map (
-        RDATA_RESET_g => (reset_bypass'range => '0')--,
+        g_RDATA_RESET => (reset_bypass'range => '0')--,
     )
     port map (
         o_rdata     => reset_bypass_125_rx,
@@ -186,7 +187,7 @@ BEGIN
 
     e_fifo_sync3 : entity work.fifo_sync
     generic map (
-        RDATA_RESET_g => (reset_bypass_payload'range => '0')--,
+        g_RDATA_RESET => (reset_bypass_payload'range => '0')--,
     )
     port map (
         o_rdata     => reset_bypass_payload_125_rx,
@@ -200,7 +201,7 @@ BEGIN
 
     e_fifo_sync4 : entity work.fifo_sync
     generic map (
-        RDATA_RESET_g => (phase_50'range => '0')--,
+        g_RDATA_RESET => (phase_50'range => '0')--,
     )
     port map (
         o_rdata     => o_phase,
@@ -214,7 +215,7 @@ BEGIN
 
     e_fifo_sync5 : entity work.fifo_sync
     generic map (
-        RDATA_RESET_g => (run_number_125_rx'range => '0')--,
+        g_RDATA_RESET => (run_number_125_rx'range => '0')--,
     )
     port map (
         o_rdata     => run_number_out,
@@ -228,7 +229,7 @@ BEGIN
 
     e_fifo_sync6 : entity work.fifo_sync
     generic map (
-        RDATA_RESET_g => (fpga_id'range => '0')--,
+        g_RDATA_RESET => (fpga_id'range => '0')--,
     )
     port map (
         o_rdata     => fpga_id_125_rx,

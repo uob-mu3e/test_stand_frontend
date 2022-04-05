@@ -13,6 +13,9 @@ use work.mudaq.all;
 
 
 entity fpp_programmer is
+    generic (
+        COMPRESSION: boolean := false
+    );
     port (
         reset_n                 : in std_logic;
         clk                     : in std_logic;
@@ -188,13 +191,29 @@ begin
         -- additional bits - we do 500 here
         when writing =>
             toggle <= toggle + 1;
-            if (toggle = "00") then
-                fpga_clk <= '0';
-                fpga_data <= shiftregister;
-            elsif(toggle = "10") then
-                fpga_clk <= '1';
-            elsif(toggle = "11") then
-                fpga_clk <= '1';
+            if(COMPRESSION) then
+                -- If we use a compressed image, then we have to drive two clock cycles 
+                -- per data word
+                if (toggle = "00") then
+                    fpga_clk <= '0';
+                    fpga_data <= shiftregister;
+                elsif(toggle = "01") then
+                    fpga_clk <= '1';
+                elsif(toggle = "10") then
+                    fpga_clk <= '0';
+                elsif(toggle = "11") then
+                    fpga_clk <= '1';
+                end if;
+            else
+                -- Uncompressed image, one clock cycle per data word
+                if (toggle = "00") then
+                    fpga_clk <= '0';
+                    fpga_data <= shiftregister;
+                elsif(toggle = "10") then
+                    fpga_clk <= '1';
+                elsif(toggle = "11") then
+                    fpga_clk <= '1';
+                end if;
             end if;
 
             if(spi_byte_ready = '1')then

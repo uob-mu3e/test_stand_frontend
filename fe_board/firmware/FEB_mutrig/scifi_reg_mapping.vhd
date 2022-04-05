@@ -16,7 +16,7 @@ generic (
 port (
     i_clk                       : in  std_logic;
     i_reset_n                   : in  std_logic;
-    
+
     i_receivers_usrclk          : in  std_logic;
 
     i_reg_add                   : in  std_logic_vector(15 downto 0);
@@ -51,14 +51,14 @@ architecture rtl of scifi_reg_mapping is
     signal dpctrl_reg           : std_logic_vector(31 downto 0);
     signal subdet_reset_reg     : std_logic_vector(31 downto 0);
     signal subdet_resetdly_reg  : std_logic_vector(31 downto 0);
-    
+
     signal sync_cntreg_num      : std_logic_vector(31 downto 0);
     signal sync_cntreg_denom_b  : std_logic_vector(63 downto 0);
     signal sync_rx_dpa_lock_reg : std_logic_vector(N_MODULES*N_ASICS - 1 downto 0);
-    
+
     signal q_sync, data_sync    : std_logic_vector(32 + 64 + N_MODULES*N_ASICS - 1 downto 0);
     signal empty                : std_logic;
-    
+
     signal q_sync_out, data_sync_out : std_logic_vector(63 downto 0);
     signal empty_out            : std_logic;
 
@@ -100,81 +100,81 @@ begin
         variable regaddr : integer;
     begin
 
-        if ( i_reset_n = '0' ) then
-            dummyctrl_reg           <= (others=>'0');
-            dpctrl_reg              <= (others=>'0');
-            subdet_reset_reg        <= (others=>'0');
-            subdet_resetdly_reg     <= (others=>'0');
-        elsif ( rising_edge(i_clk) ) then
-            o_reg_rdata         <= X"CCCCCCCC";
-            regaddr             := to_integer(unsigned(i_reg_add));
-            o_subdet_resetdly_reg_written <= '0';
+    if ( i_reset_n = '0' ) then
+        dummyctrl_reg           <= (others=>'0');
+        dpctrl_reg              <= (others=>'0');
+        subdet_reset_reg        <= (others=>'0');
+        subdet_resetdly_reg     <= (others=>'0');
+    elsif ( rising_edge(i_clk) ) then
+        o_reg_rdata         <= X"CCCCCCCC";
+        regaddr             := to_integer(unsigned(i_reg_add));
+        o_subdet_resetdly_reg_written <= '0';
 
-            if ( i_reg_re = '1' and regaddr = SCIFI_CNT_CTRL_REGISTER_W ) then
-                o_reg_rdata <= cntreg_ctrl;
-            end if;
-            if ( i_reg_we = '1' and regaddr = SCIFI_CNT_CTRL_REGISTER_W ) then
-                cntreg_ctrl <= i_reg_wdata;
-            end if;
-
-            if ( i_reg_re = '1' and regaddr = SCIFI_CNT_NOM_REGISTER_REGISTER_R ) then
-                o_reg_rdata <= sync_cntreg_num;
-            end if;
-
-            if ( i_reg_re = '1' and regaddr = SCIFI_CNT_DENOM_LOWER_REGISTER_R ) then
-                o_reg_rdata <= sync_cntreg_denom_b(31 downto 0);
-            end if;
-            if ( i_reg_re = '1' and regaddr = SCIFI_CNT_DENOM_UPPER_REGISTER_R ) then
-                o_reg_rdata <= sync_cntreg_denom_b(63 downto 32);
-            end if;
-
-            if ( i_reg_re = '1' and regaddr = SCIFI_MON_STATUS_REGISTER_R ) then
-                o_reg_rdata <= (others => '0');
-                o_reg_rdata(0) <= i_rx_pll_lock;
-                o_reg_rdata(5 downto 4) <= i_frame_desync;
-                o_reg_rdata(9 downto 8) <= "00";
-            end if;
-
-            if ( i_reg_re = '1' and regaddr = SCIFI_MON_RX_DPA_LOCK_REGISTER_R ) then
-                o_reg_rdata <= (others => '0');
-                o_reg_rdata(N_MODULES*N_ASICS - 1 downto 0) <= sync_rx_dpa_lock_reg;
-            end if;
-
-            if ( i_reg_re = '1' and regaddr = SCIFI_MON_RX_READY_REGISTER_R ) then
-                o_reg_rdata <= (others => '0');
-                o_reg_rdata(N_MODULES*N_ASICS - 1 downto 0) <= i_rx_ready;
-            end if;
-
-            if ( i_reg_we = '1' and regaddr = SCIFI_CTRL_DUMMY_REGISTER_W ) then
-                dummyctrl_reg <= i_reg_wdata;
-            end if;
-            if ( i_reg_re = '1' and regaddr = SCIFI_CTRL_DUMMY_REGISTER_W ) then
-                o_reg_rdata <= dummyctrl_reg;
-            end if;
-
-            if ( i_reg_we = '1' and regaddr = SCIFI_CTRL_DP_REGISTER_W ) then
-                dpctrl_reg <= i_reg_wdata;
-            end if;
-            if ( i_reg_re = '1' and regaddr = SCIFI_CTRL_DP_REGISTER_W ) then
-                o_reg_rdata <= dpctrl_reg;
-            end if;
-
-            if ( i_reg_we = '1' and regaddr = SCIFI_CTRL_RESET_REGISTER_W ) then
-                subdet_reset_reg <= i_reg_wdata;
-            end if;
-            if ( i_reg_re = '1' and regaddr = SCIFI_CTRL_RESET_REGISTER_W ) then
-                o_reg_rdata <= subdet_reset_reg;
-            end if;
-
-            if ( i_reg_we = '1' and regaddr = SCIFI_CTRL_RESETDELAY_REGISTER_W ) then
-                subdet_resetdly_reg <= i_reg_wdata;
-                o_subdet_resetdly_reg_written <= '1';
-            end if;
-            if ( i_reg_re = '1' and regaddr = SCIFI_CTRL_RESETDELAY_REGISTER_W ) then
-                o_reg_rdata <= subdet_resetdly_reg;
-            end if;
-
+        if ( i_reg_re = '1' and regaddr = SCIFI_CNT_CTRL_REGISTER_W ) then
+            o_reg_rdata <= cntreg_ctrl;
         end if;
+        if ( i_reg_we = '1' and regaddr = SCIFI_CNT_CTRL_REGISTER_W ) then
+            cntreg_ctrl <= i_reg_wdata;
+        end if;
+
+        if ( i_reg_re = '1' and regaddr = SCIFI_CNT_NOM_REGISTER_REGISTER_R ) then
+            o_reg_rdata <= sync_cntreg_num;
+        end if;
+
+        if ( i_reg_re = '1' and regaddr = SCIFI_CNT_DENOM_LOWER_REGISTER_R ) then
+            o_reg_rdata <= sync_cntreg_denom_b(31 downto 0);
+        end if;
+        if ( i_reg_re = '1' and regaddr = SCIFI_CNT_DENOM_UPPER_REGISTER_R ) then
+            o_reg_rdata <= sync_cntreg_denom_b(63 downto 32);
+        end if;
+
+        if ( i_reg_re = '1' and regaddr = SCIFI_MON_STATUS_REGISTER_R ) then
+            o_reg_rdata <= (others => '0');
+            o_reg_rdata(0) <= i_rx_pll_lock;
+            o_reg_rdata(5 downto 4) <= i_frame_desync;
+            o_reg_rdata(9 downto 8) <= "00";
+        end if;
+
+        if ( i_reg_re = '1' and regaddr = SCIFI_MON_RX_DPA_LOCK_REGISTER_R ) then
+            o_reg_rdata <= (others => '0');
+            o_reg_rdata(N_MODULES*N_ASICS - 1 downto 0) <= sync_rx_dpa_lock_reg;
+        end if;
+
+        if ( i_reg_re = '1' and regaddr = SCIFI_MON_RX_READY_REGISTER_R ) then
+            o_reg_rdata <= (others => '0');
+            o_reg_rdata(N_MODULES*N_ASICS - 1 downto 0) <= i_rx_ready;
+        end if;
+
+        if ( i_reg_we = '1' and regaddr = SCIFI_CTRL_DUMMY_REGISTER_W ) then
+            dummyctrl_reg <= i_reg_wdata;
+        end if;
+        if ( i_reg_re = '1' and regaddr = SCIFI_CTRL_DUMMY_REGISTER_W ) then
+            o_reg_rdata <= dummyctrl_reg;
+        end if;
+
+        if ( i_reg_we = '1' and regaddr = SCIFI_CTRL_DP_REGISTER_W ) then
+            dpctrl_reg <= i_reg_wdata;
+        end if;
+        if ( i_reg_re = '1' and regaddr = SCIFI_CTRL_DP_REGISTER_W ) then
+            o_reg_rdata <= dpctrl_reg;
+        end if;
+
+        if ( i_reg_we = '1' and regaddr = SCIFI_CTRL_RESET_REGISTER_W ) then
+            subdet_reset_reg <= i_reg_wdata;
+        end if;
+        if ( i_reg_re = '1' and regaddr = SCIFI_CTRL_RESET_REGISTER_W ) then
+            o_reg_rdata <= subdet_reset_reg;
+        end if;
+
+        if ( i_reg_we = '1' and regaddr = SCIFI_CTRL_RESETDELAY_REGISTER_W ) then
+            subdet_resetdly_reg <= i_reg_wdata;
+            o_subdet_resetdly_reg_written <= '1';
+        end if;
+        if ( i_reg_re = '1' and regaddr = SCIFI_CTRL_RESETDELAY_REGISTER_W ) then
+            o_reg_rdata <= subdet_resetdly_reg;
+        end if;
+
+    end if;
     end process;
 
 end architecture;

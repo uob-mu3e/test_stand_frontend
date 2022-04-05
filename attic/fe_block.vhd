@@ -1,13 +1,12 @@
 library ieee;
 use ieee.std_logic_1164.all;
 use ieee.numeric_std.all;
-use ieee.std_logic_misc.all;
 
 use work.feb_sc_registers.all;
 
 entity fe_block is
 generic (
-    feb_mapping : work.util.natural_array_t(3 downto 0) := 3&2&1&0;
+    feb_mapping : integer_vector(3 downto 0) := 3&2&1&0;
     PHASE_WIDTH_g : positive := 16;
     NIOS_CLK_MHZ_g : real;
     N_LINKS : positive := 1--;
@@ -112,7 +111,6 @@ architecture arch of fe_block is
     signal reset_pod_125_n : std_logic := '1';
     signal reset_qsfp : std_logic := '0'; -- not in reset for default
 
-    signal nios_pio : std_logic_vector(31 downto 0);
     signal nios_irq : std_logic_vector(3 downto 0) := (others => '0');
 
     signal spi_si_miso, spi_si_mosi, spi_si_sclk : std_logic;
@@ -204,7 +202,7 @@ begin
 
 
 
-    -- generate 1 Hz clock monitor clocks
+    -- generate 1 Hz clock monitor signals
 
     -- NIOS_CLK_MHZ_g -> 1 Hz
     e_nios_clk_hz : entity work.clkdiv
@@ -354,7 +352,7 @@ begin
 
         -- mscb
 
-        -- git head hash
+        -- git hash (HEAD)
         if ( regaddr = GIT_HASH_REGISTER_R and fe_reg.re = '1' ) then
             fe_reg.rdata <= (others => '0');
             fe_reg.rdata <= work.cmp.GIT_HEAD(0 to 31);
@@ -444,8 +442,6 @@ begin
         spi_si_mosi => spi_si_mosi,
         spi_si_sclk => spi_si_sclk,
         spi_si_ss_n => spi_si_ss_n,
-
-        pio_export => nios_pio,
 
         rst_reset_n => nios_reset_n,
         clk_clk => i_nios_clk--,

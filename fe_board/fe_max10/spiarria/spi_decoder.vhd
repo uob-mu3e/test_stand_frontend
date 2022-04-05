@@ -4,70 +4,70 @@ use ieee.std_logic_unsigned.all;
 use ieee.numeric_std.all;
 
 entity spi_decoder is
-    generic(
-        R   : std_logic := '1'; -- read write
-        ADC_data_base   : unsigned (13 downto 0) := "11111111101100"
-    );
-    port(
-        -- SPI secondary --
-        i_SPI_inst      : in  std_logic_vector(7 downto 0);
-        i_SPI_data      : in  std_logic_vector(31 downto 0);
-        i_SPI_addr_o    : in  std_logic_vector(6 downto 0);
-        i_SPI_rw        : in  std_logic;
-        o_SPI_data      : out std_logic_vector(31 downto 0);
+generic(
+    R   : std_logic := '1'; -- read write
+    ADC_data_base   : unsigned (13 downto 0) := "11111111101100"
+);
+port(
+    -- SPI secondary --
+    i_SPI_inst      : in  std_logic_vector(7 downto 0);
+    i_SPI_data      : in  std_logic_vector(31 downto 0);
+    i_SPI_addr_o    : in  std_logic_vector(6 downto 0);
+    i_SPI_rw        : in  std_logic;
+    o_SPI_data      : out std_logic_vector(31 downto 0);
 
-        -- ram interface ..
-        i_ram_data      : in  std_logic_vector(31 downto 0);
-        o_ram_data      : out std_logic_vector(31 downto 0);
-        o_ram_addr      : out std_logic_vector(13 downto 0);
-        o_ram_rw        : out std_logic;
+    -- ram interface ..
+    i_ram_data      : in  std_logic_vector(31 downto 0);
+    o_ram_data      : out std_logic_vector(31 downto 0);
+    o_ram_addr      : out std_logic_vector(13 downto 0);
+    o_ram_rw        : out std_logic;
 
-        --ADC Nioas PIOs --
-        i_adc_data_0    : in std_logic_vector(31 downto 0);
-        i_adc_data_1    : in std_logic_vector(31 downto 0);
-        i_adc_data_2    : in std_logic_vector(31 downto 0);
-        i_adc_data_3    : in std_logic_vector(31 downto 0);
-        i_adc_data_4    : in std_logic_vector(31 downto 0);
+    --ADC Nioas PIOs --
+    i_adc_data_0    : in std_logic_vector(31 downto 0);
+    i_adc_data_1    : in std_logic_vector(31 downto 0);
+    i_adc_data_2    : in std_logic_vector(31 downto 0);
+    i_adc_data_3    : in std_logic_vector(31 downto 0);
+    i_adc_data_4    : in std_logic_vector(31 downto 0);
 
-        -- fifo interface --
-        i_fifo_data     : in  std_logic_vector(31 downto 0);
-        o_fifo_data     : out std_logic_vector(31 downto 0);
-        o_fifo_next     : out std_logic;
-        o_fifo_rw       : out std_logic;
+    -- fifo interface --
+    i_fifo_data     : in  std_logic_vector(31 downto 0);
+    o_fifo_data     : out std_logic_vector(31 downto 0);
+    o_fifo_next     : out std_logic;
+    o_fifo_rw       : out std_logic;
 
-        -- command register --
-        i_comm_data     : in  std_logic_vector(31 downto 0);
-        o_comm_data     : out std_logic_vector(31 downto 0);
-        o_comm_rw       : out std_logic;
+    -- command register --
+    i_comm_data     : in  std_logic_vector(31 downto 0);
+    o_comm_data     : out std_logic_vector(31 downto 0);
+    o_comm_rw       : out std_logic;
 
-        -- status register--
-        i_stat_data     : in  std_logic_vector(31 downto 0);
-        o_stat_data     : out std_logic_vector(31 downto 0);
-        o_stat_rw       : out std_logic;
+    -- status register--
+    i_stat_data     : in  std_logic_vector(31 downto 0);
+    o_stat_data     : out std_logic_vector(31 downto 0);
+    o_stat_rw       : out std_logic;
 
-        -- register
-        i_reg_data      : in  std_logic_vector(31 downto 0);
-        o_reg_data      : out std_logic_vector(31 downto 0);
-        o_reg_addr      : out std_logic_vector(7 downto 0);
-        o_reg_rw        : out std_logic--;
+    -- register
+    i_reg_data      : in  std_logic_vector(31 downto 0);
+    o_reg_data      : out std_logic_vector(31 downto 0);
+    o_reg_addr      : out std_logic_vector(7 downto 0);
+    o_reg_rw        : out std_logic--;
 );
 
 end entity;
 
 architecture rtl of spi_decoder is
-    
+
     type reg32          is array (0 to 4) of std_logic_vector(31 downto 0);
     signal adc_data     : reg32;
-    
+
     signal adc_data_o   : std_logic_vector(31 downto 0);
     signal command      : std_logic_vector(7 downto 0);
     signal rw_comm      : std_logic;
     signal adc_adr      : std_logic_vector(13 downto 0);
-    
-    
+
+
 
 begin
-    
+
     adc_data(0) <= i_adc_data_0;
     adc_data(1) <= i_adc_data_1;
     adc_data(2) <= i_adc_data_2;
@@ -127,6 +127,6 @@ begin
                         (others => '0') when others;
     with command select
         o_reg_rw    <=  i_SPI_rw        when x"00",
-                        '1'             when others; 
+                        '1'             when others;
 
 end rtl;

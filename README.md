@@ -1,11 +1,18 @@
 # Mu3e online repository
 
-- current development branch is `v0.12_dev`
+- for latest version use tag `release/22.03`
+- current development branch is `dev`
 - Documentation and manual are under construction in the wiki associated to this repo
 
-## Raspberry Pi USB Server
+## Quickstart
 
-- Follow the setup in https://wiki.ubuntuusers.de/USBIP/
+- `mkdir build && cd build`
+- `cmake .. && make -j8 install`
+- `source set_env.sh`
+- start frontend `febcratefe`
+- start frontend `crfe`
+- start frontend `mhttpd`
+- start other frontends you need
 
 ## Structure
 
@@ -31,4 +38,3 @@
 - [setup #1](docs/setup1.md)
 - [code style](docs/style.md)
 - [git faq](docs/git.md)
-

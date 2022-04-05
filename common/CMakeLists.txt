@@ -6,3 +6,5 @@ else()
 endif (APPLE)
 
 add_subdirectory(utils)
+
+add_subdirectory(libmubanks)
