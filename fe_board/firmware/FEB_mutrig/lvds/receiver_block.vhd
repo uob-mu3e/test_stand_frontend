@@ -279,7 +279,7 @@ begin
         -- sync rx data to i_clk_global
         e_fifo : entity work.ip_dcfifo_v2
         generic map (
-            g_ADDR_WIDTH => 4,
+            g_ADDR_WIDTH => 8,
             g_DATA_WIDTH => 9--,
         )
         port map (
