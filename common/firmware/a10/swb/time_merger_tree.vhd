@@ -42,7 +42,7 @@ end entity;
 
 architecture arch of time_merger_tree is
 
-    signal reset_n : std_logic;
+    signal reset_n, en_reg : std_logic;
 
     -- merger signals
     constant size : integer := N_LINKS_IN/2;
@@ -79,14 +79,16 @@ begin
     e_reset_n : entity work.reset_sync
     port map ( o_reset_n => reset_n, i_reset_n => i_reset_n, i_clk => i_clk );
 
-    --! reset for tree
+    --! reset / enable for tree
     process(i_clk, reset_n)
     begin
     if ( reset_n /= '1' ) then
         state_reset <= '1';
+        en_reg <= '0';
         --
     elsif ( rising_edge(i_clk) ) then
         state_reset <= '0';
+        en_reg <= i_en;
     end if;
     end process;
 
@@ -190,7 +192,7 @@ begin
         -- [2]               [tr,2]                [3,sh,2]
         -- [b]               [b]                   [b]
         layer_state(i) <=             -- check if both are mask or if we are in enabled or in reset
-                            SWB_IDLE  when (mask_n(i) = '0' and mask_n(i+size) = '0') or i_en = '0' or state_reset = '1' else
+                            SWB_IDLE  when (mask_n(i) = '0' and mask_n(i+size) = '0') or en_reg = '0' or state_reset = '1' else
                                       -- we forword the error the chain
                             ONEERROR  when (i_data(i).err = '1' or i_data(i+size).err = '1') and wrfull(i) = '0' else
                                       -- simple case on of the links is mask so we just send the other throw the tree

@@ -336,7 +336,7 @@ begin
     port map (
         i_rx                => builder_data,
         i_rempty            => builder_rempty,
-        
+
         i_get_n_words       => i_writeregs(GET_N_DMA_WORDS_REGISTER_W),
         i_dmamemhalffull    => i_dmamemhalffull,
         i_wen               => i_writeregs(DMA_REGISTER_W)(DMA_BIT_ENABLE),
