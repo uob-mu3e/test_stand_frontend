@@ -21,7 +21,7 @@ port (
     o_wdata     : out   work.mu3e.link_t;
     o_rempty    : out   std_logic;
     i_ren       : in    std_logic;
-    
+
     -- output stream debug
     o_wdata_debug     : out   work.mu3e.link_t;
     o_rempty_debug    : out   std_logic;
@@ -119,7 +119,6 @@ begin
             --
         else
             case write_debug_state is
-
             when idle =>
                 -- start on start of package
                 if ( rdata.sop = '1' ) then

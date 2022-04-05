@@ -22,8 +22,8 @@ generic (
 );
 port (
     i_rx            : in  work.mu3e.link_t;
-    i_linkid        : in  std_logic_vector(5 downto 0);  
-    
+    i_linkid        : in  std_logic_vector(5 downto 0);
+
     o_q             : out work.mu3e.link_t;
     i_ren           : in  std_logic;
     o_rdempty       : out std_logic;
@@ -100,14 +100,13 @@ begin
         rx.t1 <= '0';
         rx.dthdr <= '0';
         rx.err <= '0';
-        
+
         hit_reg <= i_rx.data;
 
         if ( i_rx.idle = '1' ) then
             --
         else
             case link_to_fifo_state is
-
             when idle =>
                 if ( i_rx.sop = '1' ) then
                     cnt_events <= cnt_events + '1';
@@ -162,7 +161,7 @@ begin
                     -- TODO: changing to 64bit hit later
                     rx.dthdr <= '1';
                 end if;
-                
+
                 if ( SKIP_DOUBLE_SUB and i_rx.data = hit_reg ) then
                     rx_wen <= '0';
                 else
@@ -199,7 +198,7 @@ begin
         o_rdata     => o_q,
         i_rack      => i_ren,
         o_rempty    => o_rdempty,
-        
+
         i_clk       => i_clk,
         i_reset_n   => reset_n--;
     );

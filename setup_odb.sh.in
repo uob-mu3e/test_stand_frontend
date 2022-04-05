@@ -15,7 +15,6 @@ odbedit -c 'set Custom/OnlineAna manalyzer/OnlineAna.html'
 odbedit -c 'set Custom/Mu3eDisplay manalyzer/Mu3eDisplay.html'
 
 #set mhttpd to run http
-odbedit -c 'set "Experiment/http redirect to https" "n"'
 odbedit -c 'set "WebServer/insecure port passwords" "n"'
 odbedit -c 'set "WebServer/insecure port host list" "n"'
 odbedit -c 'set "WebServer/Enable insecure port" "y"'

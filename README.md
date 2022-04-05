@@ -4,9 +4,15 @@
 - current development branch is `dev`
 - Documentation and manual are under construction in the wiki associated to this repo
 
-## Raspberry Pi USB Server
+## Quickstart
 
-- Follow the setup in https://wiki.ubuntuusers.de/USBIP/
+- `mkdir build && cd build`
+- `cmake .. && make -j8 install`
+- `source set_env.sh`
+- start frontend `febcratefe`
+- start frontend `crfe`
+- start frontend `mhttpd`
+- start other frontends you need
 
 ## Structure
 
