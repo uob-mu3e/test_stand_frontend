@@ -653,14 +653,13 @@ void data_to_gpu(const uint32_t data, uint32_t numf_thr, uint32_t end_ofevent) {
 void gpu_check(uint32_t gpu_check_val) {
 
     std::unique_lock<std::mutex> lock(m);
-    if (gpu_check_val != 1) {
+    if (gpu_check_val == 1) {
         signal = true;
-        cudaMemcpy(d_gpucheck, gpu_check_val, gpu_check_val*sizeof(uint32_t), cudaMemcpyHostToDevice);
         v.notify_one();
+        gp_ch = 0;
     }
-
-    else signal = false;
     
+    else cudaMemcpy(d_gpucheck, gpu_check_val, gpu_check_val*sizeof(uint32_t), cudaMemcpyHostToDevice);
 }
 
 /*-- Event readout -------------------------------------------------*/
