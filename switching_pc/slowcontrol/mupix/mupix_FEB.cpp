@@ -26,7 +26,7 @@ using namespace mu3e::daq;
 
 #include <iostream>
 #include <fstream>
-
+#include <istream>
 using midas::odb;
 
 #include "default_config_mupix.h" //TODO avoid this, reproduce configure routine from chip dacs
@@ -116,9 +116,7 @@ int MupixFEB::ConfigureASICs(){
         uint32_t bitpattern_m;
         vector<vector<uint32_t> > payload_m;
         vector<uint32_t> payload;
-        uint32_t spi_busy;
-        uint32_t count = 0;
-        uint32_t limit = 5;
+
         try {
 
             payload_m.push_back(vector<uint32_t>(reinterpret_cast<uint32_t*>(config->bitpattern_w),reinterpret_cast<uint32_t*>(config->bitpattern_w)+config->length_32bits));
@@ -168,8 +166,16 @@ int MupixFEB::ConfigureASICs(){
     return status; //status of foreach function, SUCCESS when no error.
 }
 
+void read_tdac_file(vector<uint32_t>& vec, std::string path) { 
+  std::ifstream file;
+  file.open(path);
+  file.read(reinterpret_cast<char*>(&vec[0]), 256*64*sizeof(uint32_t));
+  file.close();
+}
+
     // TODO after cosmic run: check how fast this is, improve it
 int MupixFEB::ConfigureTDACs(){
+    int status = feb_sc.ERRCODES::OK;
 
             // Tdac writing for a chip would work like this:
             // write 32 bit words, 4* 8bit tdac in each word
@@ -196,14 +202,16 @@ int MupixFEB::ConfigureTDACs(){
     std::vector<std::vector<uint8_t>> pages_remaining; // vector of FEBs containing vector of sensors, containing number of remaining pages until that sensor is configured
 
     // what is the best way to do this ? .. this looks ugly
-    std::vector<std::vector<std::vector<std::vector<uint32_t>>>> tdac_pages; // vector of FEBs containing a vector of sensors, containing a vector of pages containing a vector of tdac values of that page
+    std::vector<std::vector<std::vector<uint32_t>>> tdac_pages; // vector of FEBs containing a vector of sensors, containing a vector of tdac values of that page
     std::vector<uint8_t> pages_remaining_this_chip;
     uint8_t N_PAGES_PER_CHIP;
+    uint32_t PAGESIZE = 128;  // todo get these things from firmware constants
     uint8_t current_page = 0;
     uint32_t N_free_pages = 0;
     bool allDone = false;
     uint16_t N_CHIPS = 0;
     uint16_t internal_febID = 0;
+    std::string path;
 
     // preparation loop
     for (auto feb : febs){
@@ -215,14 +223,19 @@ int MupixFEB::ConfigureTDACs(){
 
         N_CHIPS = ASICsPerFEB();
         N_PAGES_PER_CHIP=128; // will this be the same for all febs ( -> get from firmware constants) or not (-> read register from FEB) ?
+        std::vector<std::vector<uint32_t>> tdac_page_this_feb;
         for(uint32_t i = 0; i < N_CHIPS; i++){
             pages_remaining_this_chip.push_back(N_PAGES_PER_CHIP);
-            // load all tdacs from file here ?
+            std::vector<uint32_t> tdac_chip(64*256);
+            odb FEBsSettings(pixel_odb_prefix + "/Settings/TDACS/" + std::to_string(i+(internal_febID+N_CHIPS)));
+            path = FEBsSettings["TDACFILE"];
+            read_tdac_file(tdac_chip, "path");
+            tdac_page_this_feb.push_back(tdac_chip);
         }
+        tdac_pages.push_back(tdac_page_this_feb);
         pages_remaining.push_back(pages_remaining_this_chip);
         pages_remaining_this_chip.clear();
-
-
+        internal_febID++;
     }
 
     while (! allDone){
@@ -238,13 +251,16 @@ int MupixFEB::ConfigureTDACs(){
             while(!allDone && N_free_pages > 0){
                 // Write one page for every chip
                 allDone = true;
-                for (int chip = 0; chip<pages_remaining.at(internal_febID).size(); chip++){
+                for (uint32_t chip = 0; chip<pages_remaining.at(internal_febID).size(); chip++){
                     if (pages_remaining.at(internal_febID).at(chip) != 0){
                         allDone = false;
                         if(N_free_pages > 0){
                             current_page = N_PAGES_PER_CHIP-pages_remaining.at(internal_febID)[chip];
                             pages_remaining.at(internal_febID)[chip] = pages_remaining.at(internal_febID)[chip] - 1;
-                            feb_sc.FEB_write(feb, MP_CTRL_TDAC_START_REGISTER_W + chip, tdac_pages.at(internal_febID).at(chip).at(current_page), true, false);
+                            std::vector<uint32_t> tdac_page(PAGESIZE);
+                            // how to do this wihout copy ? 
+                            tdac_page = std::vector<uint32_t>(tdac_pages.at(internal_febID).at(chip).begin() + current_page*PAGESIZE, tdac_pages.at(internal_febID).at(chip).begin() + (current_page+1)*PAGESIZE);
+                            feb_sc.FEB_write(feb, MP_CTRL_TDAC_START_REGISTER_W + chip, tdac_page, true, false);
                             N_free_pages--;
                         } else {break;}
                     }
@@ -254,6 +270,7 @@ int MupixFEB::ConfigureTDACs(){
             internal_febID++;
         }
     }
+    return status;
 }
 
 //MIDAS callback function for FEB register Setter functions
