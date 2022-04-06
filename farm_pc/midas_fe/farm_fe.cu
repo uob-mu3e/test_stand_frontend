@@ -19,13 +19,14 @@
 #include <sstream>
 #include <fstream>
 
-#include "gpu_variables.h"
+//#include "gpu_variables.h"
+#include <condition_variable>
+#include <thread>
+#include <chrono>
 
 #include "mudaq_device.h"
 #include "mfe.h"
 #include "history.h"
-
-#include<thread>
 
 using namespace std;
 using midas::odb;
@@ -56,6 +57,18 @@ uint32_t cnt_loop = 0;
 uint32_t reset_regs = 0;
 uint32_t readout_state_regs = 0;
 
+/* maximum event size produced by this frontend */
+INT max_event_size = dma_buf_size; // we fix this for now to 32MB
+
+/* maximum event size for fragmented events (EQ_FRAGMENTED) */
+INT max_event_size_frag = 5 * 1024 * 1024;
+
+/* buffer size to hold events */
+INT event_buffer_size = 4 * max_event_size;
+
+mudaq::DmaMudaqDevice * mup;
+mudaq::DmaMudaqDevice::DataBlock block;
+
 /* GPU host and device variables */
 uint32_t *A, *B;          // Host variables
 uint32_t *d_A, *d_B;      // Device variables
@@ -77,51 +90,26 @@ uint32_t *h_gpucheck;
 uint32_t *d_gpucheck;
 
 uint32_t gp_ch = 0;
-// set size in cpu ram
-
-/*A = (uint32_t*)malloc(size*sizeof(uint32_t));
-B = (uint32_t*)malloc(size*sizeof(uint32_t));*/
-
-cudaHostAlloc((void **) &A, dma_buf_nwords*sizeof(uint32_t), cudaHostAllocWriteCombined);
-cudaHostAlloc((void **) &B, dma_buf_nwords*sizeof(uint32_t), cudaHostAllocWriteCombined);
-
-//cudaHostAlloc((void **) &h_evt, sizeof(uint32_t), cudaHostAllocWriteCombined);
-h_evt = (uint32_t*)malloc(sizeof(uint32_t));
-h_hit = (uint32_t*)malloc(sizeof(uint32_t));
-h_subovr = (uint32_t*)malloc(sizeof(uint32_t));
-h_bnkd = (uint32_t*)malloc(sizeof(uint32_t));
-h_gpucheck = (uint32_t*)malloc(sizeof(uint32_t));
-
-// set size in gpu ram
-cudaMalloc(&d_A, dma_buf_nwords*sizeof(uint32_t));
-cudaMalloc(&d_B, dma_buf_nwords*sizeof(uint32_t));
-
-cudaMalloc(&d_evt, sizeof(uint32_t));
-cudaMalloc(&d_hit, sizeof(uint32_t));
-cudaMalloc(&d_subovr, sizeof(uint32_t));
-cudaMalloc(&d_bnkd, sizeof(uint32_t));
-cudaMalloc(&d_gpucheck, sizeof(uint32_t));
-
+        
 uint32_t EventCount = 0;
 uint32_t Hit        = 0;
 uint32_t SubOvr     = 0;
 uint32_t Reminder   = 0;
+        
+// set size in cpu ram
+/*A = (uint32_t*)malloc(size*sizeof(uint32_t));
+B = (uint32_t*)malloc(size*sizeof(uint32_t));*/
 
-std::atomic<bool> signal;
+//cudaHostAlloc((void **) &h_evt, sizeof(uint32_t), cudaHostAllocWriteCombined);
+        
+uint32_t evc;
+uint32_t hits;
+uint32_t ovrflw;
+uint32_t rem;
+
+std::atomic<bool> gpu_done(false);
 std::mutex m;
 std::condition_variable v;
-
-/* maximum event size produced by this frontend */
-INT max_event_size = dma_buf_size; // we fix this for now to 32MB
-
-/* maximum event size for fragmented events (EQ_FRAGMENTED) */
-INT max_event_size_frag = 5 * 1024 * 1024;
-
-/* buffer size to hold events */
-INT event_buffer_size = 4 * max_event_size;
-
-mudaq::DmaMudaqDevice * mup;
-mudaq::DmaMudaqDevice::DataBlock block;
 
 /*-- Function declarations -----------------------------------------*/
 
@@ -138,10 +126,22 @@ INT read_stream_thread(void *param);
 
 INT poll_event(INT source, INT count, BOOL test);
 INT interrupt_configure(INT cmd, INT source, POINTER_T adr);
-
+INT gpu_counter(uint32_t ngputhread, uint32_t endofevt);
 
 void setup_odb();
 void setup_watches();
+
+__global__ void gpu_counters(uint32_t *dest, uint32_t *src, uint32_t Endofevent, uint32_t* evt, uint32_t* hit, uint32_t* sub_ovr, uint32_t* bnkd, size_t n, uint32_t *gpucheck);
+
+void Set_EventCount(uint32_t ec) { evc = ec; }
+void Set_Hits(uint32_t h) { hits = h; }
+void Set_SubHeaderOvrflw(uint32_t ov) { ovrflw = ov; }
+void Set_Reminders(uint32_t rm) { rem = rm; }
+
+uint32_t Get_EventCount() { return evc; }
+uint32_t Get_Hits() { return evc; }
+uint32_t Get_SubHeaderOvrflw() { return evc; }
+uint32_t Get_Reminders() { return evc; }
 
 INT init_mudaq();
 
@@ -640,10 +640,30 @@ INT read_stream_event(char *pevent, INT off)
   
 }
 
-void data_to_gpu(const uint32_t data, uint32_t numf_thr, uint32_t end_ofevent) {
+void data_to_gpu(const void* data, uint32_t numf_thr, uint32_t end_ofevent) {
+    
+    h_evt = (uint32_t*)malloc(sizeof(uint32_t));
+    h_hit = (uint32_t*)malloc(sizeof(uint32_t));
+    h_subovr = (uint32_t*)malloc(sizeof(uint32_t));
+    h_bnkd = (uint32_t*)malloc(sizeof(uint32_t));
+    //h_gpucheck = (uint32_t*)malloc(sizeof(uint32_t));
+    
+    cudaHostAlloc((void **) &A, numf_thr*sizeof(uint32_t), cudaHostAllocWriteCombined);
+    cudaHostAlloc((void **) &B, numf_thr*sizeof(uint32_t), cudaHostAllocWriteCombined);
+    cudaHostAlloc((void **) &h_gpucheck, sizeof(uint32_t), cudaHostAllocWriteCombined);
 
+    // set size in gpu ram
+    cudaMalloc(&d_A, numf_thr*sizeof(uint32_t));
+    cudaMalloc(&d_B, numf_thr*sizeof(uint32_t));
+
+    cudaMalloc(&d_evt, sizeof(uint32_t));
+    cudaMalloc(&d_hit, sizeof(uint32_t));
+    cudaMalloc(&d_subovr, sizeof(uint32_t));
+    cudaMalloc(&d_bnkd, sizeof(uint32_t));
+    cudaMalloc(&d_gpucheck, sizeof(uint32_t));
+    
     std::unique_lock<std::mutex> lock(m);
-    v.wait(lock, [&] { return signal; });
+    v.wait(lock, [&] { return gpu_done; });
     // send data to gpu
     cudaMemcpy(d_A, data, numf_thr, cudaMemcpyHostToDevice);
     gpu_counter(numf_thr, end_ofevent); // gpu code for counters
@@ -654,12 +674,29 @@ void gpu_check(uint32_t gpu_check_val) {
 
     std::unique_lock<std::mutex> lock(m);
     if (gpu_check_val == 1) {
-        signal = true;
+        
+        cudaFree((void *)d_A);
+        cudaFree((void *)d_B);
+        cudaFree((void *)d_evt);
+        cudaFree((void *)d_hit);
+        cudaFree((void *)d_subovr);
+        cudaFree((void *)d_bnkd);
+        cudaFree((void *)d_gpucheck);
+
+        cudaFreeHost((void *)A);
+        cudaFreeHost((void *)B);
+        cudaFreeHost((void *)h_evt);
+        cudaFreeHost((void *)h_hit);
+        cudaFreeHost((void *)h_subovr);
+        cudaFreeHost((void *)h_bnkd);
+        cudaFreeHost((void *)h_gpucheck);
+        
+        gpu_done = true;
         v.notify_one();
         gp_ch = 0;
     }
     
-    else cudaMemcpy(d_gpucheck, gpu_check_val, gpu_check_val*sizeof(uint32_t), cudaMemcpyHostToDevice);
+    else cudaMemcpy(d_gpucheck, &gpu_check_val, sizeof(uint32_t), cudaMemcpyHostToDevice);
 }
 
 /*-- Event readout -------------------------------------------------*/
@@ -737,7 +774,7 @@ INT read_stream_thread(void *param) {
 
         std::thread gpu_check(gp_ch);
         
-        std::thread data_gpu(data_to_gpu, const_cast<uint32_t*>(dma_buf), dma_buf_nwords*sizeof(uint32_t), endofevent, gp_ch);
+        std::thread data_gpu(const_cast<uint32_t*>(dma_buf), dma_buf_nwords*sizeof(uint32_t), endofevent);
         
         gpu_check.join();
         data_gpu.join();
@@ -752,7 +789,7 @@ INT read_stream_thread(void *param) {
     return 0;
 }
 
-INIT gpu_counter(uint32_t dma_bufnwords, uint32_t end_of_event){
+INT gpu_counter(uint32_t dma_bufnwords, uint32_t end_of_event){
 
     int threadsPerBlock = 1024;                 // threads   (Max threadsPerBlock)
     int numBlocks = ceil(dma_bufnwords/threadsPerBlock); // # blocks
@@ -789,10 +826,10 @@ __device__ uint32_t Overflowcnt;
 __device__ uint32_t bank_data;
 
 // device function to get counted values
-__device__ uint32_t Get_EventCount() { return Evecnt; }
-__device__ uint32_t Get_HitCount() { return Hitcnt; }
-__device__ uint32_t Get_SubHeaderOverFlow() { return Overflowcnt; }
-__device__ uint32_t Get_BankData() { return bank_data; }
+__device__ uint32_t get_eventcount() { return Evecnt; }
+__device__ uint32_t get_hitcount() { return Hitcnt; }
+__device__ uint32_t get_subheaderoverflow() { return Overflowcnt; }
+__device__ uint32_t get_bankdata() { return bank_data; }
 
 // device function for Counters in the GPU
 __device__ void Counter(uint32_t i, uint32_t *db, uint32_t endofevent) {
@@ -870,10 +907,10 @@ __global__ void gpu_counters(uint32_t *dest, uint32_t *src, uint32_t Endofevent,
         event_counter = 0;
     }
 
-    event_counter = Get_EventCount();
-    hit_counter = Get_HitCount();
-    subhead_ovrflow = Get_SubHeaderOverFlow();
-    total_bankdata = Get_BankData();
+    event_counter = get_eventcount();
+    hit_counter = get_hitcount();
+    subhead_ovrflow = get_subheaderoverflow();
+    total_bankdata = get_bankdata();
     //printf("i %d count: %d \n", thread_idx, event_counter);
     reminder = total_bankdata - hit_counter;
 
