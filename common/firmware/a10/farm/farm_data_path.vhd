@@ -169,7 +169,7 @@ begin
 
     o_ddr_ready <= ddr_ready_A or ddr_ready_B;
 
-    
+
     --! time stamp handling
     o_tsblocks <= x"0000" & B_tsrange & A_tsrange;
     ts_in_upper <= i_ts(tsupper); -- 15 downto 8 from 35 downto 4 of the 48b TS
@@ -238,71 +238,71 @@ begin
         end if;
 
         case mem_mode_A is
-            when disabled =>
-                if ( A_mem_calibrated = '1' ) then
-                    mem_mode_A <= ready;
-                    A_disabled <= '0';
-                end if;
+        when disabled =>
+            if ( A_mem_calibrated = '1' ) then
+                mem_mode_A <= ready;
+                A_disabled <= '0';
+            end if;
 
-            when ready =>
-                if ( tsupperchangeA and A_done = '1' ) then
-                    mem_mode_A    <= writing;
-                    A_tsrange     <= ts_in_upper_A;
-                    writefifo_A   <= '1';
-                end if;
+        when ready =>
+            if ( tsupperchangeA and A_done = '1' ) then
+                mem_mode_A    <= writing;
+                A_tsrange     <= ts_in_upper_A;
+                writefifo_A   <= '1';
+            end if;
 
-            when writing =>
-                A_writestate    <= '1';
+        when writing =>
+            A_writestate    <= '1';
 
-                writefifo_A     <= not sync_A_empty;
-                if ( tsupperchangeA or A_almost_full = '1' ) then
-                    mem_mode_A  <= reading;
-                    writefifo_A <= '0';
-                end if;
+            writefifo_A     <= not sync_A_empty;
+            if ( tsupperchangeA or A_almost_full = '1' ) then
+                mem_mode_A  <= reading;
+                writefifo_A <= '0';
+            end if;
 
-            when reading =>
-                A_readstate <= '1';
+        when reading =>
+            A_readstate <= '1';
 
-                if ( i_tsblock_done = A_tsrange ) then
-                    mem_mode_A <= ready;
-                end if;
+            if ( i_tsblock_done = A_tsrange ) then
+                mem_mode_A <= ready;
+            end if;
 
-            when others =>
-                mem_mode_A <= disabled;
+        when others =>
+            mem_mode_A <= disabled;
 
         end case;
 
         case mem_mode_B is
-            when disabled =>
-                if ( B_mem_calibrated = '1' )then
-                    mem_mode_B <= ready;
-                    B_disabled <= '0';
-                end if;
+        when disabled =>
+            if ( B_mem_calibrated = '1' )then
+                mem_mode_B <= ready;
+                B_disabled <= '0';
+            end if;
 
-            when ready  =>
-                if ( tsupperchangeB and (mem_mode_A /= ready or (mem_mode_A = ready and A_done = '0')) and B_done ='1' ) then
-                    mem_mode_B      <= writing;
-                    B_tsrange       <= ts_in_upper_B;
-                    writefifo_B     <= '1';
-                end if;
+        when ready  =>
+            if ( tsupperchangeB and (mem_mode_A /= ready or (mem_mode_A = ready and A_done = '0')) and B_done ='1' ) then
+                mem_mode_B      <= writing;
+                B_tsrange       <= ts_in_upper_B;
+                writefifo_B     <= '1';
+            end if;
 
-            when writing =>
-                B_writestate <= '1';
+        when writing =>
+            B_writestate <= '1';
 
-                writefifo_B     <= not sync_B_empty;
-                if ( tsupperchangeB or B_almost_full = '1' ) then
-                    mem_mode_B  <= reading;
-                    writefifo_B <= '0';
-                end if;
+            writefifo_B     <= not sync_B_empty;
+            if ( tsupperchangeB or B_almost_full = '1' ) then
+                mem_mode_B  <= reading;
+                writefifo_B <= '0';
+            end if;
 
-            when reading =>
-                B_readstate     <= '1';
+        when reading =>
+            B_readstate     <= '1';
 
-                if ( i_tsblock_done = B_tsrange ) then
-                    mem_mode_B <= ready;
-                end if;
-            when others =>
-                mem_mode_B <= disabled;
+            if ( i_tsblock_done = B_tsrange ) then
+                mem_mode_B <= ready;
+            end if;
+        when others =>
+            mem_mode_B <= disabled;
 
         end case;
     end if;

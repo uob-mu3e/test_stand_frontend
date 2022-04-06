@@ -45,6 +45,7 @@ begin
         mem_data <= (others => '0');
         mem_wen <= '0';
         state <= err_low;
+        --
     elsif rising_edge(i_clk) then
         case state is
         when err_low =>

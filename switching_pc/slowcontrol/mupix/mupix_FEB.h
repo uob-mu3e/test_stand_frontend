@@ -41,6 +41,7 @@ class MupixFEB  : public MuFEB{
 
       //Mapping from ASIC number to FPGA_ID and ASIC_ID
       virtual uint16_t FPGAid_from_ID(int asic) const;
+      virtual uint16_t MappedFPGAid_from_ID(int asic) const;
       virtual uint16_t ASICid_from_ID(int asic) const;
       // TODO: Do this right
       virtual uint16_t GetModulesPerFEB() const {return 4;}
@@ -89,7 +90,7 @@ class MupixFEB  : public MuFEB{
 
 
       //MIDAS callback. Made static and using the user data argument as "this" to ease binding to C-style midas-callbacks
-      static void on_settings_changed(odb o, void * userdata);
+      static void on_settings_changed(odb o);
 
 };//class MupixFEB
 

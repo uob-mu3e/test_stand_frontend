@@ -43,7 +43,6 @@ begin
         o_rc <= work.mu3e.LINK_IDLE;
 
         case demerge_state is
-
         when idle =>
             if ( i_data.datak = "0001" and i_data.data(7 downto 0) /= work.util.K28_5 and i_data.data(7 downto 0) /= work.util.K28_4 ) then
                 o_rc <= i_data;

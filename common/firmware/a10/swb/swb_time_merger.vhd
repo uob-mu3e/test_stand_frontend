@@ -31,12 +31,12 @@ port (
     o_wdata         : out   work.mu3e.link_t;
     o_rempty        : out   std_logic;
     i_ren           : in    std_logic;
-    
+
     -- output stream debug
     o_wdata_debug   : out   work.mu3e.link_t;
     o_rempty_debug  : out   std_logic;
     i_ren_debug     : in    std_logic;
-    
+
     o_error         : out   std_logic;
 
     i_en            : in    std_logic;
@@ -99,7 +99,7 @@ begin
         we_debug            <= '0';
         write_debug_state   <= idle;
         --
-    elsif ( rising_edge(i_clk) ) then
+    elsif rising_edge(i_clk) then
 
         wdata_debug <= rdata;
         we_debug    <= '0';
@@ -108,7 +108,6 @@ begin
             --
         else
             case write_debug_state is
-
             when idle =>
                 -- start on start of package
                 if ( rdata.sop = '1' ) then
@@ -165,7 +164,7 @@ begin
     begin
     if ( i_reset_n /= '1' ) then
         almost_full <= '0';
-    elsif ( rising_edge(i_clk) ) then
+    elsif rising_edge(i_clk) then
         if ( wrusedw(g_ADDR_WIDTH - 1) = '1' ) then
             almost_full <= '1';
         else

@@ -5,10 +5,6 @@
 # 
 # Test description:
 #
-# TODO
-# 1. Add option to change HAMEG channel
-# 2. Think about upstream and downstream limitations
-# 
 # 
 
 # Turn on channel 2 HAMEG
@@ -17,19 +13,55 @@
 # Output current difference on HAMEG channel 2
 
 
+# Empty all buffers at startup
+LOOP k, 3
+    ODBSET /Equipment/Mupix/QCTests/Ladder/LVPowerOn/Output/current_increase[$k-1], 0
+ENDLOOP
 
-# Turn on channel 2 of HAMEG
-ODBGET /Equipment/HAMEG0/Variables/State[1], now_state_hameg_channel
+
+PARAM half_ladder_id, "Half ladder ID"
+PARAM hameg_id, "HAMEG ID"
+PARAM channel, "HAMEG Channel"
+
+
+ODBGET /Equipment/Mupix/QCTests/Ladder/half_ladder_id, _g_half_ladder_id
+IF $_g_half_ladder_id != half_ladder_id
+    MESSAGE "Input half_ladder_id at LV Power On Test different than the one inputed previously", 0
+ENDIF
+
+ODBGET /Equipment/Mupix/QCTests/Ladder/half_ladder_id, _g_hameg_id
+IF $_g_hameg_id != hameg_id
+    MESSAGE "Input hameg_id at LV Power On Test different than the one inputed previously", 0
+ENDIF
+
+ODBGET /Equipment/Mupix/QCTests/Ladder/half_ladder_id, _g_channel
+IF $_g_channel != channel
+    MESSAGE "Input channel at LV Power On Test different than the one inputed previously", 0
+ENDIF
+
+
+ODBSET /Equipment/Mupix/QCTests/Ladder/LVPowerOn/half_ladder_id, $half_ladder_id
+ODBSET /Equipment/Mupix/QCTests/Ladder/LVPowerOn/hameg_id, $hameg_id
+ODBSET /Equipment/Mupix/QCTests/Ladder/LVPowerOn/channel, $channel
+
+
+CAT power_get_state_path, /Equipment/HAMEG, $hameg_id, /Variables/State[, $channel,]
+CAT power_set_state_path, /Equipment/HAMEG, $hameg_id, /Variables/Set State[, $channel,]
+CAT power_get_current_path, /Equipment/HAMEG, $hameg_id, /Variables/Current[, $channel,]
+
+
+# Turn on channel $channel of HAMEG$hamge_id
+ODBGET $power_get_state_path, now_state_hameg_channel
 
 IF $now_state_hameg_channel == 0
-    ODBSET /Equipment/HAMEG0/Variables/Set State[1], 1
+    ODBSET power_set_state_path, 1
 ENDIF
 
 
 
 # Turn off all
 LOOP i, 3
-    SET i_, i+2
+    i_ = i-1
     CAT path_to_bias, /Equipment/Mupix/Settings/BIASDACS/, $i_, /BiasBlock_On
     ODBSET $path_to_bias, 0
     ODBSET /Equipment/Switching/Settings/MupixChipToConfigure, $i_
@@ -40,10 +72,10 @@ ENDLOOP
 
 LOOP i, 3
     # Save init current read
-    ODBGET /Equipment/HAMEG0/Variables/Current[1], init_current
+    ODBGET $power_get_current_path, init_current
     
     # Turn on chip i
-    SET i_, $i+2
+    i_ = $i -1
     CAT path_to_bias, /Equipment/Mupix/Settings/BIASDACS/, $i_, /BiasBlock_On
     ODBSET $path_to_bias, 5
     ODBSET /Equipment/Switching/Settings/MupixChipToConfigure, $i_
@@ -51,7 +83,7 @@ LOOP i, 3
 
     # Read final current
     WAIT SECONDS 1
-    ODBGET /Equipment/HAMEG0/Variables/Current[1], current
+    ODBGET $power_get_current_path, current
 
     # Turn off chip
     ODBSET $path_to_bias, 0
@@ -59,6 +91,6 @@ LOOP i, 3
     ODBSET /Equipment/Switching/Settings/MupixConfig, 1
 
     # Save current difference
-    SET diff, $current-$init_current
+    diff = $current-$init_current
     ODBSET /Equipment/Mupix/QCTests/Ladder/LVPowerOn/Output/current_increase[$i_], $diff
 ENDLOOP

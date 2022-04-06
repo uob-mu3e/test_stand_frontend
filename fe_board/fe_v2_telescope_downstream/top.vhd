@@ -11,155 +11,155 @@ use ieee.numeric_std.all;
 use work.mudaq.all;
 use work.mupix.all;
 
-entity top is 
-    port (
-        fpga_reset                  : in    std_logic;
+entity top is
+port (
+    fpga_reset                  : in    std_logic;
 
-        LVDS_clk_si1_fpga_A         : in    std_logic; -- 125 MHz base clock for LVDS PLLs - right // SI5345
-        LVDS_clk_si1_fpga_B         : in    std_logic; -- 125 MHz base clock for LVDS PLLs - left // SI5345
-        transceiver_pll_clock       : in    std_logic_vector(0 downto 0); --_vector(1 downto 0); -- 156.25 MHz  clock for transceiver PLL-- Using 1 or 2 with 156 Mhz gives warings about coupling in clock builder
-      --extra_transceiver_pll_clocks: in    std_logic_vector(1 downto 0); -- 125 MHz base clock for transceiver PLLs // SI5345
+    LVDS_clk_si1_fpga_A         : in    std_logic; -- 125 MHz base clock for LVDS PLLs - right // SI5345
+    LVDS_clk_si1_fpga_B         : in    std_logic; -- 125 MHz base clock for LVDS PLLs - left // SI5345
+    transceiver_pll_clock       : in    std_logic_vector(0 downto 0); --_vector(1 downto 0); -- 156.25 MHz  clock for transceiver PLL-- Using 1 or 2 with 156 Mhz gives warings about coupling in clock builder
+  --extra_transceiver_pll_clocks: in    std_logic_vector(1 downto 0); -- 125 MHz base clock for transceiver PLLs // SI5345
 
-        lvds_firefly_clk            : in    std_logic; -- 125 MHz base clock
+    lvds_firefly_clk            : in    std_logic; -- 125 MHz base clock
 
-        systemclock                 : in    std_logic; -- 50 MHz system clock // SI5345
-        systemclock_bottom          : in    std_logic; -- 625 MHz clock // SI5345
-        clk_125_top                 : in    std_logic; -- 125 MHz clock spare // SI5345
-        clk_125_bottom              : in    std_logic; -- 125 Mhz clock spare // SI5345
-        spare_clk_osc               : in    std_logic; -- Spare clock // 50 MHz oscillator
+    systemclock                 : in    std_logic; -- 50 MHz system clock // SI5345
+    systemclock_bottom          : in    std_logic; -- 625 MHz clock // SI5345
+    clk_125_top                 : in    std_logic; -- 125 MHz clock spare // SI5345
+    clk_125_bottom              : in    std_logic; -- 125 Mhz clock spare // SI5345
+    spare_clk_osc               : in    std_logic; -- Spare clock // 50 MHz oscillator
 
-        -- Block A: Connections for three chips -- layer 0
-        clock_A                     : out   std_logic;
-        data_in_A                   : in    std_logic_vector(9 downto 1);
-        fast_reset_A                : out   std_logic;
-        SIN_A                       : out   std_logic;
-        mosi_A                      : out   std_logic;
-        csn_A                       : out   std_logic_vector(2 downto 0);
+    -- Block A: Connections for three chips -- layer 0
+    clock_A                     : out   std_logic;
+    data_in_A                   : in    std_logic_vector(9 downto 1);
+    fast_reset_A                : out   std_logic;
+    SIN_A                       : out   std_logic;
+    mosi_A                      : out   std_logic;
+    csn_A                       : out   std_logic_vector(2 downto 0);
 
-        -- Block B: Connections for three chips -- layer 0
-        clock_B                     : out   std_logic;
-        data_in_B                   : in    std_logic_vector(9 downto 1);
-        fast_reset_B                : out   std_logic;
-        SIN_B                       : out   std_logic;
-        mosi_B                      : out   std_logic;
-        csn_B                       : out   std_logic_vector(2 downto 0);
+    -- Block B: Connections for three chips -- layer 0
+    clock_B                     : out   std_logic;
+    data_in_B                   : in    std_logic_vector(9 downto 1);
+    fast_reset_B                : out   std_logic;
+    SIN_B                       : out   std_logic;
+    mosi_B                      : out   std_logic;
+    csn_B                       : out   std_logic_vector(2 downto 0);
 
-        -- Block C: Connections for three chips -- layer 1
-        clock_C                     : out   std_logic;
-        data_in_C                   : in    std_logic_vector(9 downto 1);
-        fast_reset_C                : out   std_logic;
-        SIN_C                       : out   std_logic;
-        mosi_C                      : out   std_logic;
-        csn_C                       : out   std_logic_vector(2 downto 0);
+    -- Block C: Connections for three chips -- layer 1
+    clock_C                     : out   std_logic;
+    data_in_C                   : in    std_logic_vector(9 downto 1);
+    fast_reset_C                : out   std_logic;
+    SIN_C                       : out   std_logic;
+    mosi_C                      : out   std_logic;
+    csn_C                       : out   std_logic_vector(2 downto 0);
 
-        -- Block D: Connections for three chips -- layer 1
-        clock_D                     : out   std_logic;
-        data_in_D                   : in    std_logic_vector(9 downto 1);
-        fast_reset_D                : out   std_logic;
-        SIN_D                       : out   std_logic;
-        mosi_D                      : out   std_logic;
-        csn_D                       : out   std_logic_vector(2 downto 0);
+    -- Block D: Connections for three chips -- layer 1
+    clock_D                     : out   std_logic;
+    data_in_D                   : in    std_logic_vector(9 downto 1);
+    fast_reset_D                : out   std_logic;
+    SIN_D                       : out   std_logic;
+    mosi_D                      : out   std_logic;
+    csn_D                       : out   std_logic_vector(2 downto 0);
 
-        -- Block E: Connections for three chips -- layer 1
-        -- clock_E                     : out   std_logic;
-        -- data_in_E                   : in    std_logic_vector(9 downto 1);
-        -- fast_reset_E                : out   std_logic;
-        -- SIN_E                       : out   std_logic;
+    -- Block E: Connections for three chips -- layer 1
+    -- clock_E                     : out   std_logic;
+    -- data_in_E                   : in    std_logic_vector(9 downto 1);
+    -- fast_reset_E                : out   std_logic;
+    -- SIN_E                       : out   std_logic;
 
-        -- enable signals for lvds repeaters on scsi adapter card
-        enable_A                    : out   std_logic;
-        enable_B                    : out   std_logic;
-        enable_C                    : out   std_logic;
-        enable_D                    : out   std_logic;
+    -- enable signals for lvds repeaters on scsi adapter card
+    enable_A                    : out   std_logic;
+    enable_B                    : out   std_logic;
+    enable_C                    : out   std_logic;
+    enable_D                    : out   std_logic;
 
-        -- NIM inputs on scsi adapter
-        Trig0_TTL                   : in    std_logic;
-        Trig1_TTL                   : in    std_logic;
-        Trig2_TTL                   : in    std_logic;
-        Trig3_TTL                   : in    std_logic;
+    -- NIM inputs on scsi adapter
+    Trig0_TTL                   : in    std_logic;
+    Trig1_TTL                   : in    std_logic;
+    Trig2_TTL                   : in    std_logic;
+    Trig3_TTL                   : in    std_logic;
 
-        -- Extra signals
-        
-        --clock_aux                   : out   std_logic; -- Pin in use for csn_A[2] M.Mueller
-        --spare_out                   : out   std_logic_vector(3 downto 2); -- Pins in use for csn_* M.Mueller
+    -- Extra signals
 
-        -- Fireflies
-        firefly1_tx_data            : out   std_logic_vector(3 downto 0); -- transceiver
-        firefly2_tx_data            : out   std_logic_vector(3 downto 0); -- transceiver 
-        firefly1_rx_data            : in    std_logic;-- transceiver
-        firefly2_rx_data            : in    std_logic_vector(2 downto 0);-- transceiver
+    --clock_aux                   : out   std_logic; -- Pin in use for csn_A[2] M.Mueller
+    --spare_out                   : out   std_logic_vector(3 downto 2); -- Pins in use for csn_* M.Mueller
 
-        firefly1_lvds_rx_in         : in    std_logic;--_vector(1 downto 0); -- receiver for slow control or something else
-        firefly2_lvds_rx_in         : in    std_logic;--_vector(1 downto 0); -- receiver for slow control or something else
+    -- Fireflies
+    firefly1_tx_data            : out   std_logic_vector(3 downto 0); -- transceiver
+    firefly2_tx_data            : out   std_logic_vector(3 downto 0); -- transceiver
+    firefly1_rx_data            : in    std_logic;-- transceiver
+    firefly2_rx_data            : in    std_logic_vector(2 downto 0);-- transceiver
 
-        Firefly_ModSel_n            : out   std_logic_vector(1 downto 0);-- Module select: active low, when host wants to communicate (I2C) with module
-        Firefly_Rst_n               : out   std_logic_vector(1 downto 0);-- Module reset: active low, complete reset of module. Module indicates reset done by "low" interrupt_n (data_not_ready is negated).
-        Firefly_Scl                 : inout std_logic;-- I2C Clock: module asserts low for clock stretch, timing infos: page 47
-        Firefly_Sda                 : inout std_logic;-- I2C Data
-      --Firefly_LPM                 : out   std_logic;-- Firefly Low Power Mode: Modules power consumption should be below 1.5 W. active high. Overrideable by I2C commands. Override default: high power (page 19 of documentation).
-        Firefly_Int_n               : in    std_logic_vector(1 downto 0);-- Firefly Interrupt: when low: operational fault or status critical. after reset: goes high, and data_not_ready is read with '0' (byte 2 bit 0) and flag field is read
-        Firefly_ModPrs_n            : in    std_logic_vector(1 downto 0);-- Module present: Pulled to ground if module is present
+    firefly1_lvds_rx_in         : in    std_logic;--_vector(1 downto 0); -- receiver for slow control or something else
+    firefly2_lvds_rx_in         : in    std_logic;--_vector(1 downto 0); -- receiver for slow control or something else
 
-        -- LEDs, test points and buttons
-        PushButton                  : in    std_logic_vector(1 downto 0);
-        FPGA_Test                   : out   std_logic_vector(7 downto 0);
+    Firefly_ModSel_n            : out   std_logic_vector(1 downto 0);-- Module select: active low, when host wants to communicate (I2C) with module
+    Firefly_Rst_n               : out   std_logic_vector(1 downto 0);-- Module reset: active low, complete reset of module. Module indicates reset done by "low" interrupt_n (data_not_ready is negated).
+    Firefly_Scl                 : inout std_logic;-- I2C Clock: module asserts low for clock stretch, timing infos: page 47
+    Firefly_Sda                 : inout std_logic;-- I2C Data
+  --Firefly_LPM                 : out   std_logic;-- Firefly Low Power Mode: Modules power consumption should be below 1.5 W. active high. Overrideable by I2C commands. Override default: high power (page 19 of documentation).
+    Firefly_Int_n               : in    std_logic_vector(1 downto 0);-- Firefly Interrupt: when low: operational fault or status critical. after reset: goes high, and data_not_ready is read with '0' (byte 2 bit 0) and flag field is read
+    Firefly_ModPrs_n            : in    std_logic_vector(1 downto 0);-- Module present: Pulled to ground if module is present
 
-        --LCD
-        lcd_csn                     : out   std_logic;--//2.5V    //LCD Chip Select
-        lcd_d_cn                    : out   std_logic;--//2.5V    //LCD Data / Command Select
-        lcd_data                    : out   std_logic_vector(7 downto 0);--//2.5V    //LCD Data
-        lcd_wen                     : out   std_logic;--//2.5V    //LCD Write Enable
+    -- LEDs, test points and buttons
+    PushButton                  : in    std_logic_vector(1 downto 0);
+    FPGA_Test                   : out   std_logic_vector(7 downto 0);
 
-        -- SI5345(0): 7 Transceiver clocks @ 125 MHz
-        -- SI4345(1): Clocks for the Fibres
-        -- 1 reference and 2 inputs for synch
-        si45_oe_n                   : out   std_logic_vector(1 downto 0);-- active low output enable -> should always be '0'
-        si45_intr_n                 : in    std_logic_vector(1 downto 0);-- fault monitor: interrupt pin: change in state of status indicators 
-        si45_lol_n                  : in    std_logic_vector(1 downto 0);-- fault monitor: loss of lock of DSPLL
+    --LCD
+    lcd_csn                     : out   std_logic;--//2.5V    //LCD Chip Select
+    lcd_d_cn                    : out   std_logic;--//2.5V    //LCD Data / Command Select
+    lcd_data                    : out   std_logic_vector(7 downto 0);--//2.5V    //LCD Data
+    lcd_wen                     : out   std_logic;--//2.5V    //LCD Write Enable
 
-        -- I2C sel is set to GND on PCB -> SPI interface
-        si45_rst_n                  : out   std_logic_vector(1 downto 0);--	reset
-        si45_spi_cs_n               : out   std_logic_vector(1 downto 0);-- chip select
-        si45_spi_in                 : out   std_logic_vector(1 downto 0);-- data in
-        si45_spi_out                : in    std_logic_vector(1 downto 0);-- data out
-        si45_spi_sclk               : out   std_logic_vector(1 downto 0);-- clock
+    -- SI5345(0): 7 Transceiver clocks @ 125 MHz
+    -- SI4345(1): Clocks for the Fibres
+    -- 1 reference and 2 inputs for synch
+    si45_oe_n                   : out   std_logic_vector(1 downto 0);-- active low output enable -> should always be '0'
+    si45_intr_n                 : in    std_logic_vector(1 downto 0);-- fault monitor: interrupt pin: change in state of status indicators
+    si45_lol_n                  : in    std_logic_vector(1 downto 0);-- fault monitor: loss of lock of DSPLL
 
-        -- change frequency by the FSTEPW parameter
-        si45_fdec                   : out   std_logic_vector(1 downto 0);-- decrease
-        si45_finc                   : out   std_logic_vector(1 downto 0);-- increase
+    -- I2C sel is set to GND on PCB -> SPI interface
+    si45_rst_n                  : out   std_logic_vector(1 downto 0);--	reset
+    si45_spi_cs_n               : out   std_logic_vector(1 downto 0);-- chip select
+    si45_spi_in                 : out   std_logic_vector(1 downto 0);-- data in
+    si45_spi_out                : in    std_logic_vector(1 downto 0);-- data out
+    si45_spi_sclk               : out   std_logic_vector(1 downto 0);-- clock
 
-        -- Midas slow control bus
-        mscb_fpga_in                : in    std_logic;
-        mscb_fpga_out               : out   std_logic;
-        mscb_fpga_oe_n              : out   std_logic;
+    -- change frequency by the FSTEPW parameter
+    si45_fdec                   : out   std_logic_vector(1 downto 0);-- decrease
+    si45_finc                   : out   std_logic_vector(1 downto 0);-- increase
 
-        -- Backplane slot signal
-        ref_adr                     : in    std_logic_vector(7 downto 0);
+    -- Midas slow control bus
+    mscb_fpga_in                : in    std_logic;
+    mscb_fpga_out               : out   std_logic;
+    mscb_fpga_oe_n              : out   std_logic;
 
-        -- MAX10 IF
-        max10_spi_sclk              : out   std_logic;
-        max10_spi_mosi              : inout std_logic;
-        max10_spi_miso              : inout std_logic;
-        max10_spi_D1                : inout std_logic;
-        max10_spi_D2                : inout std_logic;
-        max10_spi_D3                : inout std_logic;
-        max10_spi_csn               : out   std_logic;
-		
-		gate_in  					: in    std_logic;
-		pulse_train_in				: in    std_logic--;
-        );
+    -- Backplane slot signal
+    ref_adr                     : in    std_logic_vector(7 downto 0);
+
+    -- MAX10 IF
+    max10_spi_sclk              : out   std_logic;
+    max10_spi_mosi              : inout std_logic;
+    max10_spi_miso              : inout std_logic;
+    max10_spi_D1                : inout std_logic;
+    max10_spi_D2                : inout std_logic;
+    max10_spi_D3                : inout std_logic;
+    max10_spi_csn               : out   std_logic;
+
+	gate_in  					: in    std_logic;
+	pulse_train_in				: in    std_logic--;
+);
 end top;
 
 architecture rtl of top is
 
-	component trigPLL is
-		port (
-			refclk   : in  std_logic ; -- clk
-			rst      : in  std_logic ; -- reset
-			outclk_0 : out std_logic;        -- clk
-			locked   : out std_logic         -- export
-		);
-	end component trigPLL;
+    component trigPLL is
+    port (
+        refclk   : in  std_logic ; -- clk
+        rst      : in  std_logic ; -- reset
+        outclk_0 : out std_logic;        -- clk
+        locked   : out std_logic         -- export
+    );
+    end component trigPLL;
 
     -- Debouncers
     signal pb_db                    : std_logic_vector(1 downto 0);
@@ -168,7 +168,7 @@ architecture rtl of top is
     constant N_LINKS                : integer := 1;
 
     signal fifo_write               : std_logic_vector(N_LINKS-1 downto 0);
-    signal fifo_wdata               : std_logic_vector(36*(N_LINKS-1)+35 downto 0); 
+    signal fifo_wdata               : std_logic_vector(36*(N_LINKS-1)+35 downto 0);
 
     signal data_bypass              : std_logic_vector(31 downto 0);
     signal data_bypass_we           : std_logic;
@@ -249,7 +249,7 @@ architecture rtl of top is
     signal dead_cnt0_b                : integer range 0 to 63;
     signal dead_cnt1_b                : integer range 0 to 63;
 	signal trig_edge_cnt_b			: integer range 0 to 3;
-	
+
 
 	signal triggerclk				: std_logic;
 begin
@@ -280,7 +280,7 @@ begin
     csn_B <= (others => (not mp_ctrl_csn(0)));
     csn_C <= (others => mp_ctrl_csn(1));
     csn_D <= (others => mp_ctrl_csn(3));
-	
+
 --    csn_A <= (others => (not mp_ctrl_csn(0)));
 --    csn_B <= (others => (not mp_ctrl_csn(1)));
 --    csn_C <= (others => mp_ctrl_csn(3));
@@ -290,7 +290,7 @@ begin
     enable_B <= '1';
     enable_C <= '1';
     enable_D <= '1';
-	
+
 
 	e_trigPLL: component trigPLL
 	port map (
@@ -299,8 +299,8 @@ begin
 		outclk_0 => triggerclk,
 		locked   => open--,
 	);
-		
-	
+
+
     e_mupix_block : entity work.mupix_block
     generic map (
         IS_TELESCOPE_g  => '1',
@@ -353,7 +353,7 @@ begin
     begin
     if rising_edge(lvds_firefly_clk) then
         run_state_125_reg <= run_state_125;
-        
+
         if(run_state_125_reg = RUN_STATE_IDLE) then
             testcounter     <= (others => '0');
         end if;
@@ -374,7 +374,7 @@ begin
             --fast_reset_E    <= '0';
             sync_reset_cnt  <= '0';
         end if;
-        
+
     end if;
     end process;
 
@@ -399,18 +399,18 @@ begin
 
         trig0_buffer_125_prev_b <= trig0_buffer_125_reg_b;
         trig1_buffer_125_prev_b <= trig1_buffer_125_reg_b;
-		
+
         trig0_edge_detected     <= '0';
         trig1_edge_detected     <= '0';
 		trig0_edge_detected_b     <= '0';
         trig1_edge_detected_b     <= '0';
-		
+
 
         if(trig0_buffer_125_prev_b = '0' and trig0_buffer_125_reg_b = '1') then
             trig0_edge_detected <= '1';
             trig0_ts_final      <= trig0_timestamp_save + trig0_timestamp_save_b;
         end if;
-		
+
         -- register buffer once
         if(trig1_buffer_125_prev_b = '0' and trig1_buffer_125_reg_b = '1') then
             trig1_edge_detected <= '1';
@@ -446,20 +446,20 @@ begin
 			trig_edge_cnt		<= trig_edge_cnt + 1;
             if(trig_edge_cnt >= 2) then
 				dead0               <= '1';
-				dead_cnt0           <=  0;				
-				trig0_timestamp_save<= fastcounter(31 downto 0); 
+				dead_cnt0           <=  0;
+				trig0_timestamp_save<= fastcounter(31 downto 0);
 				trig_edge_cnt		<= 0;	-- save current timestamp here, grab it in the slow clock once it is save to do so (in the middle of the dead time)
 			end if;
 		end if;
         if(Trig1_TTL_reg = '0' and Trig1_TTL_prev = '1' and dead1='0') then -- same for the other input
             dead1               <= '1';
-            dead_cnt1           <=  0;          
+            dead_cnt1           <=  0;
             trig1_timestamp_save<= fastcounter(31 downto 0);
         end if;
 
-        if(dead0 = '1') then 
+        if(dead0 = '1') then
             dead_cnt0 <= dead_cnt0 + 1;
-            if(dead_cnt0=32) then 
+            if(dead_cnt0=32) then
                 trig0_buffer_125 <= '1'; -- read trig0_timestamp_save on rising edge of trig0_buffer_125 in 125 MHz clock
             end if;
             if(dead_cnt0>=63) then -- end artificial dead time
@@ -471,7 +471,7 @@ begin
 
         if(dead1 = '1') then -- same for the other input
             dead_cnt1 <= dead_cnt1 + 1;
-            if(dead_cnt1=32) then 
+            if(dead_cnt1=32) then
                 trig1_buffer_125 <= '1';
             end if;
             if(dead_cnt1>=63) then
@@ -480,7 +480,7 @@ begin
             end if;
         end if;
     end if;
-	
+
 	if (falling_edge(triggerclk)) then
         Trig0_TTL_reg_b   <= pulse_train_in;
         Trig1_TTL_reg_b   <= gate_in;
@@ -499,20 +499,20 @@ begin
 			trig_edge_cnt_b		<= trig_edge_cnt_b + 1;
             if(trig_edge_cnt_b >= 2) then
 				dead0_b               <= '1';
-				dead_cnt0_b           <=  0;				
-				trig0_timestamp_save_b<= fastcounter_b(31 downto 0); 
+				dead_cnt0_b           <=  0;
+				trig0_timestamp_save_b<= fastcounter_b(31 downto 0);
 				trig_edge_cnt_b		<= 0;	-- save current timestamp here, grab it in the slow clock once it is save to do so (in the middle of the dead time)
 			end if;
 		end if;
         if(Trig1_TTL_reg_b = '0' and Trig1_TTL_prev_b = '1' and dead1_b='0') then -- same for the other input
             dead1_b               <= '1';
-            dead_cnt1_b           <=  0;          
+            dead_cnt1_b           <=  0;
             trig1_timestamp_save_b<= fastcounter_b(31 downto 0);
         end if;
 
-        if(dead0_b = '1') then 
+        if(dead0_b = '1') then
             dead_cnt0_b <= dead_cnt0_b + 1;
-            if(dead_cnt0_b=48) then 
+            if(dead_cnt0_b=48) then
                 trig0_buffer_125_b <= '1'; -- read trig0_timestamp_save on rising edge of trig0_buffer_125 in 125 MHz clock
             end if;
             if(dead_cnt0_b>=63) then -- end artificial dead time
@@ -524,7 +524,7 @@ begin
 
         if(dead1_b = '1') then -- same for the other input
             dead_cnt1_b <= dead_cnt1_b + 1;
-            if(dead_cnt1_b=48) then 
+            if(dead_cnt1_b=48) then
                 trig1_buffer_125_b <= '1';
             end if;
             if(dead_cnt1_b>=63) then
@@ -533,7 +533,6 @@ begin
             end if;
         end if;
     end if;
-
     end process;
 --------------------------------------------------------------------
 --------------------------------------------------------------------
@@ -651,7 +650,7 @@ begin
 	FPGA_Test(5) <= gate_in;
 	FPGA_Test(6) <= pulse_train_in;
 	FPGA_Test(7) <= triggerclk;
-	
+
 
     lcd_data(5 downto 2) <= Trig0_TTL_reg & Trig1_TTL_reg & Trig2_TTL_reg & Trig3_TTL_reg;
 
