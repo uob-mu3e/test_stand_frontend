@@ -219,6 +219,11 @@ architecture RTL of pcie_block is
     signal busy                 : STD_LOGIC;
     signal regloopback          : reg32array_pcie;
 
+    -- DMA
+    signal dma_data_reg, dma2_data_reg                  : std_logic_vector(DMAMEMWRITEWIDTH-1 downto 0) := (others => '0');
+    signal dmamem_wren_reg, dma2mem_wren_reg            : std_logic := '0';
+    signal dmamem_endofevent_reg, dma2mem_endofevent_reg: std_logic := '0';
+
     signal application_reset_n  : std_logic;
 
     signal testbus              : STD_LOGIC_VECTOR (127 DOWNTO 0);
@@ -512,6 +517,27 @@ begin
 
     application_reset_n <= '0' when local_rstn = '0' or appl_rstn = '0' else '1';
 
+    process(dmamemclk, application_reset_n)
+    begin
+    if ( application_reset_n /= '1' ) then
+        dma_data_reg            <= (others => '0');
+        dmamem_wren_reg         <= '0';
+        dmamem_endofevent_reg   <= '0';
+
+        dma2_data_reg           <= (others => '0');
+        dma2mem_wren_reg        <= '0';
+        dma2mem_endofevent_reg  <= '0';
+    elsif rising_edge(dmamemclk) then
+        dma_data_reg            <= dma_data;
+        dmamem_wren_reg         <= dmamem_wren;
+        dmamem_endofevent_reg   <= dmamem_endofevent;
+
+        dma2_data_reg           <= dma2_data;
+        dma2mem_wren_reg        <= dma2mem_wren;
+        dma2mem_endofevent_reg  <= dma2mem_endofevent;
+    end if;
+    end process;
+
     e_pcie_application : entity work.pcie_application
     generic map (
         DMAMEMWRITEADDRSIZE => DMAMEMWRITEADDRSIZE,
@@ -569,17 +595,17 @@ begin
         readmem_endofevent  => readmem_endofevent,
 
         -- dma memory
-        dma_data            => dma_data,
+        dma_data            => dma_data_reg,
         dmamemclk           => dmamemclk,
-        dmamem_wren         => dmamem_wren,
-        dmamem_endofevent   => dmamem_endofevent,
+        dmamem_wren         => dmamem_wren_reg,
+        dmamem_endofevent   => dmamem_endofevent_reg,
         dmamemhalffull      => dmamemhalffull,
 
         -- 2nd dma memory
-        dma2_data           => dma2_data,
+        dma2_data           => dma2_data_reg,
         dma2memclk          => dma2memclk,
-        dma2mem_wren        => dma2mem_wren,
-        dma2mem_endofevent  => dma2mem_endofevent,
+        dma2mem_wren        => dma2mem_wren_reg,
+        dma2mem_endofevent  => dma2mem_endofevent_reg,
         dma2memhalffull     => dma2memhalffull,
 
         -- test ports

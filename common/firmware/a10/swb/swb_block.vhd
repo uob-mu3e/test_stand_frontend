@@ -398,7 +398,7 @@ begin
         --! bank_builder_tag_fifo_full
         o_counters          => builder_counters,
 
-        i_reset_n           => i_reset_n,
+        i_reset_n           => i_resets_n(RESET_BIT_DATA_PATH),
         i_clk               => i_clk--,
     );
 

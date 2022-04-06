@@ -297,7 +297,7 @@ int main(int argc, char *argv[]) {
             // stop dma
             mu.disable();
             
-            for(int i=8; i < 20; i++)
+            for(int i=0; i < 20; i++)
                 cout << hex << "0x" <<  dma_buf[i] << " ";
             cout << endl;
 
