@@ -92,7 +92,6 @@ int MupixFEB::ConfigureASICs(){
 //                 if ( asic != 3 ) return 0;
         uint32_t rpc_status;
 
-        // get settings from ODB for TDACs 
         // TODO: Has to move!!!
         odb swbSettings(odb_prefix + "/Commands");
         uint32_t MupixChipToConfigure = swbSettings["MupixChipToConfigure"];
@@ -150,11 +149,8 @@ int MupixFEB::ConfigureASICs(){
                 std::cout<<std::hex<<payload.at(j)<<std::endl;
             }
 
-            //uint32_t chip_select_mask = 0xfff; //all chips masked (12 times 1)
-            uint16_t pos = ASICid_from_ID(asic);
-            bool isTelescope = false; // TODO: make this somehow dynamic for the telescope setup
-            // my branch
-            rpc_status = feb_sc.FEB_write(FEB, MP_CTRL_COMBINED_START_REGISTER_W + asic, payload,true);
+            uint16_t pos = ASICsPerFEB() - 1 - ASICid_from_ID(asic);
+            rpc_status = feb_sc.FEB_write(FEB, MP_CTRL_COMBINED_START_REGISTER_W + pos, payload,true);
 
         } catch(std::exception& e) {
             cm_msg(MERROR, "setup_mupix", "Communication error while configuring MuPix %d: %s", asic, e.what());
@@ -262,6 +258,7 @@ int MupixFEB::ConfigureTDACs(){
     }
 
     cm_msg(MINFO, "MupixFEB" , "tdac load completed, start writing tdacs");
+    uint16_t pos=0;
 
     while (! allDone){
         allDone = true;
@@ -291,10 +288,11 @@ int MupixFEB::ConfigureTDACs(){
                             if(N_free_pages > 0){
                                 current_page = N_PAGES_PER_CHIP-pages_remaining.at(internal_febID)[chip];
                                 pages_remaining.at(internal_febID)[chip] = pages_remaining.at(internal_febID)[chip] - 1;
+                                pos = ASICsPerFEB() - 1 - chip;
                                 std::vector<uint32_t> tdac_page(PAGESIZE);
-                                // how to do this wihout copy ? 
+                                // how to do this wihout copy ?
                                 tdac_page = std::vector<uint32_t>(tdac_pages.at(internal_febID).at(chip).begin() + current_page*PAGESIZE, tdac_pages.at(internal_febID).at(chip).begin() + (current_page+1)*PAGESIZE);
-                                feb_sc.FEB_write(feb, MP_CTRL_TDAC_START_REGISTER_W + chip, tdac_page, true, false);
+                                feb_sc.FEB_write(feb, MP_CTRL_TDAC_START_REGISTER_W + pos, tdac_page, true, false);
                                 pages_remaining_this_feb--;
                                 N_free_pages--;
                             } else {break;}

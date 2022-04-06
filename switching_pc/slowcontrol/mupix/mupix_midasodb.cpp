@@ -114,7 +114,20 @@ int MapForEachASIC(std::string pixelprefix, std::function<int(MupixConfig* /*mup
         if (daq["mask"][asic])
             continue;
 
-		MupixConfig config;
+        odb swbSettings("/Equipment/SwitchingCentral/Commands");
+        uint32_t MupixChipToConfigure = swbSettings["MupixChipToConfigure"];
+        if ( MupixChipToConfigure != 999 && asic != MupixChipToConfigure ) {
+            printf(" [skipped]\n");
+            continue;
+        }
+ 
+       // uint16_t mappedFebId = MappedFPGAid_from_ID(asic);
+       // if(mappedFebId==999){
+       //     printf(" [skipped]\n");
+       //     return FE_SUCCESS;
+       // }
+
+        MupixConfig config;
 		config.reset();
 		//har set_str[255];
 		//int status, size;
