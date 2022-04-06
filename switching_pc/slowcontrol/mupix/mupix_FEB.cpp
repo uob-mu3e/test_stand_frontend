@@ -52,6 +52,17 @@ uint16_t MupixFEB::FPGAid_from_ID(int asic) const {
     return asic/ASICsPerFEB();
 }
 
+uint16_t MupixFEB::MappedFPGAid_from_ID(int asic) const {
+    uint16_t fpga_id = FPGAid_from_ID(asic);
+    uint16_t n_mapped_febs = 0;
+    for (auto feb : febs){
+        if(feb.GetLinkID()==fpga_id)
+            return n_mapped_febs;
+        n_mapped_febs++;
+    }
+    return 999;
+}
+
 uint16_t MupixFEB::ASICid_from_ID(int asic) const {
     return asic%ASICsPerFEB();
 }
@@ -80,20 +91,23 @@ int MupixFEB::ConfigureASICs(){
     int status = mupix::midasODB::MapForEachASIC(pixel_odb_prefix, [this](mupix::MupixConfig* config, uint32_t asic){
 //                 if ( asic != 3 ) return 0;
         uint32_t rpc_status;
-        //bool TDACsNotFound = false;
-        //char set_str[255];
 
         // get settings from ODB for TDACs 
         // TODO: Has to move!!!
-        odb swbSettings(odb_prefix + "/Settings");
+        odb swbSettings(odb_prefix + "/Commands");
         uint32_t MupixChipToConfigure = swbSettings["MupixChipToConfigure"];
         if ( MupixChipToConfigure != 999 && asic != MupixChipToConfigure ) {
             printf(" [skipped]\n");
             return FE_SUCCESS;
         }
+
+        uint16_t mappedFebId = MappedFPGAid_from_ID(asic);
+        if(mappedFebId==999){
+            printf(" [skipped]\n");
+            return FE_SUCCESS;
+        }
         
-        //mapping
-        auto FEB = febs[FPGAid_from_ID(asic)];
+        auto FEB = febs[mappedFebId];
         uint16_t SB_ID=FEB.SB_Number();
         uint16_t SP_ID=FEB.SB_Port();
         uint16_t FA_ID=ASICid_from_ID(asic);
@@ -129,7 +143,7 @@ int MupixFEB::ConfigureASICs(){
                 payload.push_back(bitpattern_m);
             }
             int size = payload.size();
-            payload[size-1] = 0x2900303;//TOFIX: why different?
+            //payload[size-1] = 0x2900303;//TOFIX: why different?
 
             std::cout << "Payload:\n";
             for(uint32_t j = 0; j<payload.size();j++){
@@ -139,7 +153,38 @@ int MupixFEB::ConfigureASICs(){
             //uint32_t chip_select_mask = 0xfff; //all chips masked (12 times 1)
             uint16_t pos = ASICid_from_ID(asic);
             bool isTelescope = false; // TODO: make this somehow dynamic for the telescope setup
+            // my branch
             rpc_status = feb_sc.FEB_write(FEB, MP_CTRL_COMBINED_START_REGISTER_W + asic, payload,true);
+            // other branch: (to be cleaned up)
+	        if ( asic == 3 && isTelescope ) pos = 3;
+            chip_select_mask &= ((~0x1u) << pos);
+            printf("chip_select_mask %04x\n", chip_select_mask);
+            for (int i = 0; i < pos; ++i)
+                chip_select_mask |= (0x1 << i);
+
+            if (MupixChipToConfigure == 5)
+            {
+                chip_select_mask = 0xfffffdff;
+            }
+            else if (MupixChipToConfigure == 4)
+            {
+                chip_select_mask = 0xfffffbff;
+            }
+            if (MupixChipToConfigure == 3)
+            {
+                chip_select_mask = 0xfffff7ff;
+            }//TOFIX: why has it changed?
+            printf("chip_select_mask %04x\n", chip_select_mask);
+
+            // check if FEB is busy
+            rpc_status=FEB_REPLY_SUCCESS;
+            feb_sc.FEB_read(FEB, MP_CTRL_SPI_BUSY_REGISTER_R, spi_busy);
+            while(spi_busy==1 && count < limit){
+                sleep(1);
+                feb_sc.FEB_read(FEB,MP_CTRL_SPI_BUSY_REGISTER_R,spi_busy);
+                count++;
+                cm_msg(MINFO, "MupixFEB", "Mupix config spi busy .. waiting");
+            }
 
         } catch(std::exception& e) {
             cm_msg(MERROR, "setup_mupix", "Communication error while configuring MuPix %d: %s", asic, e.what());
@@ -158,7 +203,7 @@ int MupixFEB::ConfigureASICs(){
         feb_sc.FEB_write(FEB, MP_RESET_LVDS_N_REGISTER_W, 0x0);
         feb_sc.FEB_write(FEB, MP_RESET_LVDS_N_REGISTER_W, 0x1);
 
-        sleep(2);
+        sleep(0.5);
         
         return FE_SUCCESS;//note: return of lambda function
     });//MapForEach
@@ -297,13 +342,11 @@ int MupixFEB::ConfigureTDACs(){
 }
 
 //MIDAS callback function for FEB register Setter functions
-void MupixFEB::on_settings_changed(odb o, void * userdata)
+void MupixFEB::on_settings_changed(odb o)
 {
     std::string name = o.get_name();
 
     cm_msg(MINFO, "MupixFEB::on_settings_changed", "Setting changed (%s)", name.c_str());
-
-    //MupixFEB* _this=static_cast<MupixFEB*>(userdata);
     
     BOOL bval;
 

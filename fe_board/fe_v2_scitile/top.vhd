@@ -10,102 +10,102 @@ use ieee.numeric_std.all;
 
 use work.mudaq.all;
 
-entity top is 
-    port (
-        fpga_reset                  : in    std_logic;
+entity top is
+port (
+    fpga_reset                  : in    std_logic;
 
-        LVDS_clk_si1_fpga_A         : in    std_logic; -- 125 MHz base clock for LVDS PLLs - right // SI5345
-        LVDS_clk_si1_fpga_B         : in    std_logic; -- 125 MHz base clock for LVDS PLLs - left // SI5345
-        transceiver_pll_clock       : in    std_logic_vector(0 downto 0); --_vector(1 downto 0); -- 156.25 MHz  clock for transceiver PLL-- Using 1 or 2 with 156 Mhz gives warings about coupling in clock builder
-      --extra_transceiver_pll_clocks: in    std_logic_vector(1 downto 0); -- 125 MHz base clock for transceiver PLLs // SI5345
+    LVDS_clk_si1_fpga_A         : in    std_logic; -- 125 MHz base clock for LVDS PLLs - right // SI5345
+    LVDS_clk_si1_fpga_B         : in    std_logic; -- 125 MHz base clock for LVDS PLLs - left // SI5345
+    transceiver_pll_clock       : in    std_logic_vector(0 downto 0); --_vector(1 downto 0); -- 156.25 MHz  clock for transceiver PLL-- Using 1 or 2 with 156 Mhz gives warings about coupling in clock builder
+  --extra_transceiver_pll_clocks: in    std_logic_vector(1 downto 0); -- 125 MHz base clock for transceiver PLLs // SI5345
 
-        lvds_firefly_clk            : in    std_logic; -- 125 MHz base clock
+    lvds_firefly_clk            : in    std_logic; -- 125 MHz base clock
 
-        systemclock                 : in    std_logic; -- 50 MHz system clock // SI5345
-        systemclock_bottom          : in    std_logic; -- 50 MHz system clock // SI5345
-        clk_125_top                 : in    std_logic; -- 125 MHz clock spare // SI5345
-        clk_125_bottom              : in    std_logic; -- 125 Mhz clock spare // SI5345
-        spare_clk_osc               : in    std_logic; -- Spare clock // 50 MHz oscillator
+    systemclock                 : in    std_logic; -- 50 MHz system clock // SI5345
+    systemclock_bottom          : in    std_logic; -- 50 MHz system clock // SI5345
+    clk_125_top                 : in    std_logic; -- 125 MHz clock spare // SI5345
+    clk_125_bottom              : in    std_logic; -- 125 Mhz clock spare // SI5345
+    spare_clk_osc               : in    std_logic; -- Spare clock // 50 MHz oscillator
 
-        -- tile DAB signals
-        tile_din                    : in    std_logic_vector(13 downto 1);
-        tile_pll_test               : out   std_logic;
-        tile_chip_reset             : out   std_logic;
-        tile_i2c_sda                : inout std_logic;
-        tile_i2c_scl                : inout std_logic;
-        tile_cec                    : in    std_logic;
-        tile_spi_miso               : in    std_logic;
-        tile_i2c_int                : in    std_logic;
-        tile_pll_reset              : out   std_logic;
-        tile_spi_scl                : out   std_logic;
-        tile_spi_mosi               : out   std_logic;
+    -- tile DAB signals
+    tile_din                    : in    std_logic_vector(13 downto 1);
+    tile_pll_test               : out   std_logic;
+    tile_chip_reset             : out   std_logic;
+    tile_i2c_sda                : inout std_logic;
+    tile_i2c_scl                : inout std_logic;
+    tile_cec                    : in    std_logic;
+    tile_spi_miso               : in    std_logic;
+    tile_i2c_int                : in    std_logic;
+    tile_pll_reset              : out   std_logic;
+    tile_spi_scl                : out   std_logic;
+    tile_spi_mosi               : out   std_logic;
 
-        -- Fireflies
-        firefly1_tx_data            : out   std_logic_vector(3 downto 0); -- transceiver
-        firefly2_tx_data            : out   std_logic_vector(3 downto 0); -- transceiver 
-        firefly1_rx_data            : in    std_logic;-- transceiver
-        firefly2_rx_data            : in    std_logic_vector(2 downto 0);-- transceiver
+    -- Fireflies
+    firefly1_tx_data            : out   std_logic_vector(3 downto 0); -- transceiver
+    firefly2_tx_data            : out   std_logic_vector(3 downto 0); -- transceiver
+    firefly1_rx_data            : in    std_logic;-- transceiver
+    firefly2_rx_data            : in    std_logic_vector(2 downto 0);-- transceiver
 
-        firefly1_lvds_rx_in         : in    std_logic;--_vector(1 downto 0); -- receiver for slow control or something else
-        firefly2_lvds_rx_in         : in    std_logic;--_vector(1 downto 0); -- receiver for slow control or something else
+    firefly1_lvds_rx_in         : in    std_logic;--_vector(1 downto 0); -- receiver for slow control or something else
+    firefly2_lvds_rx_in         : in    std_logic;--_vector(1 downto 0); -- receiver for slow control or something else
 
-        Firefly_ModSel_n            : out   std_logic_vector(1 downto 0);-- Module select: active low, when host wants to communicate (I2C) with module
-        Firefly_Rst_n               : out   std_logic_vector(1 downto 0);-- Module reset: active low, complete reset of module. Module indicates reset done by "low" interrupt_n (data_not_ready is negated).
-        Firefly_Scl                 : inout std_logic;-- I2C Clock: module asserts low for clock stretch, timing infos: page 47
-        Firefly_Sda                 : inout std_logic;-- I2C Data
-      --Firefly_LPM                 : out   std_logic;-- Firefly Low Power Mode: Modules power consumption should be below 1.5 W. active high. Overrideable by I2C commands. Override default: high power (page 19 of documentation).
-        Firefly_Int_n               : in    std_logic_vector(1 downto 0);-- Firefly Interrupt: when low: operational fault or status critical. after reset: goes high, and data_not_ready is read with '0' (byte 2 bit 0) and flag field is read
-        Firefly_ModPrs_n            : in    std_logic_vector(1 downto 0);-- Module present: Pulled to ground if module is present
+    Firefly_ModSel_n            : out   std_logic_vector(1 downto 0);-- Module select: active low, when host wants to communicate (I2C) with module
+    Firefly_Rst_n               : out   std_logic_vector(1 downto 0);-- Module reset: active low, complete reset of module. Module indicates reset done by "low" interrupt_n (data_not_ready is negated).
+    Firefly_Scl                 : inout std_logic;-- I2C Clock: module asserts low for clock stretch, timing infos: page 47
+    Firefly_Sda                 : inout std_logic;-- I2C Data
+  --Firefly_LPM                 : out   std_logic;-- Firefly Low Power Mode: Modules power consumption should be below 1.5 W. active high. Overrideable by I2C commands. Override default: high power (page 19 of documentation).
+    Firefly_Int_n               : in    std_logic_vector(1 downto 0);-- Firefly Interrupt: when low: operational fault or status critical. after reset: goes high, and data_not_ready is read with '0' (byte 2 bit 0) and flag field is read
+    Firefly_ModPrs_n            : in    std_logic_vector(1 downto 0);-- Module present: Pulled to ground if module is present
 
-        -- LEDs, test points and buttons
-        PushButton                  : in    std_logic_vector(1 downto 0);
-        FPGA_Test                   : out   std_logic_vector(7 downto 0);
+    -- LEDs, test points and buttons
+    PushButton                  : in    std_logic_vector(1 downto 0);
+    FPGA_Test                   : out   std_logic_vector(7 downto 0);
 
-        --LCD
-        lcd_csn                     : out   std_logic;--//2.5V    //LCD Chip Select
-        lcd_d_cn                    : out   std_logic;--//2.5V    //LCD Data / Command Select
-        lcd_data                    : out   std_logic_vector(7 downto 0);--//2.5V    //LCD Data
-        lcd_wen                     : out   std_logic;--//2.5V    //LCD Write Enable
+    --LCD
+    lcd_csn                     : out   std_logic;--//2.5V    //LCD Chip Select
+    lcd_d_cn                    : out   std_logic;--//2.5V    //LCD Data / Command Select
+    lcd_data                    : out   std_logic_vector(7 downto 0);--//2.5V    //LCD Data
+    lcd_wen                     : out   std_logic;--//2.5V    //LCD Write Enable
 
-        -- SI5345(0): 7 Transceiver clocks @ 125 MHz
-        -- SI4345(1): Clocks for the Fibres
-        -- 1 reference and 2 inputs for synch
-        si45_oe_n                   : out   std_logic_vector(1 downto 0);-- active low output enable -> should always be '0'
-        si45_intr_n                 : in    std_logic_vector(1 downto 0);-- fault monitor: interrupt pin: change in state of status indicators 
-        si45_lol_n                  : in    std_logic_vector(1 downto 0);-- fault monitor: loss of lock of DSPLL
+    -- SI5345(0): 7 Transceiver clocks @ 125 MHz
+    -- SI4345(1): Clocks for the Fibres
+    -- 1 reference and 2 inputs for synch
+    si45_oe_n                   : out   std_logic_vector(1 downto 0);-- active low output enable -> should always be '0'
+    si45_intr_n                 : in    std_logic_vector(1 downto 0);-- fault monitor: interrupt pin: change in state of status indicators
+    si45_lol_n                  : in    std_logic_vector(1 downto 0);-- fault monitor: loss of lock of DSPLL
 
-        -- I2C sel is set to GND on PCB -> SPI interface
-        si45_rst_n                  : out   std_logic_vector(1 downto 0);--	reset
-        si45_spi_cs_n               : out   std_logic_vector(1 downto 0);-- chip select
-        si45_spi_in                 : out   std_logic_vector(1 downto 0);-- data in
-        si45_spi_out                : in    std_logic_vector(1 downto 0);-- data out
-        si45_spi_sclk               : out   std_logic_vector(1 downto 0);-- clock
+    -- I2C sel is set to GND on PCB -> SPI interface
+    si45_rst_n                  : out   std_logic_vector(1 downto 0);--	reset
+    si45_spi_cs_n               : out   std_logic_vector(1 downto 0);-- chip select
+    si45_spi_in                 : out   std_logic_vector(1 downto 0);-- data in
+    si45_spi_out                : in    std_logic_vector(1 downto 0);-- data out
+    si45_spi_sclk               : out   std_logic_vector(1 downto 0);-- clock
 
-        -- change frequency by the FSTEPW parameter
-        si45_fdec                   : out   std_logic_vector(1 downto 0);-- decrease
-        si45_finc                   : out   std_logic_vector(1 downto 0);-- increase
+    -- change frequency by the FSTEPW parameter
+    si45_fdec                   : out   std_logic_vector(1 downto 0);-- decrease
+    si45_finc                   : out   std_logic_vector(1 downto 0);-- increase
 
-        -- Midas slow control bus
-        mscb_fpga_in                : in    std_logic;
-        mscb_fpga_out               : out   std_logic;
-        mscb_fpga_oe_n              : out   std_logic;
+    -- Midas slow control bus
+    mscb_fpga_in                : in    std_logic;
+    mscb_fpga_out               : out   std_logic;
+    mscb_fpga_oe_n              : out   std_logic;
 
-        -- Backplane slot signal
-        ref_adr                     : in    std_logic_vector(7 downto 0);
+    -- Backplane slot signal
+    ref_adr                     : in    std_logic_vector(7 downto 0);
 
-        -- MAX10 IF
-        max10_spi_sclk              : out   std_logic;
-        max10_spi_mosi              : inout std_logic;
-        max10_spi_miso              : inout std_logic;
-        max10_spi_D1                : inout std_logic;
-        max10_spi_D2                : inout std_logic;
-        max10_spi_D3                : inout std_logic;
-        max10_spi_csn               : out   std_logic
-        );
+    -- MAX10 IF
+    max10_spi_sclk              : out   std_logic;
+    max10_spi_mosi              : inout std_logic;
+    max10_spi_miso              : inout std_logic;
+    max10_spi_D1                : inout std_logic;
+    max10_spi_D2                : inout std_logic;
+    max10_spi_D3                : inout std_logic;
+    max10_spi_csn               : out   std_logic
+);
 end top;
 
 architecture rtl of top is
- 
+
     -- Debouncers
     signal pb_db                    : std_logic_vector(1 downto 0);
 
@@ -114,7 +114,7 @@ architecture rtl of top is
     constant N_MODULES              : integer := 1;
 
     signal fifo_write               : std_logic_vector(N_LINKS-1 downto 0);
-    signal fifo_wdata               : std_logic_vector(36*(N_LINKS-1)+35 downto 0); 
+    signal fifo_wdata               : std_logic_vector(36*(N_LINKS-1)+35 downto 0);
 
     signal malibu_reg               : work.util.rw_t;
 
@@ -311,7 +311,7 @@ begin
         i_clk_125           => lvds_firefly_clk,
 
         i_areset_n          => '1',--pb_db(0),
-        
+
         i_testin            => pb_db(1)--,
     );
 
@@ -322,4 +322,5 @@ begin
     FPGA_Test(0) <= transceiver_pll_clock(0);
     FPGA_Test(1) <= lvds_firefly_clk;
     FPGA_Test(2) <= clk_125_top;
+
 end rtl;

@@ -12,16 +12,18 @@ LOOP k, 32
     ODBSET /Equipment/Mupix/QCTests/Ladder/IV/Output/Current[$k-1], 0
 ENDLOOP
 
+PARAM half_ladder_id, "Half ladder ID"
+PARAM hameg_id, "HAMEG ID"
+PARAM channel, "HAMEG Channel"
 
-
-PARAM current_limit, "Current limit (Amps)"
+PARAM current_limit, "HV Current limit (Amps)"
 PARAM start_voltage, "Starting voltage"
 PARAM step_size, "Voltage increment"
 PARAM fine_step_size, "Fine voltage increment"
 PARAM stop_voltage, "Stop voltage"
 
-# Check
-SET end, 150
+# TODO. Check
+end = 158
 
 # Check values
 # If $current_limit is higher than value at Keithley complain
@@ -39,7 +41,7 @@ IF $step_size < $fine_step_size
 ENDIF
 
 # If voltage step is not compatible with intervals complain
-SET c1, (abs($stop_voltage)-abs($start_voltage)) % $step_size
+c1 = (abs($stop_voltage)-abs($start_voltage)) % $step_size
 IF $c1 != 0
     MESSAGE "Introduce compatible voltage step size"
     GOTO $end
@@ -51,14 +53,15 @@ IF $step_size % $fine_step_size != 0
     GOTO $end
 ENDIF
 
+# TODO: add checks for half_ladder_id and configuration
 
 
 # Calculation of num_steps without taking into account the fine steps of last interval
-SET num_steps, (abs($stop_voltage)-abs($start_voltage))/$step_size+1
-SET num_fine_steps, $step_size/$fine_step_size-1
+num_steps = (abs($stop_voltage)-abs($start_voltage))/$step_size+1
+num_fine_steps = $step_size/$fine_step_size-1
 
 # Check whether buffers are big enough
-SET total_datapoints, $num_steps+$num_fine_steps
+total_datapoints = $num_steps+$num_fine_steps
 IF $total_datapoints > 32
     MESSAGE "Buffer too small for run. Increase buffer size or increase steps", 1
     GOTO $end
@@ -67,8 +70,16 @@ ENDIF
 
 
 # Save values into ODB
+ODBSET /Equipment/Mupix/QCTests/Ladder/current_half_ladder_id, $half_ladder_id
+ODBSET /Equipment/Mupix/QCTests/Ladder/current_hameg_id, $hameg_id
+ODBSET /Equipment/Mupix/QCTests/Ladder/current_channel, $channel
+
 
 ODBSUBDIR /Equipment/Mupix/QCTests/Ladder/IV/Input
+    ODBSET half_ladder_id, $half_ladder_id
+    ODBSET hameg_id, $hameg_id
+    ODBSET channel, $channel
+    
     ODBSET current_limit, $current_limit
     ODBSET start_voltage, $start_voltage
     ODBSET step_voltage, $step_size
@@ -80,10 +91,10 @@ ENDODBSUBDIR
 
 # Config
 
-SET v, -1*abs($start_voltage)
+v = -1*abs($start_voltage)
 ODBSET /Equipment/Mupix/QCTests/Ladder/IV/Output/V, $v
 
-SET current, 0
+current = 0
 
 # Turn on Keithley
 ODBSET /Equipment/KEITHLEY0/Variables/Set State, 1
@@ -91,7 +102,6 @@ ODBSET /Equipment/KEITHLEY0/Variables/Set State, 1
 WAIT SECONDS, 2
 
 
-# Looping starts at 1
 
 LOOP i, $num_steps
     # Set voltage array in Output

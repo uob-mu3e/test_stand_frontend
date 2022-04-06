@@ -37,32 +37,32 @@ begin
 
     process(i_clk, i_reset)
     begin
-        if ( i_reset = '1' or DISABLE /= 0) then
-            o_write_req             <= '0';
-            o_wdata                 <= (others => '0');
-            state                   <= forwarding;
-        elsif rising_edge(i_clk) then
-            o_wdata         <= i_wdata;
-            case state is
-                when forwarding =>
-                    if (i_write_req = '1' and i_wdata(33 downto 32) = MERGER_FIFO_PAKET_START_MARKER(1 downto 0) and unsigned(i_usedw) > (2**FIFO_ADDR_WIDTH)-MAX_PAKET_SIZE) then
-                        state           <= throwing;
-                        o_write_req     <= '0';
-                    else
-                        o_write_req     <= i_write_req;
-                    end if;
-                    
-                when throwing =>
-                    if (i_write_req = '1' and i_wdata(33 downto 32) = MERGER_FIFO_PAKET_START_MARKER(1 downto 0) and unsigned(i_usedw) < (2**FIFO_ADDR_WIDTH)-MAX_PAKET_SIZE) then
-                        state           <= forwarding;
-                        o_write_req     <= i_write_req;
-                    else
-                        o_write_req     <= '0';
-                    end if;
-                when others =>
-                    state           <= forwarding;
-            end case;
-        end if;
+    if ( i_reset = '1' or DISABLE /= 0) then
+        o_write_req             <= '0';
+        o_wdata                 <= (others => '0');
+        state                   <= forwarding;
+    elsif rising_edge(i_clk) then
+        o_wdata         <= i_wdata;
+        case state is
+        when forwarding =>
+            if (i_write_req = '1' and i_wdata(33 downto 32) = MERGER_FIFO_PAKET_START_MARKER(1 downto 0) and unsigned(i_usedw) > (2**FIFO_ADDR_WIDTH)-MAX_PAKET_SIZE) then
+                state           <= throwing;
+                o_write_req     <= '0';
+            else
+                o_write_req     <= i_write_req;
+            end if;
+
+        when throwing =>
+            if (i_write_req = '1' and i_wdata(33 downto 32) = MERGER_FIFO_PAKET_START_MARKER(1 downto 0) and unsigned(i_usedw) < (2**FIFO_ADDR_WIDTH)-MAX_PAKET_SIZE) then
+                state           <= forwarding;
+                o_write_req     <= i_write_req;
+            else
+                o_write_req     <= '0';
+            end if;
+        when others =>
+            state           <= forwarding;
+        end case;
+    end if;
     end process;
 
 end architecture;

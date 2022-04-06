@@ -3,7 +3,7 @@
 -- On detector FPGA for layer 0/1
 -- Receiver block for all the LVDS links
 -- Niklaus Berger, May 2013
--- 
+--
 -- nberger@physi.uni-heidelberg.de
 --
 -- Adaptions for MuPix8 Telescope
@@ -11,15 +11,12 @@
 -- dittmeier@physi.uni-heidelberg.de
 ----------------------------------
 
-
-
 library ieee;
 use ieee.std_logic_1164.all;
 use ieee.std_logic_unsigned.all;
 use ieee.numeric_std.all;
 
 use work.mudaq.all;
-
 
 entity receiver_block is
 generic (
@@ -50,34 +47,32 @@ port (
 );
 end entity;
 
-
-
 architecture rtl of receiver_block is
 
-component data_decoder is 
-	generic (
+component data_decoder is
+generic (
 		EVAL_WINDOW_WORDCNT_BITS : natural := 8; -- number of bits of the counter used to check for the sync pattern
 		EVAL_WINDOW_PATTERN_BITS : natural := 1; -- number of bits of the counter of the sync patterns found in the window (realign if not overflow)
 		ALIGN_WORD	 : std_logic_vector(7 downto 0):=K28_5 -- pattern byte to search for
 	);
-	port (
+port (
 		reset_n				: in std_logic;
 --		checker_rst_n		: in std_logic;
 		clk					: in std_logic;
 		rx_in					: IN STD_LOGIC_VECTOR (9 DOWNTO 0);
-		
+
 		rx_reset				: OUT STD_LOGIC;
 		rx_fifo_reset		: OUT STD_LOGIC;
 		rx_dpa_locked		: IN STD_LOGIC;
 		rx_locked			: IN STD_LOGIC;
 		rx_bitslip				: OUT STD_LOGIC;
-	
+
 		ready					: OUT STD_LOGIC;
 		data					: OUT STD_LOGIC_VECTOR(7 downto 0);
 		k						: OUT STD_LOGIC;
 		state_out			: out std_logic_vector(1 downto 0);		-- 4 possible states
 		disp_err				: out std_logic
-		);
+);
 end component; --data_decoder;
 
     signal rx_out : 		std_logic_vector(NINPUT*10-1 downto 0);
@@ -89,7 +84,7 @@ end component; --data_decoder;
     signal rx_fifo_reset		: STD_LOGIC_VECTOR (NINPUT-1 DOWNTO 0);
     signal rx_reset			: STD_LOGIC_VECTOR (NINPUT-1 DOWNTO 0);
 
-    signal rx_ready_reg		: STD_LOGIC_VECTOR (NINPUT-1 DOWNTO 0);	
+    signal rx_ready_reg		: STD_LOGIC_VECTOR (NINPUT-1 DOWNTO 0);
     signal rx_pll_locked		: STD_LOGIC;
     signal rx_disperr		: std_logic_vector(NINPUT-1 downto 0);
 
@@ -108,6 +103,7 @@ end component; --data_decoder;
     signal rx_enable_B          : std_logic;
 
 begin
+
     rx_dpa_locked_out   <= rx_dpa_locked;
     pll_locked          <= rx_pll_locked;
     rx_clkout           <= rx_clk;
@@ -240,18 +236,18 @@ begin
 
     rx_ready <= rx_ready_reg;
 
--- flip bit order of received data (msb-lsb)
-flip_bits: process(rx_out)
-begin
-for i in NINPUT-1 downto 0 loop
-	for n in 9 downto 0 loop
-		rx_out_order(10*i+n) <= INPUT_SIGNFLIP(i) xor rx_out(10*i+9-n);
-	end loop;
-end loop;
-end process flip_bits;
+    -- flip bit order of received data (msb-lsb)
+    flip_bits: process(rx_out)
+    begin
+    for i in NINPUT-1 downto 0 loop
+    	for n in 9 downto 0 loop
+    		rx_out_order(10*i+n) <= INPUT_SIGNFLIP(i) xor rx_out(10*i+9-n);
+    	end loop;
+    end loop;
+    end process flip_bits;
 
-gen_channels: for i in NINPUT-1 downto 0 generate
-	datadec: data_decoder 
+    gen_channels: for i in NINPUT-1 downto 0 generate
+        datadec: data_decoder
 		generic map(
 			EVAL_WINDOW_WORDCNT_BITS => 13,
 			EVAL_WINDOW_PATTERN_BITS => 2,
@@ -262,13 +258,13 @@ gen_channels: for i in NINPUT-1 downto 0 generate
 	--		checker_rst_n		=> checker_rst_n(i),
 			clk			=> rx_clk,
 			rx_in			=> rx_out_order((i+1)*10-1 downto i*10),
-			
+
 			rx_reset		=> rx_reset(i),
 			rx_fifo_reset		=> rx_fifo_reset(i),
 			rx_dpa_locked		=> rx_dpa_locked(i),
 			rx_locked		=> rx_locked_A and rx_locked_B,
 			rx_bitslip		=> rx_bitslip(i),
-		
+
 			ready			=> rx_ready_reg(i),
 			data			=> rx_data((i+1)*8-1 downto i*8),
 			k			=> rx_k(i),
@@ -277,7 +273,7 @@ gen_channels: for i in NINPUT-1 downto 0 generate
 		);
 
 
-		errcounter: entity work.rx_errcounter 
+		errcounter: entity work.rx_errcounter
 		port map(
 			reset_n			=> reset_n_errcnt,
 			clk			=> rx_clk,
@@ -290,8 +286,6 @@ gen_channels: for i in NINPUT-1 downto 0 generate
 			o_synclosscounter	=> rx_synclosscounter(i)
 
 		);
-end generate;
-
-
+    end generate;
 
 end rtl;

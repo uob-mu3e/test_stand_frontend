@@ -92,3 +92,7 @@ common/firmware/include/feb_sc_registers.h
 resources
 
 .vscode/
+
+# temporal files in qctesting
+/online/pixels/qctests/ladder/Eval/output/temp/*
+
