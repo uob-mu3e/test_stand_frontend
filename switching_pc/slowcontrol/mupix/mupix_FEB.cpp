@@ -161,7 +161,7 @@ int MupixFEB::ConfigureASICs(){
             // mask all chips but not this one
             // TODO: make this correct
             uint32_t chip_select_mask = 0xfff; //all chips masked (12 times 1)
-            uint16_t pos = ASICid_from_ID(asic);
+            uint16_t pos = ASICsPerFEB() - 1 - ASICid_from_ID(asic);
             bool isTelescope = false; // TODO: make this somehow dynamic for the telescope setup
 	        if ( asic == 3 && isTelescope ) pos = 3;
             chip_select_mask &= ((~0x1u) << pos);
@@ -169,18 +169,18 @@ int MupixFEB::ConfigureASICs(){
             for (int i = 0; i < pos; ++i)
                 chip_select_mask |= (0x1 << i);
 
-            if (MupixChipToConfigure == 5)
-            {
-                chip_select_mask = 0xfffffdff;
-            }
-            else if (MupixChipToConfigure == 4)
-            {
-                chip_select_mask = 0xfffffbff;
-            }
-            if (MupixChipToConfigure == 3)
-            {
-                chip_select_mask = 0xfffff7ff;
-            }//TOFIX: why has it changed?
+            //if (MupixChipToConfigure == 5)
+            //{
+            //    chip_select_mask = 0xfffffdff;
+            //}
+            //else if (MupixChipToConfigure == 4)
+            //{
+            //    chip_select_mask = 0xfffffbff;
+            //}
+            //if (MupixChipToConfigure == 3)
+            //{
+            //    chip_select_mask = 0xfffff7ff;
+            //}//TOFIX: why has it changed?
             printf("chip_select_mask %04x\n", chip_select_mask);
 
             // check if FEB is busy
