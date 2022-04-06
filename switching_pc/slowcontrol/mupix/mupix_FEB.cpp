@@ -155,36 +155,6 @@ int MupixFEB::ConfigureASICs(){
             bool isTelescope = false; // TODO: make this somehow dynamic for the telescope setup
             // my branch
             rpc_status = feb_sc.FEB_write(FEB, MP_CTRL_COMBINED_START_REGISTER_W + asic, payload,true);
-            // other branch: (to be cleaned up)
-	        if ( asic == 3 && isTelescope ) pos = 3;
-            chip_select_mask &= ((~0x1u) << pos);
-            printf("chip_select_mask %04x\n", chip_select_mask);
-            for (int i = 0; i < pos; ++i)
-                chip_select_mask |= (0x1 << i);
-
-            if (MupixChipToConfigure == 5)
-            {
-                chip_select_mask = 0xfffffdff;
-            }
-            else if (MupixChipToConfigure == 4)
-            {
-                chip_select_mask = 0xfffffbff;
-            }
-            if (MupixChipToConfigure == 3)
-            {
-                chip_select_mask = 0xfffff7ff;
-            }//TOFIX: why has it changed?
-            printf("chip_select_mask %04x\n", chip_select_mask);
-
-            // check if FEB is busy
-            rpc_status=FEB_REPLY_SUCCESS;
-            feb_sc.FEB_read(FEB, MP_CTRL_SPI_BUSY_REGISTER_R, spi_busy);
-            while(spi_busy==1 && count < limit){
-                sleep(1);
-                feb_sc.FEB_read(FEB,MP_CTRL_SPI_BUSY_REGISTER_R,spi_busy);
-                count++;
-                cm_msg(MINFO, "MupixFEB", "Mupix config spi busy .. waiting");
-            }
 
         } catch(std::exception& e) {
             cm_msg(MERROR, "setup_mupix", "Communication error while configuring MuPix %d: %s", asic, e.what());
@@ -202,8 +172,6 @@ int MupixFEB::ConfigureASICs(){
         // reset lvds links
         feb_sc.FEB_write(FEB, MP_RESET_LVDS_N_REGISTER_W, 0x0);
         feb_sc.FEB_write(FEB, MP_RESET_LVDS_N_REGISTER_W, 0x1);
-
-        sleep(0.5);
         
         return FE_SUCCESS;//note: return of lambda function
     });//MapForEach
