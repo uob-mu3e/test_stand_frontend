@@ -54,8 +54,7 @@ end entity;
 architecture rtl of framebuilder_mux_v2 is
 
     -- intput-data based combinatorics
-    signal l_all_header  : std_logic;
-    signal l_all_trailer : std_logic;
+    signal l_all_header, l_all_trailer, l_all_header_trailer : std_logic;
     signal l_header, l_trailer, l_crc_err, l_asic_drop, l_asic_over, l_frameid_nonsync_all : std_logic_vector(N_INPUTS-1 downto 0);
 
     -- combining header, frame numbers do not match
@@ -77,6 +76,7 @@ architecture rtl of framebuilder_mux_v2 is
     constant HIT    : std_logic_vector(3 downto 0) := x"4";
     constant WAITING: std_logic_vector(3 downto 0) := x"5";
     constant TRAILER: std_logic_vector(3 downto 0) := x"6";
+    constant HATR   : std_logic_vector(3 downto 0) := x"7";
     signal rd_state, rd_state_last : std_logic_vector(3 downto 0) := IDLE;
 
     -- output words
@@ -124,12 +124,13 @@ begin
         -- check frameID
         l_frameid_nonsync_all(i) <= '1' when l_all_header = '1' and i_mask(i) = '0' and i_data(i)(15 downto 0) /= l_common_data(15 downto 0) else '0';
     END GENERATE;
-    l_all_header    <=  '0' when i_mask = (i_mask'range => '1') else
-                        '1' when work.util.and_reduce(l_header) = '1' else
-                        '0';
-    l_all_trailer   <=  '0' when i_mask = (i_mask'range => '1') else
-                        '1' when work.util.and_reduce(l_trailer) = '1' else
-                        '0';
+    l_all_header            <=  '1' when work.util.and_reduce(l_header) = '1' else
+                                '0';
+    l_all_trailer           <=  '1' when work.util.and_reduce(l_trailer) = '1' else
+                                '0';
+    -- FIXME (MK): this is bad here should work without
+    l_all_header_trailer    <=  '1' when work.util.and_reduce(l_header or l_trailer) = '1' else
+                                '0';
 
     -- common data: 
     -- TODO:    find a candidate for common frame delimiter data (frameID)
@@ -143,15 +144,16 @@ begin
     -- readout state
     rd_state <= IDLE    when i_reset_n /= '1' else
                 WAITING when i_wfull = '1' else
-                HEADER  when l_all_header = '1' and (rd_state_last = IDLE or rd_state_last = TRAILER) else
+                HEADER  when l_all_header = '1' and (rd_state_last = IDLE or rd_state_last = TRAILER or rd_state_last = HATR) else
                 T1      when rd_state_last = HEADER else
                 TRAILER when l_all_trailer = '1' and (rd_state_last = T1 or rd_state_last = HIT) else
+                HATR    when l_all_header_trailer = '1' and (rd_state_last = T1 or rd_state_last = HIT) else
                 HIT     when rd_state_last = T1 or rd_state_last = HIT else
                 IDLE    when l_all_header = '0' else
                 WAITING;
 
     -- generate write signal
-    o_wen <= '1' when rd_state = HEADER or rd_state = T1 or rd_state = TRAILER else
+    o_wen <= '1' when rd_state = HEADER or rd_state = T1 or rd_state = TRAILER or rd_state = HATR else
              '1' when work.util.or_reduce(ren) = '1' and rd_state = HIT else
              '0';
 
@@ -160,6 +162,8 @@ begin
     ren   <= (others => '0') when i_wfull = '1' or i_reset_n /= '1' or rd_state = WAITING else
              -- read when when we are in state header or trailer
              (others => '1') when rd_state = HEADER or rd_state = TRAILER else
+             -- read the once with a trailer
+             not l_trailer   when rd_state = HATR else
              -- read from inputs which dont have a header
              not l_header    when rd_state = IDLE else
              -- read from the current merged asic
@@ -192,7 +196,7 @@ begin
 
     o_data <=   w_t0 when rd_state = HEADER else
                 w_t1 when rd_state = T1 else
-                w_trailer when rd_state = TRAILER else
+                w_trailer when rd_state = TRAILER or rd_state = HATR else
                 w_hit;
 
     --! select data from current index

@@ -356,11 +356,13 @@ begin
         i_SC_datagen_enable         => s_dummyctrl_reg(1),
         i_SC_datagen_shortmode      => s_dummyctrl_reg(2),
         i_SC_datagen_count          => s_dummyctrl_reg(12 downto 3),
-        --run control
+
+        -- run control
         i_RC_may_generate           => i_run_state(RUN_STATE_BITPOS_RUNNING),
         o_RC_all_done               => o_run_state_all_done,
         i_en_lapse_counter          => ctrl_lapse_counter_reg(31),
         i_upper_bnd                 => ctrl_lapse_counter_reg(14 downto 0),
+        i_lower_bnd                 => ctrl_lapse_counter_reg(29 downto 15),
 
         -- monitors
         o_receivers_pll_lock        => rx_pll_lock,

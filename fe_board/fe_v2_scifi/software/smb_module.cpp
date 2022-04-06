@@ -246,6 +246,9 @@ void SMB_t::menu_SMB_main() {
             case 'm':
                 sc.ram->data[SCIFI_CTRL_DP_REGISTER_W] = 0x000000FC;
                 break;
+            case 'n':
+                sc.ram->data[SCIFI_CTRL_DP_REGISTER_W] = 0x000000FE;
+                break;
             case 'q':
                 return;
             default:

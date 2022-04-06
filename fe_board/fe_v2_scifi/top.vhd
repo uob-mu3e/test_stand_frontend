@@ -126,7 +126,7 @@ architecture rtl of top is
 
     constant N_LINKS                : integer := 2;
     constant N_ASICS                : integer := 4;
-    constant N_MODULES              : integer := 2;
+    constant N_MODULES              : integer := 1;
 
     signal fifo_write               : std_logic_vector(N_LINKS-1 downto 0);
     signal fifo_wdata               : std_logic_vector(36*(N_LINKS-1)+35 downto 0);
@@ -158,7 +158,7 @@ architecture rtl of top is
     --signal scifi_int_inject                : std_logic;
     --signal scifi_int_bidir_test            : std_logic;
     
-    signal sync_cnt : integer range 0 to 255 := 0;
+    signal sync_cnt, sync_cnt2 : integer range 0 to 255 := 0;
     signal chip_reset : std_logic := '0';
     signal counter_vec : std_logic_vector(31 downto 0);
     signal counter : integer;
@@ -227,7 +227,7 @@ begin
         N_MODULES       => N_MODULES,
         N_ASICS         => N_ASICS,
         N_LINKS         => N_LINKS,
-        INPUT_SIGNFLIP  => x"FFFFFFFF", -- swap input 0 of con2 and 0 of con3 x"FFFFFFEE"
+        INPUT_SIGNFLIP  => x"FFFFFFEE", -- swap input 0 of con2 and 0 of con3 x"FFFFFFEE"
         LVDS_PLL_FREQ   => 125.0,
         LVDS_DATA_RATE  => 1250.0--,
     )
@@ -279,63 +279,34 @@ begin
     if falling_edge(clk_125) then
         if ( run_state_125 = RUN_STATE_SYNC and sync_cnt <= 10 ) then
             scifi_int_syncres <= '1';
-            scifi_int_syncres2 <= '1';
             sync_cnt <= sync_cnt + 1;
         elsif ( run_state_125 /= RUN_STATE_SYNC ) then
             scifi_int_syncres <= chip_reset_v(0);
-            scifi_int_syncres2 <= chip_reset_v(1);
             sync_cnt <= 0;
         else
             scifi_int_syncres <= '0';
-            scifi_int_syncres2 <= '0';
             sync_cnt <= 0;
         end if;
     end if;
     end process;
 
---    counter_vec <= std_logic_vector(to_unsigned(counter, counter_vec'length));
---    process(LVDS_clk_si1_fpga_A)
---    begin
---    if ( rising_edge(LVDS_clk_si1_fpga_A) ) then
---        if ( run_state_125 = RUN_STATE_SYNC ) then
---            counter <= counter +1;
---            if(counter_vec(6)='1') then
---                scifi_int_syncres <= not scifi_int_syncres;
---                scifi_int_syncres2 <= not scifi_int_syncres2;
---                counter <= 0;
---            end if;
---        elsif (run_state_125 = RUN_STATE_RUNNING) then
---            counter <= counter +1;
---            if(counter_vec(6)='1') then
---                if(scifi_int_syncres = '1') then 
---                    scifi_int_syncres <= not scifi_int_syncres;
---                    scifi_int_syncres2 <= not scifi_int_syncres2;
---                end if;
---                counter <= 0;
---            end if;
---        else
---            scifi_int_syncres <= '0';
---            scifi_int_syncres2 <= '0';
---        end if;
---    end if;
---    end process;
---
---    process(fast_pll_clk)
---    begin
---    if ( rising_edge(fast_pll_clk) ) then
---        run_state_125_prev <= run_state_125;
---        if ( run_state_125 = RUN_STATE_SYNC and run_state_125_prev/=RUN_STATE_SYNC) then
---            scifi_int_syncres <= '1';
---            scifi_int_syncres2 <= '1';
---        else
---            scifi_int_syncres <= '0';
---            scifi_int_syncres2 <= '0';
---        end if;
---    end if;
---    end process;
-
-    --scifi_int_syncres <= chip_reset;
-    --scifi_int_syncres2 <= chip_reset;
+    gen_second_module: if( N_MODULES = 2 ) generate
+        process(clk_125)
+        begin
+        if falling_edge(clk_125) then
+            if ( run_state_125 = RUN_STATE_SYNC and sync_cnt2 <= 10 ) then
+                scifi_int_syncres2 <= '1';
+                sync_cnt2 <= sync_cnt2 + 1;
+            elsif ( run_state_125 /= RUN_STATE_SYNC ) then
+                scifi_int_syncres2 <= chip_reset_v(1);
+                sync_cnt2 <= 0;
+            else
+                scifi_int_syncres2 <= '0';
+                sync_cnt2 <= 0;
+            end if;
+        end if;
+        end process;
+    end generate;
 
 --------------------------------------------------------------------
 --------------------------------------------------------------------

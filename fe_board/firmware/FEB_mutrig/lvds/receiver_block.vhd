@@ -28,7 +28,7 @@ generic (
 );
 port (
     -- serial lines
-    rx_in               : in std_logic_vector(NINPUT-1 downto 0);
+    rx_in               : in std_logic_vector(NINPUT-1 downto 0) := (others => '0');
 
     -- ref.clocks
     rx_inclock_A        : in std_logic;
