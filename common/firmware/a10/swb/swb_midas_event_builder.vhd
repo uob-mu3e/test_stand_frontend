@@ -440,7 +440,16 @@ begin
             end if;
             word_counter_endofevent <= word_counter_endofevent + '1';
             event_counter_state     <= runing;
-            r_ram_add <= r_ram_add + '1';
+            if(r_ram_add = event_last_ram_add - '1') then
+                if ( is_error_q = '1' or word_counter = (word_counter'range => '0') ) then
+                    event_counter_state <= wait_last_word;
+                    cnt_4kb             <= (others => '0');
+                else
+                    event_counter_state <= waiting;
+                end if;
+            else
+                r_ram_add <= r_ram_add + '1';
+            end if;
 
         when runing =>
             o_state_out <= x"4";
