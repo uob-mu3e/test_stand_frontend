@@ -25,9 +25,10 @@ public:
     uint16_t GetCrate() const {return crate;}
     uint16_t GetSlot() const {return slot;}
     LinkStatus & GetLinkStatus() const {return linkstatus;}
+    uint32_t mask;
 protected:
     uint16_t LinkID;	//global numbering. sb_id=LinkID/MAX_LINKS_PER_SWITCHINGBOARD, sb_port=LinkID%MAX_LINKS_PER_SWITCHINGBOARD
-    uint32_t mask;
+    
     std::string fullname_link;
     uint16_t crate;
     uint16_t slot;
