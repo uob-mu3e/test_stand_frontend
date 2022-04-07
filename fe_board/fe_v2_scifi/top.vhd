@@ -127,6 +127,7 @@ architecture rtl of top is
     constant N_LINKS                : integer := 2;
     constant N_ASICS                : integer := 4;
     constant N_MODULES              : integer := 1;
+    constant N_INPUTSRX             : integer := 8;
 
     signal fifo_write               : std_logic_vector(N_LINKS-1 downto 0);
     signal fifo_wdata               : std_logic_vector(36*(N_LINKS-1)+35 downto 0);
@@ -225,6 +226,7 @@ begin
     generic map (
         IS_SCITILE      => '0',
         N_MODULES       => N_MODULES,
+        N_INPUTSRX      => N_INPUTSRX,
         N_ASICS         => N_ASICS,
         N_LINKS         => N_LINKS,
         INPUT_SIGNFLIP  => x"FFFFFFEE", -- swap input 0 of con2 and 0 of con3 x"FFFFFFEE"
@@ -241,7 +243,7 @@ begin
         o_chip_reset                => chip_reset_v,
 
         o_pll_test                  => pll_test,
-        i_data                      => scifi_din(N_MODULES*N_ASICS-1 downto 0),
+        i_data                      => scifi_din(N_INPUTSRX-1 downto 0),
 
         io_i2c_sda                  => open,
         io_i2c_scl                  => open,

@@ -136,6 +136,8 @@ alt_u16 SMB_t::sc_callback(alt_u16 cmd, volatile alt_u32* data, alt_u16 n) {
 extern int uart;
 void SMB_t::menu_SMB_main() {
     volatile sc_ram_t* ram = (sc_ram_t*) AVM_SC_BASE;
+    uint32_t value = 0x0;
+    char str[2] = {0};
     //ram->data[0xFF4D] = 0x00; -- TODO: find this again
 
     while(1) {
@@ -147,7 +149,7 @@ void SMB_t::menu_SMB_main() {
         printf("  [8] => data\n");
         printf("  [9] => monitor test\n");
         printf("  [a] => counters\n");
-        printf("  [m] => set mask to 1100\n");
+        printf("  [m] => set ASIC mask\n");
         printf("  [s] => get slow control registers\n");
         printf("  [d] => get datapath status\n");
         printf("  [f] => dummy generator settings\n");
@@ -244,10 +246,15 @@ void SMB_t::menu_SMB_main() {
             case 'r':
                 menu_reset();
             case 'm':
-                sc.ram->data[SCIFI_CTRL_DP_REGISTER_W] = 0x000000FC;
-                break;
-            case 'n':
-                sc.ram->data[SCIFI_CTRL_DP_REGISTER_W] = 0x000000FE;
+                value = 0x0;
+		printf("Enter Chip Mask in hex: ");
+		for ( int i = 0; i < 2; i++ ) {
+			printf("mask: 0x%08x\n", value);
+			str[0] = wait_key();
+			value = value*16+strtol(str,NULL,16);
+		}
+		printf("setting mask to 0x%08x\n", value);
+		sc.ram->data[SCIFI_CTRL_DP_REGISTER_W] = value;
                 break;
             case 'q':
                 return;
