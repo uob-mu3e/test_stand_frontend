@@ -229,7 +229,7 @@ begin
         N_INPUTSRX      => N_INPUTSRX,
         N_ASICS         => N_ASICS,
         N_LINKS         => N_LINKS,
-        INPUT_SIGNFLIP  => x"FFFFFFEE", -- swap input 0 of con2 and 0 of con3 x"FFFFFFEE"
+        INPUT_SIGNFLIP  => x"FFFFFFFF", -- swap input 0 of con2 and 0 of con3 x"FFFFFFEE"
         LVDS_PLL_FREQ   => 125.0,
         LVDS_DATA_RATE  => 1250.0--,
     )
@@ -292,7 +292,7 @@ begin
     end if;
     end process;
 
-    gen_second_module: if( N_MODULES = 2 ) generate
+    gen_second_module: if ( N_MODULES = 2 ) generate
         process(clk_125)
         begin
         if falling_edge(clk_125) then

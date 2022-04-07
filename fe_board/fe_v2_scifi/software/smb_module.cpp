@@ -245,6 +245,7 @@ void SMB_t::menu_SMB_main() {
                 //    break;
             case 'r':
                 menu_reset();
+		break;
             case 'm':
                 value = 0x0;
 		printf("Enter Chip Mask in hex: ");
