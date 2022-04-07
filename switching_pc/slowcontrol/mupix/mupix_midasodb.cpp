@@ -7,13 +7,15 @@
 #include "mupix_midasodb.h"
 #include "odbxx.h"
 #include "link_constants.h"
+#include "mu3ebanks.h"
 using midas::odb;
 using namespace std;
+using namespace mu3ebanks;
 
 namespace mupix { namespace midasODB {
 
 
-int setup_db(std::string prefix, MupixFEB & FEB_interface, bool init_FEB, bool write_defaults = true){
+int setup_db(std::string prefix, int switch_id, bool write_defaults = true){
     /* Book Setting space */
     
     cm_msg(MINFO, "mupix_midasodb::setup_db", "Setting up odb");
@@ -29,11 +31,9 @@ int setup_db(std::string prefix, MupixFEB & FEB_interface, bool init_FEB, bool w
 
     global_settings_febs.connect(prefix + "/Settings/FEBS", write_defaults);
 
-    //Set number of ASICs, derived from mapping
-    unsigned int nasics = FEB_interface.GetNumASICs();
-    unsigned int nFEBs = FEB_interface.GetNumFPGAs();
-    settings_asics_global["Num asics"] = nasics;
-    settings_asics_global["Num boards"] = nFEBs;
+    // get total number of FEBs
+    unsigned int nasics = settings_asics_global["Num asics"];
+    unsigned int nFEBs = settings_asics_global["Num boards"];
 
     if(nasics==0){
         cm_msg(MINFO,"mupix_midasodb::setup_db","Number of Mupixes is 0, will not continue to build DB. Consider to delete ODB subtree %s",prefix.c_str());
@@ -45,39 +45,14 @@ int setup_db(std::string prefix, MupixFEB & FEB_interface, bool init_FEB, bool w
     auto settings_daq = MUPIX_DAQ_SETTINGS;
     settings_daq.connect(prefix + "/Settings/Daq", write_defaults);
     
-    // use lambda funciton for passing FEB_interface
-    auto on_settings_changed_partial = 
-        [&FEB_interface](odb o) { 
-            return MupixFEB::on_settings_changed(
-                o, &FEB_interface
-            );
-        };
-    settings_daq.watch(on_settings_changed_partial);
-
-    //init all values on FEB
-    if(init_FEB){
-        //BOOL bval;
-
-        //bval = settings_daq["dummy_config"];
-        // TODO: do something here
-        //FEB_interface->setDummyConfig(SciFiFEB::FPGA_broadcast_ID,bval); 
-        
-        //bval = settings_daq["dummy_data"];
-        // TODO: do something here
-        //FEB_interface->setDummyData_Enable(SciFiFEB::FPGA_broadcast_ID,bval);
-        
-        // TODO: do something here
-        // for(int i=0;i<16;i++)
-        // FEB_interface->setMask(i,settings_daq["mask"]i]);
-    }
+    // create watch on MuPixFEB
+    settings_daq.watch(MupixFEB::on_settings_changed);
 
     // set all dac values per asic
     auto settings_biasdacs = MUPIX_BIASDACS_SETTINGS;
     auto settings_confdacs = MUPIX_CONFDACS_SETTINGS;
     auto settings_vdacs = MUPIX_VDACS_SETTINGS;
     auto settings_tdacs = MUPIX_TDACS_SETTINGS;
-
-    nasics = settings_asics_global["Num asics"];
         
     for(unsigned int i = 0; i < nasics; ++i) {
         settings_biasdacs.connect(prefix +  "/Settings/BIASDACS/" + to_string(i), write_defaults);
@@ -92,63 +67,33 @@ int setup_db(std::string prefix, MupixFEB & FEB_interface, bool init_FEB, bool w
     // set all tdac values per FEB
     auto settings_febs = MUPIX_FEB_SETTINGS;
 
-    nFEBs = settings_asics_global["Num boards"];
-
     for(unsigned int i = 0; i < nFEBs; ++i) {
         settings_febs.connect(prefix +  "/Settings/FEBS/" + to_string(i), write_defaults);
     }
 
-    // load tdac json from ODB into feb_interface
-    FEB_interface.SetTDACs();
-
-    // PSLL Bank setup
+    // PSLS Bank setup
     /* Default values for /Equipment/Mupix/Settings */
+    // TODO: Get rid of N_FEBS_MUPIX_INT_2021
     odb settings = {
-        {namestrPSLL.c_str(), std::array<std::string, per_fe_PSLL_size*N_FEBS_MUPIX_INT_2021*lvds_links_per_feb>{}}
+        {pslsnames[switch_id].c_str(), std::array<std::string, per_fe_PSLS_size*N_FEBS_MUPIX_INT_2021>{}}
     };
 
-    // TODO: why do I have to connect here? In switch_fe.cpp we do first the naming and than we connect
+    // TODO: why do I have to connect here? In switch_fe.cpp we do first the naming and than we connect 
+    // (NB: I have the same problem in the switch FE at some point)
     settings.connect(prefix + "/Settings", write_defaults);
 
-    create_psll_names_in_odb(settings, N_FEBS_MUPIX_INT_2021, lvds_links_per_feb);
+    create_psls_names_in_odb(settings, switch_id, N_FEBS_MUPIX_INT_2021);
 
     settings.connect(prefix + "/Settings", write_defaults=write_defaults);
 
     /* Default values for /Equipment/Mupix/Variables */
     odb variables = {
-        {banknamePSLL.c_str(), std::array<int, per_fe_PSLL_size*N_FEBS_MUPIX_INT_2021*lvds_links_per_feb>{}}
+        {psls[switch_id].c_str(), std::array<int, per_fe_PSLS_size*N_FEBS_MUPIX_INT_2021>{}}
     };
 
     variables.connect(prefix + "/Variables", write_defaults=write_defaults);
 
     return DB_SUCCESS;
-}
-
-
-void create_psll_names_in_odb(odb & settings, uint32_t N_FEBS_MUPIX, uint32_t N_LINKS){
-    int bankindex = 0;
-
-    for(uint32_t i=0; i < N_FEBS_MUPIX; i++){
-        for(uint32_t j=0; j < N_LINKS; j++){
-            string name = "FEB" + to_string(i) + " LVDS" + to_string(j);
-
-            string * s = new string(name);
-            (*s) += " INDEX";
-            settings[namestrPSLL.c_str()][bankindex++] = s;
-
-            s = new string(name);
-            (*s) += " STATUS LVDS";
-            settings[namestrPSLL.c_str()][bankindex++] = s;
-
-            s = new string(name);
-            (*s) += " NUM HITS LVDS";
-            settings[namestrPSLL.c_str()][bankindex++] = s;
-
-            s = new string(name);
-            (*s) += " NUM MuPix HITS LVDS";
-            settings[namestrPSLL.c_str()][bankindex++] = s;
-        }
-    }
 }
 
 
@@ -180,11 +125,11 @@ int MapForEachASIC(std::string pixelprefix, std::function<int(MupixConfig* /*mup
         odb confdacs(pixelprefix + "/Settings/CONFDACS/" + std::to_string(asic));
         config.Parse_ConfDACs_from_odb(confdacs);
 
-        odb coldacs(pixelprefix +"/Setrtings/VDACS/" + std::to_string(asic));
+        odb coldacs(pixelprefix +"/Settings/VDACS/" + std::to_string(asic));
         config.Parse_VDACs_from_odb(coldacs);
 
         //note: this needs to be passed as pointer, otherwise there is a memory corruption after exiting the lambda
-		status=func(&config,asic);
+		status=func(&config, asic);
 		if (status != SUCCESS) break;
 	}
 	return status;

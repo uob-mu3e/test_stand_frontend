@@ -138,7 +138,6 @@ void SMB_t::menu_SMB_main() {
     volatile sc_ram_t* ram = (sc_ram_t*) AVM_SC_BASE;
     uint32_t value = 0x0;
     char str[2] = {0};
-    //ram->data[0xFF4D] = 0x00; -- TODO: find this again
 
     while(1) {
         //        TODO: Define menu

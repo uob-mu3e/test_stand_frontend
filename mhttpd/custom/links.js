@@ -6,6 +6,7 @@ var nlinkstx = [34,33,33,12];
 
 function DataLink(xmin,y,xmax, index, name){
     this.status =0;
+    this.locked =0;
     this.type="Undefined type";
     this.shorttype="U";
     this.selected = false;
@@ -26,6 +27,7 @@ function DataLink(xmin,y,xmax, index, name){
     this.bymax = this.lymin+90;
 
     this.col = "rgb(150,150,150)"
+    this.lockcol = "rgb(255,0,0)";
     this.name = name;
     this.index = index;
 
@@ -39,6 +41,15 @@ function DataLink(xmin,y,xmax, index, name){
         if(this.status == 3)
             this.col = "rgb(255,0,0)";
 
+        if(this.status > 0){    
+            if(this.locked == 0)
+                this.lockcol = "rgb(255,0,0)";    
+            else
+                this.lockcol = "rgb(100,255,100)";   
+        } else {
+            this.lockcol = "rgb(130,130,130)";
+        }
+
         if(this.selected == false){
             cc.beginPath();
             cc.moveTo(this.xmin, this.y);
@@ -46,6 +57,11 @@ function DataLink(xmin,y,xmax, index, name){
             cc.lineWidth = 6;
             cc.strokeStyle = this.col;
             cc.stroke();
+
+            cc.fillStyle = this.lockcol;
+            cc.beginPath();
+            cc.arc(this.xmax+6, this.y, 5, 2*Math.PI, false);
+            cc.fill();
 
             cc.fillStyle = "Black";
             if(this.shorttype == "P")
@@ -79,6 +95,14 @@ function DataLink(xmin,y,xmax, index, name){
                 cc.fillText("Disable", this.bxmin+10, this.bymin+17);
             }
 
+            cc.fillStyle = this.lockcol;
+            cc.beginPath();
+            cc.arc(this.lxmax-25, this.lymax -20, 5, 2*Math.PI, false);
+            cc.fill();
+            cc.fillStyle = "Black";
+            cc.font = "12px Arial, sans-serif";
+            cc.fillText("Locked", this.lxmax-45, this.lymax-30);
+
         }
 
     }
@@ -87,6 +111,7 @@ function DataLink(xmin,y,xmax, index, name){
 
 function SCLink(xmin,y,xmax, index, name){
     this.status =0;
+    this.locked =0;
     this.type="Undefined type";
     this.shorttype="U";
     this.selected = false;
@@ -120,6 +145,15 @@ function SCLink(xmin,y,xmax, index, name){
         if(this.status == 3)
             this.col = "rgb(255,0,0)";
 
+        if(this.status > 0){    
+            if(this.locked == 0)
+                this.lockcol = "rgb(255,0,0)";    
+            else
+                this.lockcol = "rgb(100,255,100)";   
+        } else {
+            this.lockcol = "rgb(130,130,130)";
+        }    
+
         if(this.selected == false){
             cc.beginPath();
             cc.moveTo(this.xmin, this.y);
@@ -127,6 +161,11 @@ function SCLink(xmin,y,xmax, index, name){
             cc.lineWidth = 6;
             cc.strokeStyle = this.col;
             cc.stroke();
+
+            cc.fillStyle = this.lockcol;
+            cc.beginPath();
+            cc.arc(this.xmin-6, this.y, 5, 2*Math.PI, false);
+            cc.fill();
 
             cc.fillStyle = "Black";
             if(this.shorttype == "P")
@@ -161,6 +200,14 @@ function SCLink(xmin,y,xmax, index, name){
                 }
             }
 
+            cc.fillStyle = this.lockcol;
+            cc.beginPath();
+            cc.arc(this.lxmax-25, this.lymax -20, 5, 2*Math.PI, false);
+            cc.fill();
+            cc.fillStyle = "Black";
+            cc.font = "12px Arial, sans-serif";
+            cc.fillText("Locked", this.lxmax-45, this.lymax-30);
+
         }
 
     }
@@ -189,6 +236,8 @@ function Switchingboard(x,y,dx,dy, index){
     this.index = index;
     this.active = 0;
     this.name = "";
+    this.PLL156locked = 0;
+    this.PLL250locked = 0;
 
     this.Data = new Array(4);
     this.SC = new Array(4);
@@ -228,7 +277,40 @@ function Switchingboard(x,y,dx,dy, index){
 
         cc.fillStyle = "Black";
         cc.font = "12px Arial, sans-serif";
-        cc.fillText(this.name, this.x+10, this.y+740);
+        cc.fillText("PLL locked", this.x+10, this.y+725);
+
+        if(this.active > 0){    
+            if(this.PLL156locked == 0)
+                cc.fillStyle = "rgb(255,0,0)";    
+            if(this.PLL156locked != 0)
+                cc.fillStyle = "rgb(100,255,100)";   
+        } else {
+            cc.fillStyle = "rgb(150,150,150)";
+        }    
+        cc.beginPath();
+        cc.arc(this.x+83, this.y+722, 8, 2*Math.PI, false);
+        cc.fill();
+        cc.fillStyle = "Black";
+        cc.font = "8px Arial, sans-serif";
+        cc.fillText("156", this.x+76, this.y+725);
+
+        if(this.active > 0){    
+            if(this.PLL250locked == 0)
+                cc.fillStyle = "rgb(255,0,0)";    
+            if(this.PLL250locked != 0)
+                cc.fillStyle = "rgb(100,255,100)";   
+        } else {
+            cc.fillStyle = "rgb(150,150,150)";
+        }    
+        cc.beginPath();
+        cc.arc(this.x+105, this.y+722, 8, 2*Math.PI, false);
+        cc.fill();
+        cc.fillStyle = "Black";
+        cc.fillText("250", this.x+98, this.y+725);
+
+        cc.fillStyle = "Black";
+        cc.font = "12px Arial, sans-serif";
+        cc.fillText(this.name, this.x+10, this.y+750);
 
         cc.fillStyle = "rgb(50,50,50)";
         cc.fillRect(this.bxmin, this.bymin,this.bxmax-this.bxmin, this.bymax-this.bymin);
@@ -376,6 +458,35 @@ function init(){
      mjsonrpc_db_get_values(["/Equipment/LinksFibre/Variables/LinkStatus"]).then(function(rpc) {
         if(rpc.result.data[0])
             update_status(rpc.result.data[0],3);
+     }).catch(function(error) {
+        mjsonrpc_error_alert(error);
+     }); 
+
+     
+     mjsonrpc_db_get_values(["/Equipment/LinksCentral/Variables/SCPL"]).then(function(rpc) {
+        if(rpc.result.data[0]) 
+            update_plls(rpc.result.data[0],0);
+    }).catch(function(error) {
+       mjsonrpc_error_alert(error);
+    });
+
+    mjsonrpc_db_get_values(["/Equipment/LinksUpstream/Variables/SUPL"]).then(function(rpc) {
+        if(rpc.result.data[0])
+            update_plls(rpc.result.data[0],1);
+     }).catch(function(error) {
+        mjsonrpc_error_alert(error);
+     });
+
+     mjsonrpc_db_get_values(["/Equipment/LinksDownstream/Variables/SDPL"]).then(function(rpc) {
+        if(rpc.result.data[0])
+            update_plls(rpc.result.data[0],2);
+     }).catch(function(error) {
+        mjsonrpc_error_alert(error);
+     });
+     
+     mjsonrpc_db_get_values(["/Equipment/LinksFibre/Variables/SFPL"]).then(function(rpc) {
+        if(rpc.result.data[0])
+            update_plls(rpc.result.data[0],3);
      }).catch(function(error) {
         mjsonrpc_error_alert(error);
      }); 
@@ -635,6 +746,34 @@ function update_masks(valuex, swb) {
             rxlinks[swb][i].shorttype = "U";
         }
     }
+
+    draw(rxselindex, txselindex);
+}
+
+
+function update_plls(valuex, swb) {
+    var value = valuex;
+    if(typeof valuex === 'string')
+        value = JSON.parse(valuex);
+
+    switchingboards[swb].PLL156locked = value[0] & (1<<31);
+    switchingboards[swb].PLL250locked = value[1] & (1<<31); 
+    
+    for(var i=0; i < nlinksrx[swb]; i++){
+        if(rxlinks[swb][i].status > 0){
+            if(i < 32){
+                rxlinks[swb][i].locked = ! value[2] & (1<<i);
+            } else {
+                rxlinks[swb][i].locked = ! value[3] & (1<<(i-32)); 
+            }
+        }
+    }
+
+    // TXlinks are always locked
+    for(var i=0; i < nlinkstx[swb]; i++){
+        if(txlinks[swb][i].status > 0)
+            txlinks[swb][i].locked = 1;
+    } 
 
     draw(rxselindex, txselindex);
 }

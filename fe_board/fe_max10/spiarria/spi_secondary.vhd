@@ -3,30 +3,29 @@ use ieee.std_logic_1164.all;
 use ieee.numeric_std.all;
 
 entity spi_secondary is
-    generic(
-        SS      : std_logic ; -- ss should be sensitive on '1'
-        Del     : integer := 0 ; -- time diff between tx/rx data
-        R       : std_logic ; -- when (r/w = R) => read || when (r/w != R) => write
-        lanes   : integer --; number of possible lanes (2 or 4)
-        );
-    port(
+generic (
+    SS      : std_logic ; -- ss should be sensitive on '1'
+    Del     : integer := 0 ; -- time diff between tx/rx data
+    R       : std_logic ; -- when (r/w = R) => read || when (r/w != R) => write
+    lanes   : integer --; number of possible lanes (2 or 4)
+    );
+port (
+    ------ Max Data --register interface
+    o_Max_rw    : out   std_logic;
+    o_Max_data  : out   std_logic_vector(31 downto 0);
+    o_Max_addr_o: out   std_logic_vector(6 downto 0);
+    o_b_addr    : out   std_logic_vector (7 downto 0); -- command adrr.
+    --o_Ar_done	: out std_logic;
+    i_Max_data  : in    std_logic_vector(31 downto 0);
 
-        ------ Max Data --register interface 
-        o_Max_rw    : out   std_logic;
-        o_Max_data  : out   std_logic_vector(31 downto 0);
-        o_Max_addr_o: out   std_logic_vector(6 downto 0);
-        o_b_addr    : out   std_logic_vector (7 downto 0); -- command adrr.
-        --o_Ar_done	: out std_logic;
-        i_Max_data  : in    std_logic_vector(31 downto 0);
-
-        ------ SPI
-        i_SPI_cs    : in    std_logic;
-        i_SPI_clk   : in    std_logic;
-        io_SPI_mosi : inout std_logic;
-        io_SPI_miso : inout std_logic;
-        io_SPI_D1   : inout std_logic;
-        io_SPI_D2   : inout std_logic;
-        io_SPI_D3   : inout std_logic--;
+    ------ SPI
+    i_SPI_cs    : in    std_logic;
+    i_SPI_clk   : in    std_logic;
+    io_SPI_mosi : inout std_logic;
+    io_SPI_miso : inout std_logic;
+    io_SPI_D1   : inout std_logic;
+    io_SPI_D2   : inout std_logic;
+    io_SPI_D3   : inout std_logic--;
 );
 end entity;
 
@@ -49,7 +48,7 @@ architecture rtl of spi_secondary is
     signal cnt_del          : integer range 0 to 64; -- delay cnt
     -- read cnt needs until int 17 but cnts to 16 for 2 lines
     -- read cnt needs until int 9 but cnts to 8 for 4 lines
-    signal cnt_16           : integer range 0 to (32/lanes)+1 := 0; 
+    signal cnt_16           : integer range 0 to (32/lanes)+1 := 0;
     signal cnt_words        : unsigned (6 downto 0):="0000000";
     signal cnt_words_test   : std_logic_vector(6 downto 0);
     signal setup            : std_logic := '1';
@@ -57,11 +56,11 @@ architecture rtl of spi_secondary is
     signal aktiv            : std_logic;
     signal rw               : std_logic := '0';
     signal ss_del           : std_logic;
-    
+
     -- arria register
-    signal i_command        : std_logic_vector(15 downto 0); --[15-9] empty ,[8-2] cnt , [1] rw , [0] aktiv, 
-    
-    
+    signal i_command        : std_logic_vector(15 downto 0); --[15-9] empty ,[8-2] cnt , [1] rw , [0] aktiv,
+
+
 
 begin
 
@@ -127,7 +126,7 @@ begin
             addr_offset <= "0000000";
             o_Max_rw    <= R;
 
-        when Adrr => 
+        when Adrr =>
             if ( cnt_8 /= (16/lanes) ) then
                 cnt_8 <= cnt_8 + 1;
                 for i in 0 to (lanes -1) loop
@@ -207,6 +206,5 @@ begin
         end case;
     end if;
     end process;
-
 
 end rtl;

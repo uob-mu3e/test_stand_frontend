@@ -27,7 +27,7 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
 add_compile_options(
-    "-Wpedantic" "-Wall" "-Wextra"
+    "-Wpedantic" "-Wall" "-Wextra" "-Wno-missing-field-initializers"
     "-Wformat=2"
 )
 
@@ -126,9 +126,6 @@ install(FILES ${CMAKE_CURRENT_BINARY_DIR}/make_links.sh DESTINATION ./)
 
 configure_file(setup_odb.sh.in setup_odb.sh @ONLY)
 install(FILES ${CMAKE_CURRENT_BINARY_DIR}/setup_odb.sh DESTINATION ./)
-
-configure_file(setup_mhttpd.sh.in setup_mhttpd.sh @ONLY)
-install(FILES ${CMAKE_CURRENT_BINARY_DIR}/setup_mhttpd.sh DESTINATION ./)
 
 configure_file(start_daq.sh.in start_daq.sh @ONLY)
 install(FILES ${CMAKE_CURRENT_BINARY_DIR}/start_daq.sh DESTINATION bin

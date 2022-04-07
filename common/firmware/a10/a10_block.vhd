@@ -5,7 +5,6 @@ use ieee.numeric_std.all;
 use work.mudaq.all;
 use work.a10_pcie_registers.all;
 
-
 entity a10_block is
 generic (
     g_XCVR0_CHANNELS    : integer := 16;
@@ -117,27 +116,13 @@ port (
     i_pcie0_rmem_clk    : in    std_logic := '0';
 
     -- PCIe0 update interface for readable registers
-    i_pcie0_rregs_A     : in    work.util.slv32_array_t(63 downto 0) := (others => (others => '0'));
-    i_pcie0_rregs_B     : in    work.util.slv32_array_t(63 downto 0) := (others => (others => '0'));
-    i_pcie0_rregs_C     : in    work.util.slv32_array_t(63 downto 0) := (others => (others => '0'));
-
+    i_pcie0_rregs       : in    work.util.slv32_array_t(63 downto 0) := (others => (others => '0'));
+    
     -- PCIe0 read interface for writable registers
-    o_pcie0_wregs_A     : out   work.util.slv32_array_t(63 downto 0);
-    i_pcie0_wregs_A_clk : in    std_logic := '0';
-    o_pcie0_regwritten_A: out   std_logic_vector(63 downto 0);
-    o_pcie0_resets_n_A  : out   std_logic_vector(31 downto 0);
-    o_pcie0_wregs_B     : out   work.util.slv32_array_t(63 downto 0);
-    i_pcie0_wregs_B_clk : in    std_logic := '0';
-    o_pcie0_regwritten_B: out   std_logic_vector(63 downto 0);
-    o_pcie0_resets_n_B  : out   std_logic_vector(31 downto 0);
-    o_pcie0_wregs_C     : out   work.util.slv32_array_t(63 downto 0);
-    i_pcie0_wregs_C_clk : in    std_logic := '0';
-    o_pcie0_regwritten_C: out   std_logic_vector(63 downto 0);
-    o_pcie0_resets_n_C  : out   std_logic_vector(31 downto 0);
-
-
-
-    top_pll_locked      : in    std_logic;
+    o_pcie0_wregs       : out   work.util.slv32_array_t(63 downto 0);
+    i_pcie0_wregs_clk   : in    std_logic := '0';
+    o_pcie0_regwritten  : out   std_logic_vector(63 downto 0);
+    o_pcie0_resets_n    : out   std_logic_vector(31 downto 0);
 
     o_reset_156_n       : out   std_logic;
     o_clk_156           : out   std_logic;
@@ -203,23 +188,19 @@ architecture arch of a10_block is
     signal xcvr2_tx_data    : std_logic_vector(g_XCVR2_CHANNELS*8-1 downto 0) := (others => '0');
     signal xcvr2_tx_datak   : std_logic_vector(g_XCVR2_CHANNELS-1 downto 0) := (others => '0');
 
+    signal xcvr0_rx_locked  : std_logic_vector(o_xcvr0_rx_data'range);
+    signal xcvr1_rx_locked  : std_logic_vector(o_xcvr1_rx_data'range);
+
     signal pcie0_rregs      : reg32array_pcie;
-    signal pcie0_wregs_A    : reg32array_pcie;
+    signal pcie0_wregs      : reg32array_pcie;
     signal pcie0_wregs_B    : reg32array_pcie;
-    signal pcie0_wregs_C    : reg32array_pcie;
     signal local_pcie0_rregs_A : work.util.slv32_array_t(63 downto 0) := (others => (others => '0')); -- PCIe clk
     signal local_pcie0_rregs_B : work.util.slv32_array_t(63 downto 0) := (others => (others => '0')); -- data link clk
-    signal local_pcie0_rregs_C : work.util.slv32_array_t(63 downto 0) := (others => (others => '0')); -- ddr or reset link clk
 
-    signal pcie0_resets_n_A : std_logic_vector(31 downto 0);
-    signal pcie0_resets_n_B : std_logic_vector(31 downto 0);
-    signal pcie0_resets_n_C : std_logic_vector(31 downto 0);
+    signal pcie0_resets_n   : std_logic_vector(31 downto 0);
     signal pcie0_dma0_hfull : std_logic;
 
-    signal reset_C_n        : std_logic;
-
     --! pll lock counters
-    signal cnt_lock_top : std_logic_vector(30 downto 0);
     signal cnt_lock_125to156 : std_logic_vector(30 downto 0);
     signal cnt_lock_125to250 : std_logic_vector(30 downto 0);
     signal locked_125to156, locked_125to250 : std_logic;
@@ -254,28 +235,10 @@ begin
 
     --! output signals
     gen_pcie0_wregs_mapping : for i in 0 to 63 generate
-        o_pcie0_wregs_A(i) <= pcie0_wregs_A(i);
-        o_pcie0_wregs_B(i) <= pcie0_wregs_B(i);
-        o_pcie0_wregs_C(i) <= pcie0_wregs_C(i);
+        o_pcie0_wregs(i) <= pcie0_wregs(i);
     end generate;
-    o_pcie0_resets_n_A <= pcie0_resets_n_A;
-    o_pcie0_resets_n_B <= pcie0_resets_n_B;
-    o_pcie0_resets_n_C <= pcie0_resets_n_C;
-    o_pcie0_dma0_hfull <= pcie0_dma0_hfull;
-
-    --! pll counters
-    e_cnt_top_locked : entity work.counter
-    generic map (
-        WRAP => true,
-        W => cnt_lock_top'length--,
-    )
-    port map (
-        o_cnt => cnt_lock_top,
-        i_ena => top_pll_locked,
-        i_reset_n => pcie0_reset_n,
-        i_clk => pcie0_clk
-    );
-    local_pcie0_rregs_A(CNT_PLL_TOP_REGISTER_R) <= top_pll_locked & cnt_lock_top;
+    o_pcie0_resets_n    <= pcie0_resets_n;
+    o_pcie0_dma0_hfull  <= pcie0_dma0_hfull;
 
     e_cnt_125to156 : entity work.counter
     generic map (
@@ -284,7 +247,7 @@ begin
     )
     port map (
         o_cnt => cnt_lock_125to156,
-        i_ena => locked_125to156,
+        i_ena => not locked_125to156,
         i_reset_n => pcie0_reset_n,
         i_clk => pcie0_clk--,
     );
@@ -297,7 +260,7 @@ begin
     )
     port map (
         o_cnt => cnt_lock_125to250,
-        i_ena => locked_125to250,
+        i_ena => not locked_125to250,
         i_reset_n => pcie0_reset_n,
         i_clk => pcie0_clk
     );
@@ -324,15 +287,15 @@ begin
     o_clk_250 <= clk_250;
 
     e_reset_156_n : entity work.reset_sync
-    port map ( o_reset_n => reset_156_n, i_reset_n => i_reset_125_n, i_clk => clk_156 );
+    port map ( o_reset_n => reset_156_n, i_reset_n => i_reset_n, i_clk => clk_156 );
     o_reset_156_n <= reset_156_n;
 
     e_reset_250_n : entity work.reset_sync
-    port map ( o_reset_n => reset_250_n, i_reset_n => i_reset_125_n, i_clk => clk_250 );
+    port map ( o_reset_n => reset_250_n, i_reset_n => i_reset_n, i_clk => clk_250 );
     o_reset_250_n <= reset_250_n;
 
     e_pcie0_reset_n : entity work.reset_sync
-    port map ( o_reset_n => pcie0_reset_n, i_reset_n => i_reset_125_n, i_clk => pcie0_clk );
+    port map ( o_reset_n => pcie0_reset_n, i_reset_n => i_reset_n, i_clk => pcie0_clk );
     o_pcie0_reset_n <= pcie0_reset_n;
 
     e_clk_125_hz : entity work.clkdiv
@@ -351,59 +314,21 @@ begin
     generic map ( P => 250000000 )
     port map ( o_clk => o_pcie0_clk_hz, i_reset_n => pcie0_reset_n, i_clk => pcie0_clk );
 
-    e_reset_C_n : entity work.reset_sync
-    port map ( o_reset_n => reset_C_n, i_reset_n => i_reset_125_n, i_clk => i_pcie0_wregs_C_clk );
-
     --! save git version to version register
     local_pcie0_rregs_A(VERSION_REGISTER_R)(27 downto 0) <= work.cmp.GIT_HEAD(27 downto 0);
 
     --! generate reset regs for 250 MHz clk for pcie0
     e_reset_logic_pcie : entity work.reset_logic
     port map (
-        rst_n          => pcie0_reset_n,
-        reset_register => pcie0_wregs_A(RESET_REGISTER_W),
-        resets         => open,
-        resets_n       => pcie0_resets_n_A,
-        clk            => pcie0_clk--,
-    );
+        i_reset_register    => pcie0_wregs(RESET_REGISTER_W),
+        o_resets_n          => pcie0_resets_n,
 
-    gen_FARM : if ( g_FARM = 1 ) GENERATE
-        --! generate reset regs for 250 MHz link clk for pcie0
-        e_reset_logic_farm : entity work.reset_logic
-        port map (
-            rst_n          => reset_250_n,
-            reset_register => pcie0_wregs_B(RESET_REGISTER_W),
-            resets         => open,
-            resets_n       => pcie0_resets_n_B,
-            clk            => clk_250--,
-        );
-    END GENERATE gen_FARM;
-
-    gen_SWB : if g_FARM = 0 GENERATE
-        --! generate reset regs for 156 MHz link clk for pcie0
-        e_reset_logic_swb : entity work.reset_logic
-        port map (
-            rst_n          => reset_156_n,
-            reset_register => pcie0_wregs_B(RESET_REGISTER_W),
-            resets         => open,
-            resets_n       => pcie0_resets_n_B,
-            clk            => clk_156--,
-        );
-     END GENERATE gen_SWB;
-
-    --! generate reset regs for DDR clk for pcie0
-    e_reset_logic_ddr : entity work.reset_logic
-    port map (
-        rst_n          => reset_C_n,
-        reset_register => pcie0_wregs_C(RESET_REGISTER_W),
-        resets         => open,
-        resets_n       => pcie0_resets_n_C,
-        clk            => i_pcie0_wregs_C_clk--,
+        i_reset_n           => pcie0_reset_n,
+        i_clk               => pcie0_clk--,
     );
 
     --! blinky leds to check the wregs
-    o_LED_BRACKET(1 downto 0) <= pcie0_wregs_A(LED_REGISTER_W)(1 downto 0);
-    o_LED_BRACKET(3 downto 2) <= pcie0_wregs_B(LED_REGISTER_W)(3 downto 2);
+    o_LED_BRACKET(3 downto 0) <= pcie0_wregs(LED_REGISTER_W)(3 downto 0);
 
     --! blinky leds
     o_LED(1) <= nios_pio(7);
@@ -489,227 +414,252 @@ begin
     o_spi_ss_n <= nios_spi_ss_n;
     -- TODO: implement mux
 
-
-
     -- xcvr_block 6250 Mbps @ 156.25 MHz
     generate_xcvr0_block : if ( g_XCVR0_CHANNELS > 0 ) generate
-    e_xcvr0_block : entity work.xcvr_block
-    generic map (
-        g_XCVR_N        => g_XCVR0_N,
-        g_CHANNELS      => g_XCVR0_CHANNELS / g_XCVR0_N,
-        g_REFCLK_MHZ    => 125.0,
-        g_RATE_MBPS     => 6250,
-        g_CLK_MHZ       => g_CLK_MHZ--,
-    )
-    port map (
-        o_rx_data           => xcvr0_rx_data,
-        o_rx_datak          => xcvr0_rx_datak,
+        e_xcvr0_block : entity work.xcvr_block
+        generic map (
+            g_XCVR_N        => g_XCVR0_N,
+            g_CHANNELS      => g_XCVR0_CHANNELS / g_XCVR0_N,
+            g_REFCLK_MHZ    => 125.0,
+            g_RATE_MBPS     => 6250,
+            g_CLK_MHZ       => g_CLK_MHZ--,
+        )
+        port map (
+            o_rx_data           => xcvr0_rx_data,
+            o_rx_datak          => xcvr0_rx_datak,
 
-        i_tx_data           => xcvr0_tx_data,
-        i_tx_datak          => xcvr0_tx_datak,
+            i_tx_data           => xcvr0_tx_data,
+            i_tx_datak          => xcvr0_tx_datak,
 
-        i_tx_clk            => (others => clk_156),
-        i_rx_clk            => (others => clk_156),
+            i_tx_clk            => (others => clk_156),
+            i_rx_clk            => (others => clk_156),
 
-        i_rx_serial         => i_xcvr0_rx,
-        o_tx_serial         => o_xcvr0_tx,
+            i_rx_serial         => i_xcvr0_rx,
+            o_tx_serial         => o_xcvr0_tx,
 
-        i_refclk            => i_xcvr0_refclk,
+            i_refclk            => i_xcvr0_refclk,
 
-        i_avs_address       => av_xcvr0.address(17 downto 0),
-        i_avs_read          => av_xcvr0.read,
-        o_avs_readdata      => av_xcvr0.readdata,
-        i_avs_write         => av_xcvr0.write,
-        i_avs_writedata     => av_xcvr0.writedata,
-        o_avs_waitrequest   => av_xcvr0.waitrequest,
+            o_rx_locked         => xcvr0_rx_locked,
 
-        i_reset_n           => i_reset_n,
-        i_clk               => i_clk--,
-    );
+            i_avs_address       => av_xcvr0.address(17 downto 0),
+            i_avs_read          => av_xcvr0.read,
+            o_avs_readdata      => av_xcvr0.readdata,
+            i_avs_write         => av_xcvr0.write,
+            i_avs_writedata     => av_xcvr0.writedata,
+            o_avs_waitrequest   => av_xcvr0.waitrequest,
+
+            i_reset_n           => i_reset_n,
+            i_clk               => i_clk--,
+        );
     end generate;
 
     generate_xcvr0_fifo : for i in g_XCVR0_CHANNELS-1 downto 0 generate
-    e_xcvr0_fifo : entity work.xcvr_fifo
-    port map (
-        -- map logical channel rx(i) to physical channel g_XCVR0_RX_P(i)
-        i_xcvr_rx_data      => xcvr0_rx_data(f_xcvr0_rx_p(i)),
-        i_xcvr_rx_datak     => xcvr0_rx_datak(f_xcvr0_rx_p(i)),
-        o_xcvr_tx_data      => xcvr0_tx_data(f_xcvr0_tx_p(i)),
-        o_xcvr_tx_datak     => xcvr0_tx_datak(f_xcvr0_tx_p(i)),
-        i_xcvr_clk          => clk_156,
+        e_xcvr0_fifo : entity work.xcvr_fifo
+        port map (
+            -- map logical channel rx(i) to physical channel g_XCVR0_RX_P(i)
+            i_xcvr_rx_data      => xcvr0_rx_data(f_xcvr0_rx_p(i)),
+            i_xcvr_rx_datak     => xcvr0_rx_datak(f_xcvr0_rx_p(i)),
+            o_xcvr_tx_data      => xcvr0_tx_data(f_xcvr0_tx_p(i)),
+            o_xcvr_tx_datak     => xcvr0_tx_datak(f_xcvr0_tx_p(i)),
+            i_xcvr_clk          => clk_156,
 
-        o_rx_data           => o_xcvr0_rx_data(i),
-        o_rx_datak          => o_xcvr0_rx_datak(i),
-        i_tx_data           => i_xcvr0_tx_data(i),
-        i_tx_datak          => i_xcvr0_tx_datak(i),
-        i_clk               => i_xcvr0_clk,
+            o_rx_data           => o_xcvr0_rx_data(i),
+            o_rx_datak          => o_xcvr0_rx_datak(i),
+            i_tx_data           => i_xcvr0_tx_data(i),
+            i_tx_datak          => i_xcvr0_tx_datak(i),
+            i_clk               => i_xcvr0_clk,
 
-        i_reset_n           => reset_156_n--,
-    );
+            i_reset_n           => reset_156_n--,
+        );
     end generate;
+
+    --! check locks for links
+    process(pcie0_clk, pcie0_resets_n(RESET_BIT_LINK_LOCKED))
+        variable errors_out, errors_in : std_logic_vector(63 downto 0);
+    begin
+    if ( pcie0_resets_n(RESET_BIT_LINK_LOCKED) /= '1' ) then
+        local_pcie0_rregs_A(LINK_LOCKED_LOW_REGISTER_R) <= (others => '0');
+        local_pcie0_rregs_A(LINK_LOCKED_HIGH_REGISTER_R) <= (others => '0');
+        --
+    elsif rising_edge(pcie0_clk) then
+        errors_in := (others => '0');
+        for i in g_XCVR0_CHANNELS-1 downto 0 loop
+            errors_in(i) := not xcvr0_rx_locked(f_xcvr0_rx_p(i));
+        end loop;
+        for i in g_XCVR1_CHANNELS-1 downto 0 loop
+            errors_in(g_XCVR0_CHANNELS+i) := not xcvr1_rx_locked(f_xcvr1_rx_p(i));
+        end loop;
+        errors_out := local_pcie0_rregs_A(LINK_LOCKED_HIGH_REGISTER_R) & local_pcie0_rregs_A(LINK_LOCKED_LOW_REGISTER_R);
+        errors_out := errors_out or errors_in;
+        local_pcie0_rregs_A(LINK_LOCKED_LOW_REGISTER_R) <= errors_out(31 downto 0);
+        local_pcie0_rregs_A(LINK_LOCKED_HIGH_REGISTER_R) <= errors_out(63 downto 32);
+    end if;
+    end process;
 
     -- xcvr_block 10000 Mbps @ 250 MHz
     generate_xcvr1_block : if ( g_XCVR1_CHANNELS > 0 ) generate
-    e_xcvr1_block : entity work.xcvr_block
-    generic map (
-        g_MODE          => "enh",
-        g_XCVR_N        => g_XCVR1_N,
-        g_CHANNELS      => g_XCVR1_CHANNELS / g_XCVR1_N,
-        g_REFCLK_MHZ    => 125.0,
-        g_RATE_MBPS     => 10000,
-        g_CLK_MHZ       => g_CLK_MHZ--,
-    )
-    port map (
-        o_rx_data           => xcvr1_rx_data,
-        o_rx_datak          => xcvr1_rx_datak,
+        e_xcvr1_block : entity work.xcvr_block
+        generic map (
+            g_MODE          => "enh",
+            g_XCVR_N        => g_XCVR1_N,
+            g_CHANNELS      => g_XCVR1_CHANNELS / g_XCVR1_N,
+            g_REFCLK_MHZ    => 125.0,
+            g_RATE_MBPS     => 10000,
+            g_CLK_MHZ       => g_CLK_MHZ--,
+        )
+        port map (
+            o_rx_data           => xcvr1_rx_data,
+            o_rx_datak          => xcvr1_rx_datak,
 
-        i_tx_data           => xcvr1_tx_data,
-        i_tx_datak          => xcvr1_tx_datak,
+            i_tx_data           => xcvr1_tx_data,
+            i_tx_datak          => xcvr1_tx_datak,
 
-        i_rx_clk            => (others => clk_250),
-        i_tx_clk            => (others => clk_250),
+            i_rx_clk            => (others => clk_250),
+            i_tx_clk            => (others => clk_250),
 
-        i_rx_serial         => i_xcvr1_rx,
-        o_tx_serial         => o_xcvr1_tx,
+            i_rx_serial         => i_xcvr1_rx,
+            o_tx_serial         => o_xcvr1_tx,
 
-        i_refclk            => i_xcvr1_refclk,
+            i_refclk            => i_xcvr1_refclk,
 
-        i_avs_address       => av_xcvr1.address(17 downto 0),
-        i_avs_read          => av_xcvr1.read,
-        o_avs_readdata      => av_xcvr1.readdata,
-        i_avs_write         => av_xcvr1.write,
-        i_avs_writedata     => av_xcvr1.writedata,
-        o_avs_waitrequest   => av_xcvr1.waitrequest,
+            o_rx_locked         => xcvr1_rx_locked,
 
-        i_reset_n           => i_reset_n,
-        i_clk               => i_clk--,
-    );
+            i_avs_address       => av_xcvr1.address(17 downto 0),
+            i_avs_read          => av_xcvr1.read,
+            o_avs_readdata      => av_xcvr1.readdata,
+            i_avs_write         => av_xcvr1.write,
+            i_avs_writedata     => av_xcvr1.writedata,
+            o_avs_waitrequest   => av_xcvr1.waitrequest,
+
+            i_reset_n           => i_reset_n,
+            i_clk               => i_clk--,
+        );
     end generate;
 
     generate_xcvr1_fifo : for i in g_XCVR1_CHANNELS-1 downto 0 generate
-    e_xcvr1_fifo : entity work.xcvr_fifo
-    port map (
-        i_xcvr_rx_data      => xcvr1_rx_data(f_xcvr1_rx_p(i)),
-        i_xcvr_rx_datak     => xcvr1_rx_datak(f_xcvr1_rx_p(i)),
-        o_xcvr_tx_data      => xcvr1_tx_data(f_xcvr1_tx_p(i)),
-        o_xcvr_tx_datak     => xcvr1_tx_datak(f_xcvr1_tx_p(i)),
-        i_xcvr_clk          => clk_250,
+        e_xcvr1_fifo : entity work.xcvr_fifo
+        port map (
+            i_xcvr_rx_data      => xcvr1_rx_data(f_xcvr1_rx_p(i)),
+            i_xcvr_rx_datak     => xcvr1_rx_datak(f_xcvr1_rx_p(i)),
+            o_xcvr_tx_data      => xcvr1_tx_data(f_xcvr1_tx_p(i)),
+            o_xcvr_tx_datak     => xcvr1_tx_datak(f_xcvr1_tx_p(i)),
+            i_xcvr_clk          => clk_250,
 
-        o_rx_data           => o_xcvr1_rx_data(i),
-        o_rx_datak          => o_xcvr1_rx_datak(i),
-        i_tx_data           => i_xcvr1_tx_data(i),
-        i_tx_datak          => i_xcvr1_tx_datak(i),
-        i_clk               => i_xcvr1_clk,
+            o_rx_data           => o_xcvr1_rx_data(i),
+            o_rx_datak          => o_xcvr1_rx_datak(i),
+            i_tx_data           => i_xcvr1_tx_data(i),
+            i_tx_datak          => i_xcvr1_tx_datak(i),
+            i_clk               => i_xcvr1_clk,
 
-        i_reset_n           => reset_250_n--,
-    );
+            i_reset_n           => reset_250_n--,
+        );
     end generate;
 
     -- xcvr_block 1250 Mbps @ 125 MHz (reset link)
     generate_reset_link : if ( g_XCVR2_CHANNELS > 0 ) generate
-    e_reset_link : entity work.xcvr_enh
-    generic map (
-        g_CHANNELS      => g_XCVR2_CHANNELS,
-        g_BYTES         => 1,
-        g_REFCLK_MHZ    => 125.0,
-        g_RATE_MBPS     => 1250,
-        g_CLK_MHZ       => g_CLK_MHZ--,
-    )
-    port map (
-        i_rx_serial => i_xcvr2_rx,
-        o_tx_serial => o_xcvr2_tx,
+        e_reset_link : entity work.xcvr_enh
+        generic map (
+            g_CHANNELS      => g_XCVR2_CHANNELS,
+            g_BYTES         => 1,
+            g_REFCLK_MHZ    => 125.0,
+            g_RATE_MBPS     => 1250,
+            g_CLK_MHZ       => g_CLK_MHZ--,
+        )
+        port map (
+            i_rx_serial => i_xcvr2_rx,
+            o_tx_serial => o_xcvr2_tx,
 
-        i_refclk    => i_xcvr2_refclk,
+            i_refclk    => i_xcvr2_refclk,
 
-        i_tx_data   => xcvr2_tx_data,
-        i_tx_datak  => xcvr2_tx_datak,
+            i_tx_data   => xcvr2_tx_data,
+            i_tx_datak  => xcvr2_tx_datak,
 
-        i_rx_clkin  => (others => i_clk_125),
-        i_tx_clkin  => (others => i_clk_125),
+            i_rx_clkin  => (others => i_clk_125),
+            i_tx_clkin  => (others => i_clk_125),
 
-        i_reset_n   => i_reset_n,
-        i_clk       => i_clk--,
-    );
+            i_reset_n   => i_reset_n,
+            i_clk       => i_clk--,
+        );
 
-    e_a10_reset_link : entity work.a10_reset_link
-    generic map (
-        g_XCVR2_CHANNELS => 4--,
-    )
-    port map (
-        o_xcvr_tx_data      => xcvr2_tx_data,
-        o_xcvr_tx_datak     => xcvr2_tx_datak,
+        e_a10_reset_link : entity work.a10_reset_link
+        generic map (
+            g_XCVR2_CHANNELS => 4--,
+        )
+        port map (
+            o_xcvr_tx_data      => xcvr2_tx_data,
+            o_xcvr_tx_datak     => xcvr2_tx_datak,
 
-        i_reset_run_number  => pcie0_wregs_C(RESET_LINK_RUN_NUMBER_REGISTER_W),
-        i_reset_ctl         => pcie0_wregs_C(RESET_LINK_CTL_REGISTER_W),
-        i_clk               => i_clk_125,
+            i_reset_run_number  => pcie0_wregs_B(RESET_LINK_RUN_NUMBER_REGISTER_W),
+            i_reset_ctl         => pcie0_wregs_B(RESET_LINK_CTL_REGISTER_W),
+            i_clk               => i_clk_125,
 
-        o_state_out         => local_pcie0_rregs_C(RESET_LINK_STATUS_REGISTER_R),
+            o_state_out         => local_pcie0_rregs_B(RESET_LINK_STATUS_REGISTER_R),
 
-        i_reset_n           => i_reset_125_n--,
-    );
+            i_reset_n           => i_reset_125_n--,
+        );
     end generate;
 
     -- xcvr_block 5000 Mbps @ 125 MHz (clock link)
     generate_clk_link : if ( g_XCVR3_CHANNELS > 0 ) generate
-    e_clk_link : entity work.xcvr_base
-    generic map (
-        g_CHANNELS      => g_XCVR3_CHANNELS,
-        g_BITS          => 40,
-        g_REFCLK_MHZ    => 125.0,
-        g_RATE_MBPS     => 5000,
-        g_CLK_MHZ       => g_CLK_MHZ--,
-    )
-    port map (
-        i_rx_serial => i_xcvr3_rx,
-        o_tx_serial => o_xcvr3_tx,
+        e_clk_link : entity work.xcvr_base
+        generic map (
+            g_CHANNELS      => g_XCVR3_CHANNELS,
+            g_BITS          => 40,
+            g_REFCLK_MHZ    => 125.0,
+            g_RATE_MBPS     => 5000,
+            g_CLK_MHZ       => g_CLK_MHZ--,
+        )
+        port map (
+            i_rx_serial => i_xcvr3_rx,
+            o_tx_serial => o_xcvr3_tx,
 
-        i_refclk    => i_xcvr3_refclk,
+            i_refclk    => i_xcvr3_refclk,
 
---        i_tx_data   => X"FFFFF00000" & X"FFFFF00000" & X"FFFFF00000" & X"FFFFF00000",
-        i_tx_data   =>  pcie0_wregs_C(CLK_LINK_REST_REGISTER_W)(REST_3_RANGE) & pcie0_wregs_C(CLK_LINK_3_REGISTER_W) &
-                        pcie0_wregs_C(CLK_LINK_REST_REGISTER_W)(REST_2_RANGE) & pcie0_wregs_C(CLK_LINK_2_REGISTER_W) &
-                        pcie0_wregs_C(CLK_LINK_REST_REGISTER_W)(REST_1_RANGE) & pcie0_wregs_C(CLK_LINK_1_REGISTER_W) &
-                        pcie0_wregs_C(CLK_LINK_REST_REGISTER_W)(REST_0_RANGE) & pcie0_wregs_C(CLK_LINK_0_REGISTER_W),
+    --        i_tx_data   => X"FFFFF00000" & X"FFFFF00000" & X"FFFFF00000" & X"FFFFF00000",
+            i_tx_data   =>  pcie0_wregs_B(CLK_LINK_REST_REGISTER_W)(REST_3_RANGE) & pcie0_wregs_B(CLK_LINK_3_REGISTER_W) &
+                            pcie0_wregs_B(CLK_LINK_REST_REGISTER_W)(REST_2_RANGE) & pcie0_wregs_B(CLK_LINK_2_REGISTER_W) &
+                            pcie0_wregs_B(CLK_LINK_REST_REGISTER_W)(REST_1_RANGE) & pcie0_wregs_B(CLK_LINK_1_REGISTER_W) &
+                            pcie0_wregs_B(CLK_LINK_REST_REGISTER_W)(REST_0_RANGE) & pcie0_wregs_B(CLK_LINK_0_REGISTER_W),
 
-        i_rx_clkin  => (others => i_clk_125),
-        i_tx_clkin  => (others => i_clk_125),
+            i_rx_clkin  => (others => i_clk_125),
+            i_tx_clkin  => (others => i_clk_125),
 
-        i_reset_n   => i_reset_n,
-        i_clk       => i_clk--,
-    );
+            i_reset_n   => i_reset_n,
+            i_clk       => i_clk--,
+        );
     end generate;
 
     generate_sfp_block : if ( g_SFP_CHANNELS > 0 ) generate
-    e_xcvr_sfp : entity work.xcvr_enh
-    generic map (
-        g_CHANNELS      => g_SFP_CHANNELS,
-        g_BYTES         => 1,
-        g_REFCLK_MHZ    => 125.0,
-        g_RATE_MBPS     => 1250,
-        g_CLK_MHZ       => g_CLK_MHZ--,
-    )
-    port map (
-        i_rx_serial => i_sfp_rx,
-        o_tx_serial => o_sfp_tx,
+        e_xcvr_sfp : entity work.xcvr_enh
+        generic map (
+            g_CHANNELS      => g_SFP_CHANNELS,
+            g_BYTES         => 1,
+            g_REFCLK_MHZ    => 125.0,
+            g_RATE_MBPS     => 1250,
+            g_CLK_MHZ       => g_CLK_MHZ--,
+        )
+        port map (
+            i_rx_serial => i_sfp_rx,
+            o_tx_serial => o_sfp_tx,
 
-        i_refclk => i_sfp_refclk,
+            i_refclk => i_sfp_refclk,
 
-        i_tx_data => X"BC" & X"BC",
-        i_tx_datak => "1" & "1",
+            i_tx_data => X"BC" & X"BC",
+            i_tx_datak => "1" & "1",
 
-        i_rx_clkin => (others => i_clk_125),
-        i_tx_clkin => (others => i_clk_125),
+            i_rx_clkin => (others => i_clk_125),
+            i_tx_clkin => (others => i_clk_125),
 
-        i_avs_address       => av_sfp.address(13 downto 0),
-        i_avs_read          => av_sfp.read,
-        o_avs_readdata      => av_sfp.readdata,
-        i_avs_write         => av_sfp.write,
-        i_avs_writedata     => av_sfp.writedata,
-        o_avs_waitrequest   => av_sfp.waitrequest,
+            i_avs_address       => av_sfp.address(13 downto 0),
+            i_avs_read          => av_sfp.read,
+            o_avs_readdata      => av_sfp.readdata,
+            i_avs_write         => av_sfp.write,
+            i_avs_writedata     => av_sfp.writedata,
+            o_avs_waitrequest   => av_sfp.waitrequest,
 
-        i_reset_n => i_reset_n,
-        i_clk => i_clk--,
-    );
+            i_reset_n => i_reset_n,
+            i_clk => i_clk--,
+        );
     end generate;
 
     --! PCIe register mapping
@@ -718,91 +668,81 @@ begin
         g_FARM => g_FARM--,
     )
     port map(
-        i_pcie0_rregs_A     => i_pcie0_rregs_A,
-        i_pcie0_rregs_B     => i_pcie0_rregs_B,
-        i_pcie0_rregs_C     => i_pcie0_rregs_C,
+        i_pcie0_rregs_A         => i_pcie0_rregs,
 
         i_local_pcie0_rregs_A   => local_pcie0_rregs_A,
-        i_local_pcie0_rregs_C   => local_pcie0_rregs_C,
+        i_local_pcie0_rregs_B   => local_pcie0_rregs_B,
 
-        o_pcie0_rregs       => pcie0_rregs,
+        o_pcie0_rregs           => pcie0_rregs,
 
-        i_reset_n           => pcie0_reset_n,
+        i_reset_n               => pcie0_reset_n,
 
-        i_clk_A             => i_pcie0_wregs_A_clk,
-        i_clk_B             => i_pcie0_wregs_B_clk,
-        i_clk_C             => i_pcie0_wregs_C_clk--,
+        i_clk_A                 => i_pcie0_wregs_clk,
+        i_clk_B                 => i_clk_125--,
     );
 
     -- PCIe0
     generate_pcie0 : if ( g_PCIE0_X > 0 ) generate
-    e_pcie0_block : entity work.pcie_block
-    generic map (
-        DMAMEMWRITEADDRSIZE     => 11,
-        DMAMEMREADADDRSIZE      => 11,
-        DMAMEMWRITEWIDTH        => 256,
-        g_PCIE_X => g_PCIE0_X--,
-    )
-    port map (
-        local_rstn              => '1',
-        appl_rstn               => '1',
-        refclk                  => i_pcie0_refclk,
-        pcie_fastclk_out        => pcie0_clk,
+        e_pcie0_block : entity work.pcie_block
+        generic map (
+            DMAMEMWRITEADDRSIZE     => 11,
+            DMAMEMREADADDRSIZE      => 11,
+            DMAMEMWRITEWIDTH        => 256,
+            g_PCIE_X => g_PCIE0_X--,
+        )
+        port map (
+            local_rstn              => '1',
+            appl_rstn               => '1',
+            refclk                  => i_pcie0_refclk,
+            pcie_fastclk_out        => pcie0_clk,
 
-        pcie_rx_p               => i_pcie0_rx,
-        pcie_tx_p               => o_pcie0_tx,
-        pcie_refclk_p           => i_pcie0_refclk,
-        pcie_perstn             => i_pcie0_perst_n,
+            pcie_rx_p               => i_pcie0_rx,
+            pcie_tx_p               => o_pcie0_tx,
+            pcie_refclk_p           => i_pcie0_refclk,
+            pcie_perstn             => i_pcie0_perst_n,
 
-        readregs                => pcie0_rregs,
-        writeregs               => pcie0_wregs_A,
-        regwritten              => o_pcie0_regwritten_A,
+            readregs                => pcie0_rregs,
+            writeregs               => pcie0_wregs,
+            regwritten              => o_pcie0_regwritten,
 
-        i_clk_B                 => i_pcie0_wregs_B_clk,
-        o_writeregs_B           => pcie0_wregs_B,
-        o_regwritten_B          => o_pcie0_regwritten_B,
+            i_clk_B                 => i_clk_125,
+            o_writeregs_B           => pcie0_wregs_B,
+            o_regwritten_B          => open,
 
-        i_clk_C                 => i_pcie0_wregs_C_clk,
-        o_writeregs_C           => pcie0_wregs_C,
-        o_regwritten_C          => o_pcie0_regwritten_C,
+            writememreadaddr        => i_pcie0_wmem_addr,
+            writememreaddata        => o_pcie0_wmem_rdata,
+            writememclk             => i_pcie0_wmem_clk,
 
-        writememreadaddr        => i_pcie0_wmem_addr,
-        writememreaddata        => o_pcie0_wmem_rdata,
-        writememclk             => i_pcie0_wmem_clk,
+            readmem_addr            => i_pcie0_rmem_addr,
+            readmem_data            => i_pcie0_rmem_wdata,
+            readmem_wren            => i_pcie0_rmem_we,
+            readmemclk              => i_pcie0_rmem_clk,
+            readmem_endofevent      => '0',
 
-        readmem_addr            => i_pcie0_rmem_addr,
-        readmem_data            => i_pcie0_rmem_wdata,
-        readmem_wren            => i_pcie0_rmem_we,
-        readmemclk              => i_pcie0_rmem_clk,
-        readmem_endofevent      => '0',
+            dma_data                => i_pcie0_dma0_wdata,
+            dmamem_wren             => i_pcie0_dma0_we,
+            dmamem_endofevent       => i_pcie0_dma0_eoe,
+            dmamemhalffull          => pcie0_dma0_hfull,
+            dmamemclk               => i_pcie0_dma0_clk,
 
-        dma_data                => i_pcie0_dma0_wdata,
-        dmamem_wren             => i_pcie0_dma0_we,
-        dmamem_endofevent       => i_pcie0_dma0_eoe,
-        dmamemhalffull          => pcie0_dma0_hfull,
-        dmamemclk               => i_pcie0_dma0_clk,
-
-        dma2memclk              => i_pcie0_dma0_clk--,
-    );
+            dma2memclk              => i_pcie0_dma0_clk--,
+        );
     end generate;
 
     --! DMA evaluationg / monitoring for PCIe 0
     e_dma_evaluation_pcie0 : entity work.dma_evaluation
     port map (
-        reset_n                 => pcie0_resets_n_A(RESET_BIT_DMA_EVAL),
-        dmamemhalffull          => pcie0_dma0_hfull,
-        dmamem_endofevent       => i_pcie0_dma0_eoe,
-        halffull_counter        => local_pcie0_rregs_A(DMA_HALFFUL_REGISTER_R),
-        nothalffull_counter     => local_pcie0_rregs_A(DMA_NOTHALFFUL_REGISTER_R),
-        endofevent_counter      => local_pcie0_rregs_A(DMA_ENDEVENT_REGISTER_R),
-        notendofevent_counter   => local_pcie0_rregs_A(DMA_NOTENDEVENT_REGISTER_R),
-        clk                     => pcie0_clk--,
+        i_dmamemhalffull          => pcie0_dma0_hfull,
+        i_dmamem_endofevent       => i_pcie0_dma0_eoe,
+
+        o_halffull_counter        => local_pcie0_rregs_A(DMA_HALFFUL_REGISTER_R),
+        o_nothalffull_counter     => local_pcie0_rregs_A(DMA_NOTHALFFUL_REGISTER_R),
+        o_endofevent_counter      => local_pcie0_rregs_A(DMA_ENDEVENT_REGISTER_R),
+        o_notendofevent_counter   => local_pcie0_rregs_A(DMA_NOTENDEVENT_REGISTER_R),
+
+        i_reset_n               => pcie0_resets_n(RESET_BIT_DMA_EVAL),
+        i_clk                   => pcie0_clk--,
     );
     local_pcie0_rregs_A(DMA_STATUS_R)(DMA_DATA_WEN) <= i_pcie0_dma0_we;
-
-    --! DMA evaluationg / monitoring for PCIe 1
-    --! ------------------------------------------------------------------------
-    --! ------------------------------------------------------------------------
-    --! ------------------------------------------------------------------------
 
 end architecture;

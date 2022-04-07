@@ -52,7 +52,6 @@ int main()
         printf(" Run RESET_LINK_CTL_REGISTER_W: 0x%02X\n", mu.read_register_rw(RESET_LINK_CTL_REGISTER_W));
         printf(" Reset Link Status: 0x%02X\n", mu.read_register_ro(RESET_LINK_STATUS_REGISTER_R));
         printf(" Run Number: 0x%02X\n", mu.read_register_rw(RESET_LINK_RUN_NUMBER_REGISTER_W));
-        printf(" Top PLL Status bit32 is locked: 0x%02X\n", mu.read_register_ro(CNT_PLL_TOP_REGISTER_R));
         printf(" 156 PLL Status bit32 is locked: 0x%02X\n", mu.read_register_ro(CNT_PLL_156_REGISTER_R));
         printf(" 250 PLL Status bit32 is locked: 0x%02X\n", mu.read_register_ro(CNT_PLL_250_REGISTER_R));
         printf("  [1] => run_prep\n");
@@ -94,7 +93,7 @@ int main()
             mu.write_register(CLK_LINK_1_REGISTER_W, 0x000FFFFF);
             mu.write_register(CLK_LINK_2_REGISTER_W, 0xFFF00000);
             mu.write_register(CLK_LINK_3_REGISTER_W, 0xFFF00000);
-            mu.write_register(CLK_LINK_REST_REGISTER_W, 0xFFFFF00FF);
+            mu.write_register(CLK_LINK_REST_REGISTER_W, 0xFFFF00FF);
             mu.write_register(RESET_REGISTER_W, reset_regs);
             mu.write_register(RESET_REGISTER_W, 0x0);
             break;
@@ -103,7 +102,7 @@ int main()
             mu.write_register(CLK_LINK_1_REGISTER_W, 0xFFF00000);
             mu.write_register(CLK_LINK_2_REGISTER_W, 0xFFF00000);
             mu.write_register(CLK_LINK_3_REGISTER_W, 0xFFF00000);
-            mu.write_register(CLK_LINK_REST_REGISTER_W, 0xFFFFFFFFF);
+            mu.write_register(CLK_LINK_REST_REGISTER_W, 0xFFFFFFFF);
             mu.write_register(RESET_REGISTER_W, reset_regs);
             mu.write_register(RESET_REGISTER_W, 0x0);
             break;    

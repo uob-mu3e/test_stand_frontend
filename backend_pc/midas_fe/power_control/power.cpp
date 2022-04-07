@@ -128,7 +128,8 @@ EQUIPMENT equipment[] = {
      	"", "", ""} ,                  /* device driver list */
      	read_hameg_power0,    
     },
-	
+
+
 	{"HAMEG1",                       /* equipment name */
     	{121, 0,                       /* event ID, trigger mask */
      	"SYSTEM",                  /* event buffer */
@@ -435,7 +436,7 @@ INT frontend_init()
    
    
 	// Get N equipments
-	int nEq = sizeof(equipment)/sizeof(equipment[0]);
+	unsigned int nEq = sizeof(equipment)/sizeof(equipment[0]);
 	if(nEq<2) {cm_msg(MINFO,"power_fe","No Equipment defined"); return FE_ERR_DISABLED; }
 	for(unsigned int i = 0; i<nEq-1; i++) cm_msg(MINFO,"power_fe","Init 'Equipment' nr %d name = %s, event ID = %d",i,equipment[i].name,equipment[i].info.event_id);
   
@@ -727,7 +728,7 @@ void setup_history(){
         size_t nchannels = d->GetVoltage().size();
         std::vector<std::string> cnames;
         std::vector<std::string> vnames;
-        for(int i=0; i < nchannels; i++){
+        for(size_t i=0; i < nchannels; i++){
             cnames.push_back(std::string(name +std::string(":Current[")+std::to_string(i)+std::string("]")));
             vnames.push_back(std::string(name +std::string(":Voltage[")+std::to_string(i)+std::string("]")));
         }
@@ -735,6 +736,6 @@ void setup_history(){
         hs_define_panel("Power",std::string(name + std::string(" Currents")).c_str(),cnames);
         hs_define_panel("Power",std::string(name + std::string(" Voltages")).c_str(),vnames);
     }
-};
+}
 
 

@@ -23,6 +23,7 @@ port (
     o_runcounter        : out reg32;
     o_errcounter        : out reg32;
     o_synclosscounter   : out reg32--;
+
 );
 end rx_errcounter;
 
@@ -69,3 +70,4 @@ begin
     end process;
 
 end architecture;
+

@@ -48,6 +48,7 @@
 
 using namespace std;
 using midas::odb;
+using namespace mu3ebanks;
 
 /*-- Globals -------------------------------------------------------*/
 
@@ -91,12 +92,14 @@ TilesFEB    * tilefeb;
 /*-- Function declarations -----------------------------------------*/
 
 INT read_sc_event(char *pevent, INT off);
-INT read_WMEM_event(char *pevent, INT off);
+INT read_link_sc_event(char *pevent, INT off);
+//INT read_WMEM_event(char *pevent, INT off);
 INT read_scifi_sc_event(char *pevent, INT off);
 INT read_scitiles_sc_event(char *pevent, INT off);
 INT read_mupix_sc_event(char *pevent, INT off);
 
 DWORD * fill_SSCN(DWORD *);
+DWORD * fill_SSPL(DWORD *);
 
 void sc_settings_changed(odb o);
 void switching_board_mask_changed(odb o);
@@ -109,7 +112,7 @@ void set_feb_enable(uint64_t enablebits);
 uint64_t get_runstart_ack();
 uint64_t get_runend_ack();
 void print_ack_state();
-uint32_t read_counters(uint32_t write_value);
+uint32_t read_counters(mudaq::MudaqDevice * mu, uint32_t write_value, uint8_t link, uint8_t detector, uint8_t type, uint8_t treeLayer);
 
 void setup_odb();
 void setup_watches();
@@ -117,10 +120,10 @@ void setup_history();
 void setup_alarms();
 
 INT init_mudaq(mudaq::MudaqDevice&  mu);
-INT init_febs(mudaq::MudaqDevice&  mu);
-INT init_scifi(mudaq::MudaqDevice&  mu);
-INT init_scitiles(mudaq::MudaqDevice& mu);
-INT init_mupix(mudaq::MudaqDevice& mu);
+INT init_febs();
+INT init_scifi();
+INT init_scitiles();
+INT init_mupix();
 
 // Here we choose which switching board we are
 #include "OneSwitchingBoard.inc"
@@ -133,12 +136,12 @@ std::array<uint32_t, N_FEBS[switch_id]> sorterdelays{};
 
 /*-- Dummy routines ------------------------------------------------*/
 
-INT poll_event(INT source, INT count, BOOL test)
+INT poll_event(INT, INT, BOOL)
 {
     return 1;
 }
 
-INT interrupt_configure(INT cmd, INT source, POINTER_T adr)
+INT interrupt_configure(INT, INT, POINTER_T)
 {
     return 1;
 }
@@ -162,21 +165,29 @@ INT frontend_init()
         mup = new mudaq::DummyDmaMudaqDevice("/dev/mudaq0");
     #else
         mup = new mudaq::DmaMudaqDevice("/dev/mudaq0");
-    #endif       
+    #endif
+
         
     INT status = init_mudaq(*mup);
     if (status != SUCCESS)
         return FE_ERR_DRIVER;
 
+    // check if PCIE is working
+    uint32_t val=mup->read_register_ro(VERSION_REGISTER_R);
+    if(val == 0xFFFFFFFF){
+        cm_msg(MINFO, "frontend_init()", "PCIE Error, swb pcie reg reading not working");
+        return FE_ERR_DRIVER;
+    }
+
     //init febs (general)
-    status = init_febs(*mup);
+    status = init_febs();
     if (status != SUCCESS)
         return FE_ERR_DRIVER;
 
 
     //init scifi
     if constexpr(has_scifi){
-        status = init_scifi(*mup);
+        status = init_scifi();
         if (status != SUCCESS)
             return FE_ERR_DRIVER;
     }
@@ -184,14 +195,14 @@ INT frontend_init()
     
     //init scitiles
     if constexpr(has_tiles){
-        status = init_scitiles(*mup);
+        status = init_scitiles();
         if (status != SUCCESS)
             return FE_ERR_DRIVER;
     }
 
     //init mupix
     if constexpr(has_pixels){
-        status = init_mupix(*mup);
+        status = init_mupix();
         if (status != SUCCESS)
             return FE_ERR_DRIVER;
     }
@@ -243,7 +254,7 @@ void setup_odb(){
             {"Sorter Delay", zeroarr},
             // For this, switch_id has to be known at compile time (calls for a preprocessor macro or some constexpr magic, I guess)
             {namestr.c_str(), std::array<std::string, per_fe_SSFE_size*N_FEBS[switch_id]>()},
-            {cntnamestr.c_str(), std::array<std::string, num_swb_counters_per_feb*N_FEBS[switch_id]+4>()},
+            {cntnamestr.c_str(), std::array<std::string, num_swb_counters_per_feb * N_FEBS[switch_id] + num_swb_counters_data_path + num_swb_counters_per_tree_layer * num_swb_tree_layers + num_swb_counters_node_total>()},
             {sorternamestr.c_str(), std::array<std::string, per_fe_SSSO_size*N_FEBS[switch_id]>()}
     };
 
@@ -287,7 +298,7 @@ void setup_odb(){
     commands.connect(path_c, true);
 
 
-    /* Default values for /Equipment/Switching/Variables */
+    /* Default values for /Equipment/SwitchingX/Variables */
     odb sc_variables = {
             {"FPGA_ID_READ", 0},
             {"START_ADD_READ", 0},
@@ -311,12 +322,15 @@ void setup_odb(){
             {"Merger Timeout All FEBs", 0},
 
             {bankname.c_str(), std::array<float, per_fe_SSFE_size*N_FEBS[switch_id]>{}},
-            {cntbankname.c_str(), std::array<int, num_swb_counters_per_feb*N_FEBS[switch_id]+4>()},
+            {cntbankname.c_str(), std::array<int, num_swb_counters_per_feb * N_FEBS[switch_id] + num_swb_counters_data_path + num_swb_counters_per_tree_layer * num_swb_tree_layers + num_swb_counters_node_total>()},
             {sorterbankname.c_str(), std::array<int, per_fe_SSSO_size*N_FEBS[switch_id]>{}}
     };
 
     string path2 = "/Equipment/" + eq_name + "/Variables";
     sc_variables.connect(path2);
+
+    string pllnamestring    = ssplnames[switch_id];
+    string pllbankname      = sspl[switch_id];
 
     std::array<uint32_t, N_FEBS[switch_id]> verarray;
     verarray.fill(20);
@@ -334,16 +348,21 @@ void setup_odb(){
         {"LinkMask", std::array<uint32_t,N_FEBS[switch_id]>{}},
         {"LinkFEB", febarray},
         {"FEBType", std::array<uint32_t, N_FEBS[switch_id]>{}},
-        {"FEBName", std::array<std::string, N_FEBS[switch_id]>{}}
+        {"FEBName", std::array<std::string, N_FEBS[switch_id]>{}},
+        {pllnamestring.c_str(), std::array<std::string, ssplsize>{}}
     };
+    
+    
     string path_ls = "/Equipment/" + link_eq_name + "/Settings";
     link_settings.connect(path_ls);
 
+    create_sspl_names_in_odb(link_settings,switch_id);
 
     odb link_variables = {
         {"LinkStatus", std::array<uint32_t, N_FEBS[switch_id]>{}},
         {"BypassEnabled", std::array<uint32_t,N_FEBS[switch_id]>{}},
-        {"RunState", std::array<uint32_t, N_FEBS[switch_id]>{}}
+        {"RunState", std::array<uint32_t, N_FEBS[switch_id]>{}},
+        {pllbankname.c_str(), std::array<uint32_t, ssplsize>{}}
     };
     string path_lv = "/Equipment/" + link_eq_name + "/Variables";
     link_variables.connect(path_lv);
@@ -360,10 +379,10 @@ void setup_odb(){
 
     // add custom pages to ODB
     odb custom("/Custom");
-    custom["Switching&"] = "sc.html";
     custom["Links"] = "links.html";
     custom["Febs&"] = "febs.html";
     custom["DAQcounters&"] = "daqcounters.html";
+    custom["Data Flow&"] = "dataflow.html";
 
     // Inculde the line below to set up the FEBs and their mapping for the 2021 integration run
     //#include "odb_feb_mapping_integration_run_2021.h"
@@ -376,37 +395,37 @@ void setup_odb(){
 
 void setup_history(){
 
-    hs_define_panel(eq_name.c_str(), "All FEBs", {"Switching:Merger Timeout All FEBs"});
+    hs_define_panel(eq_name.c_str(), "All FEBs", {eq_name.c_str() + std::string(": Merger Timeout All FEBs")});
 
     //TODO: The 12 is the integration run number used to reduce clutter
     for(uint i= 0; i < 12; i++){
         std::string name("FEB"+std::to_string(i));
         std::vector<std::string> tnames;
-        tnames.push_back(std::string(eq_name.c_str() + name + std::string(" Arria Temperature")));
-        tnames.push_back(std::string(eq_name.c_str() + name + std::string(" MAX Temperature")));
-        tnames.push_back(std::string(eq_name.c_str() + name + std::string(" SI1 Temperature")));
-        tnames.push_back(std::string(eq_name.c_str() + name + std::string(" SI2 Temperature")));
-        tnames.push_back(std::string(eq_name.c_str() + name + std::string(" ext Arria Temperature")));
-        tnames.push_back(std::string(eq_name.c_str() + name + std::string(" DCDC Temperature")));
-        tnames.push_back(std::string(eq_name.c_str() + name + std::string(" Firefly1 Temperature")));
+        tnames.push_back(std::string(eq_name.c_str() + name + std::string(":Arria Temperature")));
+        tnames.push_back(std::string(eq_name.c_str() + name + std::string(":MAX Temperature")));
+        tnames.push_back(std::string(eq_name.c_str() + name + std::string(":SI1 Temperature")));
+        tnames.push_back(std::string(eq_name.c_str() + name + std::string(":SI2 Temperature")));
+        tnames.push_back(std::string(eq_name.c_str() + name + std::string(":ext Arria Temperature")));
+        tnames.push_back(std::string(eq_name.c_str() + name + std::string(":DCDC Temperature")));
+        tnames.push_back(std::string(eq_name.c_str() + name + std::string(":Firefly1 Temperature")));
 
        std::vector<std::string> vnames;
-       vnames.push_back(std::string(eq_name.c_str() + name + std::string(" Voltage 1.1")));
-       vnames.push_back(std::string(eq_name.c_str() + name + std::string(" Voltage 1.8")));
-       vnames.push_back(std::string(eq_name.c_str() + name + std::string(" Voltage 2.5")));
-       vnames.push_back(std::string(eq_name.c_str() + name + std::string(" Voltage 3.3")));
-       vnames.push_back(std::string(eq_name.c_str() + name + std::string(" Voltage 20")));
-       vnames.push_back(std::string(eq_name.c_str() + name + std::string(" Firefly1 Voltage")));
+       vnames.push_back(std::string(eq_name.c_str() + name + std::string(":Voltage 1.1")));
+       vnames.push_back(std::string(eq_name.c_str() + name + std::string(":Voltage 1.8")));
+       vnames.push_back(std::string(eq_name.c_str() + name + std::string(":Voltage 2.5")));
+       vnames.push_back(std::string(eq_name.c_str() + name + std::string(":Voltage 3.3")));
+       vnames.push_back(std::string(eq_name.c_str() + name + std::string(":Voltage 20")));
+       vnames.push_back(std::string(eq_name.c_str() + name + std::string(":Firefly1 Voltage")));
 
        std::vector<std::string> pnames;
-       pnames.push_back(std::string(eq_name.c_str() + name + std::string(" Firefly1 RX1 Power")));
-       pnames.push_back(std::string(eq_name.c_str() + name + std::string(" Firefly1 RX2 Power")));
-       pnames.push_back(std::string(eq_name.c_str() + name + std::string(" Firefly1 RX3 Power")));
-       pnames.push_back(std::string(eq_name.c_str() + name + std::string(" Firefly1 RX4 Power")));
+       pnames.push_back(std::string(eq_name.c_str() + name + std::string(":Firefly1 RX1 Power")));
+       pnames.push_back(std::string(eq_name.c_str() + name + std::string(":Firefly1 RX2 Power")));
+       pnames.push_back(std::string(eq_name.c_str() + name + std::string(":Firefly1 RX3 Power")));
+       pnames.push_back(std::string(eq_name.c_str() + name + std::string(":Firefly1 RX4 Power")));
 
-       hs_define_panel(eq_name.c_str(),std::string(name + std::string(" Temperatures")).c_str(),tnames);
-       hs_define_panel(eq_name.c_str(),std::string(name + std::string(" Voltages")).c_str(),vnames);
-       hs_define_panel(eq_name.c_str(),std::string(name + std::string(" RX Power")).c_str(),pnames);
+       hs_define_panel(eq_name.c_str(),std::string(name + std::string(":Temperatures")).c_str(),tnames);
+       hs_define_panel(eq_name.c_str(),std::string(name + std::string(":Voltages")).c_str(),vnames);
+       hs_define_panel(eq_name.c_str(),std::string(name + std::string(":RX Power")).c_str(),pnames);
     }
 }
 
@@ -461,7 +480,7 @@ void switching_board_mask_changed(odb o) {
     mufeb->ReadFirmwareVersionsToODB();
 }
 
-void frontend_board_mask_changed(odb o) {
+void frontend_board_mask_changed(odb) {
     cm_msg(MINFO, "frontend_board_mask_changed", "Frontend board masking changed");
     feblist->RebuildFEBList();
     mufeb->ReadFirmwareVersionsToODB();
@@ -487,7 +506,7 @@ INT init_mudaq(mudaq::MudaqDevice &mu) {
     return SUCCESS;
 }
 
-INT init_febs(mudaq::MudaqDevice & mu) {
+INT init_febs() {
 
     //set link enables so slow control can pass
     string path_l = "/Equipment/" + link_eq_name + "/Settings/LinkMask";
@@ -524,7 +543,7 @@ INT init_febs(mudaq::MudaqDevice & mu) {
 }
 
 
-INT init_scifi(mudaq::MudaqDevice & mu) {
+INT init_scifi() {
 
     // SciFi setup part
     set_equipment_status(equipment[EQUIPMENT_ID::SciFi].name, "Initializing...", "var(--myellow)");
@@ -563,7 +582,7 @@ INT init_scifi(mudaq::MudaqDevice & mu) {
     return SUCCESS;
 }
 
-INT init_scitiles(mudaq::MudaqDevice & mu) {
+INT init_scitiles() {
 
     
     //SciTiles setup part
@@ -594,7 +613,7 @@ INT init_scitiles(mudaq::MudaqDevice & mu) {
 }
 
 
-INT init_mupix(mudaq::MudaqDevice & mu) {
+INT init_mupix() {
 
 
     //Mupix setup part
@@ -607,7 +626,7 @@ INT init_mupix(mudaq::MudaqDevice & mu) {
                      equipment[EQUIPMENT_ID::Pixels].name,
                      switch_id); //create FEB interface signleton for mupix
 
-    int status=mupix::midasODB::setup_db("/Equipment/" + pixel_eq_name, *mupixfeb, true, false);//true);
+    int status=mupix::midasODB::setup_db("/Equipment/" + pixel_eq_name, switch_id, true);
     if(status != SUCCESS){
         set_equipment_status(equipment[EQUIPMENT_ID::Pixels].name, "Start up failed", "var(--mred)");
         return status;
@@ -641,7 +660,7 @@ INT frontend_loop()
 
 /*-- Begin of Run --------------------------------------------------*/
 
-INT begin_of_run(INT run_number, char *error)
+INT begin_of_run(INT run_number, char *)
 {
     for(int i = 0; i < NEQUIPMENT; i++) 
         set_equipment_status(equipment[i].name, "Starting Run", "var(--morange)");
@@ -721,20 +740,23 @@ try{ // TODO: What can throw here?? Why?? Is there another way to handle this??
    }
 
    set_equipment_status(equipment[EQUIPMENT_ID::SciFi].name, "Scintillating...", "mblue");
-   set_equipment_status(equipment[EQUIPMENT_ID::Pixels].name, "Running...", "mgreen");
+   for(int i = 0; i < NEQUIPMENT; i++) 
+        if(i!= EQUIPMENT_ID::SciFi)
+            set_equipment_status(equipment[i].name, "Running...", "mgreen");
    return CM_SUCCESS;
 }catch(...){return CM_TRANSITION_CANCELED;}
 }
 
 /*-- End of Run ----------------------------------------------------*/
 
-INT end_of_run(INT run_number, char *error)
+INT end_of_run(INT, char *)
 {
 
 try{
-   /* get link active from odb */
-    odb cur_links_odb("/Equipment/Links/Settings/LinkMask");
-    uint64_t link_active_from_odb = get_link_active_from_odb(cur_links_odb);
+    /* get link active from odb. */
+   string path_l = "/Equipment/" + std::string(link_eq_name) + "/Settings/LinkMask";
+   odb cur_links_odb(path_l);
+   uint64_t link_active_from_odb = get_link_active_from_odb(cur_links_odb);
 
    printf("end_of_run: Waiting for stop signals from all FEBs\n");
    uint16_t timeout_cnt = 50;
@@ -776,24 +798,22 @@ try{
 
    printf("EOR successful\n");
 
-
-   set_equipment_status(equipment[EQUIPMENT_ID::Switching].name, "Ok", "var(--mgreen)");
-   set_equipment_status(equipment[EQUIPMENT_ID::SciFi].name, "Ok", "var(--mgreen)");
-   set_equipment_status(equipment[EQUIPMENT_ID::Pixels].name, "Ok", "var(--mgreen)");
+    for(int i = 0; i < NEQUIPMENT; i++) 
+        set_equipment_status(equipment[i].name, "Ok", "var(--mgreen)");
    return CM_SUCCESS;
 }catch(...){return CM_TRANSITION_CANCELED;}
 }
 
 /*-- Pause Run -----------------------------------------------------*/
 
-INT pause_run(INT run_number, char *error)
+INT pause_run(INT, char *)
 {
    return CM_SUCCESS;
 }
 
 /*-- Resume Run ----------------------------------------------------*/
 
-INT resume_run(INT run_number, char *error)
+INT resume_run(INT, char *)
 {
    return CM_SUCCESS;
 }
@@ -801,12 +821,13 @@ INT resume_run(INT run_number, char *error)
 
 
 /*--- Read Slow Control Event from FEBs to be put into data stream --------*/
-INT read_sc_event(char *pevent, INT off)
+INT read_sc_event(char *pevent, INT)
 {    
-    auto vec = mufeb->CheckLinks(N_FEBS[switch_id]);
+    // Do this in link SC?
+    /*auto vec = mufeb->CheckLinks(N_FEBS[switch_id]);
     string path_l = "/Equipment/" + std::string(link_eq_name) + "/Variables/LinkStatus";
     odb linkstatus_odb(path_l);
-    linkstatus_odb = vec;
+    linkstatus_odb = vec;*/
 
     //cm_msg(MINFO, "switch_fe::read_sc_event()" , "Reading FEB SC");
     mufeb->ReadBackAllRunState();
@@ -842,19 +863,24 @@ DWORD * fill_SSCN(DWORD * pdata)
     std::bitset<64> cur_link_active_from_odb = feblist->getLinkMask();
 
     // first read general counters
-    *pdata++ = read_counters(SWB_STREAM_FIFO_FULL_PIXEL_CNT);
-    *pdata++ = read_counters(SWB_BANK_BUILDER_IDLE_NOT_HEADER_PIXEL_CNT);
-    *pdata++ = read_counters(SWB_BANK_BUILDER_RAM_FULL_PIXEL_CNT);
-    *pdata++ = read_counters(SWB_BANK_BUILDER_TAG_FIFO_FULL_PIXEL_CNT);
+    *pdata++ = read_counters(mup, SWB_STREAM_FIFO_FULL_CNT, 0, 0, 1, 0);
+    *pdata++ = read_counters(mup, SWB_STREAM_DEBUG_FIFO_ALFULL_CNT, 0, 0, 1, 0);
+    *pdata++ = read_counters(mup, SWB_BANK_BUILDER_IDLE_NOT_HEADER_CNT, 0, 0, 1, 0);
+    *pdata++ = read_counters(mup, SWB_BANK_BUILDER_SKIP_EVENT_CNT, 0, 0, 1, 0);
+    *pdata++ = read_counters(mup, SWB_BANK_BUILDER_EVENT_CNT, 0, 0, 1, 0);
+    *pdata++ = read_counters(mup, SWB_BANK_BUILDER_TAG_FIFO_FULL_CNT, 0, 0, 1, 0);
+    *pdata++ = read_counters(mup, SWB_EVENTS_TO_FARM_CNT, 0, 0, 1, 0);
+    *pdata++ = read_counters(mup, SWB_MERGER_DEBUG_FIFO_ALFULL_CNT, 0, 0, 1, 0);
 
+    // now we read the link counters
     for(uint32_t i=0; i < N_FEBS[switch_id]; i++){
-        
+        // set the link id
         *pdata++ = i;
-        *pdata++ = (cur_link_active_from_odb.test(i) == 1 ? (read_counters(SWB_LINK_FIFO_ALMOST_FULL_PIXEL_CNT | (i << 8))) : 0);
-        *pdata++ = (cur_link_active_from_odb.test(i) == 1 ? (read_counters(SWB_LINK_FIFO_FULL_PIXEL_CNT | (i << 8))) : 0);
-        *pdata++ = (cur_link_active_from_odb.test(i) == 1 ? (read_counters(SWB_SKIP_EVENT_PIXEL_CNT | (i << 8))) : 0);
-        *pdata++ = (cur_link_active_from_odb.test(i) == 1 ? (read_counters(SWB_EVENT_PIXEL_CNT | (i << 8))) : 0);
-        *pdata++ = (cur_link_active_from_odb.test(i) == 1 ? (read_counters(SWB_SUB_HEADER_PIXEL_CNT | (i << 8))) : 0);
+        *pdata++ = (cur_link_active_from_odb.test(i) == 1 ? read_counters(mup, SWB_LINK_FIFO_ALMOST_FULL_CNT, i, 0, 0, 0) : 0);
+        *pdata++ = (cur_link_active_from_odb.test(i) == 1 ? read_counters(mup, SWB_LINK_FIFO_FULL_CNT, i, 0, 0, 0) : 0);
+        *pdata++ = (cur_link_active_from_odb.test(i) == 1 ? read_counters(mup, SWB_SKIP_EVENT_CNT, i, 0, 0, 0) : 0);
+        *pdata++ = (cur_link_active_from_odb.test(i) == 1 ? read_counters(mup, SWB_EVENT_CNT, i, 0, 0, 0) : 0);
+        *pdata++ = (cur_link_active_from_odb.test(i) == 1 ? read_counters(mup, SWB_SUB_HEADER_CNT, i, 0, 0, 0) : 0);
         if(feblist->getFEBatPort(i)){
             auto feb = feblist->getFEBatPort(i).value();
             if(feb.GetLinkStatus().LinkIsOK()){
@@ -872,12 +898,58 @@ DWORD * fill_SSCN(DWORD * pdata)
             *pdata++ = 0;
         }
     }
+
+    // read merger counters
+    for ( int layer = 0; layer < num_swb_tree_layers; layer++ ) {
+        // set tree layer
+        *pdata++ = layer;
+        for ( int nodes = 0; nodes < out_nodes_per_tree_layer[layer]; nodes++ ) {
+            // set tree nodes
+            *pdata++ = nodes;
+            *pdata++ = read_counters(mup, SWB_MERGER_HEADER_CNT, nodes, 0, 2, layer);
+            *pdata++ = read_counters(mup, SWB_MERGER_SHEADER_CNT, nodes, 0, 2, layer);
+            *pdata++ = read_counters(mup, SWB_MERGER_HIT_CNT, nodes, 0, 2, layer);
+        }
+    }
+
     return pdata;
 }
 
+/*--- Read Slow Control Event from Link status to be put into data stream --------*/
+INT read_link_sc_event(char *pevent, INT)
+{    
+    auto vec = mufeb->CheckLinks(N_FEBS[switch_id]);
+    string path_l = "/Equipment/" + std::string(link_eq_name) + "/Variables/LinkStatus";
+    odb linkstatus_odb(path_l);
+    linkstatus_odb = vec;
+
+    string pllbankname = sspl[switch_id];
+
+    // create bank, pdata
+    bk_init(pevent);
+    DWORD *pdata;
+
+    bk_create(pevent, pllbankname.c_str(), TID_UINT32, (void **)&pdata);
+    pdata = fill_SSPL(pdata);
+    bk_close(pevent,pdata);
+
+    return bk_size(pevent);
+}
+
+DWORD * fill_SSPL(DWORD * pdata)
+{
+    *pdata++ = mup->read_register_ro(CNT_PLL_156_REGISTER_R);
+    *pdata++ = mup->read_register_ro(CNT_PLL_250_REGISTER_R);
+    *pdata++ = mup->read_register_ro(LINK_LOCKED_LOW_REGISTER_R);
+    *pdata++ = mup->read_register_ro(LINK_LOCKED_HIGH_REGISTER_R);
+
+    return pdata;
+}
+
+
 /*--- Read Slow Control Event from SciFi to be put into data stream --------*/
 
-INT read_scifi_sc_event(char *pevent, INT off){
+INT read_scifi_sc_event(char *pevent, INT){
 
     //TODO: Make this more proper: move this to class driver routine and make functions not writing to ODB all the time (only on update).
     //Add readout function for this one that gets data from class variables and writes midas banks
@@ -889,7 +961,7 @@ INT read_scifi_sc_event(char *pevent, INT off){
 
 /*--- Read Slow Control Event from SciTiles to be put into data stream --------*/
 
-INT read_scitiles_sc_event(char *pevent, INT off){
+INT read_scitiles_sc_event(char *pevent, INT){
     
     //TODO: Make this more proper: move this to class driver routine and make functions not writing to ODB all the time (only on update).
     //Add readout function for this one that gets data from class variables and writes midas banks
@@ -901,14 +973,16 @@ INT read_scitiles_sc_event(char *pevent, INT off){
 
 /*--- Read Slow Control Event from Mupix to be put into data stream --------*/
 
-INT read_mupix_sc_event(char *pevent, INT off){
+INT read_mupix_sc_event(char *pevent, INT){
     //cm_msg(MINFO, "Mupix::read_mupix_sc_event()" , "Reading MuPix FEB SC");
     
     // create banks with LVDS counters & status
     bk_init(pevent);
     DWORD *pdata;
-    bk_create(pevent, banknamePSLL.c_str(), TID_INT, (void **)&pdata);
-    pdata = mupixfeb->fill_PSLL(pdata);
+    string lvdsbankname = psls[switch_id];
+
+    bk_create(pevent, lvdsbankname.c_str(), TID_INT, (void **)&pdata);
+    pdata = mupixfeb->fill_PSLS(pdata);
     bk_close(pevent, pdata);
 
 //     TODO: implement bank PSLM
@@ -1264,9 +1338,49 @@ void print_ack_state(){
 }
 
 // -- Helper functions
-uint32_t read_counters(uint32_t write_value)
+uint32_t read_counters(mudaq::MudaqDevice * mu, uint32_t write_value, uint8_t link, uint8_t detector, uint8_t type, uint8_t treeLayer)
 {
-    mup->write_register(SWB_COUNTER_REGISTER_W, write_value);
-    return mup->read_register_ro(SWB_COUNTER_REGISTER_R);
-}
+    // write_value: counter one wants to read
+    // link:        addrs for link specific counters
+    // detector:    for readout, 0=PIXEL US, 1=PIXEL DS, 2=SCIFI
+    // type:        0=link, 1=datapath, 2=tree
+    // layer:       layer of the tree 0, 1 or 2
 
+    // counter range for each sub detector
+    // 0 to 7:
+    //      e_stream_fifo full
+    //      e_debug_stream_fifo almost full
+    //      bank_builder_idle_not_header
+    //      bank_builder_skip_event_dma
+    //      bank_builder_event_dma
+    //      bank_builder_tag_fifo_full
+    //      events send to the farm
+    //      e_debug_time_merger_fifo almost full
+    // 8 to 3 * (1 + 2 + 4):
+    //      tree layer0: 8 to 3 * 4
+    //      tree layer1: 8 + 3 * 4 to 3 * 4 + 3 * 2
+    //      tree layer2: 8 + 3 * 4 + 3 * 2 to 3 * 4 + 3 * 2 + 3 * 1
+    //          layerN link output: # HEADER, SHEADER, HIT
+    // 8 + 3 * (1 + 2 + 4) to 8 + 3 * (1 + 2 + 4) + NLINKS * 5:
+    //      fifo almost_full
+    //      fifo wrfull
+    //      # of skip event
+    //      # of events
+    //      # of sub header
+
+    // link counters
+    if ( type == 0 ) {
+        write_value += SWB_DATAPATH_CNT + SWB_TREE_CNT * (SWB_LAYER0_OUT_CNT + SWB_LAYER1_OUT_CNT + SWB_LAYER2_OUT_CNT) + link * SWB_LINK_CNT;
+    // tree counters
+    } else if ( type == 2 ) {
+        uint32_t treeLinkOffset[3] = { 0, 4, 6 };
+        write_value += SWB_DATAPATH_CNT + SWB_TREE_CNT * (treeLinkOffset[treeLayer] + link);
+        //printf("write_value %d, link %d, treeLinkOffset[treeLayer] %d\n", write_value, link, treeLinkOffset[treeLayer]);
+    }
+
+    // TODO: add detector
+    //write_value += detector * SWB_DATAPATH_CNT + SWB_TREE_CNT * (SWB_LAYER0_OUT_CNT + SWB_LAYER1_OUT_CNT + SWB_LAYER2_OUT_CNT) + link * SWB_LINK_CNT
+
+    mu->write_register(SWB_COUNTER_REGISTER_W, write_value);
+    return mu->read_register_ro(SWB_COUNTER_REGISTER_R);
+}

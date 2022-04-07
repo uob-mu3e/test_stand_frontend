@@ -32,7 +32,7 @@ port (
 
     -- registers
     writeregs           : in    reg32array_pcie;
-    readregs            : in    reg32array_pcie;
+    i_readregs          : in    reg32array_pcie;
 
     -- from register read part
     rreg_readaddr       : in    std_logic_vector(5 downto 0);
@@ -91,11 +91,12 @@ port (
     -- test ports
     testout             : out   STD_LOGIC_VECTOR (127 DOWNTO 0);
     testout_ena         : out   std_logic
-
 );
 end entity;
 
 architecture RTL of pcie_completer is
+
+    signal readregs : reg32array_pcie;
 
     type completer_state_type is (reset, waiting,
         readrreg, readrreg1,
@@ -373,8 +374,10 @@ begin
         variable regaddr_var : std_logic_vector(5 downto 0);
         variable length_var  : std_logic_vector(9 downto 0);
     begin
-    if(local_rstn = '0') then
+    if ( local_rstn = '0' ) then
         state <= reset;
+
+        readregs <= (others => (others => '0'));
 
         tx_st_valid0_r <= '0';
         tx_st_sop0_r <= '0';
@@ -407,7 +410,8 @@ begin
         rmem_state <= '0';
         readmemnext <= '0';
 
-    elsif (refclk'event and refclk = '1') then
+    elsif rising_edge(refclk) then
+        readregs <= i_readregs;
 
         dma_granted <= dma_granted_r;
         dma2_granted <= dma2_granted_r;
