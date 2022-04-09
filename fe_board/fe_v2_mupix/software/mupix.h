@@ -20,7 +20,7 @@ struct mupix_t {
         sc->ram->data[MP_CTRL_SLOW_DOWN_REGISTER_W]=0x0000000F; // set spi slow down
         sc->ram->data[MP_CTRL_RESET_REGISTER_W]=0x00000001;
         
-        for(int i = 0; i<36; i++){
+        for(int i = 0; i<12; i++){
             sc->ram->data[MP_CTRL_COMBINED_START_REGISTER_W+i]=0x2A000A03;
             sc->ram->data[MP_CTRL_COMBINED_START_REGISTER_W+i]=0xFA3F002F;
             sc->ram->data[MP_CTRL_COMBINED_START_REGISTER_W+i]=0x1E041041;
@@ -80,20 +80,38 @@ struct mupix_t {
     void test_write_all(bool maskPixel) {
         sc->ram->data[MP_CTRL_SPI_ENABLE_REGISTER_W]=0x00000001;
         sc->ram->data[MP_CTRL_RESET_REGISTER_W]=0x00000001;
+        printf("test write all");
+        for(int i = 0; i<6; i++){
+            sc->ram->data[MP_CTRL_COMBINED_START_REGISTER_W+i]=0x2A000A03;
+            sc->ram->data[MP_CTRL_COMBINED_START_REGISTER_W+i]=0xFA3F0025;
+            sc->ram->data[MP_CTRL_COMBINED_START_REGISTER_W+i]=0x1E041041;
+            sc->ram->data[MP_CTRL_COMBINED_START_REGISTER_W+i]=0x041E5951;
+            sc->ram->data[MP_CTRL_COMBINED_START_REGISTER_W+i]=0x40280000;
+            sc->ram->data[MP_CTRL_COMBINED_START_REGISTER_W+i]=0x1400C20A;
+            sc->ram->data[MP_CTRL_COMBINED_START_REGISTER_W+i]=0x028A001F;
+            sc->ram->data[MP_CTRL_COMBINED_START_REGISTER_W+i]=0x00000038;
+            sc->ram->data[MP_CTRL_COMBINED_START_REGISTER_W+i]=0x0000FC09;
+            sc->ram->data[MP_CTRL_COMBINED_START_REGISTER_W+i]=0xF0001C80;
+            sc->ram->data[MP_CTRL_COMBINED_START_REGISTER_W+i]=0x00148000;
+            sc->ram->data[MP_CTRL_COMBINED_START_REGISTER_W+i]=0x11802E00;
+        }
         
-        sc->ram->data[MP_CTRL_COMBINED_START_REGISTER_W]=0x2A000A03;
-        sc->ram->data[MP_CTRL_COMBINED_START_REGISTER_W]=0xFA3F0025;
-        sc->ram->data[MP_CTRL_COMBINED_START_REGISTER_W]=0x1E041041;
-        sc->ram->data[MP_CTRL_COMBINED_START_REGISTER_W]=0x041E5951;
-        sc->ram->data[MP_CTRL_COMBINED_START_REGISTER_W]=0x40280000;
-        sc->ram->data[MP_CTRL_COMBINED_START_REGISTER_W]=0x1400C20A;
-        sc->ram->data[MP_CTRL_COMBINED_START_REGISTER_W]=0x028A001F;
-        sc->ram->data[MP_CTRL_COMBINED_START_REGISTER_W]=0x00000038;
-        sc->ram->data[MP_CTRL_COMBINED_START_REGISTER_W]=0x0000FC09;
-        sc->ram->data[MP_CTRL_COMBINED_START_REGISTER_W]=0xF0001C80;
-        sc->ram->data[MP_CTRL_COMBINED_START_REGISTER_W]=0x00148000;
-        sc->ram->data[MP_CTRL_COMBINED_START_REGISTER_W]=0x11802E00;
-        
+    }
+
+    void test_write_one(int i) {
+        printf("test write %i", i);
+        sc->ram->data[MP_CTRL_COMBINED_START_REGISTER_W+i]=0x2A000A03;
+        sc->ram->data[MP_CTRL_COMBINED_START_REGISTER_W+i]=0xFA3F0025;
+        sc->ram->data[MP_CTRL_COMBINED_START_REGISTER_W+i]=0x1E041041;
+        sc->ram->data[MP_CTRL_COMBINED_START_REGISTER_W+i]=0x041E5951;
+        sc->ram->data[MP_CTRL_COMBINED_START_REGISTER_W+i]=0x40280000;
+        sc->ram->data[MP_CTRL_COMBINED_START_REGISTER_W+i]=0x1400C20A;
+        sc->ram->data[MP_CTRL_COMBINED_START_REGISTER_W+i]=0x028A001F;
+        sc->ram->data[MP_CTRL_COMBINED_START_REGISTER_W+i]=0x00000038;
+        sc->ram->data[MP_CTRL_COMBINED_START_REGISTER_W+i]=0x0000FC09;
+        sc->ram->data[MP_CTRL_COMBINED_START_REGISTER_W+i]=0xF0001C80;
+        sc->ram->data[MP_CTRL_COMBINED_START_REGISTER_W+i]=0x00148000;
+        sc->ram->data[MP_CTRL_COMBINED_START_REGISTER_W+i]=0x11802E00;
     }
 
     void menu_lvds() {
@@ -114,7 +132,7 @@ struct mupix_t {
             printf("order is CON2 ModuleA chip1 ABC, chip2 ABC, .. ModuleB chip1 ABC .. CON3..\n");
             for(int i=0; i<37; i++){
                 value = sc->ram->data[MP_LVDS_STATUS_START_REGISTER_W+i];
-                printf("%i ready: %01x  rx_state: %01x  pll_lock: %01x  disp_err: %01x\n ",i,value>>31,(value>>29) & 0x3,(value>>28) & 0x1,value & 0x0FFFFFFF);
+                printf("chip%i, Link%i ready: %01x  rx_state: %01x  pll_lock: %01x  disp_err: %01x\n ",i/3,i,value>>31,(value>>29) & 0x3,(value>>28) & 0x1,value & 0x0FFFFFFF);
             }
             printf("----------------------------\n");
             usleep(200000);
@@ -151,6 +169,7 @@ struct mupix_t {
         while(1) {
             printf("  [a] => write all OFF\n");
             printf("  [t] => test tdacs\n");
+            printf("  [0] => configure chip Number N\n");
             printf("  [1] => set mupix config mask\n");
             printf("  [2] => set spi clk slow down reg\n");
             printf("  [3] => print lvds status\n");
@@ -186,6 +205,20 @@ struct mupix_t {
             case 'p':
                 test_tdac_pattern();
 		        break;
+            case '0':
+                value = 0x0;
+                printf("Enter Chip to configure in hex: ");
+
+                str[0] = wait_key();
+                value = strtol(str,NULL,16);
+                printf("configuring chip: 0x%08x\n", value);
+                if(value<12) {
+                    test_write_one(value);
+                } else {
+                    printf("chip 0x%08x does not exist on any FEB\n", value);
+                }
+
+                break;
             case '1':
                 value = 0x0;
                 printf("Enter Chip Mask in hex: ");

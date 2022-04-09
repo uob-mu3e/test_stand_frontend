@@ -35,7 +35,7 @@ entity mupix_ctrl is
 
         o_clock             : out std_logic_vector(N_SPI_g-1 downto 0) := (others => '0');
         o_mosi              : out std_logic_vector(N_SPI_g-1 downto 0) := (others => '0');
-        o_csn               : out std_logic_vector(N_CHIPS_PER_SPI_g*N_SPI_g-1 downto 0) := (others => '0')--;
+        o_cs                : out std_logic_vector(N_CHIPS_PER_SPI_g*N_SPI_g-1 downto 0) := (others => '0')--;
         );
 end entity mupix_ctrl;
 
@@ -83,7 +83,7 @@ architecture RTL of mupix_ctrl is
 begin
 
     slow_down                   <= slow_down_buf(15 downto 0);
-    spi_chip_select_mask        <= spi_chip_select_mask_sc when mp_ctrl_direct_spi_ena = '1' else spi_chip_select_mask_mp_ctrl;
+    spi_chip_select_mask        <= spi_chip_select_mask_mp_ctrl; --spi_chip_select_mask_sc when mp_ctrl_direct_spi_ena = '1' else spi_chip_select_mask_mp_ctrl;
     mp_direct_spi_busy_n        <= not mp_direct_spi_busy;
 
 
@@ -234,7 +234,7 @@ begin
 
             o_spi                => o_mosi(I),
             o_spi_clk            => o_clock(I),
-            o_csn                => o_csn(I*N_CHIPS_PER_SPI_g+N_CHIPS_PER_SPI_g-1 downto I*N_CHIPS_PER_SPI_g)
+            o_cs                 => o_cs(I*N_CHIPS_PER_SPI_g+N_CHIPS_PER_SPI_g-1 downto I*N_CHIPS_PER_SPI_g)
         );
     end generate;
     

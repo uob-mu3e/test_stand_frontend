@@ -170,7 +170,7 @@ architecture rtl of top is
     signal mp_ctrl_clock            : std_logic_vector(3  downto 0);
     signal mp_ctrl_SIN              : std_logic_vector(3  downto 0);
     signal mp_ctrl_mosi             : std_logic_vector(3  downto 0);
-    signal mp_ctrl_csn              : std_logic_vector(11 downto 0);
+    signal mp_ctrl_cs               : std_logic_vector(11 downto 0);
 
 begin
 
@@ -195,10 +195,10 @@ begin
     mosi_C <= mp_ctrl_mosi(1);
     mosi_D <= mp_ctrl_mosi(0);
 
-    csn_A <= mp_ctrl_csn(11 downto 9);
-    csn_B <= mp_ctrl_csn( 8 downto 6);
-    csn_C <= mp_ctrl_csn( 5 downto 3);
-    csn_D <= mp_ctrl_csn( 2 downto 0);
+    csn_A <= mp_ctrl_cs( 2 downto 0);
+    csn_B <= mp_ctrl_cs( 5 downto 3);
+    csn_C <= mp_ctrl_cs( 8 downto 6);
+    csn_D <= mp_ctrl_cs(11 downto 9);
 
     e_mupix_block : entity work.mupix_block
     port map (
@@ -208,7 +208,7 @@ begin
         o_clock                 => mp_ctrl_clock,
         o_SIN                   => mp_ctrl_SIN,
         o_mosi                  => mp_ctrl_mosi,
-        o_csn                   => mp_ctrl_csn,
+        o_cs                    => mp_ctrl_cs,
 
         -- mupix dac regs
         i_reg_add               => mupix_reg.addr(15 downto 0),
