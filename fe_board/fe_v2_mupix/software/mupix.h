@@ -81,7 +81,7 @@ struct mupix_t {
         sc->ram->data[MP_CTRL_SPI_ENABLE_REGISTER_W]=0x00000001;
         sc->ram->data[MP_CTRL_RESET_REGISTER_W]=0x00000001;
         printf("test write all");
-        for(int i = 0; i<6; i++){
+        for(int i = 0; i<12; i++){
             sc->ram->data[MP_CTRL_COMBINED_START_REGISTER_W+i]=0x2A000A03;
             sc->ram->data[MP_CTRL_COMBINED_START_REGISTER_W+i]=0xFA3F0025;
             sc->ram->data[MP_CTRL_COMBINED_START_REGISTER_W+i]=0x1E041041;
