@@ -1,0 +1,13 @@
+All:
+ - Add id convertor
+ - Add script that calls the rest of scripts automatizing everything further
+ - Add more controls for input param in tests
+ - Change name of tests in ODB to sth nicer
+ - Same naming style for everything
+ - Same coding style for every file
+ - Add comments to all files
+ - Add README, descriptions...
+
+
+
+
