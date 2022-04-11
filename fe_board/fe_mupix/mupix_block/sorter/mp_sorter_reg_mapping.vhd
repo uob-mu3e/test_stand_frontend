@@ -60,6 +60,8 @@ architecture rtl of mp_sorter_reg_mapping is
             credit                      <= i_credit;
 
             regaddr                     := to_integer(unsigned(i_reg_add));
+            o_reg_rdata                 <= (others => '0');
+
             -----------------------------------------------------------------
             ---- sorter regs ------------------------------------------------
             -----------------------------------------------------------------
