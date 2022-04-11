@@ -180,20 +180,20 @@ begin
 --------------------------------------------------------------------
 --------------------------------------------------------------------
 
-    clock_A <= mp_ctrl_clock(3);
-    clock_B <= mp_ctrl_clock(2);
-    clock_C <= mp_ctrl_clock(1);
-    clock_D <= mp_ctrl_clock(0);
+    clock_A <= mp_ctrl_clock(0);
+    clock_B <= mp_ctrl_clock(1);
+    clock_C <= mp_ctrl_clock(2);
+    clock_D <= mp_ctrl_clock(3);
 
-    SIN_A <= mp_ctrl_SIN(3);
-    SIN_B <= mp_ctrl_SIN(2);
-    SIN_C <= mp_ctrl_SIN(1);
-    SIN_D <= mp_ctrl_SIN(0);
+    SIN_A <= mp_ctrl_SIN(0);
+    SIN_B <= mp_ctrl_SIN(1);
+    SIN_C <= mp_ctrl_SIN(2);
+    SIN_D <= mp_ctrl_SIN(3);
 
-    mosi_A <= mp_ctrl_mosi(3);
-    mosi_B <= mp_ctrl_mosi(2);
-    mosi_C <= mp_ctrl_mosi(1);
-    mosi_D <= mp_ctrl_mosi(0);
+    mosi_A <= mp_ctrl_mosi(0);
+    mosi_B <= mp_ctrl_mosi(1);
+    mosi_C <= mp_ctrl_mosi(2);
+    mosi_D <= mp_ctrl_mosi(3);
 
     csn_A <= mp_ctrl_cs( 2 downto 0);
     csn_B <= mp_ctrl_cs( 5 downto 3);
