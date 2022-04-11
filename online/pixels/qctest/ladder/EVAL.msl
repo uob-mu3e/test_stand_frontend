@@ -10,7 +10,7 @@
 
 
 # MAIN PATH TO MIDAS LADDER QUALITY CONTROL DIRECTORY
-path_root = "/Equipment/Mupix/QCTests/Ladder"
+path_root = "/Equipment/PixelsCentral/QCTests/Ladder"
 
 # MAKE NEW KEY IN THE EVAL DIRECTORY WITH LADDER ID NUMBER IN IT
 # The new key is a vector that stores evaluation outcomes for this ladder. Possible outcomes 0 (failed) 1(passed)
@@ -33,15 +33,15 @@ ENDIF
 
 ############################### Copy full test to eval ###################################
 
-ODBSAVE /Equipment/Mupix/QCTests/Ladder/IV, output/temp/_current_iv.json
-ODBSAVE /Equipment/Mupix/QCTests/Ladder/LVPowerOn, output/temp/_current_lv_power_on.json
-ODBSAVE /Equipment/Mupix/QCTests/Ladder/DACScan, output/temp/_current_dac_scan.json
-ODBSAVE /Equipment/Mupix/QCTests/Ladder/LINKQUALIcheck, output/temp/_current_link_quali.json
+ODBSAVE /Equipment/PixelsCentral/QCTests/Ladder/IV, output/temp/_current_iv.json
+ODBSAVE /Equipment/PixelsCentral/QCTests/Ladder/LVPowerOn, output/temp/_current_lv_power_on.json
+ODBSAVE /Equipment/PixelsCentral/QCTests/Ladder/DACScan, output/temp/_current_dac_scan.json
+ODBSAVE /Equipment/PixelsCentral/QCTests/Ladder/LINKQUALIcheck, output/temp/_current_link_quali.json
 
-ODBLOAD output/temp/_current_iv.json, /Equipment/Mupix/QCTests/Ladder/Eval/Insight/IV_curve
-ODBLOAD output/temp/_current_lv_power_on.json, /Equipment/Mupix/QCTests/Ladder/Eval/Insight/LV_power_ON
-ODBLOAD output/temp/_current_dac_scan.json, /Equipment/Mupix/QCTests/Ladder/Eval/Insight/DAC_scan
-ODBLOAD output/temp/_current_link_quali.json, /Equipment/Mupix/QCTests/Ladder/Eval/Insight/link_quality
+ODBLOAD output/temp/_current_iv.json, /Equipment/PixelsCentral/QCTests/Ladder/Eval/Insight/IV_curve
+ODBLOAD output/temp/_current_lv_power_on.json, /Equipment/PixelsCentral/QCTests/Ladder/Eval/Insight/LV_power_ON
+ODBLOAD output/temp/_current_dac_scan.json, /Equipment/PixelsCentral/QCTests/Ladder/Eval/Insight/DAC_scan
+ODBLOAD output/temp/_current_link_quali.json, /Equipment/PixelsCentral/QCTests/Ladder/Eval/Insight/link_quality
 
 
 
