@@ -149,7 +149,7 @@ int MupixFEB::ConfigureASICs(){
                 std::cout<<std::hex<<payload.at(j)<<std::endl;
             }
 
-            uint16_t pos = ASICsPerFEB() - 1 - ASICid_from_ID(asic);
+            uint16_t pos = ASICid_from_ID(asic);
             rpc_status = feb_sc.FEB_write(FEB, MP_CTRL_COMBINED_START_REGISTER_W + pos, payload,true);
 
         } catch(std::exception& e) {
