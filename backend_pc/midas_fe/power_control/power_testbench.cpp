@@ -102,7 +102,6 @@ DEVICE_DRIVER mscb_driver[] = {
 };
 
 EQUIPMENT equipment[] = {
-<<<<<<< HEAD
 
     {"KEITHLEY0",                       /* equipment name */
         {121, 0,                       /* event ID, trigger mask */
