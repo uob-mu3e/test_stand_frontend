@@ -43,7 +43,9 @@ entity mupix_ctrl_config_storage is
         i_tdac_we           : in  std_logic;
 
         o_data              : out mp_conf_array_out(N_CHIPS_g-1 downto 0);
-        i_read              : in  mp_conf_array_in(N_CHIPS_g-1 downto 0)--;
+        i_read              : in  mp_conf_array_in(N_CHIPS_g-1 downto 0);
+
+        o_n_free_pages      : out std_logic_vector(31 downto 0)--;
     );
 
 end entity mupix_ctrl_config_storage;
@@ -257,7 +259,8 @@ begin
 
         i_data           => i_tdac_data,
         i_we             => i_tdac_we,
-        i_chip           => i_chip_tdac
+        i_chip           => i_chip_tdac,
+        o_n_free_pages   => o_n_free_pages--,
       );
 
 end RTL;

@@ -5,7 +5,7 @@ use ieee.numeric_std.all;
 
 
 -- This entity should correct the early lapsing of the Mutrig cc counter
--- assuming the Mutrig should count from 0 to 3 but it only counts from 0 to 2 
+-- assuming the Mutrig should count from 0 to 3 but it only counts from 0 to 2
 -- we have the following "correction":
 
 -- FPGA 2^15-1 counter: 0 1 2 0 1 2 0 1 2
@@ -30,7 +30,7 @@ port (
 
     i_CC        : in  std_logic_vector(N_CC - 1 downto 0);  -- counter from the Mutrig @625MHz
     o_cnt       : out std_logic_vector(63 downto 0);        -- cnt for nLapses (63 downto 32) and CC_fpga <= 32767 case
-    o_CC        : out std_logic_vector(N_CC - 1 downto 0)   -- corrected Mutrig counter 
+    o_CC        : out std_logic_vector(N_CC - 1 downto 0)   -- corrected Mutrig counter
 );
 end lapse_counter;
 
@@ -41,20 +41,20 @@ architecture arch of lapse_counter is
 
 begin
 
--- cnt output
-o_cnt <= std_logic_vector(to_unsigned(nLapses, 32)) & std_logic_vector(to_unsigned(cntCCsmaller, 32));
+    -- cnt output
+    o_cnt <= std_logic_vector(to_unsigned(nLapses, 32)) & std_logic_vector(to_unsigned(cntCCsmaller, 32));
 
--- counting lapsing of coarse counter
--- CC lapses every 2^15-1 cycles @ 625MHz. 
-p_gen_lapsing: process(i_clk, i_reset_n)
-begin
+    -- counting lapsing of coarse counter
+    -- CC lapses every 2^15-1 cycles @ 625MHz.
+    p_gen_lapsing: process(i_clk, i_reset_n)
+    begin
     if ( i_reset_n = '0' ) then
         nLapses <= 0;
         CC_fpga <= 0;
         cntCCsmaller <= 0;
     elsif ( rising_edge(i_clk) ) then
         -- in the following we have 5 different edge cases where
-        -- the internal CC_fpga counter runs away from the Mutrig 
+        -- the internal CC_fpga counter runs away from the Mutrig
         -- counter. To counter this we set the correct next value
         if ( CC_fpga = 32765 ) then
             nLapses <= nLapses + 1;
@@ -89,23 +89,23 @@ begin
         end if;
         -- synthesis translate_on
     end if;
-end process;
+    end process;
 
--- assuming that the default delay is in the range of 
--- upper=30000 to 32766/7 and 0 to lower=2767
--- get upper lower bnd
-upper       <=  to_integer(unsigned(i_upper_bnd));
-lower       <=  32767 - to_integer(unsigned(i_upper_bnd));
+    -- assuming that the default delay is in the range of
+    -- upper=30000 to 32766/7 and 0 to lower=2767
+    -- get upper lower bnd
+    upper       <=  to_integer(unsigned(i_upper_bnd));
+    lower       <=  32767 - to_integer(unsigned(i_upper_bnd));
 
--- convert i_CC to unsigned
-i_CC_u      <=  unsigned(i_CC);
+    -- convert i_CC to unsigned
+    i_CC_u      <=  unsigned(i_CC);
 
-                -- check if i_CC_u did not lapse but the interal counter did
-s_o_CC      <=  i_CC_u - (nLapses - 1) when i_CC_u  <= 32766 and i_CC_u  >= upper and CC_fpga <= lower and nLapses > 0 else
-                -- this case should never happen
-                i_CC_u - (nLapses + 1) when CC_fpga <= 32767 and CC_fpga >= upper and i_CC_u  <= lower else
-                i_CC_u - nLapses;
+                    -- check if i_CC_u did not lapse but the interal counter did
+    s_o_CC      <=  i_CC_u - (nLapses - 1) when i_CC_u  <= 32766 and i_CC_u  >= upper and CC_fpga <= lower and nLapses > 0 else
+                    -- this case should never happen
+                    i_CC_u - (nLapses + 1) when CC_fpga <= 32767 and CC_fpga >= upper and i_CC_u  <= lower else
+                    i_CC_u - nLapses;
 
-o_CC        <=  i_CC when i_en = '0' else std_logic_vector(s_o_CC);
+    o_CC        <=  i_CC when i_en = '0' else std_logic_vector(s_o_CC);
 
 end architecture;

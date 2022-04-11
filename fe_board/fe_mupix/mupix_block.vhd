@@ -23,7 +23,7 @@ port (
     o_clock                 : out std_logic_vector( 3 downto 0);
     o_SIN                   : out std_logic_vector( 3 downto 0);
     o_mosi                  : out std_logic_vector( 3 downto 0);
-    o_csn                   : out std_logic_vector(11 downto 0);
+    o_cs                    : out std_logic_vector(11 downto 0);
 
     i_run_state_125           : in  run_state_t;
     i_run_state_156           : in  run_state_t;
@@ -90,7 +90,7 @@ begin
         o_clock                     => o_clock,
         o_SIN                       => o_sin,
         o_mosi                      => o_mosi,
-        o_csn                       => o_csn--,
+        o_cs                       => o_cs--,
     );
 
     e_mupix_datapath : work.mupix_datapath

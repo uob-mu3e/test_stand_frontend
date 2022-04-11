@@ -14,7 +14,6 @@ use ieee.numeric_std.all;
 use ieee.std_logic_1164.all;
 use ieee.std_logic_unsigned.all;
 
-
 entity swb_sc_main is
 generic (
     NLINKS : positive := 4
@@ -116,61 +115,61 @@ begin
         end if;
 
         case state is
-            when idle =>
-                o_state         <= x"0000001";
-                o_done          <= '1';
-                if ( length_we = '1' ) then
-                    state       <= read_fpga_id;
-                    length_s    <= i_length;
-                    o_done      <= '0';
-                    wait_cnt    <= (others => '0');
-                end if;
-                --
-            when read_fpga_id =>
-                o_state <= x"0000002";
-                if ( wait_cnt = "111" ) then
-                    if ( mem_data_reg(7 downto 0) = x"BC" ) then
-                        state           <= read_data;
-                        addr_reg        <= addr_reg + '1';
-                        cur_length      <= cur_length + '1';
-                        mem_data.datak  <= "0001";
-                        mask_addr       <= mem_data_reg(23 downto 8); -- get fpga id if x"FFFF" write to all links, if 1 first link and so on
-                        if ( mem_data_reg(23 downto 8) = x"FFFF" ) then
-                            wren_reg    <= (others => '1');
-                        else
-                            wren_reg    <= mem_data_reg(23 downto 8); -- todo fix me to more the 16 addr one hot
-                        end if;
-                    end if;
-                end if;
-                --
-            when read_data =>
-                o_state <= x"0000003";
-                if ( wait_cnt = "111" ) then
-                    if(mask_addr(15 downto 0) = x"FFFF") then
+        when idle =>
+            o_state         <= x"0000001";
+            o_done          <= '1';
+            if ( length_we = '1' ) then
+                state       <= read_fpga_id;
+                length_s    <= i_length;
+                o_done      <= '0';
+                wait_cnt    <= (others => '0');
+            end if;
+            --
+        when read_fpga_id =>
+            o_state <= x"0000002";
+            if ( wait_cnt = "111" ) then
+                if ( mem_data_reg(7 downto 0) = x"BC" ) then
+                    state           <= read_data;
+                    addr_reg        <= addr_reg + '1';
+                    cur_length      <= cur_length + '1';
+                    mem_data.datak  <= "0001";
+                    mask_addr       <= mem_data_reg(23 downto 8); -- get fpga id if x"FFFF" write to all links, if 1 first link and so on
+                    if ( mem_data_reg(23 downto 8) = x"FFFF" ) then
                         wren_reg    <= (others => '1');
                     else
-                        wren_reg    <= mask_addr(15 downto 0);
-                    end if;
-                    if (length_s + '1' = cur_length ) then
-                        mem_data.datak  <= "0001";
-                        state           <= idle;
-                        wait_cnt        <= (others => '0');
-                        addr_reg        <= (others => '0');
-                        length_s        <= (others => '0');
-                        cur_length      <= (others => '0');
-                    else
-                        cur_length  <= cur_length + '1';
-                        addr_reg    <= addr_reg + '1';
+                        wren_reg    <= mem_data_reg(23 downto 8); -- todo fix me to more the 16 addr one hot
                     end if;
                 end if;
-                --
-            when others =>
-                state       <= idle;
-                addr_reg    <= (others => '0');
-                wren_reg    <= (others => '0');
-                cur_length  <= (others => '0');
-                length_s    <= (others => '0');
-                --
+            end if;
+            --
+        when read_data =>
+            o_state <= x"0000003";
+            if ( wait_cnt = "111" ) then
+                if(mask_addr(15 downto 0) = x"FFFF") then
+                    wren_reg    <= (others => '1');
+                else
+                    wren_reg    <= mask_addr(15 downto 0);
+                end if;
+                if (length_s + '1' = cur_length ) then
+                    mem_data.datak  <= "0001";
+                    state           <= idle;
+                    wait_cnt        <= (others => '0');
+                    addr_reg        <= (others => '0');
+                    length_s        <= (others => '0');
+                    cur_length      <= (others => '0');
+                else
+                    cur_length  <= cur_length + '1';
+                    addr_reg    <= addr_reg + '1';
+                end if;
+            end if;
+            --
+        when others =>
+            state       <= idle;
+            addr_reg    <= (others => '0');
+            wren_reg    <= (others => '0');
+            cur_length  <= (others => '0');
+            length_s    <= (others => '0');
+            --
         end case;
 
     end if;

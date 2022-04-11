@@ -144,15 +144,15 @@ begin
                 o_read(I).spi_read  <= (others => '0');
             end loop;
             o_data_to_direct_spi_we <= '0';
-            o_spi_chip_selct_mask   <= (others => '1');
+            o_spi_chip_selct_mask   <= (others => '0');
             mp_spi_clk_state        <= zero1;
             dpf_empty_this_round    <= (others => '0');
             reg_is_writing          <= (others => '0');
             chip_is_writing         <= (others => '0');
 
             -- IMPORTANT: needs to go into init case, use idle only for simulation here !!!
-            mp_spi_state            <= init;
-            --mp_spi_state            <= idle;
+            --mp_spi_state            <= init;
+            mp_spi_state            <= idle;
             
             init_counter            <= 0;
             col_shift_state         <= zero1;
@@ -226,7 +226,7 @@ begin
             case mp_spi_state is
               when init =>
                 -- 0 col register of all chips, put a single 1 into start of col register for all chips
-                o_spi_chip_selct_mask <= (others => '0');
+                o_spi_chip_selct_mask <= (others => '1');
                 
                 if(init_counter = 900) then
                     col <= '1';
@@ -244,6 +244,7 @@ begin
                         Load_Col <= '0';
                         Load_Test <= '0';
                         mp_spi_state <= idle;
+                        o_spi_chip_selct_mask <= (others => '0');
                         mp_spi_clk_state <= zero1;
 
                     elsif(i_direct_spi_fifo_empty = '1') then 
@@ -278,7 +279,7 @@ begin
                 end case;
               
               when test =>
-                o_spi_chip_selct_mask <= (others => '0');
+                o_spi_chip_selct_mask <= (others => '1');
                 running_test          <= '1';
 
                 case mp_spi_clk_state is
@@ -324,7 +325,7 @@ begin
                     o_data_to_direct_spi_we <= '0';
                 end case;
             when test2 =>
-                o_spi_chip_selct_mask <= (others => '0');
+                o_spi_chip_selct_mask <= (others => '1');
                 tdac <= '1';
 
                 case mp_spi_clk_state is
@@ -340,6 +341,7 @@ begin
                         init_counter <= 0;
                         if(test_tdac_step = 7) then 
                             mp_spi_state <= idle;
+                            o_spi_chip_selct_mask <= (others => '1');
                             test_tdac_step <= 0;
                         else
                             test_tdac_step <= test_tdac_step + 1;
@@ -399,7 +401,7 @@ begin
                         tdac                <= '0';
                     else
                         for I in 0 to N_CHIPS_PER_SPI_g-1 loop -- decide on the chip that is supposed to write this round (could also write more than 1 chip if bits are identical but i dont want to right now)
-                          if((bias_rdy(I)='1'or tdac_rdy(I)='1') and i_direct_spi_fifo_empty = '1') then
+                          if((bias_rdy(I)='1'or tdac_rdy(I)='1' or vdac_rdy(I)='1' or conf_rdy(I)='1') and i_direct_spi_fifo_empty = '1') then
                             mp_spi_state    <= load_bits;
                             chip_is_writing     <= (I => '1', others => '0');
                             o_read              <= (I => (spi_read => i_data(I).rdy, mu3e_read => (others => 'Z')), others =>(spi_read => (others => '0'), mu3e_read => (others => 'Z')));
@@ -441,6 +443,8 @@ begin
                 --o_spi_chip_selct_mask   <= (chip_is_writing_int=> '0', others => '1'); -- (quartus does not like it)
                 for I in 0 to N_CHIPS_PER_SPI_g-1 loop
                     if(chip_is_writing_int=I) then 
+                        o_spi_chip_selct_mask(I) <= '1';
+                    else
                         o_spi_chip_selct_mask(I) <= '0';
                     end if;
                 end loop;

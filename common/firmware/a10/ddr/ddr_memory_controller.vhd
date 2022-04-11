@@ -17,39 +17,39 @@ use work.a10_pcie_registers.all;
 
 entity ddr_memory_controller is
 port (
-    i_reset_n           : in  std_logic;
-    i_clk               : in  std_logic;
-
     -- Control and status registers
-    i_ddr_control       : in  std_logic_vector(15 downto 0);
-    o_ddr_status        : out std_logic_vector(15 downto 0);
+    i_ddr_control       : in    std_logic_vector(15 downto 0);
+    o_ddr_status        : out   std_logic_vector(15 downto 0);
 
-    o_ddr_calibrated    : out std_logic;
-    o_ddr_ready         : out std_logic;
+    o_ddr_calibrated    : out   std_logic;
+    o_ddr_ready         : out   std_logic;
 
-    i_ddr_addr          : in  std_logic_vector(25 downto 0);
-    i_ddr_data          : in  std_logic_vector(511 downto 0);
-    o_ddr_data          : out std_logic_vector(511 downto 0);
-    i_ddr_write         : in  std_logic;
-    i_ddr_read          : in  std_logic;
-    o_ddr_read_valid    : out std_logic;
+    i_ddr_addr          : in    std_logic_vector(25 downto 0);
+    i_ddr_data          : in    std_logic_vector(511 downto 0);
+    o_ddr_data          : out   std_logic_vector(511 downto 0);
+    i_ddr_write         : in    std_logic;
+    i_ddr_read          : in    std_logic;
+    o_ddr_read_valid    : out   std_logic;
 
     -- Error counters
-    o_error             : out std_logic_vector(31 downto 0);
+    o_error             : out   std_logic_vector(31 downto 0);
 
     -- IF to DDR
-    M_cal_success       : in  std_logic;
-    M_cal_fail          : in  std_logic;
-    M_clk               : in  std_logic;
-    M_reset_n           : in  std_logic;
-    M_ready             : in  std_logic;
-    M_read              : out std_logic;
-    M_write             : out std_logic;
-    M_address           : out std_logic_vector(25 downto 0);
-    M_readdata          : in  std_logic_vector(511 downto 0);
-    M_writedata         : out std_logic_vector(511 downto 0);
-    M_burstcount        : out std_logic_vector(6 downto 0);
-    M_readdatavalid     : in  std_logic--;
+    M_cal_success       : in    std_logic;
+    M_cal_fail          : in    std_logic;
+    M_clk               : in    std_logic;
+    M_reset_n           : in    std_logic;
+    M_ready             : in    std_logic;
+    M_read              : out   std_logic;
+    M_write             : out   std_logic;
+    M_address           : out   std_logic_vector(25 downto 0);
+    M_readdata          : in    std_logic_vector(511 downto 0);
+    M_writedata         : out   std_logic_vector(511 downto 0);
+    M_burstcount        : out   std_logic_vector(6 downto 0);
+    M_readdatavalid     : in    std_logic;
+
+    i_reset_n           : in    std_logic;
+    i_clk               : in    std_logic--;
 );
 end entity;
 
@@ -66,7 +66,7 @@ architecture rtl of ddr_memory_controller is
     signal counter_readdata         : std_logic_vector(511 downto 0);
     signal counter_readdatavalid    : std_logic;
     signal counter_readdatavalid_reg: std_logic;
-        
+
     type counter_state_type is (disabled, writing, reading, done);
     signal counter_state    : counter_state_type;
     signal mycounter        : std_logic_vector(31 downto 0);
@@ -85,7 +85,7 @@ architecture rtl of ddr_memory_controller is
     signal timecount_reg    : std_logic_vector(31 downto 0);
 
     signal started          : std_logic;
-    
+
     signal reset_n          : std_logic;
 
     --! internal output signals
@@ -104,7 +104,7 @@ architecture rtl of ddr_memory_controller is
 begin
 
     --! Counter forwarding
-    error   <=  poserr_reg      when ddr_control(DDR_COUNTERSEL_RANGE_A) = "01" else   
+    error   <=  poserr_reg      when ddr_control(DDR_COUNTERSEL_RANGE_A) = "01" else
                 counterr_reg    when ddr_control(DDR_COUNTERSEL_RANGE_A) = "10" else
                 timecount_reg;
 
@@ -123,7 +123,7 @@ begin
     e_sync_out : entity work.fifo_sync
     generic map(
         g_RDATA_RESET => (ddr_sync_out'range => '0')--,
-    ) port map (    i_wdata => wdata_sync_out, 
+    ) port map (    i_wdata => wdata_sync_out,
                     i_wclk => M_clk, i_wreset_n => '1', o_rdata => ddr_sync_out, i_rclk => i_clk, i_rreset_n => '1'--,
     );
     o_ddr_status        <= ddr_sync_out(15 downto 0);
@@ -137,7 +137,7 @@ begin
     e_sync_in : entity work.fifo_sync
     generic map(
         g_RDATA_RESET => (ddr_sync_in'range => '0')--,
-    ) port map (    i_wdata => wdata_sync_in, 
+    ) port map (    i_wdata => wdata_sync_in,
                     i_wclk => i_clk, i_wreset_n => '1', o_rdata => ddr_sync_in, i_rclk => M_clk, i_rreset_n => '1'--,
     );
     ddr_control <= ddr_sync_in(15 downto 0);
@@ -154,7 +154,7 @@ begin
     M_read  <=  counter_read    when mode = countertest else
                 ddr_read        when mode = dataflow    else
                 '0';
-                
+
     M_write <=  counter_write   when mode = countertest else
                 ddr_write       when mode = dataflow    else
                 '0';
@@ -178,30 +178,30 @@ begin
     if ( reset_n = '0' ) then
         mode <= disabled;
         --
-    elsif ( rising_edge(M_clk) ) then
+    elsif rising_edge(M_clk) then
         case mode is
-            when disabled =>
-                if ( ddr_control(DDR_BIT_ENABLE_A) = '1' ) then
-                    mode <= waiting;
-                end if;
-            when waiting =>
-                if ( M_reset_n = '1' and M_cal_success = '1' ) then
-                    mode <= ready;
-                end if;
-            when ready =>
-                if ( ddr_control(DDR_BIT_COUNTERTEST_A) = '1' ) then
-                    mode <= countertest;
-                else 
-                    mode <= dataflow;
-                end if;
-            when countertest =>
-                if ( ddr_control(DDR_BIT_COUNTERTEST_A)='0' ) then
-                    mode <= ready;
-                end if;
-            when dataflow =>
-                if ( ddr_control(DDR_BIT_COUNTERTEST_A)='1' ) then
-                    mode <= ready;
-                end if;
+        when disabled =>
+            if ( ddr_control(DDR_BIT_ENABLE_A) = '1' ) then
+                mode <= waiting;
+            end if;
+        when waiting =>
+            if ( M_reset_n = '1' and M_cal_success = '1' ) then
+                mode <= ready;
+            end if;
+        when ready =>
+            if ( ddr_control(DDR_BIT_COUNTERTEST_A) = '1' ) then
+                mode <= countertest;
+            else
+                mode <= dataflow;
+            end if;
+        when countertest =>
+            if ( ddr_control(DDR_BIT_COUNTERTEST_A)='0' ) then
+                mode <= ready;
+            end if;
+        when dataflow =>
+            if ( ddr_control(DDR_BIT_COUNTERTEST_A)='1' ) then
+                mode <= ready;
+            end if;
         end case;
     end if;
     end process;
@@ -225,208 +225,208 @@ begin
         counter_readdata            <= M_readdata;
         counter_readdatavalid       <= M_readdatavalid;
         counter_readdatavalid_reg   <= counter_readdatavalid;
-        
-    case counter_state is
-    when disabled =>
-        
-        if ( mode = countertest and M_ready = '1' ) then
-            counter_state <= writing;
-        end if;
-        mycounter       <= (others => '1');
-        counter_address <= (others => '1');
-        RWDone          <= '0';
-        Running         <= '0';
-        poserr_reg      <= (others => '0');
-        counterr_reg    <= (others => '0');
-        timecount_reg   <= (others => '0');
-        started         <= '0';
-        
-    when writing =>
 
-        timecount_reg <= timecount_reg + '1';
-        counter_write <= '1';
-        
-        if ( M_ready = '1' ) then
-            started         <= '1';
-            counter_var     := mycounter + '1';
-            mycounter       <= mycounter + '1';
-            counter_address <= counter_address + '1';
-        else
-            counter_var := mycounter;
-        end if;
+        case counter_state is
+        when disabled =>
 
-        counter_writedata <= X"1" & counter_var(27 downto 0) &
-                             X"2" & counter_var(27 downto 0) &
-                             X"3" & counter_var(27 downto 0) &
-                             X"4" & counter_var(27 downto 0) &
-                             X"5" & counter_var(27 downto 0) &
-                             X"6" & counter_var(27 downto 0) &
-                             X"7" & counter_var(27 downto 0) &
-                             X"8" & counter_var(27 downto 0) &
-                             X"9" & counter_var(27 downto 0) &
-                             X"A" & counter_var(27 downto 0) &
-                             X"B" & counter_var(27 downto 0) &
-                             X"C" & counter_var(27 downto 0) &
-                             X"D" & counter_var(27 downto 0) &
-                             X"E" & counter_var(27 downto 0) &
-                             X"F" & counter_var(27 downto 0) &
-                             X"0" & counter_var(27 downto 0);
-                             
-        if ( counter_address = counter_address_1 and started = '1' ) then
-            RWDone <= '1';
-            counter_write <= '0';
-        end if;
-        
-        if ( RWDone = '1' ) then
-            counter_write <= '0';
-            counter_state <= reading;
+            if ( mode = countertest and M_ready = '1' ) then
+                counter_state <= writing;
+            end if;
+            mycounter       <= (others => '1');
             counter_address <= (others => '1');
-            RWDone <= '0';
-            started <= '0';
-        end if;
-        
-    when reading =>
+            RWDone          <= '0';
+            Running         <= '0';
+            poserr_reg      <= (others => '0');
+            counterr_reg    <= (others => '0');
+            timecount_reg   <= (others => '0');
+            started         <= '0';
 
-        timecount_reg <= timecount_reg + '1';
-        counter_read <= '1';
+        when writing =>
 
-        if ( M_ready = '1' ) then
-            counter_address <= counter_address + '1';
-            started         <= '1';
-        end if;
-        
-        if ( counter_address = counter_address_1 and started = '1' ) then
-            RWDone <= '1';
-            counter_read <= '0';
-        end if;
-        
-        if ( RWDone = '1' ) then
-            counter_state <= done;
-        end if;
-        
-        pcheck  <= (others => '0');
-        check   <= (others => '0');
-        
-        if ( counter_readdatavalid = '1' ) then
-            Running <= '1';
-            LastC   <= counter_readdata(27 downto 0) + '1';
-            
-            if ( Running = '1' ) then
-                if ( counter_readdata(31 downto 28) /= X"0" ) then
-                    pcheck(0) <= '1';
-                end if;
-                if ( counter_readdata(63 downto 60) /= X"F" ) then
-                    pcheck(1) <= '1';
-                end if;
-                if ( counter_readdata(95 downto 92) /= X"E") then
-                    pcheck(2) <= '1';
-                end if;
-                if ( counter_readdata(127 downto 124) /= X"D" ) then
-                    pcheck(3) <= '1';
-                end if;
-                if ( counter_readdata(159 downto 156) /= X"C" ) then
-                    pcheck(4) <= '1';
-                end if;
-                if ( counter_readdata(191 downto 188) /= X"B" ) then
-                    pcheck(5) <= '1';
-                end if;
-                if ( counter_readdata(223 downto 220) /= X"A" ) then
-                    pcheck(6) <= '1';
-                end if;
-                if ( counter_readdata(255 downto 252) /= X"9" ) then
-                    pcheck(7) <= '1';
-                end if;
-                if ( counter_readdata(287 downto 284) /= X"8" ) then
-                    pcheck(8) <= '1';
-                end if;
-                if ( counter_readdata(319 downto 316) /= X"7" ) then
-                    pcheck(9) <= '1';
-                end if;
-                if ( counter_readdata(351 downto 348) /= X"6" ) then
-                    pcheck(10) <= '1';
-                end if;
-                if ( counter_readdata(383 downto 380) /= X"5" ) then
-                    pcheck(11) <= '1';
-                end if;
-                if ( counter_readdata(415 downto 412) /= X"4" ) then
-                    pcheck(12) <= '1';
-                end if;
-                if ( counter_readdata(447 downto 444) /= X"3" ) then
-                    pcheck(13) <= '1';
-                end if;
-                if ( counter_readdata(479 downto 476) /= X"2" ) then
-                    pcheck(14) <= '1';
-                end if;
-                if ( counter_readdata(511 downto 508) /= X"1" ) then
-                    pcheck(15) <= '1';
-                end if;
+            timecount_reg <= timecount_reg + '1';
+            counter_write <= '1';
 
-                if ( counter_readdata(27 downto 0) /= LastC ) then
-                    check(0) <= '1';
-                end if;
-                if ( counter_readdata(59 downto 32) /= LastC ) then
-                    check(1) <= '1';
-                end if;
-                if ( counter_readdata(91 downto 64) /= LastC ) then
-                    check(2) <= '1';
-                end if;
-                if ( counter_readdata(123 downto 96) /= LastC ) then
-                    check(3) <= '1';
-                end if;
-                if ( counter_readdata(155 downto 128) /= LastC ) then
-                    check(4) <= '1';
-                end if;
-                if ( counter_readdata(187 downto 160) /= LastC ) then
-                    check(5) <= '1';
-                end if;
-                if ( counter_readdata(219 downto 192) /= LastC ) then
-                    check(6) <= '1';
-                end if;
-                if ( counter_readdata(251 downto 224) /= LastC ) then
-                    check(7) <= '1';
-                end if;
-                if ( counter_readdata(283 downto 256) /= LastC ) then
-                    check(8) <= '1';
-                end if;
-                if ( counter_readdata(315 downto 288) /= LastC ) then
-                    check(9) <= '1';
-                end if;
-                if ( counter_readdata(347 downto 320) /= LastC ) then
-                    check(10) <= '1';
-                end if;
-                if ( counter_readdata(379 downto 352) /= LastC ) then
-                    check(11) <= '1';
-                end if;
-                if ( counter_readdata(411 downto 384) /= LastC ) then
-                    check(12) <= '1';
-                end if;
-                if ( counter_readdata(443 downto 416) /= LastC ) then
-                    check(13) <= '1';
-                end if;
-                if ( counter_readdata(475 downto 448) /= LastC ) then
-                    check(14) <= '1';
-                end if;
-                if ( counter_readdata(507 downto 480) /= LastC ) then
-                    check(15) <= '1';
+            if ( M_ready = '1' ) then
+                started         <= '1';
+                counter_var     := mycounter + '1';
+                mycounter       <= mycounter + '1';
+                counter_address <= counter_address + '1';
+            else
+                counter_var := mycounter;
+            end if;
+
+            counter_writedata <= X"1" & counter_var(27 downto 0) &
+                                 X"2" & counter_var(27 downto 0) &
+                                 X"3" & counter_var(27 downto 0) &
+                                 X"4" & counter_var(27 downto 0) &
+                                 X"5" & counter_var(27 downto 0) &
+                                 X"6" & counter_var(27 downto 0) &
+                                 X"7" & counter_var(27 downto 0) &
+                                 X"8" & counter_var(27 downto 0) &
+                                 X"9" & counter_var(27 downto 0) &
+                                 X"A" & counter_var(27 downto 0) &
+                                 X"B" & counter_var(27 downto 0) &
+                                 X"C" & counter_var(27 downto 0) &
+                                 X"D" & counter_var(27 downto 0) &
+                                 X"E" & counter_var(27 downto 0) &
+                                 X"F" & counter_var(27 downto 0) &
+                                 X"0" & counter_var(27 downto 0);
+
+            if ( counter_address = counter_address_1 and started = '1' ) then
+                RWDone <= '1';
+                counter_write <= '0';
+            end if;
+
+            if ( RWDone = '1' ) then
+                counter_write <= '0';
+                counter_state <= reading;
+                counter_address <= (others => '1');
+                RWDone <= '0';
+                started <= '0';
+            end if;
+
+        when reading =>
+
+            timecount_reg <= timecount_reg + '1';
+            counter_read <= '1';
+
+            if ( M_ready = '1' ) then
+                counter_address <= counter_address + '1';
+                started         <= '1';
+            end if;
+
+            if ( counter_address = counter_address_1 and started = '1' ) then
+                RWDone <= '1';
+                counter_read <= '0';
+            end if;
+
+            if ( RWDone = '1' ) then
+                counter_state <= done;
+            end if;
+
+            pcheck  <= (others => '0');
+            check   <= (others => '0');
+
+            if ( counter_readdatavalid = '1' ) then
+                Running <= '1';
+                LastC   <= counter_readdata(27 downto 0) + '1';
+
+                if ( Running = '1' ) then
+                    if ( counter_readdata(31 downto 28) /= X"0" ) then
+                        pcheck(0) <= '1';
+                    end if;
+                    if ( counter_readdata(63 downto 60) /= X"F" ) then
+                        pcheck(1) <= '1';
+                    end if;
+                    if ( counter_readdata(95 downto 92) /= X"E") then
+                        pcheck(2) <= '1';
+                    end if;
+                    if ( counter_readdata(127 downto 124) /= X"D" ) then
+                        pcheck(3) <= '1';
+                    end if;
+                    if ( counter_readdata(159 downto 156) /= X"C" ) then
+                        pcheck(4) <= '1';
+                    end if;
+                    if ( counter_readdata(191 downto 188) /= X"B" ) then
+                        pcheck(5) <= '1';
+                    end if;
+                    if ( counter_readdata(223 downto 220) /= X"A" ) then
+                        pcheck(6) <= '1';
+                    end if;
+                    if ( counter_readdata(255 downto 252) /= X"9" ) then
+                        pcheck(7) <= '1';
+                    end if;
+                    if ( counter_readdata(287 downto 284) /= X"8" ) then
+                        pcheck(8) <= '1';
+                    end if;
+                    if ( counter_readdata(319 downto 316) /= X"7" ) then
+                        pcheck(9) <= '1';
+                    end if;
+                    if ( counter_readdata(351 downto 348) /= X"6" ) then
+                        pcheck(10) <= '1';
+                    end if;
+                    if ( counter_readdata(383 downto 380) /= X"5" ) then
+                        pcheck(11) <= '1';
+                    end if;
+                    if ( counter_readdata(415 downto 412) /= X"4" ) then
+                        pcheck(12) <= '1';
+                    end if;
+                    if ( counter_readdata(447 downto 444) /= X"3" ) then
+                        pcheck(13) <= '1';
+                    end if;
+                    if ( counter_readdata(479 downto 476) /= X"2" ) then
+                        pcheck(14) <= '1';
+                    end if;
+                    if ( counter_readdata(511 downto 508) /= X"1" ) then
+                        pcheck(15) <= '1';
+                    end if;
+
+                    if ( counter_readdata(27 downto 0) /= LastC ) then
+                        check(0) <= '1';
+                    end if;
+                    if ( counter_readdata(59 downto 32) /= LastC ) then
+                        check(1) <= '1';
+                    end if;
+                    if ( counter_readdata(91 downto 64) /= LastC ) then
+                        check(2) <= '1';
+                    end if;
+                    if ( counter_readdata(123 downto 96) /= LastC ) then
+                        check(3) <= '1';
+                    end if;
+                    if ( counter_readdata(155 downto 128) /= LastC ) then
+                        check(4) <= '1';
+                    end if;
+                    if ( counter_readdata(187 downto 160) /= LastC ) then
+                        check(5) <= '1';
+                    end if;
+                    if ( counter_readdata(219 downto 192) /= LastC ) then
+                        check(6) <= '1';
+                    end if;
+                    if ( counter_readdata(251 downto 224) /= LastC ) then
+                        check(7) <= '1';
+                    end if;
+                    if ( counter_readdata(283 downto 256) /= LastC ) then
+                        check(8) <= '1';
+                    end if;
+                    if ( counter_readdata(315 downto 288) /= LastC ) then
+                        check(9) <= '1';
+                    end if;
+                    if ( counter_readdata(347 downto 320) /= LastC ) then
+                        check(10) <= '1';
+                    end if;
+                    if ( counter_readdata(379 downto 352) /= LastC ) then
+                        check(11) <= '1';
+                    end if;
+                    if ( counter_readdata(411 downto 384) /= LastC ) then
+                        check(12) <= '1';
+                    end if;
+                    if ( counter_readdata(443 downto 416) /= LastC ) then
+                        check(13) <= '1';
+                    end if;
+                    if ( counter_readdata(475 downto 448) /= LastC ) then
+                        check(14) <= '1';
+                    end if;
+                    if ( counter_readdata(507 downto 480) /= LastC ) then
+                        check(15) <= '1';
+                    end if;
                 end if;
             end if;
-        end if;
 
-        if ( counter_readdatavalid_reg = '1' ) then
-            if ( pcheck /= "0000000000000000" ) then
-                poserr_reg <= poserr_reg + '1';
+            if ( counter_readdatavalid_reg = '1' ) then
+                if ( pcheck /= "0000000000000000" ) then
+                    poserr_reg <= poserr_reg + '1';
+                end if;
+                if ( check /= "0000000000000000" ) then
+                    counterr_reg <= counterr_reg + '1';
+                end if;
             end if;
-            if ( check /= "0000000000000000" ) then
-                counterr_reg <= counterr_reg + '1';
+
+        when done =>
+            if ( mode /= countertest ) then
+                counter_state <= disabled;
             end if;
-        end if;
 
-    when done =>
-        if ( mode /= countertest ) then
-            counter_state <= disabled;
-        end if;
-
-    end case;
+        end case;
     end if;
     end process;
 

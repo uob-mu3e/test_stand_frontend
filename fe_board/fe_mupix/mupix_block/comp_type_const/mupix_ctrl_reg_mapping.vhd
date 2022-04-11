@@ -50,7 +50,9 @@ port (
     o_mp_direct_spi_data_wr     : out std_logic_vector(N_SPI_g-1 downto 0);
     i_mp_direct_spi_busy        : in  std_logic_vector(N_SPI_g-1 downto 0);
     o_mp_ctrl_direct_spi_enable : out std_logic;
-    o_mp_ctrl_spi_enable        : out std_logic--;
+    o_mp_ctrl_spi_enable        : out std_logic;
+
+    i_n_free_pages              : in  std_logic_vector(31 downto 0)--;
 );
 end entity;
 
@@ -200,6 +202,11 @@ architecture rtl of mupix_ctrl_reg_mapping is
             if ( regaddr = MP_CTRL_RUN_TEST_REGISTER_W and i_reg_we = '1' ) then
                 o_run_tdac_test <= '1';
             end if;
+
+            if ( regaddr = MP_CTRL_N_FREE_PAGES_REGISTER_R and i_reg_re = '1' ) then
+                o_reg_rdata <= i_n_free_pages;
+            end if;
+
         end if;
     end process;
 

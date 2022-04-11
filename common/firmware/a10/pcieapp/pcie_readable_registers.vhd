@@ -99,10 +99,10 @@ begin
 
     process(local_rstn, refclk)
     begin
-    if(local_rstn = '0') then
+    if ( local_rstn = '0' ) then
         state <= reset;
         --
-    elsif (refclk'event and refclk = '1') then
+    elsif rising_edge(refclk) then
         readen <= '0';
         case state is
         when reset =>
@@ -119,7 +119,10 @@ begin
                     state <= waiting;
                 end if; -- 32 bit write/read request
             end if; -- if Start of Packet
+            --
         end case;
+
+        --
     end if; -- if clk event
     end process;
 

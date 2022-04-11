@@ -41,7 +41,7 @@ entity mp_ctrl_direct_spi is
 
         o_spi               : out std_logic;
         o_spi_clk           : out std_logic;
-        o_csn               : out std_logic_vector(N_CHIPS_PER_SPI_g-1 downto 0)--;
+        o_cs                : out std_logic_vector(N_CHIPS_PER_SPI_g-1 downto 0)--;
     );
 end entity mp_ctrl_direct_spi;
 
@@ -91,7 +91,7 @@ begin
         if(i_reset_n = '0') then
             o_spi               <= '0';
             o_spi_clk           <= '0';
-            o_csn               <= (others => '1');
+            o_cs                <= (others => '0');
             fifo_rd             <= '0';
             direct_spi_state    <= idle;
             spi_bitpos          <= 0;
@@ -146,11 +146,11 @@ begin
                 end case;
               when ld =>
                 if(wait_cnt=i_spi_slow_down) then
-                    o_csn <= internal_chip_mask;
+                    o_cs  <= internal_chip_mask;
                 end if;
                 if(wait_cnt = i_spi_slow_down + i_spi_slow_down) then 
                     direct_spi_state <= idle;
-                    o_csn <= (others => '1');
+                    o_cs  <= (others => '0');
                 end if;
               when others =>
                 direct_spi_state <= idle;
