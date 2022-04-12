@@ -397,7 +397,7 @@ begin
     u_mux_A : entity work.framebuilder_mux_v2
     generic map( 
         N_INPUTS => N_ASICS,
-        -- NOTE: N_INPUTS_INDEX = sqrt(N_ASICS)
+        -- NOTE: N_INPUTS_INDEX = log2(N_ASICS)
         N_INPUTS_INDEX => 2,
         C_ASICNO_PREFIX => C_ASICNO_PREFIX_A--,
     )

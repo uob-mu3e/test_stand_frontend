@@ -21,7 +21,7 @@ entity framebuilder_mux_v2 is
 generic(
     -- num of input links
     N_INPUTS : integer;
-    -- sqrt(N_INPUTS)
+    -- log2(N_INPUTS)
     N_INPUTS_INDEX : integer;
     --use prefix value as the first bits (MSBs) of the chip number field. Leave empty to append nothing and use all bits from Input # numbering
     C_ASICNO_PREFIX : std_logic_vector := ""--;
