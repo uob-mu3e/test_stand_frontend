@@ -1,0 +1,313 @@
+#############################################################################################################################       
+    # Authors A. Loreti, March 2022, cosmic run. andrea.loreti@physics.ox.ac.uk
+    #         J. Guzman-Funck, March 2022, cosmic run. jose.guzman-funck19@imperial.ac.uk || pepe.guzmanfunck@gmail.com
+    # Summary: Eval evaluates the quality of the Ladder
+    # User input: half_ladder_id
+    # Output: 
+    #
+#############################################################################################################################
+
+
+
+# MAIN PATH TO MIDAS LADDER QUALITY CONTROL DIRECTORY
+path_root = "/Equipment/Mupix/QCTests/Ladder"
+
+# MAKE NEW KEY IN THE EVAL DIRECTORY WITH LADDER ID NUMBER IN IT
+# The new key is a vector that stores evaluation outcomes for this ladder. Possible outcomes 0 (failed) 1(passed)
+#
+#
+
+CAT path_Eval, $path_root, "/Eval"
+PARAM half_ladder_id, "Half ladder ID"
+
+ODBGET $path_root/IV/half_ladder_id, iv_hl_id
+ODBGET $path_root/LVPowerOn/half_ladder_id, on_hl_id
+ODBGET $path_root/DACScan/half_ladder_id, dac_hl_id
+ODBGET $path_root/LINKQUALIcheck/half_ladder_id, lq_hl_id
+
+IF $iv_hl_id + $on_hl_id + $dac_hl_id + $lq_hl_id != iv_hl_id * 4
+    MESSAGE "Given half ladder ids are not the same in all tests. Saving result with half ladder id inputted as parameter to the Eval script", 1
+ENDIF
+
+
+
+############################### Copy full test to eval ###################################
+
+ODBSAVE /Equipment/Mupix/QCTests/Ladder/IV, output/temp/_current_iv.json
+ODBSAVE /Equipment/Mupix/QCTests/Ladder/LVPowerOn, output/temp/_current_lv_power_on.json
+ODBSAVE /Equipment/Mupix/QCTests/Ladder/DACScan, output/temp/_current_dac_scan.json
+ODBSAVE /Equipment/Mupix/QCTests/Ladder/LINKQUALIcheck, output/temp/_current_link_quali.json
+
+ODBLOAD output/temp/_current_iv.json, /Equipment/Mupix/QCTests/Ladder/Eval/Insight/IV_curve
+ODBLOAD output/temp/_current_lv_power_on.json, /Equipment/Mupix/QCTests/Ladder/Eval/Insight/LV_power_ON
+ODBLOAD output/temp/_current_dac_scan.json, /Equipment/Mupix/QCTests/Ladder/Eval/Insight/DAC_scan
+ODBLOAD output/temp/_current_link_quali.json, /Equipment/Mupix/QCTests/Ladder/Eval/Insight/link_quality
+
+
+
+###################################### LADDER IV TEST ##########################################
+
+# CONTROL VALUES
+_target_V = 25
+
+
+CAT path_IV_input, $path_root,"/IV/Input"
+CAT path_IV_output, $path_root,"/IV/Output"
+
+
+
+ODBSUBDIR $path_IV_input   
+    ODBSET current_limit, $current_limit
+    ODBSET start_voltage, $start_voltage
+    ODBSET step_voltage, $step_size
+    ODBSET fine_step_voltage, $fine_step_size
+    ODBSET stop_voltage, $stop_voltage
+ENDODBSUBDIR
+
+max_voltage = 0
+line_iv_eval = 91
+num_steps = (abs($stop_voltage)-abs($start_voltage))/$step_size+1
+num_fine_steps = $step_size/$fine_step_size-1
+
+total_datapoints = $num_steps+$num_fine_steps
+
+
+LOOP i, $total_datapoints  
+    # Output of IV curve test script is positive Voltage
+    ODBGET $path_IV_output/Voltage[$i-1], this_voltage
+    ODBGET $path_IV_input/Current[$i-1], this_current
+
+    IF $this_voltage > $max_voltage
+        max_voltage = $this_voltage
+    ENDIF
+
+    IF this_current > $current_limit
+        # Goto half ladder evaluation. TODO Check. 
+        GOTO $line_iv_eval
+    ENDIF
+ENDLOOP
+
+
+IF max_voltage > _target_V
+    # Test passed
+    ODBSET $path_Eval/IV_curve, 1
+ENDIF
+
+
+
+###################################### LV POWER ON TEST ##########################################
+# TODO:
+# - Output working chips.
+# - Ladder test would fail but we can still output stuff about working chips. Discuss with Luigi to what extent this is interesting 
+#
+
+# CONTROL VALUES
+_min_config_current = 0.4
+_max_config_current = 0.6
+control_flag = 3
+
+LOOP i, 3
+    CAT path_chip_config, $path_root, "/LVPowerOn/Output/current_increase[$i-1]"
+    ODBGET $path_chip_config, chip_config_current
+
+    IF $chip_config_current > $_min_config_current
+        IF $chip_config_current < $_max_config_current
+            # Current increase in range, test passed. 
+            ODBSET $path_Eval/LV_power_ON[$i-1], 1
+        control_flag = $control_flag -1
+    ENDIF
+ENDLOOP
+
+
+
+###################################### LADDER VPDAC TEST ##########################################
+# 
+# Should have a linear increase
+# 
+#
+
+# CONTROL VALUES. TODO Check with Luigi
+_VPDAC_gradient_min = 0.95
+_VPDAC_gradient_max = 1.05
+
+CAT path_VPDAC_input,  $path_root,"/DACScan/Input/VPDAC"
+CAT path_VPDAC_output, $path_root,"/DACScan/Output/VPDAC/"
+
+
+# Nr. of steps in VPDAC
+ODBSUBDIR $path_VPDAC_input
+    ODBGET start_value, vpdac_start
+    ODBGET stop_value, vpdac_stop
+    ODBGET step, vpdac_step
+    VPDAC_steps = (($vpdac_stop-$vpdac_start) / $vpdac_step) + 1 
+ENDODBSUBDIR
+
+chip = 0
+
+LOOP i, 3
+    # The 3 is here because we expect a plateau at the final values
+    LOOP j, $VPDAC_steps - 1 - 3
+        ODBGET VPDAC_values[$j-1], VPDAC_val_0
+        ODBGET VPDAC_current[$j-1], VPDAC_cur_0
+        ODBGET VPDAC_values[$j], VPDAC_val_1
+        ODBGET VPDAC_current[$j], VPDAC_cur_1
+
+        gradient = ($VPDAC_cur_1 - $VPDAC_cur_0)/($VPDAC_val_1 - $VPDAC_val_0)
+
+        IF gradient > _VPDAC_gradient_min
+            IF gradient < _VPDAC_gradient_max
+                # gradient in range
+                ODBSET $path_Eval/DAC_scan_VPDAC[$chip], 1
+            ENDIF
+        ENDIF
+
+    ENDLOOP
+
+    chip = $i
+ENDLOOP
+
+
+
+###################################### LADDER ref_Vss TEST ##########################################
+#
+# We need an increase in current between the initial and the final value of ref_Vss
+#
+# TODO
+# - Implement a better test
+#
+
+# CONTROL VALUES. TODO Check with Luigi
+_max_ref_Vss_diff = 20
+_min_ref_Vss_diff = 15
+
+# Paths
+CAT path_ref_Vss_input, $path_root, "DACScan/Input/ref_Vss"
+CAT path_ref_Vss_output, "/DACScan/Output/ref_Vss"
+
+ODBSUBDIR $path_ref_Vss_input
+    ODBGET start_value, ref_Vss_start
+    ODBGET stop_value, ref_Vss_stop
+    ODBGET step, ref_Vss_step
+    ref_Vss_steps = (($ref_Vss_stop-$ref_Vss_start) / $ref_Vss_step) + 1 
+ENDODBSUBDIR
+
+
+chip = 0
+
+LOOP i, 3
+    ODBGET $path_ref_Vss_output/$i/ref_Vss_current[0], _ref_Vss_curr_0
+    ODBGET $path_ref_Vss_output/$i/ref_Vss_current[$ref_Vss_steps-1], _ref_Vss_curr_1
+
+    diff = _ref_Vss_curr_1 - _ref_Vss_curr_0
+    IF diff > _min_ref_Vss_diff
+        IF diff < _max_ref_Vss_diff
+            #  diff is in range
+            ODBSET $path_Eval/DAC_scan_VPDAC[$chip], 1
+        ENDIF
+    ENDIF
+
+    chip = $i
+ENDLOOP
+
+
+
+###################################### LADDER link_quali TEST ##########################################
+#
+# Link quality will check if the rate is good enough. Needs to be below 1 Hz
+#
+#
+
+# Paths
+CAT path_error_rate, $path_root, "/LINKQUALIcheck/Output/"
+
+# CONTROL VALUES
+error_threshold = 1
+
+
+chip = 0
+
+LOOP i, $chips
+    CAT this_path, $path_error_rate, $chip
+    ODBGET $this_path/ErrorRate, this_error_rate
+
+    IF this_error_rate < error_threshold
+        ODBSET $path_Eval/link_quality[$chip], 1
+    ENDIF
+ENDLOOP 
+
+
+
+# Calculate final grade
+# Rules:
+# all good --> grade A
+# some link rates bad (1 chip max) --> grade B
+# IV curve not good --> grade C --> flag check breakdown voltage
+# IV curve not good and some link rates bad --> grade D
+# any chip no power up --> grade E  
+# any chip no ref_Vss or VPDAC --> grade E
+# all links not working --> grade E
+
+
+ODBGET $path_Eval/IV_curve, gr_iv_curve
+
+ODBGET $path_Eval/LV_power_ON[0], gr_on_0
+ODBGET $path_Eval/LV_power_ON[1], gr_on_1
+ODBGET $path_Eval/LV_power_ON[2], gr_on_2
+
+ODBGET $path_Eval/DAC_scan_VPDAC[0], gr_vpdac_0
+ODBGET $path_Eval/DAC_scan_VPDAC[1], gr_vpdac_1
+ODBGET $path_Eval/DAC_scan_VPDAC[2], gr_vpdac_2
+
+ODBGET $path_Eval/DAC_scan_ref_Vss[0], gr_ref_Vss_0
+ODBGET $path_Eval/DAC_scan_ref_Vss[1], gr_ref_Vss_1
+ODBGET $path_Eval/DAC_scan_ref_Vss[2], gr_ref_Vss_2
+
+ODBGET $path_Eval/link_quality[0], gr_link_0
+ODBGET $path_Eval/link_quality[1], gr_link_1
+ODBGET $path_Eval/link_quality[2], gr_link_2
+
+sum = $gr_iv_curve + $gr_on_0 + $gr_on_1 + $gr_on_2 + $gr_vpdac_0 + $gr_vpdac_1 + $gr_vpdac_2 + $gr_ref_Vss_0 + $gr_ref_Vss_1 + $gr_ref_Vss_2 + $gr_link_0 + $gr_link_1 + $gr_link_2
+tgr_on = $gr_on_0 + $gr_on_1 + $gr_on_2
+tgr_vpdac = $gr_vpdac_0 + $gr_vpdac_1 + $gr_vpdac_2
+tgr_ref_Vss = $gr_ref_Vss_0 + $gr_ref_Vss_1 + $gr_ref_Vss_2
+tgr_link = $gr_link_0 + $gr_link_1 + $gr_link_2
+
+grade = "E"
+
+IF $gr_iv_curve == 1
+    IF $tgr_link > 1
+        grade = "B"
+    ENDIF
+ELSE
+    IF $tgr_link == 3
+        grade = "C"
+    ELSE
+        grade = "D"
+    ENDIF
+
+IF $tgr_on != 3
+    grade = "E"
+ENDIF
+
+IF $tgr_ref_Vss != 3
+    grade = "E"
+ENDIF
+
+IF $tgr_vpdac != 3
+    grade = "E"
+ENDIF
+
+IF $tgr_link == 0
+    grade = "E"
+
+IF sum == 13
+    # All good
+    grade = "A"
+ENDIF
+
+ODBSET $path_Eval/grade, $grade
+
+
+# Save to file
+CAT output_filename, output/Half_ladder_id_$half_ladder_id.json
+ODBSAVE $path_Eval, output/

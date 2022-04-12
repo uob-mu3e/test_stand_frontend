@@ -57,8 +57,7 @@ bool TCPClient::Write(std::string str)
   boost::asio::write( *socket, boost::asio::buffer(str), error );
   if( !error )
   {
-	  int dummy;
-		//std::cout << "Client sent message: " << str << std::endl;
+
 	}
 	else
 	{
@@ -78,7 +77,7 @@ bool TCPClient::FlushQueu()
 	if(error) { std::cout << " size request failed " << std::endl; return false; }
 	while( int(data_size) > 0)
 	{
-		size_t length = socket->read_some(boost::asio::buffer(data), error);
+		socket->read_some(boost::asio::buffer(data), error);
 		if(error) { std::cout << " size request failed " << std::endl; return false; }
 		data_size = socket->available(error);
 		if(error) { std::cout << " size request failed " << std::endl; return false; }
@@ -87,9 +86,9 @@ bool TCPClient::FlushQueu()
 	
 }
 
-bool TCPClient::ReadReply(std::string *str,int min_size) 
+bool TCPClient::ReadReply(std::string *str,size_t min_size) 
 { 
-	std::size_t data_size;
+	std::size_t data_size = 0;
 	auto start = std::chrono::system_clock::now();
 	int time_elapsed = 0;
 	boost::system::error_code error;

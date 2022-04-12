@@ -9,6 +9,7 @@ entity scifi_path is
 generic (
     IS_SCITILE : std_logic := '1';
     N_MODULES : positive;
+    N_INPUTSRX : positive := 8;
     N_ASICS : positive;
     N_LINKS : positive;
     INPUT_SIGNFLIP : std_logic_vector := (31 downto 0 => '0');
@@ -26,7 +27,7 @@ port (
     -- to detector module
     o_chip_reset    : out   std_logic_vector(N_MODULES-1 downto 0);
     o_pll_test      : out   std_logic;
-    i_data          : in    std_logic_vector(N_MODULES*N_ASICS-1 downto 0);
+    i_data          : in    std_logic_vector(N_INPUTSRX-1 downto 0);
     io_i2c_sda      : inout std_logic;
     io_i2c_scl      : inout std_logic;
     i_cec           : in    std_logic;
@@ -70,8 +71,8 @@ architecture arch of scifi_path is
 
     -- rx signals
     signal rx_pll_lock                  : std_logic;
-    signal rx_dpa_lock, rx_dpa_lock_reg : std_logic_vector(i_data'range);
-    signal rx_ready                     : std_logic_vector(i_data'range);
+    signal rx_dpa_lock, rx_dpa_lock_reg : std_logic_vector(N_MODULES*N_ASICS-1 downto 0);
+    signal rx_ready                     : std_logic_vector(N_MODULES*N_ASICS-1 downto 0);
     signal frame_desync                 : std_logic_vector(1 downto 0);
     signal buffer_full                  : std_logic_vector(1 downto 0);
 
@@ -356,11 +357,13 @@ begin
         i_SC_datagen_enable         => s_dummyctrl_reg(1),
         i_SC_datagen_shortmode      => s_dummyctrl_reg(2),
         i_SC_datagen_count          => s_dummyctrl_reg(12 downto 3),
-        --run control
+
+        -- run control
         i_RC_may_generate           => i_run_state(RUN_STATE_BITPOS_RUNNING),
         o_RC_all_done               => o_run_state_all_done,
         i_en_lapse_counter          => ctrl_lapse_counter_reg(31),
         i_upper_bnd                 => ctrl_lapse_counter_reg(14 downto 0),
+        i_lower_bnd                 => ctrl_lapse_counter_reg(29 downto 15),
 
         -- monitors
         o_receivers_pll_lock        => rx_pll_lock,

@@ -44,30 +44,30 @@ int main()
     reset_reg = SET_RESET_BIT_ALL(reset_reg);
     mu.write_register_wait(RESET_REGISTER_W, reset_reg, 100);
     
-    // get DDR3 Status
-    cout << hex << "DDR3 Status: 0x" << mu.read_register_ro(DDR3_STATUS_R) << endl;
-    cout << hex << "DDR3 Error: 0x" << mu.read_register_ro(DDR3_ERR_R) << endl;
+    // get DDR Status
+    cout << hex << "DDR Status: 0x" << mu.read_register_ro(DDR_STATUS_R) << endl;
+    cout << hex << "DDR Error: 0x" << mu.read_register_ro(DDR_ERR_R) << endl;
     
-//     constant DDR3_STATUS_R									: integer := 16#27#;
-//     constant DDR3_BIT_CAL_SUCCESS							: integer := 0;
-//     constant DDR3_BIT_CAL_FAIL								: integer := 1;
-//     constant DDR3_BIT_RESET_N								: integer := 2;
-//     constant DDR3_BIT_READY									: integer := 3;
-//     constant DDR3_BIT_TEST_WRITING						    : integer := 4;
-//     constant DDR3_BIT_TEST_READING						    : integer := 5;
-//     constant DDR3_BIT_TEST_DONE							    : integer := 6;
+//     constant DDR_STATUS_R									: integer := 16#27#;
+//     constant DDR_BIT_CAL_SUCCESS							: integer := 0;
+//     constant DDR_BIT_CAL_FAIL								: integer := 1;
+//     constant DDR_BIT_RESET_N								: integer := 2;
+//     constant DDR_BIT_READY									: integer := 3;
+//     constant DDR_BIT_TEST_WRITING						    : integer := 4;
+//     constant DDR_BIT_TEST_READING						    : integer := 5;
+//     constant DDR_BIT_TEST_DONE							    : integer := 6;
     
-    // DDR3_BIT_ENABLE_A
-    cout << "Enable DDR3 BIT A" << endl;
-    mu.write_register(DDR3_CONTROL_W, 0x1);
-    cout << hex << "DDR3 Status: 0x" << mu.read_register_ro(DDR3_STATUS_R) << endl;
+    // DDR_BIT_ENABLE_A
+    cout << "Enable DDR BIT A" << endl;
+    mu.write_register(DDR_CONTROL_W, 0x1);
+    cout << hex << "DDR Status: 0x" << mu.read_register_ro(DDR_STATUS_R) << endl;
     
-//     constant DDR3_CONTROL_W									: integer := 16#20#;
-//     constant DDR3_BIT_ENABLE_A								: integer := 0;
-//     constant DDR3_BIT_COUNTERTEST_A						    : integer := 1;
-//     subtype  DDR3_COUNTERSEL_RANGE_A						is integer range 15 downto 14;		
-//     constant DDR3_BIT_ENABLE_B								: integer := 16;
-//     constant DDR3_BIT_COUNTERTEST_B						    : integer := 17;
-//     subtype  DDR3_COUNTERSEL_RANGE_B						is integer range 31 downto 30;
+//     constant DDR_CONTROL_W									: integer := 16#20#;
+//     constant DDR_BIT_ENABLE_A								: integer := 0;
+//     constant DDR_BIT_COUNTERTEST_A						    : integer := 1;
+//     subtype  DDR_COUNTERSEL_RANGE_A						is integer range 15 downto 14;		
+//     constant DDR_BIT_ENABLE_B								: integer := 16;
+//     constant DDR_BIT_COUNTERTEST_B						    : integer := 17;
+//     subtype  DDR_COUNTERSEL_RANGE_B						is integer range 31 downto 30;
     
 }

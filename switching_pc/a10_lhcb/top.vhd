@@ -92,12 +92,13 @@ architecture arch of top is
 
     -- constants
     constant SWB_ID : std_logic_vector(7 downto 0) := x"01";
-    constant g_NLINKS_FEB_TOTL   : positive := 16;
-    constant g_NLINKS_FARM_TOTL  : positive := 16;
-    constant g_NLINKS_FARM_PIXEL : positive := 8;
-    constant g_NLINKS_DATA_PIXEL : positive := 10;
-    constant g_NLINKS_FARM_SCIFI : positive := 8;
-    constant g_NLINKS_DATA_SCIFI : positive := 4;
+    constant g_NLINKS_FEB_TOTL   : positive := 12;
+    constant g_NLINKS_FARM_TOTL  : positive := 3;
+    constant g_NLINKS_FARM_PIXEL : positive := 2;
+    constant g_NLINKS_DATA_PIXEL_US : positive := 5;
+    constant g_NLINKS_DATA_PIXEL_DS : positive := 5;
+    constant g_NLINKS_FARM_SCIFI : positive := 1;
+    constant g_NLINKS_DATA_SCIFI : positive := 2;
     constant g_NLINKS_FARM_TILE  : positive := 8;
     constant g_NLINKS_DATA_TILE  : positive := 12;
 
@@ -105,7 +106,7 @@ architecture arch of top is
     signal reset_n : std_logic;
 
 
-
+    
     -- local 100 MHz clock
     signal clk_100, reset_100_n : std_logic;
 
@@ -114,19 +115,16 @@ architecture arch of top is
     -- global 125 MHz clock
     signal clk_125, reset_125_n : std_logic;
 
-    signal clk_156, reset_156_n, clk_250, reset_250_n : std_logic;
+    signal clk_250, reset_250_n : std_logic;
 
     -- 250 MHz pcie clock
     signal pcie0_clk : std_logic;
     signal pcie0_reset_n : std_logic;
 
     -- pcie read / write registers
-    signal pcie0_resets_n_A   : std_logic_vector(31 downto 0);
-    signal pcie0_resets_n_B   : std_logic_vector(31 downto 0);
-    signal pcie0_writeregs_A  : work.util.slv32_array_t(63 downto 0);
-    signal pcie0_writeregs_B  : work.util.slv32_array_t(63 downto 0);
-    signal pcie0_readregs_A   : work.util.slv32_array_t(63 downto 0);
-    signal pcie0_readregs_B   : work.util.slv32_array_t(63 downto 0);
+    signal pcie0_resets_n   : std_logic_vector(31 downto 0);
+    signal pcie0_writeregs  : work.util.slv32_array_t(63 downto 0);
+    signal pcie0_readregs   : work.util.slv32_array_t(63 downto 0);
 
     -- pcie read / write memory
     signal readmem_writedata    : std_logic_vector(31 downto 0);
@@ -139,11 +137,13 @@ architecture arch of top is
     signal dma_data_wren, dmamem_endofevent, pcie0_dma0_hfull : std_logic;
     signal dma_data : std_logic_vector(255 downto 0);
 
-    signal rx_data_raw, rx_data, tx_data : work.util.slv32_array_t(23 downto 0) := (others => X"000000BC");
-    signal rx_datak_raw, rx_datak, tx_datak : work.util.slv4_array_t(23 downto 0) := (others => "0001");
+    signal feb_rx_data, feb_tx_data : work.util.slv32_array_t(23 downto 0) := (others => x"000000BC");
+    signal feb_rx_datak, feb_tx_datak : work.util.slv4_array_t(23 downto 0) := (others => "0001");
+    signal feb_rx, feb_tx : work.mu3e.link_array_t(g_NLINKS_FEB_TOTL-1 downto 0) := (others => work.mu3e.LINK_IDLE);
 
     signal farm_rx_data, farm_tx_data : work.util.slv32_array_t(23 downto 0) := (others => X"000000BC");
     signal farm_rx_datak, farm_tx_datak : work.util.slv4_array_t(23 downto 0) := (others => "0001");
+    signal farm_rx, farm_tx : work.mu3e.link_array_t(g_NLINKS_FARM_TOTL-1 downto 0) := (others => work.mu3e.LINK_IDLE);
 
     -- pll locked signal top
     signal locked_100to125 : std_logic;
@@ -187,7 +187,9 @@ begin
     A10_SI5345_1_JITTER_CLOCK_P <= clk_125;
     A10_SI5345_2_JITTER_CLOCK_P <= clk_125;
 
-
+    e_pcieref_clk_hz : entity work.clkdiv
+    generic map ( P => 100000000 )
+    port map ( o_clk => led(4), i_reset_n => reset_n, i_clk => i_pcie0_refclk );
 
     --! A10 block
     --! ------------------------------------------------------------------------
@@ -258,11 +260,11 @@ begin
         o_xcvr0_tx                      => tx_gbt(23 downto 0),
         i_xcvr0_refclk                  => A10_REFCLK_GBT_P_3 & A10_REFCLK_GBT_P_2 & A10_REFCLK_GBT_P_1 & A10_REFCLK_GBT_P_0,
 
-        o_xcvr0_rx_data                 => rx_data_raw,
-        o_xcvr0_rx_datak                => rx_datak_raw,
-        i_xcvr0_tx_data                 => tx_data,
-        i_xcvr0_tx_datak                => tx_datak,
-        i_xcvr0_clk                     => clk_156,
+        o_xcvr0_rx_data                 => feb_rx_data,
+        o_xcvr0_rx_datak                => feb_rx_datak,
+        i_xcvr0_tx_data                 => feb_tx_data,
+        i_xcvr0_tx_datak                => feb_tx_datak,
+        i_xcvr0_clk                     => pcie0_clk,
 
         -- XCVR1 (10000 Mbps @ 250 MHz)
         i_xcvr1_rx                      => rx_gbt(47 downto 24),
@@ -281,8 +283,6 @@ begin
         o_sfp_tx(0)                     => A10_SFP1_TFC_TX_P,
         o_sfp_tx(1)                     => A10_SFP2_TFC_TX_P,
         i_sfp_refclk                    => A10_REFCLK_TFC_CMU_P,
-
-
 
         -- PCIe0
         i_pcie0_rx                      => i_pcie0_rx,
@@ -303,33 +303,24 @@ begin
         -- PCIe0 read interface to writable memory
         i_pcie0_wmem_addr               => writememreadaddr,
         o_pcie0_wmem_rdata              => writememreaddata,
-        i_pcie0_wmem_clk                => clk_156,
+        i_pcie0_wmem_clk                => pcie0_clk,
 
         -- PCIe0 write interface to readable memory
         i_pcie0_rmem_addr               => readmem_writeaddr,
         i_pcie0_rmem_wdata              => readmem_writedata,
         i_pcie0_rmem_we                 => readmem_wren,
-        i_pcie0_rmem_clk                => clk_156,
+        i_pcie0_rmem_clk                => pcie0_clk,
 
         -- PCIe0 update interface for readable registers
-        i_pcie0_rregs_A                 => pcie0_readregs_A,
-        i_pcie0_rregs_B                 => pcie0_readregs_B,
+        i_pcie0_rregs                   => pcie0_readregs,
 
         -- PCIe0 read interface for writable registers
-        o_pcie0_wregs_A                 => pcie0_writeregs_A,
-        i_pcie0_wregs_A_clk             => pcie0_clk,
-        o_pcie0_wregs_B                 => pcie0_writeregs_B,
-        i_pcie0_wregs_B_clk             => clk_156,
-        o_pcie0_wregs_C                 => open,
-        i_pcie0_wregs_C_clk             => clk_156,
-        o_pcie0_resets_n_A              => pcie0_resets_n_A,
-        o_pcie0_resets_n_B              => pcie0_resets_n_B,
+        o_pcie0_wregs                   => pcie0_writeregs,
+        i_pcie0_wregs_clk               => pcie0_clk,
+        o_pcie0_resets_n                => pcie0_resets_n,
 
         -- resets clk
-        top_pll_locked                  => locked_100to125,
 
-        o_reset_156_n                   => reset_156_n,
-        o_clk_156                       => clk_156,
         o_clk_156_hz                    => led(2),
 
         i_reset_125_n                   => reset_125_n,
@@ -340,6 +331,20 @@ begin
         i_clk                           => clk_100--,
     );
 
+    --! map links
+    generate_feb_links : for i in 0 to g_NLINKS_FEB_TOTL - 1 generate
+        feb_rx(i).data     <= feb_rx_data(i);
+        feb_rx(i).datak    <= feb_rx_datak(i);
+        feb_tx_data(i)     <= feb_tx(i).data;
+        feb_tx_datak(i)    <= feb_tx(i).datak;
+    end generate;
+
+    generate_farm_links : for i in 0 to g_NLINKS_FARM_TOTL - 1 generate
+        farm_rx(i).data     <= farm_rx_data(i);
+        farm_rx(i).datak    <= farm_rx_datak(i);
+        farm_tx_data(i)     <= farm_tx(i).data;
+        farm_tx_datak(i)    <= farm_tx(i).datak;
+    end generate;
 
 
     --! SWB Block
@@ -351,26 +356,20 @@ begin
         g_NLINKS_FEB_TOTL       => g_NLINKS_FEB_TOTL,
         g_NLINKS_FARM_TOTL      => g_NLINKS_FARM_TOTL,
         g_NLINKS_FARM_PIXEL     => g_NLINKS_FARM_PIXEL,
-        g_NLINKS_DATA_PIXEL     => g_NLINKS_DATA_PIXEL,
+        g_NLINKS_DATA_PIXEL     => g_NLINKS_DATA_PIXEL_US + g_NLINKS_DATA_PIXEL_DS,
+        g_NLINKS_DATA_PIXEL_US  => g_NLINKS_DATA_PIXEL_US,
+        g_NLINKS_DATA_PIXEL_DS  => g_NLINKS_DATA_PIXEL_DS,
         g_NLINKS_FARM_SCIFI     => g_NLINKS_FARM_SCIFI,
         g_NLINKS_DATA_SCIFI     => g_NLINKS_DATA_SCIFI,
         SWB_ID                  => SWB_ID--,
     )
     port map (
-        -- TODO: rename to feb_data_rx, etc.
-        i_rx            => rx_data_raw(15 downto 0),
-        i_rx_k          => rx_datak_raw(15 downto 0),
-        o_tx            => tx_data(15 downto 0),
-        o_tx_k          => tx_datak(15 downto 0),
+        i_feb_rx        => feb_rx,
+        o_feb_tx        => feb_tx,
 
-        i_writeregs_250 => pcie0_writeregs_A,
-        i_writeregs_156 => pcie0_writeregs_B,
-
-        o_readregs_250  => pcie0_readregs_A,
-        o_readregs_156  => pcie0_readregs_B,
-
-        i_resets_n_250  => pcie0_resets_n_A,
-        i_resets_n_156  => pcie0_resets_n_B,
+        i_writeregs     => pcie0_writeregs,
+        o_readregs      => pcie0_readregs,
+        i_resets_n      => pcie0_resets_n,
 
         i_wmem_rdata    => writememreaddata,
         o_wmem_addr     => writememreadaddr,
@@ -384,16 +383,10 @@ begin
         o_endofevent    => dmamem_endofevent,
         o_dma_data      => dma_data,
 
-        o_farm_tx_data  => farm_tx_data(15 downto 0),
-        o_farm_tx_datak => farm_tx_datak(15 downto 0),
+        o_farm_tx       => farm_tx,
 
-        --! 250 MHz clock / reset_n
-        i_reset_n_250   => pcie0_reset_n,
-        i_clk_250       => pcie0_clk,
-
-        --! 156 MHz clock / reset_n
-        i_reset_n_156   => reset_156_n,
-        i_clk_156       => clk_156--,
+        i_reset_n       => pcie0_reset_n,
+        i_clk           => pcie0_clk--,
     );
 
 end architecture;

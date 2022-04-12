@@ -82,12 +82,12 @@ EQUIPMENT equipment[] = {
 INT poll_event(__attribute__((unused)) INT source, __attribute__((unused)) INT count, __attribute__((unused))BOOL test)
 {
    return 1;
-};
+}
 
 INT interrupt_configure(__attribute__((unused)) INT cmd, __attribute__((unused)) INT source, __attribute__((unused)) PTYPE adr)
 {
    return 1;
-};
+}
 
 /*-- Function to define MSCB variables in a convenient way ---------*/
 

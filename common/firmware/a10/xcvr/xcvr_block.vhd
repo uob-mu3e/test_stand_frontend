@@ -27,6 +27,8 @@ port (
     o_tx_clk            : out   std_logic_vector(g_XCVR_N*g_CHANNELS-1 downto 0);
     i_tx_clk            : in    std_logic_vector(g_XCVR_N*g_CHANNELS-1 downto 0);
 
+    o_rx_locked         : out   std_logic_vector(g_XCVR_N*g_CHANNELS-1 downto 0);
+
     -- avalon slave interface
     -- # address units words
     -- # read latency 0
@@ -92,6 +94,8 @@ begin
             i_rx_clkin  => i_rx_clk(g_CHANNELS*i + g_CHANNELS-1 downto 0 + g_CHANNELS*i),
             o_tx_clkout => o_tx_clk(g_CHANNELS*i + g_CHANNELS-1 downto 0 + g_CHANNELS*i),
             i_tx_clkin  => i_tx_clk(g_CHANNELS*i + g_CHANNELS-1 downto 0 + g_CHANNELS*i),
+
+            o_rx_locked => o_rx_locked((i+1)*g_CHANNELS-1 downto i*g_CHANNELS),
 
             i_avs_address     => av(i).address(13 downto 0),
             i_avs_read        => av(i).read,

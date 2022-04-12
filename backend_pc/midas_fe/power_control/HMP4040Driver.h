@@ -21,13 +21,15 @@ class HMP4040Driver : public PowerDriver {
 		INT ConnectODB();
 		INT Init();
 		INT ReadAll();
+
+        std::string GenerateCommand(COMMAND_TYPE cmdt, float val) override;
 	
 	private:
 	
+        std::string idCode;
+        std::string ip;
 		void InitODBArray();
 		bool AskPermissionToTurnOn(int);
-		std::string idCode;
-		std::string ip;
 
 		//watch
 		void ReadESRChanged();

@@ -31,6 +31,8 @@ using std::vector;
 
 using midas::odb;
 
+using namespace mu3ebanks;
+
 /* Start address of power in the crate controller - TODO: Move to an appropriate header*/
 constexpr uint8_t CC_POWER_OFFSET = 5;
 constexpr uint8_t CC_VT_READOUT_START = 1;
@@ -80,7 +82,7 @@ INT init_crates();
 /*-- Equipment list ------------------------------------------------*/
 EQUIPMENT equipment[] = {
     {"FEBCrates",                    /* equipment name */
-    {114, 0,                      /* event ID, trigger mask */
+    {152, 0,                      /* event ID, trigger mask */
      "SYSTEM",                  /* event buffer */
      EQ_PERIODIC,                 /* equipment type */
      0,                         /* event source crate 0, all stations */

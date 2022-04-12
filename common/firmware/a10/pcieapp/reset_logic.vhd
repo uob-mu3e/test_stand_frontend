@@ -16,55 +16,59 @@ use work.a10_pcie_registers.all;
 
 entity reset_logic is
 port (
-    reset_register      : in    std_logic_vector(31 downto 0);
---    reset_reg_written   : in    std_logic;
+    i_reset_register    : in    std_logic_vector(31 downto 0);
+--    i_reset_reg_written : in    std_logic;
 
-    resets              : out   std_logic_vector(31 downto 0);
-    resets_n            : out   std_logic_vector(31 downto 0);
+    o_resets_n          : out   std_logic_vector(31 downto 0);
 
-    rst_n               : in    std_logic;
-    clk                 : in    std_logic--;
+    i_reset_n           : in    std_logic;
+    i_clk               : in    std_logic--;
 );
 end entity;
 
 architecture rtl of reset_logic is
 
-    signal resets_reg, resets_del0, resets_del1, resets_del2, resets_del3, resets_del4 : std_logic_vector(reset_register'range);
+    signal reset_register : std_logic_vector(i_reset_register'range);
+    signal resets_n, resets0, resets1, resets2, resets3, resets4 : std_logic_vector(o_resets_n'range);
 
 begin
 
-    resets <= resets_reg;
-    resets_n <= not resets_reg;
-
-    process(clk, rst_n)
+    process(i_clk, i_reset_n)
     begin
-    if ( rst_n = '0' ) then
-        resets_reg  <= (others => '1');
-        resets_del0 <= (others => '0');
-        resets_del1 <= (others => '0');
-        resets_del2 <= (others => '0');
-        resets_del3 <= (others => '0');
-        resets_del4 <= (others => '0');
+    if ( i_reset_n = '0' ) then
+        reset_register  <= (others => '0');
+        o_resets_n      <= (others => '0');
+        resets_n        <= (others => '0');
+        resets0         <= (others => '0');
+        resets1         <= (others => '0');
+        resets2         <= (others => '0');
+        resets3         <= (others => '0');
+        resets4         <= (others => '0');
         --
-    elsif rising_edge(clk) then
+    elsif rising_edge(i_clk) then
+        reset_register <= i_reset_register;
 
-        resets_reg <= resets_del0 or resets_del1 or resets_del2 or resets_del3 or resets_del4;
+        o_resets_n <= resets_n;
 
-        resets_del0 <= (others => '0');
-        resets_del1 <= resets_del0;
-        resets_del2 <= resets_del1;
-        resets_del3 <= resets_del2;
-        resets_del4 <= resets_del3;
+        resets_n <= not ( resets0 or resets1 or resets2 or resets3 or resets4 );
 
---        if ( reset_reg_written <= '1' and reset_register(RESET_BIT_ALL) = '1' ) then
-        if ( reset_register(RESET_BIT_ALL) = '1' ) then
-            resets_del0 <= (others => '1');
+        resets0 <= (others => '0');
+        resets1 <= resets0;
+        resets2 <= resets1;
+        resets3 <= resets2;
+        resets4 <= resets3;
+
+        if ( reset_register(RESET_BIT_ALL) = '1'
+--            and reset_reg_written <= '1'
+        ) then
+            resets0 <= (others => '1');
         end if;
 
         for i in reset_register'range loop
---            if ( reset_reg_written <= '1' and reset_register(i) = '1' ) then
-            if ( reset_register(i) = '1' ) then
-                resets_del0(i) <= '1';
+            if ( reset_register(i) = '1'
+--                and reset_reg_written <= '1'
+            ) then
+                resets0(i) <= '1';
             end if;
         end loop;
 

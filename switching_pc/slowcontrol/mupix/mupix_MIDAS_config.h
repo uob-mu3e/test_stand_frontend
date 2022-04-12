@@ -20,6 +20,9 @@ typedef unsigned int DWORD;
 typedef DWORD BOOL;
 typedef int INT;
 
+//TODO: The fine grained inclusion giards here actually dangerous and allow for these constants
+// to be multiply defined, which produces very nice bugs. Get rid of them!
+
 
 #ifndef MU3EDAQ_MUPIX_MIDAS_CONFIG_H
 #define MU3EDAQ_MUPIX_MIDAS_CONFIG_H
@@ -35,8 +38,10 @@ typedef struct {
 } MUPIX_GLOBAL;
 
 static odb MUPIX_GLOBAL_SETTINGS = {
-        {"Num asics", 6},   // This is for the EDM 122021 run
-        {"Num boards", 2},  // This is for the EDM 122021 run
+        //{"Num asics", 6},   // This is for the EDM 122021 run
+        //{"Num boards", 2},  // This is for the EDM 122021 run
+        {"Num asics", 120},   // This is for the 2022 cosmic run
+        {"Num boards", 10},  // This is for the 2022 cosmic run
         {"Num rows", 250},
         {"Num cols", 256},
 };
@@ -323,21 +328,13 @@ typedef struct {
 } MUPIX_GLOBAL_FEBS;
 
 static odb MUPIX_GLOBAL_FEBS_SETTINGS = {
-    {"ASICsPerFEB", 3}  // This is for the EDM 122021 run
+    //{"ASICsPerFEB", 3}  // This is for the EDM 122021 run
+    {"ASICsPerFEB", 12}  // This is for the CosmicRun 042022 run
 };
 
 #endif
 
-#ifndef MUPIX_PSLL_DEFINED
-#define MUPIX_PSLL_DEFINED
 
-//// PSLL
-/// TODO: we need this for different SWBs in the future for now its only central
-constexpr uint32_t per_fe_PSLL_size = 4;
-constexpr uint32_t lvds_links_per_feb = 36;
-const std::string banknamePSLL = "PSLL";
-const std::string namestrPSLL = "Names PSLL";
 
-#endif
 
 #endif //MU3EDAQ_MUPIX_MIDAS_CONFIG_H

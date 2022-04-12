@@ -1,11 +1,8 @@
 #
 
+set_global_assignment -name VHDL_FILE [ file join $::quartus(qip_path) a10_block.vhd ]
 set_global_assignment -name VHDL_FILE [ file join $::quartus(qip_path) link_observer.vhd ]
-set_global_assignment -name VHDL_FILE [ file join $::quartus(qip_path) dma_evaluation.vhd ]
 set_global_assignment -name VHDL_FILE [ file join $::quartus(qip_path) hex2seg7.vhd ]
-set_global_assignment -name VHDL_FILE [ file join $::quartus(qip_path) swb_data_demerger.vhd ]
-set_global_assignment -name VHDL_FILE [ file join $::quartus(qip_path) swb_sc_main.vhd ]
-set_global_assignment -name VHDL_FILE [ file join $::quartus(qip_path) swb_sc_secondary.vhd ]
 set_global_assignment -name VHDL_FILE [ file join $::quartus(qip_path) data_generator_a10.vhd ]
 set_global_assignment -name VHDL_FILE [ file join $::quartus(qip_path) run_control.vhd ]
 set_global_assignment -name VHDL_FILE [ file join $::quartus(qip_path) run_control_link_listener.vhd ]
@@ -13,5 +10,7 @@ set_global_assignment -name VHDL_FILE [ file join $::quartus(qip_path) link_to_f
 
 set_global_assignment -name VHDL_FILE [ file join $::quartus(qip_path) chip_lookup_int_2021.vhd ]
 set_global_assignment -name VHDL_FILE [ file join $::quartus(qip_path) chip_lookup_edm_2021.vhd ]
-set_global_assignment -name VHDL_FILE [ file join $::quartus(qip_path) a10_reset_link.vhd ]
 set_global_assignment -name VHDL_FILE [ file join $::quartus(qip_path) chip_lookup.vhd ]
+set_global_assignment -name VHDL_FILE [ file join $::quartus(qip_path) a10_reset_link.vhd ]
+
+set_global_assignment -name QIP_FILE [ file join $::quartus(qip_path) link/include.qip ]

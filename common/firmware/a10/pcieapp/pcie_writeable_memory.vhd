@@ -100,15 +100,13 @@ begin
     plength <= rx_st_data0(9 downto 8) & rx_st_data0(7 downto 0);
 
     process(local_rstn, refclk)
-
     begin
-
-    if(local_rstn = '0') then
+    if ( local_rstn = '0' ) then
         state <= reset;
         tomemwren_r <= '0';
         tomemwren <= '0';
-
-    elsif (refclk'event and refclk = '1') then
+        --
+    elsif rising_edge(refclk) then
         readen <= '0';
 
         tomemaddr <= tomemaddr_r;
@@ -119,7 +117,7 @@ begin
             when reset =>
                 state <= waiting;
                 tomemwren_r <= '0';
-    -------------------------------------------------------------------------------------
+                --
             when waiting =>
                 tomemwren_r <= '0';
                 if(rx_st_sop0 = '1' and rx_bar = '1') then
@@ -143,11 +141,13 @@ begin
                         state <= waiting;
                     end if; -- 32 bit write/read request
                 end if; -- if Start of Packet
-    ----------------------------------------------------------------------------------
-
+                --
             when others =>
                 state <= waiting;
+                --
         end case;
+
+        --
     end if; -- if clk event
     end process;
 

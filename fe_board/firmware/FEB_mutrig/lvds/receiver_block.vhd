@@ -3,7 +3,7 @@
 -- On detector FPGA for layer 0/1
 -- Receiver block for all the LVDS links
 -- Niklaus Berger, May 2013
--- 
+--
 -- nberger@physi.uni-heidelberg.de
 --
 -- Adaptions for MuPix8 Telescope
@@ -28,7 +28,7 @@ generic (
 );
 port (
     -- serial lines
-    rx_in               : in std_logic_vector(NINPUT-1 downto 0);
+    rx_in               : in std_logic_vector(NINPUT-1 downto 0) := (others => '0');
 
     -- ref.clocks
     rx_inclock_A        : in std_logic;
@@ -273,7 +273,6 @@ begin
             o_runcounter        => rx_runcounter(i),
             o_errcounter        => rx_errorcounter(i),
             o_synclosscounter   => rx_synclosscounter(i)
-
         );
 
         -- sync rx data to i_clk_global
@@ -292,8 +291,8 @@ begin
             i_rack          => not fifo_rempty(i),
             o_rdata         => fifo_rdata(i*9+8 downto i*9),
             o_rempty        => fifo_rempty(i),
-            i_rclk          => i_clk,
 
+            i_rclk          => i_clk,
             i_reset_n       => i_reset_n--,
         );
 

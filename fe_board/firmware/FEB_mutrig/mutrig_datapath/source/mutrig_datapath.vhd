@@ -14,35 +14,36 @@ use work.mutrig.all;
 
 entity mutrig_datapath is
 generic(
-    IS_SCITILE : std_logic := '1';
+    IS_SCITILE          : std_logic := '1';
     N_MODULES           : integer range 1 to 2 := 1;
+    N_INPUTSRX          : positive := 8;
     N_ASICS             : positive := 1;
     N_LINKS             : positive := 1;
     N_CC                : positive := 15; -- will be always 15
     LVDS_PLL_FREQ       : real := 125.0;
     LVDS_DATA_RATE      : real := 1250.0;
     GEN_DUMMIES         : boolean := TRUE;
-    INPUT_SIGNFLIP : std_logic_vector(31 downto 0):=x"00000000";
-    C_ASICNO_PREFIX_A: std_logic_vector:=""; --use prefix value as the first bits (MSBs) of the chip number field. Leave empty to append nothing and use all bits from Input # numbering
-    C_ASICNO_PREFIX_B: std_logic_vector:=""
+    INPUT_SIGNFLIP      : std_logic_vector(31 downto 0):=x"00000000";
+    C_ASICNO_PREFIX_A   : std_logic_vector:=""; --use prefix value as the first bits (MSBs) of the chip number field. Leave empty to append nothing and use all bits from Input # numbering
+    C_ASICNO_PREFIX_B   : std_logic_vector:=""--;
     --(e.g. Tiles,  one module with up to 16 ASICs, PREFIX="")
     --(e.g. Fibers, two modules with up to 4 ASICs each, PREFIX="00" ; "01" for A and B )
 );
 port (
     i_rst_core                  : in  std_logic;    -- logic reset of digital core (buffer clear, 156MHz clock synced)
     i_rst_rx                    : in  std_logic;    -- logic reset of lvds receivers (125MHz clock synced)
-    i_stic_txd                  : in  std_logic_vector(N_MODULES*N_ASICS-1 downto 0);   -- serial data
+    i_stic_txd                  : in  std_logic_vector(N_INPUTSRX-1 downto 0);   -- serial data
     i_refclk_125_A              : in  std_logic;    -- ref clk for lvds pll (A-Side)
     i_refclk_125_B              : in  std_logic;    -- ref clk for lvds pll (B-Side)
     i_ts_clk                    : in  std_logic;    -- ref clk for global timestamp
     i_ts_rst                    : in  std_logic;    -- global timestamp reset, high active
 
-    --interface to asic fifos
+    -- interface to asic fifos
     o_fifo_data                 : out std_logic_vector(N_LINKS*36-1 downto 0);
     o_fifo_wr                   : out std_logic_vector(N_LINKS-1 downto 0);
     i_common_fifos_almost_full  : in  std_logic_vector(N_LINKS-1 downto 0);
 
-    --slow control
+    -- slow control
     i_SC_disable_dec            : in  std_logic;
     i_SC_mask                   : in  std_logic_vector(N_MODULES*N_ASICS-1 downto 0);
     i_SC_mask_rx                : in  std_logic_vector(N_MODULES*N_ASICS-1 downto 0);
@@ -52,15 +53,16 @@ port (
     i_SC_rx_wait_for_all        : in  std_logic;
     i_SC_rx_wait_for_all_sticky : in  std_logic;
     
-    --run control
+    -- run control
     i_RC_may_generate           : in  std_logic; --do not generate new frames for runstates that are not RUNNING, allows to let fifos run empty
     o_RC_all_done               : out std_logic; --all fifos empty, all data read
 
     -- lapse lapse counter
     i_en_lapse_counter          : in  std_logic;
     i_upper_bnd                 : in  std_logic_vector(N_CC - 1 downto 0);
+    i_lower_bnd                 : in  std_logic_vector(N_CC - 1 downto 0);
 
-    --monitors
+    -- monitors
     o_receivers_pll_lock        : out std_logic; -- pll lock flag
     o_receivers_dpa_lock        : out std_logic_vector(N_MODULES*N_ASICS-1 downto 0); -- dpa lock flag per channel
     o_receivers_ready           : out std_logic_vector(N_MODULES*N_ASICS-1 downto 0); -- receiver output ready flag
@@ -195,27 +197,28 @@ begin
     -- u_rxdeser: entity work.receiver_block
     -- generic map(
     --     IS_SCITILE      => IS_SCITILE,
-    --     NINPUT          => N_ASICS_TOTAL,
+    --     NINPUT          => N_INPUTSRX,
     --     LVDS_PLL_FREQ   => LVDS_PLL_FREQ,
     --     LVDS_DATA_RATE  => LVDS_DATA_RATE,
     --     INPUT_SIGNFLIP  => INPUT_SIGNFLIP
     -- )
     -- port map(
-    --     rx_in               => i_stic_txd,
+    --     rx_in                                           => i_stic_txd,
+
+    --     rx_state(2*N_ASICS_TOTAL-1 downto 0)            => s_receivers_state,
+    --     rx_ready(N_ASICS_TOTAL-1 downto 0)              => s_receivers_ready,
+    --     pll_locked                                      => o_receivers_pll_lock,
+    --     rx_dpa_locked_out(N_ASICS_TOTAL-1 downto 0)     => o_receivers_dpa_lock,
+    --     rx_runcounter(N_ASICS_TOTAL-1 downto 0)         => s_receivers_runcounter,
+    --     rx_errorcounter(N_ASICS_TOTAL-1 downto 0)       => s_receivers_errorcounter,
+    --     rx_synclosscounter(N_ASICS_TOTAL-1 downto 0)    => s_receivers_synclosscounter,
+    --     reset_n_errcnt                                  => s_SC_reset_counters_125_n,
+
+    --     o_rx_data(N_ASICS_TOTAL*8-1 downto 0)           => s_receivers_data,
+    --     o_rx_datak(N_ASICS_TOTAL-1 downto 0)            => s_receivers_data_isk,
+
     --     rx_inclock_A        => i_refclk_125_A,
     --     rx_inclock_B        => i_refclk_125_B,
-
-    --     rx_state            => s_receivers_state,
-    --     rx_ready            => s_receivers_ready,
-    --     pll_locked          => o_receivers_pll_lock,
-    --     rx_dpa_locked_out   => o_receivers_dpa_lock,
-    --     rx_runcounter       => s_receivers_runcounter,
-    --     rx_errorcounter     => s_receivers_errorcounter,
-    --     rx_synclosscounter  => s_receivers_synclosscounter,
-    --     reset_n_errcnt      => s_SC_reset_counters_125_n,
-
-    --     o_rx_data           => s_receivers_data,
-    --     o_rx_datak          => s_receivers_data_isk,
 
     --     i_reset_n           => not i_rst_rx,
     --     i_clk               => i_clk_125
@@ -224,25 +227,25 @@ begin
 
     o_receivers_ready <= s_receivers_ready;
 
-    --generate a pll-synchronous all-ready signal for the data receivers.
-    --this assures all start dumping data into the fifos at the same time, and we do not enter a deadlock scenario from the start
+    -- generate a pll-synchronous all-ready signal for the data receivers.
+    -- this assures all start dumping data into the fifos at the same time, and we do not enter a deadlock scenario from the start
     gen_ready_all : process (i_clk_125, i_rst_rx, s_receivers_ready, i_SC_mask_rx)
     variable v_ready : std_logic_vector(N_ASICS_TOTAL-1 downto 0);
     begin
     if ( i_rst_rx = '1' ) then
-        s_receivers_all_ready<='0';
+        s_receivers_all_ready <= '0';
         --
     elsif rising_edge(i_clk_125) then
         v_ready := s_receivers_ready or i_SC_mask_rx;
         if ( v_ready = ((v_ready'range)=>'1') ) then
-            s_receivers_all_ready<='1';
+            s_receivers_all_ready <= '1';
         end if;
         --
     end if;
     end process;
 
-    --if i_SC_rx_wait_for_all is set, wait for all (not masked) receivers to become ready before letting any data pass through the frame unpacking blocks.
-    --if i_SC_rx_wait_for_all_sticky is set in addition, the all_ready property is sticky: once all receivers become ready do not block data again.
+    -- if i_SC_rx_wait_for_all is set, wait for all (not masked) receivers to become ready before letting any data pass through the frame unpacking blocks.
+    -- if i_SC_rx_wait_for_all_sticky is set in addition, the all_ready property is sticky: once all receivers become ready do not block data again.
     --            The sticky bit is cleared with i_reset
     --            Otherwise, data is blocked as soon as one receiver is loosing the pattern or sync.
     releasedata_p : process(i_clk_125, i_rst_rx)
@@ -267,7 +270,7 @@ begin
     port map (
         i_reset             => i_rst_rx,
         i_clk               => i_clk_125,
-        --configuration
+        -- configuration
         i_enable            => i_SC_datagen_enable and i_RC_may_generate,
         i_fast              => i_SC_datagen_shortmode,
         i_cnt               => i_SC_datagen_count,
@@ -375,11 +378,11 @@ begin
             i_frame_info        => s_frame_info(i),
             i_frame_number      => s_frame_number(i),
             i_crc_error         => s_crc_error(i),
-            --event data output inteface
+            -- event data output inteface
             o_fifo_data         => s_fifos_data(i),
             o_fifo_empty        => s_fifos_empty(i),
             i_fifo_rd           => s_fifos_rd(i),
-            --monitoring
+            -- monitoring
             o_fifo_full         => s_fifos_full(i),
             i_reset_counters    => not s_SC_reset_counters_125_n,
             o_eventcounter      => s_eventcounter(i),
@@ -402,15 +405,15 @@ begin
         C_ASICNO_PREFIX => C_ASICNO_PREFIX_A--,
     )
     port map(
-        --event data inputs interface
+        -- event data inputs interface
         i_data       => s_fifos_data(N_ASICS-1 downto 0),
         i_rempty     => s_fifos_empty(N_ASICS-1 downto 0),
         o_ren        => s_fifos_rd(N_ASICS-1 downto 0),
-        --event data output interface to big buffer storage
+        -- event data output interface to big buffer storage
         o_data       => s_A_buf_predec_data,
         i_wfull      => s_A_buf_predec_full,
         o_wen        => s_A_buf_predec_wr,
-        --monitoring, errors, slow control
+        -- monitoring, errors, slow control
         o_busy       => s_A_mux_busy,
         o_sync_error => o_frame_desync(0),
         i_mask       => i_SC_mask(N_ASICS-1 downto 0),
@@ -419,6 +422,32 @@ begin
         i_clk        => i_clk_125,
         i_reset_n    => not i_rst_core--,
     );
+    --mux between asic channels
+    -- u_mux_A : entity work.framebuilder_mux
+    -- generic map( 
+    --     N_INPUTS => N_ASICS,
+    --     N_INPUTID_BITS => 4,
+    --     C_CHANNELNO_PREFIX => C_ASICNO_PREFIX_A--,
+    -- )
+    -- port map(
+    --     i_coreclk           => i_clk_125,
+    --     i_rst               => i_rst_core,
+    --     i_timestamp_clk     => i_clk_125,
+    --     i_timestamp_rst     => i_ts_rst,
+    --     --event data inputs interface
+    --     i_source_data       => s_fifos_data(N_ASICS-1 downto 0),
+    --     i_source_empty      => s_fifos_empty(N_ASICS-1 downto 0),
+    --     o_source_rd         => s_fifos_rd(N_ASICS-1 downto 0),
+    --     --event data output interface to big buffer storage
+    --     o_sink_data         => s_A_buf_predec_data,
+    --     i_sink_full         => s_A_buf_predec_full,
+    --     o_sink_wr           => s_A_buf_predec_wr,
+    --     --monitoring, errors, slow control
+    --     o_busy              => s_A_mux_busy,
+    --     o_sync_error        => o_frame_desync(0),
+    --     i_SC_mask           => i_SC_mask(N_ASICS-1 downto 0),
+    --     i_SC_nomerge        => '0'--,
+    -- );
 
     gen_dual_mux : if( N_MODULES > 1 ) generate
         u_mux_B : entity work.framebuilder_mux_v2
@@ -429,15 +458,15 @@ begin
             C_ASICNO_PREFIX => C_ASICNO_PREFIX_B--,
         )
         port map(
-            --event data inputs interface
+            -- event data inputs interface
             i_data       => s_fifos_data(N_ASICS_TOTAL-1 downto N_ASICS),
             i_rempty     => s_fifos_empty(N_ASICS_TOTAL-1 downto N_ASICS),
             o_ren        => s_fifos_rd(N_ASICS_TOTAL-1 downto N_ASICS),
-            --event data output interface to big buffer storage
+            -- event data output interface to big buffer storage
             o_data       => s_B_buf_predec_data,
             i_wfull      => s_B_buf_predec_full,
             o_wen        => s_B_buf_predec_wr,
-            --monitoring, errors, slow control
+            -- monitoring, errors, slow control
             o_busy       => s_B_mux_busy,
             o_sync_error => o_frame_desync(1),
             i_mask       => i_SC_mask(N_ASICS_TOTAL-1 downto N_ASICS),
@@ -446,6 +475,31 @@ begin
             i_clk        => i_clk_125,
             i_reset_n    => not i_rst_core--,
         );
+        -- u_mux_B : entity work.framebuilder_mux
+        -- generic map( 
+        --     N_INPUTS => N_ASICS,
+        --     N_INPUTID_BITS => 4,
+        --     C_CHANNELNO_PREFIX => C_ASICNO_PREFIX_B--,
+        -- )
+        -- port map(
+        --     i_coreclk           => i_clk_125,
+        --     i_rst               => i_rst_core,
+        --     i_timestamp_clk     => i_clk_125,
+        --     i_timestamp_rst     => i_ts_rst,
+        --     --event data inputs interface
+        --     i_source_data       => s_fifos_data(N_ASICS_TOTAL-1 downto N_ASICS),
+        --     i_source_empty      => s_fifos_empty(N_ASICS_TOTAL-1 downto N_ASICS),
+        --     o_source_rd         => s_fifos_rd(N_ASICS_TOTAL-1 downto N_ASICS),
+        --     --event data output interface to big buffer storage
+        --     o_sink_data         => s_B_buf_predec_data,
+        --     i_sink_full         => s_B_buf_predec_full,
+        --     o_sink_wr           => s_B_buf_predec_wr,
+        --     --monitoring, errors, slow control
+        --     o_busy              => s_B_mux_busy,
+        --     o_sync_error        => o_frame_desync(1),
+        --     i_SC_mask           => i_SC_mask(N_ASICS_TOTAL-1 downto N_ASICS),
+        --     i_SC_nomerge        => '0'--,
+        -- );
     end generate;
 
     --prbs decoder (two-stream)
@@ -470,13 +524,13 @@ begin
     e_lapse_counter_A : entity work.lapse_counter
     generic map ( N_CC => N_CC )
     port map ( i_clk => i_ts_clk, i_reset_n => not i_ts_rst, i_CC => s_A_buf_data(20 downto 6),
-        i_en => i_en_lapse_counter, i_upper_bnd => i_upper_bnd, o_CC => CC_corrected_A, o_cnt => open );
+        i_upper_bnd => i_upper_bnd, i_lower_bnd => i_lower_bnd, o_CC => CC_corrected_A, o_cnt => open );
 
-    -- generate lapse counter B
-    e_lapse_counter_B : entity work.lapse_counter
-    generic map ( N_CC => N_CC )
-    port map ( i_clk => i_ts_clk, i_reset_n => not i_ts_rst, i_CC => s_B_buf_data(20 downto 6),
-        i_en => i_en_lapse_counter, i_upper_bnd => i_upper_bnd, o_CC => CC_corrected_B, o_cnt => open );
+    -- to fifo_out_1
+    fifo_data(35 downto 0) <=
+        "00" & s_A_buf_data;-- when i_en_lapse_counter = '0' else
+        --"00" & s_A_buf_data(33 downto 21) & CC_corrected_A(14 downto 0) & s_A_buf_data(5 downto 0) when ( s_A_buf_data(33 downto 32) = "00" ) else
+        --"00" & s_A_buf_data;
 
     e_fifo_out_1 : entity work.ip_dcfifo_v2
     generic map (
@@ -500,11 +554,6 @@ begin
     o_fifo_data(35 downto 0)    <= sync_fifo_data(35 downto 0) when sync_fifo_empty(0) = '0' else (others => '0');
     sync_fifo_read(0)           <= '1' when sync_fifo_empty(0) = '0' else '0';
     o_fifo_wr(0)                <= '1' when sync_fifo_empty(0) = '0' else '0';
-    
-    --to common fifo buffer:
-    fifo_data(35 downto 0) <=
-        "00" & s_A_buf_data(33 downto 21) & CC_corrected_A(14 downto 0) & s_A_buf_data(5 downto 0) when ( s_A_buf_data(33 downto 32) = "00" ) else
-        "00" & s_A_buf_data;
 
     e_sync_common_fifos_almost_full_A : entity work.ff_sync
     generic map ( W => i_common_fifos_almost_full'length )
@@ -514,6 +563,19 @@ begin
     );
 
     gen_dual_cfifo: if( N_LINKS > 1 ) generate
+
+        -- generate lapse counter B
+        e_lapse_counter_B : entity work.lapse_counter
+        generic map ( N_CC => N_CC )
+        port map ( i_clk => i_ts_clk, i_reset_n => not i_ts_rst, i_CC => s_B_buf_data(20 downto 6),
+            i_upper_bnd => i_upper_bnd, i_lower_bnd => i_lower_bnd, o_CC => CC_corrected_B, o_cnt => open );
+
+        -- to fifo_out_2
+        fifo_data(71 downto 36) <=
+            "00" & s_B_buf_data;-- when i_en_lapse_counter = '0' else
+            --"00" & s_B_buf_data(33 downto 21) & CC_corrected_B(14 downto 0) & s_B_buf_data(5 downto 0) when ( s_B_buf_data(33 downto 32) = "00" ) else
+            --"00" & s_B_buf_data;
+
         e_fifo_out_2 : entity work.ip_dcfifo_v2
         generic map (
             g_ADDR_WIDTH => 8,
@@ -536,10 +598,6 @@ begin
         o_fifo_data(71 downto 36)   <= sync_fifo_data(71 downto 36) when sync_fifo_empty(1) = '0' else (others => '0');
         sync_fifo_read(1)           <= '1' when sync_fifo_empty(1) = '0' else '0';
         o_fifo_wr(1)                <= '1' when sync_fifo_empty(1) = '0' else '0';
-
-        fifo_data(71 downto 36) <=
-            "00" & s_B_buf_data(33 downto 21) & CC_corrected_B(14 downto 0) & s_B_buf_data(5 downto 0) when ( s_B_buf_data(33 downto 32) = "00" ) else
-            "00" & s_B_buf_data;
 
         e_sync_common_fifos_almost_full_B : entity work.ff_sync
         generic map ( W => i_common_fifos_almost_full'length )
