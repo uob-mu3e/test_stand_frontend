@@ -52,17 +52,10 @@ class MupixFEB  : public MuFEB{
 
       uint16_t ASICsPerFEB() const;
 
-      // TDAC functions
-      // for each ASIC we have a map for each col which holds a vector for each row information
-      void SetTDACs();
-      vector<std::map<std::string, std::vector<uint32_t>>> GetTDACsJSON() {return TDACsJSON;}
-      vector<std::map<std::string, std::vector<uint32_t>>> TDACsJSON;
-
       //ASIC configuration:
       //Configure all asics under prefix (e.g. prefix="/Equipment/Mupix")
       int ConfigureASICs();
-      //Configure all boards under prefix (e.g. prefix="/Equipment/Mupix")
-      int ConfigureBoards();
+      int ConfigureTDACs();
 
       //FEB registers and functions
       uint32_t ReadBackLVDSNumHits(mappedFEB & FEB, uint16_t LVDS_ID);

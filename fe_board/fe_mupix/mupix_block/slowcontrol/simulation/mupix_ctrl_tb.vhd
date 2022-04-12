@@ -14,7 +14,7 @@ architecture rtl of mupix_ctrl_tb is
     signal counter          : std_logic_vector(31 downto 0);
     signal counter_int      : unsigned(31 downto 0);
 
-    signal reg_add          : std_logic_vector(7 downto 0);
+    signal reg_add          : std_logic_vector(15 downto 0);
     signal reg_re           : std_logic;
     signal reg_rdata        : std_logic_vector(31 downto 0);
     signal reg_we           : std_logic;

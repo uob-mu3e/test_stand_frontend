@@ -1,4 +1,5 @@
--- last change: M.Mueller, November 2020 (muellem@uni-mainz.de)
+-- mupix block of FEB firmware 
+-- M. Mueller
 
 library ieee;
 use ieee.std_logic_1164.all;
@@ -22,7 +23,7 @@ port (
     o_clock                 : out std_logic_vector( 3 downto 0);
     o_SIN                   : out std_logic_vector( 3 downto 0);
     o_mosi                  : out std_logic_vector( 3 downto 0);
-    o_csn                   : out std_logic_vector(11 downto 0);
+    o_cs                    : out std_logic_vector(11 downto 0);
 
     i_run_state_125           : in  run_state_t;
     i_run_state_156           : in  run_state_t;
@@ -61,14 +62,10 @@ end entity;
 
 architecture arch of mupix_block is
 
-    signal datapath_reset_n             : std_logic;
+    signal datapath_reset_n : std_logic;
 
     signal mp_ctrl_reg      : work.util.rw_t;
     signal mp_datapath_reg  : work.util.rw_t;
-
-    signal spi_clock        : std_logic;
-    signal spi_mosi         : std_logic;
-    signal spi_csn          : std_logic;
 
     signal iram_addr    : std_logic_vector(15 downto 0) := (others => '0');
     signal iram_we      : std_logic := '0';
@@ -91,9 +88,9 @@ begin
         i_reg_wdata                 => mp_ctrl_reg.wdata,
 
         o_clock                     => o_clock,
-        o_SIN                       => o_SIN,
+        o_SIN                       => o_sin,
         o_mosi                      => o_mosi,
-        o_csn                       => o_csn--,
+        o_cs                       => o_cs--,
     );
 
     e_mupix_datapath : work.mupix_datapath
