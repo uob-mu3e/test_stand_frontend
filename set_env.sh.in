@@ -39,3 +39,8 @@ fi
 if test -n "${BASH}" -o -n "${ZSH_VERSION}"; then
     hash -r
 fi
+
+#
+# [SR] Personal git-xy alias to be used by all of us, please add one for yourself
+#
+alias git-sr='env GIT_AUTHOR_NAME="Stefan Ritt" GIT_AUTHOR_EMAIL="stefan.ritt@psi.ch" git'
