@@ -94,7 +94,7 @@ end generate;
     begin
     if rising_edge(clk) then
         if (time_counter > x"9502f90") then
-            o_rate_count    <= std_logic_vector(x"9502f90" * N_LINKS - rate_counter + 1)(31 downto 0);
+            o_rate_count    <= std_logic_vector(x"9502f90" * N_LINKS - rate_counter + 1);
             time_counter    <= (others => '0');
             rate_counter    <= (others => '0');
         else
