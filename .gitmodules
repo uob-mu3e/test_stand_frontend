@@ -14,3 +14,9 @@
 	path = wiki
 	url = git@bitbucket.org:mu3e/online.git/wiki
 	branch = master
+[submodule "backend_pc/midas_fe/hp_fe"]
+	path = backend_pc/midas_fe/hp_fe
+	url = git@bitbucket.org:mu3e/hp_fe.git
+[submodule "backend_pc/midas_fe/heplant"]
+	path = backend_pc/midas_fe/heplant
+	url = git@bitbucket.org:mu3e/hp_fe.git

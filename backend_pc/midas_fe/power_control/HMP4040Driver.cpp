@@ -147,7 +147,12 @@ INT HMP4040Driver::Init()
 
 bool HMP4040Driver::AskPermissionToTurnOn(int ) //extra check whether it is safe to tunr on supply;
 {
-	return true;
+   midas::odb settings;
+   settings.connect("/Equipment/PixelsCentral/Variables");
+   if ((UINT8)settings["Current Hameg Channels On"] >= (UINT8)settings["Max Hameg Channels On"])   
+       return false;
+   else
+       return true;
 }
 
 

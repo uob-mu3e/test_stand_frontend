@@ -1,0 +1,24 @@
+#############################################################################################################################       
+    # Author A. Loreti, March 2022, cosmic run. andrea.loreti@physics.ox.ac.uk
+
+    # Summary: Eval evaluates the quality of the Ladder
+    # User input: ladder ID 
+    # Input from MIDAS: DACScan Input/Outputs -- IV Input/Outputs -- Lov voltage Output
+    # Output single chip: to be done
+    # Output ladder: the total score for the ladder and a breakthrough evaluation in array format, one netry for each test done
+#############################################################################################################################
+
+
+
+# MAIN PATH TO MIDAS LADDER QUALITY CONTROL DIRECTORY
+SET path_root, "/Equipment/Mupix/QCTests/Ladder"
+
+# MAKE NEW KEY IN THE EVAL DIRECTORY WITH LADDER ID NUMBER IN IT
+# The new key is a vector that stores evaluation outcomes for this ladder. Possble outcomes 0 (failed) 1(passed)
+CAT path_Eval,$path_root,"/Eval"
+PARAM ladderID, "Ladder identification number"
+
+CAT output_file, qc_ladder_, ladderID, .json
+
+ODBSAVE /Equipment/PixelsCentral/QCTests/Ladder, output.json
+

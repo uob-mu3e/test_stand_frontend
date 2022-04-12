@@ -146,7 +146,8 @@ var change_descriptions = function () {
     for (var hameg = 0; hameg < 9; ++hameg) {
         var tab = document.getElementById("hameg" + hameg.toString())
         for (var channel = 0; channel < 4; ++channel) {
-            tab.rows[2+channel].cells[7].innerHTML = get_description(hameg,channel)
+            //tab.rows[2+channel].cells[7].innerHTML = get_description(hameg,channel)
+            continue;
         }
     }
 }

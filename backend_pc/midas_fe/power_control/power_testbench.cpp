@@ -38,7 +38,7 @@ using midas::odb;
 /*-- Globals -------------------------------------------------------*/
 
 /* The frontend name (client name) as seen by other MIDAS clients   */
-const char *frontend_name = "Power Frontend";
+const char *frontend_name = "Power Frontend TestBench";
 /* The frontend file name, don't change it */
 const char *frontend_file_name = __FILE__;
 
@@ -119,21 +119,22 @@ EQUIPMENT equipment[] = {
         read_keithley_power0,
     }, 
 
-    {"HAMEG0",                       /* equipment name */
-    	{120, 0,                       /* event ID, trigger mask */
-     	"SYSTEM",                  /* event buffer */
-     	EQ_PERIODIC,                   /* equipment type */
-     	0,                         /* event source */
-     	"MIDAS",                   /* format */
-     	TRUE,                      /* enabled */
-     	RO_STOPPED | RO_RUNNING | RO_PAUSE,        /* all, but not write to odb */
-        1000,                     /* read every 1 sec */
-     	0,                         /* stop run after this event limit */
-    	0,                         /* number of sub events */
-        1,                         /* log history every event */
-     	"", "", ""} ,                  /* device driver list */
-     	read_hameg_power0,    
-    },
+
+//    {"HAMEG0",                       /* equipment name */
+//    	{120, 0,                       /* event ID, trigger mask */
+//     	"SYSTEM",                  /* event buffer */
+//     	EQ_PERIODIC,                   /* equipment type */
+//     	0,                         /* event source */
+//     	"MIDAS",                   /* format */
+//     	TRUE,                      /* enabled */
+//     	RO_STOPPED | RO_RUNNING | RO_PAUSE,        /* all, but not write to odb */
+//        1000,                     /* read every 1 sec */
+//     	0,                         /* stop run after this event limit */
+//    	0,                         /* number of sub events */
+//        1,                         /* log history every event */
+//     	"", "", ""} ,                  /* device driver list */
+//     	read_hameg_power0,    
+//    },
 
     {"HAMEG1",                       /* equipment name */
     	{121, 0,                       /* event ID, trigger mask */
