@@ -44,3 +44,4 @@ fi
 # [SR] Personal git-xy alias to be used by all of us, please add one for yourself
 #
 alias git-sr='env GIT_AUTHOR_NAME="Stefan Ritt" GIT_AUTHOR_EMAIL="stefan.ritt@psi.ch" git'
+alias git-mm='env GIT_AUTHOR_NAME="Martin Mueller" GIT_AUTHOR_EMAIL="mmarti04@students.uni-mainz.de" git'
