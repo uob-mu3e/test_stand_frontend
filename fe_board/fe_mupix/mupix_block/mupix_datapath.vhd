@@ -101,6 +101,8 @@ architecture rtl of mupix_datapath is
     signal data_bypass_we           : std_logic;
     signal data_bypass_select       : std_logic_vector(31 downto 0);
 
+    signal mp_use_arrival_time      : std_logic_vector(35 downto 0);
+
     signal running                  : std_logic := '0';
 
     -- error signal output from unpacker
@@ -161,6 +163,7 @@ architecture rtl of mupix_datapath is
     signal mp_sorter_reg            : work.util.rw_t;
     signal mp_lvds_rx_reg           : work.util.rw_t;
     signal mp_datapath_reg          : work.util.rw_t;
+    signal mp_pll_lock_reg          : work.util.rw_t;
 
     signal ena3_counter             : std_logic_vector(31 downto 0);
     signal ena4_counter             : std_logic_vector(31 downto 0);
@@ -203,7 +206,8 @@ begin
     e_lvl2_sc_node: entity work.sc_node
     generic map (
         SLAVE1_ADDR_MATCH_g => "00010000--------",
-        SLAVE2_ADDR_MATCH_g => "00010001--------"--,
+        SLAVE2_ADDR_MATCH_g => "00010001--------",
+        SLAVE3_ADDR_MATCH_g => "00010010--------"--,
     )
     port map (
         i_clk          => i_clk156,
@@ -231,7 +235,13 @@ begin
         o_slave2_re    => mp_lvds_rx_reg.re,
         i_slave2_rdata => mp_lvds_rx_reg.rdata,
         o_slave2_we    => mp_lvds_rx_reg.we,
-        o_slave2_wdata => mp_lvds_rx_reg.wdata--,
+        o_slave2_wdata => mp_lvds_rx_reg.wdata,
+
+        o_slave3_addr  => mp_pll_lock_reg.addr(15 downto 0),
+        o_slave3_re    => mp_pll_lock_reg.re,
+        i_slave3_rdata => mp_pll_lock_reg.rdata,
+        o_slave3_we    => mp_pll_lock_reg.we,
+        o_slave3_wdata => mp_pll_lock_reg.wdata--,
     );
 
     mp_lvds_rx_reg_mapping_inst: entity work.mp_lvds_rx_reg_mapping
@@ -282,12 +292,30 @@ begin
         o_mp_readout_mode           => mp_readout_mode,
         o_mp_data_bypass_select     => data_bypass_select,
         o_mp_delta_ts_link_select   => delta_ts_link_select,
+        o_mp_use_arrival_time       => mp_use_arrival_time,
 
         -- outputs 125-------------------------------------------------
         o_sorter_inject             => sorter_inject,
         o_mp_reset_n_lvds           => reset_n_lvds,
         o_mp_hit_ena_cnt_select     => hit_ena_cnt_select,
         o_mp_hit_ena_cnt_sorter_sel => hitsorter_in_ena_cnt_sel--,
+    );
+
+    mp_pll_lock_reg_mapping: work.mp_pll_lock_reg_mapping
+    port map (
+        i_clk156            => i_clk156,
+        i_clk125            => i_clk125,
+        i_reset_n           => i_reset_n_regs,
+        i_reset_125         => reset_125_n,
+
+        i_reg_add           => mp_pll_lock_reg.addr(15 downto 0),
+        i_reg_re            => mp_pll_lock_reg.re,
+        o_reg_rdata         => mp_pll_lock_reg.rdata,
+        i_reg_we            => mp_pll_lock_reg.we,
+        i_reg_wdata         => mp_pll_lock_reg.wdata,
+
+        i_hit_ena(11 downto 0)  => hits_sorter_in_ena_buf,
+        i_counter               => counter125(31 downto 0)--,
     );
 
 ------------------------------------------------------------------------------------
@@ -506,9 +534,7 @@ begin
             o_tot(0)            => tot_hs(i),
             o_hit_ena           => hits_sorter_in_ena_buf(i)--,
         );
-        --hits_sorter_in_buf(i)       <= row_hs(i) & col_hs(i) & tot_hs(i)(4 downto 0) & ts_hs(i);
-        hits_sorter_in_buf(i)       <= row_hs(i) & col_hs(i) & tot_hs(i)(4 downto 0) & counter125(10 downto 0); -- TODO: change me
-
+        hits_sorter_in_buf(i)       <= row_hs(i) & col_hs(i) & tot_hs(i)(4 downto 0) & ts_hs(i) when mp_use_arrival_time(I)='0' else row_hs(i) & col_hs(i) & tot_hs(i)(4 downto 0) & counter125(10 downto 0);
     END GENERATE;
 
     process(i_clk125)

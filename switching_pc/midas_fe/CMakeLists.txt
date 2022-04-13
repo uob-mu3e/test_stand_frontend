@@ -1,4 +1,6 @@
 add_executable(switch_fe switch_fe.cpp)
+add_executable(tdac_test_file_generate generate_tdac_test.cpp)
+add_executable(tdac_test_file_read read_tdac_test.cpp)
 
 target_include_directories(switch_fe
         PRIVATE 
@@ -12,4 +14,4 @@ if(DEBUG)
     add_definitions(-DMY_DEBUG)
 endif()
 
-install(TARGETS switch_fe DESTINATION bin)
+install(TARGETS switch_fe tdac_test_file_generate tdac_test_file_read DESTINATION bin)

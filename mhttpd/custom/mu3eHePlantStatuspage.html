@@ -1,0 +1,313 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+   <meta charset="UTF-8">
+   <link rel="stylesheet" href="midas.css">
+   <script src="controls.js"></script>
+   <script src="midas.js"></script>
+   <script src="mhttpd.js"></script>
+   <script src="mhistory.js"></script>
+   <script>
+        function precise(x, prec) {
+            return Number.parseFloat(x).toPrecision(prec);
+        }
+
+        // Marker on compressor map
+        function calcLinePars(axis) {
+            axis["transform"] = {};
+            axis.transform["b"] = (axis.mincor - axis.maxcor) / (axis.minval - axis.maxval);
+            axis.transform["a"] = axis.mincor - axis.transform.b * axis.minval;
+            //axis.transform["func"] = function(val) { return this.transform.a + val * this.transform.b; }
+            return;
+        }
+
+        function initMarker(marker) {
+            calcLinePars(marker.xaxis);
+            calcLinePars(marker.yaxis);
+            console.log(marker.id);
+            var markersvg = document.getElementById(marker.id);
+            markersvg.setAttributeNS(null, "r", marker.circle.r);
+            markersvg.setAttributeNS(null, "stroke", marker.circle.stroke);
+            markersvg.setAttributeNS(null, "stroke-width", marker.circle.strokewidth);
+            markersvg.setAttributeNS(null, "fill", marker.circle.fill);
+        }
+
+        var celeMarker_dp_PI_1 = {
+            label: "Venturi in",
+            id: "celeMarker_dp_PI_1", 
+            xaxis: { label: "∆p", "unit": "Pa", mincor: 155, maxcor: 1074, minval: 0, maxval: 150 },
+            yaxis: { label: "Π", "unit": "-", mincor: 537, maxcor: 59, minval: 1, maxval: 1.25 },
+            circle: { r: 8, stroke: "black", strokewidth: "2", fill: "red" }
+        }
+
+        var celeMarker_dp_PI_2 = {
+            label: "Venturi out",
+            id: "celeMarker_dp_PI_2", 
+            xaxis: { label: "∆p", "unit": "Pa", mincor: 155, maxcor: 1074, minval: 0, maxval: 150 },
+            yaxis: { label: "Π", "unit": "-", mincor: 537, maxcor: 59, minval: 1, maxval: 1.25 },
+            circle: { r: 8, stroke: "black", strokewidth: "2", fill: "blue" }
+        }
+
+        var celeMarker_m_Pi_1 = {
+            label: "Venturi in",
+            id: "celeMarker_m_Pi_1", 
+            xaxis: { label: "dm/dt", "unit": "g/s", mincor: 155, maxcor: 1074, minval: 0, maxval: 9 },
+            yaxis: { label: "Π", "unit": "-", mincor: 537, maxcor: 59, minval: 1, maxval: 1.25 },
+            circle: { r: 8, stroke: "black", strokewidth: "2", fill: "red" }
+        }
+
+        var celeMarker_m_Pi_2 = {
+            label: "Venturi out",
+            id: "celeMarker_m_Pi_2", 
+            xaxis: { label: "dm/dt", "unit": "g/s", mincor: 155, maxcor: 1074, minval: 0, maxval: 9 },
+            yaxis: { label: "Π", "unit": "-", mincor: 537, maxcor: 59, minval: 1, maxval: 1.25 },
+            circle: { r: 8, stroke: "black", strokewidth: "2", fill: "blue" }
+        }
+
+        function updatePiDeltapMarker(marker, Pi, deltap) {
+            if (Pi < 0 || isNaN(Pi)) Pi = 0;
+            if (deltap < 0 || isNaN(deltap)) deltap = 0;
+            var markersvg = document.getElementById(marker.id);
+            let x = marker.xaxis.transform.a + 100 * deltap * marker.xaxis.transform.b;
+            let y = marker.yaxis.transform.a + Pi * marker.yaxis.transform.b;
+            markersvg.setAttributeNS(null, "cx", x);
+            markersvg.setAttributeNS(null, "cy", y);
+        }
+
+        function updatePidmdtMarker(marker, Pi, dmdt) {
+            if (Pi < 0 || isNaN(Pi)) Pi = 0;
+            if (dmdt < 0 || isNaN(dmdt)) dmdt = 0;
+            var markersvg = document.getElementById(marker.id);
+            let x = marker.xaxis.transform.a + dmdt * marker.xaxis.transform.b;
+            let y = marker.yaxis.transform.a + Pi * marker.yaxis.transform.b;
+            markersvg.setAttributeNS(null, "cx", x);
+            markersvg.setAttributeNS(null, "cy", y);
+        }
+
+        // Update the sensor values and trigger updates of derived variables
+        var pIn = 1, pComp = 1, pOut = 1;
+        function updatepIn   (value) { pIn = value; updatePiCompressor(); };
+        function updatepComp (value) { pComp = value; updatePiCompressor(); };
+        function updatepOut  (value) { pOut = value; };
+
+        var TIn = 1, TComp = 1, TOut = 1;
+        function updateTIn   (value) { TIn   = value; updateRhoIn(); };
+        function updateTComp (value) { TComp = value; updateRhoComp(); };
+        function updateTOut  (value) { TOut  = value; updateRhoOut(); };
+
+        // Calculation of the compression ratio &Pi; across the compressor
+        var PiCompressor = 1;
+        function updatePiCompressor() {
+            PiCompressor = pComp/pIn;
+            document.getElementById("PiCompressor").innerHTML = precise(PiCompressor,4);
+            updatePiDeltapMarker(celeMarker_dp_PI_1, PiCompressor, deltaPVenturiIn);
+            updatePiDeltapMarker(celeMarker_dp_PI_2, PiCompressor, deltaPVenturiOut);
+            updatePidmdtMarker(celeMarker_m_Pi_1, PiCompressor, mdotGasIn);
+            updatePidmdtMarker(celeMarker_m_Pi_2, PiCompressor, mdotGasOut);
+        };
+
+        // Calculation of the air content
+        const O2inAir = 0.20942; // https://de.wikipedia.org/wiki/LuftairContent
+        const O2calib = 0.949; // Value for this sensor. TODO implement this into DB
+        var airContent = 1;
+        function calcAirConc(O2conc) { return 0.01 * O2conc / O2inAir * O2calib; };
+        function updateAirConc(value) { airContent = calcAirConc(value); document.getElementById("airContent").innerHTML = precise(airContent,4); };
+
+        // Calculate the molar mass from the air content
+        const Mhelium = 4.0026; // g/mol
+        const Mair = 28.949; // g/mol Caveat: this is the molar mass for dry air TODO implement correction using an RH value
+        var Mgas = 1;
+        function calcMolarMass(x) { return x * Mair + (1-x) * Mhelium;};
+        function updateMolarMass(value) { Mgas = calcMolarMass(airContent); document.getElementById("Mgas").innerHTML = precise(Mgas,4); };
+
+        // Calculate gas density
+        const R = 8.314; // J/mol*K
+        const CtoK = 273.13;
+        function gasDensity(p, M, T) {
+            let ret = p * 1e5 * M * 1e-3 / (R * (T+CtoK));
+            //console.log("p: "+p+" M: "+M+" R: "+R+" T: "+T+" T(K): "+(T+CtoK)+" rho: "+ret);
+            return ret;
+        };
+        var RhoIn = 1, RhoComp = 1, RhoOut = 1;
+        function updateRhoIn()   { RhoIn = gasDensity(pIn, Mgas, TIn); document.getElementById("rhoIn").innerHTML = precise(RhoIn,4); };
+        function updateRhoComp() { RhoComp = gasDensity(pComp, Mgas, TComp); document.getElementById("rhoComp").innerHTML = precise(RhoComp,4); };
+        function updateRhoOut()  { RhoOut = gasDensity(pOut, Mgas, TOut); document.getElementById("rhoOut").innerHTML = precise(RhoOut,4); };
+
+        // Calculate deltaP from Venturis
+        var deltaPVenturiIn = 1, deltaPVenturiOut = 1;
+        function updateDeltaPVenturiIn(value)  { deltaPVenturiIn = value;  updateMdotIn(); updateMdotGasIn(); };
+        function updateDeltaPVenturiOut(value) { deltaPVenturiOut = value; updateMdotOut(); updateMdotGasOut();};
+
+        // Calculate mass flow
+        // These values come from our calibration and have to be regarded as estimates
+        // p0 is the zero offset and depends on the sensor (and its drift)
+        const p1 = 0.024;
+        const p2 = 0.1092;
+
+        function calcMdot(deltaP, p0) { return ( (-p1 + Math.sqrt(p1*p1 - 4*p2*(p0-deltaP)))/(2*p2) ); };
+        var mdotIn = 1, mdotOut = 1;
+        // p0 values updated from averages collected 8.8.21 19:35 to 20:35
+        function updateMdotIn()  { mdotIn = calcMdot(deltaPVenturiIn, 0); document.getElementById("mdotIn").innerHTML = precise(mdotIn, 4); };
+        function updateMdotOut() { mdotOut = calcMdot(deltaPVenturiOut, 0); document.getElementById("mdotOut").innerHTML = precise(mdotOut, 4); };
+
+        // Convert dm/dt to current gas
+        var mdotGasIn = 1, mdotGasOut = 1;
+        const rhoCalib = 0.157; // kg/m3 This was the condition during the Venturi tube calibration
+        function calcMdotGas(dmdt, rho) { return Math.sqrt(rho / rhoCalib) * dmdt; }
+        function updateMdotGasIn()  { mdotGasIn = calcMdotGas(mdotIn, RhoIn); document.getElementById("mdotGasIn").innerHTML = precise(mdotGasIn, 4); }
+        function updateMdotGasOut()  { mdotGasOut = calcMdotGas(mdotOut, RhoOut); document.getElementById("mdotGasOut").innerHTML = precise(mdotGasOut, 4); }
+
+   </script>
+   <title>Mu3e Helium Plant Integration Run</title>
+</head>
+
+<body class="mcss" onload="mhttpd_init('myPage'); mhistory_init();">
+
+<!-- header and side navigation will be filled in mhttpd_start -->
+<div id="mheader"></div>
+<div id="msidenav"></div>
+
+<div id="mmain">
+
+<div class="modb" data-odb-path="/Equipment/HePlantIntRun/Variables/Input[10]" onchange="updateAirConc(this.value); updateMolarMass(airContent);">
+<div class="modb" data-odb-path="/Equipment/HePlantIntRun/Variables/Input[2]" onchange="updatepIn(this.value);">
+<div class="modb" data-odb-path="/Equipment/HePlantIntRun/Variables/Input[3]" onchange="updatepComp(this.value);">
+<div class="modb" data-odb-path="/Equipment/HePlantIntRun/Variables/Input[4]" onchange="updatepOut(this.value);">
+<div class="modb" data-odb-path="/Equipment/HePlantIntRun/Variables/Input[7]" onchange="updateTIn(this.value);">
+<div class="modb" data-odb-path="/Equipment/HePlantIntRun/Variables/Input[8]" onchange="updateTComp(this.value);">
+<div class="modb" data-odb-path="/Equipment/HePlantIntRun/Variables/Input[9]" onchange="updateTOut(this.value);">
+<div class="modb" data-odb-path="/Equipment/HePlantIntRun/Variables/Input[5]" onchange="updateDeltaPVenturiIn(this.value);">
+<div class="modb" data-odb-path="/Equipment/HePlantIntRun/Variables/Input[6]" onchange="updateDeltaPVenturiOut(this.value);">
+
+
+<table class="mtable" style="border-spacing:1px;text-align: center;">
+    <thead>
+        <tr>
+            <th class="ODBkey">Location</th>
+            <th class="ODBkey">p</th>
+            <th>&thetasym;</th>
+            <th>&Delta;p</th>
+            <th>O<sub>2</sub></th>
+            <th>Air</th>
+            <th>M<sub>gas</sub></th>
+            <th>&Pi;</th>
+            <th>&rho;</th>
+            <th>dm/dt(He)</th>
+            <th>dm/dt(Gas)</th>
+        </tr>
+        <tr>
+            <th></th>
+            <th>bar</th>
+            <th>&deg;C</th>
+            <th>mbar</th>
+            <th>%</th>
+            <th></th>
+            <th>g/mol</th>
+            <th></th>
+            <th>kg/m<sup>3</sup></th>
+            <th>g/s</th>
+            <th>g/s</th>
+        </tr>
+    </thead>
+    <tr class="ODBtableEven">
+        <td>In</td>
+        <td><div class="modbvalue" style="padding: .2em .5em;" data-format="p3" data-odb-path="/Equipment/HePlantIntRun/Variables/Input[2]"></div></td>
+        <td><div class="modbvalue" style="padding: .2em .5em;" data-format="p3" data-odb-path="/Equipment/HePlantIntRun/Variables/Input[7]"></div></td>
+        <td><div class="modbvalue" data-format="p3" data-odb-path="/Equipment/HePlantIntRun/Variables/Input[5]"></div></td>
+        <td rowspan="3"><div class="modbvalue" data-format="p3" data-odb-path="/Equipment/HePlantIntRun/Variables/Input[10]"></div></td>
+        <td rowspan="3"><span id="airContent"/></td>
+        <td rowspan="3"><span id="Mgas"></span></td>
+        <td rowspan="2"><span id="PiCompressor"></span></td>
+        <td><span id="rhoIn"></span></td>
+        <td><span id="mdotIn"/></td>
+        <td><span id="mdotGasIn"/></td>
+    </tr>
+    <tr>
+        <td>Compressor</td>
+        <td><div class="modbvalue" data-format="p3" data-odb-path="/Equipment/HePlantIntRun/Variables/Input[3]"></div></td>
+        <td><div class="modbvalue" data-format="p3" data-odb-path="/Equipment/HePlantIntRun/Variables/Input[8]"></div></td>
+        <td>–</td>
+        <td><span id="rhoComp"></span></td>
+        <td>–</td>
+        <td>–</td>
+    </tr>
+    <tr>
+        <td>Out</td>
+        <td><div class="modbvalue" data-format="p3" data-odb-path="/Equipment/HePlantIntRun/Variables/Input[4]"></div></td>
+        <td><div class="modbvalue" data-format="p3" data-odb-path="/Equipment/HePlantIntRun/Variables/Input[9]"></div></td>
+        <td><div class="modbvalue" data-format="p3" data-odb-path="/Equipment/HePlantIntRun/Variables/Input[6]"></div></td>
+        <td>–</td>
+        <td><span id="rhoOut"></span></td>
+        <td><span id="mdotOut"/></td>
+        <td><span id="mdotGasOut"/></td>
+    </tr>
+</table>
+
+<!-- Status of some components -->
+<table class="mtable" style="border-spacing:1px;text-align: center;">
+    <tr>
+        <td>Bypass valve (ON: valve closed; OFF: valve open):</td>
+        <td><div class="modbbox" data-odb-path="/Equipment/HePlantIntRun/Variables/Output[0]" data-formula="x > 0" style="width: 30px; height: 30px; border: 1px solid black" data-color="lightgreen" data-background-color="red"></div></td>
+        <td colspan="2">Closed in normal operation, open if &Pi; too large or unit off</td>
+    </tr>
+    <tr>
+        <td>Water flow chiller 1 (compressor):</td>
+        <td><div class="modbbox" data-odb-path="/Equipment/HePlantIntRun/Variables/Input[0]" data-formula="x > 0" style="width: 30px; height: 30px; border: 1px solid black" data-color="lightgreen" data-background-color="red"></div></td>
+    </tr>
+    <tr>
+        <td>Water flow chiller 2 (heat exchanger):</td>
+        <td><div class="modbbox" data-odb-path="/Equipment/HePlantIntRun/Variables/Input[1]" data-formula="x > 0" style="width: 30px; height: 30px; border: 1px solid black" data-color="lightgreen" data-background-color="red"></div></td>
+    </tr>
+    <tr>
+        <td>Compressor (rpm):</td>
+        <td><div class="modbbox" data-odb-path="/Equipment/HePlantIntRun/Variables/Input[11]" data-formula="x > 20000" style="width: 30px; height: 30px; border: 1px solid black" data-color="lightgreen" data-background-color="red"></div></td>
+        <td colspan="2">
+            <div class="mhaxis" style="width: 500px; height: 22px;" data-min-value="0" data-max-value="240000" ></div>
+            <div class="modbhbar" style="width: 500px; height: 18px; background-color: lightgrey; color: lightblue" data-odb-path="/Equipment/HePlantIntRun/Variables/Input[11]" data-max-value="240000" data-print-value="1" data-format="f0"></div>
+        </td>
+    </tr>
+    <tr>
+        <td>Helium purity ok (&lt;0.4% O<sub>2</sub>):</td>
+        <td><div class="modbbox" data-odb-path="/Equipment/HePlantIntRun/Variables/Input[10]" data-formula="x < 0.4" style="width: 30px; height: 30px; border: 1px solid black" data-color="lightgreen" data-background-color="red"></div></td>
+        <td colspan="2">
+            <div class="mhaxis" style="width: 500px; height: 22px;" data-min-value="0" data-max-value="24" ></div>
+            <div class="modbhbar" style="width: 500px; height: 18px; color: lightgreen; background-color: lightgrey;" data-odb-path="/Equipment/HePlantIntRun/Variables/Input[10]" data-min-value="0" data-max-value="24" data-print-value="1" data-format="f2"></div>
+        </td>
+    </tr>
+</table>
+
+<!-- Compress performance map -->
+
+<!-- <img src="dp_PI_Celeroton_v20210609k.png"> -->
+
+<svg width="1200" height="620" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink= "http://www.w3.org/1999/xlink">
+    <image xlink:href="dp_PI_Celeroton_v20210609k.png" x="0" y="0"/>
+    <circle id="celeMarker_dp_PI_1" />
+    <circle id="celeMarker_dp_PI_2" />
+</svg>
+
+<svg width="1200" height="620" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink= "http://www.w3.org/1999/xlink">
+    <image xlink:href="m_Pi_Celeroton_v20210609k.png" x="0" y="0"/>
+    <circle id="celeMarker_m_Pi_1" />
+    <circle id="celeMarker_m_Pi_2" />
+</svg>
+
+<!-- History plots -->
+<div class="mjshistory" data-group="HePlantStatus" data-panel="Abs Pressure" style="width: 100%; height: 200px;" ></div>
+<div class="mjshistory" data-group="HePlantStatus" data-panel="Temperatures" style="width: 100%; height: 200px;" ></div>
+<div class="mjshistory" data-group="HePlantStatus" data-panel="Venturi" style="width: 100%; height: 200px;" ></div>
+<div class="mjshistory" data-group="HePlantStatus" data-panel="Oxygen" style="width: 100%; height: 200px;" ></div>
+<div class="mjshistory" data-group="HePlantStatus" data-panel="Outputs" style="width: 100%; height: 200px;" ></div>
+<div class="mjshistory" data-group="HePlantStatus" data-panel="Chiller status" style="width: 100%; height: 200px;" ></div>
+
+</div>
+
+<script>
+        initMarker(celeMarker_dp_PI_1);
+        initMarker(celeMarker_dp_PI_2);
+        initMarker(celeMarker_m_Pi_1);
+        initMarker(celeMarker_m_Pi_2);
+</script>
+
+</body>
+</html>

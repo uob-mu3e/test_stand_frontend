@@ -57,7 +57,7 @@
 			<textarea id='log' rows=3 cols=50 readonly ></textarea>
 
             <table class="mtable" id="keithley0">
-                <tr><th colspan="8" class="mtableheader">KEITHLEY 0</th></tr>
+                <tr><th colspan="8" class="mtableheader">KEITHLEY 0 (192.168.0.068)</th></tr>
                 <tr>
                     <th colspan="2" >Channel</th>
                     <th>State</th>
@@ -131,8 +131,195 @@
                     <td><div class="modbvalue" data-odb-path="/Equipment/HAMEG0/Variables/Current[3]"></div></td>
                     <td style="text-align: center">PM4+</td>
                 </tr>
+            
             </table>
+            
+            <h2>Test instructions</h2>
+<pre>
+        (1) setup hardware 
+            a. make sure that HV is off in
+               MIDAS->Pixel QC
 
+            b. connect Keithley HV cable to correct ladder cable
+               (h/w cables start with 1, software labeling starts at 0)
+
+            c. make sure interlocks are overridden
+               - jumper switch on RPI: 24V toggle LED turns on
+               - toggle the end two switches
+               -> all lights should turn orange
+
+            d. turn on HAMEG 5 to power the FEB
+               -> 2V will have high current if all connected FEBs will turn on (so do f. immediately!)
+               
+            e. the HAMEG channel/ladder mapping is in
+               https://docs.google.com/presentation/d/1seX2Ig6owvBtZpWNlwRym0GfKrux07pc3yLSB8JvzVA/edit#slide=id.p1
+       
+            f. turn off all FEBs not required for test
+               find out which FEB you need running: 
+
+
+               (logical #) FEBs and FEB crates
+     
+                       / ./      \4 \
+                      / 3/        \. \
+                420  / 2/    US    \. \   421
+                #0  / 1/ (from US)  \10\  #1
+                   / 0/              \. \ 
+               
+               
+                       / ./      \8 \
+                      / 9/        \7 \
+                426  / ./    DS    \6 \   425
+                #3  / ./ (from DS)  \5 \  #2
+                   /11/              \. \ 
+
+
+
+               ssh mu3ebe
+               cd midas/build/mscb
+               ./msc -d mscb420 
+                    s                 [scan -> "Node 1 addressed"]
+                    p 1               [address 1]
+                    r                 [read]
+                    w 5 0             [turn off channels 5,7,8 not required]
+                    w 7 0
+                    w 8 0  
+
+                The same can be achieved in MIDAS->FEBcrates
+
+            g. program FEB FPGAs
+    
+               ssh mu3eswitch0
+               cd online/fe_board/fe_v2_mupix
+               make pgm
+               make app_upload
+               make terminal
+
+               [type the following numbers, there is no character echoing]
+        
+                    2        [for mupix]
+                    2        [to set config clk divider; not strictly required]
+                    0000000f [do this only, if previous '2' typed; type blindly seven times '0' and once 'f', printout confirmation will appear]
+        
+
+
+                [IF you want to check connection, configure all chips by typing]
+
+                    0
+
+                [BUT THEN turn off STATE in MIDAS->LV Power immediately if current goes up]
+    
+            h. enter FEB link and mask into MIDAS
+               MIDAS->ODB->Equipment->LinksCentral->Settings
+               Linkmask: The active FED should have 3 inserted into its position (e.g. for FEB 1 enter 3 in place [1]); all others are 0
+               LinkFEB:  The active FED should have its number inserted into its position (e.g. FEB 2 is entered as 2 in place [2]); all others are 255
+               
+            i. enable frontend MIDAS process interfacing with FPGA on FEB
+      
+               ssh mu3eswitch0
+               cd online_mupix_debug/build/switching_pc/midas_fe
+               ./switch_fe -h be
+
+               [wait for OK]
+
+
+            j. MIDAS->FEBs
+               [click on correct FEB number]
+               [look at RX numbers to be changing]
+
+            k. HAMEGs
+               The current limits (3A for 2V) cannot be set from MIDAS.
+               Turn of Power Frontend (running on mu3ebe) and set current limits manually at the HAMEGs
+
+            l. (re)start Power frontend
+               ssh mu3ebe
+               cd ~/online/build/backend_pc/midas_fe/power_control
+               ./power
+
+            m. (re)start Keithley frontend
+               ssh mu3eb3
+               cd ~/online/build/backend_pc/midas_fe/power_control
+               ./power_testbench 
+
+
+        (2) Run tests
+            a. IVCurve_test.msl (accessible from MIDAS->Sequencer->Load script)
+                parameters:
+                    Compliance 0.00001
+                    Start      0
+                    Step       5
+                    Fine step  1
+                    End        25
+    
+                OBSERVE: MIDAS->Pixel QC increase of HV
+        
+            b. LV_power_ON_test.msl
+                parameters:
+                    half-ladder Id ?
+                    HAMEG          ?
+                    channel        ?
+             
+    
+                OBSERVE: LV jumping around, results: current increases should be >0.35
+             
+            c. DACscan_test.msl
+                parameters:
+                    half-ladder Id ?
+                    HAMEG          ?
+                    channel        ?
+                    HV             5
+                    limit          0.00001
+                    vpdac start    0
+                                   1
+                                   6
+                    ref_Vss        50
+                                   50
+                                   250
+    
+            d. LINK_QUALI_test.msl
+                parameters:
+                    half-ladder Id ?
+                    HAMEG          ?
+                    channel        ?
+                    HV             5
+                    limit          0.00001   (1e-5)
+    
+        (5) Save output into JSON file
+            Before starting this, do
+    
+            ssh mu3ebe
+            cd online/online/pixels/qctest/ladder
+    
+            [check that no output file "output.json" is there]
+    
+         
+            MIDAS->Sequencer->Load script->Eval [note capitalization!]
+    
+            [enter dummy number, it is ignored]
+    
+            start script
+    
+         
+            back in mu3ebe:
+         
+            mv output.json eval_output/qc_ladder_LDR.json
+         
+         
+         NOTES
+            - Always make sure that the HV is turned on as some tests change it and leave it off(?)
+            - Results appear in
+                MIDAS->Equipment->PixelsCentral->QCTests->Ladder
+                and then select [test] and [output] and possibly other segmentation 
+            - do NOT hit TAB to switch between input fields when entering test parameters. 
+              It will lead to many parse errors.
+
+            - swap between workspaces on computer with CTRL-ALT-arrows
+
+        Possible problems
+            - Midas frontend to FEB crashed
+                restart as in (1) h.
+
+</pre>
 	    <!--<div id="status">
 		<div style="display: none;" id="autotest_IV" class="modbvalue" data-odb-path="/Equipment/Mupix/Settings/AutomaticTests/IV"></div>
 		<div id="status_report">Nothing</div>-->

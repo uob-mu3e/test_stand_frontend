@@ -38,8 +38,10 @@ typedef struct {
 } MUPIX_GLOBAL;
 
 static odb MUPIX_GLOBAL_SETTINGS = {
-        {"Num asics", 6},   // This is for the EDM 122021 run
-        {"Num boards", 2},  // This is for the EDM 122021 run
+        //{"Num asics", 6},   // This is for the EDM 122021 run
+        //{"Num boards", 2},  // This is for the EDM 122021 run
+        {"Num asics", 120},   // This is for the 2022 cosmic run
+        {"Num boards", 10},  // This is for the 2022 cosmic run
         {"Num rows", 250},
         {"Num cols", 256},
 };
@@ -326,7 +328,8 @@ typedef struct {
 } MUPIX_GLOBAL_FEBS;
 
 static odb MUPIX_GLOBAL_FEBS_SETTINGS = {
-    {"ASICsPerFEB", 3}  // This is for the EDM 122021 run
+    //{"ASICsPerFEB", 3}  // This is for the EDM 122021 run
+    {"ASICsPerFEB", 12}  // This is for the CosmicRun 042022 run
 };
 
 #endif

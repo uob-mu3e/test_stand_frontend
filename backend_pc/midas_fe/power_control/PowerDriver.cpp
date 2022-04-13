@@ -444,7 +444,7 @@ void PowerDriver::SetState(int index, bool value,INT& error)
 	{
 		if(!AskPermissionToTurnOn(index))
 		{
-			cm_msg(MERROR, "Genesys supply ... ", "changing of channel %d not allowed",instrumentID[index] );
+			cm_msg(MERROR, "Power supply ... ", "changing of channel %d not allowed",instrumentID[index] );
 			variables["Set State"][index]=false; //disable request
 			error=FE_ERR_DISABLED;
 			return;
@@ -454,10 +454,22 @@ void PowerDriver::SetState(int index, bool value,INT& error)
     // From here on we grab the mutex until the end of the function: One transaction at a time
     const std::lock_guard<std::mutex> lock(power_mutex);
 
+     midas::odb settings;
+     settings.connect("/Equipment/PixelsCentral/Variables");
 	if( SelectChannel(instrumentID[index]) )
 	{
-        if(value==true) { cmd=GenerateCommand(COMMAND_TYPE::SetState, 1); }
-        else { cmd = GenerateCommand(COMMAND_TYPE::SetState, 0); }
+        if(value==true) { 
+		cmd=GenerateCommand(COMMAND_TYPE::SetState, 1);
+	       if (cmd.find("OUTP:STAT") != std::string::npos) { //This to ensure the device is a Hameg. Something better should be done
+		       settings["Current Hameg Channels On"] += 1;
+	       }	       
+	}
+        else { 
+		cmd = GenerateCommand(COMMAND_TYPE::SetState, 0); 
+		if (cmd.find("OUTP:STAT") != std::string::npos) { //This to ensure the device is a Hameg. Something better should be done
+		     settings["Current Hameg Channels On"] -= 1;
+		}
+	}
 		client->Write(cmd);
 		std::this_thread::sleep_for(std::chrono::milliseconds(client->GetWaitTime()));
 		success = OPC();

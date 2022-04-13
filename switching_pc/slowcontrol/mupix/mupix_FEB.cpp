@@ -22,10 +22,11 @@ using namespace mu3e::daq;
 #include "mupix_midasodb.h"
 #include <thread>
 #include <chrono>
+#include <vector>
 
 #include <iostream>
 #include <fstream>
-
+#include <istream>
 using midas::odb;
 
 #include "default_config_mupix.h" //TODO avoid this, reproduce configure routine from chip dacs
@@ -51,6 +52,17 @@ uint16_t MupixFEB::FPGAid_from_ID(int asic) const {
     return asic/ASICsPerFEB();
 }
 
+uint16_t MupixFEB::MappedFPGAid_from_ID(int asic) const {
+    uint16_t fpga_id = FPGAid_from_ID(asic);
+    uint16_t n_mapped_febs = 0;
+    for (auto feb : febs){
+        if(feb.GetLinkID()==fpga_id)
+            return n_mapped_febs;
+        n_mapped_febs++;
+    }
+    return 999;
+}
+
 uint16_t MupixFEB::ASICid_from_ID(int asic) const {
     return asic%ASICsPerFEB();
 }
@@ -59,43 +71,10 @@ uint16_t MupixFEB::GetNumASICs() const {
     return febs.size()*ASICsPerFEB();
 }
 
-void MupixFEB::SetTDACs() {
-
-    for (int asic = 0; asic < GetNumASICs(); asic++) {
-        odb TDACsSettings(pixel_odb_prefix + "/Settings/TDACs/" + std::to_string(asic));
-        std::string TDACFILE = TDACsSettings["TDACFILE"];
-        std::ifstream data(TDACFILE);
-        std::string line;
-        std::map<std::string, std::vector<uint32_t>> parsedCsv;
-        bool firstLine = true;
-        while ( std::getline(data, line) )
-        {
-            if (firstLine) {
-                firstLine = false;
-            } else {
-                std::stringstream lineStream(line);
-                std::string cell;
-                std::vector<uint32_t> parsedRow;
-                std::string firstValue = "-999";
-                while(std::getline(lineStream, cell, ','))
-                {
-                    if ( firstValue == "-999" ) {
-                        firstValue = cell;
-                    } else {
-                        parsedRow.push_back(std::stoi(cell));
-                    }
-                }
-                parsedCsv.insert(std::pair<std::string, std::vector<uint32_t>>(firstValue, parsedRow));
-            }
-        }
-        TDACsJSON.push_back(parsedCsv);
-    }   
-}
-
 //ASIC configuration:
 //Configure all asics under prefix (e.g. prefix="/Equipment/Mupix")
 int MupixFEB::ConfigureASICs(){
-    
+
     printf("MupixFEB::ConfigureASICs()\n");
     cm_msg(MINFO, "MupixFEB" , "Configuring sensors under prefix %s/Settings/ASICs/", pixel_odb_prefix.c_str());
 
@@ -104,27 +83,30 @@ int MupixFEB::ConfigureASICs(){
         odb FEBsSettings(pixel_odb_prefix + "/Settings/FEBS/" + std::to_string(feb.GetLinkID()));
         feb_sc.FEB_write(feb, MP_LVDS_LINK_MASK_REGISTER_W, (uint32_t) FEBsSettings["MP_LVDS_LINK_MASK"]);
         feb_sc.FEB_write(feb, MP_LVDS_LINK_MASK2_REGISTER_W, (uint32_t) FEBsSettings["MP_LVDS_LINK_MASK2"]);
+        feb_sc.FEB_write(feb, MP_CTRL_SPI_ENABLE_REGISTER_W, 0x00000001);
+        feb_sc.FEB_write(feb, MP_CTRL_SLOW_DOWN_REGISTER_W, 0x0000000F);
     }
-    
+
     // configure each asic
     int status = mupix::midasODB::MapForEachASIC(pixel_odb_prefix, [this](mupix::MupixConfig* config, uint32_t asic){
 //                 if ( asic != 3 ) return 0;
         uint32_t rpc_status;
-        //bool TDACsNotFound = false;
-        //char set_str[255];
 
-        // get settings from ODB for TDACs 
         // TODO: Has to move!!!
-        odb swbSettings(odb_prefix + "/Settings");
-        bool useTDACs = swbSettings["MupixSetTDACConfig"];
+        odb swbSettings(odb_prefix + "/Commands");
         uint32_t MupixChipToConfigure = swbSettings["MupixChipToConfigure"];
         if ( MupixChipToConfigure != 999 && asic != MupixChipToConfigure ) {
             printf(" [skipped]\n");
             return FE_SUCCESS;
         }
+
+        uint16_t mappedFebId = MappedFPGAid_from_ID(asic);
+        if(mappedFebId==999){
+            printf(" [skipped]\n");
+            return FE_SUCCESS;
+        }
         
-        //mapping
-        auto FEB = febs[FPGAid_from_ID(asic)];
+        auto FEB = febs[mappedFebId];
         uint16_t SB_ID=FEB.SB_Number();
         uint16_t SP_ID=FEB.SB_Port();
         uint16_t FA_ID=ASICid_from_ID(asic);
@@ -147,9 +129,7 @@ int MupixFEB::ConfigureASICs(){
         uint32_t bitpattern_m;
         vector<vector<uint32_t> > payload_m;
         vector<uint32_t> payload;
-        uint32_t spi_busy;
-        uint32_t count = 0;
-        uint32_t limit = 5;
+
         try {
 
             payload_m.push_back(vector<uint32_t>(reinterpret_cast<uint32_t*>(config->bitpattern_w),reinterpret_cast<uint32_t*>(config->bitpattern_w)+config->length_32bits));
@@ -162,67 +142,16 @@ int MupixFEB::ConfigureASICs(){
                 payload.push_back(bitpattern_m);
             }
             int size = payload.size();
-            payload[size-1] = 0x2900303;//TOFIX: why different?
+            //payload[size-1] = 0x2900303;//TOFIX: why different?
 
             std::cout << "Payload:\n";
             for(uint32_t j = 0; j<payload.size();j++){
                 std::cout<<std::hex<<payload.at(j)<<std::endl;
             }
 
-            // ToDo: Col Test Tdac bits from file
-            for(int i=0; i<85; i++){
-                payload.push_back(0x00000000);
-            }
-
-            // mask all chips but not this one
-            // TODO: make this correct
-            uint32_t chip_select_mask = 0xfff; //all chips masked (12 times 1)
             uint16_t pos = ASICid_from_ID(asic);
-            bool isTelescope = false; // TODO: make this somehow dynamic for the telescope setup
-	        if ( asic == 3 && isTelescope ) pos = 3;
-            chip_select_mask &= ((~0x1u) << pos);
-            printf("chip_select_mask %04x\n", chip_select_mask);
-            for (int i = 0; i < pos; ++i)
-                chip_select_mask |= (0x1 << i);
+            rpc_status = feb_sc.FEB_write(FEB, MP_CTRL_COMBINED_START_REGISTER_W + pos, payload,true);
 
-            if (MupixChipToConfigure == 0)
-            {
-                chip_select_mask = 0xfffffdff;
-            }
-            else if (MupixChipToConfigure == 1)
-            {
-                chip_select_mask = 0xfffffbff;
-            }
-            if (MupixChipToConfigure == 2)
-            {
-                chip_select_mask = 0xfffff7ff;
-            }//TOFIX: why has it changed?
-            printf("chip_select_mask %04x\n", chip_select_mask);
-
-            // check if FEB is busy
-            rpc_status=FEB_REPLY_SUCCESS;
-            feb_sc.FEB_read(FEB, MP_CTRL_SPI_BUSY_REGISTER_R, spi_busy);
-            while(spi_busy==1 && count < limit){
-                sleep(1);
-                feb_sc.FEB_read(FEB,MP_CTRL_SPI_BUSY_REGISTER_R,spi_busy);
-                count++;
-                cm_msg(MINFO, "MupixFEB", "Mupix config spi busy .. waiting");
-            }
-
-            if (count == limit) {
-                std::cout<<"Timeout"<<std::endl;
-                cm_msg(MERROR, "setup_mupix", "FEB Mupix SPI timeout");
-            } else { // do the SPI writing 
-                // TODO: make this correct
-                feb_sc.FEB_write(FEB, MP_CTRL_CHIP_MASK_REGISTER_W, chip_select_mask); //
-                // TODO: include headers for addr.
-                feb_sc.FEB_write(FEB, MP_CTRL_SLOW_DOWN_REGISTER_W, 0x0000000F); // SPI slow down reg
-                feb_sc.FEB_write(FEB, MP_CTRL_ENABLE_REGISTER_W, 0x00000FC0); // reset Mupix config fifos
-                feb_sc.FEB_write(FEB, MP_CTRL_ENABLE_REGISTER_W, 0x00000000);
-                feb_sc.FEB_write(FEB, MP_CTRL_INVERT_REGISTER_W, 0x00000003); // idk, have to look it up
-                // We now only write the default configuration for testing
-                rpc_status = feb_sc.FEB_write(FEB, MP_CTRL_ALL_REGISTER_W, payload,true);
-            }
         } catch(std::exception& e) {
             cm_msg(MERROR, "setup_mupix", "Communication error while configuring MuPix %d: %s", asic, e.what());
             set_equipment_status(equipment_name.c_str(), "SB-FEB Communication error", "red");
@@ -235,69 +164,10 @@ int MupixFEB::ConfigureASICs(){
             cm_msg(MERROR, "setup_mupix", "MuPix configuration error for ASIC %i", asic);
             return FE_ERR_HW;//note: return of lambda function
         }
-      
-        // check if we also want to write the TDACs
-        if (useTDACs) {
-            std::cout << "Write TDACs" << "\n";
-            uint32_t curNBits = 0;
-            uint32_t curWord = 0;
-            // loop over keys of the tdacs dict for the current asic
-            // {"0": ["0x0", "0x0", "0x0", "0x0", ...],
-            // {"1": ["0x0", "0x0", "0x0", "0x0", ...],
-            // {"5": ["0x0", "0x0", "0x0", "0x0", ...],
-            // from the key we get the col value for the masking by 6*key+6
-            // the row values for the masking (512 bits) are stored in 32b words in the json file
-            
-            for (auto it = GetTDACsJSON().at(asic).begin(); it != GetTDACsJSON().at(asic).end(); it++) {
-                std::cout << "KEY: " << it->first << "\n";
-                // check if FEB is busy
-                feb_sc.FEB_read(FEB, MP_CTRL_SPI_BUSY_REGISTER_R, spi_busy);
-                count = 0;
-                while ( spi_busy==1 && count < limit ) {
-                    sleep(1);
-                    feb_sc.FEB_read(FEB, MP_CTRL_SPI_BUSY_REGISTER_R, spi_busy);
-                    count++;
-                    cm_msg(MINFO, "MupixFEB", "Mupix config spi busy .. waiting");
-                }
-                if (count == limit) {
-                    std::cout << "Timeout" << std::endl;
-                    cm_msg(MERROR, "setup_mupix", "FEB Mupix SPI timeout for TDAC writing");
-                } else {
-                    // first we write the row values from the value
-                    for ( uint32_t v : it->second ) {
-                        std::cout << "VALUE: " << v << "\n";
-                        feb_sc.FEB_write(FEB, MP_CTRL_TDAC_REGISTER_W, v);
-                    }
-                    feb_sc.FEB_write(FEB, MP_CTRL_ENABLE_REGISTER_W, reg_setBit(0x0,WR_TDAC_BIT,true));
-                    feb_sc.FEB_write(FEB,MP_CTRL_ENABLE_REGISTER_W,0x0);
-                    
-                    // now we write the 128*7b col values where we write on col (key) at the time
-                    curWord = 0;
-                    curNBits = 0;
-                    for ( int i = 0; i <= 127; i++ ) {
-                        for ( int b = 0; b < 7; b++ ) {
-                            curNBits++;
-                            if (b == 6 && it->first == std::to_string(i)) {
-                                curWord = curWord | (1 << curNBits);
-                            }
-                            if (curNBits == 32) {
-                                feb_sc.FEB_write(FEB, MP_CTRL_COL_REGISTER_W, curWord);
-                                curWord = 0;
-                                curNBits = 0;
-                            }
-                        }
-                    }
-                    feb_sc.FEB_write(FEB, MP_CTRL_ENABLE_REGISTER_W, reg_setBit(0x0,WR_COL_BIT,true));
-                    feb_sc.FEB_write(FEB,MP_CTRL_ENABLE_REGISTER_W,0x0);
-                }
-            }
-        }
 
         // reset lvds links
         feb_sc.FEB_write(FEB, MP_RESET_LVDS_N_REGISTER_W, 0x0);
         feb_sc.FEB_write(FEB, MP_RESET_LVDS_N_REGISTER_W, 0x1);
-
-        sleep(2);
         
         return FE_SUCCESS;//note: return of lambda function
     });//MapForEach
@@ -305,14 +175,144 @@ int MupixFEB::ConfigureASICs(){
     return status; //status of foreach function, SUCCESS when no error.
 }
 
+void read_tdac_file(vector<uint32_t>& vec, std::string path) { 
+  std::ifstream file;
+  file.open(path);
+  if(file.fail()){
+    cm_msg(MINFO, "MupixFEB" , "Could not find tdac file %s, proceeding with 0xFF for all tdacs", path.c_str());
+    for(int i = 0; i<256*64; i++){
+        vec.push_back(0xFFFFFFFF);
+    }
+  } else {
+    file.read(reinterpret_cast<char*>(&vec[0]), 256*64*sizeof(uint32_t));
+  }
+  file.close();
+}
+
+    // TODO after cosmic run: check how fast this is, improve it
+int MupixFEB::ConfigureTDACs(){
+    int status = feb_sc.ERRCODES::OK;
+
+            // Tdac writing for a chip would work like this:
+            // write 32 bit words, 4* 8bit tdac in each word
+            // order: 
+            /*
+                col 0 -> 255, starting with col 0, physical col addr. 
+                row 0 -> row 255 for each col, starting with row0, physical row addr.
+
+                example:
+                start with col 0 ..
+                (32 bit)  : [8 bit tdac, 8 bit tdac, 8 bit tdac, 8 bit tdac]
+                word 0    : [row 3     , row 2     , row 1     , row 0     ]
+                word 1    : [row 7     , row 6     , row 5     , row 4     ]
+                word 2    : [row 11    , row 10    , row 9     , row 8     ]
+                ...
+                word 63   : [row 255   , row 254   , row253    , row 252   ]
+                now col 1 ..
+                word 64   : [row 3     , row 2     , row 1     , row 0     ]
+                ...
+            */
+    printf("MupixFEB::ConfigureTDACs()\n");
+    cm_msg(MINFO, "MupixFEB" , "Configuring TDACS");
+    std::vector<uint32_t> test;
+    std::vector<std::vector<uint8_t>> pages_remaining; // vector of FEBs containing vector of sensors, containing number of remaining pages until that sensor is configured
+
+    // what is the best way to do this ? .. this looks ugly
+    std::vector<std::vector<std::vector<uint32_t>>> tdac_pages; // vector of FEBs containing a vector of sensors, containing a vector of tdac values of that page
+    std::vector<uint8_t> pages_remaining_this_chip;
+    uint32_t pages_remaining_this_feb;
+    uint8_t N_PAGES_PER_CHIP;
+    uint32_t PAGESIZE = 128;  // todo get these things from firmware constants
+    uint8_t current_page = 0;
+    uint32_t N_free_pages = 0;
+    bool allDone = false;
+    uint16_t N_CHIPS = 0;
+    uint16_t internal_febID = 0;
+    std::string path;
+
+    // preparation loop
+    for (auto feb : febs){
+        if(feb.IsScEnabled()){
+            // set all febs to use spi with a slow down of F
+            feb_sc.FEB_write(feb, MP_CTRL_SPI_ENABLE_REGISTER_W, 0x00000001);
+            feb_sc.FEB_write(feb, MP_CTRL_SLOW_DOWN_REGISTER_W, 0x0000000F);
+            // run configuration init    (TODO: seperate config init from writing 0 to all tdacs in firmware)
+            feb_sc.FEB_write(feb, MP_CTRL_RESET_REGISTER_W, 0x00000001);
+
+            N_CHIPS = ASICsPerFEB();
+            N_PAGES_PER_CHIP=128; // will this be the same for all febs ( -> get from firmware constants) or not (-> read register from FEB) ?
+            std::vector<std::vector<uint32_t>> tdac_page_this_feb;
+            for(uint32_t i = 0; i < N_CHIPS; i++){
+                pages_remaining_this_chip.push_back(N_PAGES_PER_CHIP);
+                std::vector<uint32_t> tdac_chip(64*256);
+                odb FEBsSettings(pixel_odb_prefix + "/Settings/TDACS/" + std::to_string(i+(internal_febID*N_CHIPS)));
+                path = FEBsSettings["TDACFILE"];
+                read_tdac_file(tdac_chip, path);
+                tdac_page_this_feb.push_back(tdac_chip);
+            }
+            tdac_pages.push_back(tdac_page_this_feb);
+            pages_remaining.push_back(pages_remaining_this_chip);
+            pages_remaining_this_chip.clear();
+            internal_febID++;
+        }
+    }
+
+    cm_msg(MINFO, "MupixFEB" , "tdac load completed, start writing tdacs");
+    uint16_t pos=0;
+
+    while (! allDone){
+        allDone = true;
+        internal_febID = 0;
+
+        for (auto feb : febs){
+            if(feb.IsScEnabled()){
+                pages_remaining_this_feb = 0;
+
+                // get number of free tdac pages for this feb
+                status = feb_sc.ERRCODES::OK;
+                status = feb_sc.FEB_read(feb,MP_CTRL_N_FREE_PAGES_REGISTER_R, N_free_pages);
+                if(status != feb_sc.ERRCODES::OK) {
+                    cm_msg(MERROR, "MupixFEB" , "could not reach feb %i, aborting tdac wriring", internal_febID);
+                    return status;
+                }
+
+                for (auto& n : pages_remaining.at(internal_febID))
+                   pages_remaining_this_feb += n;
+                if(pages_remaining_this_feb > 0)
+                    allDone = false;
+                // while the feb has space left ..
+                while(N_free_pages > 0 && pages_remaining_this_feb > 0){
+                    // Write one page for every chip
+                    for (uint32_t chip = 0; chip<pages_remaining.at(internal_febID).size(); chip++){
+                        if (pages_remaining.at(internal_febID).at(chip) != 0){
+                            if(N_free_pages > 0){
+                                current_page = N_PAGES_PER_CHIP-pages_remaining.at(internal_febID)[chip];
+                                pages_remaining.at(internal_febID)[chip] = pages_remaining.at(internal_febID)[chip] - 1;
+                                pos = ASICsPerFEB() - 1 - chip;
+                                std::vector<uint32_t> tdac_page(PAGESIZE);
+                                // how to do this wihout copy ?
+                                tdac_page = std::vector<uint32_t>(tdac_pages.at(internal_febID).at(chip).begin() + current_page*PAGESIZE, tdac_pages.at(internal_febID).at(chip).begin() + (current_page+1)*PAGESIZE);
+                                feb_sc.FEB_write(feb, MP_CTRL_TDAC_START_REGISTER_W + pos, tdac_page, true, false);
+                                pages_remaining_this_feb--;
+                                N_free_pages--;
+                            } else {break;}
+                        }
+                    }
+                }
+                internal_febID++;
+            }
+        }
+    }
+    cm_msg(MINFO, "MupixFEB" , "tdac write completed");
+    return status;
+}
+
 //MIDAS callback function for FEB register Setter functions
-void MupixFEB::on_settings_changed(odb o, void * userdata)
+void MupixFEB::on_settings_changed(odb o)
 {
     std::string name = o.get_name();
 
     cm_msg(MINFO, "MupixFEB::on_settings_changed", "Setting changed (%s)", name.c_str());
-
-    //MupixFEB* _this=static_cast<MupixFEB*>(userdata);
     
     BOOL bval;
 

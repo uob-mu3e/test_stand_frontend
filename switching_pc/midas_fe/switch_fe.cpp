@@ -278,7 +278,7 @@ void setup_odb(){
             {"Last RM ADD", false},
             {"MupixConfig", false},
             {"MupixChipToConfigure", 999}, // 999 means all
-            {"MupixSetTDACConfig", false},
+            {"MupixTDACConfig", false},
             {"MupixBoard", false},
             {"Sorter Zero Suppression Mupix", false},
             {"SciFiConfig", false},
@@ -626,7 +626,7 @@ INT init_mupix() {
                      equipment[EQUIPMENT_ID::Pixels].name,
                      switch_id); //create FEB interface signleton for mupix
 
-    int status=mupix::midasODB::setup_db("/Equipment/" + pixel_eq_name, *mupixfeb, switch_id, true, false);//true);
+    int status=mupix::midasODB::setup_db("/Equipment/" + pixel_eq_name, switch_id, true);
     if(status != SUCCESS){
         set_equipment_status(equipment[EQUIPMENT_ID::Pixels].name, "Start up failed", "var(--mred)");
         return status;
@@ -1240,6 +1240,14 @@ void sc_settings_changed(odb o)
     }
     if (name == "MupixConfig" && o) {
           int status=mupixfeb->ConfigureASICs();
+          if(status!=SUCCESS){ 
+         	//TODO: what to do? 
+          }
+      o = false;
+      return;
+    }
+    if (name == "MupixTDACConfig" && o) {
+          int status=mupixfeb->ConfigureTDACs();
           if(status!=SUCCESS){ 
          	//TODO: what to do? 
           }

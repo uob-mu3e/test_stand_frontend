@@ -25,72 +25,75 @@ constant MUPIX_LVDS_STATUS_BLOCK_LENGTH     : integer := 36;
 ---- mupix ctrl (0x0400-0x0FFF)----------------------------------
 -----------------------------------------------------------------
 
-    constant MP_CTRL_ENABLE_REGISTER_W          :  integer := 16#0400#; -- DOC: Used to start the mupix configuration | MP_FEB
-        constant WR_BIAS_BIT                    :  integer := 0;        -- DOC: start spi writing of the mupix bias reg (one can start all in parallel)| MP_FEB
-        constant WR_CONF_BIT                    :  integer := 1;        -- DOC: start spi writing of the mupix conf reg | MP_FEB
-        constant WR_VDAC_BIT                    :  integer := 2;        -- DOC: start spi writing of the mupix VDAC reg | MP_FEB
-        constant WR_COL_BIT                     :  integer := 3;        -- DOC: start spi writing of the mupix COL reg | MP_FEB
-        constant WR_TEST_BIT                    :  integer := 4;        -- DOC: start spi writing of the mupix TEST reg | MP_FEB
-        constant WR_TDAC_BIT                    :  integer := 5;        -- DOC: start spi writing of the mupix TDAC reg | MP_FEB
-        constant CLEAR_BIAS_FIFO_BIT            :  integer := 6;        -- DOC: clear Bias fifo in mp_ctrl | MP_FEB
-        constant CLEAR_CONF_FIFO_BIT            :  integer := 7;        -- DOC: clear Bias fifo in mp_ctrl | MP_FEB
-        constant CLEAR_VDAC_FIFO_BIT            :  integer := 8;        -- DOC: clear Bias fifo in mp_ctrl | MP_FEB
-        constant CLEAR_COL_FIFO_BIT             :  integer := 9;        -- DOC: clear Bias fifo in mp_ctrl | MP_FEB
-        constant CLEAR_TEST_FIFO_BIT            :  integer := 10;       -- DOC: clear Bias fifo in mp_ctrl | MP_FEB
-        constant CLEAR_TDAC_FIFO_BIT            :  integer := 11;       -- DOC: clear Bias fifo in mp_ctrl | MP_FEB
+    constant BIAS_BIT                               :  integer := 0;        -- DOC: used wherever BIAS, CONF, VDAC and TDAC need order | MP_FEB
+    constant CONF_BIT                               :  integer := 1;        -- DOC: used wherever BIAS, CONF, VDAC and TDAC need order | MP_FEB
+    constant VDAC_BIT                               :  integer := 2;        -- DOC: used wherever BIAS, CONF, VDAC and TDAC need order | MP_FEB
+    constant TDAC_BIT                               :  integer := 3;        -- DOC: used wherever BIAS, CONF, VDAC and TDAC need order | MP_FEB
 
-    constant MP_CTRL_BIAS_REGISTER_W            :  integer := 16#0401#; -- DOC: If you want to write the mupix BIAS reg only, send data here | MP_FEB
-    constant MP_CTRL_CONF_REGISTER_W            :  integer := 16#0402#; -- DOC: If you want to write the mupix CONF reg only, send data here | MP_FEB
-    constant MP_CTRL_VDAC_REGISTER_W            :  integer := 16#0403#; -- DOC: If you want to write the mupix VDAC reg only, send data here | MP_FEB
-    constant MP_CTRL_COL_REGISTER_W             :  integer := 16#0404#; -- DOC: If you want to write the mupix COL reg only, send data here | MP_FEB
-    constant MP_CTRL_TEST_REGISTER_W            :  integer := 16#0405#; -- DOC: If you want to write the mupix TEST reg only, send data here | MP_FEB
-    constant MP_CTRL_TDAC_REGISTER_W            :  integer := 16#0406#; -- DOC: If you want to write the mupix TDAC reg only, send data here | MP_FEB
+    constant MP_CTRL_COMBINED_START_REGISTER_W      :  integer := 16#0400#; -- DOC: Used to send combined config data to the mupix, chip ID encoded in addr as regaddr + chipID | MP_FEB
+    constant MP_CTRL_TDAC_START_REGISTER_W          :  integer := 16#0430#; -- DOC: Used to send TDAC to the mupix, chip ID encoded in addr as regaddr + chipID | MP_FEB
+    constant MP_CTRL_CHIP_SELECT1_REGISTER_W        :  integer := 16#0460#; -- DOC: Used to specify the chip ID in case of direct SPI or direct register configuration | MP_FEB
+    constant MP_CTRL_CHIP_SELECT2_REGISTER_W        :  integer := 16#0461#; -- DOC: Used to specify the chip ID in case of direct SPI or direct register configuration | MP_FEB
 
-    constant MP_CTRL_SLOW_DOWN_REGISTER_W       :  integer := 16#0407#; -- DOC: Division factor for the mupix spi clk | MP_FEB
-    constant MP_CTRL_CHIP_MASK_REGISTER_W       :  integer := 16#0408#; -- DOC: MASK for the SPI writing to mupix (one can write in parallel) | MP_FEB
-    constant MP_CTRL_INVERT_REGISTER_W          :  integer := 16#0409#; -- DOC: To be removed, inversions in mupix SPI | MP_FEB
-        constant MP_CTRL_INVERT_29_BIT          :  integer := 0;        -- DOC: inverts oder of the mupix 29 bit spi shift reg | MP_FEB
-        constant MP_CTRL_INVERT_CSN_BIT         :  integer := 1;        -- DOC: inverts mupix spi chip select bit | MP_FEB
+    constant MP_CTRL_BIAS_REGISTER_W                :  integer := 16#0462#; -- DOC: If you want to write the mupix BIAS reg only, send data here | MP_FEB
+    constant MP_CTRL_CONF_REGISTER_W                :  integer := 16#0463#; -- DOC: If you want to write the mupix CONF reg only, send data here | MP_FEB
+    constant MP_CTRL_VDAC_REGISTER_W                :  integer := 16#0464#; -- DOC: If you want to write the mupix VDAC reg only, send data here | MP_FEB
 
-    constant MP_CTRL_ALL_REGISTER_W             :  integer := 16#040A#; -- DOC: Write complete mupix configuration to this address | MP_FEB
-    constant MP_CTRL_SPI_BUSY_REGISTER_R        :  integer := 16#040F#; -- DOC: Indicates if the mupix spi is busy, do not send new data | MP_FEB
+    constant MP_CTRL_SLOW_DOWN_REGISTER_W           :  integer := 16#0465#; -- DOC: Division factor for the mupix spi clk | MP_FEB
+
+    constant MP_CTRL_SPI_BUSY_REGISTER_R            :  integer := 16#0466#; -- DOC: Indicates if the mupix spi is busy, do not send new data | MP_FEB
+    constant MP_CTRL_DIRECT_SPI_ENABLE_REGISTER_W   :  integer := 16#0467#; -- DOC: Enable direct SPI configuration mode for mupix | MP_FEB
+    constant MP_CTRL_SPI_ENABLE_REGISTER_W          :  integer := 16#0468#; -- DOC: Enable SPI configuration mode for mupix (direct spi needs to be disabled in this case) | MP_FEB
+    constant MP_CTRL_DIRECT_SPI_BUSY_REGISTER_R     :  integer := 16#0469#; -- DOC: contains 1 bit for each spi bus, 1 if busy | MP_FEB
+    constant MP_CTRL_DIRECT_SPI_START_REGISTER_W    :  integer := 16#046A#; -- DOC: Register for direct spi configuration mode, needs to be enabled first | MP_FEB
+    constant MP_CTRL_RESET_REGISTER_W               :  integer := 16#04A0#; -- DOC: write to this reg triggers a 1 cycle mp ctrl reset | MP_FEB
+    constant MP_CTRL_RUN_TEST_REGISTER_W            :  integer := 16#04A1#; -- DOC: write to this reg triggers write of a TDAC test pattern | MP_FEB
+    constant MP_CTRL_N_FREE_PAGES_REGISTER_R        :  integer := 16#04A2#; -- DOC: number of free TDAC pages | MP_FEB
 
 -----------------------------------------------------------------
----- mupix datapath (0x1200-0xFBFF)------------------------------
+---- mupix datapath general (0x1300-0xFBFF)----------------------
 -----------------------------------------------------------------
-    constant MP_READOUT_MODE_REGISTER_W         :  integer := 16#1200#; -- DOC: to be removed | MP_FEB
+    constant MP_READOUT_MODE_REGISTER_W         :  integer := 16#1300#; -- DOC: to be removed | MP_FEB
         constant INVERT_TS_BIT                  :  integer := 0;        -- DOC: if set: TS is inverted | MP_FEB
         constant INVERT_TS2_BIT                 :  integer := 1;        -- DOC: if set: TS2 is inverted | MP_FEB
         constant GRAY_TS_BIT                    :  integer := 2;        -- DOC: if set: TS is grey-decoded | MP_FEB
         constant GRAY_TS2_BIT                   :  integer := 3;        -- DOC: if set: TS2 is grey-decoded | MP_FEB
         subtype  CHIP_ID_MODE_RANGE             is integer range 5 downto 4; -- DOC: bits to select different chip id numbering modes (not in use) | MP_FEB
         subtype  TOT_MODE_RANGE                 is integer range 8 downto 6; -- DOC: bits to select different TOT calculation modes (Default is to send TS2 as TOT, not in use) | MP_FEB
-    constant MP_LVDS_LINK_MASK_REGISTER_W       :  integer := 16#1201#; -- DOC: masking of mupix lvds connections | MP_FEB
-    constant MP_LVDS_LINK_MASK2_REGISTER_W      :  integer := 16#1202#; -- DOC: masking of mupix lvds connections | MP_FEB
-    constant MP_DATA_GEN_CONTROL_REGISTER_W     :  integer := 16#1203#; -- DOC: controls the mupix data generator | MP_FEB
+    constant MP_LVDS_LINK_MASK_REGISTER_W       :  integer := 16#1301#; -- DOC: masking of mupix lvds connections | MP_FEB
+    constant MP_LVDS_LINK_MASK2_REGISTER_W      :  integer := 16#1302#; -- DOC: masking of mupix lvds connections | MP_FEB
+    constant MP_DATA_GEN_CONTROL_REGISTER_W     :  integer := 16#1303#; -- DOC: controls the mupix data generator | MP_FEB
         subtype  MP_DATA_GEN_HIT_P_RANGE        is integer range 3 downto 0; -- DOC: generator hit output probability, 1/(2^(MP_DATA_GEN_HIT_P_RANGE+1)) for each cycle where a hit could be send | MP_FEB
         constant MP_DATA_GEN_FULL_STEAM_BIT     :  integer := 4;        -- DOC: if set: generator hit output probability is 1 | MP_FEB
         constant MP_DATA_GEN_SYNC_BIT           :  integer := 5;        -- DOC: if set: generator seed is the same on all boards else: generator seed depends on FPGA_ID | MP_FEB
         constant MP_DATA_GEN_ENGAGE_BIT         :  integer := 16;       -- DOC: if set: use hits from generator, datapath is not connected to link | MP_FEB
         constant MP_DATA_GEN_SORT_IN_BIT        :  integer := 17;       -- DOC: if set: generated hits are inserted after the data_unpacker (bevore sorter) | MP_FEB
         constant MP_DATA_GEN_ENABLE_BIT         :  integer := 31;       -- DOC: if set: data generator generates hits | MP_FEB
-    constant MP_LVDS_INVERT_REGISTER_W          :  integer := 16#1204#;       -- DOC: inverting mupix lvds lines | MP_FEB 
-    constant MP_DATA_BYPASS_SELECT_REGISTER_W   :  integer := 16#1205#;       -- DOC: bypass the mupix soter and put input to_integer(THISREG) directly on optical link (implemented but not connected in top) | MP_FEB
-    constant MP_TS_HISTO_SELECT_REGISTER_W      :  integer := 16#1206#;       -- DOC: not in use | MP_FEB
+    constant MP_LVDS_INVERT_REGISTER_W          :  integer := 16#1304#;       -- DOC: inverting mupix lvds lines | MP_FEB 
+    constant MP_DATA_BYPASS_SELECT_REGISTER_W   :  integer := 16#1305#;       -- DOC: bypass the mupix soter and put input to_integer(THISREG) directly on optical link (implemented but not connected in top) | MP_FEB
+    constant MP_TS_HISTO_SELECT_REGISTER_W      :  integer := 16#1306#;       -- DOC: not in use | MP_FEB
         subtype  MP_TS_HISTO_LINK_SELECT_RANGE  is integer range 15 downto 0; -- DOC: not in use | MP_FEB
         subtype  MP_TS_HISTO_N_SAMPLE_RANGE     is integer range 31 downto 16;-- DOC: not in use | MP_FEB
-    constant MP_LAST_SORTER_HIT_REGISTER_R      :  integer := 16#1207#;       -- DOC: register that contains the last mupix hit of the sorter output | MP_FEB
-    constant MP_SORTER_INJECT_REGISTER_W        :  integer := 16#1208#;       -- DOC: used to inject single hits at the sorter inputs | MP_FEB
+    constant MP_LAST_SORTER_HIT_REGISTER_R      :  integer := 16#1307#;       -- DOC: register that contains the last mupix hit of the sorter output | MP_FEB
+    constant MP_SORTER_INJECT_REGISTER_W        :  integer := 16#1308#;       -- DOC: used to inject single hits at the sorter inputs | MP_FEB
         -- select the input of the sorter to inject to
         subtype MP_SORTER_INJECT_SELECT_RANGE   is integer range 7 downto 4;  -- DOC: input of the sorter to inject to | MP_FEB
         -- rising edge on this bit will trigger a single inject of the word MP_SORTER_INJECT_REGISTER_W at sorter input MP_SORTER_INJECT_REGISTER_W(MP_SORTER_INJECT_SELECT_RANGE)
         constant MP_SORTER_INJECT_ENABLE_BIT    :  integer := 8;              -- DOC: rising_edge: single hit is injected | MP_FEB
-    constant MP_HIT_ENA_CNT_REGISTER_R          :  integer := 16#1209#;       -- DOC: hit enable counter | MP_FEB
-    constant MP_HIT_ENA_CNT_SELECT_REGISTER_W   :  integer := 16#120A#;       -- DOC: register to select the link for hit ena counter | MP_FEB
-    constant MP_HIT_ENA_CNT_SORTER_IN_REGISTER_R :  integer := 16#120B#;      -- DOC: hit enable counter at the sorter input | MP_FEB
-    constant MP_HIT_ENA_CNT_SORTER_SELECT_REGISTER_W :  integer := 16#120C#;  -- DOC: register to select the link for the sorter input hin ena counter | MP_FEB
-    constant MP_HIT_ENA_CNT_SORTER_OUT_REGISTER_R : integer := 16#120D#;      -- DOC: hit counter at sorter output | MP_FEB
-    constant MP_RESET_LVDS_N_REGISTER_W         :  integer := 16#120F#;       -- DOC: reset register for mupix lvds rx | MP_FEB
+    constant MP_HIT_ENA_CNT_REGISTER_R          :  integer := 16#1309#;       -- DOC: hit enable counter | MP_FEB
+    constant MP_HIT_ENA_CNT_SELECT_REGISTER_W   :  integer := 16#130A#;       -- DOC: register to select the link for hit ena counter | MP_FEB
+    constant MP_HIT_ENA_CNT_SORTER_IN_REGISTER_R :  integer := 16#130B#;      -- DOC: hit enable counter at the sorter input | MP_FEB
+    constant MP_HIT_ENA_CNT_SORTER_SELECT_REGISTER_W :  integer := 16#130C#;  -- DOC: register to select the link for the sorter input hin ena counter | MP_FEB
+    constant MP_HIT_ENA_CNT_SORTER_OUT_REGISTER_R : integer := 16#130D#;      -- DOC: hit counter at sorter output | MP_FEB
+    constant MP_RESET_LVDS_N_REGISTER_W         :  integer := 16#130F#;       -- DOC: reset register for mupix lvds rx | MP_FEB
+    constant MP_USE_ARRIVAL_TIME1_REGISTER_W    :  integer := 16#1310#;       -- DOC: use hit arrival time instead of timestamp from mupix (lower 32 chips) | MP_FEB
+    constant MP_USE_ARRIVAL_TIME2_REGISTER_W    :  integer := 16#1311#;       -- DOC: use hit arrival time instead of timestamp from mupix (uppder 4 chips) | MP_FEB
+
+-----------------------------------------------------------------
+---- mupix PLL lock monitor (0x1200-0x12FF)----------------------
+-----------------------------------------------------------------
+
+    constant MP_HIT_ARRIVAL_START_REGISTER_R    :  integer := 16#1200#;       -- DOC: start of PLL lock monitor block, 4 Words for each chip, histogram lower bits of mupix arrival timestamp | MP_FEB
 
 -----------------------------------------------------------------
 ---- mupix lvds rx (0x1100-0x11FF)-------------------------------

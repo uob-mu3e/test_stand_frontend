@@ -3,165 +3,250 @@
 # Script to perform the Link Quality test
 #
 #
-# TODO.
-# Check upstream / downstream behaviour
-# Add checks for input parameters.
 #
 
 # Process input parameters
+PARAM half_ladder_id, "Half ladder ID"
+PARAM hameg_id, "HAMEG ID"
+PARAM channel, "HAMEG Channel"
+
+
+#ODBGET /Equipment/PixelsCentral/QCTests/Ladder/half_ladder_id, _g_ladder_id
+#IF $_g_ladder_id != half_ladder_id
+#    MESSAGE "Input half_ladder_id at Link Quality Test different than the one inputed in IV curve test", 0
+#ENDIF
+
+#ODBGET /Equipment/PixelsCentral/QCTests/Ladder/half_ladder_id, _g_hameg_id
+#IF $_g_hameg_id != hameg_id
+#    MESSAGE "Input hameg_id at Link Quality Test different than the one inputed in IV curve test", 0
+#ENDIF
+
+#ODBGET /Equipment/PixelsCentral/QCTests/Ladder/half_ladder_id, _g_channel
+#IF $_g_channel != channel
+#    MESSAGE "Input channel at Link Quality Test different than the one inputed in IV curve test", 0
+#ENDIF
+
+
+ODBSET /Equipment/PixelsCentral/QCTests/Ladder/LINKQUALIcheck/half_ladder_id, $half_ladder_id
+ODBSET /Equipment/PixelsCentral/QCTests/Ladder/LINKQUALIcheck/hameg_id, $hameg_id
+ODBSET /Equipment/PixelsCentral/QCTests/Ladder/LINKQUALIcheck/channel, $channel
+
+
+CAT power_get_state_path, /Equipment/HAMEG, $hameg_id, /Variables/State[, $channel,]
+CAT power_set_state_path, /Equipment/HAMEG, $hameg_id, /Variables/Set State[, $channel,]
+
+
 PARAM hv_voltage, "HV voltage"
 PARAM hv_curr_limit, "HV current limit"
-ODBSET /Equipment/Mupix/QCTests/Ladder/LINKQUALIcheck/Input/HV_voltage, $hv_voltage
-ODBSET /Equipment/Mupix/QCTests/Ladder/LINKQUALIcheck/Input/HV_curr_limit, $hv_curr_limit
-
-# Select configuration. TODO: check if it necessary to save this in the ODB as a param. TODO check working
-PARAM select_UD, "UPstream(-1) DOWNstream(2) chips"
+ODBSET /Equipment/PixelsCentral/QCTests/Ladder/LINKQUALIcheck/Input/HV_voltage, $hv_voltage
+ODBSET /Equipment/PixelsCentral/QCTests/Ladder/LINKQUALIcheck/Input/HV_curr_limit, $hv_curr_limit
 
 # Definitions
-start_magic_value = 7
-stop_magic_value = 29
+start_magic_value = 11
+stop_magic_value = 40
+
+waiting_time = 5
+
+# Save parameters to ODB
+ODBSET /Equipment/PixelsCentral/QCTests/Ladder/LINKQUALIcheck/Input/start_magic_value_VPVCO, $start_magic_value
+ODBSET /Equipment/PixelsCentral/QCTests/Ladder/LINKQUALIcheck/Input/stop_magic_value_VPVCO, $stop_magic_value
+ODBSET /Equipment/PixelsCentral/QCTests/Ladder/LINKQUALIcheck/Input/waiting_time, $waiting_time
+
+#Reset output
+ODBSET  /Equipment/PixelsCentral/QCTests/Ladder/LINKQUALIcheck/Output/*/Scan/VPVCO[*], 0
+ODBSET  /Equipment/PixelsCentral/QCTests/Ladder/LINKQUALIcheck/Output/*/Scan/error_rate[*], 0
+ODBSET  /Equipment/PixelsCentral/QCTests/Ladder/LINKQUALIcheck/Output/*/Scan/error_rate_linkA[*], 0
+ODBSET  /Equipment/PixelsCentral/QCTests/Ladder/LINKQUALIcheck/Output/*/Scan/error_rate_linkB[*], 0
+ODBSET  /Equipment/PixelsCentral/QCTests/Ladder/LINKQUALIcheck/Output/*/Scan/error_rate_linkC[*], 0
 
 
 # Power settings?
 # - LV: on
-ODBGET /Equipment/HAMEG0/Variables/State[1], now_state_hameg_channel
+ODBGET $power_get_state_path, now_state_hameg_channel
 IF $now_state_hameg_channel == 0
-    ODBSET /Equipment/HAMEG0/Variables/Set State[1], 1
+    ODBSET $power_set_state_path, 1
     WAIT SECONDS, 10
 ENDIF
 
 # - HV: specify at the begnning as params
 ODBSET /Equipment/KEITHLEY0/Variables/Current Limit, $hv_curr_limit
-ODBSET /Equipment/KEITHLEY0/Variables/Demand Voltage, $hv_voltage
+ODBSET /Equipment/KEITHLEY0/Variables/Demand Voltage, -1*abs($hv_voltage)
 ODBSET /Equipment/KEITHLEY0/Variables/Set State, 1
 WAIT SECONDS, 2
 
 # ID of each mupix
-mupixID0 = 0 + $select_UD
-mupixID1 = 1 + $select_UD
-mupixID2 = 2 + $select_UD
+mupixID0 = 0 + ($half_ladder_id % 4)*3
+mupixID1 = 1 + ($half_ladder_id % 4)*3
+mupixID2 = 2 + ($half_ladder_id % 4)*3
 
+CAT chip0_linkA, Equipment/PixelsCentral/Variables/PCLS[, 1 + 21*$mupixID0 + 1, ]
+CAT chip0_linkB, Equipment/PixelsCentral/Variables/PCLS[, 1 + 21*$mupixID0 + 8, ]
+CAT chip0_linkC, Equipment/PixelsCentral/Variables/PCLS[, 1 + 21*$mupixID0 + 15, ]
+CAT chip1_linkA, Equipment/PixelsCentral/Variables/PCLS[, 1 + 21*$mupixID1 + 1, ]
+CAT chip1_linkB, Equipment/PixelsCentral/Variables/PCLS[, 1 + 21*$mupixID1 + 8, ]
+CAT chip1_linkC, Equipment/PixelsCentral/Variables/PCLS[, 1 + 21*$mupixID1 + 15, ]
+CAT chip2_linkA, Equipment/PixelsCentral/Variables/PCLS[, 1 + 21*$mupixID2 + 1, ]
+CAT chip2_linkB, Equipment/PixelsCentral/Variables/PCLS[, 1 + 21*$mupixID2 + 8, ]
+CAT chip2_linkC, Equipment/PixelsCentral/Variables/PCLS[, 1 + 21*$mupixID2 + 15, ]
+
+globalMupixID0 = $half_ladder_id*3 + 0
+globalMupixID1 = $half_ladder_id*3 + 1
+globalMupixID2 = $half_ladder_id*3 + 2
 
 # Initialize errors as big as possible
-norm0 = 1000000000
-norm1 = 1000000000
-norm2 = 1000000000
+norm0 = 1000000.0
+norm1 = 1000000.0
+norm2 = 1000000.0
+
+SET error0, 0
+SET error0_final, 0
+
+out0 = 0
+out1 = 0
+out2 = 0
 
 # Loop over all possible magic values
+index_j = 0
 LOOP j, ($stop_magic_value-$start_magic_value)+1
     # Magic values to test
-    vpvco = $j-1+$start_magic_value
+    vpvco = $j -1 + $start_magic_value
     vnvco = $vpvco + 1
 
 
     # Configure chip
-    LOOP j, 3
-        mupixID = $j-1 # Implement UPSTREAM or DOWNSTREAM
+    LOOP i, 3
+        i_ = $i-1
+        mupixID = $i_ + $half_ladder_id*3
 
-        ODBSET /Equipment/Mupix/Settings/BIASDACS/$mupixID/VPVCO, $vpvco
-        ODBSET /Equipment/Mupix/Settings/BIASDACS/$mupixID/VNVCO, $vnvco
-        ODBSET /Equipment/Mupix/Settings/BIASDACS/$mupixID/BiasBlock_On, 5
+        ODBSET /Equipment/PixelsCentral/Settings/BIASDACS/$mupixID/VPVCO, $vpvco
+        ODBSET /Equipment/PixelsCentral/Settings/BIASDACS/$mupixID/VNVCO, $vnvco
+        ODBSET /Equipment/PixelsCentral/Settings/BIASDACS/$mupixID/BiasBlock_On, 5
 
         # Upload config
-        ODBSET /Equipment/Switching/Settings/MupixChipToConfigure, $mupixID
-        ODBSET /Equipment/Switching/Settings/MupixConfig, 1
-        WAIT 2 SECONDS
+        ODBSET /Equipment/SwitchingCentral/Commands/MupixChipToConfigure, $mupixID
+        ODBSET /Equipment/SwitchingCentral/Commands/MupixConfig, 1
+        WAIT 10
     ENDLOOP
 
+    WAIT 5
 
     # Get errors
-        ODBGET Equipment/Mupix/Variables/PSLL[12*$mupixID0 + 1], error0
-        ODBGET Equipment/Mupix/Variables/PSLL[12*$mupixID0 + 5], error1
-        ODBGET Equipment/Mupix/Variables/PSLL[12*$mupixID0 + 9], error2
+        ODBGET $chip0_linkA, error0
+        ODBGET $chip0_linkB, error1
+        ODBGET $chip0_linkC, error2
 
-        ODBGET Equipment/Mupix/Variables/PSLL[12*$mupixID1 + 1], error3
-        ODBGET Equipment/Mupix/Variables/PSLL[12*$mupixID1 + 5], error4
-        ODBGET Equipment/Mupix/Variables/PSLL[12*$mupixID1 + 9], error5
+        ODBGET $chip1_linkA, error3
+        ODBGET $chip1_linkB, error4
+        ODBGET $chip1_linkC, error5
 
-        ODBGET Equipment/Mupix/Variables/PSLL[12*$mupixID2 + 1], error6
-        ODBGET Equipment/Mupix/Variables/PSLL[12*$mupixID2 + 5], error7
-        ODBGET Equipment/Mupix/Variables/PSLL[12*$mupixID2 + 9], error8
+        ODBGET $chip2_linkA, error6
+        ODBGET $chip2_linkB, error7
+        ODBGET $chip2_linkC, error8
 
-    WAIT SECONDS, 3
+    WAIT SECONDS, $waiting_time
 
     # Get errors again
-        ODBGET Equipment/Mupix/Variables/PSLL[12*$mupixID0 + 1], error0_final
-        ODBGET Equipment/Mupix/Variables/PSLL[12*$mupixID0 + 5], error1_final
-        ODBGET Equipment/Mupix/Variables/PSLL[12*$mupixID0 + 9], error2_final
+        ODBGET $chip0_linkA, error0_final
+        ODBGET $chip0_linkB, error1_final
+        ODBGET $chip0_linkC, error2_final
 
-        ODBGET Equipment/Mupix/Variables/PSLL[12*$mupixID1 + 1], error3_final
-        ODBGET Equipment/Mupix/Variables/PSLL[12*$mupixID1 + 5], error4_final
-        ODBGET Equipment/Mupix/Variables/PSLL[12*$mupixID1 + 9], error5_final
+        ODBGET $chip1_linkA, error3_final
+        ODBGET $chip1_linkB, error4_final
+        ODBGET $chip1_linkC, error5_final
 
-        ODBGET Equipment/Mupix/Variables/PSLL[12*$mupixID2 + 1], error6_final
-        ODBGET Equipment/Mupix/Variables/PSLL[12*$mupixID2 + 5], error7_final
-        ODBGET Equipment/Mupix/Variables/PSLL[12*$mupixID2 + 9], error8_final
+        ODBGET $chip2_linkA, error6_final
+        ODBGET $chip2_linkB, error7_final
+        ODBGET $chip2_linkC, error8_final
 
     # Get differences
-        diff0 = error0_final - error0
-        diff1 = error1_final - error1
-        diff2 = error2_final - error2
+        diff0 = ($error0_final - $error0)/$waiting_time
+        diff1 = ($error1_final - $error1)/$waiting_time
+        diff2 = ($error2_final - $error2)/$waiting_time
 
-        diff3 = error3_final - error3
-        diff4 = error4_final - error4
-        diff5 = error5_final - error5
+        diff3 = ($error3_final - $error3)/$waiting_time
+        diff4 = ($error4_final - $error4)/$waiting_time
+        diff5 = ($error5_final - $error5)/$waiting_time
 
-        diff6 = error6_final - error6
-        diff7 = error7_final - error7
-        diff8 = error8_final - error8
+        diff6 = ($error6_final - $error6)/$waiting_time
+        diff7 = ($error7_final - $error7)/$waiting_time
+        diff8 = ($error8_final - $error8)/$waiting_time
 
-        candidate_norm0 = sqrt(diff0*diff0 + diff1*diff1 + diff2*diff2)
-        candidate_norm1 = sqrt(diff3*diff3+ diff4*diff4 + diff5*diff5)
-        candidate_norm2 = sqrt(diff6*diff6+ diff7*diff7 + diff8*diff8)
+        candidate_norm0 = sqrt($diff0*$diff0 + $diff1*$diff1 + $diff2*$diff2)
+        candidate_norm1 = sqrt($diff3*$diff3 + $diff4*$diff4 + $diff5*$diff5)
+        candidate_norm2 = sqrt($diff6*$diff6 + $diff7*$diff7 + $diff8*$diff8)
 
-    IF candidate_norm0 < norm0
-        norm0 = candidate_norm1
+        # Save in ODB
+        ODBSET  /Equipment/PixelsCentral/QCTests/Ladder/LINKQUALIcheck/Output/0/Scan/VPVCO[$index_j], $vpvco
+        ODBSET  /Equipment/PixelsCentral/QCTests/Ladder/LINKQUALIcheck/Output/0/Scan/error_rate[$index_j], $candidate_norm0
+        ODBSET  /Equipment/PixelsCentral/QCTests/Ladder/LINKQUALIcheck/Output/0/Scan/error_rate_linkA[$index_j], $diff0
+        ODBSET  /Equipment/PixelsCentral/QCTests/Ladder/LINKQUALIcheck/Output/0/Scan/error_rate_linkB[$index_j], $diff1
+        ODBSET  /Equipment/PixelsCentral/QCTests/Ladder/LINKQUALIcheck/Output/0/Scan/error_rate_linkC[$index_j], $diff2
+
+        ODBSET  /Equipment/PixelsCentral/QCTests/Ladder/LINKQUALIcheck/Output/1/Scan/VPVCO[$index_j], $vpvco
+        ODBSET  /Equipment/PixelsCentral/QCTests/Ladder/LINKQUALIcheck/Output/1/Scan/error_rate[$index_j], $candidate_norm1
+        ODBSET  /Equipment/PixelsCentral/QCTests/Ladder/LINKQUALIcheck/Output/1/Scan/error_rate_linkA[$index_j], $diff3
+        ODBSET  /Equipment/PixelsCentral/QCTests/Ladder/LINKQUALIcheck/Output/1/Scan/error_rate_linkB[$index_j], $diff4
+        ODBSET  /Equipment/PixelsCentral/QCTests/Ladder/LINKQUALIcheck/Output/1/Scan/error_rate_linkC[$index_j], $diff5
+
+        ODBSET  /Equipment/PixelsCentral/QCTests/Ladder/LINKQUALIcheck/Output/2/Scan/VPVCO[$index_j], $vpvco
+        ODBSET  /Equipment/PixelsCentral/QCTests/Ladder/LINKQUALIcheck/Output/2/Scan/error_rate[$index_j], $candidate_norm2        
+        ODBSET  /Equipment/PixelsCentral/QCTests/Ladder/LINKQUALIcheck/Output/2/Scan/error_rate_linkA[$index_j], $diff6
+        ODBSET  /Equipment/PixelsCentral/QCTests/Ladder/LINKQUALIcheck/Output/2/Scan/error_rate_linkB[$index_j], $diff7
+        ODBSET  /Equipment/PixelsCentral/QCTests/Ladder/LINKQUALIcheck/Output/2/Scan/error_rate_linkC[$index_j], $diff8
+
+
+    IF $candidate_norm0 < $norm0
+        norm0 = $candidate_norm1
         out0 = $vpvco
     ENDIF
 
-    IF candidate_norm1 < norm1
-        norm1 = candidate_norm1
+    IF $candidate_norm1 < $norm1
+        norm1 = $candidate_norm1
         out1 = $vpvco
     ENDIF
 
-    IF candidate_norm2 < norm2 
-        norm2 = candidate_norm2
+    IF $candidate_norm2 < $norm2 
+        norm2 = $candidate_norm2
         out2 = $vpvco
     ENDIF
+    index_j = $j
 ENDLOOP
 
 
 # Save error rate and and optimal params from mupixID0, mupixID1, mupixID2.
-ODBSET /Equipment/Mupix/QCTests/Ladder/LINKQUALIcheck/Output/$mupixID0/VPVCO, $out0
-ODBSET /Equipment/Mupix/QCTests/Ladder/LINKQUALIcheck/Output/$mupixID0/VNVCO, $out0 + 1
-ODBSET /Equipment/Mupix/QCTests/Ladder/LINKQUALIcheck/Output/$mupixID0/ErrorRate, $norm0
+ODBSET /Equipment/PixelsCentral/QCTests/Ladder/LINKQUALIcheck/Output/0/opt_VPVCO, $out0
+ODBSET /Equipment/PixelsCentral/QCTests/Ladder/LINKQUALIcheck/Output/0/opt_VNVCO, $out0 + 1
+ODBSET /Equipment/PixelsCentral/QCTests/Ladder/LINKQUALIcheck/Output/0/ErrorRate, $norm0
 
-ODBSET /Equipment/Mupix/QCTests/Ladder/LINKQUALIcheck/Output/$mupixID1/VPVCO, $out1
-ODBSET /Equipment/Mupix/QCTests/Ladder/LINKQUALIcheck/Output/$mupixID1/VNVCO, $out1 + 1
-ODBSET /Equipment/Mupix/QCTests/Ladder/LINKQUALIcheck/Output/$mupixID1/ErrorRate, $norm1
+ODBSET /Equipment/PixelsCentral/QCTests/Ladder/LINKQUALIcheck/Output/1/opt_VPVCO, $out1
+ODBSET /Equipment/PixelsCentral/QCTests/Ladder/LINKQUALIcheck/Output/1/opt_VNVCO, $out1 + 1
+ODBSET /Equipment/PixelsCentral/QCTests/Ladder/LINKQUALIcheck/Output/1/ErrorRate, $norm1
 
-ODBSET /Equipment/Mupix/QCTests/Ladder/LINKQUALIcheck/Output/$mupixID2/VPVCO, $out2
-ODBSET /Equipment/Mupix/QCTests/Ladder/LINKQUALIcheck/Output/$mupixID2/VNVCO, $out2 +1 
-ODBSET /Equipment/Mupix/QCTests/Ladder/LINKQUALIcheck/Output/$mupixID2/ErrorRate, $norm2
+ODBSET /Equipment/PixelsCentral/QCTests/Ladder/LINKQUALIcheck/Output/2/opt_VPVCO, $out2
+ODBSET /Equipment/PixelsCentral/QCTests/Ladder/LINKQUALIcheck/Output/2/opt_VNVCO, $out2 +1 
+ODBSET /Equipment/PixelsCentral/QCTests/Ladder/LINKQUALIcheck/Output/2/ErrorRate, $norm2
 
 # Set chips to that values and configure all
-ODBSET /Equipment/Mupix/Settings/BIASDACS/$mupixID0/VPVCO, $out0
-ODBSET /Equipment/Mupix/Settings/BIASDACS/$mupixID0/VNVCO, $out0+1
-ODBSET /Equipment/Switching/Variables/MupixChipToConfigure, $mupixID0
-ODBSET /Equipment/Switching/Variables/MupixConfig, 1
-WAIT SECONDS, 1
+ODBSET /Equipment/PixelsCentral/Settings/BIASDACS/$globalMupixID0/VPVCO, $out0
+ODBSET /Equipment/PixelsCentral/Settings/BIASDACS/$globalMupixID0/VNVCO, $out0+1
+ODBSET /Equipment/SwitchingCentral/Commands/MupixChipToConfigure, $globalMupixID0
+ODBSET /Equipment/SwitchingCentral/Commands/MupixConfig, 1
+WAIT SECONDS, 15
 
-ODBSET /Equipment/Mupix/Settings/BIASDACS/$mupixID1/VPVCO, $out1
-ODBSET /Equipment/Mupix/Settings/BIASDACS/$mupixID1/VNVCO, $out1+1
-ODBSET /Equipment/Switching/Variables/MupixChipToConfigure, $mupixID1
-ODBSET /Equipment/Switching/Variables/MupixConfig, 1
-WAIT SECONDS, 1
+ODBSET /Equipment/PixelsCentral/Settings/BIASDACS/$globalMupixID1/VPVCO, $out1
+ODBSET /Equipment/PixelsCentral/Settings/BIASDACS/$globalMupixID1/VNVCO, $out1+1
+ODBSET /Equipment/SwitchingCentral/Commands/MupixChipToConfigure, $globalMupixID1
+ODBSET /Equipment/SwitchingCentral/Commands/MupixConfig, 1
+WAIT SECONDS, 15
 
-ODBSET /Equipment/Mupix/Settings/BIASDACS/$mupixID2/VPVCO, $out2
-ODBSET /Equipment/Mupix/Settings/BIASDACS/$mupixID2/VNVCO, $out2+1
-ODBSET /Equipment/Switching/Variables/MupixChipToConfigure, $mupixID2
-ODBSET /Equipment/Switching/Variables/MupixConfig, 1
-WAIT SECONDS, 2
+ODBSET /Equipment/PixelsCentral/Settings/BIASDACS/$globalMupixID2/VPVCO, $out2
+ODBSET /Equipment/PixelsCentral/Settings/BIASDACS/$globalMupixID2/VNVCO, $out2+1
+ODBSET /Equipment/SwitchingCentral/Commands/MupixChipToConfigure, $globalMupixID2
+ODBSET /Equipment/SwitchingCentral/Commands/MupixConfig, 1
+WAIT SECONDS, 15
 
-
+# Turn off HV
+ODBSET /Equipment/KEITHLEY0/Variables/Demand Voltage, 0
+WAIT 3
+ODBSET /Equipment/KEITHLEY0/Variables/Set State, 0
 
