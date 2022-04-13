@@ -1256,7 +1256,7 @@ void sc_settings_changed(odb o)
          uint32_t command = o;
 
 	  if((command&0xff) == 0) return;
-      uint32_t payload = odb("/Equipment/Switching/Settings/Reset Bypass Payload");
+      uint32_t payload = odb("/Equipment/SwitchingCentral/Commands/Reset Bypass Payload");
 
 	  cm_msg(MINFO, "sc_settings_changed", "Reset Bypass Command %d, payload %d", command, payload);
 
@@ -1285,9 +1285,9 @@ void sc_settings_changed(odb o)
     }
     if (name == "Load Firmware" && o) {
         cm_msg(MINFO, "sc_settings_changed", "Load firmware triggered");
-        string fname = odb("/Equipment/Switching/Settings/Firmware File");
-        uint32_t id = odb("/Equipment/Switching/Settings/Firmware FEB ID");
-        bool emergency = odb("/Equipment/Switching/Settings/Firmware Is Emergency Image");
+        string fname = odb("/Equipment/SwitchingCentral/Commands/Firmware File");
+        uint32_t id = odb("/Equipment/SwitchingCentral/Commands/Firmware FEB ID");
+        bool emergency = odb("/Equipment/SwitchingCentral/Commands/Firmware Is Emergency Image");
 
         auto feb = feblist->getFEBatPort(id);
         if(feb)
