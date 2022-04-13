@@ -49,7 +49,7 @@ EQUIPMENT equipment[] = {
     },
 
    {"Pixel Temperatures",     // equipment name
-     {151, 0,                 // event ID, trigger mask
+     {203, 0,                 // event ID, trigger mask
        "SYSTEM",              // event buffer
        EQ_SLOW,               // equipment type
        0,                     // event source
