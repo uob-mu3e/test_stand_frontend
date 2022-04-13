@@ -48,7 +48,7 @@ public:
          mOdbSettings["Names"][0] = std::string(31, '\0');
 
       for (int i=0 ; i<n_channels ; i++) {
-         if (i >= name.size() || name[i] == std::string("")) {
+         if (i >= (int) name.size() || name[i] == std::string("")) {
             // put some default name, names must be unique
             int ch = mEq->driver[mDevIndex].channels + i;
             mOdbSettings["Names"][chn_total + i] = mDevName + "%CH " + std::to_string(ch) + " " +
