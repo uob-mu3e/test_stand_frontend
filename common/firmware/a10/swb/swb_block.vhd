@@ -245,25 +245,25 @@ begin
 
     -- counter mapping
     counter_swb(builder_counters'left downto 0) <= builder_counters;
-    counter_swb(builder_counters'left+1 + counter_swb_data_pixel_ds'left+1 - 1 downto builder_counters'left+1) <= counter_swb_data_pixel_ds;
-    counter_swb(builder_counters'left+1 + counter_swb_data_pixel_us'left+1 + counter_swb_data_pixel_ds'left+1 - 1 downto counter_swb_data_pixel_ds'left+1 + builder_counters'left+1) <= counter_swb_data_pixel_us;
+    counter_swb(builder_counters'left+1 + counter_swb_data_pixel_us'left+1 - 1 downto builder_counters'left+1) <= counter_swb_data_pixel_us;
+    counter_swb(builder_counters'left+1 + counter_swb_data_pixel_us'left+1 + counter_swb_data_pixel_ds'left+1 - 1 downto counter_swb_data_pixel_us'left+1 + builder_counters'left+1) <= counter_swb_data_pixel_ds;
     counter_swb(builder_counters'left+1 + counter_swb_data_scifi'left+1 + counter_swb_data_pixel_ds'left+1 + counter_swb_data_pixel_us'left+1 - 1 downto counter_swb_data_pixel_ds'left+1 + counter_swb_data_pixel_us'left+1 + builder_counters'left+1) <= counter_swb_data_scifi;
 
     -- DAM mapping
-    builder_data    <=  data_debug_pixel(0) when i_writeregs(SWB_READOUT_STATE_REGISTER_W)(USE_BIT_PIXEL_DS) = '1' else
-                        data_debug_pixel(1) when i_writeregs(SWB_READOUT_STATE_REGISTER_W)(USE_BIT_PIXEL_US) = '1' else
+    builder_data    <=  data_debug_pixel(0) when i_writeregs(SWB_READOUT_STATE_REGISTER_W)(USE_BIT_PIXEL_US) = '1' else
+                        data_debug_pixel(1) when i_writeregs(SWB_READOUT_STATE_REGISTER_W)(USE_BIT_PIXEL_DS) = '1' else
                         data_debug_scifi(0) when i_writeregs(SWB_READOUT_STATE_REGISTER_W)(USE_BIT_SCIFI) = '1' else
                         work.mu3e.LINK_IDLE;
-    builder_rempty  <=  rempty_debug_pixel(0) when i_writeregs(SWB_READOUT_STATE_REGISTER_W)(USE_BIT_PIXEL_DS) = '1' else
-                        rempty_debug_pixel(1) when i_writeregs(SWB_READOUT_STATE_REGISTER_W)(USE_BIT_PIXEL_US) = '1' else
+    builder_rempty  <=  rempty_debug_pixel(0) when i_writeregs(SWB_READOUT_STATE_REGISTER_W)(USE_BIT_PIXEL_US) = '1' else
+                        rempty_debug_pixel(1) when i_writeregs(SWB_READOUT_STATE_REGISTER_W)(USE_BIT_PIXEL_DS) = '1' else
                         rempty_debug_scifi(0) when i_writeregs(SWB_READOUT_STATE_REGISTER_W)(USE_BIT_SCIFI) = '1' else
                         '0';
-    builder_data_type <= "00" when i_writeregs(SWB_READOUT_STATE_REGISTER_W)(USE_BIT_PIXEL_DS) = '1' else
-                         "00" when i_writeregs(SWB_READOUT_STATE_REGISTER_W)(USE_BIT_PIXEL_US) = '1' else
+    builder_data_type <= "00" when i_writeregs(SWB_READOUT_STATE_REGISTER_W)(USE_BIT_PIXEL_US) = '1' else
+                         "00" when i_writeregs(SWB_READOUT_STATE_REGISTER_W)(USE_BIT_PIXEL_DS) = '1' else
                          "01" when i_writeregs(SWB_READOUT_STATE_REGISTER_W)(USE_BIT_SCIFI) = '1' else
                          "00";
-    rack_debug_pixel(0) <=  builder_rack when i_writeregs(SWB_READOUT_STATE_REGISTER_W)(USE_BIT_PIXEL_DS) = '1' else '0';
-    rack_debug_pixel(1) <=  builder_rack when i_writeregs(SWB_READOUT_STATE_REGISTER_W)(USE_BIT_PIXEL_US) = '1' else '0';
+    rack_debug_pixel(0) <=  builder_rack when i_writeregs(SWB_READOUT_STATE_REGISTER_W)(USE_BIT_PIXEL_US) = '1' else '0';
+    rack_debug_pixel(1) <=  builder_rack when i_writeregs(SWB_READOUT_STATE_REGISTER_W)(USE_BIT_PIXEL_DS) = '1' else '0';
     rack_debug_scifi(0) <=  builder_rack when i_writeregs(SWB_READOUT_STATE_REGISTER_W)(USE_BIT_SCIFI) = '1' else '0';
 
 
@@ -271,40 +271,9 @@ begin
     --! ------------------------------------------------------------------------
     --! ------------------------------------------------------------------------
     --! ------------------------------------------------------------------------
-    e_swb_data_path_pixel_ds : entity work.swb_data_path
-    generic map (
-        g_LOOPUP_NAME           => "intRun2021",
-        g_ADDR_WIDTH            => 11,
-        g_NLINKS_DATA           => g_NLINKS_DATA_PIXEL_DS,
-        LINK_FIFO_ADDR_WIDTH    => 13,
-        SWB_ID                  => SWB_ID,
-        -- Data type: "00" = pixel, "01" = scifi, "10" = tiles
-        DATA_TYPE               => "00"--,
-    )
-    port map (
-        -- clk and reset signals
-        i_clk               => i_clk,
-        i_reset_n           => i_resets_n(RESET_BIT_DATA_PATH),
-        i_resets_n          => i_resets_n,
-
-        -- link inputs
-        i_rx                => rx_data_pixel(g_NLINKS_DATA_PIXEL_DS-1 downto 0),
-        i_rmask_n           => pixel_mask_n(g_NLINKS_DATA_PIXEL_DS-1 downto 0),
-
-        i_writeregs         => i_writeregs,
-
-        o_counter           => counter_swb_data_pixel_ds,
-
-        o_farm_data         => pixel_farm_data(0),
-
-        i_rack_debug        => rack_debug_pixel(0),
-        o_data_debug        => data_debug_pixel(0),
-        o_rempty_debug      => rempty_debug_pixel(0)--;
-    );
-
     e_swb_data_path_pixel_us : entity work.swb_data_path
     generic map (
-        g_LOOPUP_NAME           => "intRun2021",
+        g_LOOPUP_NAME           => "intRun2022_us",
         g_ADDR_WIDTH            => 11,
         g_NLINKS_DATA           => g_NLINKS_DATA_PIXEL_US,
         LINK_FIFO_ADDR_WIDTH    => 13,
@@ -319,12 +288,43 @@ begin
         i_resets_n          => i_resets_n,
 
         -- link inputs
-        i_rx                => rx_data_pixel(g_NLINKS_DATA_PIXEL_US+g_NLINKS_DATA_PIXEL_DS-1 downto g_NLINKS_DATA_PIXEL_DS),
-        i_rmask_n           => pixel_mask_n(g_NLINKS_DATA_PIXEL_US+g_NLINKS_DATA_PIXEL_DS-1 downto g_NLINKS_DATA_PIXEL_DS),
+        i_rx                => rx_data_pixel(g_NLINKS_DATA_PIXEL_US-1 downto 0),
+        i_rmask_n           => pixel_mask_n(g_NLINKS_DATA_PIXEL_US-1 downto 0),
 
         i_writeregs         => i_writeregs,
 
         o_counter           => counter_swb_data_pixel_us,
+
+        o_farm_data         => pixel_farm_data(0),
+
+        i_rack_debug        => rack_debug_pixel(0),
+        o_data_debug        => data_debug_pixel(0),
+        o_rempty_debug      => rempty_debug_pixel(0)--;
+    );
+
+    e_swb_data_path_pixel_ds : entity work.swb_data_path
+    generic map (
+        g_LOOPUP_NAME           => "intRun2022_ds",
+        g_ADDR_WIDTH            => 11,
+        g_NLINKS_DATA           => g_NLINKS_DATA_PIXEL_DS,
+        LINK_FIFO_ADDR_WIDTH    => 13,
+        SWB_ID                  => SWB_ID,
+        -- Data type: "00" = pixel, "01" = scifi, "10" = tiles
+        DATA_TYPE               => "00"--,
+    )
+    port map (
+        -- clk and reset signals
+        i_clk               => i_clk,
+        i_reset_n           => i_resets_n(RESET_BIT_DATA_PATH),
+        i_resets_n          => i_resets_n,
+
+        -- link inputs
+        i_rx                => rx_data_pixel(g_NLINKS_DATA_PIXEL_US+g_NLINKS_DATA_PIXEL_DS-1 downto g_NLINKS_DATA_PIXEL_US),
+        i_rmask_n           => pixel_mask_n(g_NLINKS_DATA_PIXEL_US+g_NLINKS_DATA_PIXEL_DS-1 downto g_NLINKS_DATA_PIXEL_US),
+
+        i_writeregs         => i_writeregs,
+
+        o_counter           => counter_swb_data_pixel_ds,
 
         o_farm_data         => pixel_farm_data(1),
 
