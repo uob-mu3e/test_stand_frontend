@@ -1,0 +1,37 @@
+{
+    "Description": [
+        "Tracker configuration chip-by-chip",
+        "'Chips' is a dictionary with a unique chip identifier as key. This is NOT related to any ID used in the experiment (configuration, analysis,...).",
+        "Every value of the dictionary then corresponds to a chip, and it is a dictionary itself. The element of the dictionary are the following:",
+        "- ID_configuration: the chip ID used for configuring the chip with MIDAS and switch_fe. Unique for all chips. from 0 to 119 in Cosmic Run",
+        "- ID_analysis. the chip ID used for the analysis.",
+        "- ID_onladder: the chip ID on the physical ladder (from 0 to 5)",
+        "- ID_specbook: the chip ID as in the specbook",
+        "- Layer: layer to which the chip belongs (0 or 1)",
+        "- Direction: upstream (US) or downstream (DS)",
+        "- Ladder_onlayer: ladder to which the chip belongs, as seen inside the layer (from 0 to 7 for Layer 0, from 0 to 9 for layer 1)",
+        "- Ladder_global: ladder to which the chip belongs, using the ladder unique ID (global ID, from 0 to 35)",
+        "- Ladder_specbook: ladder to which the chip belongs, using the ladder specbook ID",
+        "- Phi:the phi position of the ladder to which the chip belongs",
+        "- DatalinkA_onFEB: the FEB data link number to which the chip's link A is connected",
+        "- DatalinkA_onFEB: the FEB data link number to which the chip's link B is connected",
+        "- DatalinkA_onFEB: the FEB data link number to which the chip's link C is connected"
+    ],
+    "Chips": {
+        "0": {
+            "ID_configuration": 0,
+            "ID_analysis": 0,
+            "ID_onladder": 0,
+            "ID_specbook": 0,
+            "Layer": 0,
+            "Direction": "US",
+            "Ladder_onlayer": 0,
+            "Ladder_global": 0,
+            "Ladder_specbook": 0,
+            "Phi": 0,
+            "DatalinkA_onFEB": 0,
+            "DatalinkB_onFEB": 1,
+            "DatalinkC_onFEB": 2
+        }
+    }
+}
