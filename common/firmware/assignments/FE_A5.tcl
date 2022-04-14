@@ -56,8 +56,6 @@ set_global_assignment -name CONFIGURATION_VCCIO_LEVEL AUTO
 set_global_assignment -name CRC_ERROR_OPEN_DRAIN ON
 set_global_assignment -name RESERVE_DATA7_THROUGH_DATA5_AFTER_CONFIGURATION "AS INPUT TRI-STATED"
 
-set_global_assignment -name ON_CHIP_BITSTREAM_DECOMPRESSION OFF
-
 set_instance_assignment -name IO_STANDARD LVDS -to testout
 set_location_assignment PIN_AK4 -to testout
 set_location_assignment PIN_AK5 -to "testout(n)"
