@@ -86,7 +86,7 @@ LOOP j, 3
     ODBSET /Equipment/SwitchingCentral/Commands/MupixConfig, 1
 
     # Read final current
-    WAIT SECONDS, 10
+    WAIT SECONDS, 15
     ODBGET $power_get_current_path, current
     WAIT SECONDS, 1
 
@@ -95,7 +95,7 @@ LOOP j, 3
     ODBSET /Equipment/SwitchingCentral/Commands/MupixChipToConfigure, $chip_id_
     ODBSET /Equipment/SwitchingCentral/Commands/MupixConfig, 1
 
-    WAIT SECONDS, 10
+    WAIT SECONDS, 15
 
     # Save current difference
     diff = $current-$init_current
