@@ -150,6 +150,7 @@ INT frontend_init()
    env.define_panel("Water",       {"US_bottom_Water",
                                     "DS_bottom_Water"});
 
+
    // Pixel Temperatures
    mdevice_mscb pix("Pixel Temperatures", "Input", DF_INPUT, "mscb334.mu3e", "", 100);
    //~ pix.define_var(0,  0, "US L0-0" , 0.005, -165.9, -228);
