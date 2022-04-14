@@ -92,39 +92,75 @@ INT frontend_init()
 
    /*---- set correct ODB device addresses ----*/
 
-   // O2 sensors
+   // SCS3000 Port 0
    mdevice_mscb env("Environment", "Input", DF_INPUT, "mscb400.mu3e", "", 100);
-   env.define_var(1,  3, "Env_US2 - O2-7-top",       0.001, 10.0, 0.009);
-   env.define_var(1, 19, "Env_US3 - O2-6-central",   0.001, 10.0, 0.042);
-   env.define_var(1, 18, "Env_DS3 - O2-11-bottom",   0.001, 10.0, 0.082);
+   env.set_threshold(0.001);
+   env.define_var(1,  0, "US1 - Water");
+   env.define_var(1,  1, "US1 - PCMini52_RH");
+   env.define_var(1,  2, "US1 - PCMini52_T");
+   env.define_var(1,  3, "US2 - O2-7-top");
+   env.define_var(1,  4, "US2 - HIH4040_top");
+   env.define_var(1,  5, "US2 - LM35_Fibre");
+   env.define_var(1,  6, "US2 - LM35_FEC1");
+   env.define_var(1,  7, "US2 - LM35_top");
 
-   // Temperature
-   env.define_var(1,  2, "PCMini52_T",               0.005,  20.0, 0.000);
-   env.define_var(1,  5, "LM35_Fibre_US",            0.005, 100.0, 0.000);
-   env.define_var(1,  6, "LM35_FEC1_US",             0.005, 100.0, 0.000);
-   env.define_var(1,  7, "LM35_top_US",              0.005, 100.0, 0.000);
-   env.define_var(1, 13, "LM35_Fibre_DS",            0.005, 100.0, 0.000);
-   env.define_var(1, 14, "LM35_FEC1_DS",             0.005, 100.0, 0.000);
-   env.define_var(1, 15, "LM35_top_DS",              0.005, 100.0, 0.000);
+   // SCS3000 Port 1
+   env.define_var(1,  8, "DS1 - Water");
+   env.define_var(1,  9, "NC 1-1");
+   env.define_var(1, 10, "DS2 - O2-4-top");
+   env.define_var(1, 11, "DS2 - HIH4040_top");
+   env.define_var(1, 12, "DS2 - LM35_Fibre");
+   env.define_var(1, 13, "DS2 - LM35_FEC1");
+   env.define_var(1, 14, "DS2 - LM35_top");
+   env.define_var(1, 15, "NC 1-7");
 
-   // Humidity
-   env.define_var(1,  1, "PCMini52_RH",              0.005, 20.0, 0.000);
-   env.define_var(1,  4, "HIH4040_top_US",           0.005, 32.5905, 26.0724);
-   env.define_var(1, 12, "HIH4040_top_DS",           0.005, 32.5905, 26.0724);
-   env.define_var(1, 20, "HIH4040_bottom_US",        0.005, 32.5905, 26.0724);
-   env.define_var(1, 21, "HIH4040_central_US",       0.005, 32.5905, 26.0724);
-   env.define_var(1, 29, "HIH4040_bottom_DS",        0.005, 32.5905, 26.0724);
-   env.define_var(1, 30, "HIH4040_central_DS",       0.005, 32.5905, 26.0724);
+   // SCS3000 Port 2
+   env.define_var(1, 16, "US3 - O2-11-bottom");
+   env.define_var(1, 17, "US3 - O2-6-central");
+   env.define_var(1, 18, "US3 - HIH4040_bottom");
+   env.define_var(1, 19, "US3 - HIH4040_central");
+   env.define_var(1, 20, "NC 2-4");
+   env.define_var(1, 21, "US6 - O2_3");
+   env.define_var(1, 22, "US6 - LM35_3");
+   env.define_var(1, 23, "US6 - HIH_3");
 
-   // Water
-   env.define_var(1,  0, "Water_US",                 0.005, 1.0, 0.000);
-   env.define_var(1,  9, "Water_DS",                 0.005, 1.0, 0.000);
+   // SCS3000 Port 3
+   env.define_var(1, 24, "DS3 - O2-11-bottom");
+   env.define_var(1, 25, "DS3 - O2-6-central");
+   env.define_var(1, 26, "DS3 - HIH4040_bottom");
+   env.define_var(1, 27, "DS3 - HIH4040_central");
+   env.define_var(1, 28, "NC 2-4");
+   env.define_var(1, 29, "US6 - LM35_6");
+   env.define_var(1, 30, "US6 - HIH_6");
+   env.define_var(1, 31, "US6 - O2_6");
 
    // define associated history panels
-   env.define_panel("Oxygen",         0,  2);
-   env.define_panel("Tempreature",    3,  9);
-   env.define_panel("Humidity",      10, 16);
-   env.define_panel("Water",         17, 18);
+   env.define_panel("Oxygen",      {"US2 - O2-7-top",
+                                    "DS2 - O2-4-top",
+                                    "US3 - O2-11-bottom",
+                                    "US3 - O2-6-central",
+                                    "US6 - O2_3",
+                                    "DS3 - O2-11-bottom",
+                                    "DS3 - O2-6-central",
+                                    "US6 - O2_6"});
+   env.define_panel("Tempreature", {"US2 - LM35_Fibre",
+                                    "US2 - LM35_FEC1",
+                                    "US2 - LM35_top",
+                                    "DS2 - LM35_Fibre",
+                                    "DS2 - LM35_FEC1",
+                                    "DS2 - LM35_top",
+                                    "US6 - LM35_3",
+                                    "US6 - LM35_6"});
+   env.define_panel("Humidity",    {"US2 - HIH4040_top",
+                                    "DS2 - HIH4040_top",
+                                    "US3 - HIH4040_bottom",
+                                    "US3 - HIH4040_central",
+                                    "US6 - HIH_3",
+                                    "DS3 - HIH4040_bottom",
+                                    "DS3 - HIH4040_central",
+                                    "US6 - HIH_6"});
+   env.define_panel("Water",       {"US1 - Water",
+                                    "DS1 - Water"});
 
    // Pixel Temperatures
    mdevice_mscb pix("Pixel Temperatures", "Input", DF_INPUT, "mscb334.mu3e", "", 100);
