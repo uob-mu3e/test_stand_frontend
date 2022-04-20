@@ -94,8 +94,7 @@ end generate;
     begin
     if rising_edge(clk) then
         if (time_counter > x"9502f90") then
-            -- TODO: find a solution that works in ghdl
-            o_rate_count    <= std_logic_vector(x"9502f90" * N_LINKS - rate_counter + 1)(31 downto 0);
+            o_rate_count    <= std_logic_vector(resize(unsigned(x"9502f90" * N_LINKS - rate_counter + 1), 32));
             time_counter    <= (others => '0');
             rate_counter    <= (others => '0');
         else
@@ -182,6 +181,9 @@ begin
         rdreq           => data_read_req,
         usedw           => usedw_data_fifo--,
     );
+                     -- we read when we are in running and the fifo is not empty
+    data_read_req <= '1' when ( run_state = RUN_STATE_RUNNING or run_state = RUN_STATE_TERMINATING ) and
+                                merger_state = sending_data and data_fifo_empty = '0' else '0';
 
     e_common_fifo_sc: entity work.ip_scfifo
     generic map(
@@ -207,7 +209,7 @@ begin
     if ( reset = '1' ) then
         merger_state                    <= idle;
         slowcontrol_read_req            <= '0';
-        data_read_req                   <= '0';
+        --data_read_req                   <= '0';
         terminated(i)                   <= '0';
         run_prep_acknowledge_send       <= '0';
         data_is_k(4*i+3 downto 4*i)     <= K285_datak;
@@ -223,7 +225,7 @@ begin
             if ( merger_timeout_counter = 10000 ) then
                 merger_state                    <= idle; -- TODO: do i do when state Something merger_state <= something;
                 slowcontrol_read_req            <= '0';
-                data_read_req                   <= '0';
+                --data_read_req                   <= '0';
                 data_is_k(4*i+3 downto 4*i)     <= MERGER_TIMEOUT_DATAK;
                 data_out(32*i+31 downto 32*i)   <= MERGER_TIMEOUT;
                 merger_timeout_counter          <= 0;
@@ -333,7 +335,7 @@ begin
 
                 else -- no data --> do nothing
                     slowcontrol_read_req                    <= '0';
-                    data_read_req                           <= '0';
+                    --data_read_req                           <= '0';
                     data_out(32*i+31 downto 32*i)           <= K285;
                     data_is_k(4*i+3 downto 4*i)             <= K285_datak;
                 end if;
@@ -436,7 +438,7 @@ begin
                     merger_state                            <= sending_slowcontrol; -- go to sending slowcontrol state next
 
                 elsif ( data_fifo_empty = '0' ) then
-                    data_read_req <= '1'; -- need 2 cycles to get new data from fifo --> start reading now
+                    --data_read_req <= '1'; -- need 2 cycles to get new data from fifo --> start reading now
                     -- send data header:
                     data_is_k(4*i+3 downto 4*i)             <= "0001";
                     data_out(32*i+31 downto 26+32*i)        <= FEB_type_in;
@@ -453,14 +455,15 @@ begin
                 if ( data_fifo_empty = '1' ) then -- send k285 idle, leave read req = 1 ?
                     data_out(32*i+31 downto 32*i)           <= K285;
                     data_is_k(4*i+3 downto 4*i)             <= K285_datak;
+                    --data_read_req                           <= '0';
                 elsif ( data_in(33 downto 32) = "11" ) then -- run end(0111) in state sending_data is always packet end (XX11)
                     merger_state                            <= idle;
-                    data_read_req                           <= '0';
+                    --data_read_req                           <= '0';
                     data_out(32*i+31 downto 32*i)           <= data_in(23 downto 0) & K284;
                     data_is_k(4*i+3 downto 4*i)             <= K284_datak;
                     last_merger_fifo_control_bits           <= data_in(35 downto 32); -- save them now --> if 35 downto 32 is actually 0111(run END) then terminate in merger_state idle
                 else
-                    data_read_req                           <= '1';
+                    --data_read_req                           <= '1';
                     data_out(32*i+31 downto 32*i)           <= data_in(31 downto 0);
                     data_is_k(4*i+3 downto 4*i)             <= "0000";
                 end if;

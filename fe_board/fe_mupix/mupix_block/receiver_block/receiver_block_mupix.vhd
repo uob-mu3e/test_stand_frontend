@@ -17,27 +17,28 @@ use work.mupix_registers.all;
 use work.mupix.all;
 
 entity receiver_block_mupix is 
-    generic(
-        NINPUT : integer := 36;
-        NCHIPS : integer := 15;
-        IS_TELESCOPE_g : std_logic := '0'--;
-    );
-    port (
-        i_reset_n       : in  std_logic;
-        i_nios_clk      : in  std_logic;
-        i_clk_global    : in  std_logic;
-        checker_rst_n   : in  std_logic_vector(NINPUT-1 downto 0);
-        rx_in           : in  std_logic_vector(NINPUT-1 DOWNTO 0);
-        rx_inclock_A    : in  std_logic;
-        rx_inclock_B    : in  std_logic;
-        o_rx_status     : out work.util.slv32_array_t(NINPUT-1 downto 0);
-        o_rx_ready      : out std_logic_vector(NINPUT-1 downto 0);
-        i_rx_invert     : in  std_logic;
-        o_rx_data       : out work.util.slv8_array_t(NINPUT-1 downto 0);
-        o_rx_k          : out std_logic_vector(NINPUT-1 downto 0);
-        rx_clkout       : out std_logic_vector(1 downto 0);
-        rx_doubleclk    : out std_logic_vector(1 downto 0)--;
-    );
+generic(
+    NINPUT : integer := 36;
+    NCHIPS : integer := 15;
+    IS_TELESCOPE_g : std_logic := '0'--;
+);
+port (
+    i_nios_clk      : in  std_logic;
+    checker_rst_n   : in  std_logic_vector(NINPUT-1 downto 0);
+    rx_in           : in  std_logic_vector(NINPUT-1 DOWNTO 0);
+    rx_inclock_A    : in  std_logic;
+    rx_inclock_B    : in  std_logic;
+    o_rx_status     : out work.util.slv32_array_t(NINPUT-1 downto 0);
+    o_rx_ready      : out std_logic_vector(NINPUT-1 downto 0);
+    i_rx_invert     : in  std_logic;
+    o_rx_data       : out work.util.slv8_array_t(NINPUT-1 downto 0);
+    o_rx_k          : out std_logic_vector(NINPUT-1 downto 0);
+    rx_clkout       : out std_logic_vector(1 downto 0);
+    rx_doubleclk    : out std_logic_vector(1 downto 0);
+
+    i_reset_n           : in    std_logic;
+    i_clk_global        : in    std_logic--;
+);
 end receiver_block_mupix;
 
 
@@ -335,14 +336,14 @@ begin
 
     process(i_clk_global)
     begin
-        if(rising_edge(i_clk_global)) then
-            rx_sync_fifo_rd     <= not rx_sync_fifo_empty;
-            o_rx_ready          <= rx_ready;
-            for i in 0 to 35 loop
-                o_rx_data(i)    <= rx_data_out_buffer(i*8+7 downto i*8);
-                o_rx_k(i)       <= rx_k_out_buffer(i);
-            end loop;
-        end if;
+    if rising_edge(i_clk_global) then
+        rx_sync_fifo_rd     <= not rx_sync_fifo_empty;
+        o_rx_ready          <= rx_ready;
+        for i in 0 to 35 loop
+            o_rx_data(i)    <= rx_data_out_buffer(i*8+7 downto i*8);
+            o_rx_k(i)       <= rx_k_out_buffer(i);
+        end loop;
+    end if;
     end process;
 
-end rtl;
+end architecture;

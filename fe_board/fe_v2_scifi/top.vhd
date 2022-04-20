@@ -118,12 +118,16 @@ end top;
 
 architecture rtl of top is
 
+    signal clk_125, reset_125_n : std_logic;
+    signal clk_156, reset_156_n : std_logic;
+
     -- Debouncers
     signal pb_db                    : std_logic_vector(1 downto 0);
 
     constant N_LINKS                : integer := 2;
     constant N_ASICS                : integer := 4;
-    constant N_MODULES              : integer := 2;
+    constant N_MODULES              : integer := 1;
+    constant N_INPUTSRX             : integer := 8;
 
     signal fifo_write               : std_logic_vector(N_LINKS-1 downto 0);
     signal fifo_wdata               : std_logic_vector(36*(N_LINKS-1)+35 downto 0);
@@ -154,17 +158,31 @@ architecture rtl of top is
     --signal scifi_int_fifo_ext              : std_logic;
     --signal scifi_int_inject                : std_logic;
     --signal scifi_int_bidir_test            : std_logic;
-
-    signal sync_cnt : integer range 0 to 255 := 0;
+    
+    signal sync_cnt, sync_cnt2 : integer range 0 to 255 := 0;
     signal chip_reset : std_logic := '0';
     signal counter_vec : std_logic_vector(31 downto 0);
     signal counter : integer;
-
+    signal chip_reset_v : std_logic_vector(N_MODULES-1 downto 0);
+    
     signal pll_test : std_logic;
 
     signal fast_pll_clk : std_logic;
 
 begin
+
+    clk_125 <= lvds_firefly_clk;
+
+    e_reset_125_n : entity work.reset_sync
+    port map ( o_reset_n => reset_125_n, i_reset_n => pb_db(0), i_clk => clk_125 );
+
+    clk_156 <= transceiver_pll_clock(0);
+
+    e_reset_156_n : entity work.reset_sync
+    port map ( o_reset_n => reset_156_n, i_reset_n => pb_db(0), i_clk => clk_156 );
+
+
+
 --------------------------------------------------------------------
 --------------------------------------------------------------------
 ---- SciFi SUB-DETECTOR FIRMWARE -----------------------------------
@@ -175,12 +193,12 @@ begin
     -- stuff which is not used at the moment but PINs need to be tested
     lcd_data(2) <= scifi_temp_mutrig or scifi_temp_mutrig2 or scifi_temp_sipm or scifi_temp_sipm2 or scifi_cec_miso or scifi_cec_miso2;
 
--- assignments of DAB pins: special IOBUF, constant and polarity flips here
-    scifi_fifo_ext              <= '0';
-    scifi_inject                <= pll_test;
-    scifi_fifo_ext2             <= '0';
-    scifi_inject2               <= pll_test;
-    scifi_cec_csn               <= (others => '1');
+    -- assignments of DAB pins: special IOBUF, constant and polarity flips here
+    scifi_fifo_ext   <= '0';
+    scifi_inject     <= pll_test;
+    scifi_fifo_ext2  <= '0';
+    scifi_inject2    <= pll_test;
+    scifi_cec_csn    <= (others => '1');
 
     scifi_csn_buf(0) <= not scifi_int_csn(0);
     scifi_csn_buf(1) <= not scifi_int_csn(1);
@@ -191,26 +209,27 @@ begin
     scifi_csn_buf(6) <= not scifi_int_csn(6);
     scifi_csn_buf(7) <=     scifi_int_csn(7);
 
-    scifi_syncres   <= not scifi_int_syncres;
-    scifi_syncres2  <= not scifi_int_syncres2;
+    scifi_syncres    <= not scifi_int_syncres;
+    scifi_syncres2   <= not scifi_int_syncres2;
+    
+    scifi_spi_sclk   <= not scifi_int_spi_sclk; -- check google doc
+    scifi_spi_mosi   <= not scifi_int_spi_mosi;
+    scifi_spi_sclk2  <= not scifi_int_spi_sclk; -- check google doc
+    scifi_spi_mosi2  <= not scifi_int_spi_mosi;
 
-    scifi_spi_sclk      <= not scifi_int_spi_sclk;
-    scifi_spi_mosi      <= not scifi_int_spi_mosi;
-    scifi_spi_sclk2     <= not scifi_int_spi_sclk;
-    scifi_spi_mosi2     <= not scifi_int_spi_mosi;
-
-    scifi_int_spi_miso <=  (not scifi_spi_miso2) when (scifi_csn_buf(7 downto 4) /= x"F") else (not scifi_spi_miso);
+    scifi_int_spi_miso <=  (not scifi_spi_miso2) when (scifi_csn_buf(7 downto 4) /= x"F") else scifi_spi_miso;
 
     -- LVDS inputs signflip in receiver block generic
 
--- scifi detector firmware
-    e_tile_path : entity work.scifi_path
+    -- scifi detector firmware
+    e_scifi_path : entity work.scifi_path
     generic map (
         IS_SCITILE      => '0',
         N_MODULES       => N_MODULES,
+        N_INPUTSRX      => N_INPUTSRX,
         N_ASICS         => N_ASICS,
         N_LINKS         => N_LINKS,
-        INPUT_SIGNFLIP  => x"FFFFFFFF",
+        INPUT_SIGNFLIP  => x"FFFFFFFF", -- swap input 0 of con2 and 0 of con3 x"FFFFFFEE"
         LVDS_PLL_FREQ   => 125.0,
         LVDS_DATA_RATE  => 1250.0--,
     )
@@ -221,16 +240,15 @@ begin
         i_reg_we                    => scifi_reg.we,
         i_reg_wdata                 => scifi_reg.wdata,
 
-        o_chip_reset(0)             => open,
-        o_chip_reset(1)             => open,
+        o_chip_reset                => chip_reset_v,
 
         o_pll_test                  => pll_test,
-        i_data                      => scifi_din,
+        i_data                      => scifi_din(N_INPUTSRX-1 downto 0),
 
         io_i2c_sda                  => open,
         io_i2c_scl                  => open,
         i_cec                       => '0',
-        i_spi_miso                  => '0',
+        i_spi_miso                  => scifi_int_spi_miso,
         i_i2c_int                   => '0',
         o_pll_reset                 => open,
         o_spi_scl                   => open,
@@ -246,74 +264,51 @@ begin
 
         o_MON_rxrdy                 => s_MON_rxrdy,
 
-        i_clk_core                  => transceiver_pll_clock(0),
-        i_clk_g125                  => lvds_firefly_clk,
         i_clk_ref_A                 => LVDS_clk_si1_fpga_A,
         i_clk_ref_B                 => LVDS_clk_si1_fpga_B,
 
         o_fast_pll_clk              => fast_pll_clk,
         o_test_led                  => lcd_data(4 downto 3),
-        i_reset                     => not pb_db(0)--,
+
+        i_reset_156_n               => reset_156_n,
+        i_clk_156                   => clk_156,
+        i_reset_125_n               => reset_125_n,
+        i_clk_125                   => clk_125--,
     );
 
-    process(lvds_firefly_clk)
+    process(clk_125)
     begin
-    if ( falling_edge(lvds_firefly_clk) ) then
+    if falling_edge(clk_125) then
         if ( run_state_125 = RUN_STATE_SYNC and sync_cnt <= 10 ) then
             scifi_int_syncres <= '1';
-            scifi_int_syncres2 <= '1';
             sync_cnt <= sync_cnt + 1;
+        elsif ( run_state_125 /= RUN_STATE_SYNC ) then
+            scifi_int_syncres <= chip_reset_v(0);
+            sync_cnt <= 0;
         else
             scifi_int_syncres <= '0';
-            scifi_int_syncres2 <= '0';
             sync_cnt <= 0;
         end if;
     end if;
     end process;
 
---    counter_vec <= std_logic_vector(to_unsigned(counter, counter_vec'length));
---    process(LVDS_clk_si1_fpga_A)
---    begin
---    if ( rising_edge(LVDS_clk_si1_fpga_A) ) then
---        if ( run_state_125 = RUN_STATE_SYNC ) then
---            counter <= counter +1;
---            if(counter_vec(6)='1') then
---                scifi_int_syncres <= not scifi_int_syncres;
---                scifi_int_syncres2 <= not scifi_int_syncres2;
---                counter <= 0;
---            end if;
---        elsif (run_state_125 = RUN_STATE_RUNNING) then
---            counter <= counter +1;
---            if(counter_vec(6)='1') then
---                if(scifi_int_syncres = '1') then
---                    scifi_int_syncres <= not scifi_int_syncres;
---                    scifi_int_syncres2 <= not scifi_int_syncres2;
---                end if;
---                counter <= 0;
---            end if;
---        else
---            scifi_int_syncres <= '0';
---            scifi_int_syncres2 <= '0';
---        end if;
---    end if;
---    end process;
---
---    process(fast_pll_clk)
---    begin
---    if ( rising_edge(fast_pll_clk) ) then
---        run_state_125_prev <= run_state_125;
---        if ( run_state_125 = RUN_STATE_SYNC and run_state_125_prev/=RUN_STATE_SYNC) then
---            scifi_int_syncres <= '1';
---            scifi_int_syncres2 <= '1';
---        else
---            scifi_int_syncres <= '0';
---            scifi_int_syncres2 <= '0';
---        end if;
---    end if;
---    end process;
-
-    --scifi_int_syncres <= chip_reset;
-    --scifi_int_syncres2 <= chip_reset;
+    gen_second_module: if ( N_MODULES = 2 ) generate
+        process(clk_125)
+        begin
+        if falling_edge(clk_125) then
+            if ( run_state_125 = RUN_STATE_SYNC and sync_cnt2 <= 10 ) then
+                scifi_int_syncres2 <= '1';
+                sync_cnt2 <= sync_cnt2 + 1;
+            elsif ( run_state_125 /= RUN_STATE_SYNC ) then
+                scifi_int_syncres2 <= chip_reset_v(1);
+                sync_cnt2 <= 0;
+            else
+                scifi_int_syncres2 <= '0';
+                sync_cnt2 <= 0;
+            end if;
+        end if;
+        end process;
+    end generate;
 
 --------------------------------------------------------------------
 --------------------------------------------------------------------
@@ -406,14 +401,16 @@ begin
 
         -- reset system
         o_run_state_125             => run_state_125,
-        i_ack_run_prep_permission   => '1',--and_reduce(s_MON_rxrdy), --TODO: check what s_MON_rxrdy does and if it works
+        --TODO: check what s_MON_rxrdy does and if it works
+        --MK: it is the ready bit for all the receivers
+        i_ack_run_prep_permission   => '1',--and_reduce(s_MON_rxrdy),
 
         -- clocks
         i_nios_clk          => spare_clk_osc,
         o_nios_clk_mon      => lcd_data(0),
-        i_clk_156           => transceiver_pll_clock(0),
+        i_clk_156           => clk_156,
         o_clk_156_mon       => lcd_data(1),
-        i_clk_125           => lvds_firefly_clk,
+        i_clk_125           => clk_125,
 
         i_areset_n          => pb_db(0),
 
@@ -425,7 +422,7 @@ begin
 
 
     FPGA_Test(0) <= transceiver_pll_clock(0);
-    FPGA_Test(1) <= lvds_firefly_clk;
+    FPGA_Test(1) <= clk_125;
     FPGA_Test(2) <= clk_125_top;
 
 end architecture;

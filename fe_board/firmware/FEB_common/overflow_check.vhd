@@ -18,13 +18,14 @@ generic (
     DISABLE             : integer := 0--;
 );
 port (
-    i_clk               : in  std_logic;
-    i_reset             : in  std_logic;
     i_write_req         : in  std_logic;
     i_wdata             : in  std_logic_vector(35 downto 0);
     i_usedw             : in  std_logic_vector(FIFO_ADDR_WIDTH-1 downto 0 );
     o_write_req         : out std_logic;
-    o_wdata             : out std_logic_vector(35 downto 0)--;
+    o_wdata             : out std_logic_vector(35 downto 0);
+
+    i_reset             : in  std_logic;
+    i_clk               : in  std_logic--;
 );
 end entity;
 

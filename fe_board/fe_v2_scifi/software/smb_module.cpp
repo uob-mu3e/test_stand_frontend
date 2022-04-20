@@ -16,8 +16,8 @@ char wait_key(useconds_t us = 100000);
 
 //write slow control pattern over SPI, returns 0 if readback value matches written, otherwise -1. Does not include CSn line switching.
 int SMB_t::spi_write_pattern(alt_u32 spi_slave, const alt_u8* bitpattern) {
-    //char tx_string[681];
-    //char rx_string[681];
+    char tx_string[681]; //cmp
+    char rx_string[681]; //cmp
     int result_i=0;
     int status=0;
     uint16_t rx_pre=0xff00;
@@ -31,17 +31,17 @@ int SMB_t::spi_write_pattern(alt_u32 spi_slave, const alt_u8* bitpattern) {
         alt_avalon_spi_command(SPI_BASE, spi_slave, 1, &tx, 0, &rx, nb==0?0:ALT_AVALON_SPI_COMMAND_MERGE);
         rx = IORD_8DIRECT(SPI_BASE, 0);
 
-        //printf("tx:%2.2X rx:%2.2x nb:%d\n",tx,rx,nb);
-        //char result_hex[3];
-        //char tx_hex[3];
-        //sprintf(result_hex,"%2.2X",rx);
-        //sprintf(tx_hex,"%2.2X",tx);
-        //rx_string[result_i] = result_hex[0];
-        //tx_string[result_i] = tx_hex[0];
-        //result_i++;
-        //rx_string[result_i] = result_hex[1];
-        //tx_string[result_i] = tx_hex[1];
-        //result_i++;
+        //printf("tx:%2.2X rx:%2.2x nb:%d\n",tx,rx,nb);//cmp
+        char result_hex[3]; //cmp
+        char tx_hex[3]; //cmp
+        sprintf(result_hex,"%2.2X",rx); //cmp
+        sprintf(tx_hex,"%2.2X",tx); //cmp
+        rx_string[result_i] = result_hex[0]; //cmp
+        tx_string[result_i] = tx_hex[0]; //cmp
+        result_i++; //cmp
+        rx_string[result_i] = result_hex[1]; //cmp
+        tx_string[result_i] = tx_hex[1]; //cmp
+        result_i++; //cmp
 
         //pattern is not in full units of bytes, so shift back while receiving to check the correct configuration state
         unsigned char rx_check= (rx_pre | rx ) >> (8-MUTRIG_CONFIG_LEN_BITS%8);
@@ -55,10 +55,11 @@ int SMB_t::spi_write_pattern(alt_u32 spi_slave, const alt_u8* bitpattern) {
         }
         rx_pre=rx<<8;
     }while(nb>0);
-    //rx_string[680]=0;
-    //tx_string[680]=0;
-    //printf("TX = %s\n", tx_string);
-    //printf("RX = %s\n", rx_string);
+    //rx_string[680]=0; //cmp
+    //tx_string[680]=0; //cmp
+    printf("TX = %s\n", tx_string); //cmp
+    printf("RX = %s\n", rx_string); //cmp
+    //printf("Status = %u\n", status); //cmp
     return status;
 }
 
@@ -76,7 +77,7 @@ void SMB_t::print_config(const alt_u8* bitpattern) {
 
 //configure ASIC
 alt_u16 SMB_t::configure_asic(alt_u32 asic, const alt_u8* bitpattern) {
-    //printf("[SMB] chip_configure(%u)\n", asic);
+    printf("[SMB] chip_configure(%u)\n", asic); //cmp
 
     int ret;
     ret = spi_write_pattern(asic, bitpattern);
@@ -135,6 +136,8 @@ alt_u16 SMB_t::sc_callback(alt_u16 cmd, volatile alt_u32* data, alt_u16 n) {
 extern int uart;
 void SMB_t::menu_SMB_main() {
     volatile sc_ram_t* ram = (sc_ram_t*) AVM_SC_BASE;
+    uint32_t value = 0x0;
+    char str[2] = {0};
 
     while(1) {
         //        TODO: Define menu
@@ -145,6 +148,7 @@ void SMB_t::menu_SMB_main() {
         printf("  [8] => data\n");
         printf("  [9] => monitor test\n");
         printf("  [a] => counters\n");
+        printf("  [m] => set ASIC mask\n");
         printf("  [s] => get slow control registers\n");
         printf("  [d] => get datapath status\n");
         printf("  [f] => dummy generator settings\n");
@@ -240,6 +244,18 @@ void SMB_t::menu_SMB_main() {
                 //    break;
             case 'r':
                 menu_reset();
+		break;
+            case 'm':
+                value = 0x0;
+		printf("Enter Chip Mask in hex: ");
+		for ( int i = 0; i < 2; i++ ) {
+			printf("mask: 0x%08x\n", value);
+			str[0] = wait_key();
+			value = value*16+strtol(str,NULL,16);
+		}
+		printf("setting mask to 0x%08x\n", value);
+		sc.ram->data[SCIFI_CTRL_DP_REGISTER_W] = value;
+                break;
             case 'q':
                 return;
             default:
@@ -312,6 +328,7 @@ void SMB_t::menu_reset() {
         printf("  [2] => reset datapath\n");
         printf("  [3] => reset lvds_rx\n");
         printf("  [4] => reset skew settings\n");
+        printf("  [5] => read reset reg\n");
 
 
         printf("Select entry ...\n");
@@ -319,21 +336,27 @@ void SMB_t::menu_reset() {
         switch(cmd) {
             case '1':
                 sc.ram->data[SCIFI_CTRL_RESET_REGISTER_W] = 1;
+                printf("%x, %x\n", sc.ram->data[SCIFI_CTRL_RESET_REGISTER_W], SCIFI_CTRL_RESET_REGISTER_W);
                 usleep(50000);
                 sc.ram->data[SCIFI_CTRL_RESET_REGISTER_W] = 0;
                 break;
             case '2':
                 sc.ram->data[SCIFI_CTRL_RESET_REGISTER_W] = 2;
+                printf("%x, %x\n", sc.ram->data[SCIFI_CTRL_RESET_REGISTER_W], SCIFI_CTRL_RESET_REGISTER_W);
                 usleep(50000);
                 sc.ram->data[SCIFI_CTRL_RESET_REGISTER_W] = 0;
                 break;
             case '3':
                 sc.ram->data[SCIFI_CTRL_RESET_REGISTER_W] = 4;
+                printf("%x, %x\n", sc.ram->data[SCIFI_CTRL_RESET_REGISTER_W], SCIFI_CTRL_RESET_REGISTER_W);
                 usleep(50000);
                 sc.ram->data[SCIFI_CTRL_RESET_REGISTER_W] = 0;
                 break;
             case '4':
                 menu_reg_resetskew();
+                break;
+            case '5':
+                printf("Reset red %x\n", sc.ram->data[SCIFI_CTRL_RESET_REGISTER_W]);
                 break;
             case 'q':
                 return;
@@ -429,24 +452,92 @@ void SMB_t::menu_reg_resetskew(){
 }
 
 void SMB_t::menu_counters(){
+    // Scifi Counters per ASIC N_ASICS_TOTAL
+    // mutrig store:
+    //  0: s_eventcounter
+    //  1: s_timecounter low
+    //  2: s_timecounter high
+    //  3: s_crcerrorcounter
+    //  4: s_framecounter
+    //  5: s_prbs_wrd_cnt
+    //  6: s_prbs_err_cnt
+    // rx
+    //  7: s_receivers_runcounter
+    //  8: s_receivers_errorcounter
+    //  9: s_receivers_synclosscounter
     char cmd;
+    uint32_t lastTS = 0;
+    uint32_t curNom = 0;
+    uint32_t curDeNom = 0;
+    uint32_t lastFrame[8] = {0, 0, 0, 0, 0, 0, 0, 0};
+    uint32_t lastWords[8] = {0, 0, 0, 0, 0, 0, 0, 0};
+    uint32_t lastCRC[8] = {0, 0, 0, 0, 0, 0, 0, 0};
+    uint32_t lastPRBS[8] = {0, 0, 0, 0, 0, 0, 0, 0};
+    uint32_t lastLVDS[8] = {0, 0, 0, 0, 0, 0, 0, 0};
+    uint32_t lastEvents[8] = {0, 0, 0, 0, 0, 0, 0, 0};    
+    uint32_t counter_map[8] = {0, 3, 4, 5, 6, 7, 8, 9};
     printf("Counters: press 'q' to end / 'r' to reset\n");
     while(1){
-        for (int j=0; j<2; j++) {
-            printf("ASIC %i to %i\n", j*4, 3+j*4);
-            for(char selected=0;selected<5; selected++){
-                sc.ram->data[SCIFI_CNT_CTRL_REGISTER_W] = (sc.ram->data[SCIFI_CNT_CTRL_REGISTER_W] & ~0xF) | selected&0x7;
-                switch(selected){
-                    case 0: printf("Events/Time  [8ns] "); break;
-                    case 1: printf("Errors/Frame       "); break;
-                    case 2: printf("PRBS: Errors/Words "); break;
-                    case 3: printf("LVDS: Errors/Words "); break;
-                    case 4: printf("SYNCLOSS: Count/-- "); break;
+    printf("\n\n\n\n\n\n\n\n\n\n\n\n\n\n");
+        for ( uint32_t mod = 0; mod < 2; mod++ ) {
+            printf("ASIC %i to %i\n", mod * 4, 3 + mod * 4);
+            for ( uint32_t selected = 0; selected < 5; selected++ ) {
+                switch ( selected ) {
+                    case 0: printf("Events / 8ns        "); break;
+                    case 1: printf("CRC-Errors / Frame  "); break;
+                    case 2: printf("PRBS-Errors / Words "); break;
+                    case 3: printf("LVDS-Errors / Words "); break;
+                    case 4: printf("# SYNCLOSS  / -     "); break;
                 }
-                for(int i=0+j*4;i<4+j*4;i++){
-                    sc.ram->data[SCIFI_CNT_CTRL_REGISTER_W] = ((sc.ram->data[SCIFI_CNT_CTRL_REGISTER_W]) & ~0xF) | (0x7 + (i<<3));
-                    printf("| %10u / %18lu |", sc.ram->data[SCIFI_CNT_NOM_REGISTER_REGISTER_R],
-                            (alt_u64) sc.ram->data[SCIFI_CNT_DENOM_LOWER_REGISTER_R]);
+                // loop over asics
+                for ( uint32_t asic = 0 + selected * 4; asic < 4 + selected * 4; asic++ ) {
+                    // print event rate
+                    if ( selected == 0 ) {
+                        // get time
+                        sc.ram->data[SCIFI_CNT_ADDR_REGISTER_W] = 1;
+                        curDeNom = sc.ram->data[SCIFI_CNT_VALUE_REGISTER_R];
+                        // get events of chip
+                        sc.ram->data[SCIFI_CNT_ADDR_REGISTER_W] = counter_map[selected] + asic * 10 + mod * 4 * 10;
+                        curNom = sc.ram->data[SCIFI_CNT_VALUE_REGISTER_R];
+                        printf("| %10u / %10u |", curNom, curDeNom);
+                        lastEvents[mod * asic] = curNom;
+                        lastTS = curDeNom;
+                    } else if ( selected == 1 ) {
+                        // get frame
+                        sc.ram->data[SCIFI_CNT_ADDR_REGISTER_W] = 4;
+                        curDeNom = sc.ram->data[SCIFI_CNT_VALUE_REGISTER_R];
+                        // get crc errors
+                        sc.ram->data[SCIFI_CNT_ADDR_REGISTER_W] = counter_map[selected] + asic * 10 + mod * 4 * 10;
+                        curNom = sc.ram->data[SCIFI_CNT_VALUE_REGISTER_R];
+                        printf("| %10u / %10u |", curNom, curDeNom);
+                        lastCRC[mod * asic] = curNom;
+                        lastFrame[mod * asic] = curDeNom;
+                    } else if ( selected == 2 ) {
+                        // get words
+                        sc.ram->data[SCIFI_CNT_ADDR_REGISTER_W] = 5;
+                        curDeNom = sc.ram->data[SCIFI_CNT_VALUE_REGISTER_R];
+                        // get prbs errors
+                        sc.ram->data[SCIFI_CNT_ADDR_REGISTER_W] = counter_map[selected] + asic * 10 + mod * 4 * 10;
+                        curNom = sc.ram->data[SCIFI_CNT_VALUE_REGISTER_R];
+                        printf("| %10u / %10u |", curNom, curDeNom);
+                        lastPRBS[mod * asic] = curNom;
+                        lastWords[mod * asic] = curDeNom;
+                    } else if ( selected == 3 ) {
+                        // get words
+                        sc.ram->data[SCIFI_CNT_ADDR_REGISTER_W] = 5;
+                        curDeNom = sc.ram->data[SCIFI_CNT_VALUE_REGISTER_R];
+                        // get lvds errors
+                        sc.ram->data[SCIFI_CNT_ADDR_REGISTER_W] = counter_map[selected] + asic * 10 + mod * 4 * 10;
+                        curNom = sc.ram->data[SCIFI_CNT_VALUE_REGISTER_R];
+                        printf("| %10u / %10u |", curNom, curDeNom);
+                        lastLVDS[mod * asic] = curNom;
+                        lastWords[mod * asic] = curDeNom;
+                    } else if ( selected == 4 ) {
+                        // get sync loss
+                        sc.ram->data[SCIFI_CNT_ADDR_REGISTER_W] = counter_map[selected] + asic * 10 + mod * 4 * 10;
+                        curNom = sc.ram->data[SCIFI_CNT_VALUE_REGISTER_R];
+                        printf("| %10u / %10u |", curNom, counter_map[selected] + asic * 10 + mod * 4 * 10);
+                    }
                 }
                 printf("\n");
             }
@@ -475,16 +566,16 @@ alt_u16 SMB_t::reset_counters(){
 alt_u16 SMB_t::store_counters(volatile alt_u32* data){
     for(uint8_t i=0;i<4*n_MODULES;i++){
         for(uint8_t selected=0;selected<5; selected++){
-            sc.ram->data[SCIFI_CNT_CTRL_REGISTER_W] = (sc.ram->data[SCIFI_CNT_CTRL_REGISTER_W] & ~0xF) | ((selected&0x7) + (i<<3));
-            *data = sc.ram->data[SCIFI_CNT_NOM_REGISTER_REGISTER_R];
+            //sc.ram->data[SCIFI_CNT_CTRL_REGISTER_W] = (sc.ram->data[SCIFI_CNT_CTRL_REGISTER_W] & ~0xF) | ((selected&0x7) + (i<<3));
+            //*data = sc.ram->data[SCIFI_CNT_NOM_REGISTER_REGISTER_R];
             //printf("%u: %8.8x\n", sc.ram->data[SCIFI_CNT_CTRL_REGISTER_W], *data);
-            data++;
-            *data = sc.ram->data[SCIFI_CNT_DENOM_UPPER_REGISTER_R];
+            //data++;
+            //*data = sc.ram->data[SCIFI_CNT_DENOM_UPPER_REGISTER_R];
             //printf("%u: %8.8x\n", sc.ram->data[SCIFI_CNT_DENOM_UPPER_REGISTER_R],*data);
-            data++;
-            *data = sc.ram->data[SCIFI_CNT_DENOM_LOWER_REGISTER_R];
+            //data++;
+            //*data = sc.ram->data[SCIFI_CNT_DENOM_LOWER_REGISTER_R];
             //printf("%u: %8.8x\n", sc.ram->data[SCIFI_CNT_DENOM_LOWER_REGISTER_R],*data);
-            data++;
+            //data++;
             //*data=(sc.ram->regs.SMB.counters.denom>>32)&0xffffffff;
             //printf("%u: %8.8x\n", sc.ram->regs.SMB.counters.ctrl,*data);
             //data++;
