@@ -16,7 +16,9 @@ generic (
     g_LOOPUP_NAME        : string := "intRun2021";
     is_FARM              : boolean := false;
     SKIP_DOUBLE_SUB      : boolean := false;
-    LINK_FIFO_ADDR_WIDTH : positive := 10--;
+    LINK_FIFO_ADDR_WIDTH : positive := 10;
+    -- Data type: "00" = pixel, "01" = scifi, "10" = tiles
+    DATA_TYPE            : std_logic_vector(1 downto 0)    := "00"--;
 );
 port (
     i_rx            : in  work.mu3e.link_t;
@@ -46,7 +48,7 @@ architecture arch of link_to_fifo is
     signal cnt_skip_data, cnt_sub, cnt_events : std_logic_vector(31 downto 0);
 
     signal rx : work.mu3e.link_t;
-    signal rx_wen, almost_full, wrfull : std_logic;
+    signal rx_wen, almost_full, wrfull, reset_n : std_logic;
     signal wrusedw : std_logic_vector(LINK_FIFO_ADDR_WIDTH - 1 downto 0);
 
     signal hit_reg : std_logic_vector(31 downto 0);
@@ -54,13 +56,16 @@ architecture arch of link_to_fifo is
 
 begin
 
+    e_reset_n : entity work.reset_sync
+    port map ( o_reset_n => reset_n, i_reset_n => i_reset_n, i_clk => i_clk );
+
     e_cnt_link_fifo_almost_full : entity work.counter
     generic map ( WRAP => true, W => 32 )
-    port map ( o_cnt => o_counter(0), i_ena => almost_full, i_reset_n => i_reset_n, i_clk => i_clk );
+    port map ( o_cnt => o_counter(0), i_ena => almost_full, i_reset_n => reset_n, i_clk => i_clk );
 
     e_cnt_dc_link_fifo_full : entity work.counter
     generic map ( WRAP => true, W => 32 )
-    port map ( o_cnt => o_counter(1), i_ena => wrfull, i_reset_n => i_reset_n, i_clk => i_clk );
+    port map ( o_cnt => o_counter(1), i_ena => wrfull, i_reset_n => reset_n, i_clk => i_clk );
 
     o_counter(2) <= cnt_skip_data;
     o_counter(3) <= cnt_events;
@@ -72,9 +77,9 @@ begin
     port map ( i_fpgaID => i_linkid, i_chipID => i_rx.data(25 downto 22), o_chipID => chipID );
 
     --! write only if not idle
-    process(i_clk, i_reset_n)
+    process(i_clk, reset_n)
     begin
-    if ( i_reset_n /= '1' ) then
+    if ( reset_n /= '1' ) then
         rx                  <= work.mu3e.LINK_ZERO;
         cnt_sub             <= (others => '0');
         cnt_events          <= (others => '0');
@@ -131,7 +136,8 @@ begin
                     link_to_fifo_state <= idle;
                     rx.eop <= '1';
                 -- check for sub header on the SWB
-                elsif ( i_rx.data(31 downto 26) = "111111" and i_rx.datak = "0000" and not is_FARM ) then
+                -- NOTE: for scifi we dont have a subheader at the moment so skip this change this when we have a sorter
+                elsif ( i_rx.data(31 downto 26) = "111111" and i_rx.datak = "0000" and not is_FARM and DATA_TYPE = "00" ) then
                     -- we shift the subheader around here the marker will be 1111111 for chipID = 128
                     -- on position 27 downto 21, overflow will be 15 downto 0 and the time stamp
                     -- will be shifted from ts(10-9) to 29-28 and from ts(8-4)to 20-16
@@ -140,7 +146,11 @@ begin
                     cnt_sub <= cnt_sub + '1';
                 -- write hit on swb
                 elsif ( not is_FARM ) then
-                    rx.data <= i_rx.data(31 downto 28) & chipID & i_rx.data(21 downto 1); -- hit
+                    if ( DATA_TYPE = "00" ) then
+                        rx.data <= i_rx.data(31 downto 28) & chipID & i_rx.data(21 downto 1); -- pixel hit
+                    else
+                        rx.data <= i_rx.data; -- scifi hit
+                    end if;
                     rx.dthdr <= '1';
                 -- check for sub header on the farm
                 elsif ( i_rx.data(27 downto 21) = "1111111" and i_rx.datak = "0000" and is_FARM ) then
@@ -190,12 +200,12 @@ begin
         o_rempty    => o_rdempty,
 
         i_clk       => i_clk,
-        i_reset_n   => i_reset_n--;
+        i_reset_n   => reset_n--;
     );
 
-    process(i_clk, i_reset_n)
+    process(i_clk, reset_n)
     begin
-    if ( i_reset_n = '0' ) then
+    if ( reset_n = '0' ) then
         almost_full <= '0';
     elsif ( rising_edge(i_clk) ) then
         if ( wrusedw(LINK_FIFO_ADDR_WIDTH - 1) = '1' ) then
