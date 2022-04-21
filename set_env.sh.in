@@ -45,3 +45,4 @@ fi
 #
 alias git-sr='env GIT_AUTHOR_NAME="Stefan Ritt" GIT_AUTHOR_EMAIL="stefan.ritt@psi.ch" git'
 alias git-mm='env GIT_AUTHOR_NAME="Martin Mueller" GIT_AUTHOR_EMAIL="mmarti04@students.uni-mainz.de" git'
+alias git-fw='env GIT_AUTHOR_NAME=“Frederik Wauters” GIT_AUTHOR_EMAIL="fwauters@uni-mainz.de” git'
