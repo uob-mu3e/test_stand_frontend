@@ -19,6 +19,13 @@
         grid-template-rows: repeat(var(--grid-rows), 1fr);
         grid-template-columns: repeat(var(--grid-cols), 1fr);
       }
+      
+      #global {
+        display: grid;
+        grid-gap: 1em;
+        grid-template-rows: repeat(var(--grid-rows), 1fr);
+        grid-template-columns: repeat(var(--grid-cols), 1fr);
+      }
 
       .grid-item {
         padding: 1em;
@@ -39,7 +46,7 @@
 <div id="mmain">
 
   <h1>Global DQ Histograms</h1>
-  <div id="chipID" style="width:800px; height:600px"></div>
+  <div id="global"></div>
   
   <h1>Hitmaps</h1>
   startChipID: <input type="text" placeholder="0" id="startID" name="startID">
@@ -54,18 +61,20 @@
   import { createHistogram, redraw, httpRequest, draw } from 'https://root.cern/js/latest/modules/main.mjs';
 
   // create grid container
-  function makeRows(rows, cols, id) {
+  function makeRows(rows, cols, id, w, h) {
     const container = document.getElementById(id);
     container.style.setProperty('--grid-rows', rows);
     container.style.setProperty('--grid-cols', cols);
     for (let c = 0; c < (rows * cols); c++) {
       let cell = document.createElement("div");
       cell.id = id+c;
-      cell.style.cssText = "width:250px; height:150px";
+      cell.style.cssText = "width:"+w+"px; height:"+h+"px";
       container.appendChild(cell).className = "grid-item";
     };
   };
-  makeRows(2, 5, "hitmap");
+  makeRows(2, 5, "hitmap", 250, 150);
+  var gHistos = ["chipID", "MIDASEventID", "fpgaID", "hitTime", "hitType"];
+  makeRows(1, gHistos.length, "global", 250, 150);
   
   // page settings
   var startID = 0;
@@ -92,14 +101,18 @@
 
     getPageStatus();
 
-    // draw chipID
-    let chipID = await httpRequest('http://localhost:8088/Files/'+fileName+'/HitData/exe.json?method=Draw&prototype="Option_t*"&opt="chipID>>h1"&_ret_object_=h1', 'object');
-    redraw('chipID', chipID, 'hist');
+    // draw global maps
+    for (let i = 0; i < gHistos.length; i++) {
+//       let gH = await httpRequest('http://localhost:8088/Files/'+fileName+'/HitData/exe.json?method=Draw&prototype="Option_t*"&opt="'+gHistos[i]+'>>h1"&_ret_object_=h1', 'object');
+      let gH = await httpRequest('http://localhost:8088/Files/'+fileName+'/'+gHistos[i]+'/root.json', 'object');
+      redraw('global'+i, gH, 'hist');
+    }
     
     // draw hitmaps
     for (let i = 0; i < 10; i++) {
       let curI = i + startID;
-      let colGrow = await httpRequest('http://localhost:8088/Files/dataTree00026.root/chip'+curI+'_hitmap/root.json', 'object');
+      if (isNaN(curI)) curI = i;
+      let colGrow = await httpRequest('http://localhost:8088/Files/'+fileName+'/chip'+curI+'_hitmap/root.json', 'object');
       redraw('hitmap'+i, colGrow, 'colz');
     }
   }
