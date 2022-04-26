@@ -109,8 +109,12 @@ INT frontend_init()
    //mupixDS.define_panel("HV", 0, 3);
 
    mdevice_mscbhv4 scifiUS("SciFi HV", "SciFi HV US", "mscb422");
-   scifiUS.define_box(27, {"Module 2U", "Module 1U", "spare 1", "spare 2"});
+   scifiUS.define_box(27, {"Module 2U", "Module 1U", "SciFi spare 1", "SciFi spare 2"});
    //scifiUS.define_panel("HV", 0, 3);
+
+   mdevice_mscbhv4 scifiDS("SciFi HV", "SciFi HV DS", "mscb427");
+   scifiDS.define_box(25, {"Module 2D", "Module 1D", "SciFi spare 3", "SciFi spare 4"});
+   //scifiDS.define_panel("HV", 0, 3);
 
    return CM_SUCCESS;
 }
