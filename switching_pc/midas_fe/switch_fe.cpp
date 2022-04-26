@@ -734,9 +734,9 @@ try{ // TODO: What can throw here?? Why?? Is there another way to handle this??
    }while( (link_active_from_register & link_active_from_odb) != link_active_from_odb && (timeout_cnt > 0));
 
    if(timeout_cnt==0) {
-      cm_msg(MERROR,"switch_fe","Run number mismatch on run %d", run_number);
+      cm_msg(MERROR,"switch_fe","Run number mismatch on run %d, not aborting run start, TODO: Debug", run_number);
       print_ack_state();
-      return CM_TRANSITION_CANCELED;
+      //return CM_TRANSITION_CANCELED; // MM: insert again once mismatch issue found
    }
 
    set_equipment_status(equipment[EQUIPMENT_ID::SciFi].name, "Scintillating...", "mblue");
@@ -863,6 +863,8 @@ DWORD * fill_SSCN(DWORD * pdata)
     std::bitset<64> cur_link_active_from_odb = feblist->getLinkMask();
 
     // first read general counters
+    *pdata++ = mup->read_register_ro(GLOBAL_TS_LOW_REGISTER_R);
+    *pdata++ = mup->read_register_ro(GLOBAL_TS_HIGH_REGISTER_R);
     *pdata++ = read_counters(mup, SWB_STREAM_FIFO_FULL_CNT, 0, 0, 1, 0);
     *pdata++ = read_counters(mup, SWB_STREAM_DEBUG_FIFO_ALFULL_CNT, 0, 0, 1, 0);
     *pdata++ = read_counters(mup, SWB_BANK_BUILDER_IDLE_NOT_HEADER_CNT, 0, 0, 1, 0);

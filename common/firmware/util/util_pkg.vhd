@@ -142,6 +142,10 @@ package util is
         v : std_logic_vector--;
     ) return std_logic_vector;
 
+    function grayinc (
+        v : std_logic_vector--;
+    ) return std_logic_vector;
+
     function shift_right (
         v : std_logic_vector;
         n : natural--;
@@ -227,7 +231,11 @@ package util is
         crc  : std_logic_vector(31 downto 0)--;
     ) return std_logic_vector;
 
-
+   function one_hot_to_index (
+        one_hot : std_logic_vector;
+        len_hot : natural;
+        len_idx : natural--;
+    ) return natural;
 
     function count_bits_4 (
         data : std_logic_vector(3 downto 0)--;
@@ -384,6 +392,22 @@ package body util is
         r := gray2bin(v);
         r := std_logic_vector(unsigned(r) + 1);
         return bin2gray(r);
+    end function;
+
+    function grayinc (
+        v : std_logic_vector--;
+    ) return std_logic_vector is
+        variable r : std_logic_vector(v'range) := (others => '0');
+    begin
+        r(r'right) := '1';
+        if ( xor_reduce(v) /= '0' ) then
+            for i in v'reverse_range loop
+                exit when ( i = v'left );
+                r := shift_left(r, 1);
+                exit when ( v(i) = '1' );
+            end loop;
+        end if;
+        return v xor r;
     end function;
 
     function shift_right (
@@ -671,6 +695,34 @@ package body util is
     end function;
 
 
+    -- one hot to index calculate; assuming LEN_HOT = 2 ** LEN_IDX
+    -- https://stackoverflow.com/questions/57269302/how-can-i-get-the-index-of-a-one-hot-encoded-vector-without-using-a-for-loop
+    function one_hot_to_index (
+        one_hot : std_logic_vector;
+        len_hot : natural;
+        len_idx : natural--;
+    ) return natural is
+        variable mask_v : std_logic_vector(len_hot - 1 downto 0);
+        variable res_v  : std_logic_vector(len_idx - 1 downto 0);
+    begin
+    for i in 0 to len_idx - 1 loop
+        -- generate mask
+        for j in 0 to len_hot - 1 loop
+            if ((j / (2 ** i)) mod 2) = 0 then
+                mask_v(j) := '0';
+            else
+                mask_v(j) := '1';
+            end if;
+        end loop;
+        -- apply mask and generate bit in index
+        if unsigned(one_hot and mask_v) = 0 then
+            res_v(i) := '0';
+        else
+            res_v(i) := '1';
+        end if;
+    end loop;
+    return to_integer(unsigned(res_v));
+    end function;
 
     function count_bits_4 (
         data : std_logic_vector(3 downto 0)--;

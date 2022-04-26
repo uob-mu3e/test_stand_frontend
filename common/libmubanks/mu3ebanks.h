@@ -44,7 +44,7 @@ const array<const string, MAX_N_SWITCHINGBOARDS> sssonames = {"Names SCSO","Name
 void create_ssso_names_in_odb(odb & settings, int switch_id);
 
 //// SSCN
-constexpr int num_swb_counters_data_path = 8;
+constexpr int num_swb_counters_data_path = 10;
 constexpr int num_swb_counters_per_feb = 9;
 constexpr int num_swb_counters_per_tree_layer = 1;
 constexpr int num_swb_tree_layers = 3;

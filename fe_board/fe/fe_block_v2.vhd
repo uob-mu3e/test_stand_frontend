@@ -618,8 +618,8 @@ begin
         i_clk                   => i_clk_156--,
     );
 
-    firefly: entity work.firefly
-    port map(
+    firefly : entity work.firefly
+    port map (
         i_clk                           => i_clk_156,
         i_sysclk                        => i_nios_clk,
         i_clk_i2c                       => i_nios_clk,
@@ -673,7 +673,7 @@ begin
     );
 
     e_max10_interface : entity work.max10_interface
-    port map(
+    port map (
         i_clk               => i_nios_clk,
         i_reset_n           => nios_reset_n,
         i_clk_156           => i_clk_156,

@@ -14,6 +14,7 @@ set_global_assignment -name QIP_FILE ../firmware/FEB_common/include_FEB_v2.qip
 
 set_global_assignment -name VHDL_FILE scifi_path.vhd
 set_global_assignment -name QIP_FILE ../firmware/FEB_mutrig/include.qip
+set_global_assignment -name QIP_FILE ../../common/firmware/a10/link/include.qip
 set_global_assignment -name QIP_FILE ../fe_scifi/resetalign/realign_block.qip
 #set_global_assignment -name QIP_FILE mupix_block/include.qip
 #set_global_assignment -name VHDL_FILE dac_fifo.vhd

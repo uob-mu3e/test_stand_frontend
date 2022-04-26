@@ -20,73 +20,50 @@ use work.mudaq.all;
 
 entity receiver_block is
 generic (
-	IS_SCITILE : std_logic := '1';
-	NINPUT : positive := 1;
-	LVDS_PLL_FREQ : real := 125.0;
-	LVDS_DATA_RATE : real := 1250.0;
-	INPUT_SIGNFLIP : std_logic_vector(31 downto 0) := x"00000000"--;
+    IS_SCITILE : std_logic := '1';
+    NINPUT : positive := 1;
+    LVDS_PLL_FREQ : real := 125.0;
+    LVDS_DATA_RATE : real := 1250.0;
+    INPUT_SIGNFLIP : std_logic_vector(31 downto 0) := x"00000000"--;
 );
 port (
-	reset_n             : in std_logic;
-	reset_n_errcnt      : in std_logic;
-	rx_in               : in std_logic_vector(NINPUT-1 downto 0);
-	rx_inclock_A        : in std_logic;
-	rx_inclock_B        : in std_logic;
-	rx_state            : out std_logic_vector(2*NINPUT-1 downto 0);
-	rx_ready            : out std_logic_vector(NINPUT-1 downto 0);
-	rx_data             : out std_logic_vector(NINPUT*8-1 downto 0);
-	rx_k                : out std_logic_vector(NINPUT-1 downto 0);
-	rx_clkout           : out std_logic;
-	pll_locked          : out std_logic;
+    -- serial lines
+    rx_in               : in std_logic_vector(NINPUT-1 downto 0) := (others => '0');
 
-	rx_dpa_locked_out   : out std_logic_vector(NINPUT-1 downto 0);
+    -- ref.clocks
+    rx_inclock_A        : in std_logic;
+    rx_inclock_B        : in std_logic;
 
-	rx_runcounter       : out work.util.slv32_array_t(NINPUT-1 downto 0);
-	rx_errorcounter     : out work.util.slv32_array_t(NINPUT-1 downto 0);
-	rx_synclosscounter  : out work.util.slv32_array_t(NINPUT-1 downto 0)
+    rx_state            : out std_logic_vector(2*NINPUT-1 downto 0);
+    rx_ready            : out std_logic_vector(NINPUT-1 downto 0);
+    pll_locked          : out std_logic;
+    rx_dpa_locked_out   : out std_logic_vector(NINPUT-1 downto 0);
+    rx_runcounter       : out work.util.slv32_array_t(NINPUT-1 downto 0);
+    rx_errorcounter     : out work.util.slv32_array_t(NINPUT-1 downto 0);
+    rx_synclosscounter  : out work.util.slv32_array_t(NINPUT-1 downto 0);
+    reset_n_errcnt      : in std_logic;
+
+    o_rx_data           : out   std_logic_vector(NINPUT*8-1 downto 0);
+    o_rx_datak          : out   std_logic_vector(NINPUT-1 downto 0);
+
+    i_reset_n           : in    std_logic;
+    i_clk               : in    std_logic--;
 );
 end entity;
 
 architecture rtl of receiver_block is
 
-component data_decoder is
-generic (
-		EVAL_WINDOW_WORDCNT_BITS : natural := 8; -- number of bits of the counter used to check for the sync pattern
-		EVAL_WINDOW_PATTERN_BITS : natural := 1; -- number of bits of the counter of the sync patterns found in the window (realign if not overflow)
-		ALIGN_WORD	 : std_logic_vector(7 downto 0):=K28_5 -- pattern byte to search for
-	);
-port (
-		reset_n				: in std_logic;
---		checker_rst_n		: in std_logic;
-		clk					: in std_logic;
-		rx_in					: IN STD_LOGIC_VECTOR (9 DOWNTO 0);
+    signal rx_out       : std_logic_vector(NINPUT*10-1 downto 0);
+    signal rx_out_order : std_logic_vector(NINPUT*10-1 downto 0);
+    signal rx_clk       : std_logic;
 
-		rx_reset				: OUT STD_LOGIC;
-		rx_fifo_reset		: OUT STD_LOGIC;
-		rx_dpa_locked		: IN STD_LOGIC;
-		rx_locked			: IN STD_LOGIC;
-		rx_bitslip				: OUT STD_LOGIC;
+    signal rx_dpa_locked    : std_logic_vector (NINPUT-1 DOWNTO 0);
+    signal rx_bitslip       : std_logic_vector (NINPUT-1 DOWNTO 0);
+    signal rx_fifo_reset    : std_logic_vector (NINPUT-1 DOWNTO 0);
+    signal rx_reset         : std_logic_vector (NINPUT-1 DOWNTO 0);
 
-		ready					: OUT STD_LOGIC;
-		data					: OUT STD_LOGIC_VECTOR(7 downto 0);
-		k						: OUT STD_LOGIC;
-		state_out			: out std_logic_vector(1 downto 0);		-- 4 possible states
-		disp_err				: out std_logic
-);
-end component; --data_decoder;
-
-    signal rx_out : 		std_logic_vector(NINPUT*10-1 downto 0);
-    signal rx_out_order : 		std_logic_vector(NINPUT*10-1 downto 0);
-    signal rx_clk :			std_logic;
-
-    signal rx_dpa_locked		: STD_LOGIC_VECTOR (NINPUT-1 DOWNTO 0);
-    signal rx_bitslip			: STD_LOGIC_VECTOR (NINPUT-1 DOWNTO 0);
-    signal rx_fifo_reset		: STD_LOGIC_VECTOR (NINPUT-1 DOWNTO 0);
-    signal rx_reset			: STD_LOGIC_VECTOR (NINPUT-1 DOWNTO 0);
-
-    signal rx_ready_reg		: STD_LOGIC_VECTOR (NINPUT-1 DOWNTO 0);
-    signal rx_pll_locked		: STD_LOGIC;
-    signal rx_disperr		: std_logic_vector(NINPUT-1 downto 0);
+    signal rx_ready_reg     : std_logic_vector (NINPUT-1 DOWNTO 0);
+    signal rx_disperr       : std_logic_vector(NINPUT-1 downto 0);
 
     signal rx_inclock_A_ctrl    : std_logic;
     signal rx_inclock_A_pll     : std_logic;
@@ -102,11 +79,16 @@ end component; --data_decoder;
     signal rx_syncclock_B       : std_logic;
     signal rx_enable_B          : std_logic;
 
+    signal rx_data  : std_logic_vector(NINPUT*8-1 downto 0);
+    signal rx_datak : std_logic_vector(NINPUT-1 downto 0);
+
+    signal fifo_rdata               : std_logic_vector(NINPUT*9-1 downto 0);
+    signal fifo_wfull, fifo_rempty  : std_logic_vector(NINPUT-1 downto 0);
+
 begin
 
     rx_dpa_locked_out   <= rx_dpa_locked;
-    pll_locked          <= rx_pll_locked;
-    rx_clkout           <= rx_clk;
+    pll_locked          <= rx_locked_A and rx_locked_B;
 
 -----------------------------------------------------------
 ---------------SciTile lvds rx-----------------------------
@@ -130,7 +112,7 @@ begin
             outclk_2 => rx_syncclock_A,
             outclk_3 => rx_dpaclock_A,
             outclk_4 => open,
-            locked   => rx_locked_A
+            locked   => rx_locked_A--,
         );
 
         -- D4, D1, D2, D3, D7, D6, D9
@@ -234,58 +216,94 @@ begin
         );
     end generate;
 
-    rx_ready <= rx_ready_reg;
+    -- sync rx ready bits
+    e_rx_ready : entity work.ff_sync
+    generic map ( W => rx_ready'length )
+    port map (
+        i_d => rx_ready_reg, o_q => rx_ready,
+        i_reset_n => i_reset_n, i_clk => i_clk--,
+    );
 
     -- flip bit order of received data (msb-lsb)
     flip_bits: process(rx_out)
     begin
     for i in NINPUT-1 downto 0 loop
-    	for n in 9 downto 0 loop
-    		rx_out_order(10*i+n) <= INPUT_SIGNFLIP(i) xor rx_out(10*i+9-n);
-    	end loop;
+        for n in 9 downto 0 loop
+            rx_out_order(10*i+n) <= INPUT_SIGNFLIP(i) xor rx_out(10*i+9-n);
+        end loop;
     end loop;
     end process flip_bits;
 
     gen_channels: for i in NINPUT-1 downto 0 generate
-        datadec: data_decoder
-		generic map(
-			EVAL_WINDOW_WORDCNT_BITS => 13,
-			EVAL_WINDOW_PATTERN_BITS => 2,
-			ALIGN_WORD	 	 => K28_0
-		)
-		port map(
-			reset_n			=> reset_n,
-	--		checker_rst_n		=> checker_rst_n(i),
-			clk			=> rx_clk,
-			rx_in			=> rx_out_order((i+1)*10-1 downto i*10),
+        e_data_decoder : entity work.data_decoder
+        generic map (
+            EVAL_WINDOW_WORDCNT_BITS    => 13,
+            EVAL_WINDOW_PATTERN_BITS    => 2,
+            ALIGN_WORD                  => K28_0--,
+        )
+        port map (
+            --  checker_rst_n   => checker_rst_n(i),
+            clk             => rx_clk,
+            rx_in           => rx_out_order((i+1)*10-1 downto i*10),
 
-			rx_reset		=> rx_reset(i),
-			rx_fifo_reset		=> rx_fifo_reset(i),
-			rx_dpa_locked		=> rx_dpa_locked(i),
-			rx_locked		=> rx_locked_A and rx_locked_B,
-			rx_bitslip		=> rx_bitslip(i),
+            rx_reset        => rx_reset(i),
+            rx_fifo_reset   => rx_fifo_reset(i),
+            rx_dpa_locked   => rx_dpa_locked(i),
+            rx_locked       => rx_locked_A and rx_locked_B,
+            rx_bitslip      => rx_bitslip(i),
 
-			ready			=> rx_ready_reg(i),
-			data			=> rx_data((i+1)*8-1 downto i*8),
-			k			=> rx_k(i),
-			state_out		=> rx_state((i+1)*2-1 downto i*2),
-			disp_err		=> rx_disperr(i)
-		);
+            ready           => rx_ready_reg(i),
+            data            => rx_data((i+1)*8-1 downto i*8),
+            k               => rx_datak(i),
+            state_out       => rx_state((i+1)*2-1 downto i*2),
+            disp_err        => rx_disperr(i),
+
+            reset_n         => i_reset_n--,
+        );
 
 
-		errcounter: entity work.rx_errcounter
-		port map(
-			reset_n			=> reset_n_errcnt,
-			clk			=> rx_clk,
+        errcounter: entity work.rx_errcounter
+        port map(
+            reset_n             => reset_n_errcnt,
+            clk                 => rx_clk,
 
-			rx_sync			=> rx_ready_reg(i),
-			rx_disperr		=> rx_disperr(i),
+            rx_sync             => rx_ready_reg(i),
+            rx_disperr          => rx_disperr(i),
 
-			o_runcounter		=> rx_runcounter(i),
-			o_errcounter		=> rx_errorcounter(i),
-			o_synclosscounter	=> rx_synclosscounter(i)
+            o_runcounter        => rx_runcounter(i),
+            o_errcounter        => rx_errorcounter(i),
+            o_synclosscounter   => rx_synclosscounter(i)
+        );
 
-		);
+        -- sync rx data to i_clk_global
+        e_fifo : entity work.ip_dcfifo_v2
+        generic map (
+            g_ADDR_WIDTH => 8,
+            g_DATA_WIDTH => 9--,
+        )
+        port map (
+            -- if not idle -> write
+            i_we            => not work.util.to_std_logic(rx_data((i+1)*8-1 downto i*8) = X"BC" and rx_datak(i) = '1'),
+            i_wdata         => rx_datak(i) & rx_data((i+1)*8-1 downto i*8),
+            o_wfull         => fifo_wfull(i),
+            i_wclk          => rx_clk,
+
+            i_rack          => not fifo_rempty(i),
+            o_rdata         => fifo_rdata(i*9+8 downto i*9),
+            o_rempty        => fifo_rempty(i),
+
+            i_rclk          => i_clk,
+            i_reset_n       => i_reset_n--,
+        );
+
+        -- if empty -> generate idle
+        o_rx_data(i*8+7 downto i*8) <=
+            fifo_rdata(i*9+7 downto i*9) when ( fifo_rempty(i) = '0' ) else
+            X"BC"; -- idle
+        o_rx_datak(i) <=
+            fifo_rdata(i*9+8) when ( fifo_rempty(i) = '0' ) else
+            '1'; -- idle
+
     end generate;
 
-end rtl;
+end architecture;
