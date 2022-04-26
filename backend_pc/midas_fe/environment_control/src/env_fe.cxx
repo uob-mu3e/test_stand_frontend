@@ -175,7 +175,7 @@ INT frontend_init()
    water.define_var(1,  1, "DS_In_P");
    
    water.define_var(1,  3, "US_Out_P");
-   water.define_var(1,  4, "US_Out_P");
+   water.define_var(1,  4, "DS_Out_P");
    
    water.define_var(1,  5, "US_In_T");
    water.define_var(1,  6, "DS_In_T");
