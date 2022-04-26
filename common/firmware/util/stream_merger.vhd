@@ -37,7 +37,7 @@ begin
     -- set rack for current not empty input
     o_rack <= (others => '0') when ( i_wfull = '1' or i_reset_n = '0' ) else
         not i_rempty and index;
-        
+
     -- set sop / eop
     sop_eop_gen : for i in 0 to N - 1 generate
         sop(i) <= i_rdata(i).sop;

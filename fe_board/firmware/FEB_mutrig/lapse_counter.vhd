@@ -25,14 +25,14 @@ port (
     i_reset_n   : in  std_logic;                            -- i_run_state(RUN_STATE_BITPOS_SYNC)
     i_clk       : in  std_logic;                            -- 125 MHz
 
-    i_en        : in  std_logic;                            -- this entity can be enabled disabled via software
     i_upper_bnd : in  std_logic_vector(N_CC - 1 downto 0);  -- upper bnd for the correction (default: 30000)
+    i_lower_bnd : in  std_logic_vector(N_CC - 1 downto 0);  -- upper bnd for the correction (default:  2767)
 
     i_CC        : in  std_logic_vector(N_CC - 1 downto 0);  -- counter from the Mutrig @625MHz
     o_cnt       : out std_logic_vector(63 downto 0);        -- cnt for nLapses (63 downto 32) and CC_fpga <= 32767 case
     o_CC        : out std_logic_vector(N_CC - 1 downto 0)   -- corrected Mutrig counter
 );
-end lapse_counter;
+end;
 
 architecture arch of lapse_counter is
 
@@ -46,13 +46,13 @@ begin
 
     -- counting lapsing of coarse counter
     -- CC lapses every 2^15-1 cycles @ 625MHz.
-    p_gen_lapsing: process(i_clk, i_reset_n)
+    process(i_clk, i_reset_n)
     begin
-    if ( i_reset_n = '0' ) then
+    if ( i_reset_n /= '1' ) then
         nLapses <= 0;
         CC_fpga <= 0;
         cntCCsmaller <= 0;
-    elsif ( rising_edge(i_clk) ) then
+    elsif rising_edge(i_clk) then
         -- in the following we have 5 different edge cases where
         -- the internal CC_fpga counter runs away from the Mutrig
         -- counter. To counter this we set the correct next value
@@ -74,17 +74,17 @@ begin
         else
             CC_fpga <= CC_fpga + 5;
         end if;
-        if (CC_fpga <= 32767 and CC_fpga >= upper and i_CC_u <= lower) then
+        if (CC_fpga < 32768 and CC_fpga > upper and i_CC_u < lower) then
             cntCCsmaller <= cntCCsmaller + 1;
         end if;
         -- for simulation
         -- synthesis translate_off
-        if (i_CC_u <= 32766 and i_CC_u >= upper and CC_fpga <= lower) then
+        if (i_CC_u < 32767 and i_CC_u > upper and CC_fpga < lower) then
             report "i_CC_u " & work.util.to_hstring(std_logic_vector(i_CC_u));
             report "nLapses " & work.util.to_hstring(std_logic_vector(to_unsigned(nLapses, o_CC'length)));
             report "s_o_CC " & work.util.to_hstring(std_logic_vector(s_o_CC));
         end if;
-        if (CC_fpga <= 32767 and CC_fpga >= upper and i_CC_u <= lower) then
+        if (CC_fpga < 32768 and CC_fpga > upper and i_CC_u < lower) then
             report "this case should never happen";
         end if;
         -- synthesis translate_on
@@ -95,17 +95,17 @@ begin
     -- upper=30000 to 32766/7 and 0 to lower=2767
     -- get upper lower bnd
     upper       <=  to_integer(unsigned(i_upper_bnd));
-    lower       <=  32767 - to_integer(unsigned(i_upper_bnd));
+    lower       <=  to_integer(unsigned(i_lower_bnd));
 
     -- convert i_CC to unsigned
     i_CC_u      <=  unsigned(i_CC);
 
                     -- check if i_CC_u did not lapse but the interal counter did
-    s_o_CC      <=  i_CC_u - (nLapses - 1) when i_CC_u  <= 32766 and i_CC_u  >= upper and CC_fpga <= lower and nLapses > 0 else
+    s_o_CC      <=  i_CC_u - (nLapses - 1) when i_CC_u  < 32767 and i_CC_u  > upper and CC_fpga < lower and nLapses > 0 else
                     -- this case should never happen
-                    i_CC_u - (nLapses + 1) when CC_fpga <= 32767 and CC_fpga >= upper and i_CC_u  <= lower else
+                    i_CC_u - (nLapses + 1) when CC_fpga < 32768 and CC_fpga > upper and i_CC_u  < lower else
                     i_CC_u - nLapses;
 
-    o_CC        <=  i_CC when i_en = '0' else std_logic_vector(s_o_CC);
+    o_CC        <=  std_logic_vector(s_o_CC);
 
 end architecture;

@@ -86,14 +86,17 @@ architecture arch of swb_block is
     signal pixel_farm_data : work.mu3e.link_array_t(g_NLINKS_FARM_PIXEL-1 downto 0) := (others => work.mu3e.LINK_IDLE);
     signal scifi_farm_data : work.mu3e.link_array_t(g_NLINKS_FARM_SCIFI-1 downto 0) := (others => work.mu3e.LINK_IDLE);
     
-    --! DMA
-    signal pixel_dma_data : work.util.slv256_array_t(g_NLINKS_FARM_PIXEL-1 downto 0);
-    signal pixel_dma_cnt_words : work.util.slv32_array_t(g_NLINKS_FARM_PIXEL-1 downto 0);
-    signal pixel_dma_wren, pixel_dma_endofevent, pixel_dma_done : std_logic_vector (g_NLINKS_FARM_PIXEL-1 downto 0);
+    --! DMA debug path
+    signal builder_data : work.mu3e.link_t;
+    signal builder_rempty, builder_rack : std_logic;
+        -- Data type: "00" = pixel, "01" = scifi, "10" = tiles
+    signal builder_data_type : std_logic_vector(1 downto 0);
+
+    signal data_debug_pixel : work.mu3e.link_array_t(g_NLINKS_FARM_PIXEL-1 downto 0);
+    signal rempty_debug_pixel, rack_debug_pixel : std_logic_vector(g_NLINKS_FARM_PIXEL-1 downto 0);
     
-    signal scifi_dma_data : work.util.slv256_array_t(g_NLINKS_FARM_SCIFI-1 downto 0);
-    signal scifi_dma_cnt_words : work.util.slv32_array_t(g_NLINKS_FARM_SCIFI-1 downto 0);
-    signal scifi_dma_wren, scifi_dma_endofevent, scifi_dma_done : std_logic_vector (g_NLINKS_FARM_SCIFI-1 downto 0);
+    signal data_debug_scifi : work.mu3e.link_array_t(g_NLINKS_FARM_SCIFI-1 downto 0);
+    signal rempty_debug_scifi, rack_debug_scifi : std_logic_vector(g_NLINKS_FARM_SCIFI-1 downto 0);
     
     --! demerged FEB links
     signal rx_data         : work.mu3e.link_array_t(g_NLINKS_FEB_TOTL-1 downto 0)   := (others => work.mu3e.LINK_IDLE);
@@ -106,7 +109,8 @@ architecture arch of swb_block is
     signal counter_swb_data_pixel_us    : work.util.slv32_array_t(g_NLINKS_DATA_PIXEL_US * 5 + 3 * (N_LINKS_TREE(3) + N_LINKS_TREE(2) + N_LINKS_TREE(1)) + 7 downto 0);
     signal counter_swb_data_pixel_ds    : work.util.slv32_array_t(g_NLINKS_DATA_PIXEL_DS * 5 + 3 * (N_LINKS_TREE(3) + N_LINKS_TREE(2) + N_LINKS_TREE(1)) + 7 downto 0);
     signal counter_swb_data_scifi       : work.util.slv32_array_t(g_NLINKS_DATA_SCIFI * 5 + 3 * (N_LINKS_TREE(3) + N_LINKS_TREE(2) + N_LINKS_TREE(1)) + 7 downto 0);
-    signal counter_swb                  : work.util.slv32_array_t(counter_swb_data_pixel_us'left+1 + counter_swb_data_pixel_ds'left+1 + counter_swb_data_scifi'left+1 - 1 downto 0);
+    signal builder_counters             : work.util.slv32_array_t(3 downto 0);
+    signal counter_swb                  : work.util.slv32_array_t(builder_counters'left+1 + counter_swb_data_pixel_us'left+1 + counter_swb_data_pixel_ds'left+1 + counter_swb_data_scifi'left+1 - 1 downto 0);
 
 begin
 
@@ -240,75 +244,36 @@ begin
     END GENERATE gen_scifi_data_mapping;
 
     -- counter mapping
-    counter_swb(counter_swb_data_pixel_ds'left downto 0) <= counter_swb_data_pixel_ds;
-    counter_swb(counter_swb_data_pixel_us'left+1 + counter_swb_data_pixel_ds'left+1 - 1 downto counter_swb_data_pixel_ds'left+1) <= counter_swb_data_pixel_us;
-    counter_swb(counter_swb_data_scifi'left+1 + counter_swb_data_pixel_ds'left+1 + counter_swb_data_pixel_us'left+1 - 1 downto counter_swb_data_pixel_ds'left+1 + counter_swb_data_pixel_us'left+1) <= counter_swb_data_scifi;
+    counter_swb(builder_counters'left downto 0) <= builder_counters;
+    counter_swb(builder_counters'left+1 + counter_swb_data_pixel_us'left+1 - 1 downto builder_counters'left+1) <= counter_swb_data_pixel_us;
+    counter_swb(builder_counters'left+1 + counter_swb_data_pixel_us'left+1 + counter_swb_data_pixel_ds'left+1 - 1 downto counter_swb_data_pixel_us'left+1 + builder_counters'left+1) <= counter_swb_data_pixel_ds;
+    counter_swb(builder_counters'left+1 + counter_swb_data_scifi'left+1 + counter_swb_data_pixel_ds'left+1 + counter_swb_data_pixel_us'left+1 - 1 downto counter_swb_data_pixel_ds'left+1 + counter_swb_data_pixel_us'left+1 + builder_counters'left+1) <= counter_swb_data_scifi;
 
     -- DAM mapping
-    o_dma_wren      <=  pixel_dma_wren(0) when i_writeregs(SWB_READOUT_STATE_REGISTER_W)(USE_BIT_PIXEL_DS) = '1' else
-                        pixel_dma_wren(1) when i_writeregs(SWB_READOUT_STATE_REGISTER_W)(USE_BIT_PIXEL_US) = '1' else
-                        scifi_dma_wren(0) when i_writeregs(SWB_READOUT_STATE_REGISTER_W)(USE_BIT_SCIFI) = '1' else
+    builder_data    <=  data_debug_pixel(0) when i_writeregs(SWB_READOUT_STATE_REGISTER_W)(USE_BIT_PIXEL_US) = '1' else
+                        data_debug_pixel(1) when i_writeregs(SWB_READOUT_STATE_REGISTER_W)(USE_BIT_PIXEL_DS) = '1' else
+                        data_debug_scifi(0) when i_writeregs(SWB_READOUT_STATE_REGISTER_W)(USE_BIT_SCIFI) = '1' else
+                        work.mu3e.LINK_IDLE;
+    builder_rempty  <=  rempty_debug_pixel(0) when i_writeregs(SWB_READOUT_STATE_REGISTER_W)(USE_BIT_PIXEL_US) = '1' else
+                        rempty_debug_pixel(1) when i_writeregs(SWB_READOUT_STATE_REGISTER_W)(USE_BIT_PIXEL_DS) = '1' else
+                        rempty_debug_scifi(0) when i_writeregs(SWB_READOUT_STATE_REGISTER_W)(USE_BIT_SCIFI) = '1' else
                         '0';
-    o_endofevent    <=  pixel_dma_endofevent(0) when i_writeregs(SWB_READOUT_STATE_REGISTER_W)(USE_BIT_PIXEL_DS) = '1' else 
-                        pixel_dma_endofevent(1) when i_writeregs(SWB_READOUT_STATE_REGISTER_W)(USE_BIT_PIXEL_US) = '1' else 
-                        scifi_dma_endofevent(0) when i_writeregs(SWB_READOUT_STATE_REGISTER_W)(USE_BIT_SCIFI) = '1' else
-                        '0';
-    o_dma_data      <=  pixel_dma_data(0) when i_writeregs(SWB_READOUT_STATE_REGISTER_W)(USE_BIT_PIXEL_DS) = '1' else
-                        pixel_dma_data(1) when i_writeregs(SWB_READOUT_STATE_REGISTER_W)(USE_BIT_PIXEL_US) = '1' else 
-                        scifi_dma_data(0) when i_writeregs(SWB_READOUT_STATE_REGISTER_W)(USE_BIT_SCIFI) = '1' else
-                        (others => '0');
-    o_readregs(EVENT_BUILD_STATUS_REGISTER_R)(EVENT_BUILD_DONE) <=      pixel_dma_done(0) when i_writeregs(SWB_READOUT_STATE_REGISTER_W)(USE_BIT_PIXEL_DS) = '1' else
-                                                                        pixel_dma_done(1) when i_writeregs(SWB_READOUT_STATE_REGISTER_W)(USE_BIT_PIXEL_US) = '1' else
-                                                                        scifi_dma_done(0) when i_writeregs(SWB_READOUT_STATE_REGISTER_W)(USE_BIT_SCIFI) = '1' else
-                                                                        '0';
-    o_readregs(DMA_CNT_WORDS_REGISTER_R) <=     pixel_dma_cnt_words(0) when i_writeregs(SWB_READOUT_STATE_REGISTER_W)(USE_BIT_PIXEL_DS) = '1' else
-                                                pixel_dma_cnt_words(1) when i_writeregs(SWB_READOUT_STATE_REGISTER_W)(USE_BIT_PIXEL_US) = '1' else
-                                                scifi_dma_cnt_words(0) when i_writeregs(SWB_READOUT_STATE_REGISTER_W)(USE_BIT_SCIFI) = '1' else
-                                                (others => '0');
+    builder_data_type <= "00" when i_writeregs(SWB_READOUT_STATE_REGISTER_W)(USE_BIT_PIXEL_US) = '1' else
+                         "00" when i_writeregs(SWB_READOUT_STATE_REGISTER_W)(USE_BIT_PIXEL_DS) = '1' else
+                         "01" when i_writeregs(SWB_READOUT_STATE_REGISTER_W)(USE_BIT_SCIFI) = '1' else
+                         "00";
+    rack_debug_pixel(0) <=  builder_rack when i_writeregs(SWB_READOUT_STATE_REGISTER_W)(USE_BIT_PIXEL_US) = '1' else '0';
+    rack_debug_pixel(1) <=  builder_rack when i_writeregs(SWB_READOUT_STATE_REGISTER_W)(USE_BIT_PIXEL_DS) = '1' else '0';
+    rack_debug_scifi(0) <=  builder_rack when i_writeregs(SWB_READOUT_STATE_REGISTER_W)(USE_BIT_SCIFI) = '1' else '0';
 
 
     --! SWB data path Pixel
     --! ------------------------------------------------------------------------
     --! ------------------------------------------------------------------------
     --! ------------------------------------------------------------------------
-    e_swb_data_path_pixel_ds : entity work.swb_data_path
-    generic map (
-        g_LOOPUP_NAME           => "intRun2021",
-        g_ADDR_WIDTH            => 11,
-        g_NLINKS_DATA           => g_NLINKS_DATA_PIXEL_DS,
-        LINK_FIFO_ADDR_WIDTH    => 13,
-        SWB_ID                  => SWB_ID,
-        -- Data type: "00" = pixel, "01" = scifi, "10" = tiles
-        DATA_TYPE               => "00"--,
-    )
-    port map (
-        -- clk and reset signals
-        i_clk               => i_clk,
-        i_reset_n           => i_resets_n(RESET_BIT_DATA_PATH),
-        i_resets_n          => i_resets_n,
-
-        -- link inputs
-        i_rx                => rx_data_pixel(g_NLINKS_DATA_PIXEL_DS-1 downto 0),
-        i_rmask_n           => pixel_mask_n(g_NLINKS_DATA_PIXEL_DS-1 downto 0),
-
-        i_writeregs         => i_writeregs,
-
-        o_counter           => counter_swb_data_pixel_ds,
-
-        i_dmamemhalffull    => i_dmamemhalffull,
-
-        o_farm_data         => pixel_farm_data(0),
-
-        o_dma_wren          => pixel_dma_wren(0),
-        o_dma_cnt_words     => pixel_dma_cnt_words(0),
-        o_dma_done          => pixel_dma_done(0),
-        o_endofevent        => pixel_dma_endofevent(0),
-        o_dma_data          => pixel_dma_data(0)--;
-    );
-
     e_swb_data_path_pixel_us : entity work.swb_data_path
     generic map (
-        g_LOOPUP_NAME           => "intRun2021",
+        g_LOOPUP_NAME           => "intRun2022_us",
         g_ADDR_WIDTH            => 11,
         g_NLINKS_DATA           => g_NLINKS_DATA_PIXEL_US,
         LINK_FIFO_ADDR_WIDTH    => 13,
@@ -323,22 +288,49 @@ begin
         i_resets_n          => i_resets_n,
 
         -- link inputs
-        i_rx                => rx_data_pixel(g_NLINKS_DATA_PIXEL_US+g_NLINKS_DATA_PIXEL_DS-1 downto g_NLINKS_DATA_PIXEL_DS),
-        i_rmask_n           => pixel_mask_n(g_NLINKS_DATA_PIXEL_US+g_NLINKS_DATA_PIXEL_DS-1 downto g_NLINKS_DATA_PIXEL_DS),
+        i_rx                => rx_data_pixel(g_NLINKS_DATA_PIXEL_US-1 downto 0),
+        i_rmask_n           => pixel_mask_n(g_NLINKS_DATA_PIXEL_US-1 downto 0),
 
         i_writeregs         => i_writeregs,
 
         o_counter           => counter_swb_data_pixel_us,
 
-        i_dmamemhalffull    => i_dmamemhalffull,
+        o_farm_data         => pixel_farm_data(0),
+
+        i_rack_debug        => rack_debug_pixel(0),
+        o_data_debug        => data_debug_pixel(0),
+        o_rempty_debug      => rempty_debug_pixel(0)--;
+    );
+
+    e_swb_data_path_pixel_ds : entity work.swb_data_path
+    generic map (
+        g_LOOPUP_NAME           => "intRun2022_ds",
+        g_ADDR_WIDTH            => 11,
+        g_NLINKS_DATA           => g_NLINKS_DATA_PIXEL_DS,
+        LINK_FIFO_ADDR_WIDTH    => 13,
+        SWB_ID                  => SWB_ID,
+        -- Data type: "00" = pixel, "01" = scifi, "10" = tiles
+        DATA_TYPE               => "00"--,
+    )
+    port map (
+        -- clk and reset signals
+        i_clk               => i_clk,
+        i_reset_n           => i_resets_n(RESET_BIT_DATA_PATH),
+        i_resets_n          => i_resets_n,
+
+        -- link inputs
+        i_rx                => rx_data_pixel(g_NLINKS_DATA_PIXEL_US+g_NLINKS_DATA_PIXEL_DS-1 downto g_NLINKS_DATA_PIXEL_US),
+        i_rmask_n           => pixel_mask_n(g_NLINKS_DATA_PIXEL_US+g_NLINKS_DATA_PIXEL_DS-1 downto g_NLINKS_DATA_PIXEL_US),
+
+        i_writeregs         => i_writeregs,
+
+        o_counter           => counter_swb_data_pixel_ds,
 
         o_farm_data         => pixel_farm_data(1),
 
-        o_dma_wren          => pixel_dma_wren(1),
-        o_dma_cnt_words     => pixel_dma_cnt_words(1),
-        o_dma_done          => pixel_dma_done(1),
-        o_endofevent        => pixel_dma_endofevent(1),
-        o_dma_data          => pixel_dma_data(1)--;
+        i_rack_debug        => rack_debug_pixel(1),
+        o_data_debug        => data_debug_pixel(1),
+        o_rempty_debug      => rempty_debug_pixel(1)--;
     );
 
 
@@ -346,39 +338,68 @@ begin
     --! ------------------------------------------------------------------------
     --! ------------------------------------------------------------------------
     --! ------------------------------------------------------------------------
---    e_swb_data_path_pixel_scifi : entity work.swb_data_path
---    generic map (
---        g_LOOPUP_NAME           => "intRun2021",
---        g_ADDR_WIDTH            => 11,
---        g_NLINKS_DATA           => g_NLINKS_DATA_SCIFI,
---        LINK_FIFO_ADDR_WIDTH    => 13,
---        SWB_ID                  => SWB_ID,
---        -- Data type: "00" = pixel, "01" = scifi, "10" = tiles
---        DATA_TYPE               => "01"--,
---    )
---    port map (
---        -- clk and reset signals
---        i_clk               => i_clk,
---        i_reset_n           => i_resets_n(RESET_BIT_DATA_PATH),
---        i_resets_n          => i_resets_n,
---
---        -- link inputs
---        i_rx                => rx_data_scifi,
---        i_rmask_n           => scifi_mask_n,
---
---        i_writeregs         => i_writeregs,
---
---        o_counter           => counter_swb_data_scifi,
---
---        i_dmamemhalffull    => i_dmamemhalffull,
---
---        o_farm_data         => scifi_farm_data(0),
---
---        o_dma_wren          => scifi_dma_wren(0),
---        o_dma_cnt_words     => scifi_dma_cnt_words(0),
---        o_dma_done          => scifi_dma_done(0),
---        o_endofevent        => scifi_dma_endofevent(0),
---        o_dma_data          => scifi_dma_data(0)--;
---    );
+    e_swb_data_path_pixel_scifi : entity work.swb_data_path
+    generic map (
+        g_LOOPUP_NAME           => "intRun2021",
+        g_ADDR_WIDTH            => 11,
+        g_NLINKS_DATA           => g_NLINKS_DATA_SCIFI,
+        LINK_FIFO_ADDR_WIDTH    => 13,
+        SWB_ID                  => SWB_ID,
+        g_gen_time_merger       => false,
+        -- Data type: "00" = pixel, "01" = scifi, "10" = tiles
+        DATA_TYPE               => "01"--,
+    )
+    port map (
+        -- clk and reset signals
+        i_clk               => i_clk,
+        i_reset_n           => i_resets_n(RESET_BIT_DATA_PATH),
+        i_resets_n          => i_resets_n,
+
+        -- link inputs
+        i_rx                => rx_data_scifi(g_NLINKS_DATA_SCIFI-1 downto 0),
+        i_rmask_n           => scifi_mask_n(g_NLINKS_DATA_SCIFI-1 downto 0),
+
+        i_writeregs         => i_writeregs,
+
+        o_counter           => counter_swb_data_scifi,
+
+        o_farm_data         => scifi_farm_data(0),
+
+        i_rack_debug        => rack_debug_scifi(0),
+        o_data_debug        => data_debug_scifi(0),
+        o_rempty_debug      => rempty_debug_scifi(0)--;
+    );
+
+
+    --! event builder used for the debug readout on the SWB
+    --! ------------------------------------------------------------------------
+    --! ------------------------------------------------------------------------
+    --! ------------------------------------------------------------------------
+    e_event_builder : entity work.swb_midas_event_builder
+    port map (
+        i_rx                => builder_data,
+        i_rempty            => builder_rempty,
+
+        i_get_n_words       => i_writeregs(GET_N_DMA_WORDS_REGISTER_W),
+        i_dmamemhalffull    => i_dmamemhalffull,
+        i_wen               => i_writeregs(DMA_REGISTER_W)(DMA_BIT_ENABLE),
+        i_data_type         => builder_data_type,
+
+        o_data              => o_dma_data,
+        o_wen               => o_dma_wren,
+        o_ren               => builder_rack,
+        o_endofevent        => o_endofevent,
+        o_dma_cnt_words     => o_readregs(DMA_CNT_WORDS_REGISTER_R),
+        o_done              => o_readregs(EVENT_BUILD_STATUS_REGISTER_R)(EVENT_BUILD_DONE),
+
+        --! bank_builder_idle_not_header
+        --! bank_builder_skip_event_dma
+        --! bank_builder_event_dma
+        --! bank_builder_tag_fifo_full
+        o_counters          => builder_counters,
+
+        i_reset_n           => i_resets_n(RESET_BIT_DATA_PATH),
+        i_clk               => i_clk--,
+    );
 
 end architecture;

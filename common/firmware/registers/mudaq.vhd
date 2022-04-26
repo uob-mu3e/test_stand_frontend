@@ -185,6 +185,7 @@ package mudaq is
     constant MERGER_FIFO_RUN_END_MARKER     : std_logic_vector(3 downto 0)      := "0111";
     constant MERGER_FIFO_PAKET_END_MARKER   : std_logic_vector(3 downto 0)      := "0011";
     constant MERGER_FIFO_PAKET_START_MARKER : std_logic_vector(3 downto 0)      := "0010";
+    constant MERGER_FIFO_PAKET_T1_MARKER    : std_logic_vector(3 downto 0)      := "0001";
 
     -- FEB Arria-MAX SPI addresses
     constant FEBSPI_ADDR_GITHASH            : std_logic_vector(6 downto 0)      := "0000000";

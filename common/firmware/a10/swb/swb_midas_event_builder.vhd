@@ -73,7 +73,12 @@ architecture arch of swb_midas_event_builder is
     signal cnt_skip_event_dma, cnt_event_dma : std_logic_vector(31 downto 0);
     signal cnt_idle_not_header : std_logic_vector(31 downto 0);
 
+    signal reset_n : std_logic;
+
 begin
+
+    e_reset_n : entity work.reset_sync
+    port map ( o_reset_n => reset_n, i_reset_n => i_reset_n, i_clk => i_clk );
 
     --! set output done
     o_done <= done;
@@ -84,7 +89,7 @@ begin
     o_counters(2) <= cnt_event_dma;
     e_cnt_tag_fifo : entity work.counter
     generic map ( WRAP => true, W => 32 )
-    port map ( o_cnt => o_counters(3), i_ena => tag_fifo_full, i_reset_n => i_reset_n, i_clk => i_clk );
+    port map ( o_cnt => o_counters(3), i_ena => tag_fifo_full, i_reset_n => reset_n, i_clk => i_clk );
 
     --! data out
     o_data <= (others => '1')                                                       when event_counter_state = write_4kb_padding and is_error_q = '0' else
@@ -124,7 +129,7 @@ begin
         q               => r_fifo_data,
         full            => tag_fifo_full,
         empty           => tag_fifo_empty,
-        sclr            => not i_reset_n--,
+        sclr            => not reset_n--,
     );
 
     o_ren <=
@@ -133,9 +138,9 @@ begin
         '0';
 
     -- write link data to event ram
-    process(i_clk, i_reset_n)
+    process(i_clk, reset_n)
     begin
-    if ( i_reset_n = '0' ) then
+    if ( reset_n = '0' ) then
         e_size_add          <= (others => '0');
         b_size_add          <= (others => '0');
         b_length_add        <= (others => '0');
@@ -361,9 +366,9 @@ begin
 
 
     -- dma end of events, count events and write control
-    process(i_clk, i_reset_n)
+    process(i_clk, reset_n)
     begin
-    if ( i_reset_n = '0' ) then
+    if ( reset_n = '0' ) then
         o_wen               <= '0';
         done                <= '0';
         o_endofevent        <= '0';
@@ -435,7 +440,16 @@ begin
             end if;
             word_counter_endofevent <= word_counter_endofevent + '1';
             event_counter_state     <= runing;
-            r_ram_add <= r_ram_add + '1';
+            if(r_ram_add = event_last_ram_add - '1') then
+                if ( is_error_q = '1' or word_counter = (word_counter'range => '0') ) then
+                    event_counter_state <= wait_last_word;
+                    cnt_4kb             <= (others => '0');
+                else
+                    event_counter_state <= waiting;
+                end if;
+            else
+                r_ram_add <= r_ram_add + '1';
+            end if;
 
         when runing =>
             o_state_out <= x"4";

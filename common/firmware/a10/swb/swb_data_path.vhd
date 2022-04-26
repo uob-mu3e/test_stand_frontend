@@ -18,13 +18,14 @@ use work.mudaq.all;
 
 entity swb_data_path is
 generic (
-    g_LOOPUP_NAME : string := "intRun2021";
-    g_ADDR_WIDTH : positive := 11;
-    g_NLINKS_DATA : positive := 8;
-    LINK_FIFO_ADDR_WIDTH : positive := 10;
-    SWB_ID : std_logic_vector(7 downto 0) := x"01";
+    g_LOOPUP_NAME                               : string := "intRun2021";
+    g_ADDR_WIDTH                                : positive := 11;
+    g_NLINKS_DATA                               : positive := 8;
+    LINK_FIFO_ADDR_WIDTH                        : positive := 10;
+    g_gen_time_merger                           : boolean := true;
+    SWB_ID : std_logic_vector(7 downto 0)       := x"01";
     -- Data type: "00" = pixel, "01" = scifi, "10" = tiles
-    DATA_TYPE : std_logic_vector(1 downto 0) := "00"--;
+    DATA_TYPE : std_logic_vector(1 downto 0)    := "00"--;
 );
 port(
     -- clk and reset signals
@@ -45,13 +46,11 @@ port(
     -- farm data
     o_farm_data      : out work.mu3e.link_t := work.mu3e.LINK_IDLE;
 
-    -- dma
-    i_dmamemhalffull : in  std_logic;
-    o_dma_wren       : out std_logic;
-    o_dma_cnt_words  : out std_logic_vector (31 downto 0);
-    o_dma_done       : out std_logic;
-    o_endofevent     : out std_logic;
-    o_dma_data       : out std_logic_vector (255 downto 0)--;
+    -- dma debug path
+    i_rack_debug     : in  std_logic;
+    o_data_debug     : out work.mu3e.link_t;
+    o_rempty_debug   : out std_logic--;
+
 );
 end entity;
 
@@ -82,11 +81,6 @@ architecture arch of swb_data_path is
     signal merger_rempty_debug, merger_ren_debug : std_logic;
     signal merger_rack : std_logic_vector (g_NLINKS_DATA-1 downto 0);
 
-    --! event builder
-    signal builder_data : work.mu3e.link_t;
-    signal builder_counters : work.util.slv32_array_t(3 downto 0);
-    signal builder_rempty, builder_rack : std_logic;
-
     --! links to farm
     signal farm_data : work.mu3e.link_t;
     signal farm_rack, farm_rempty : std_logic;
@@ -109,10 +103,10 @@ begin
     -- dma and farm counters
     o_counter(0) <= stream_counters(0);  --! e_stream_fifo full
     o_counter(1) <= stream_counters(1);  --! e_debug_stream_fifo almost full
-    o_counter(2) <= builder_counters(0); --! bank_builder_idle_not_header
-    o_counter(3) <= builder_counters(1); --! bank_builder_skip_event_dma
-    o_counter(4) <= builder_counters(2); --! bank_builder_event_dma
-    o_counter(5) <= builder_counters(3); --! bank_builder_tag_fifo_full
+    o_counter(2) <= (others => '0');
+    o_counter(3) <= (others => '0');
+    o_counter(4) <= (others => '0');
+    o_counter(5) <= (others => '0');
     o_counter(6) <= events_to_farm_cnt;  --! events send to the farm
     o_counter(7) <= merger_counters(0);  --! e_debug_time_merger_fifo almost full
     o_counter(7 + 3 * (N_LINKS_TREE(3) + N_LINKS_TREE(2) + N_LINKS_TREE(1)) downto 8) <= merger_counters(3 * (N_LINKS_TREE(3) + N_LINKS_TREE(2) + N_LINKS_TREE(1)) downto 1);
@@ -207,6 +201,7 @@ begin
             g_LOOPUP_NAME        => g_LOOPUP_NAME,
             is_FARM              => false,
             SKIP_DOUBLE_SUB      => false,
+            DATA_TYPE            => DATA_TYPE,
             LINK_FIFO_ADDR_WIDTH => LINK_FIFO_ADDR_WIDTH--,
         )
         port map (
@@ -267,36 +262,38 @@ begin
     --! ------------------------------------------------------------------------
     --! ------------------------------------------------------------------------
     --! ------------------------------------------------------------------------
-    e_time_merger : entity work.swb_time_merger
-    generic map (
-        g_ADDR_WIDTH    => g_ADDR_WIDTH,
-        g_NLINKS_DATA   => g_NLINKS_DATA,
-        DATA_TYPE       => DATA_TYPE--,
-    )
-    port map (
-        i_rx            => rx_q,
-        i_rempty        => rx_rdempty,
-        i_rmask_n       => i_rmask_n,
-        o_rack          => merger_rack,
+    generate_time_merger : if ( g_gen_time_merger ) generate
+        e_time_merger : entity work.swb_time_merger
+        generic map (
+            g_ADDR_WIDTH    => g_ADDR_WIDTH,
+            g_NLINKS_DATA   => g_NLINKS_DATA,
+            DATA_TYPE       => DATA_TYPE--,
+        )
+        port map (
+            i_rx            => rx_q,
+            i_rempty        => rx_rdempty,
+            i_rmask_n       => i_rmask_n,
+            o_rack          => merger_rack,
 
-        o_counters      => merger_counters,
+            o_counters      => merger_counters,
 
-        -- farm data
-        o_wdata         => merger_rdata,
-        o_rempty        => merger_rempty,
-        i_ren           => merger_ren,
+            -- farm data
+            o_wdata         => merger_rdata,
+            o_rempty        => merger_rempty,
+            i_ren           => merger_ren,
 
-        -- data for debug readout
-        o_wdata_debug   => merger_rdata_debug,
-        o_rempty_debug  => merger_rempty_debug,
-        i_ren_debug     => merger_ren_debug,
+            -- data for debug readout
+            o_wdata_debug   => merger_rdata_debug,
+            o_rempty_debug  => merger_rempty_debug,
+            i_ren_debug     => merger_ren_debug,
 
-        o_error         => open,
+            o_error         => open,
 
-        i_en            => i_writeregs(SWB_READOUT_STATE_REGISTER_W)(USE_BIT_MERGER),
-        i_reset_n       => i_resets_n(RESET_BIT_SWB_TIME_MERGER),
-        i_clk           => i_clk--,
-    );
+            i_en            => i_writeregs(SWB_READOUT_STATE_REGISTER_W)(USE_BIT_MERGER),
+            i_reset_n       => i_resets_n(RESET_BIT_SWB_TIME_MERGER),
+            i_clk           => i_clk--,
+        );
+    end generate;
 
 
     --! readout switches
@@ -307,14 +304,14 @@ begin
                         merger_rack when i_writeregs(SWB_READOUT_STATE_REGISTER_W)(USE_BIT_MERGER) = '1' else
                         (others => '0');
 
-    builder_data    <=  stream_rdata_debug when i_writeregs(SWB_READOUT_STATE_REGISTER_W)(USE_BIT_STREAM) = '1' else
+    o_data_debug    <=  stream_rdata_debug when i_writeregs(SWB_READOUT_STATE_REGISTER_W)(USE_BIT_STREAM) = '1' else
                         merger_rdata_debug when i_writeregs(SWB_READOUT_STATE_REGISTER_W)(USE_BIT_MERGER) = '1' else
                         work.mu3e.LINK_ZERO;
-    builder_rempty  <=  stream_rempty_debug when i_writeregs(SWB_READOUT_STATE_REGISTER_W)(USE_BIT_STREAM) = '1' else
+    o_rempty_debug  <=  stream_rempty_debug when i_writeregs(SWB_READOUT_STATE_REGISTER_W)(USE_BIT_STREAM) = '1' else
                         merger_rempty_debug when i_writeregs(SWB_READOUT_STATE_REGISTER_W)(USE_BIT_MERGER) = '1' else
                         '0';
-    stream_ren_debug <= builder_rack when i_writeregs(SWB_READOUT_STATE_REGISTER_W)(USE_BIT_STREAM) = '1' else '0';
-    merger_ren_debug <= builder_rack when i_writeregs(SWB_READOUT_STATE_REGISTER_W)(USE_BIT_MERGER) = '1' else '0';
+    stream_ren_debug <= i_rack_debug when i_writeregs(SWB_READOUT_STATE_REGISTER_W)(USE_BIT_STREAM) = '1' else '0';
+    merger_ren_debug <= i_rack_debug when i_writeregs(SWB_READOUT_STATE_REGISTER_W)(USE_BIT_MERGER) = '1' else '0';
 
     farm_data       <=  stream_rdata when i_writeregs(SWB_READOUT_STATE_REGISTER_W)(USE_BIT_STREAM) = '1' else
                         merger_rdata when i_writeregs(SWB_READOUT_STATE_REGISTER_W)(USE_BIT_MERGER) = '1' else
@@ -324,34 +321,6 @@ begin
                         '0';
     stream_ren      <=  farm_rack when i_writeregs(SWB_READOUT_STATE_REGISTER_W)(USE_BIT_STREAM) = '1' else '0';
     merger_ren      <=  farm_rack when i_writeregs(SWB_READOUT_STATE_REGISTER_W)(USE_BIT_MERGER) = '1' else '0';
-
-
-    --! event builder used for the debug readout on the SWB
-    --! ------------------------------------------------------------------------
-    --! ------------------------------------------------------------------------
-    --! ------------------------------------------------------------------------
-    e_event_builder : entity work.swb_midas_event_builder
-    port map (
-        i_rx                => builder_data,
-        i_rempty            => builder_rempty,
-
-        i_get_n_words       => i_writeregs(GET_N_DMA_WORDS_REGISTER_W),
-        i_dmamemhalffull    => i_dmamemhalffull,
-        i_wen               => i_writeregs(DMA_REGISTER_W)(DMA_BIT_ENABLE),
-        i_data_type         => DATA_TYPE,
-
-        o_data              => o_dma_data,
-        o_wen               => o_dma_wren,
-        o_ren               => builder_rack,
-        o_endofevent        => o_endofevent,
-        o_dma_cnt_words     => o_dma_cnt_words,
-        o_done              => o_dma_done,
-
-        o_counters          => builder_counters,
-
-        i_reset_n           => i_reset_n,
-        i_clk               => i_clk--,
-    );
 
 
     --! generate farm output data
