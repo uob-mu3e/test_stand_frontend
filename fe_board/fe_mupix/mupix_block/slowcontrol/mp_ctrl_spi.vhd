@@ -151,8 +151,8 @@ begin
             chip_is_writing         <= (others => '0');
 
             -- IMPORTANT: needs to go into init case, use idle only for simulation here !!!
-            --mp_spi_state            <= init;
-            mp_spi_state            <= idle;
+            mp_spi_state            <= init;
+            --mp_spi_state            <= idle;
             
             init_counter            <= 0;
             col_shift_state         <= zero1;
