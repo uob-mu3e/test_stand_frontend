@@ -341,13 +341,14 @@ begin
     );
 
     -- use a link mask to disable channels from being used in the data processing
-    link_enable <= data_valid and not lvds_link_mask_reg;
 
 --------------------------------------------------------------------------------------
 --------------------- Unpack the data ------------------------------------------------
     genunpack:
     FOR i in 0 to 35 GENERATE
     -- we currently only use link 0 of each chip (up to 8 possible)
+
+    link_enable(I) <= data_valid(LINK_ORDER_g(I)) and not lvds_link_mask_reg(I);
 
     unpacker_single : work.data_unpacker
     generic map(
@@ -359,7 +360,7 @@ begin
         clk                 => i_clk125,
         datain              => rx_data(LINK_ORDER_g(i)),
         kin                 => rx_k(LINK_ORDER_g(i)),
-        readyin             => link_enable(LINK_ORDER_g(i)),
+        readyin             => link_enable(i),
         i_mp_readout_mode   => mp_readout_mode,
         o_ts                => ts_unpacker(i),
         o_chip_ID           => chip_ID_unpacker(i),

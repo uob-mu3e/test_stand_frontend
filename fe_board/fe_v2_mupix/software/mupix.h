@@ -45,8 +45,18 @@ struct mupix_t {
         }
         //for(int i = 30; i<40; i++) {
             sc->ram->data[MP_CTRL_TDAC_START_REGISTER_W]=0x0;
+            sc->ram->data[MP_CTRL_TDAC_START_REGISTER_W]=0x0;
+            sc->ram->data[MP_CTRL_TDAC_START_REGISTER_W]=0x0;
+            sc->ram->data[MP_CTRL_TDAC_START_REGISTER_W]=0x0;
+            sc->ram->data[MP_CTRL_TDAC_START_REGISTER_W]=0x0;
+            sc->ram->data[MP_CTRL_TDAC_START_REGISTER_W]=0x0;
+            sc->ram->data[MP_CTRL_TDAC_START_REGISTER_W]=0x0;
+            sc->ram->data[MP_CTRL_TDAC_START_REGISTER_W]=0x0;
+            sc->ram->data[MP_CTRL_TDAC_START_REGISTER_W]=0x0;
+            sc->ram->data[MP_CTRL_TDAC_START_REGISTER_W]=0x0;
+            sc->ram->data[MP_CTRL_TDAC_START_REGISTER_W]=0x0;
         //}
-        for(int i = 25; i<128; i++) {
+        for(int i = 35; i<128; i++) {
             sc->ram->data[MP_CTRL_TDAC_START_REGISTER_W]=0xFFFFFFFF;
         }
 
