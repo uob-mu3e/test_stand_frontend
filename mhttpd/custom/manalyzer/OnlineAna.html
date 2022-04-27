@@ -20,7 +20,28 @@
         grid-template-columns: repeat(var(--grid-cols), 1fr);
       }
       
+      #timestamp {
+        display: grid;
+        grid-gap: 1em;
+        grid-template-rows: repeat(var(--grid-rows), 1fr);
+        grid-template-columns: repeat(var(--grid-cols), 1fr);
+      }
+      
       #global {
+        display: grid;
+        grid-gap: 1em;
+        grid-template-rows: repeat(var(--grid-rows), 1fr);
+        grid-template-columns: repeat(var(--grid-cols), 1fr);
+      }
+      
+      #globalScifi {
+        display: grid;
+        grid-gap: 1em;
+        grid-template-rows: repeat(var(--grid-rows), 1fr);
+        grid-template-columns: repeat(var(--grid-cols), 1fr);
+      }
+      
+      #chipcor {
         display: grid;
         grid-gap: 1em;
         grid-template-rows: repeat(var(--grid-rows), 1fr);
@@ -45,14 +66,19 @@
 
 <div id="mmain">
 
-  <h1>Global DQ Histograms</h1>
+  <h1>Global DQ Histograms Pixel</h1>
   <div id="global"></div>
   
-  <h1>Hitmaps</h1>
+  <h1>Hitmaps / TimeStamp</h1>
   startChipID: <input type="text" placeholder="0" id="startID" name="startID">
   <div id="hitmap"></div>
+  <div id="timestamp"></div>
   
   <h1>ChipToChipCor</h1>
+  <div id="chipcor"></div>
+  
+  <h1>Global DQ Histograms Scifi</h1>
+  <div id="globalScifi"></div>
   
 </div>
 
@@ -73,22 +99,33 @@
     };
   };
   makeRows(2, 5, "hitmap", 250, 150);
+  makeRows(2, 5, "timestamp", 250, 150);
   var gHistos = ["chipID", "MIDASEventID", "fpgaID", "hitTime", "hitType"];
   makeRows(1, gHistos.length, "global", 250, 150);
+  var gChipCor = ["timeDiff", "tsdiffChipID", "ColL0ColL1"];
+  makeRows(1, gChipCor.length, "chipcor", 250, 150);
+  var gHistosScifi = ["FPGAID", "ASICUnique", "ChannelUnique", "HitType", "CourseCounter", "FineCounter", "DeltaFineCounter", "DeltaCoarseCounter"];
+  makeRows(2, gHistosScifi.length/2, "globalScifi", 250, 150);
   
   // page settings
   var startID = 0;
   var runNumber = 0;
   var fileName = "";
+  var fileNameScifi = "";
   function getPageStatus() {
     startID = parseInt(document.getElementById("startID").value);
     
     mjsonrpc_db_get_values(["/runinfo/run number"]).then(function(rpc) {
       runNumber = rpc.result.data[0];
-      if (runNumber < 100) {
+      if (runNumber < 10) {
+        fileName = "dataTree0000"+runNumber+".root";
+        fileNameScifi = "output0000"+runNumber+".root";
+      } else if (runNumber < 100) {
         fileName = "dataTree000"+runNumber+".root";
+        fileNameScifi = "output000"+runNumber+".root";
       } else if (runNumber < 1000) {;
         fileName = "dataTree00"+runNumber+".root";
+        fileNameScifi = "output00"+runNumber+".root";
       }
     }).catch(function(error) {
       mjsonrpc_error_alert(error);
@@ -108,12 +145,32 @@
       redraw('global'+i, gH, 'hist');
     }
     
+    // draw chipCor
+    for (let i = 0; i < gChipCor.length; i++) {
+//       let gH = await httpRequest('http://localhost:8088/Files/'+fileName+'/HitData/exe.json?method=Draw&prototype="Option_t*"&opt="'+gHistos[i]+'>>h1"&_ret_object_=h1', 'object');
+      let gH = await httpRequest('http://localhost:8088/Files/'+fileName+'/'+gChipCor[i]+'/root.json', 'object');
+      if (gChipCor[i] == "timeDiff") {
+        redraw('chipcor'+i, gH, 'hist');
+      } else {
+        redraw('chipcor'+i, gH, 'colz');
+      }
+    }
+    
     // draw hitmaps
     for (let i = 0; i < 10; i++) {
       let curI = i + startID;
       if (isNaN(curI)) curI = i;
-      let colGrow = await httpRequest('http://localhost:8088/Files/'+fileName+'/chip'+curI+'_hitmap/root.json', 'object');
-      redraw('hitmap'+i, colGrow, 'colz');
+      let hitmap = await httpRequest('http://localhost:8088/Files/'+fileName+'/chip'+curI+'_hitmap/root.json', 'object');
+      let timestamp = await httpRequest('http://localhost:8088/Files/'+fileName+'/chip'+curI+'_ts/root.json', 'object');
+      redraw('hitmap'+i, hitmap, 'colz');
+      redraw('timestamp'+i, timestamp, 'hist');
+    }
+    
+    // draw global maps scifi
+    for (let i = 0; i < gHistosScifi.length; i++) {
+//       let gH = await httpRequest('http://localhost:8088/Files/'+fileName+'/HitData/exe.json?method=Draw&prototype="Option_t*"&opt="'+gHistos[i]+'>>h1"&_ret_object_=h1', 'object');
+      let gH = await httpRequest('http://localhost:8088/Files/'+fileNameScifi+'/ScifiSW_DQ_histograms/'+gHistosScifi[i]+'/root.json', 'object');
+      redraw('globalScifi'+i, gH, 'hist');
     }
   }
   
