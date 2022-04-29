@@ -595,9 +595,9 @@ begin
             i_reset_n   => i_reset_156_n--,
         );
 
-        o_fifo_data(71 downto 36)   <= sync_fifo_data(71 downto 36) when sync_fifo_empty(1) = '0' else (others => '0');
-        sync_fifo_read(1)           <= '1' when sync_fifo_empty(1) = '0' else '0';
-        o_fifo_wr(1)                <= '1' when sync_fifo_empty(1) = '0' else '0';
+        o_fifo_data(71 downto 36)   <= sync_fifo_data(71 downto 36) when sync_fifo_empty(1) = '0' and N_MODULES > 1 else (others => '0');
+        sync_fifo_read(1)           <= '1' when sync_fifo_empty(1) = '0' and N_MODULES > 1 else '0';
+        o_fifo_wr(1)                <= '1' when sync_fifo_empty(1) = '0' and N_MODULES > 1 else '0';
 
         e_sync_common_fifos_almost_full_B : entity work.ff_sync
         generic map ( W => i_common_fifos_almost_full'length )
