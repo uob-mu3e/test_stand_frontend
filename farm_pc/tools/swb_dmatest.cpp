@@ -253,12 +253,16 @@ int main(int argc, char *argv[]) {
     if (atoi(argv[5]) == 0) readout_state_regs = SET_USE_BIT_PIXEL_DS(readout_state_regs);
     if (atoi(argv[5]) == 1) readout_state_regs = SET_USE_BIT_PIXEL_US(readout_state_regs);
     if (atoi(argv[5]) == 2) readout_state_regs = SET_USE_BIT_SCIFI(readout_state_regs);
+    if (atoi(argv[5]) == 4) readout_state_regs = SET_USE_BIT_ALL(readout_state_regs);
+    
     uint32_t detector = 0;
     if (atoi(argv[5]) == 0) detector = 0;
     if (atoi(argv[5]) == 1) detector = 1;
     if (atoi(argv[5]) == 2) detector = 2;
     // set mask bits
-    mu.write_register(mask_n_add, strtol(argv[4], NULL, 16));
+    if (atoi(argv[5]) == 4) mu.write_register(SWB_LINK_MASK_PIXEL_REGISTER_W, strtol(argv[4], NULL, 16));
+    if (atoi(argv[5]) == 4) mu.write_register(SWB_LINK_MASK_SCIFI_REGISTER_W, strtol(argv[4], NULL, 16));
+    if (atoi(argv[5]) != 4) mu.write_register(mask_n_add, strtol(argv[4], NULL, 16));
     // use stream merger
     if ( atoi(argv[1]) == 0 or atoi(argv[1]) == 2 ) readout_state_regs = SET_USE_BIT_STREAM(readout_state_regs);
     // use datagen
