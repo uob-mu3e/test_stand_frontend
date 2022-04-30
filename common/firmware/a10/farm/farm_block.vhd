@@ -216,7 +216,7 @@ begin
     generic map (
         DATA_TYPE => DATA_TYPE,
         go_to_sh => 3,
-        test_error => true,
+        test_error => false,
         is_farm => true,
         go_to_trailer => 4--,
     )
