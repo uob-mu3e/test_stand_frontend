@@ -69,7 +69,7 @@ INT event_buffer_size = 4 * max_event_size;
 mudaq::DmaMudaqDevice * mup;
 mudaq::DmaMudaqDevice::DataBlock block;
 
-//uint32_t *A, *B;          // Host variables
+//uint32_t *A, *B;        // Host variables
 uint32_t *B;
 uint32_t *d_A, *d_B;      // Device variables
 
@@ -88,7 +88,6 @@ uint32_t *d_bnkd;
 // gpu check flag
 uint32_t *h_gpucheck;
 uint32_t *d_gpucheck;
-
 // fpga counter
 uint32_t fpga_counter = 0;
 
@@ -98,16 +97,18 @@ bool gpu_done;
 uint32_t gpu_checkflag = 0;
 uint32_t gpu_data_flag = 0;
 
-uint32_t evc 	= 0;
-uint32_t hits 	= 0;
+uint32_t evc    = 0;
+uint32_t hits   = 0;
 uint32_t ovrflw = 0;
-uint32_t rem 	= 0;
+uint32_t rem    = 0;
 
 // device variable to store the counts
-__device__ uint32_t Evecnt;
+/*__device__ uint32_t Evecnt;
 __device__ uint32_t Hitcnt;
 __device__ uint32_t Overflowcnt;
-__device__ uint32_t bank_data;    
+__device__ uint32_t bank_data;*/    
+
+__device__ int sem = 0;
 
 /*-- Function declarations -----------------------------------------*/
 
@@ -123,16 +124,20 @@ INT read_stream_thread(void *param);
 
 INT poll_event(INT source, INT count, BOOL test);
 INT interrupt_configure(INT cmd, INT source, POINTER_T adr);
-//INT gpu_counter(uint32_t ngputhread, uint32_t endofevt);
 
 void setup_odb();
-void setup_watches();
 
 // device function to get counted values
-__device__ uint32_t get_eventcount() { return Evecnt; }
+/*__device__ uint32_t get_eventcount() { return Evecnt; }
 __device__ uint32_t get_hitcount() { return Hitcnt; }
 __device__ uint32_t get_subheaderoverflow() { return Overflowcnt; }
-__device__ uint32_t get_bankdata() { return bank_data; } 
+__device__ uint32_t get_bankdata() { return bank_data; }*/ 
+
+__device__ void Counter(uint32_t i, uint32_t *db, uint32_t endofevent);
+
+//__device__ void lock(int *lk);
+
+//__device__ void unlock(int *lk);
 
 __global__ void gpu_counters(uint32_t *dest, uint32_t *src, uint32_t Endofevent, uint32_t* evt, uint32_t* hit, uint32_t* sub_ovr, uint32_t* bnkd, size_t n, uint32_t *gpu_flag);
 
@@ -154,45 +159,13 @@ INT init_mudaq();
 
 uint64_t get_link_active_from_odb(odb o);
 void link_active_settings_changed(odb);
-void stream_settings_changed(odb);
 INT read_stream_event(char *pevent, INT off);
 /*-- Equipment list ------------------------------------------------*/
 
-EQUIPMENT equipment[] = {
-
-   {"Stream",                /* equipment name */
-    {1, 0,                   /* event ID, trigger mask */
-     "SYSTEM",               /* event buffer */
-     EQ_USER,                /* equipment type */
-     0,                      /* event source crate 0, all stations */
-     "MIDAS",                /* format */
-     TRUE,                   /* enabled */
-     RO_RUNNING  | RO_STOPPED | RO_ODB,             /* read while running and stopped but not at transitions and update ODB */
-     1000,                    /* poll for 1s */
-     0,                      /* stop run after this event limit */
-     0,                      /* number of sub events */
-     0,                      /* don't log history */
-     "", "", "",},
-     NULL,                    /* readout routine */
-    },
-    {"GPU0",                /* equipment name */
-    {11, 0,                   /* event ID, trigger mask */
-     "SYSTEM",               /* event buffer */
-     EQ_PERIODIC,                /* equipment type */
-     0,                      /* event source crate 0, all stations */
-     "MIDAS",                /* format */
-     TRUE,                   /* enabled */
-     RO_ALWAYS  | RO_ODB,             /* read only when running */
-     1000,                    /* poll for 1s */
-     0,                      /* stop run after this event limit */
-     0,                      /* number of sub events */
-     1,                      /* log history every event */
-     "", "", "",},
-     read_stream_event,                    /* readout routine */
-    },
-
-   {""}
-};
+// Here we choose which switching board we are
+#include "farm_fe_0.inc"
+//#include "farm_fe_1.inc"
+// Others to be written
 
 /*-- Frontend Init -------------------------------------------------*/
 
@@ -205,7 +178,6 @@ INT frontend_init()
 
     // setup odb and watches
     setup_odb();
-    setup_watches();
 
     // init dma and mudaq device
     INT status = init_mudaq();
@@ -215,9 +187,11 @@ INT frontend_init()
 
     // set reset registers
     reset_regs = SET_RESET_BIT_DATA_PATH(reset_regs);
+    reset_regs = SET_RESET_BIT_FARM_BLOCK(reset_regs);
     reset_regs = SET_RESET_BIT_DATAGEN(reset_regs);
-    reset_regs = SET_RESET_BIT_SWB_TIME_MERGER(reset_regs);
-    reset_regs = SET_RESET_BIT_SWB_STREAM_MERGER(reset_regs);
+    reset_regs = SET_RESET_BIT_FARM_STREAM_MERGER(reset_regs);
+    reset_regs = SET_RESET_BIT_FARM_TIME_MERGER(reset_regs);
+    reset_regs = SET_RESET_BIT_LINK_LOCKED(reset_regs);
 
     // create ring buffer for readout thread
     create_event_rb(0);
@@ -235,62 +209,6 @@ INT frontend_init()
     cm_set_transition_sequence(TR_STOP, 700);
 
     return SUCCESS;
-}
-
-void stream_settings_changed(odb o)
-{
-    std::string name = o.get_name();
-    uint32_t current_state;
-
-    cm_msg(MINFO, "stream_settings_changed", "Stream stettings changed");
-
-    if (name == "Datagen Divider") {
-        uint32_t divider = o;
-        cm_msg(MINFO, "stream_settings_changed", "Set Divider to %d", divider);
-        mup->write_register(DATAGENERATOR_DIVIDER_REGISTER_W, divider);
-    }
-
-    if (name == "Datagen Enable") {
-        cm_msg(MINFO, "stream_settings_changed", "Set Disable Datagen to %s", o ? "y" : "n");
-        if (o) {
-            current_state = mup->read_register_rw(SWB_READOUT_STATE_REGISTER_W);
-            current_state |= (1 << 0);
-            mup->write_register(SWB_READOUT_STATE_REGISTER_W, current_state);
-        } else {
-            current_state = mup->read_register_rw(SWB_READOUT_STATE_REGISTER_W);
-            current_state &= ~(1 << 0);
-            mup->write_register(SWB_READOUT_STATE_REGISTER_W, current_state);
-        }
-    }
-
-    if (name == "use_merger") {
-        cm_msg(MINFO, "stream_settings_changed", "Set Disable Merger to %s", o ? "y" : "n");
-        if (o) {
-            current_state = mup->read_register_rw(SWB_READOUT_STATE_REGISTER_W);
-            current_state |= (1 << 2);
-            mup->write_register(SWB_READOUT_STATE_REGISTER_W, current_state);
-        } else {
-            current_state = mup->read_register_rw(SWB_READOUT_STATE_REGISTER_W);
-            current_state &= ~(1 << 2);
-            mup->write_register(SWB_READOUT_STATE_REGISTER_W, current_state);
-        }
-    }
-
-    if (name == "mask_n_scifi") {
-        uint32_t mask = o;
-        char buffer [255];
-        sprintf(buffer, "Set Mask Links Scifi to " PRINTF_BINARY_PATTERN_INT32, PRINTF_BYTE_TO_BINARY_INT32((long long int) mask));
-        cm_msg(MINFO, "stream_settings_changed", buffer);
-        mup->write_register(SWB_LINK_MASK_SCIFI_REGISTER_W, mask);
-    }
-
-    if (name == "mask_n_pixel") {
-        uint32_t mask = o;
-        char buffer [255];
-        sprintf(buffer, "Set Mask Links Pixel to " PRINTF_BINARY_PATTERN_INT32, PRINTF_BYTE_TO_BINARY_INT32((long long int) mask));
-        cm_msg(MINFO, "stream_settings_changed", buffer);
-        mup->write_register(SWB_LINK_MASK_PIXEL_REGISTER_W, mask);
-    }
 }
 
 void link_active_settings_changed(odb o){
@@ -326,12 +244,8 @@ void setup_odb(){
     odb stream_settings = {
         {"Datagen Divider", 1000},     // int
         {"Datagen Enable", false},     // bool
-        {"mask_n_scifi", 0x0},         // int
-        {"mask_n_pixel", 0x0},         // int
-        {"use_scifi", false},          // bool
-        {"use_pixel_ds", false},       // bool
-        {"use_pixel_us", false},       // bool
         {"use_merger", false},         // bool
+        {"mask_n_farm", 0x0},         // int
         {"dma_buf_nwords", int(dma_buf_nwords)},
         {"dma_buf_size", int(dma_buf_size)}
     };
@@ -346,13 +260,6 @@ void setup_odb(){
 
 }
 
-void setup_watches(){
-
-    // datagenerator changed settings
-    odb stream_settings("/Equipment/Stream/Settings");
-    stream_settings.watch(stream_settings_changed);
-
-}
 
 // INIT MUDAQ //////////////////////////////
 INT init_mudaq(){
@@ -415,7 +322,6 @@ INT frontend_exit()
    return SUCCESS;
 }
 
-
 /*-- Begin of Run --------------------------------------------------*/
 
 INT begin_of_run(INT run_number, char *error)
@@ -431,6 +337,16 @@ INT begin_of_run(INT run_number, char *error)
     for (uint32_t i = 0; i < dma_buf_nwords ; i++) {
         (dma_buf)[i] = 0;
     }
+    
+    /*Set_EventCount(0);
+    Set_Hits(0);
+    Set_SubHeaderOvrflw(0);
+    Set_Reminders(0);*/
+    
+    // gpu job check threads
+    gpu_done = false;
+    gpu_checkflag = 0;
+    gpu_data_flag = 0;
 
     // setup readout registers
     odb stream_settings;
@@ -453,29 +369,20 @@ INT begin_of_run(INT run_number, char *error)
         cm_msg(MINFO,"farm_fe", "Use Stream Merger");
         readout_state_regs = SET_USE_BIT_STREAM(readout_state_regs);
     }
-
-    if ( stream_settings["use_scifi"] ) {
-        readout_state_regs = SET_USE_BIT_SCIFI(readout_state_regs);
-    } else if ( stream_settings["use_pixel_ds"] ) {
-        readout_state_regs = SET_USE_BIT_PIXEL_DS(readout_state_regs);
-    } else if ( stream_settings["use_pixel_us"] ) {
-        readout_state_regs = SET_USE_BIT_PIXEL_US(readout_state_regs);
-    }
     
     // write readout register
-    mu.write_register(SWB_READOUT_STATE_REGISTER_W, readout_state_regs);
+    mu.write_register(FARM_READOUT_STATE_REGISTER_W, readout_state_regs);
 
     // link masks 
     // Note: link masks are already set via ODB watch
-    mu.write_register(SWB_LINK_MASK_PIXEL_REGISTER_W, stream_settings["mask_n_pixel"]);
-    mu.write_register(SWB_LINK_MASK_SCIFI_REGISTER_W, stream_settings["mask_n_scifi"]);
+    mu.write_register(FARM_LINK_MASK_REGISTER_W, stream_settings["mask_n_farm"]);
 
     // release reset
     mu.write_register_wait(RESET_REGISTER_W, 0x0, 100);
 
     set_equipment_status(equipment[0].name, "Running", "var(--mgreen)");
 
-return SUCCESS;
+    return SUCCESS;
 }
 
 /*-- End of Run ----------------------------------------------------*/
@@ -532,8 +439,7 @@ INT end_of_run(INT run_number, char *error)
     // stop readout
     mu.write_register(RESET_REGISTER_W, reset_regs);
     mu.write_register(DATAGENERATOR_DIVIDER_REGISTER_W, 0x0);
-    mu.write_register(SWB_READOUT_STATE_REGISTER_W, 0x0);
-    mu.write_register(SWB_READOUT_LINK_REGISTER_W, 0x0);
+    mu.write_register(FARM_READOUT_STATE_REGISTER_W, 0x0);
     mu.write_register(GET_N_DMA_WORDS_REGISTER_W, 0x0);
 
     set_equipment_status(equipment[0].name, "Ready for running", "var(--mgreen)");
@@ -594,7 +500,6 @@ INT interrupt_configure(INT cmd, INT source, POINTER_T adr)
 
 INT read_stream_event(char *pevent, INT off)
 {
-    
    // get mudaq 
    mudaq::DmaMudaqDevice & mu = *mup;
  
@@ -616,7 +521,7 @@ INT read_stream_event(char *pevent, INT off)
    uint32_t reminders   = Get_Reminders();
                                                                           
    // get FPGA counter
-   mup->write_register(SWB_COUNTER_REGISTER_W, 4);
+   mup->write_register(SWB_COUNTER_REGISTER_W, 25);
    fpga_counter = mup->read_register_ro(SWB_COUNTER_REGISTER_R);
                                                                           
    cout << "Event Count GPU" << "\t" << eventcounts << endl;
@@ -624,22 +529,33 @@ INT read_stream_event(char *pevent, INT off)
    cout << "Hit Count GPU" << "\t" << hits << endl;
    cout << "SubHeader Overflow Count GPU" << "\t" << subovrflows << endl;
    cout << "Reminder Count GPU" << "\t" << reminders << endl;
+   
+   // Test for the RAM of GPU copy
+    /*uint32_t err_counter = 0;
+    for (int i = 0; i < dma_buf_nwords; i++) {
+    if(!(B[i] == dma_buf[i]+1)) {
+    err_counter++;
+    }
+    }
 
+    const double err_rate = (err_counter / static_cast<double>(dma_buf_nwords)) * 100;
+    cout << "error(%) = " << err_rate << "\n";*/
+   
    *pdata++ = eventcounts;
    *pdata++ = fpga_counter;
    *pdata++ = hits;
    *pdata++ = subovrflows;
    *pdata++ = reminders;
+   *pdata++ = ss_time();
 
    bk_close(pevent, pdata);
  
    return bk_size(pevent);
-  
 }
 
 /*------------------------GPU counters block-----------------------------*/
 
-__device__ void Counter(uint32_t i, uint32_t *db, uint32_t endofevent) {
+__device__ void Counter(uint32_t i, uint32_t *db, uint32_t Evecnt, uint32_t Hitcnt, uint32_t Overflowcnt, uint32_t bank_data, uint32_t endofevent) {
 
     uint32_t hpos = 0;
     uint32_t hitcnt = 0;
@@ -684,47 +600,59 @@ __device__ void Counter(uint32_t i, uint32_t *db, uint32_t endofevent) {
     }
 }
 
-// Kernel definition
+/*__device__ void lock(int *lk){
+  while (atomicCAS(lk, 0, 1) != 0);
+  }*/
+
+/*__device__ void unlock(int *lk){
+    atomicExch(lk, 0); 
+  }*/
+    
+// gpu kernel function    
 __global__ void gpu_counters(uint32_t *dest, uint32_t *src, uint32_t Endofevent, uint32_t* evt, uint32_t* hit, uint32_t* sub_ovr, uint32_t* bnkd, size_t n, uint32_t *gpu_flag)
 {
     /*int blockid = (gridDim.x * blockIdx.y) + blockIdx.x;  // Block Id
     int i = (blockid * (blockDim.x * blockDim.y)) + (threadIdx.y * blockDim.x) + threadIdx.x; // Thread Index */
 
-    uint32_t event_counter = 0;
-    uint32_t hit_counter = 0;
-    uint32_t subhead_ovrflow = 0;
-    uint32_t total_bankdata = 0;
+    uint32_t evecnt = 0;
+    uint32_t hitcnt = 0;
+    uint32_t ovrflw = 0;
+    uint32_t bnkdata = 0;
+    uint32_t reminder = 0;
 
-    uint32_t thread_idx = (blockIdx.x * blockDim.x) + threadIdx.x; // Thread Index
+    uint32_t thread_id = (blockIdx.x * blockDim.x) + threadIdx.x; // Thread Index
     uint32_t n_threads_per_grid = blockDim.x * gridDim.x;
 
-    for (int i = thread_idx; i < n; i += n_threads_per_grid) {
+    for (int i = thread_id; i < n; i += n_threads_per_grid) {
         dest[i] = src[i]+1;
+    
+    if (thread_id == 0) {
+        //lock(&sem);
+        //Evecnt = 0;
+        //Hitcnt = 0;
+        //Overflowcnt = 0;
+        //bank_data = 0;
+        //unlock(&sem);
+        //__syncthreads();
+        Counter(thread_id, src, evecnt, hitcnt, ovrflw, bnkdata, Endofevent);
     }
-   //event_serial = Serial_EventCount(src, Endofevent);
- 
-   //printf("Thread id: %d, %d", thread_idx, event_counter);   
-
-   if (thread_idx == 0) {
-       Counter(thread_idx, src, Endofevent);
-   }
-    else if (src[thread_idx] == 0x00000001 and (src[thread_idx-1] == 0xAFFEAFFE or src[thread_idx-1] == 0xFC00009C)) {
-        Counter(thread_idx, src, Endofevent);
+    else if (src[thread_id] == 0x00000001 and (src[thread_id-1] == 0xAFFEAFFE or src[thread_id-1] == 0xFC00009C)) {
+        Counter(thread_id, src, evecnt, hitcnt, ovrflw, bnkdata, Endofevent);
     }
     else {
-        event_counter = 0;
+        evecnt = 0;
     }
 
-    event_counter = get_eventcount();
+    /*event_counter = get_eventcount();
     hit_counter = get_hitcount();
     subhead_ovrflow = get_subheaderoverflow();
-    total_bankdata = get_bankdata();
-    //printf("i %d count: %d \n", thread_idx, event_counter);
-    uint32_t reminder = total_bankdata - hit_counter;
-
-    *evt = event_counter;
-    *hit = hit_counter;
-    *sub_ovr = subhead_ovrflow;
+    total_bankdata = get_bankdata();*/
+    reminder = bnkdata - hitcnt;
+    }
+    __syncthreads();
+    *evt = evecnt;
+    *hit = hitcnt;
+    *sub_ovr = ovrflw;
     *bnkd = reminder;
     __syncthreads();
     *gpu_flag = 1;
@@ -732,8 +660,8 @@ __global__ void gpu_counters(uint32_t *dest, uint32_t *src, uint32_t Endofevent,
 
 void gpu_counter(uint32_t dma_bufnwords, uint32_t end_of_event) {
 
-    int threadsPerBlock = 1024;                 	 // threads   (Max threadsPerBlock)
-    int numBlocks = ceil(dma_bufnwords/threadsPerBlock); // # blocks
+    int threadsPerBlock = 1024;                                 // threads   (Max threadsPerBlock)
+    int numBlocks       = ceil(dma_bufnwords/threadsPerBlock);  // # blocks
 
     //...
     // Kernel invocation with N threads
@@ -746,12 +674,14 @@ void gpu_counter(uint32_t dma_bufnwords, uint32_t end_of_event) {
     cudaMemcpy(h_subovr, d_subovr, sizeof(uint32_t), cudaMemcpyDeviceToHost);
     cudaMemcpy(h_bnkd, d_bnkd, sizeof(uint32_t), cudaMemcpyDeviceToHost);
     cudaMemcpy(h_gpucheck, d_gpucheck, sizeof(uint32_t), cudaMemcpyDeviceToHost);
+    
+    cudaMemcpy(B, d_B, dma_bufnwords*sizeof(uint32_t), cudaMemcpyDeviceToHost);
 
     uint32_t EventCount = *h_evt;
     uint32_t Hit        = *h_hit;
     uint32_t SubOvr     = *h_subovr;
     uint32_t Reminder   = *h_bnkd;
-    gpu_checkflag      	= *h_gpucheck;
+    gpu_checkflag       = *h_gpucheck;
 
     Set_EventCount(EventCount);
     Set_Hits(Hit);
@@ -778,38 +708,35 @@ void data_to_gpu(volatile uint32_t* dma_buf_gpu, uint32_t numf_thr, uint32_t end
     cudaMalloc(&d_bnkd, sizeof(uint32_t));
     cudaMalloc(&d_gpucheck, sizeof(uint32_t));
 
-    cout << "DMA to GPU on WAIT" << "\t" << gpu_data_flag << endl;
+    //cout << "DMA to GPU on WAIT" << "\t" << gpu_checkflag << "\t" << gpu_data_flag << endl;
     std::unique_lock<std::mutex> lk(cv_m);
     cv.wait(lk, []{return gpu_done == true;});
     // send data to gpu
-    //cudaMalloc(&d_A, numf_thr*sizeof(uint32_t));
     cudaMemcpy(d_A, const_cast<uint32_t*>(dma_buf_gpu), numf_thr, cudaMemcpyHostToDevice);
     gpu_data_flag = 1;
-    cout << "DMA to GPU sent" << "\t" << gpu_data_flag << endl;
+    //cout << "DMA to GPU sent" << "\t" << gpu_checkflag << "\t" << gpu_data_flag << endl;
     gpu_counter(numf_thr, end_ofevent); // gpu code for counters
 }
 
 void gpu_check(uint32_t gpu_check_flag, uint32_t gpudata_flag) {
 
-    if (gpu_check_flag == 1) {
-	std::lock_guard<std::mutex> lk(cv_m);
-	gpu_done = true;
-	cv.notify_one();
-
- 	cout << "Gpu flag con1" << "\t" << gpu_check_flag << endl;
-    }
-
-    else if (gpudata_flag != 1) {
-	cout << "Gpu flag con2" << "\t" << gpu_check_flag << "\t" << gpu_data_flag << endl;
+    if (gpu_check_flag == 1 && gpudata_flag == 1) {
+    //cout << "Gpu flag con1" << "\t" << gpu_checkflag << endl;
+    gpu_checkflag = 0;
+    cudaMemcpy(d_gpucheck, &gpu_checkflag, sizeof(uint32_t), cudaMemcpyHostToDevice);
     std::lock_guard<std::mutex> lk(cv_m);
-	gpu_done = true;
+    gpu_done = true;
     cv.notify_one();
     }
-	
+    else if (gpudata_flag != 1) {
+    //cout << "Gpu flag con2" << "\t" << gpu_checkflag << "\t" << gpu_data_flag << endl;
+    std::lock_guard<std::mutex> lk(cv_m);
+    gpu_done = true;
+    cv.notify_one();
+    }
     else {
-	gpu_done = false;
- 	cudaMemcpy(d_gpucheck, &gpu_check_flag, sizeof(uint32_t), cudaMemcpyHostToDevice);
-	cout << "Gpu flag con3" << "\t" << gpu_check_flag << "\t" << gpu_data_flag << endl;
+    gpu_done = false;
+    //cout << "Gpu flag con3" << "\t" << gpu_checkflag << "\t" << gpu_data_flag << endl;
     }
 }
 
@@ -889,27 +816,25 @@ INT read_stream_thread(void *param) {
         memcpy(pdata, const_cast<uint32_t*>(dma_buf), size_dma_buf);
 
         std::thread data_to_gputhread(data_to_gpu, dma_buf, dma_buf_nwords*sizeof(uint32_t), endofevent);
-
         data_to_gputhread.join();
-
+    
         // increment write pointer of ring buffer
         rb_increment_wp(rbh, size_dma_buf); // in byte length         
 
-    	cudaFree((void *)d_A);
-    	cudaFree((void *)d_B);
-    	cudaFree((void *)d_evt);
-    	cudaFree((void *)d_hit);
-    	cudaFree((void *)d_subovr);
-    	cudaFree((void *)d_bnkd);
-    	cudaFree((void *)d_gpucheck);
+        cudaFree((void *)d_A);
+        cudaFree((void *)d_B);
+        cudaFree((void *)d_evt);
+        cudaFree((void *)d_hit);
+        cudaFree((void *)d_subovr);
+        cudaFree((void *)d_bnkd);
+        cudaFree((void *)d_gpucheck);
 
-    	cudaFreeHost((void *)B);
-    	cudaFreeHost((void *)h_evt);
-    	cudaFreeHost((void *)h_hit);
-    	cudaFreeHost((void *)h_subovr);
-    	cudaFreeHost((void *)h_bnkd);
-    	cudaFreeHost((void *)h_gpucheck);
-
+        cudaFreeHost((void *)B);
+        cudaFreeHost((void *)h_evt);
+        cudaFreeHost((void *)h_hit);
+        cudaFreeHost((void *)h_subovr);
+        cudaFreeHost((void *)h_bnkd);
+        cudaFreeHost((void *)h_gpucheck);
     }
 
     // tell framework that we finished
@@ -917,8 +842,6 @@ INT read_stream_thread(void *param) {
     
     return 0;
 }
-
-
 
 uint64_t get_link_active_from_odb(odb o){
 

@@ -8,7 +8,6 @@
 #include "odbxx.h"
 #include "msystem.h"
 #include "mcstd.h"
-#include "experim.h"
 #include "switching_constants.h"
 #include "link_constants.h"
 #include "util.h"
@@ -87,25 +86,9 @@ INT init_mudaq();
 uint64_t get_link_active_from_odb(odb o);
 /*-- Equipment list ------------------------------------------------*/
 
-EQUIPMENT equipment[] = {
-
-   {"ro_swb_fe",                /* equipment name */
-    {1, 0,                   /* event ID, trigger mask */
-     "SYSTEM",               /* event buffer */
-     EQ_USER,                /* equipment type */
-     0,                      /* event source crate 0, all stations */
-     "MIDAS",                /* format */
-     TRUE,                   /* enabled */
-     RO_RUNNING  | RO_STOPPED | RO_ODB,             /* read while running and stopped but not at transitions and update ODB */
-     1000,                    /* poll for 1s */
-     0,                      /* stop run after this event limit */
-     0,                      /* number of sub events */
-     0,                      /* don't log history */
-     "", "", "",},
-     NULL,                    /* readout routine */
-    },
-   {""}
-};
+// Here we choose which switching board we are
+#include "ro_swb_fe_central.inc"
+// Others to be written
 
 /*-- Frontend Init -------------------------------------------------*/
 
@@ -260,17 +243,17 @@ INT begin_of_run(INT run_number, char *error)
 
     if(stream_settings["Datagen Enable"]) {
         // setup data generator
-        cm_msg(MINFO,"farm_fe", "Use datagenerator with divider register %i", (int) stream_settings["Datagen Divider"]);
+        cm_msg(MINFO,"ro_swb_fe", "Use datagenerator with divider register %i", (int) stream_settings["Datagen Divider"]);
         mu.write_register(DATAGENERATOR_DIVIDER_REGISTER_W, stream_settings["Datagen Divider"]);
         readout_state_regs = SET_USE_BIT_GEN_LINK(readout_state_regs);
     }
     if(stream_settings["use_merger"]) {
         // readout merger
-        cm_msg(MINFO,"farm_fe", "Use Time Merger");
+        cm_msg(MINFO,"ro_swb_fe", "Use Time Merger");
         readout_state_regs = SET_USE_BIT_MERGER(readout_state_regs);
     } else {
         // readout stream
-        cm_msg(MINFO,"farm_fe", "Use Stream Merger");
+        cm_msg(MINFO,"ro_swb_fe", "Use Stream Merger");
         readout_state_regs = SET_USE_BIT_STREAM(readout_state_regs);
     }
 
@@ -306,7 +289,7 @@ INT end_of_run(INT run_number, char *error)
 {
 
     mudaq::DmaMudaqDevice & mu = *mup;
-    cm_msg(MINFO,"farm_fe","Waiting for buffers to empty");
+    cm_msg(MINFO,"ro_swb_fe","Waiting for buffers to empty");
     uint16_t timeout_cnt = 0;
     while(!(mu.read_register_ro(BUFFER_STATUS_REGISTER_R) & 1<<0)/* TODO right bit */ && timeout_cnt++ < 50) {
         //printf("Waiting for buffers to empty %d/50\n", timeout_cnt);
@@ -315,8 +298,8 @@ INT end_of_run(INT run_number, char *error)
     };
 
     if(timeout_cnt>=50) {
-        //cm_msg(MERROR,"farm_fe","Buffers on Switching Board not empty at end of run");
-        cm_msg(MINFO,"farm_fe","Buffers on Switching Board not empty at end of run");
+        //cm_msg(MERROR,"ro_swb_fe","Buffers on Switching Board not empty at end of run");
+        cm_msg(MINFO,"ro_swb_fe","Buffers on Switching Board not empty at end of run");
         set_equipment_status(equipment[0].name, "Buffers not empty", "var(--mred)");
         // TODO: at the moment we dont care
         //return CM_TRANSITION_CANCELED;
@@ -325,7 +308,7 @@ INT end_of_run(INT run_number, char *error)
     }
 
     //Finish DMA while waiting for last requested data to be finished
-    cm_msg(MINFO, "farm_fe", "Waiting for DMA to finish");
+    cm_msg(MINFO, "ro_swb_fe", "Waiting for DMA to finish");
     usleep(1000); // Wait for DMA to finish
     timeout_cnt = 0;
     
@@ -339,13 +322,13 @@ INT end_of_run(INT run_number, char *error)
     };
 
     if(timeout_cnt>=100) {
-            //cm_msg(MERROR, "farm_fe", "DMA did not finish");
-            cm_msg(MINFO, "farm_fe", "DMA did not finish");
+            //cm_msg(MERROR, "ro_swb_fe", "DMA did not finish");
+            cm_msg(MINFO, "ro_swb_fe", "DMA did not finish");
             set_equipment_status(equipment[0].name, "DMA did not finish", "var(--mred)");
             // TODO: at the moment we dont care
             //return CM_TRANSITION_CANCELED;
     }else{
-        cm_msg(MINFO, "farm_fe", "DMA is finished\n");
+        cm_msg(MINFO, "ro_swb_fe", "DMA is finished\n");
     }
 
     // disable dma
