@@ -89,7 +89,7 @@ architecture arch of swb_block is
     signal builder_data : work.mu3e.link_t;
     signal builder_rempty, builder_rack : std_logic;
         -- Data type: "00" = pixel, "01" = scifi, "10" = tiles
-    signal builder_data_type, data_type_debug : std_logic_vector(1 downto 0);
+    signal builder_data_type : std_logic_vector(1 downto 0);
 
     --! debug data pixel
     signal data_debug_pixel : work.mu3e.link_array_t(g_NLINKS_FARM_PIXEL-1 downto 0);
@@ -273,8 +273,7 @@ begin
                         rempty_debug_pixel(1) when i_writeregs(SWB_READOUT_STATE_REGISTER_W)(USE_BIT_PIXEL_DS) = '1' else
                         rempty_debug_scifi(0) when i_writeregs(SWB_READOUT_STATE_REGISTER_W)(USE_BIT_SCIFI) = '1' else
                         '0';
-    builder_data_type <= data_type_debug when i_writeregs(SWB_READOUT_STATE_REGISTER_W)(USE_BIT_ALL) = '1' else
-                         "00" when i_writeregs(SWB_READOUT_STATE_REGISTER_W)(USE_BIT_PIXEL_US) = '1' else
+    builder_data_type <= "00" when i_writeregs(SWB_READOUT_STATE_REGISTER_W)(USE_BIT_PIXEL_US) = '1' else
                          "00" when i_writeregs(SWB_READOUT_STATE_REGISTER_W)(USE_BIT_PIXEL_DS) = '1' else
                          "01" when i_writeregs(SWB_READOUT_STATE_REGISTER_W)(USE_BIT_SCIFI) = '1' else
                          "00";
