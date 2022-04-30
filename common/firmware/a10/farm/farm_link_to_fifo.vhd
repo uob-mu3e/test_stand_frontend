@@ -25,7 +25,8 @@ port (
     -- link data
     i_rx            : in  work.mu3e.link_array_t(g_NLINKS_SWB_TOTL-1 downto 0) := (others => work.mu3e.LINK_IDLE);
     o_tx            : out work.mu3e.link_array_t(g_NLINKS_SWB_TOTL-1 downto 0) := (others => work.mu3e.LINK_IDLE);
-    
+    i_mask_n        : in  std_logic_vector(g_NLINKS_SWB_TOTL-1 downto 0);
+
     -- data out for farm path
     o_data          : out work.mu3e.link_array_t(g_NLINKS_SWB_TOTL-1 downto 0) := (others => work.mu3e.LINK_IDLE);
     o_empty         : out std_logic_vector(g_NLINKS_SWB_TOTL-1 downto 0);
@@ -51,6 +52,9 @@ begin
 
     --! sync link data from link to pcie clk
     gen_link_to_fifo : FOR i in 0 to g_NLINKS_SWB_TOTL - 1 GENERATE
+
+        -- NOTE: quick fix to send link to the next farm
+        o_tx(i) <= i_rx(i) when i_mask_n(i) = '0' else work.mu3e.LINK_IDLE;
     
         -- TODO: different lookup for farm
         e_link_to_fifo : entity work.link_to_fifo

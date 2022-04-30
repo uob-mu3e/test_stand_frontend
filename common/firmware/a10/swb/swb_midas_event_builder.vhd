@@ -15,7 +15,7 @@ port (
     i_rempty            : in  std_logic;
     -- Data type: "00" = pixel, "01" = scifi, "10" = tiles
     i_data_type         : std_logic_vector(1 downto 0) := "00";
-    i_use_sop_type      : in  std_logic;
+    i_use_sop_type      : in  std_logic := '0';
 
     i_get_n_words       : in  std_logic_vector (31 downto 0);
     i_dmamemhalffull    : in  std_logic;

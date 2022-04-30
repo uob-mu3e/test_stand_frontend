@@ -361,7 +361,7 @@ begin
 
     farm_block : entity work.farm_block
     generic map (
-        g_LOOPUP_NAME   => "intRun2021",
+        g_LOOPUP_NAME   => "", -- no lookup for the farm
         g_NLINKS_TOTL   => 3,
         g_ADDR_WIDTH    => 11,
         g_DDR4          => false--,
