@@ -226,9 +226,12 @@ int main(int argc, char *argv[]) {
     // reset all
     uint32_t reset_regs = 0;
     reset_regs = SET_RESET_BIT_DATA_PATH(reset_regs);
+    reset_regs = SET_RESET_BIT_FARM_BLOCK(reset_regs);
     reset_regs = SET_RESET_BIT_DATAGEN(reset_regs);
     reset_regs = SET_RESET_BIT_SWB_STREAM_MERGER(reset_regs);
+    reset_regs = SET_RESET_BIT_FARM_STREAM_MERGER(reset_regs);
     reset_regs = SET_RESET_BIT_SWB_TIME_MERGER(reset_regs);
+    reset_regs = SET_RESET_BIT_FARM_TIME_MERGER(reset_regs);
     reset_regs = SET_RESET_BIT_LINK_LOCKED(reset_regs);
     cout << "Reset Regs: " << hex << reset_regs << endl;
     mu.write_register(RESET_REGISTER_W, reset_regs);
