@@ -240,9 +240,9 @@ begin
             rx(I)   <= work.mu3e.LINK_IDLE;
         elsif ( rising_edge( i_clk ) ) then
             if ( i_writeregs(FARM_READOUT_STATE_REGISTER_W)(USE_BIT_GEN_LINK) = '1' ) then
-                rx(I)   <= work.mu3e.to_link(gen_link.data, gen_link.datak);
+                rx(I) <= work.mu3e.to_link(gen_link.data, gen_link.datak);
             else
-                rx(I)   <= work.mu3e.to_link(i_rx(I).data, i_rx(I).datak);
+                rx(I) <= work.mu3e.to_link(i_rx(I).data, i_rx(I).datak);
             end if;
         end if;
         end process;
