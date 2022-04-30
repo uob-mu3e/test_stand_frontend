@@ -323,7 +323,7 @@ begin
     );
 
     --! map links
-        generate_farm_links : for i in 0 to 15 generate
+    generate_farm_links : for i in 0 to 15 generate
         farm_rx(i).data     <= farm_rx_data(i);
         farm_rx(i).datak    <= farm_rx_datak(i);
         farm_tx_data(i)     <= farm_tx(i).data;
@@ -422,7 +422,7 @@ begin
         i_B_pll_ref_clk      => DDR3B_REFCLK_p,
 
         --! 250 MHz clock pice / reset_n
-        i_reset_n       => pcie0_reset_n,
+        i_reset_n       => pcie0_resets_n(RESET_BIT_FARM_BLOCK),
         i_clk           => pcie0_clk--,
     );
 

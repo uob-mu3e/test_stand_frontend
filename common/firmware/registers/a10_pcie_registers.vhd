@@ -34,6 +34,7 @@ package a10_pcie_registers is
         constant RESET_BIT_FARM_TIME_MERGER                     :  integer := 25; -- DOC: Reset bit for farm time merger | FARM
         constant RESET_BIT_LINK_LOCKED                          :  integer := 26; -- DOC: Reset bit for link locked bit | SWB/FARM
         constant RESET_BIT_GLOBAL_TS                            :  integer := 27; -- DOC: Reset bit for global time counter | SWB/FARM
+        constant RESET_BIT_FARM_BLOCK                           :  integer := 28; -- DOC: Reset bit for the data path | FARM
         constant RESET_BIT_PCIE                                 :  integer := 31; -- DOC: Not used at the moment | ALL
 
     constant DATAGENERATOR_REGISTER_W                       : integer := 16#02#; -- DOC: Register to control the datagenerator which is generating the link data from FEBs | SWB
