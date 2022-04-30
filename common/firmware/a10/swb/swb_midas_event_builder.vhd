@@ -15,6 +15,7 @@ port (
     i_rempty            : in  std_logic;
     -- Data type: "00" = pixel, "01" = scifi, "10" = tiles
     i_data_type         : std_logic_vector(1 downto 0) := "00";
+    i_use_sop_type      : in  std_logic;
 
     i_get_n_words       : in  std_logic_vector (31 downto 0);
     i_dmamemhalffull    : in  std_logic;
@@ -247,14 +248,24 @@ begin
                 -- SCD1 = ScifiCentralDebug1
                 -- TCD1 = TileCentralDebug1
                 -- NONE else
-                if ( i_data_type = "00" ) then
-                    w_ram_data <= x"31444350";
-                elsif ( i_data_type = "01" ) then
-                    w_ram_data <= x"31444353";
-                elsif ( i_data_type = "10" ) then
-                    w_ram_data <= x"31444354";
+                if ( i_use_sop_type = '1' ) then
+                    if ( i_rx.data(21 downto 20) = "00" or i_rx.data(21 downto 20) = "01" ) then
+                        w_ram_data <= x"31444350";
+                    elsif ( i_rx.data(21 downto 20) = "10" ) then
+                        w_ram_data <= x"31444353";
+                    else
+                        w_ram_data <= x"454E4F4E";
+                    end if;
                 else
-                    w_ram_data <= x"454E4F4E";
+                    if ( i_data_type = "00" ) then
+                        w_ram_data <= x"31444350";
+                    elsif ( i_data_type = "01" ) then
+                        w_ram_data <= x"31444353";
+                    elsif ( i_data_type = "10" ) then
+                        w_ram_data <= x"31444354";
+                    else
+                        w_ram_data <= x"454E4F4E";
+                    end if;
                 end if;
                 event_size_cnt      <= event_size_cnt + 4;
                 event_tagging_state <= bank_type;

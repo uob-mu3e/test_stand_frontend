@@ -7,6 +7,7 @@ use ieee.numeric_std.all;
 entity swb_stream_merger is
 generic (
     g_ADDR_WIDTH : positive := 8;
+    g_set_type : boolean := false;
     N : positive--;
 );
 port (
@@ -66,6 +67,7 @@ begin
 
     e_stream_merger : entity work.stream_merger
     generic map (
+        g_set_type => g_set_type,
         N => N--,
     )
     port map (

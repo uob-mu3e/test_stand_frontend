@@ -79,7 +79,8 @@ package a10_pcie_registers is
         constant USE_BIT_PIXEL_DS                               : integer := 8;  -- DOC: Readout state to only readout DS pixel data via DMA (for debugging) |  SWB & FARM
         constant USE_BIT_SCIFI                                  : integer := 9;  -- DOC: Readout state to only readout scifi data via DMA (for debugging) |  SWB & FARM
         constant USE_BIT_TEST_ERROR                             : integer := 10; -- DOC: Readout state for testing an error handling in the time merger using generated data |  SWB & FARM
-        constant USE_BIT_DDR                                    : integer := 10; -- DOC: Readout state for using the ddr memory | FARM
+        constant USE_BIT_DDR                                    : integer := 11; -- DOC: Readout state for using the ddr memory | FARM
+        constant USE_BIT_ALL                                    : integer := 12; -- DOC: Readout state to only readout all data in round robin via DMA (for debugging) |  SWB
     constant SWB_READOUT_LINK_REGISTER_W                    : integer := 16#14#; -- DOC: Not used at the moment |  SWB & FARM
     constant SWB_COUNTER_REGISTER_W                         : integer := 16#15#; -- DOC: Addr register to readout counter values from the SWB, to have more information about the counter look at a10_counter.md | SWB
 

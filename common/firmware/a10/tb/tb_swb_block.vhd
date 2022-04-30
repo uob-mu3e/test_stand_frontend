@@ -13,11 +13,11 @@ architecture arch of tb_swb_block is
 
     -- constants
     constant SWB_ID : std_logic_vector(7 downto 0) := x"01";
-    constant g_NLINKS_FEB_TOTL   : positive := 12;
+    constant g_NLINKS_FEB_TOTL   : positive := 13;
     constant g_NLINKS_FARM_TOTL  : positive := 3;
     constant g_NLINKS_FARM_PIXEL : positive := 2;
     constant g_NLINKS_DATA_PIXEL_US : positive := 5;
-    constant g_NLINKS_DATA_PIXEL_DS : positive := 5;
+    constant g_NLINKS_DATA_PIXEL_DS : positive := 6;
     constant g_NLINKS_FARM_SCIFI : positive := 1;
     constant g_NLINKS_DATA_SCIFI : positive := 2;
     constant g_NLINKS_FARM_TILE  : positive := 8;
@@ -94,8 +94,8 @@ architecture arch of tb_swb_block is
     writeregs(DATAGENERATOR_DIVIDER_REGISTER_W)             <= x"00000002";
     writeregs(SWB_READOUT_STATE_REGISTER_W)(USE_BIT_GEN_LINK)   <= '1';
     writeregs(SWB_READOUT_STATE_REGISTER_W)(USE_BIT_TEST_ERROR) <= '0';
-    writeregs(SWB_READOUT_STATE_REGISTER_W)(USE_BIT_STREAM)     <= '1';
-    writeregs(SWB_READOUT_STATE_REGISTER_W)(USE_BIT_MERGER)     <= '0';
+    writeregs(SWB_READOUT_STATE_REGISTER_W)(USE_BIT_STREAM)     <= '0';
+    writeregs(SWB_READOUT_STATE_REGISTER_W)(USE_BIT_MERGER)     <= '1';
 
     writeregs(SWB_LINK_MASK_PIXEL_REGISTER_W)(4 downto 0)   <= '1' & x"F";--x"00000048";
     writeregs(SWB_LINK_MASK_PIXEL_REGISTER_W)(9 downto 5)   <= '1' & x"F";--x"00000048";
@@ -107,7 +107,8 @@ architecture arch of tb_swb_block is
 
     writeregs(SWB_READOUT_STATE_REGISTER_W)(USE_BIT_PIXEL_US)   <= '0';
     writeregs(SWB_READOUT_STATE_REGISTER_W)(USE_BIT_PIXEL_DS)   <= '0';
-    writeregs(SWB_READOUT_STATE_REGISTER_W)(USE_BIT_SCIFI)      <= '1';
+    writeregs(SWB_READOUT_STATE_REGISTER_W)(USE_BIT_SCIFI)      <= '0';
+    writeregs(SWB_READOUT_STATE_REGISTER_W)(USE_BIT_ALL)        <= '1';
 
     --! SWB Block
     --! ------------------------------------------------------------------------
