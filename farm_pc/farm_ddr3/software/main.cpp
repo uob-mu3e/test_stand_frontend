@@ -63,10 +63,16 @@ int main() {
         char cmd = wait_key();
         switch(cmd) {
         case '1':
-            menu_xcvr((alt_u32*)(AVM_XCVR0_BASE | ALT_CPU_DCACHE_BYPASS_MASK));
+            xcvr_block_t xcvr_block((alt_u32*)(AVM_XCVR0_BASE | ALT_CPU_DCACHE_BYPASS_MASK), AVM_XCVR0_SPAN);
+            xcvr_block.rx_p = xcvr0_rx_p;
+            xcvr_block.n = 16;
+            xcvr_block.menu();
             break;
         case '2':
-            menu_xcvr((alt_u32*)(AVM_XCVR1_BASE | ALT_CPU_DCACHE_BYPASS_MASK));
+            xcvr_block_t xcvr_block((alt_u32*)(AVM_XCVR1_BASE | ALT_CPU_DCACHE_BYPASS_MASK), AVM_XCVR1_SPAN);
+            xcvr_block.rx_p = xcvr1_rx_p;
+            xcvr_block.n = 16;
+            xcvr_block.menu();
             break;
         case '3':
             flash.menu();
