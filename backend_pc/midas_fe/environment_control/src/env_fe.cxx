@@ -187,6 +187,17 @@ INT frontend_init()
    water.define_var(1,  17, "US_In_Flow");
    water.define_var(1,  18, "DS_In_Flow");
 
+   water.define_panel("Pressure",    {"US_In_P",
+                                      "US_Out_P",
+                                      "DS_In_P",
+                                      "DS_Out_P"});
+   water.define_panel("Temperature", {"US_In_T",
+                                      "US_Out_T",
+                                      "DS_In_T",
+                                      "DS_Out_T"});
+   water.define_panel("Flow",        {"US_In_Flow",
+                                      "DS_In_Flow"});
+
 
    // Pixel Temperatures
    //mdevice_mscb pix("Pixel Temperatures", "Input", DF_INPUT, "mscb334.mu3e", "", 100);
