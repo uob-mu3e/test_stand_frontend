@@ -310,8 +310,6 @@ begin
         o_pcie0_resets_n                => pcie0_resets_n,
 
         -- resets clk
-        top_pll_locked                  => locked_50to125,
-
         o_reset_250_n                   => reset_250_n,
         o_clk_250                       => clk_250,
         o_clk_250_hz                    => LED(2),
