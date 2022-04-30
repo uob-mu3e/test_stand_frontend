@@ -155,6 +155,7 @@ INT init_mudaq();
 uint64_t get_link_active_from_odb(odb o);
 void link_active_settings_changed(odb);
 void stream_settings_changed(odb);
+INT read_stream_event(char *pevent, INT off);
 /*-- Equipment list ------------------------------------------------*/
 
 EQUIPMENT equipment[] = {
