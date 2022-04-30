@@ -36,4 +36,14 @@ begin
         port map ( i_fpgaID => i_fpgaID(3 downto 0), i_chipID => i_chipID, o_chipID => chipID );
     end generate;
 
+    generate_intRun2022_ds : if ( g_LOOPUP_NAME = "intRun2022_ds" ) generate
+        e_intRun2022_ds : entity work.chip_lookup_int_2022_ds
+        port map ( i_fpgaID => i_fpgaID(3 downto 0), i_chipID => i_chipID, o_chipID => chipID );
+    end generate;
+
+    generate_intRun2022_us : if ( g_LOOPUP_NAME = "intRun2022_us" ) generate
+        e_intRun2022_us : entity work.chip_lookup_int_2022_us
+        port map ( i_fpgaID => i_fpgaID(3 downto 0), i_chipID => i_chipID, o_chipID => chipID );
+    end generate;
+
 end architecture;

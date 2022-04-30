@@ -187,7 +187,7 @@ begin
 
     e_clk_pcieref_hz : entity work.clkdiv
     generic map ( P => 100000000 )
-    port map ( o_clk => LED(4), i_reset_n => reset_50_n, i_clk => PCIE_REFCLK_p );
+    port map ( o_clk => LED_BRACKET(0), i_reset_n => reset_50_n, i_clk => PCIE_REFCLK_p );
 
     --! A10 block
     --! ------------------------------------------------------------------------
@@ -229,8 +229,7 @@ begin
         o_spi_ss_n(0)                   => RS422_DE,
 
         -- LEDs
-        o_LED(1)                        => LED(0),
-        o_LED_BRACKET                   => LED_BRACKET,
+        o_LED(1)                        => LED_BRACKET(1),
 
         -- XCVR0 (6250 Mbps @ 156.25 MHz)
         i_xcvr0_rx( 3 downto  0)        => QSFPA_RX_p,
@@ -264,7 +263,7 @@ begin
         i_pcie0_refclk                  => PCIE_REFCLK_p,
         o_pcie0_reset_n                 => pcie0_reset_n,
         o_pcie0_clk                     => pcie0_clk,
-        o_pcie0_clk_hz                  => LED(3),
+        o_pcie0_clk_hz                  => LED(0),
 
         -- PCIe0 DMA0
         i_pcie0_dma0_wdata              => dma_data,
@@ -293,11 +292,11 @@ begin
         o_pcie0_resets_n                => pcie0_resets_n,
 
         -- resets clk
-        top_pll_locked                  => locked_50to125,
+        o_clk_156_hz                    => LED_BRACKET(2),
 
         i_reset_125_n                   => reset_125_n,
         i_clk_125                       => clk_125,
-        o_clk_125_hz                    => LED(1),
+        o_clk_125_hz                    => LED_BRACKET(3),
 
         i_reset_n                       => reset_50_n,
         i_clk                           => clk_50--,

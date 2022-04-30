@@ -75,7 +75,6 @@ INT pause_run(INT run_number, char *error);
 INT resume_run(INT run_number, char *error);
 INT frontend_loop();
 
-INT read_stream_event(char *pevent, INT off);
 INT read_stream_thread(void *param);
 
 INT poll_event(INT source, INT count, BOOL test);
@@ -108,21 +107,6 @@ EQUIPMENT equipment[] = {
      0,                      /* don't log history */
      "", "", "",},
      NULL,                    /* readout routine */
-    },
-    {"Stream Logger",                /* equipment name */
-    {11, 0,                   /* event ID, trigger mask */
-     "SYSTEM",               /* event buffer */
-     EQ_PERIODIC,                /* equipment type */
-     0,                      /* event source crate 0, all stations */
-     "MIDAS",                /* format */
-     FALSE,                   /* enabled */
-     RO_ALWAYS  | RO_ODB,             /* read only when running */
-     1000,                    /* poll for 1s */
-     0,                      /* stop run after this event limit */
-     0,                      /* number of sub events */
-     1,                      /* log history every event */
-     "", "", "",},
-     read_stream_event,                    /* readout routine */
     },
 
    {""}
@@ -262,41 +246,16 @@ void setup_odb(){
         {"Datagen Enable", false},     // bool
         {"mask_n_scifi", 0x0},         // int
         {"mask_n_pixel", 0x0},         // int
-        {"use_merger", false},         // int
+        {"use_scifi", false},          // bool
+        {"use_pixel_ds", false},       // bool
+        {"use_pixel_us", false},       // bool
+        {"use_merger", false},         // bool
         {"dma_buf_nwords", int(dma_buf_nwords)},
         {"dma_buf_size", int(dma_buf_size)}
     };
 
     stream_settings.connect("/Equipment/Stream/Settings");
 
-    // add custom page to ODB
-    odb custom("/Custom");
-    custom["Farm&"] = "farm.html";
-    
-    // add error cnts to ODB
-    //odb error_settings = {
-    //    {"DC FIFO ALMOST FUll", 0},
-    //    {"DC LINK FIFO FULL", 0},
-    //    {"TAG FIFO FULL", 0},
-    //    {"MIDAS EVENT RAM FULL", 0},
-    //    {"STREAM FIFO FULL", 0},
-    //    {"DMA HALFFULL", 0},
-    //    {"SKIP EVENT LINK FIFO", 0},
-    //    {"SKIP EVENT DMA RAM", 0},
-    //    {"IDLE NOT EVENT HEADER", 0},
-    //};
-    //error_settings.connect("/Equipment/Stream Logger/Variables", true);
-    
-    // Define history panels
-    //hs_define_panel("Stream Logger", "MIDAS Bank Builder", {"Stream Logger:DC FIFO ALMOST FUll",
-    //                                                        "Stream Logger:DC LINK FIFO FULL",
-    //                                                        "Stream Logger:TAG FIFO FULL",
-    //                                                        "Stream Logger:MIDAS EVENT RAM FULL",
-    //                                                        "Stream Logger:STREAM FIFO FULL",
-    //                                                        "Stream Logger:DMA HALFFULL",
-    //                                                        "Stream Logger:SKIP EVENT LINK FIFO",
-    //                                                        "Stream Logger:SKIP EVENT DMA RAM",
-    //                                                        "Stream Logger:IDLE NOT EVENT HEADER"});
 }
 
 void setup_watches(){
@@ -324,12 +283,12 @@ INT init_mudaq(){
         cm_msg(MERROR, "frontend_init" , "mmap failed: dmabuf = %x\n", MAP_FAILED);
         return FE_ERR_DRIVER;
     }
-    
+
     // initialize to zero
     for (uint32_t i = 0; i < dma_buf_nwords ; i++) {
         (dma_buf)[i] = 0;
     }
-    
+
     // open mudaq
     mup = new mudaq::DmaMudaqDevice("/dev/mudaq0");
     if ( !mup->open() ) {
@@ -386,12 +345,14 @@ INT begin_of_run(INT run_number, char *error)
 
     // empty dma buffer
     for (uint32_t i = 0; i < dma_buf_nwords ; i++) {
-    (dma_buf)[i] = 0;
+        (dma_buf)[i] = 0;
     }
 
     // setup readout registers
     odb stream_settings;
     stream_settings.connect("/Equipment/Stream/Settings");
+
+    readout_state_regs = 0;
 
     if(stream_settings["Datagen Enable"]) {
         // setup data generator
@@ -408,8 +369,15 @@ INT begin_of_run(INT run_number, char *error)
         cm_msg(MINFO,"farm_fe", "Use Stream Merger");
         readout_state_regs = SET_USE_BIT_STREAM(readout_state_regs);
     }
-    cm_msg(MINFO,"farm_fe", "WARNING: For now just use US Pixel data");
-    readout_state_regs = SET_USE_BIT_PIXEL_US(readout_state_regs);
+
+    if ( stream_settings["use_scifi"] ) {
+        readout_state_regs = SET_USE_BIT_SCIFI(readout_state_regs);
+    } else if ( stream_settings["use_pixel_ds"] ) {
+        readout_state_regs = SET_USE_BIT_PIXEL_DS(readout_state_regs);
+    } else if ( stream_settings["use_pixel_us"] ) {
+        readout_state_regs = SET_USE_BIT_PIXEL_US(readout_state_regs);
+    }
+
     // write readout register
     mu.write_register(SWB_READOUT_STATE_REGISTER_W, readout_state_regs);
 
@@ -464,7 +432,7 @@ INT end_of_run(INT run_number, char *error)
         timeout_cnt++;
         usleep(1000);
     };
-            
+
     if(timeout_cnt>=100) {
             //cm_msg(MERROR, "farm_fe", "DMA did not finish");
             cm_msg(MINFO, "farm_fe", "DMA did not finish");
@@ -483,9 +451,9 @@ INT end_of_run(INT run_number, char *error)
     mu.write_register(SWB_READOUT_STATE_REGISTER_W, 0x0);
     mu.write_register(SWB_READOUT_LINK_REGISTER_W, 0x0);
     mu.write_register(GET_N_DMA_WORDS_REGISTER_W, 0x0);
-    
+
     set_equipment_status(equipment[0].name, "Ready for running", "var(--mgreen)");
-   
+
     return SUCCESS;
 }
 
@@ -497,9 +465,9 @@ INT pause_run(INT run_number, char *error)
 
    // disable DMA
    mu.disable();
-   
+
    set_equipment_status(equipment[0].name, "Paused", "var(--myellow)");
-   
+
    return SUCCESS;
 }
 
@@ -508,7 +476,7 @@ INT pause_run(INT run_number, char *error)
 INT resume_run(INT run_number, char *error)
 {
    set_equipment_status(equipment[0].name, "Running", "var(--mgreen)");
-   
+
    return SUCCESS;
 }
 
@@ -536,50 +504,6 @@ INT poll_event(INT source, INT count, BOOL test)
 INT interrupt_configure(INT cmd, INT source, POINTER_T adr)
 {
    return SUCCESS;
-}
-
-/*-- Event readout -------------------------------------------------*/
-
-INT read_stream_event(char *pevent, INT off)
-{
-    
-   // get mudaq 
-   mudaq::DmaMudaqDevice & mu = *mup;
- 
-   // get odb for errors
-   odb error_cnt("/Equipment/Stream Logger/Variables");
-
-   // create bank, pdata, stream buffer is name
-   bk_init(pevent);
-   DWORD *pdata;
-   bk_create(pevent, "STBU", TID_DWORD, (void **)&pdata);
-    
-   // TODO: save value to variable before and dont call function all the time
-   // get error regs and write to odb
-   error_cnt["DC FIFO ALMOST FUll"] = mu.read_register_ro(0x1D);
-   error_cnt["TAG FIFO FULL"] =  mu.read_register_ro(0x1E);
-   error_cnt["MIDAS EVENT RAM FULL"] = mu.read_register_ro(0x1F);
-   error_cnt["STREAM FIFO FULL"] = mu.read_register_ro(0x20);
-   error_cnt["DMA HALFFULL"] = mu.read_register_ro(0x21);
-   error_cnt["DC LINK FIFO FULL"] = mu.read_register_ro(0x22);
-   error_cnt["SKIP EVENT LINK FIFO"] = mu.read_register_ro(0x23);
-   error_cnt["SKIP EVENT DMA RAM"] =  mu.read_register_ro(0x24);
-   error_cnt["IDLE NOT EVENT HEADER"] =  mu.read_register_ro(0x25);
-
-   *pdata++ = mu.read_register_ro(0x1D);
-   *pdata++ = mu.read_register_ro(0x1E);
-   *pdata++ = mu.read_register_ro(0x1F);
-   *pdata++ = mu.read_register_ro(0x20);
-   *pdata++ = mu.read_register_ro(0x21);
-   *pdata++ = mu.read_register_ro(0x22);
-   *pdata++ = mu.read_register_ro(0x23);
-   *pdata++ = mu.read_register_ro(0x24);
-   *pdata++ = mu.read_register_ro(0x25);
-
-   bk_close(pevent, pdata);
- 
-   return bk_size(pevent);
-  
 }
 
 /*-- Event readout -------------------------------------------------*/
@@ -624,7 +548,7 @@ INT read_stream_thread(void *param) {
             ss_sleep(10);// don't eat all CPU
             continue;
         }
-        
+
         // stop if there is an error in the ODB
         if ( status != DB_SUCCESS ) {
             printf("ERROR: rb_get_wp -> rb_status != DB_SUCCESS\n");
@@ -646,16 +570,16 @@ INT read_stream_thread(void *param) {
 
         // disable dma
         mu.disable();
-        
+
         // get written words from FPGA in bytes
         size_dma_buf = mu.last_endofevent_addr() * 256 / 8;
-        
+
         // copy data
         memcpy(pdata, const_cast<uint32_t*>(dma_buf), size_dma_buf);
 
         // increment write pointer of ring buffer
         rb_increment_wp(rbh, size_dma_buf); // in byte length         
-        
+
     }
 
     // tell framework that we finished
@@ -674,8 +598,8 @@ uint64_t get_link_active_from_odb(odb o){
       int cur_mask = o[offset + link];
       if((cur_mask == FEBLINKMASK::ON) || (cur_mask == FEBLINKMASK::DataOn)){
         //a standard FEB link (SC and data) is considered enabled if RX and TX are. 
-	    //a secondary FEB link (only data) is enabled if RX is.
-	    //Here we are concerned only with run transitions and slow control, the farm frontend may define this differently.
+        //a secondary FEB link (only data) is enabled if RX is.
+        //Here we are concerned only with run transitions and slow control, the farm frontend may define this differently.
         link_active_from_odb += (1 << link);
       }
    }

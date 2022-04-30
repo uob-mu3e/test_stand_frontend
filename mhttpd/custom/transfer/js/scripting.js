@@ -17,11 +17,11 @@ var temp = 0;
 function load(){
 	mhttpd_init('Pixel test helper', 100);
 
-	mjsonrpc_db_ls(["/Equipment/Mupix/Settings/BIASDACS/1",
-				   "/Equipment/Mupix/Settings/CONFDACS/1",
-				   "/Equipment/Mupix/Settings/VDACS/1"]).then(function(rpc) {
+	mjsonrpc_db_ls(["/Equipment/PixelsCentral/Settings/BIASDACS/1",
+				   "/Equipment/PixelsCentral/Settings/CONFDACS/1",
+				   "/Equipment/PixelsCentral/Settings/VDACS/1"]).then(function(rpc) {
 
-		   // Populate dac_library with all DACs at /Equipment/Mupix/Settings/
+		   // Populate dac_library with all DACs at /Equipment/PixelsCentral/Settings/
 		   var result = rpc.result;
 		   dac_library = {'BIASDACS': result.data[0],
 		   				  'CONFDACS': result.data[1],
@@ -90,7 +90,7 @@ function uploadConfigToODB(req_id){ //TODO TRY OUT
 		} else{
 			mupix = req_id;
 		}
-		
+		//mupix = form.value;		
 
 		if (temp == 0){
 			temp = {};
@@ -115,15 +115,15 @@ function uploadConfigToODB(req_id){ //TODO TRY OUT
 
 		for (var dac in full_config){
 			if (Object.keys(dac_library.BIASDACS).includes(dac)){
-				paths[paths.length] = "/Equipment/Mupix/Settings/BIASDACS/"+mupix+"/"+dac
+				paths[paths.length] = "/Equipment/PixelsCentral/Settings/BIASDACS/"+mupix+"/"+dac
 				values[values.length] = full_config[dac]
 				console.log("Entered BIAS")
 			} else if (Object.keys(dac_library.CONFDACS).includes(dac)){
-				paths[paths.length] = "/Equipment/Mupix/Settings/CONFDACS/"+mupix+"/"+dac
+				paths[paths.length] = "/Equipment/PixelsCentral/Settings/CONFDACS/"+mupix+"/"+dac
 				values[values.length] = full_config[dac]
 				console.log("Entered CONF")
 			} else if (Object.keys(dac_library.VDACS).includes(dac)){
-				paths[paths.length] = "/Equipment/Mupix/Settings/VDACS/"+mupix+"/"+dac
+				paths[paths.length] = "/Equipment/PixelsCentral/Settings/VDACS/"+mupix+"/"+dac
 				values[values.length] = full_config[dac]
 				console.log("Entered VDACS")
 			} else {
@@ -149,7 +149,7 @@ function uploadAllConfigToODB(){
 	if (fileloc == ''){
 		dlgAlert("Upload file, please")
 	}else{
-		for (let i = 0; i < 6; i++){
+		for (let i = 0; i < 120; i++){
 			uploadConfigToODB(i);
 		}
 	}

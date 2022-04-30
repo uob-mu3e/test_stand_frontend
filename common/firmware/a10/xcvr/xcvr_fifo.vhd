@@ -16,7 +16,7 @@ generic (
     g_FIFO_TX_RREG_N : natural := 1;
     g_FIFO_RX_WREG_N : natural := 1;
     g_FIFO_RX_RREG_N : natural := 1;
-    g_FIFO_ADDR_WIDTH : positive := 4--;
+    g_FIFO_ADDR_WIDTH : positive := 6--;
 );
 port (
     i_xcvr_rx_data      : in    std_logic_vector(g_BYTES*8-1 downto 0);

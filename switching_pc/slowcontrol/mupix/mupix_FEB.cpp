@@ -254,6 +254,7 @@ int MupixFEB::ConfigureTDACs(){
             pages_remaining.push_back(pages_remaining_this_chip);
             pages_remaining_this_chip.clear();
             internal_febID++;
+            printf(" load tdac for feb\n");
         }
     }
 
@@ -271,6 +272,7 @@ int MupixFEB::ConfigureTDACs(){
                 // get number of free tdac pages for this feb
                 status = feb_sc.ERRCODES::OK;
                 status = feb_sc.FEB_read(feb,MP_CTRL_N_FREE_PAGES_REGISTER_R, N_free_pages);
+                printf("free pages check: %i\n", N_free_pages);
                 if(status != feb_sc.ERRCODES::OK) {
                     cm_msg(MERROR, "MupixFEB" , "could not reach feb %i, aborting tdac wriring", internal_febID);
                     return status;
@@ -293,6 +295,7 @@ int MupixFEB::ConfigureTDACs(){
                                 // how to do this wihout copy ?
                                 tdac_page = std::vector<uint32_t>(tdac_pages.at(internal_febID).at(chip).begin() + current_page*PAGESIZE, tdac_pages.at(internal_febID).at(chip).begin() + (current_page+1)*PAGESIZE);
                                 feb_sc.FEB_write(feb, MP_CTRL_TDAC_START_REGISTER_W + pos, tdac_page, true, false);
+                                printf(" write page, remaining: %i\n", pages_remaining_this_feb);
                                 pages_remaining_this_feb--;
                                 N_free_pages--;
                             } else {break;}
