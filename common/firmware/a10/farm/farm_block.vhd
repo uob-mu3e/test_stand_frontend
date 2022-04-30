@@ -517,89 +517,89 @@ begin
     -- );
 
 
-    -- --! Farm DDR Block
-    -- --! ------------------------------------------------------------------------
-    -- --! ------------------------------------------------------------------------
-    -- --! ------------------------------------------------------------------------
-    -- e_ddr_block : entity work.ddr_block
-    -- generic map (
-    --     g_DDR4                => g_DDR4--,
-    -- )
-    -- port map(
-    --     --! control and status registers
-    --     i_ddr_control         => i_writeregs(DDR_CONTROL_W),
+    --! Farm DDR Block
+    --! ------------------------------------------------------------------------
+    --! ------------------------------------------------------------------------
+    --! ------------------------------------------------------------------------
+    e_ddr_block : entity work.ddr_block
+    generic map (
+        g_DDR4                => g_DDR4--,
+    )
+    port map(
+        --! control and status registers
+        i_ddr_control         => i_writeregs(DDR_CONTROL_W),
 
-    --     --! A interface
-    --     o_A_ddr_calibrated    => A_mem_calibrated,
-    --     o_A_ddr_ready         => A_mem_ready,
-    --     i_A_ddr_addr          => A_mem_addr,
-    --     i_A_ddr_datain        => A_mem_data,
-    --     o_A_ddr_dataout       => A_mem_q,
-    --     i_A_ddr_write         => A_mem_write,
-    --     i_A_ddr_read          => A_mem_read,
-    --     o_A_ddr_read_valid    => A_mem_q_valid,
+        --! A interface
+        o_A_ddr_calibrated    => A_mem_calibrated,
+        o_A_ddr_ready         => A_mem_ready,
+        i_A_ddr_addr          => A_mem_addr,
+        i_A_ddr_datain        => A_mem_data,
+        o_A_ddr_dataout       => A_mem_q,
+        i_A_ddr_write         => A_mem_write,
+        i_A_ddr_read          => A_mem_read,
+        o_A_ddr_read_valid    => A_mem_q_valid,
 
-    --     --! B interface
-    --     o_B_ddr_calibrated    => B_mem_calibrated,
-    --     o_B_ddr_ready         => B_mem_ready,
-    --     i_B_ddr_addr          => B_mem_addr,
-    --     i_B_ddr_datain        => B_mem_data,
-    --     o_B_ddr_dataout       => B_mem_q,
-    --     i_B_ddr_write         => B_mem_write,
-    --     i_B_ddr_read          => B_mem_read,
-    --     o_B_ddr_read_valid    => B_mem_q_valid,
+        --! B interface
+        o_B_ddr_calibrated    => B_mem_calibrated,
+        o_B_ddr_ready         => B_mem_ready,
+        i_B_ddr_addr          => B_mem_addr,
+        i_B_ddr_datain        => B_mem_data,
+        o_B_ddr_dataout       => B_mem_q,
+        i_B_ddr_write         => B_mem_write,
+        i_B_ddr_read          => B_mem_read,
+        o_B_ddr_read_valid    => B_mem_q_valid,
 
-    --     --! error counters
-    --     o_error               => o_readregs(DDR_ERR_R),
+        --! error counters
+        o_error               => o_readregs(DDR_ERR_R),
 
-    --     --! interface to memory bank A
-    --     o_A_mem_ck            => o_A_mem_ck,
-    --     o_A_mem_ck_n          => o_A_mem_ck_n,
-    --     o_A_mem_a             => o_A_mem_a,
-    --     o_A_mem_act_n         => o_A_mem_act_n,
-    --     o_A_mem_ba            => o_A_mem_ba,
-    --     o_A_mem_bg            => o_A_mem_bg,
-    --     o_A_mem_cke           => o_A_mem_cke,
-    --     o_A_mem_cs_n          => o_A_mem_cs_n,
-    --     o_A_mem_odt           => o_A_mem_odt,
-    --     o_A_mem_reset_n(0)    => o_A_mem_reset_n(0),
-    --     i_A_mem_alert_n(0)    => i_A_mem_alert_n(0),
-    --     o_A_mem_we_n(0)       => o_A_mem_we_n(0),
-    --     o_A_mem_ras_n(0)      => o_A_mem_ras_n(0),
-    --     o_A_mem_cas_n(0)      => o_A_mem_cas_n(0),
-    --     io_A_mem_dqs          => io_A_mem_dqs,
-    --     io_A_mem_dqs_n        => io_A_mem_dqs_n,
-    --     io_A_mem_dq           => io_A_mem_dq,
-    --     o_A_mem_dm            => o_A_mem_dm,
-    --     io_A_mem_dbi_n        => io_A_mem_dbi_n,
-    --     i_A_oct_rzqin         => i_A_oct_rzqin,
-    --     i_A_pll_ref_clk       => i_A_pll_ref_clk,
+        --! interface to memory bank A
+        o_A_mem_ck            => o_A_mem_ck,
+        o_A_mem_ck_n          => o_A_mem_ck_n,
+        o_A_mem_a             => o_A_mem_a,
+        o_A_mem_act_n         => o_A_mem_act_n,
+        o_A_mem_ba            => o_A_mem_ba,
+        o_A_mem_bg            => o_A_mem_bg,
+        o_A_mem_cke           => o_A_mem_cke,
+        o_A_mem_cs_n          => o_A_mem_cs_n,
+        o_A_mem_odt           => o_A_mem_odt,
+        o_A_mem_reset_n(0)    => o_A_mem_reset_n(0),
+        i_A_mem_alert_n(0)    => i_A_mem_alert_n(0),
+        o_A_mem_we_n(0)       => o_A_mem_we_n(0),
+        o_A_mem_ras_n(0)      => o_A_mem_ras_n(0),
+        o_A_mem_cas_n(0)      => o_A_mem_cas_n(0),
+        io_A_mem_dqs          => io_A_mem_dqs,
+        io_A_mem_dqs_n        => io_A_mem_dqs_n,
+        io_A_mem_dq           => io_A_mem_dq,
+        o_A_mem_dm            => o_A_mem_dm,
+        io_A_mem_dbi_n        => io_A_mem_dbi_n,
+        i_A_oct_rzqin         => i_A_oct_rzqin,
+        i_A_pll_ref_clk       => i_A_pll_ref_clk,
 
-    --     --! interface to memory bank B
-    --     o_B_mem_ck            => o_B_mem_ck,
-    --     o_B_mem_ck_n          => o_B_mem_ck_n,
-    --     o_B_mem_a             => o_B_mem_a,
-    --     o_B_mem_act_n         => o_B_mem_act_n,
-    --     o_B_mem_ba            => o_B_mem_ba,
-    --     o_B_mem_bg            => o_B_mem_bg,
-    --     o_B_mem_cke           => o_B_mem_cke,
-    --     o_B_mem_cs_n          => o_B_mem_cs_n,
-    --     o_B_mem_odt           => o_B_mem_odt,
-    --     o_B_mem_reset_n(0)    => o_B_mem_reset_n(0),
-    --     i_B_mem_alert_n(0)    => i_B_mem_alert_n(0),
-    --     o_B_mem_we_n(0)       => o_B_mem_we_n(0),
-    --     o_B_mem_ras_n(0)      => o_B_mem_ras_n(0),
-    --     o_B_mem_cas_n(0)      => o_B_mem_cas_n(0),
-    --     io_B_mem_dqs          => io_B_mem_dqs,
-    --     io_B_mem_dqs_n        => io_B_mem_dqs_n,
-    --     io_B_mem_dq           => io_B_mem_dq,
-    --     o_B_mem_dm            => o_B_mem_dm,
-    --     io_B_mem_dbi_n        => io_B_mem_dbi_n,
-    --     i_B_oct_rzqin         => i_B_oct_rzqin,
-    --     i_B_pll_ref_clk       => i_B_pll_ref_clk,
+        --! interface to memory bank B
+        o_B_mem_ck            => o_B_mem_ck,
+        o_B_mem_ck_n          => o_B_mem_ck_n,
+        o_B_mem_a             => o_B_mem_a,
+        o_B_mem_act_n         => o_B_mem_act_n,
+        o_B_mem_ba            => o_B_mem_ba,
+        o_B_mem_bg            => o_B_mem_bg,
+        o_B_mem_cke           => o_B_mem_cke,
+        o_B_mem_cs_n          => o_B_mem_cs_n,
+        o_B_mem_odt           => o_B_mem_odt,
+        o_B_mem_reset_n(0)    => o_B_mem_reset_n(0),
+        i_B_mem_alert_n(0)    => i_B_mem_alert_n(0),
+        o_B_mem_we_n(0)       => o_B_mem_we_n(0),
+        o_B_mem_ras_n(0)      => o_B_mem_ras_n(0),
+        o_B_mem_cas_n(0)      => o_B_mem_cas_n(0),
+        io_B_mem_dqs          => io_B_mem_dqs,
+        io_B_mem_dqs_n        => io_B_mem_dqs_n,
+        io_B_mem_dq           => io_B_mem_dq,
+        o_B_mem_dm            => o_B_mem_dm,
+        io_B_mem_dbi_n        => io_B_mem_dbi_n,
+        i_B_oct_rzqin         => i_B_oct_rzqin,
+        i_B_pll_ref_clk       => i_B_pll_ref_clk,
 
-    --     i_reset_n             => i_resets_n(RESET_BIT_DDR),
-    --     i_clk                 => i_clk--,
-    --  );
+        i_reset_n             => i_resets_n(RESET_BIT_DDR),
+        i_clk                 => i_clk--,
+     );
 
 end architecture;
