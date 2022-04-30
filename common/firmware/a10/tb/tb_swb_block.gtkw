@@ -1,15 +1,15 @@
 [*]
 [*] GTKWave Analyzer v3.3.111 (w)1999-2020 BSI
-[*] Sat Apr 30 09:18:06 2022
+[*] Sat Apr 30 18:47:34 2022
 [*]
 [dumpfile] "/home/makoeppel/mu3e/online/common/firmware/a10/tb/.cache/tb_swb_block.ghw"
-[dumpfile_mtime] "Sat Apr 30 09:11:14 2022"
-[dumpfile_size] 13693238
+[dumpfile_mtime] "Sat Apr 30 18:43:23 2022"
+[dumpfile_size] 14858070
 [savefile] "/home/makoeppel/mu3e/online/common/firmware/a10/tb/tb_swb_block.gtkw"
-[timestart] 11263000
+[timestart] 19446000
 [size] 1366 768
-[pos] -912 -1
-*-20.695719 16650000 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
+[pos] -684 -1
+*-18.695719 20694000 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
 [treeopen] top.
 [treeopen] top.tb_swb_block.
 [treeopen] top.tb_swb_block.e_swb_block.
@@ -18,9 +18,7 @@
 [treeopen] top.tb_swb_block.e_swb_block.e_sc_secondary.i_link_data.[0].
 [treeopen] top.tb_swb_block.e_swb_block.e_swb_data_path_pixel_ds.o_data_debug.
 [treeopen] top.tb_swb_block.e_swb_block.e_swb_data_path_pixel_ds.o_farm_data.
-[treeopen] top.tb_swb_block.e_swb_block.e_swb_data_path_pixel_scifi.
 [treeopen] top.tb_swb_block.e_swb_block.e_swb_data_path_pixel_scifi.o_data_debug.
-[treeopen] top.tb_swb_block.e_swb_block.e_swb_data_path_pixel_us.
 [treeopen] top.tb_swb_block.e_swb_block.e_swb_data_path_pixel_us.e_data_gen_error_test.o_data.
 [treeopen] top.tb_swb_block.e_swb_block.e_swb_data_path_pixel_us.e_data_gen_link.o_data.
 [treeopen] top.tb_swb_block.e_swb_block.e_swb_data_path_pixel_us.farm_data.
@@ -32,12 +30,17 @@
 [treeopen] top.tb_swb_block.e_swb_block.g_demerge[0].e_data_demerge.o_rc.
 [treeopen] top.tb_swb_block.e_swb_block.g_demerge[0].e_data_demerge.o_sc.
 [treeopen] top.tb_swb_block.e_swb_block.i_feb_rx.[0].
+[treeopen] top.tb_swb_block.e_swb_block.o_farm_tx.
+[treeopen] top.tb_swb_block.e_swb_block.o_farm_tx.[0].
+[treeopen] top.tb_swb_block.e_swb_block.o_farm_tx.[1].
+[treeopen] top.tb_swb_block.e_swb_block.o_farm_tx.[2].
 [treeopen] top.tb_swb_block.e_swb_block.o_feb_tx.[0].
 [treeopen] top.tb_swb_block.tx.[0].
+[treeopen] top.tb_swb_block.tx.[1].
 [sst_width] 347
 [signals_width] 350
 [sst_expanded] 1
-[sst_vpaned_height] 230
+[sst_vpaned_height] 239
 @200
 -Reset / Clk
 @28
@@ -122,7 +125,6 @@ top.tb_swb_block.e_swb_block.i_feb_rx[0].datak[0]
 -Scifi Path
 @22
 #{top.tb_swb_block.e_swb_block.e_swb_data_path_pixel_scifi.farm_data.data[31:0]} top.tb_swb_block.e_swb_block.e_swb_data_path_pixel_scifi.farm_data.data[31] top.tb_swb_block.e_swb_block.e_swb_data_path_pixel_scifi.farm_data.data[30] top.tb_swb_block.e_swb_block.e_swb_data_path_pixel_scifi.farm_data.data[29] top.tb_swb_block.e_swb_block.e_swb_data_path_pixel_scifi.farm_data.data[28] top.tb_swb_block.e_swb_block.e_swb_data_path_pixel_scifi.farm_data.data[27] top.tb_swb_block.e_swb_block.e_swb_data_path_pixel_scifi.farm_data.data[26] top.tb_swb_block.e_swb_block.e_swb_data_path_pixel_scifi.farm_data.data[25] top.tb_swb_block.e_swb_block.e_swb_data_path_pixel_scifi.farm_data.data[24] top.tb_swb_block.e_swb_block.e_swb_data_path_pixel_scifi.farm_data.data[23] top.tb_swb_block.e_swb_block.e_swb_data_path_pixel_scifi.farm_data.data[22] top.tb_swb_block.e_swb_block.e_swb_data_path_pixel_scifi.farm_data.data[21] top.tb_swb_block.e_swb_block.e_swb_data_path_pixel_scifi.farm_data.data[20] top.tb_swb_block.e_swb_block.e_swb_data_path_pixel_scifi.farm_data.data[19] top.tb_swb_block.e_swb_block.e_swb_data_path_pixel_scifi.farm_data.data[18] top.tb_swb_block.e_swb_block.e_swb_data_path_pixel_scifi.farm_data.data[17] top.tb_swb_block.e_swb_block.e_swb_data_path_pixel_scifi.farm_data.data[16] top.tb_swb_block.e_swb_block.e_swb_data_path_pixel_scifi.farm_data.data[15] top.tb_swb_block.e_swb_block.e_swb_data_path_pixel_scifi.farm_data.data[14] top.tb_swb_block.e_swb_block.e_swb_data_path_pixel_scifi.farm_data.data[13] top.tb_swb_block.e_swb_block.e_swb_data_path_pixel_scifi.farm_data.data[12] top.tb_swb_block.e_swb_block.e_swb_data_path_pixel_scifi.farm_data.data[11] top.tb_swb_block.e_swb_block.e_swb_data_path_pixel_scifi.farm_data.data[10] top.tb_swb_block.e_swb_block.e_swb_data_path_pixel_scifi.farm_data.data[9] top.tb_swb_block.e_swb_block.e_swb_data_path_pixel_scifi.farm_data.data[8] top.tb_swb_block.e_swb_block.e_swb_data_path_pixel_scifi.farm_data.data[7] top.tb_swb_block.e_swb_block.e_swb_data_path_pixel_scifi.farm_data.data[6] top.tb_swb_block.e_swb_block.e_swb_data_path_pixel_scifi.farm_data.data[5] top.tb_swb_block.e_swb_block.e_swb_data_path_pixel_scifi.farm_data.data[4] top.tb_swb_block.e_swb_block.e_swb_data_path_pixel_scifi.farm_data.data[3] top.tb_swb_block.e_swb_block.e_swb_data_path_pixel_scifi.farm_data.data[2] top.tb_swb_block.e_swb_block.e_swb_data_path_pixel_scifi.farm_data.data[1] top.tb_swb_block.e_swb_block.e_swb_data_path_pixel_scifi.farm_data.data[0]
-@23
 #{top.tb_swb_block.e_swb_block.e_swb_data_path_pixel_scifi.o_data_debug.data[31:0]} top.tb_swb_block.e_swb_block.e_swb_data_path_pixel_scifi.o_data_debug.data[31] top.tb_swb_block.e_swb_block.e_swb_data_path_pixel_scifi.o_data_debug.data[30] top.tb_swb_block.e_swb_block.e_swb_data_path_pixel_scifi.o_data_debug.data[29] top.tb_swb_block.e_swb_block.e_swb_data_path_pixel_scifi.o_data_debug.data[28] top.tb_swb_block.e_swb_block.e_swb_data_path_pixel_scifi.o_data_debug.data[27] top.tb_swb_block.e_swb_block.e_swb_data_path_pixel_scifi.o_data_debug.data[26] top.tb_swb_block.e_swb_block.e_swb_data_path_pixel_scifi.o_data_debug.data[25] top.tb_swb_block.e_swb_block.e_swb_data_path_pixel_scifi.o_data_debug.data[24] top.tb_swb_block.e_swb_block.e_swb_data_path_pixel_scifi.o_data_debug.data[23] top.tb_swb_block.e_swb_block.e_swb_data_path_pixel_scifi.o_data_debug.data[22] top.tb_swb_block.e_swb_block.e_swb_data_path_pixel_scifi.o_data_debug.data[21] top.tb_swb_block.e_swb_block.e_swb_data_path_pixel_scifi.o_data_debug.data[20] top.tb_swb_block.e_swb_block.e_swb_data_path_pixel_scifi.o_data_debug.data[19] top.tb_swb_block.e_swb_block.e_swb_data_path_pixel_scifi.o_data_debug.data[18] top.tb_swb_block.e_swb_block.e_swb_data_path_pixel_scifi.o_data_debug.data[17] top.tb_swb_block.e_swb_block.e_swb_data_path_pixel_scifi.o_data_debug.data[16] top.tb_swb_block.e_swb_block.e_swb_data_path_pixel_scifi.o_data_debug.data[15] top.tb_swb_block.e_swb_block.e_swb_data_path_pixel_scifi.o_data_debug.data[14] top.tb_swb_block.e_swb_block.e_swb_data_path_pixel_scifi.o_data_debug.data[13] top.tb_swb_block.e_swb_block.e_swb_data_path_pixel_scifi.o_data_debug.data[12] top.tb_swb_block.e_swb_block.e_swb_data_path_pixel_scifi.o_data_debug.data[11] top.tb_swb_block.e_swb_block.e_swb_data_path_pixel_scifi.o_data_debug.data[10] top.tb_swb_block.e_swb_block.e_swb_data_path_pixel_scifi.o_data_debug.data[9] top.tb_swb_block.e_swb_block.e_swb_data_path_pixel_scifi.o_data_debug.data[8] top.tb_swb_block.e_swb_block.e_swb_data_path_pixel_scifi.o_data_debug.data[7] top.tb_swb_block.e_swb_block.e_swb_data_path_pixel_scifi.o_data_debug.data[6] top.tb_swb_block.e_swb_block.e_swb_data_path_pixel_scifi.o_data_debug.data[5] top.tb_swb_block.e_swb_block.e_swb_data_path_pixel_scifi.o_data_debug.data[4] top.tb_swb_block.e_swb_block.e_swb_data_path_pixel_scifi.o_data_debug.data[3] top.tb_swb_block.e_swb_block.e_swb_data_path_pixel_scifi.o_data_debug.data[2] top.tb_swb_block.e_swb_block.e_swb_data_path_pixel_scifi.o_data_debug.data[1] top.tb_swb_block.e_swb_block.e_swb_data_path_pixel_scifi.o_data_debug.data[0]
 @200
 -Pixel DS
@@ -192,14 +194,10 @@ top.tb_swb_block.e_swb_block.e_event_builder.event_counter_state
 #{top.tb_swb_block.e_swb_block.e_event_builder.event_last_ram_add[8:0]} top.tb_swb_block.e_swb_block.e_event_builder.event_last_ram_add[8] top.tb_swb_block.e_swb_block.e_event_builder.event_last_ram_add[7] top.tb_swb_block.e_swb_block.e_event_builder.event_last_ram_add[6] top.tb_swb_block.e_swb_block.e_event_builder.event_last_ram_add[5] top.tb_swb_block.e_swb_block.e_event_builder.event_last_ram_add[4] top.tb_swb_block.e_swb_block.e_event_builder.event_last_ram_add[3] top.tb_swb_block.e_swb_block.e_event_builder.event_last_ram_add[2] top.tb_swb_block.e_swb_block.e_event_builder.event_last_ram_add[1] top.tb_swb_block.e_swb_block.e_event_builder.event_last_ram_add[0]
 #{top.tb_swb_block.e_swb_block.e_event_builder.r_ram_add[8:0]} top.tb_swb_block.e_swb_block.e_event_builder.r_ram_add[8] top.tb_swb_block.e_swb_block.e_event_builder.r_ram_add[7] top.tb_swb_block.e_swb_block.e_event_builder.r_ram_add[6] top.tb_swb_block.e_swb_block.e_event_builder.r_ram_add[5] top.tb_swb_block.e_swb_block.e_event_builder.r_ram_add[4] top.tb_swb_block.e_swb_block.e_event_builder.r_ram_add[3] top.tb_swb_block.e_swb_block.e_event_builder.r_ram_add[2] top.tb_swb_block.e_swb_block.e_event_builder.r_ram_add[1] top.tb_swb_block.e_swb_block.e_event_builder.r_ram_add[0]
 @200
--Layer0 SOP
--Layer0 SH
--Layer0 HIT
--Layer1 SOP
--Layer1 SH
--Layer1 HIT
--Layer2 SOP
--Layer2 SH
--Layer2 HIT
+-Farm Data
+@22
+#{top.tb_swb_block.e_swb_block.o_farm_tx[0].data[31:0]} top.tb_swb_block.e_swb_block.o_farm_tx[0].data[31] top.tb_swb_block.e_swb_block.o_farm_tx[0].data[30] top.tb_swb_block.e_swb_block.o_farm_tx[0].data[29] top.tb_swb_block.e_swb_block.o_farm_tx[0].data[28] top.tb_swb_block.e_swb_block.o_farm_tx[0].data[27] top.tb_swb_block.e_swb_block.o_farm_tx[0].data[26] top.tb_swb_block.e_swb_block.o_farm_tx[0].data[25] top.tb_swb_block.e_swb_block.o_farm_tx[0].data[24] top.tb_swb_block.e_swb_block.o_farm_tx[0].data[23] top.tb_swb_block.e_swb_block.o_farm_tx[0].data[22] top.tb_swb_block.e_swb_block.o_farm_tx[0].data[21] top.tb_swb_block.e_swb_block.o_farm_tx[0].data[20] top.tb_swb_block.e_swb_block.o_farm_tx[0].data[19] top.tb_swb_block.e_swb_block.o_farm_tx[0].data[18] top.tb_swb_block.e_swb_block.o_farm_tx[0].data[17] top.tb_swb_block.e_swb_block.o_farm_tx[0].data[16] top.tb_swb_block.e_swb_block.o_farm_tx[0].data[15] top.tb_swb_block.e_swb_block.o_farm_tx[0].data[14] top.tb_swb_block.e_swb_block.o_farm_tx[0].data[13] top.tb_swb_block.e_swb_block.o_farm_tx[0].data[12] top.tb_swb_block.e_swb_block.o_farm_tx[0].data[11] top.tb_swb_block.e_swb_block.o_farm_tx[0].data[10] top.tb_swb_block.e_swb_block.o_farm_tx[0].data[9] top.tb_swb_block.e_swb_block.o_farm_tx[0].data[8] top.tb_swb_block.e_swb_block.o_farm_tx[0].data[7] top.tb_swb_block.e_swb_block.o_farm_tx[0].data[6] top.tb_swb_block.e_swb_block.o_farm_tx[0].data[5] top.tb_swb_block.e_swb_block.o_farm_tx[0].data[4] top.tb_swb_block.e_swb_block.o_farm_tx[0].data[3] top.tb_swb_block.e_swb_block.o_farm_tx[0].data[2] top.tb_swb_block.e_swb_block.o_farm_tx[0].data[1] top.tb_swb_block.e_swb_block.o_farm_tx[0].data[0]
+#{top.tb_swb_block.e_swb_block.o_farm_tx[1].data[31:0]} top.tb_swb_block.e_swb_block.o_farm_tx[1].data[31] top.tb_swb_block.e_swb_block.o_farm_tx[1].data[30] top.tb_swb_block.e_swb_block.o_farm_tx[1].data[29] top.tb_swb_block.e_swb_block.o_farm_tx[1].data[28] top.tb_swb_block.e_swb_block.o_farm_tx[1].data[27] top.tb_swb_block.e_swb_block.o_farm_tx[1].data[26] top.tb_swb_block.e_swb_block.o_farm_tx[1].data[25] top.tb_swb_block.e_swb_block.o_farm_tx[1].data[24] top.tb_swb_block.e_swb_block.o_farm_tx[1].data[23] top.tb_swb_block.e_swb_block.o_farm_tx[1].data[22] top.tb_swb_block.e_swb_block.o_farm_tx[1].data[21] top.tb_swb_block.e_swb_block.o_farm_tx[1].data[20] top.tb_swb_block.e_swb_block.o_farm_tx[1].data[19] top.tb_swb_block.e_swb_block.o_farm_tx[1].data[18] top.tb_swb_block.e_swb_block.o_farm_tx[1].data[17] top.tb_swb_block.e_swb_block.o_farm_tx[1].data[16] top.tb_swb_block.e_swb_block.o_farm_tx[1].data[15] top.tb_swb_block.e_swb_block.o_farm_tx[1].data[14] top.tb_swb_block.e_swb_block.o_farm_tx[1].data[13] top.tb_swb_block.e_swb_block.o_farm_tx[1].data[12] top.tb_swb_block.e_swb_block.o_farm_tx[1].data[11] top.tb_swb_block.e_swb_block.o_farm_tx[1].data[10] top.tb_swb_block.e_swb_block.o_farm_tx[1].data[9] top.tb_swb_block.e_swb_block.o_farm_tx[1].data[8] top.tb_swb_block.e_swb_block.o_farm_tx[1].data[7] top.tb_swb_block.e_swb_block.o_farm_tx[1].data[6] top.tb_swb_block.e_swb_block.o_farm_tx[1].data[5] top.tb_swb_block.e_swb_block.o_farm_tx[1].data[4] top.tb_swb_block.e_swb_block.o_farm_tx[1].data[3] top.tb_swb_block.e_swb_block.o_farm_tx[1].data[2] top.tb_swb_block.e_swb_block.o_farm_tx[1].data[1] top.tb_swb_block.e_swb_block.o_farm_tx[1].data[0]
+#{top.tb_swb_block.e_swb_block.o_farm_tx[2].data[31:0]} top.tb_swb_block.e_swb_block.o_farm_tx[2].data[31] top.tb_swb_block.e_swb_block.o_farm_tx[2].data[30] top.tb_swb_block.e_swb_block.o_farm_tx[2].data[29] top.tb_swb_block.e_swb_block.o_farm_tx[2].data[28] top.tb_swb_block.e_swb_block.o_farm_tx[2].data[27] top.tb_swb_block.e_swb_block.o_farm_tx[2].data[26] top.tb_swb_block.e_swb_block.o_farm_tx[2].data[25] top.tb_swb_block.e_swb_block.o_farm_tx[2].data[24] top.tb_swb_block.e_swb_block.o_farm_tx[2].data[23] top.tb_swb_block.e_swb_block.o_farm_tx[2].data[22] top.tb_swb_block.e_swb_block.o_farm_tx[2].data[21] top.tb_swb_block.e_swb_block.o_farm_tx[2].data[20] top.tb_swb_block.e_swb_block.o_farm_tx[2].data[19] top.tb_swb_block.e_swb_block.o_farm_tx[2].data[18] top.tb_swb_block.e_swb_block.o_farm_tx[2].data[17] top.tb_swb_block.e_swb_block.o_farm_tx[2].data[16] top.tb_swb_block.e_swb_block.o_farm_tx[2].data[15] top.tb_swb_block.e_swb_block.o_farm_tx[2].data[14] top.tb_swb_block.e_swb_block.o_farm_tx[2].data[13] top.tb_swb_block.e_swb_block.o_farm_tx[2].data[12] top.tb_swb_block.e_swb_block.o_farm_tx[2].data[11] top.tb_swb_block.e_swb_block.o_farm_tx[2].data[10] top.tb_swb_block.e_swb_block.o_farm_tx[2].data[9] top.tb_swb_block.e_swb_block.o_farm_tx[2].data[8] top.tb_swb_block.e_swb_block.o_farm_tx[2].data[7] top.tb_swb_block.e_swb_block.o_farm_tx[2].data[6] top.tb_swb_block.e_swb_block.o_farm_tx[2].data[5] top.tb_swb_block.e_swb_block.o_farm_tx[2].data[4] top.tb_swb_block.e_swb_block.o_farm_tx[2].data[3] top.tb_swb_block.e_swb_block.o_farm_tx[2].data[2] top.tb_swb_block.e_swb_block.o_farm_tx[2].data[1] top.tb_swb_block.e_swb_block.o_farm_tx[2].data[0]
 [pattern_trace] 1
 [pattern_trace] 0
