@@ -37,7 +37,7 @@ def main(fname, outname):
     
     del lines[0:pkgindex]
 
-    outnameDoc = outname.split(".")[0] + ".md"
+    outnameDoc = outname.split(".h")[0] + ".md"
     docFile = open(outnameDoc, "w")
     docStr = ''
     docStr += '## Doc file for {}\n\n'.format(fname)
