@@ -66,6 +66,7 @@
 
 <div id="mmain">
 
+  IP-RootServer: <input type="text" placeholder="192.168.0.11" id="serverIP" name="serverIP">
   <h1>Global DQ Histograms Pixel</h1>
   <div id="global"></div>
   
@@ -109,11 +110,13 @@
   
   // page settings
   var startID = 0;
+  var serverIP = "";
   var runNumber = 0;
   var fileName = "";
   var fileNameScifi = "";
   function getPageStatus() {
     startID = parseInt(document.getElementById("startID").value);
+    serverIP = parseInt(document.getElementById("serverIP").value);
     
     mjsonrpc_db_get_values(["/runinfo/run number"]).then(function(rpc) {
       runNumber = rpc.result.data[0];
@@ -140,15 +143,15 @@
 
     // draw global maps
     for (let i = 0; i < gHistos.length; i++) {
-//       let gH = await httpRequest('http://localhost:8088/Files/'+fileName+'/HitData/exe.json?method=Draw&prototype="Option_t*"&opt="'+gHistos[i]+'>>h1"&_ret_object_=h1', 'object');
-      let gH = await httpRequest('http://localhost:8088/Files/'+fileName+'/'+gHistos[i]+'/root.json', 'object');
+//       let gH = await httpRequest('http://'+serverIP+':8088/Files/'+fileName+'/HitData/exe.json?method=Draw&prototype="Option_t*"&opt="'+gHistos[i]+'>>h1"&_ret_object_=h1', 'object');
+      let gH = await httpRequest('http://'+serverIP+':8088/Files/'+fileName+'/'+gHistos[i]+'/root.json', 'object');
       redraw('global'+i, gH, 'hist');
     }
     
     // draw chipCor
     for (let i = 0; i < gChipCor.length; i++) {
-//       let gH = await httpRequest('http://localhost:8088/Files/'+fileName+'/HitData/exe.json?method=Draw&prototype="Option_t*"&opt="'+gHistos[i]+'>>h1"&_ret_object_=h1', 'object');
-      let gH = await httpRequest('http://localhost:8088/Files/'+fileName+'/'+gChipCor[i]+'/root.json', 'object');
+//       let gH = await httpRequest('http://'+serverIP+':8088/Files/'+fileName+'/HitData/exe.json?method=Draw&prototype="Option_t*"&opt="'+gHistos[i]+'>>h1"&_ret_object_=h1', 'object');
+      let gH = await httpRequest('http://'+serverIP+':8088/Files/'+fileName+'/'+gChipCor[i]+'/root.json', 'object');
       if (gChipCor[i] == "timeDiff") {
         redraw('chipcor'+i, gH, 'hist');
       } else {
@@ -160,16 +163,16 @@
     for (let i = 0; i < 10; i++) {
       let curI = i + startID;
       if (isNaN(curI)) curI = i;
-      let hitmap = await httpRequest('http://localhost:8088/Files/'+fileName+'/chip'+curI+'_hitmap/root.json', 'object');
-      let timestamp = await httpRequest('http://localhost:8088/Files/'+fileName+'/chip'+curI+'_ts/root.json', 'object');
+      let hitmap = await httpRequest('http://'+serverIP+':8088/Files/'+fileName+'/chip'+curI+'_hitmap/root.json', 'object');
+      let timestamp = await httpRequest('http://'+serverIP+':8088/Files/'+fileName+'/chip'+curI+'_ts/root.json', 'object');
       redraw('hitmap'+i, hitmap, 'colz');
       redraw('timestamp'+i, timestamp, 'hist');
     }
     
     // draw global maps scifi
     for (let i = 0; i < gHistosScifi.length; i++) {
-//       let gH = await httpRequest('http://localhost:8088/Files/'+fileName+'/HitData/exe.json?method=Draw&prototype="Option_t*"&opt="'+gHistos[i]+'>>h1"&_ret_object_=h1', 'object');
-      let gH = await httpRequest('http://localhost:8088/Files/'+fileNameScifi+'/ScifiSW_DQ_histograms/'+gHistosScifi[i]+'/root.json', 'object');
+//       let gH = await httpRequest('http://'+serverIP+':8088/Files/'+fileName+'/HitData/exe.json?method=Draw&prototype="Option_t*"&opt="'+gHistos[i]+'>>h1"&_ret_object_=h1', 'object');
+      let gH = await httpRequest('http://'+serverIP+':8088/Files/'+fileNameScifi+'/ScifiSW_DQ_histograms/'+gHistosScifi[i]+'/root.json', 'object');
       redraw('globalScifi'+i, gH, 'hist');
     }
   }

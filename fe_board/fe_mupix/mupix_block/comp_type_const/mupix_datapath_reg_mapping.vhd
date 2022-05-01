@@ -81,7 +81,8 @@ begin
     end process;
 
     gen_mask_order: for i in 0 to 35 generate
-        mp_lvds_link_mask_ordered(LINK_ORDER_g(i))         <= mp_lvds_link_mask(i);
+        --mp_lvds_link_mask_ordered(LINK_ORDER_g(i))         <= mp_lvds_link_mask(i);
+        mp_lvds_link_mask_ordered(i)         <= mp_lvds_link_mask(i);
     end generate;
 
     process (i_clk156, i_reset_n)

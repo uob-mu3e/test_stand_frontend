@@ -734,9 +734,9 @@ try{ // TODO: What can throw here?? Why?? Is there another way to handle this??
    }while( (link_active_from_register & link_active_from_odb) != link_active_from_odb && (timeout_cnt > 0));
 
    if(timeout_cnt==0) {
-      cm_msg(MERROR,"switch_fe","Run number mismatch on run %d", run_number);
+      cm_msg(MERROR,"switch_fe","Run number mismatch on run %d, not aborting run start, TODO: Debug", run_number);
       print_ack_state();
-      return CM_TRANSITION_CANCELED;
+      //return CM_TRANSITION_CANCELED; // MM: insert again once mismatch issue found
    }
 
    set_equipment_status(equipment[EQUIPMENT_ID::SciFi].name, "Scintillating...", "mblue");
