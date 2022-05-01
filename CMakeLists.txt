@@ -43,6 +43,7 @@ find_package(Doxygen 1.8)
 message("here we set GLVND to default (https://cmake.org/cmake/help/git-stage/policy/CMP0072.html)")
 set(OpenGL_GL_PREFERENCE GLVND)
 find_package(OpenGL)
+find_package(CUDA)
 
 set(LIBMUDAQ_DIR ${PROJECT_SOURCE_DIR}/common/libmudaq)
 set(LIBMUPIX_DIR ${PROJECT_SOURCE_DIR}/common/libmupix)
@@ -79,13 +80,7 @@ include_directories(${MIDAS_INCLUDE_DIRS})
 
 add_subdirectory(common)
 add_subdirectory(backend_pc)
-#add_subdirectory(common/kerneldriver)
-#add_subdirectory(common/libmudaq)
-#add_subdirectory(common/libmupix)
-#add_subdirectory(common/libmutrig)
-#add_subdirectory(common/libMALIBU)
 add_subdirectory(switching_pc)
-
 
 if(APPLE)
     message("Compile for Apple")
