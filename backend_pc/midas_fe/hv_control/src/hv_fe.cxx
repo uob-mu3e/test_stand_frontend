@@ -22,7 +22,7 @@
 /*-- Globals -------------------------------------------------------*/
 
 /* The frontend name (client name) as seen by other MIDAS clients   */
-const char *frontend_name = "SC Frontend";
+const char *frontend_name = "HV Frontend";
 /* The frontend file name, don't change it */
 const char *frontend_file_name = __FILE__;
 
@@ -94,19 +94,27 @@ INT frontend_init()
 
    /*---- set correct ODB device addresses ----*/
 
-   mdevice_mscbhv4 mupix("MuPix HV", "MuPix HV", "mscb394");
-   mupix.define_box(1, {"U0-0", "U0-1", "U0-2", "U0-3"});
-   mupix.define_box(2, {"U1-0", "U1-1", "U1-2", "U1-3"});
-   mupix.define_box(3, {"U2-0", "U2-1", "U2-2", "U2-3"});
-   mupix.define_box(4, {"U3-0", "U3-1", "U3-2", "U3-3"});
-   mupix.define_box(5, {"D0-0", "D0-1", "D0-2", "D0-3"});
-   mupix.define_box(6, {"D1-0", "D1-1", "D1-2", "D1-3"});
-   mupix.define_box(7, {"D2-0", "D2-1", "D2-2", "D2-3"});
-   mupix.define_box(8, {"D3-0", "D3-1", "D3-2", "D3-3"});
+   mdevice_mscbhv4 mupixUS("MuPix HV", "MuPix HV US", "mscb422");
+   mupixUS.define_box(1, {"U0-0", "U0-1", "U0-2", "U0-3"});
+   mupixUS.define_box(2, {"U0-4", "U0-5", "U0-6", "U0-7"});
+   mupixUS.define_box(3, {"U1-0&1", "U1-2", "U1-3", "U1-9"});
+   mupixUS.define_box(4, {"U1-4", "U1-5&6", "U1-7", "U1-8"});
+   //mupixUS.define_panel("HV", 0, 3);
+   
+   mdevice_mscbhv4 mupixDS("MuPix HV", "MuPix HV DS", "mscb427");
+   mupixDS.define_box(5, {"D0-0", "D0-1", "D0-2", "D0-3"});
+   mupixDS.define_box(6, {"D0-4", "D0-5", "D0-6", "D0-7"});
+   mupixDS.define_box(7, {"D1-0&1", "D1-2", "D1-3", "D1-9"});
+   mupixDS.define_box(8, {"D1-4", "D1-5&6", "D1-7", "D1-8"});
+   //mupixDS.define_panel("HV", 0, 3);
 
-   mdevice_mscbhv4 scifi("SciFi HV", "SciFi HV", "mscb394");
-   scifi.define_box(20, {"Module 2U", "Module 1U", "", ""});
-   scifi.define_box(21, {"", "", "Module 2D", "Module 1D"});
+   mdevice_mscbhv4 scifiUS("SciFi HV", "SciFi HV US", "mscb422");
+   scifiUS.define_box(27, {"Module 2U", "Module 1U", "SciFi spare 1", "SciFi spare 2"});
+   //scifiUS.define_panel("HV", 0, 3);
+
+   mdevice_mscbhv4 scifiDS("SciFi HV", "SciFi HV DS", "mscb427");
+   scifiDS.define_box(25, {"Module 2D", "Module 1D", "SciFi spare 3", "SciFi spare 4"});
+   //scifiDS.define_panel("HV", 0, 3);
 
    return CM_SUCCESS;
 }
