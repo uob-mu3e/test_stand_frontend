@@ -43,7 +43,7 @@ architecture RTL of tdac_memory is
         );
     end component tdacMemPLL;
 
-    constant N_PAGES_PER_CHIP : integer := 4;     -- divide tune dacs of 1 Chip into N_PAGES_PER_CHIP blocks
+    constant N_PAGES_PER_CHIP : integer := 128;     -- divide tune dacs of 1 Chip into N_PAGES_PER_CHIP blocks
     constant N_COLS_PER_PAGE  : integer := 128/N_PAGES_PER_CHIP;
 
 
@@ -163,7 +163,7 @@ begin
 
                 else 
                     -- if we are not yet at the end of the page we incr the address by one
-                    addr_in_current_page <= std_logic_vector(to_unsigned(to_integer(unsigned(addr_in_current_page)) + 1,ADDR_WIDTH_g-PAGE_ADDR_WIDTH_g));
+                    addr_in_current_page <=  std_logic_vector(unsigned(addr_in_current_page) + 1); --std_logic_vector(to_unsigned(to_integer(unsigned(addr_in_current_page)) + 1,ADDR_WIDTH_g-PAGE_ADDR_WIDTH_g));
                     -- saving chip and in_use of that page here and not above for reasons on the read side
                     TDAC_page_array(current_write_page).chip    <= i_chip; 
                     TDAC_page_array(current_write_page).in_use  <= true; 
