@@ -60,9 +60,9 @@ package a10_counters is
     constant FARM_DDR_DMA_HALFFULL          :  integer := 16#03#;
 
     -- bank builder without ddr (23-26)
-    constant FARM_DDR_BUILDER_IDLE_NOT_HEADER_CNT   :  integer := 16#00#;
-    constant FARM_DDR_BUILDER_SKIP_EVENT_CNT        :  integer := 16#01#;
-    constant FARM_DDR_BUILDER_EVENT_CNT             :  integer := 16#02#;
-    constant FARM_DDR_BUILDER_TAG_FIFO_FULL_CNT     :  integer := 16#03#;
+    constant FARM_BANK_BUILDER_IDLE_NOT_HEADER_CNT   :  integer := 16#00#;
+    constant FARM_BANK_BUILDER_SKIP_EVENT_CNT        :  integer := 16#01#;
+    constant FARM_BANK_BUILDER_EVENT_CNT             :  integer := 16#02#;
+    constant FARM_BANK_BUILDER_TAG_FIFO_FULL_CNT     :  integer := 16#03#;
 
 end package;

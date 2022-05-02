@@ -1,6 +1,8 @@
+const string eq_name = "ROSWBCentral";
+
 EQUIPMENT equipment[] = {
 
-   {"ro_swb_central",                /* equipment name */
+   {"ROSWBCentral",                /* equipment name */
     {1, 0,                   /* event ID, trigger mask */
      "SYSTEM",               /* event buffer */
      EQ_USER,                /* equipment type */

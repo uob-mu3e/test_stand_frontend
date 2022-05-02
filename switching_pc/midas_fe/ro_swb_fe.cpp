@@ -90,6 +90,8 @@ uint64_t get_link_active_from_odb(odb o);
 #include "ro_swb_fe_central.inc"
 // Others to be written
 
+string path_s = "/Equipment/" + eq_name + "/Settings";
+
 /*-- Frontend Init -------------------------------------------------*/
 
 INT frontend_init()
@@ -154,7 +156,7 @@ void setup_odb(){
         {"dma_buf_size", int(dma_buf_size)}
     };
 
-    stream_settings.connect("/Equipment/Stream/Settings");
+    stream_settings.connect(path_s);
 }
 
 // INIT MUDAQ //////////////////////////////
@@ -237,7 +239,7 @@ INT begin_of_run(INT run_number, char *error)
 
     // setup readout registers
     odb stream_settings;
-    stream_settings.connect("/Equipment/Stream/Settings");
+    stream_settings.connect(path_s);
 
     readout_state_regs = 0;
 

@@ -79,6 +79,9 @@ begin
         "1110101" when i_fpgaID = x"4" and i_chipID = x"9" else
         "1110110" when i_fpgaID = x"4" and i_chipID = x"a" else
         "1110111" when i_fpgaID = x"4" and i_chipID = x"b" else
+        -- trigger input
+        "1111000" when i_fpgaID = x"5" and i_chipID = x"3" else
+        "1111001" when i_fpgaID = x"5" and i_chipID = x"4" else
         "1111111";
 
 end architecture;
