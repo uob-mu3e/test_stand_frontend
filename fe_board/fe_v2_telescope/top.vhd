@@ -188,7 +188,7 @@ architecture rtl of top is
     signal mp_ctrl_clock            : std_logic_vector(3  downto 0);
     signal mp_ctrl_SIN              : std_logic_vector(3  downto 0);
     signal mp_ctrl_mosi             : std_logic_vector(3  downto 0);
-    signal mp_ctrl_csn              : std_logic_vector(11 downto 0);
+    signal mp_ctrl_cs               : std_logic_vector(11 downto 0);
 
     signal testcounter              : std_logic_vector(31 downto 0);
     signal fastcounter              : std_logic_vector(31 downto 0);
@@ -272,12 +272,12 @@ begin
     mosi_C <= mp_ctrl_mosi(0);
     mosi_D <= mp_ctrl_mosi(0);
 
-	-- TODO: reverse this again (cabling mistake in muEDM run hotfix)
-    csn_A <= (others => (mp_ctrl_csn(3)));
-    csn_B <= (others => (mp_ctrl_csn(0)));
-    csn_C <= (others => mp_ctrl_csn(1));
-    csn_D <= (others => mp_ctrl_csn(2));
-	
+    -- TODO: reverse this again (cabling mistake in muEDM run hotfix)
+    csn_A <= (others => mp_ctrl_cs(3));
+    csn_B <= (others => mp_ctrl_cs(0));
+    csn_C <= (others => mp_ctrl_cs(1));
+    csn_D <= (others => mp_ctrl_cs(2));
+
 --    csn_A <= (others => (not mp_ctrl_csn(0)));
 --    csn_B <= (others => (not mp_ctrl_csn(1)));
 --    csn_C <= (others => mp_ctrl_csn(3));
@@ -308,7 +308,7 @@ begin
         o_clock                 => mp_ctrl_clock,
         o_SIN                   => mp_ctrl_SIN,
         o_mosi                  => mp_ctrl_mosi,
-        o_csn                   => mp_ctrl_csn,
+        o_cs                    => mp_ctrl_cs,
 
         -- mupix dac regs
         i_reg_add               => mupix_reg.addr(15 downto 0),
