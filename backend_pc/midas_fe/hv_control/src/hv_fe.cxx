@@ -95,26 +95,36 @@ INT frontend_init()
    /*---- set correct ODB device addresses ----*/
 
    mdevice_mscbhv4 mupixUS("MuPix HV", "MuPix HV US", "mscb422");
+   mupixUS.set_hvmax(60);
    mupixUS.define_box(1, {"U0-0", "U0-1", "U0-2", "U0-3"});
    mupixUS.define_box(2, {"U0-4", "U0-5", "U0-6", "U0-7"});
    mupixUS.define_box(3, {"U1-0&1", "U1-2", "U1-3", "U1-9"});
+   mupixUS.set_hvmax(20);
    mupixUS.define_box(4, {"U1-4", "U1-5&6", "U1-7", "U1-8"});
-   //mupixUS.define_panel("HV", 0, 3);
-   
+   mupixUS.define_history_panel("US V", "Measured");
+   mupixUS.define_history_panel("US I", "Current");
+
    mdevice_mscbhv4 mupixDS("MuPix HV", "MuPix HV DS", "mscb427");
+   mupixDS.set_hvmax(60);
    mupixDS.define_box(5, {"D0-0", "D0-1", "D0-2", "D0-3"});
    mupixDS.define_box(6, {"D0-4", "D0-5", "D0-6", "D0-7"});
    mupixDS.define_box(7, {"D1-0&1", "D1-2", "D1-3", "D1-9"});
+   mupixDS.set_hvmax(20);
    mupixDS.define_box(8, {"D1-4", "D1-5&6", "D1-7", "D1-8"});
-   //mupixDS.define_panel("HV", 0, 3);
+   mupixDS.define_history_panel("DS V", "Measured");
+   mupixDS.define_history_panel("DS I", "Current");
 
    mdevice_mscbhv4 scifiUS("SciFi HV", "SciFi HV US", "mscb422");
-   scifiUS.define_box(27, {"Module 2U", "Module 1U", "SciFi spare 1", "SciFi spare 2"});
-   //scifiUS.define_panel("HV", 0, 3);
+   scifiUS.set_hvmax(60);
+   scifiUS.define_box(27, {"US-0"});
+   scifiUS.define_history_panel("US V", "Measured");
+   scifiUS.define_history_panel("US I", "Current");
 
    mdevice_mscbhv4 scifiDS("SciFi HV", "SciFi HV DS", "mscb427");
-   scifiDS.define_box(25, {"Module 2D", "Module 1D", "SciFi spare 3", "SciFi spare 4"});
-   //scifiDS.define_panel("HV", 0, 3);
+   scifiDS.set_hvmax(60);
+   scifiDS.define_box(25, {"DS-0"});
+   scifiDS.define_history_panel("DS V", "Measured");
+   scifiDS.define_history_panel("DS I", "Current");
 
    return CM_SUCCESS;
 }
