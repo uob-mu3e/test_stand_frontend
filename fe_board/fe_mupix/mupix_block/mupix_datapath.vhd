@@ -168,6 +168,9 @@ architecture rtl of mupix_datapath is
     signal ena3_counter             : std_logic_vector(31 downto 0);
     signal ena4_counter             : std_logic_vector(31 downto 0);
 
+    -- trigger
+    signal trigger0, trigger1, trigger0_reg, trigger1_reg : std_logic_vector(31 downto 0);
+
 begin
 
     process(i_clk156)
@@ -284,6 +287,10 @@ begin
         i_mp_hit_ena_cnt            => hit_ena_cnt,
         i_mp_sorter_in_hit_ena_cnt  => hitsorter_in_ena_cnt,
         i_mp_sorter_out_hit_ena_cnt => hitsorter_out_ena_cnt_reg,
+        i_trigger0                  => trigger0,
+        i_trigger1                  => trigger1,
+        i_trigger0_reg              => trigger0_reg,
+        i_trigger1_reg              => trigger1_reg,
 
         -- outputs 156--------------------------------------------
         o_mp_datagen_control        => mp_datagen_control_reg,
@@ -613,6 +620,21 @@ begin
     );
     gen_seed <= i_fpga_id & not i_fpga_id & i_fpga_id & not i_fpga_id & not i_fpga_id & i_fpga_id & i_fpga_id & not i_fpga_id & '0';
 
+    -- get frequency of trigger
+    process(i_clk125)
+    begin
+    if(rising_edge(i_clk125))then
+        if ( fifo_write = '1' and fifo_wdata(27 downto 22) = "000011" ) then
+            trigger0        <= fifo_wdata(31 downto 0);
+            trigger0_reg    <= trigger0;
+        end if;
+
+        if ( fifo_write = '1' and fifo_wdata(27 downto 22) = "000100" ) then
+            trigger1        <= fifo_wdata(31 downto 0);
+            trigger1_reg    <= trigger1;
+        end if;
+    end if;
+    end process;
 
     -- sync some things ..
     sync_fifo_cnt : entity work.ip_dcfifo

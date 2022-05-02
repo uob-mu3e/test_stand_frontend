@@ -6,7 +6,11 @@ struct mupix_datapath_t {
         //auto& regs = sc->ram->regs.scifi;
         alt_u32 datagenreg = 0x0;
         char str[2] = {0};
-        
+        alt_u32 trigger0_time = 0x0;
+        alt_u32 trigger0_time_pre = 0x0;
+        alt_u32 trigger1_time = 0x0;
+        alt_u32 trigger1_time_pre = 0x0;
+
         while(1) {
             printf("  [0] => write datagen control reg\n");
             printf("  [1] => read  datagen control reg\n");
@@ -30,6 +34,7 @@ struct mupix_datapath_t {
             printf("  [6] => set data bypass select\n");
             printf("  [7] => write sorter inject reg\n");
             printf("  [8] => print hit ena counters\n");
+            printf("  [9] => print trigger diff\n");
             
             if((sc->ram->data[MP_DATA_GEN_CONTROL_REGISTER_W] >> 4) & 1U){
                 printf("\n DataGen RATE: Full Stream\n");
@@ -134,6 +139,14 @@ struct mupix_datapath_t {
                 printf("  0x%08x\n",sc->ram->data[0xFFC3]);
                 */
                 break;
+	    case '9':
+		trigger0_time 		= (sc->ram->data[MP_TRIGGER0_REGISTER_R] >> 1) & 0x1FFFFF;
+		trigger0_time_pre 	= (sc->ram->data[MP_TRIGGER0_REG_REGISTER_R] >> 1) & 0x1FFFFF;
+		trigger1_time 		= (sc->ram->data[MP_TRIGGER1_REGISTER_R] >> 1) & 0x1FFFFF;
+		trigger1_time_pre 	= (sc->ram->data[MP_TRIGGER1_REG_REGISTER_R] >> 1) & 0x1FFFFF;
+		printf("Trigger0: %d, trigger0_time_pre: %d, trigger1_time: %d, trigger1_time_pre: %d\n", trigger0_time, trigger0_time_pre, trigger1_time, trigger1_time_pre);
+		printf("TriggerFreq: %d, triggerFreq: %d\n", trigger0_time - trigger0_time_pre, trigger1_time - trigger1_time_pre);
+		break;
             case 'q':
                 return;
             default:
