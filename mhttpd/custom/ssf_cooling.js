@@ -43,3 +43,14 @@
 ////document.getElementById("4_pres_v").addEventListener('DOMSubtreeModified', function () {
 ////    document.getElementById("4_press_bar").textContent = convert_v_to_bar(document.getElementById("4_pres_v").textContent)
 ////})
+	//
+	//
+function doSomething() {
+   document.getElementById("debug").textContent += document.getElementById("1_temp_c").textContent + " - " + document.getElementById("2_temp_c").textContent + " - " + document.getElementById("3_temp_c").textContent + " - " + document.getElementById("4_temp_c").textContent + "\n" ;
+   document.getElementById("debug").textContent += document.getElementById("1_pres_p").textContent + " - " + document.getElementById("2_pres_p").textContent + " - " + document.getElementById("3_pres_p").textContent + " - " + document.getElementById("4_pres_p").textContent + "\n" ;
+   document.getElementById("debug").textContent += document.getElementById("1_flow_l").textContent + " - " + document.getElementById("2_flow_l").textContent + "\n" ;
+   document.getElementById("debug").textContent += "-----------------\n";
+}
+
+//setInterval(doSomething, 30000); // Time in milliseconds
+

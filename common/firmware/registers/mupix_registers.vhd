@@ -88,6 +88,10 @@ constant MUPIX_LVDS_STATUS_BLOCK_LENGTH     : integer := 36;
     constant MP_RESET_LVDS_N_REGISTER_W         :  integer := 16#130F#;       -- DOC: reset register for mupix lvds rx | MP_FEB
     constant MP_USE_ARRIVAL_TIME1_REGISTER_W    :  integer := 16#1310#;       -- DOC: use hit arrival time instead of timestamp from mupix (lower 32 chips) | MP_FEB
     constant MP_USE_ARRIVAL_TIME2_REGISTER_W    :  integer := 16#1311#;       -- DOC: use hit arrival time instead of timestamp from mupix (uppder 4 chips) | MP_FEB
+    constant MP_TRIGGER0_REGISTER_R             :  integer := 16#1312#;       -- DOC: trigger0 | MP_FEB
+    constant MP_TRIGGER1_REGISTER_R             :  integer := 16#1313#;       -- DOC: trigger1 | MP_FEB
+    constant MP_TRIGGER0_REG_REGISTER_R         :  integer := 16#1314#;       -- DOC: Prev-trigger0 | MP_FEB
+    constant MP_TRIGGER1_REG_REGISTER_R         :  integer := 16#1315#;       -- DOC: Prev-trigger1 | MP_FEB
 
 -----------------------------------------------------------------
 ---- mupix PLL lock monitor (0x1200-0x12FF)----------------------

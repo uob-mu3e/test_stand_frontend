@@ -184,7 +184,7 @@ var chip_clicked = function (ladname, chip) {
     change_state_chip(current_lad_chips[chip]["chip"], "selected")
     current_chip_selected = chip
     reset_table("pixel_parameters", 0)
-    tab_fill = {"SpecBook ID:" : "SpecBookId", "MIDAS ID:" : "MIDAS_ID", "Event Display ID:" : "EventDisplayID", "Link A number:": "LinkA", "Link B number:": "LinkB", "Link C number:": "LinkC", "Status" : "Initial_Status"}
+    tab_fill = {"SpecBook ID:" : "SpecBookId", "Configuration ID:" : "MIDAS_ID", "Event Display ID:" : "EventDisplayID", "Link A number:": "LinkA", "Link B number:": "LinkB", "Link C number:": "LinkC", "Status" : "Initial_Status", "Optimized VPVCO" : "opt_VPVCO", "Optimized VNVCO" : "opt_VNVCO"}
     fill_table_by_json("pixel_parameters", current_lad_chips[chip]["json_node"], tab_fill)
     var chip_select_mask = 0xfff;
     var pos = current_lad_chips[current_chip_selected]["json_node"]["MIDAS_ID"];
@@ -210,6 +210,7 @@ var chip_clicked = function (ladname, chip) {
     for (i = 0; i < tablinks.length; i++) {
       tablinks[i].className = tablinks[i].className.replace(" active", "");
     }
+    change_qc_image()
 }
 
 var ladder_clicked = function(ladname) {
@@ -290,7 +291,32 @@ var ladder_clicked = function(ladname) {
             chip.classList.add("chip_dead")
             chip.textContent += "\nDEAD"
         }
-        else if (lads[ladname]["json_node"]["Chips"][ch_num]["Initial_Status"] == "OK") {
+        else if (lads[ladname]["json_node"]["Chips"][ch_num]["Initial_Status"] == "A") {
+            //chip.classList.add("chip_available")
+            chip.classList.add("chip_qc_a")
+            chip.textContent += "\nA"
+        }
+        else if (lads[ladname]["json_node"]["Chips"][ch_num]["Initial_Status"] == "B") {
+            //chip.classList.add("chip_available")
+            chip.classList.add("chip_qc_b")
+            chip.textContent += "\nB"
+        }
+        else if (lads[ladname]["json_node"]["Chips"][ch_num]["Initial_Status"] == "C") {
+            //chip.classList.add("chip_available")
+            chip.classList.add("chip_qc_c")
+            chip.textContent += "\nC"
+        }
+        else if (lads[ladname]["json_node"]["Chips"][ch_num]["Initial_Status"] == "D") {
+            //chip.classList.add("chip_available")
+            chip.classList.add("chip_qc_d")
+            chip.textContent += "\nD"
+        }
+        else if (lads[ladname]["json_node"]["Chips"][ch_num]["Initial_Status"] == "E") {
+            //chip.classList.add("chip_available")
+            chip.classList.add("chip_qc_e")
+            chip.textContent += "\nE"
+        }
+        else if (lads[ladname]["json_node"]["Chips"][ch_num]["Initial_Status"] == "N.A.") {
             chip.classList.add("chip_available")
         }
         chip.onclick = function () {chip_clicked(ladname, ch_num)}
@@ -307,6 +333,7 @@ var ladder_clicked = function(ladname) {
     document.getElementById("chip_dacs").style["visibility"] = "hidden"
     document.getElementById("configure_chip_div").style["visibility"] = "hidden"
     document.getElementById("pixel_configure_update").style["visibility"] = "hidden"
+    document.getElementById("qctestdiv").style["visibility"] = "hidden";
     reset_table("pixel_parameters", 0)
     reset_table("Bias_tab", 0)
     reset_table("Conf_tab", 0)
@@ -344,7 +371,7 @@ function openChipDacs(evt, dacName) {
         odb_dacName = "CONFDACS"
     else if (dacName === "VDAC")
         odb_dacName = "VDACS"
-    document.getElementById(dacName + "_head").textContent = "Change values in " + "/Equipment/PixelsCentral/Settings/" + odb_dacName + "/" + (parseInt(lads[current_selected]["json_node"]["FEB_ID"])*12 + parseInt(current_lad_chips[current_chip_selected]["json_node"]["MIDAS_ID"]))
+    document.getElementById(dacName + "_head").textContent = "Change values in " + "/Equipment/PixelsCentral/Settings/" + odb_dacName + "/" + parseInt(current_lad_chips[current_chip_selected]["json_node"]["MIDAS_ID"])
     reset_table(dacName + "_tab", 0)
     var table = document.getElementById(dacName + "_tab");
     table.style["visibility"] = "visible"
@@ -368,7 +395,7 @@ function openChipDacs(evt, dacName) {
         var cell2 = row1.insertCell(1);
         cell1.innerHTML = dac;
         cell2.classList.add("modbvalue")
-        var link = "/Equipment/PixelsCentral/Settings/" + odb_dacName + "/" + (parseInt(lads[current_selected]["json_node"]["FEB_ID"])*12 + parseInt(current_lad_chips[current_chip_selected]["json_node"]["MIDAS_ID"])) + "/" + dac
+        var link = "/Equipment/PixelsCentral/Settings/" + odb_dacName + "/" + parseInt(current_lad_chips[current_chip_selected]["json_node"]["MIDAS_ID"]) + "/" + dac
         cell2.setAttribute("data-odb-path", link)
         cell2.setAttribute("data-odb-editable", "1")
         cell2.id = "DAC_tab_" + dac
@@ -388,7 +415,7 @@ function openChipDacs(evt, dacName) {
 }
 
 function configureChip(evt) {
-    var mask_names = []
+    /*var mask_names = []
     var px_mask = []
     var num = (parseInt(lads[current_selected]["json_node"]["FEB_ID"])*12 + parseInt(current_lad_chips[current_chip_selected]["json_node"]["MIDAS_ID"]))
     for (var i = 0; i < 128; ++i) {
@@ -397,10 +424,9 @@ function configureChip(evt) {
             px_mask.push(false);
         else
             px_mask.push(true)
-    }
+    }*/
     document.getElementById("pixel_configure_update").style["visibility"] = "visible"
-    document.getElementById("pixel_configure_update_content").textContent = "Configuring chip number " + num
-    mjsonrpc_db_paste(mask_names, px_mask).then(function () {
+    /*mjsonrpc_db_paste(mask_names, px_mask).then(function () {
         mjsonrpc_db_paste(["/Equipment/SwitchingCentral/Commands/MupixConfig"], [true])
     }).catch(function(error) {
         mjsonrpc_error_alert(error);
@@ -409,13 +435,21 @@ function configureChip(evt) {
     var pos = current_lad_chips[current_chip_selected]["json_node"]["MIDAS_ID"];
     chip_select_mask &= ((~0x1) << pos);
     for (var i = 0; i < pos; ++i)
-        chip_select_mask |= (0x1 << i);
+        chip_select_mask |= (0x1 << i);*/
+
+    document.getElementById("pixel_configure_update_content").textContent = "Configuring chip number " + parseInt(current_lad_chips[current_chip_selected]["json_node"]["MIDAS_ID"])
+
     document.getElementById("debug").textContent = "0x" + chip_select_mask.toString(16);
+    mjsonrpc_db_paste(["/Equipment/SwitchingCentral/Commands/MupixChipToConfigure"], [parseInt(current_lad_chips[current_chip_selected]["json_node"]["MIDAS_ID"])]).then(function () {
+        mjsonrpc_db_paste(["/Equipment/SwitchingCentral/Commands/MupixConfig"], [true])
+    }).catch(function(error) {
+        mjsonrpc_error_alert(error);
+    });
 }
 
 function resetDACs(evt) {
     var odb_dacName = ""
-    var num = (parseInt(lads[current_selected]["json_node"]["FEB_ID"])*12 + parseInt(current_lad_chips[current_chip_selected]["json_node"]["MIDAS_ID"]))
+    var num = parseInt(current_lad_chips[current_chip_selected]["json_node"]["MIDAS_ID"])
     for (var dacName in mupix_dacs) {
         var daclist = []
         var dacvalues = []
@@ -454,7 +488,7 @@ function configureMultipleChip(evt) {
                     else
                         return
                     lad_name += "_L" +ladder
-                    num = (parseInt(lads[lad_name]["json_node"]["FEB_ID"])*12 + parseInt(lads[lad_name]["json_node"]["Chips"][chip]["MIDAS_ID"]))
+                    num = parseInt(lads[lad_name]["json_node"]["Chips"][chip]["MIDAS_ID"])
                     mask_names.push("/Equipment/PixelsCentral/Settings/Daq/mask[" + num + "]")
                     if (multiple_chip_boxes[direction][layer][ladder][chip].checked == true) {
                         document.getElementById("debug").textContent += lad_name + " : " + num + " - "
@@ -601,6 +635,49 @@ var list_chips_configuration = function (ele, direction) {
             ele.appendChild(linebreak)
         }
     }
+}
+
+var change_qc_image = function () {
+
+    /*var xmlhttp = new XMLHttpRequest();
+    //xmlhttp.responseType = "arraybuffer";
+    xmlhttp.onreadystatechange = function(){
+      if(xmlhttp.status==200 && xmlhttp.readyState==4){
+        document.getElementById("QC").src = xmlhttp.responseText;
+        //document.getElementById("QC").setAttribute('src', "http://mu3ebe:8081/home/mu3e/online/online/pixels/qctest/ladder/output/IV_"+String((current_chip_selected))+".png")
+    }
+      else {
+          document.getElementById("QC").textContent = "NOOOOOOO IMAGE!!!" ;
+      }
+    }
+    xmlhttp.open("GET","http://mu3ebe:8081//home/mu3e/online/online/pixels/qctest/ladder/output/IV_"+String((current_chip_selected))+".png",true);
+    xmlhttp.send();*/
+    lad_id = parseInt(parseInt(current_lad_chips[current_chip_selected]["json_node"]["MIDAS_ID"])/3)
+    if (lad_id > 17)
+        lad_id += 2
+    document.getElementById("QC").src="http://mu3ebe:8081//home/mu3e/online/online/pixels/qctest/ladder/ana_output/ladder_" + lad_id  + "_chip_" + parseInt(current_lad_chips[current_chip_selected]["json_node"]["MIDAS_ID"])%3 + ".png";
+    document.getElementById("qctestdiv").style["visibility"] = "visible";
+
+}
+
+var update_qc_dacs_link = function() {
+    chip_id = current_lad_chips[current_chip_selected]["json_node"]["MIDAS_ID"]
+    opt_vpvco = current_lad_chips[current_chip_selected]["json_node"]["opt_VPVCO"]
+    opt_vnvco = current_lad_chips[current_chip_selected]["json_node"]["opt_VNVCO"]
+    if (opt_vpvco == 0) {
+        document.getElementById("pixel_configure_update_content").textContent = "VPVCO and VNVCO not optimized for chip " + chip_id
+        return
+    }
+    else {
+        link_vpvco = "/Equipment/PixelsCentral/Settings/BIASDACS/" + parseInt(current_lad_chips[current_chip_selected]["json_node"]["MIDAS_ID"]) + "/VPVCO"
+        link_vnvco = "/Equipment/PixelsCentral/Settings/BIASDACS/" + parseInt(current_lad_chips[current_chip_selected]["json_node"]["MIDAS_ID"]) + "/VNVCO"
+        mjsonrpc_db_paste([link_vpvco, link_vnvco], [opt_vpvco, opt_vnvco]).then(function () {
+            document.getElementById("pixel_configure_update_content").textContent = "VPVCO for chip " + chip_id + " set to " + opt_vpvco
+            document.getElementById("pixel_configure_update_content").textContent += ", VNVCO for chip " + chip_id + " set to " + opt_vnvco
+        }).catch(function(error) {
+            mjsonrpc_error_alert(error);
+        });
+        }
 }
 
 var setup_listeners = function () {

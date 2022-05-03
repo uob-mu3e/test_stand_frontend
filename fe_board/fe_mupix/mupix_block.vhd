@@ -126,7 +126,7 @@ begin
         i_fpga_id           => i_fpga_id,
         i_run_state_125     => i_run_state_125,
         i_run_state_156     => i_run_state_156,
-        
+
         i_trigger_in0       => i_trigger_in0,
         i_trigger_in1       => i_trigger_in1,
         i_trigger_in0_timestamp => i_trigger_in0_timestamp,

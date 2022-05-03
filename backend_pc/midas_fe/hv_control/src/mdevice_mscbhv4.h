@@ -8,6 +8,7 @@
 */
 
 class mdevice_mscbhv4: public mdevice {
+   double mHvMax = -1;
 public:
    mdevice_mscbhv4(std::string eq_name,
                    std::string dev_name,
@@ -34,7 +35,12 @@ public:
       dev["MSCB Pwd"]    = pwd;
    }
 
-   void define_box(int address, std::vector<std::string> name, int n_channels = 4)
+   void set_hvmax(double hv_max)
+   {
+      mHvMax = hv_max;
+   }
+
+   void define_box(int address, std::vector<std::string> name, double hv_max = -1)
    {
       // count total number of input channels
       int chn_total = 0;
@@ -47,6 +53,8 @@ public:
       if (chn_total == 0)
          mOdbSettings["Names"][0] = std::string(31, '\0');
 
+      int n_channels = name.size();
+
       for (int i=0 ; i<n_channels ; i++) {
          if (i >= (int) name.size() || name[i] == std::string("")) {
             // put some default name, names must be unique
@@ -55,10 +63,34 @@ public:
                     std::to_string(address) + "-" + std::to_string(i);
          } else
             mOdbSettings["Names"][chn_total + i] = name[i];
+
+         mName.push_back(name[i]);
+
+         if (hv_max != -1)
+            mOdbSettings["Voltage Limit"][chn_total + i] = (float)hv_max;
+         else if (mHvMax != -1)
+            mOdbSettings["Voltage Limit"][chn_total + i] = (float)mHvMax;
       }
 
       mEq->driver[mDevIndex].channels += n_channels;
       mNchannels += n_channels;
+   }
+
+   void define_history_panel(std::string panelName, std::string varName)
+   {
+      std::vector<std::string> vars;
+
+      int chn_first = 0;
+      for (int i=0 ; i < mDevIndex ; i++)
+         chn_first += mEq->driver[i].channels;
+
+
+      for (int i=chn_first ; i<chn_first + mEq->driver[mDevIndex].channels ; i++) {
+         std::string name =  mOdbSettings["Names"][i];
+         vars.push_back(mEq->name + std::string(":") + name + std::string(" ") + varName);
+      }
+
+      hs_define_panel(mEq->name, panelName.c_str(), vars);
    }
 
 };

@@ -114,6 +114,7 @@ LOOP i, 3
         IF $chip_config_current < $_max_config_current
             # Current increase in range, test passed. 
             ODBSET $path_Eval/LV_power_ON[$i-1], 1
+        ENDIF
         control_flag = $control_flag -1
     ENDIF
 ENDLOOP

@@ -1,2011 +1,2227 @@
 {
-  "Description": [
-    "JSON file for mu3e pixel configuration. Current subdivision",
-    "Subdivisions",
-    "-Stations (Tracker/Central/RecurlUS/RecurlDS",
-    "--Direction (Upsream/Downstream)",
-    "---Layers (0/1) (see specbook)",
-    "----Ladders (0/1/...)",
-    "-----Chips (0/1/...)",
-    "Every ladder has:",
-    "-SpecbookID: ID as found on specbook (valid within the layer)",
-    "-FEB_ID: FEB number, the ID of the FEB in MIDAS",
-    "-FEB_channel: the channel used in MIDAS",
-    "-phi: position on the phi angle",
-    "Every chip has:",
-    "-SpecbookID: Id as on specbook (valid within the ladder)",
-    "-MIDAS_ID: the ID within the FEB assigned for MIDAS (used during configuration)",
-    "-EventDisplayID: ID for the event display (unique for every chip)",
-    "Note: the key designating each layer/ladder/chip is an increasing number, but it is just for display reason.",
-    "----> always refer to the fields in the dictionaries to identify the layer/ladder/chip."
-  ],
-  "Version": "IntegrationRun_1",
-  "Comments": [
-    "Ladder 'FEB_channel' item (during Integration Run): 4 channels per FEB, corresponding to the Samtec cable",
-    "Ladders are ordered following phi (i.e. you can find a ladder easily by searching Ladders['phi'])"
-  ],
-  "Stations": {
-    "Tracker": {
-      "Direction": {
-        "Upstream": {
-          "N_Layers": 2,
-          "Layers": {
-            "0": {
-              "SpecBookId": 0,
-              "N_Ladders": 8,
-              "Ladders": {
-                "0": {
-                  "SpecBookId": 0,
-                  "FEB_ID": 0,
-                  "FEB_channel": 0,
-                  "phi": 0,
-                  "N_Chips": 3,
-                  "Chips": {
-                    "0": {
-                      "Type": "Mupix10",
-                      "MIDAS_ID": 9,
-                      "SpecBookId": 1,
-                      "EventDisplayID": 0,
-                      "LinkA": 0,
-                      "LinkB": 1,
-                      "LinkC": 2,
-                      "Initial_Status": "Dead"
-                    },
-                    "1": {
-                      "Type": "Mupix10",
-                      "MIDAS_ID": 10,
-                      "SpecBookId": 2,
-                      "EventDisplayID": 1,
-                      "LinkA": 3,
-                      "LinkB": 4,
-                      "LinkC": 5,
-                      "Initial_Status": "OK"
-                    },
-                    "2": {
-                      "Type": "Mupix10",
-                      "MIDAS_ID": 11,
-                      "SpecBookId": 3,
-                      "EventDisplayID": 2,
-                      "LinkA": 6,
-                      "LinkB": 7,
-                      "LinkC": 8,
-                      "Initial_Status": "OK"
+    "Description": [
+        "JSON file for mu3e pixel configuration. Current subdivision",
+        "Subdivisions",
+        "-Stations (Tracker/Central/RecurlUS/RecurlDS",
+        "--Direction (Upsream/Downstream)",
+        "---Layers (0/1) (see specbook)",
+        "----Ladders (0/1/...)",
+        "-----Chips (0/1/...)",
+        "Every ladder has:",
+        "-SpecbookID: ID as found on specbook (valid within the layer)",
+        "-FEB_ID: FEB number, the ID of the FEB in MIDAS",
+        "-FEB_channel: the channel used in MIDAS",
+        "-phi: position on the phi angle",
+        "Every chip has:",
+        "-SpecbookID: Id as on specbook (valid within the ladder)",
+        "-MIDAS_ID: the ID within the FEB assigned for MIDAS (used during configuration)",
+        "-EventDisplayID: ID for the event display (unique for every chip)",
+        "Note: the key designating each layer/ladder/chip is an increasing number, but it is just for display reason.",
+        "----> always refer to the fields in the dictionaries to identify the layer/ladder/chip."
+    ],
+    "Version": "IntegrationRun_1",
+    "Comments": [
+        "Ladder 'FEB_channel' item (during Integration Run): 4 channels per FEB, corresponding to the Samtec cable",
+        "Ladders are ordered following phi (i.e. you can find a ladder easily by searching Ladders['phi'])"
+    ],
+    "Stations": {
+        "Tracker": {
+            "Direction": {
+                "Upstream": {
+                    "N_Layers": 2,
+                    "Layers": {
+                        "0": {
+                            "SpecBookId": 0,
+                            "N_Ladders": 8,
+                            "Ladders": {
+                                "0": {
+                                    "SpecBookId": 0,
+                                    "FEB_ID": 0,
+                                    "FEB_channel": 0,
+                                    "phi": 0,
+                                    "N_Chips": 3,
+                                    "Chips": {
+                                        "0": {
+                                            "Type": "Mupix10",
+                                            "MIDAS_ID": 0,
+                                            "SpecBookId": 1,
+                                            "EventDisplayID": 0,
+                                            "LinkA": 0,
+                                            "LinkB": 1,
+                                            "LinkC": 2,
+                                            "Initial_Status": "E",
+                                            "opt_VPVCO": 0,
+                                            "opt_VNVCO": 1
+                                        },
+                                        "1": {
+                                            "Type": "Mupix10",
+                                            "MIDAS_ID": 1,
+                                            "SpecBookId": 2,
+                                            "EventDisplayID": 1,
+                                            "LinkA": 3,
+                                            "LinkB": 4,
+                                            "LinkC": 5,
+                                            "Initial_Status": "E",
+                                            "opt_VPVCO": 0,
+                                            "opt_VNVCO": 1
+                                        },
+                                        "2": {
+                                            "Type": "Mupix10",
+                                            "MIDAS_ID": 2,
+                                            "SpecBookId": 3,
+                                            "EventDisplayID": 2,
+                                            "LinkA": 6,
+                                            "LinkB": 7,
+                                            "LinkC": 8,
+                                            "Initial_Status": "E",
+                                            "opt_VPVCO": 0,
+                                            "opt_VNVCO": 1
+                                        }
+                                    },
+                                    "LV_parameters": {
+                                        "Module": 7,
+                                        "IP": "0.0.0.0",
+                                        "Channel": 0
+                                    },
+                                    "HV_parameters": {
+                                        "Module": 0,
+                                        "IP": "0.0.0.0",
+                                        "Channel": 0
+                                    },
+                                    "Temperature_parameters": {
+                                        "submaster": "mscb334.mu3e",
+                                        "port": 0,
+                                        "channel": 0
+                                    }
+                                },
+                                "1": {
+                                    "SpecBookId": 1,
+                                    "FEB_ID": 0,
+                                    "FEB_channel": 1,
+                                    "phi": 1,
+                                    "N_Chips": 3,
+                                    "Chips": {
+                                        "0": {
+                                            "Type": "Mupix10",
+                                            "MIDAS_ID": 3,
+                                            "SpecBookId": 1,
+                                            "EventDisplayID": 3,
+                                            "LinkA": 9,
+                                            "LinkB": 10,
+                                            "LinkC": 11,
+                                            "Initial_Status": "A",
+                                            "opt_VPVCO": 23,
+                                            "opt_VNVCO": 24
+                                        },
+                                        "1": {
+                                            "Type": "Mupix10",
+                                            "MIDAS_ID": 4,
+                                            "SpecBookId": 2,
+                                            "EventDisplayID": 4,
+                                            "LinkA": 12,
+                                            "LinkB": 13,
+                                            "LinkC": 14,
+                                            "Initial_Status": "A",
+                                            "opt_VPVCO": 14,
+                                            "opt_VNVCO": 15
+                                        },
+                                        "2": {
+                                            "Type": "Mupix10",
+                                            "MIDAS_ID": 5,
+                                            "SpecBookId": 3,
+                                            "EventDisplayID": 5,
+                                            "LinkA": 15,
+                                            "LinkB": 16,
+                                            "LinkC": 17,
+                                            "Initial_Status": "E",
+                                            "opt_VPVCO": 14,
+                                            "opt_VNVCO": 15
+                                        }
+                                    },
+                                    "LV_parameters": {
+                                        "Module": 7,
+                                        "IP": "0.0.0.0",
+                                        "Channel": 0
+                                    },
+                                    "HV_parameters": {
+                                        "Module": 0,
+                                        "IP": "0.0.0.0",
+                                        "Channel": 2
+                                    },
+                                    "Temperature_parameters": {
+                                        "submaster": "mscb334.mu3e",
+                                        "port": 0,
+                                        "channel": 1
+                                    }
+                                },
+                                "2": {
+                                    "SpecBookId": 2,
+                                    "FEB_ID": 0,
+                                    "FEB_channel": 2,
+                                    "phi": 2,
+                                    "N_Chips": 3,
+                                    "Chips": {
+                                        "0": {
+                                            "Type": "Mupix10",
+                                            "MIDAS_ID": 6,
+                                            "SpecBookId": 1,
+                                            "EventDisplayID": 6,
+                                            "LinkA": 18,
+                                            "LinkB": 19,
+                                            "LinkC": 20,
+                                            "Initial_Status": "A",
+                                            "opt_VPVCO": 12,
+                                            "opt_VNVCO": 13
+                                        },
+                                        "1": {
+                                            "Type": "Mupix10",
+                                            "MIDAS_ID": 7,
+                                            "SpecBookId": 2,
+                                            "EventDisplayID": 7,
+                                            "LinkA": 21,
+                                            "LinkB": 22,
+                                            "LinkC": 23,
+                                            "Initial_Status": "B",
+                                            "opt_VPVCO": 30,
+                                            "opt_VNVCO": 31
+                                        },
+                                        "2": {
+                                            "Type": "Mupix10",
+                                            "MIDAS_ID": 8,
+                                            "SpecBookId": 3,
+                                            "EventDisplayID": 8,
+                                            "LinkA": 24,
+                                            "LinkB": 25,
+                                            "LinkC": 26,
+                                            "Initial_Status": "B",
+                                            "opt_VPVCO": 26,
+                                            "opt_VNVCO": 27
+                                        }
+                                    },
+                                    "LV_parameters": {
+                                        "Module": 7,
+                                        "IP": "0.0.0.0",
+                                        "Channel": 2
+                                    },
+                                    "HV_parameters": {
+                                        "Module": 1,
+                                        "IP": "0.0.0.0",
+                                        "Channel": 0
+                                    },
+                                    "Temperature_parameters": {
+                                        "submaster": "mscb334.mu3e",
+                                        "port": 4,
+                                        "channel": 7
+                                    }
+                                },
+                                "3": {
+                                    "SpecBookId": 3,
+                                    "FEB_ID": 0,
+                                    "FEB_channel": 3,
+                                    "phi": 3,
+                                    "N_Chips": 3,
+                                    "Chips": {
+                                        "0": {
+                                            "Type": "Mupix10",
+                                            "MIDAS_ID": 9,
+                                            "SpecBookId": 1,
+                                            "EventDisplayID": 9,
+                                            "LinkA": 27,
+                                            "LinkB": 28,
+                                            "LinkC": 29,
+                                            "Initial_Status": "E",
+                                            "opt_VPVCO": 0,
+                                            "opt_VNVCO": 1
+                                        },
+                                        "1": {
+                                            "Type": "Mupix10",
+                                            "MIDAS_ID": 10,
+                                            "SpecBookId": 2,
+                                            "EventDisplayID": 10,
+                                            "LinkA": 30,
+                                            "LinkB": 31,
+                                            "LinkC": 32,
+                                            "Initial_Status": "E",
+                                            "opt_VPVCO": 0,
+                                            "opt_VNVCO": 1
+                                        },
+                                        "2": {
+                                            "Type": "Mupix10",
+                                            "MIDAS_ID": 11,
+                                            "SpecBookId": 3,
+                                            "EventDisplayID": 11,
+                                            "LinkA": 33,
+                                            "LinkB": 34,
+                                            "LinkC": 35,
+                                            "Initial_Status": "E",
+                                            "opt_VPVCO": 40,
+                                            "opt_VNVCO": 41
+                                        }
+                                    },
+                                    "LV_parameters": {
+                                        "Module": 7,
+                                        "IP": "0.0.0.0",
+                                        "Channel": 2
+                                    },
+                                    "HV_parameters": {
+                                        "Module": 1,
+                                        "IP": "0.0.0.0",
+                                        "Channel": 2
+                                    },
+                                    "Temperature_parameters": {
+                                        "submaster": "mscb334.mu3e",
+                                        "port": 0,
+                                        "channel": 3
+                                    }
+                                },
+                                "4": {
+                                    "SpecBookId": 8,
+                                    "FEB_ID": 1,
+                                    "FEB_channel": 0,
+                                    "phi": 4,
+                                    "N_Chips": 3,
+                                    "Chips": {
+                                        "0": {
+                                            "Type": "Mupix10",
+                                            "MIDAS_ID": 12,
+                                            "SpecBookId": 1,
+                                            "EventDisplayID": 12,
+                                            "LinkA": 0,
+                                            "LinkB": 1,
+                                            "LinkC": 2,
+                                            "Initial_Status": "E",
+                                            "opt_VPVCO": 0,
+                                            "opt_VNVCO": 1
+                                        },
+                                        "1": {
+                                            "Type": "Mupix10",
+                                            "MIDAS_ID": 13,
+                                            "SpecBookId": 2,
+                                            "EventDisplayID": 13,
+                                            "LinkA": 3,
+                                            "LinkB": 4,
+                                            "LinkC": 5,
+                                            "Initial_Status": "E",
+                                            "opt_VPVCO": 0,
+                                            "opt_VNVCO": 1
+                                        },
+                                        "2": {
+                                            "Type": "Mupix10",
+                                            "MIDAS_ID": 14,
+                                            "SpecBookId": 3,
+                                            "EventDisplayID": 14,
+                                            "LinkA": 6,
+                                            "LinkB": 7,
+                                            "LinkC": 8,
+                                            "Initial_Status": "E",
+                                            "opt_VPVCO": 0,
+                                            "opt_VNVCO": 1
+                                        }
+                                    },
+                                    "LV_parameters": {
+                                        "Module": 1,
+                                        "IP": "0.0.0.0",
+                                        "Channel": 0
+                                    },
+                                    "HV_parameters": {
+                                        "Module": 2,
+                                        "IP": "0.0.0.0",
+                                        "Channel": 0
+                                    },
+                                    "Temperature_parameters": {
+                                        "submaster": "mscb334.mu3e",
+                                        "port": 0,
+                                        "channel": 4
+                                    }
+                                },
+                                "5": {
+                                    "SpecBookId": 9,
+                                    "FEB_ID": 1,
+                                    "FEB_channel": 1,
+                                    "phi": 5,
+                                    "N_Chips": 3,
+                                    "Chips": {
+                                        "0": {
+                                            "Type": "Mupix10",
+                                            "MIDAS_ID": 15,
+                                            "SpecBookId": 1,
+                                            "EventDisplayID": 15,
+                                            "LinkA": 9,
+                                            "LinkB": 10,
+                                            "LinkC": 11,
+                                            "Initial_Status": "N.A.",
+                                            "opt_VPVCO": 0,
+                                            "opt_VNVCO": 1
+                                        },
+                                        "1": {
+                                            "Type": "Mupix10",
+                                            "MIDAS_ID": 16,
+                                            "SpecBookId": 2,
+                                            "EventDisplayID": 16,
+                                            "LinkA": 12,
+                                            "LinkB": 13,
+                                            "LinkC": 14,
+                                            "Initial_Status": "N.A.",
+                                            "opt_VPVCO": 0,
+                                            "opt_VNVCO": 1
+                                        },
+                                        "2": {
+                                            "Type": "Mupix10",
+                                            "MIDAS_ID": 17,
+                                            "SpecBookId": 3,
+                                            "EventDisplayID": 17,
+                                            "LinkA": 15,
+                                            "LinkB": 16,
+                                            "LinkC": 17,
+                                            "Initial_Status": "N.A.",
+                                            "opt_VPVCO": 0,
+                                            "opt_VNVCO": 1
+                                        }
+                                    },
+                                    "LV_parameters": {
+                                        "Module": 1,
+                                        "IP": "0.0.0.0",
+                                        "Channel": 0
+                                    },
+                                    "HV_parameters": {
+                                        "Module": 2,
+                                        "IP": "0.0.0.0",
+                                        "Channel": 2
+                                    },
+                                    "Temperature_parameters": {
+                                        "submaster": "mscb334.mu3e",
+                                        "port": 0,
+                                        "channel": 5
+                                    }
+                                },
+                                "6": {
+                                    "SpecBookId": 10,
+                                    "FEB_ID": 1,
+                                    "FEB_channel": 2,
+                                    "phi": 6,
+                                    "N_Chips": 3,
+                                    "Chips": {
+                                        "0": {
+                                            "Type": "Mupix10",
+                                            "MIDAS_ID": 18,
+                                            "SpecBookId": 1,
+                                            "EventDisplayID": 18,
+                                            "LinkA": 18,
+                                            "LinkB": 19,
+                                            "LinkC": 20,
+                                            "Initial_Status": "E",
+                                            "opt_VPVCO": 0,
+                                            "opt_VNVCO": 0
+                                        },
+                                        "1": {
+                                            "Type": "Mupix10",
+                                            "MIDAS_ID": 19,
+                                            "SpecBookId": 2,
+                                            "EventDisplayID": 19,
+                                            "LinkA": 21,
+                                            "LinkB": 22,
+                                            "LinkC": 23,
+                                            "Initial_Status": "C",
+                                            "opt_VPVCO": 20,
+                                            "opt_VNVCO": 21
+                                        },
+                                        "2": {
+                                            "Type": "Mupix10",
+                                            "MIDAS_ID": 20,
+                                            "SpecBookId": 3,
+                                            "EventDisplayID": 20,
+                                            "LinkA": 24,
+                                            "LinkB": 25,
+                                            "LinkC": 26,
+                                            "Initial_Status": "E",
+                                            "opt_VPVCO": 29,
+                                            "opt_VNVCO": 30
+                                        }
+                                    },
+                                    "LV_parameters": {
+                                        "Module": 1,
+                                        "IP": "0.0.0.0",
+                                        "Channel": 2
+                                    },
+                                    "HV_parameters": {
+                                        "Module": 3,
+                                        "IP": "0.0.0.0",
+                                        "Channel": 0
+                                    },
+                                    "Temperature_parameters": {
+                                        "submaster": "mscb334.mu3e",
+                                        "port": 0,
+                                        "channel": 6
+                                    }
+                                },
+                                "7": {
+                                    "SpecBookId": 11,
+                                    "FEB_ID": 1,
+                                    "FEB_channel": 3,
+                                    "phi": 7,
+                                    "N_Chips": 3,
+                                    "Chips": {
+                                        "0": {
+                                            "Type": "Mupix10",
+                                            "MIDAS_ID": 21,
+                                            "SpecBookId": 1,
+                                            "EventDisplayID": 21,
+                                            "LinkA": 27,
+                                            "LinkB": 28,
+                                            "LinkC": 29,
+                                            "Initial_Status": "E",
+                                            "opt_VPVCO": 28,
+                                            "opt_VNVCO": 29
+                                        },
+                                        "1": {
+                                            "Type": "Mupix10",
+                                            "MIDAS_ID": 22,
+                                            "SpecBookId": 2,
+                                            "EventDisplayID": 22,
+                                            "LinkA": 30,
+                                            "LinkB": 31,
+                                            "LinkC": 32,
+                                            "Initial_Status": "E",
+                                            "opt_VPVCO": 0,
+                                            "opt_VNVCO": 1
+                                        },
+                                        "2": {
+                                            "Type": "Mupix10",
+                                            "MIDAS_ID": 23,
+                                            "SpecBookId": 3,
+                                            "EventDisplayID": 23,
+                                            "LinkA": 33,
+                                            "LinkB": 34,
+                                            "LinkC": 35,
+                                            "Initial_Status": "A",
+                                            "opt_VPVCO": 40,
+                                            "opt_VNVCO": 41
+                                        }
+                                    },
+                                    "LV_parameters": {
+                                        "Module": 1,
+                                        "IP": "0.0.0.0",
+                                        "Channel": 2
+                                    },
+                                    "HV_parameters": {
+                                        "Module": 3,
+                                        "IP": "0.0.0.0",
+                                        "Channel": 2
+                                    },
+                                    "Temperature_parameters": {
+                                        "submaster": "mscb334.mu3e",
+                                        "port": 0,
+                                        "channel": 7
+                                    }
+                                }
+                            }
+                        },
+                        "1": {
+                            "SpecBookId": 1,
+                            "N_Ladders": 10,
+                            "Ladders": {
+                                "0": {
+                                    "SpecBookId": 0,
+                                    "FEB_ID": 2,
+                                    "FEB_channel": 0,
+                                    "phi": 0,
+                                    "N_Chips": 3,
+                                    "Chips": {
+                                        "0": {
+                                            "Type": "Mupix10",
+                                            "MIDAS_ID": 24,
+                                            "SpecBookId": 1,
+                                            "EventDisplayID": 0,
+                                            "LinkA": 0,
+                                            "LinkB": 1,
+                                            "LinkC": 2,
+                                            "Initial_Status": "N.A.",
+                                            "opt_VPVCO": 0,
+                                            "opt_VNVCO": 1
+                                        },
+                                        "1": {
+                                            "Type": "Mupix10",
+                                            "MIDAS_ID": 25,
+                                            "SpecBookId": 2,
+                                            "EventDisplayID": 1,
+                                            "LinkA": 3,
+                                            "LinkB": 4,
+                                            "LinkC": 5,
+                                            "Initial_Status": "N.A.",
+                                            "opt_VPVCO": 0,
+                                            "opt_VNVCO": 1
+                                        },
+                                        "2": {
+                                            "Type": "Mupix10",
+                                            "MIDAS_ID": 26,
+                                            "SpecBookId": 3,
+                                            "EventDisplayID": 2,
+                                            "LinkA": 6,
+                                            "LinkB": 7,
+                                            "LinkC": 8,
+                                            "Initial_Status": "N.A.",
+                                            "opt_VPVCO": 0,
+                                            "opt_VNVCO": 1
+                                        }
+                                    },
+                                    "LV_parameters": {
+                                        "Module": 2,
+                                        "IP": "0.0.0.0",
+                                        "Channel": 0
+                                    },
+                                    "HV_parameters": {
+                                        "Module": 4,
+                                        "IP": "0.0.0.0",
+                                        "Channel": 0
+                                    },
+                                    "Temperature_parameters": {
+                                        "submaster": "mscb334.mu3e",
+                                        "port": 2,
+                                        "channel": 0
+                                    }
+                                },
+                                "1": {
+                                    "SpecBookId": 1,
+                                    "FEB_ID": 2,
+                                    "FEB_channel": 1,
+                                    "phi": 1,
+                                    "N_Chips": 3,
+                                    "Chips": {
+                                        "0": {
+                                            "Type": "Mupix10",
+                                            "MIDAS_ID": 27,
+                                            "SpecBookId": 1,
+                                            "EventDisplayID": 3,
+                                            "LinkA": 9,
+                                            "LinkB": 10,
+                                            "LinkC": 11,
+                                            "Initial_Status": "N.A.",
+                                            "opt_VPVCO": 0,
+                                            "opt_VNVCO": 1
+                                        },
+                                        "1": {
+                                            "Type": "Mupix10",
+                                            "MIDAS_ID": 28,
+                                            "SpecBookId": 2,
+                                            "EventDisplayID": 4,
+                                            "LinkA": 12,
+                                            "LinkB": 13,
+                                            "LinkC": 14,
+                                            "Initial_Status": "N.A.",
+                                            "opt_VPVCO": 0,
+                                            "opt_VNVCO": 1
+                                        },
+                                        "2": {
+                                            "Type": "Mupix10",
+                                            "MIDAS_ID": 29,
+                                            "SpecBookId": 3,
+                                            "EventDisplayID": 5,
+                                            "LinkA": 15,
+                                            "LinkB": 16,
+                                            "LinkC": 17,
+                                            "Initial_Status": "N.A.",
+                                            "opt_VPVCO": 0,
+                                            "opt_VNVCO": 1
+                                        }
+                                    },
+                                    "LV_parameters": {
+                                        "Module": 2,
+                                        "IP": "0.0.0.0",
+                                        "Channel": 0
+                                    },
+                                    "HV_parameters": {
+                                        "Module": 4,
+                                        "IP": "0.0.0.0",
+                                        "Channel": 2
+                                    },
+                                    "Temperature_parameters": {
+                                        "submaster": "mscb334.mu3e",
+                                        "port": 2,
+                                        "channel": 1
+                                    }
+                                },
+                                "2": {
+                                    "SpecBookId": 2,
+                                    "FEB_ID": 2,
+                                    "FEB_channel": 2,
+                                    "phi": 2,
+                                    "N_Chips": 3,
+                                    "Chips": {
+                                        "0": {
+                                            "Type": "Mupix10",
+                                            "MIDAS_ID": 30,
+                                            "SpecBookId": 1,
+                                            "EventDisplayID": 6,
+                                            "LinkA": 18,
+                                            "LinkB": 19,
+                                            "LinkC": 20,
+                                            "Initial_Status": "E",
+                                            "opt_VPVCO": 0,
+                                            "opt_VNVCO": 1
+                                        },
+                                        "1": {
+                                            "Type": "Mupix10",
+                                            "MIDAS_ID": 31,
+                                            "SpecBookId": 2,
+                                            "EventDisplayID": 7,
+                                            "LinkA": 21,
+                                            "LinkB": 22,
+                                            "LinkC": 23,
+                                            "Initial_Status": "B",
+                                            "opt_VPVCO": 27,
+                                            "opt_VNVCO": 28
+                                        },
+                                        "2": {
+                                            "Type": "Mupix10",
+                                            "MIDAS_ID": 32,
+                                            "SpecBookId": 3,
+                                            "EventDisplayID": 8,
+                                            "LinkA": 24,
+                                            "LinkB": 25,
+                                            "LinkC": 26,
+                                            "Initial_Status": "E",
+                                            "opt_VPVCO": 27,
+                                            "opt_VNVCO": 28
+                                        }
+                                    },
+                                    "LV_parameters": {
+                                        "Module": 2,
+                                        "IP": "0.0.0.0",
+                                        "Channel": 2
+                                    },
+                                    "HV_parameters": {
+                                        "Module": 5,
+                                        "IP": "0.0.0.0",
+                                        "Channel": 0
+                                    },
+                                    "Temperature_parameters": {
+                                        "submaster": "mscb334.mu3e",
+                                        "port": 2,
+                                        "channel": 2
+                                    }
+                                },
+                                "3": {
+                                    "SpecBookId": 3,
+                                    "FEB_ID": 2,
+                                    "FEB_channel": 3,
+                                    "phi": 3,
+                                    "N_Chips": 3,
+                                    "Chips": {
+                                        "0": {
+                                            "Type": "Mupix10",
+                                            "MIDAS_ID": 33,
+                                            "SpecBookId": 1,
+                                            "EventDisplayID": 9,
+                                            "LinkA": 27,
+                                            "LinkB": 28,
+                                            "LinkC": 29,
+                                            "Initial_Status": "E",
+                                            "opt_VPVCO": 0,
+                                            "opt_VNVCO": 1
+                                        },
+                                        "1": {
+                                            "Type": "Mupix10",
+                                            "MIDAS_ID": 34,
+                                            "SpecBookId": 2,
+                                            "EventDisplayID": 10,
+                                            "LinkA": 30,
+                                            "LinkB": 31,
+                                            "LinkC": 32,
+                                            "Initial_Status": "E",
+                                            "opt_VPVCO": 0,
+                                            "opt_VNVCO": 1
+                                        },
+                                        "2": {
+                                            "Type": "Mupix10",
+                                            "MIDAS_ID": 35,
+                                            "SpecBookId": 3,
+                                            "EventDisplayID": 11,
+                                            "LinkA": 33,
+                                            "LinkB": 34,
+                                            "LinkC": 35,
+                                            "Initial_Status": "E",
+                                            "opt_VPVCO": 30,
+                                            "opt_VNVCO": 31
+                                        }
+                                    },
+                                    "LV_parameters": {
+                                        "Module": 2,
+                                        "IP": "0.0.0.0",
+                                        "Channel": 2
+                                    },
+                                    "HV_parameters": {
+                                        "Module": 5,
+                                        "IP": "0.0.0.0",
+                                        "Channel": 2
+                                    },
+                                    "Temperature_parameters": {
+                                        "submaster": "mscb334.mu3e",
+                                        "port": 2,
+                                        "channel": 3
+                                    }
+                                },
+                                "4": {
+                                    "SpecBookId": 4,
+                                    "FEB_ID": 3,
+                                    "FEB_channel": 0,
+                                    "phi": 4,
+                                    "N_Chips": 3,
+                                    "Chips": {
+                                        "0": {
+                                            "Type": "Mupix10",
+                                            "MIDAS_ID": 36,
+                                            "SpecBookId": 1,
+                                            "EventDisplayID": 12,
+                                            "LinkA": 0,
+                                            "LinkB": 1,
+                                            "LinkC": 2,
+                                            "Initial_Status": "E",
+                                            "opt_VPVCO": 25,
+                                            "opt_VNVCO": 26
+                                        },
+                                        "1": {
+                                            "Type": "Mupix10",
+                                            "MIDAS_ID": 37,
+                                            "SpecBookId": 2,
+                                            "EventDisplayID": 13,
+                                            "LinkA": 3,
+                                            "LinkB": 4,
+                                            "LinkC": 5,
+                                            "Initial_Status": "E",
+                                            "opt_VPVCO": 0,
+                                            "opt_VNVCO": 1
+                                        },
+                                        "2": {
+                                            "Type": "Mupix10",
+                                            "MIDAS_ID": 38,
+                                            "SpecBookId": 3,
+                                            "EventDisplayID": 14,
+                                            "LinkA": 6,
+                                            "LinkB": 7,
+                                            "LinkC": 8,
+                                            "Initial_Status": "E",
+                                            "opt_VPVCO": 0,
+                                            "opt_VNVCO": 1
+                                        }
+                                    },
+                                    "LV_parameters": {
+                                        "Module": 3,
+                                        "IP": "0.0.0.0",
+                                        "Channel": 0
+                                    },
+                                    "HV_parameters": {
+                                        "Module": 6,
+                                        "IP": "0.0.0.0",
+                                        "Channel": 0
+                                    },
+                                    "Temperature_parameters": {
+                                        "submaster": "mscb334.mu3e",
+                                        "port": 2,
+                                        "channel": 4
+                                    }
+                                },
+                                "5": {
+                                    "SpecBookId": 5,
+                                    "FEB_ID": 3,
+                                    "FEB_channel": 1,
+                                    "phi": 5,
+                                    "N_Chips": 3,
+                                    "Chips": {
+                                        "0": {
+                                            "Type": "Mupix10",
+                                            "MIDAS_ID": 39,
+                                            "SpecBookId": 1,
+                                            "EventDisplayID": 15,
+                                            "LinkA": 9,
+                                            "LinkB": 10,
+                                            "LinkC": 11,
+                                            "Initial_Status": "E",
+                                            "opt_VPVCO": 32,
+                                            "opt_VNVCO": 33
+                                        },
+                                        "1": {
+                                            "Type": "Mupix10",
+                                            "MIDAS_ID": 40,
+                                            "SpecBookId": 2,
+                                            "EventDisplayID": 16,
+                                            "LinkA": 12,
+                                            "LinkB": 13,
+                                            "LinkC": 14,
+                                            "Initial_Status": "E",
+                                            "opt_VPVCO": 21,
+                                            "opt_VNVCO": 22
+                                        },
+                                        "2": {
+                                            "Type": "Mupix10",
+                                            "MIDAS_ID": 41,
+                                            "SpecBookId": 3,
+                                            "EventDisplayID": 17,
+                                            "LinkA": 15,
+                                            "LinkB": 16,
+                                            "LinkC": 17,
+                                            "Initial_Status": "E",
+                                            "opt_VPVCO": 24,
+                                            "opt_VNVCO": 25
+                                        }
+                                    },
+                                    "LV_parameters": {
+                                        "Module": 3,
+                                        "IP": "0.0.0.0",
+                                        "Channel": 0
+                                    },
+                                    "HV_parameters": {
+                                        "Module": 6,
+                                        "IP": "0.0.0.0",
+                                        "Channel": 2
+                                    },
+                                    "Temperature_parameters": {
+                                        "submaster": "mscb334.mu3e",
+                                        "port": 2,
+                                        "channel": 5
+                                    }
+                                },
+                                "6": {
+                                    "SpecBookId": 6,
+                                    "FEB_ID": 3,
+                                    "FEB_channel": 2,
+                                    "phi": 6,
+                                    "N_Chips": 3,
+                                    "Chips": {
+                                        "0": {
+                                            "Type": "Mupix10",
+                                            "MIDAS_ID": 42,
+                                            "SpecBookId": 1,
+                                            "EventDisplayID": 18,
+                                            "LinkA": 18,
+                                            "LinkB": 19,
+                                            "LinkC": 20,
+                                            "Initial_Status": "C",
+                                            "opt_VPVCO": 11,
+                                            "opt_VNVCO": 12
+                                        },
+                                        "1": {
+                                            "Type": "Mupix10",
+                                            "MIDAS_ID": 43,
+                                            "SpecBookId": 2,
+                                            "EventDisplayID": 19,
+                                            "LinkA": 21,
+                                            "LinkB": 22,
+                                            "LinkC": 23,
+                                            "Initial_Status": "C",
+                                            "opt_VPVCO": 13,
+                                            "opt_VNVCO": 14
+                                        },
+                                        "2": {
+                                            "Type": "Mupix10",
+                                            "MIDAS_ID": 44,
+                                            "SpecBookId": 3,
+                                            "EventDisplayID": 20,
+                                            "LinkA": 24,
+                                            "LinkB": 25,
+                                            "LinkC": 26,
+                                            "Initial_Status": "D",
+                                            "opt_VPVCO": 13,
+                                            "opt_VNVCO": 14
+                                        }
+                                    },
+                                    "LV_parameters": {
+                                        "Module": 3,
+                                        "IP": "0.0.0.0",
+                                        "Channel": 2
+                                    },
+                                    "HV_parameters": {
+                                        "Module": 7,
+                                        "IP": "0.0.0.0",
+                                        "Channel": 0
+                                    },
+                                    "Temperature_parameters": {
+                                        "submaster": "mscb334.mu3e",
+                                        "port": 2,
+                                        "channel": 6
+                                    }
+                                },
+                                "7": {
+                                    "SpecBookId": 8,
+                                    "FEB_ID": 4,
+                                    "FEB_channel": 0,
+                                    "phi": 7,
+                                    "N_Chips": 3,
+                                    "Chips": {
+                                        "0": {
+                                            "Type": "Mupix10",
+                                            "MIDAS_ID": 45,
+                                            "SpecBookId": 1,
+                                            "EventDisplayID": 21,
+                                            "LinkA": 27,
+                                            "LinkB": 28,
+                                            "LinkC": 29,
+                                            "Initial_Status": "C",
+                                            "opt_VPVCO": 25,
+                                            "opt_VNVCO": 26
+                                        },
+                                        "1": {
+                                            "Type": "Mupix10",
+                                            "MIDAS_ID": 46,
+                                            "SpecBookId": 2,
+                                            "EventDisplayID": 22,
+                                            "LinkA": 30,
+                                            "LinkB": 31,
+                                            "LinkC": 32,
+                                            "Initial_Status": "D",
+                                            "opt_VPVCO": 0,
+                                            "opt_VNVCO": 1
+                                        },
+                                        "2": {
+                                            "Type": "Mupix10",
+                                            "MIDAS_ID": 47,
+                                            "SpecBookId": 3,
+                                            "EventDisplayID": 23,
+                                            "LinkA": 33,
+                                            "LinkB": 34,
+                                            "LinkC": 35,
+                                            "Initial_Status": "D",
+                                            "opt_VPVCO": 37,
+                                            "opt_VNVCO": 38
+                                        }
+                                    },
+                                    "LV_parameters": {
+                                        "Module": 3,
+                                        "IP": "0.0.0.0",
+                                        "Channel": 2
+                                    },
+                                    "HV_parameters": {
+                                        "Module": 7,
+                                        "IP": "0.0.0.0",
+                                        "Channel": 2
+                                    },
+                                    "Temperature_parameters": {
+                                        "submaster": "mscb334.mu3e",
+                                        "port": 2,
+                                        "channel": 7
+                                    }
+                                },
+                                "8": {
+                                    "SpecBookId": 9,
+                                    "FEB_ID": 4,
+                                    "FEB_channel": 1,
+                                    "phi": 8,
+                                    "N_Chips": 3,
+                                    "Chips": {
+                                        "0": {
+                                            "Type": "Mupix10",
+                                            "MIDAS_ID": 48,
+                                            "SpecBookId": 1,
+                                            "EventDisplayID": 21,
+                                            "LinkA": 0,
+                                            "LinkB": 1,
+                                            "LinkC": 2,
+                                            "Initial_Status": "E",
+                                            "opt_VPVCO": 0,
+                                            "opt_VNVCO": 1
+                                        },
+                                        "1": {
+                                            "Type": "Mupix10",
+                                            "MIDAS_ID": 49,
+                                            "SpecBookId": 2,
+                                            "EventDisplayID": 22,
+                                            "LinkA": 3,
+                                            "LinkB": 4,
+                                            "LinkC": 5,
+                                            "Initial_Status": "E",
+                                            "opt_VPVCO": 31,
+                                            "opt_VNVCO": 32
+                                        },
+                                        "2": {
+                                            "Type": "Mupix10",
+                                            "MIDAS_ID": 50,
+                                            "SpecBookId": 3,
+                                            "EventDisplayID": 23,
+                                            "LinkA": 6,
+                                            "LinkB": 7,
+                                            "LinkC": 8,
+                                            "Initial_Status": "E",
+                                            "opt_VPVCO": 0,
+                                            "opt_VNVCO": 1
+                                        }
+                                    },
+                                    "LV_parameters": {
+                                        "Module": 4,
+                                        "IP": "0.0.0.0",
+                                        "Channel": 0
+                                    },
+                                    "HV_parameters": {
+                                        "Module": 8,
+                                        "IP": "0.0.0.0",
+                                        "Channel": 0
+                                    },
+                                    "Temperature_parameters": {
+                                        "submaster": "mscb334.mu3e",
+                                        "port": 4,
+                                        "channel": 0
+                                    }
+                                },
+                                "9": {
+                                    "SpecBookId": 10,
+                                    "FEB_ID": 4,
+                                    "FEB_channel": 2,
+                                    "phi": 9,
+                                    "N_Chips": 3,
+                                    "Chips": {
+                                        "0": {
+                                            "Type": "Mupix10",
+                                            "MIDAS_ID": 51,
+                                            "SpecBookId": 1,
+                                            "EventDisplayID": 21,
+                                            "LinkA": 9,
+                                            "LinkB": 10,
+                                            "LinkC": 11,
+                                            "Initial_Status": "E",
+                                            "opt_VPVCO": 35,
+                                            "opt_VNVCO": 36
+                                        },
+                                        "1": {
+                                            "Type": "Mupix10",
+                                            "MIDAS_ID": 52,
+                                            "SpecBookId": 2,
+                                            "EventDisplayID": 22,
+                                            "LinkA": 12,
+                                            "LinkB": 13,
+                                            "LinkC": 14,
+                                            "Initial_Status": "E",
+                                            "opt_VPVCO": 0,
+                                            "opt_VNVCO": 1
+                                        },
+                                        "2": {
+                                            "Type": "Mupix10",
+                                            "MIDAS_ID": 53,
+                                            "SpecBookId": 3,
+                                            "EventDisplayID": 23,
+                                            "LinkA": 15,
+                                            "LinkB": 16,
+                                            "LinkC": 17,
+                                            "Initial_Status": "E",
+                                            "opt_VPVCO": 40,
+                                            "opt_VNVCO": 41
+                                        }
+                                    },
+                                    "LV_parameters": {
+                                        "Module": 4,
+                                        "IP": "0.0.0.0",
+                                        "Channel": 0
+                                    },
+                                    "HV_parameters": {
+                                        "Module": 8,
+                                        "IP": "0.0.0.0",
+                                        "Channel": 2
+                                    },
+                                    "Temperature_parameters": {
+                                        "submaster": "mscb334.mu3e",
+                                        "port": 4,
+                                        "channel": 1
+                                    }
+                                }
+                            }
+                        }
                     }
-                  },
-                  "LV_parameters": {
-                    "Module": 0,
-                    "IP": "0.0.0.0",
-                    "Channel": 0
-                  },
-                  "HV_parameters": {
-                    "Module": 0,
-                    "IP": "0.0.0.0",
-                    "Channel": 0
-                  },
-                  "Temperature_parameters": {
-                    "submaster": "mscb334.mu3e",
-                    "port": 0,
-                    "channel": 0
-                  }
                 },
-                "1": {
-                  "SpecBookId": 1,
-                  "FEB_ID": 0,
-                  "FEB_channel": 1,
-                  "phi": 1,
-                  "N_Chips": 3,
-                  "Chips": {
-                    "0": {
-                      "Type": "Mupix10",
-                      "MIDAS_ID": 6,
-                      "SpecBookId": 1,
-                      "EventDisplayID": 3,
-                      "LinkA": 9,
-                      "LinkB": 10,
-                      "LinkC": 11,
-                      "Initial_Status": "OK"
-                    },
-                    "1": {
-                      "Type": "Mupix10",
-                      "MIDAS_ID": 7,
-                      "SpecBookId": 2,
-                      "EventDisplayID": 4,
-                      "LinkA": 12,
-                      "LinkB": 13,
-                      "LinkC": 14,
-                      "Initial_Status": "OK"
-                    },
-                    "2": {
-                      "Type": "Mupix10",
-                      "MIDAS_ID": 8,
-                      "SpecBookId": 3,
-                      "EventDisplayID": 5,
-                      "LinkA": 15,
-                      "LinkB": 16,
-                      "LinkC": 17,
-                      "Initial_Status": "OK"
+                "Downstream": {
+                    "N_Layers": 2,
+                    "Layers": {
+                        "0": {
+                            "SpecBookId": 0,
+                            "N_Ladders": 8,
+                            "Ladders": {
+                                "0": {
+                                    "SpecBookId": 0,
+                                    "FEB_ID": 5,
+                                    "FEB_channel": 0,
+                                    "phi": 0,
+                                    "N_Chips": 3,
+                                    "Chips": {
+                                        "0": {
+                                            "Type": "Mupix10",
+                                            "MIDAS_ID": 62,
+                                            "SpecBookId": 4,
+                                            "EventDisplayID": 0,
+                                            "LinkA": 0,
+                                            "LinkB": 1,
+                                            "LinkC": 2,
+                                            "Initial_Status": "E",
+                                            "opt_VPVCO": 0,
+                                            "opt_VNVCO": 1
+                                        },
+                                        "1": {
+                                            "Type": "Mupix10",
+                                            "MIDAS_ID": 61,
+                                            "SpecBookId": 5,
+                                            "EventDisplayID": 1,
+                                            "LinkA": 3,
+                                            "LinkB": 4,
+                                            "LinkC": 5,
+                                            "Initial_Status": "A",
+                                            "opt_VPVCO": 0,
+                                            "opt_VNVCO": 1
+                                        },
+                                        "2": {
+                                            "Type": "Mupix10",
+                                            "MIDAS_ID": 60,
+                                            "SpecBookId": 6,
+                                            "EventDisplayID": 2,
+                                            "LinkA": 6,
+                                            "LinkB": 7,
+                                            "LinkC": 8,
+                                            "Initial_Status": "A",
+                                            "opt_VPVCO": 0,
+                                            "opt_VNVCO": 1
+                                        }
+                                    },
+                                    "LV_parameters": {
+                                        "Module": 7,
+                                        "IP": "0.0.0.0",
+                                        "Channel": 1
+                                    },
+                                    "HV_parameters": {
+                                        "Module": 0,
+                                        "IP": "0.0.0.0",
+                                        "Channel": 1
+                                    },
+                                    "Temperature_parameters": {
+                                        "submaster": "mscb334.mu3e",
+                                        "port": 1,
+                                        "channel": 0
+                                    }
+                                },
+                                "1": {
+                                    "SpecBookId": 1,
+                                    "FEB_ID": 5,
+                                    "FEB_channel": 1,
+                                    "phi": 1,
+                                    "N_Chips": 3,
+                                    "Chips": {
+                                        "0": {
+                                            "Type": "Mupix10",
+                                            "MIDAS_ID": 65,
+                                            "SpecBookId": 4,
+                                            "EventDisplayID": 3,
+                                            "LinkA": 9,
+                                            "LinkB": 10,
+                                            "LinkC": 11,
+                                            "Initial_Status": "A",
+                                            "opt_VPVCO": 23,
+                                            "opt_VNVCO": 24
+                                        },
+                                        "1": {
+                                            "Type": "Mupix10",
+                                            "MIDAS_ID": 64,
+                                            "SpecBookId": 5,
+                                            "EventDisplayID": 4,
+                                            "LinkA": 12,
+                                            "LinkB": 13,
+                                            "LinkC": 14,
+                                            "Initial_Status": "A",
+                                            "opt_VPVCO": 14,
+                                            "opt_VNVCO": 15
+                                        },
+                                        "2": {
+                                            "Type": "Mupix10",
+                                            "MIDAS_ID": 63,
+                                            "SpecBookId": 6,
+                                            "EventDisplayID": 5,
+                                            "LinkA": 15,
+                                            "LinkB": 16,
+                                            "LinkC": 17,
+                                            "Initial_Status": "A",
+                                            "opt_VPVCO": 14,
+                                            "opt_VNVCO": 15
+                                        }
+                                    },
+                                    "LV_parameters": {
+                                        "Module": 7,
+                                        "IP": "0.0.0.0",
+                                        "Channel": 1
+                                    },
+                                    "HV_parameters": {
+                                        "Module": 0,
+                                        "IP": "0.0.0.0",
+                                        "Channel": 3
+                                    },
+                                    "Temperature_parameters": {
+                                        "submaster": "mscb334.mu3e",
+                                        "port": 1,
+                                        "channel": 1
+                                    }
+                                },
+                                "2": {
+                                    "SpecBookId": 2,
+                                    "FEB_ID": 5,
+                                    "FEB_channel": 2,
+                                    "phi": 2,
+                                    "N_Chips": 3,
+                                    "Chips": {
+                                        "0": {
+                                            "Type": "Mupix10",
+                                            "MIDAS_ID": 68,
+                                            "SpecBookId": 4,
+                                            "EventDisplayID": 6,
+                                            "LinkA": 18,
+                                            "LinkB": 19,
+                                            "LinkC": 20,
+                                            "Initial_Status": "E",
+                                            "opt_VPVCO": 12,
+                                            "opt_VNVCO": 13
+                                        },
+                                        "1": {
+                                            "Type": "Mupix10",
+                                            "MIDAS_ID": 67,
+                                            "SpecBookId": 5,
+                                            "EventDisplayID": 7,
+                                            "LinkA": 21,
+                                            "LinkB": 22,
+                                            "LinkC": 23,
+                                            "Initial_Status": "A",
+                                            "opt_VPVCO": 30,
+                                            "opt_VNVCO": 31
+                                        },
+                                        "2": {
+                                            "Type": "Mupix10",
+                                            "MIDAS_ID": 66,
+                                            "SpecBookId": 6,
+                                            "EventDisplayID": 8,
+                                            "LinkA": 24,
+                                            "LinkB": 25,
+                                            "LinkC": 26,
+                                            "Initial_Status": "A",
+                                            "opt_VPVCO": 26,
+                                            "opt_VNVCO": 27
+                                        }
+                                    },
+                                    "LV_parameters": {
+                                        "Module": 7,
+                                        "IP": "0.0.0.0",
+                                        "Channel": 3
+                                    },
+                                    "HV_parameters": {
+                                        "Module": 1,
+                                        "IP": "0.0.0.0",
+                                        "Channel": 1
+                                    },
+                                    "Temperature_parameters": {
+                                        "submaster": "mscb334.mu3e",
+                                        "port": 1,
+                                        "channel": 2
+                                    }
+                                },
+                                "3": {
+                                    "SpecBookId": 3,
+                                    "FEB_ID": 5,
+                                    "FEB_channel": 3,
+                                    "phi": 3,
+                                    "N_Chips": 3,
+                                    "Chips": {
+                                        "0": {
+                                            "Type": "Mupix10",
+                                            "MIDAS_ID": 71,
+                                            "SpecBookId": 4,
+                                            "EventDisplayID": 9,
+                                            "LinkA": 27,
+                                            "LinkB": 28,
+                                            "LinkC": 29,
+                                            "Initial_Status": "E",
+                                            "opt_VPVCO": 0,
+                                            "opt_VNVCO": 1
+                                        },
+                                        "1": {
+                                            "Type": "Mupix10",
+                                            "MIDAS_ID": 70,
+                                            "SpecBookId": 5,
+                                            "EventDisplayID": 10,
+                                            "LinkA": 30,
+                                            "LinkB": 31,
+                                            "LinkC": 32,
+                                            "Initial_Status": "E",
+                                            "opt_VPVCO": 0,
+                                            "opt_VNVCO": 1
+                                        },
+                                        "2": {
+                                            "Type": "Mupix10",
+                                            "MIDAS_ID": 69,
+                                            "SpecBookId": 6,
+                                            "EventDisplayID": 11,
+                                            "LinkA": 33,
+                                            "LinkB": 34,
+                                            "LinkC": 35,
+                                            "Initial_Status": "E",
+                                            "opt_VPVCO": 40,
+                                            "opt_VNVCO": 41
+                                        }
+                                    },
+                                    "LV_parameters": {
+                                        "Module": 7,
+                                        "IP": "0.0.0.0",
+                                        "Channel": 3
+                                    },
+                                    "HV_parameters": {
+                                        "Module": 1,
+                                        "IP": "0.0.0.0",
+                                        "Channel": 3
+                                    },
+                                    "Temperature_parameters": {
+                                        "submaster": "mscb334.mu3e",
+                                        "port": 1,
+                                        "channel": 3
+                                    }
+                                },
+                                "4": {
+                                    "SpecBookId": 8,
+                                    "FEB_ID": 6,
+                                    "FEB_channel": 0,
+                                    "phi": 4,
+                                    "N_Chips": 3,
+                                    "Chips": {
+                                        "0": {
+                                            "Type": "Mupix10",
+                                            "MIDAS_ID": 74,
+                                            "SpecBookId": 4,
+                                            "EventDisplayID": 12,
+                                            "LinkA": 0,
+                                            "LinkB": 1,
+                                            "LinkC": 2,
+                                            "Initial_Status": "B",
+                                            "opt_VPVCO": 0,
+                                            "opt_VNVCO": 1
+                                        },
+                                        "1": {
+                                            "Type": "Mupix10",
+                                            "MIDAS_ID": 73,
+                                            "SpecBookId": 5,
+                                            "EventDisplayID": 13,
+                                            "LinkA": 3,
+                                            "LinkB": 4,
+                                            "LinkC": 5,
+                                            "Initial_Status": "A",
+                                            "opt_VPVCO": 0,
+                                            "opt_VNVCO": 1
+                                        },
+                                        "2": {
+                                            "Type": "Mupix10",
+                                            "MIDAS_ID": 72,
+                                            "SpecBookId": 6,
+                                            "EventDisplayID": 14,
+                                            "LinkA": 6,
+                                            "LinkB": 7,
+                                            "LinkC": 8,
+                                            "Initial_Status": "A",
+                                            "opt_VPVCO": 0,
+                                            "opt_VNVCO": 1
+                                        }
+                                    },
+                                    "LV_parameters": {
+                                        "Module": 1,
+                                        "IP": "0.0.0.0",
+                                        "Channel": 1
+                                    },
+                                    "HV_parameters": {
+                                        "Module": 2,
+                                        "IP": "0.0.0.0",
+                                        "Channel": 1
+                                    },
+                                    "Temperature_parameters": {
+                                        "submaster": "mscb334.mu3e",
+                                        "port": 1,
+                                        "channel": 4
+                                    }
+                                },
+                                "5": {
+                                    "SpecBookId": 9,
+                                    "FEB_ID": 6,
+                                    "FEB_channel": 1,
+                                    "phi": 5,
+                                    "N_Chips": 3,
+                                    "Chips": {
+                                        "0": {
+                                            "Type": "Mupix10",
+                                            "MIDAS_ID": 77,
+                                            "SpecBookId": 4,
+                                            "EventDisplayID": 15,
+                                            "LinkA": 9,
+                                            "LinkB": 10,
+                                            "LinkC": 11,
+                                            "Initial_Status": "B",
+                                            "opt_VPVCO": 0,
+                                            "opt_VNVCO": 1
+                                        },
+                                        "1": {
+                                            "Type": "Mupix10",
+                                            "MIDAS_ID": 76,
+                                            "SpecBookId": 5,
+                                            "EventDisplayID": 16,
+                                            "LinkA": 12,
+                                            "LinkB": 13,
+                                            "LinkC": 14,
+                                            "Initial_Status": "A",
+                                            "opt_VPVCO": 0,
+                                            "opt_VNVCO": 1
+                                        },
+                                        "2": {
+                                            "Type": "Mupix10",
+                                            "MIDAS_ID": 75,
+                                            "SpecBookId": 6,
+                                            "EventDisplayID": 17,
+                                            "LinkA": 15,
+                                            "LinkB": 16,
+                                            "LinkC": 17,
+                                            "Initial_Status": "A",
+                                            "opt_VPVCO": 0,
+                                            "opt_VNVCO": 1
+                                        }
+                                    },
+                                    "LV_parameters": {
+                                        "Module": 1,
+                                        "IP": "0.0.0.0",
+                                        "Channel": 1
+                                    },
+                                    "HV_parameters": {
+                                        "Module": 2,
+                                        "IP": "0.0.0.0",
+                                        "Channel": 3
+                                    },
+                                    "Temperature_parameters": {
+                                        "submaster": "mscb334.mu3e",
+                                        "port": 1,
+                                        "channel": 5
+                                    }
+                                },
+                                "6": {
+                                    "SpecBookId": 10,
+                                    "FEB_ID": 6,
+                                    "FEB_channel": 2,
+                                    "phi": 6,
+                                    "N_Chips": 3,
+                                    "Chips": {
+                                        "0": {
+                                            "Type": "Mupix10",
+                                            "MIDAS_ID": 80,
+                                            "SpecBookId": 4,
+                                            "EventDisplayID": 18,
+                                            "LinkA": 18,
+                                            "LinkB": 19,
+                                            "LinkC": 20,
+                                            "Initial_Status": "A",
+                                            "opt_VPVCO": 0,
+                                            "opt_VNVCO": 0
+                                        },
+                                        "1": {
+                                            "Type": "Mupix10",
+                                            "MIDAS_ID": 79,
+                                            "SpecBookId": 5,
+                                            "EventDisplayID": 19,
+                                            "LinkA": 21,
+                                            "LinkB": 22,
+                                            "LinkC": 23,
+                                            "Initial_Status": "A",
+                                            "opt_VPVCO": 20,
+                                            "opt_VNVCO": 21
+                                        },
+                                        "2": {
+                                            "Type": "Mupix10",
+                                            "MIDAS_ID": 78,
+                                            "SpecBookId": 6,
+                                            "EventDisplayID": 20,
+                                            "LinkA": 24,
+                                            "LinkB": 25,
+                                            "LinkC": 26,
+                                            "Initial_Status": "A",
+                                            "opt_VPVCO": 29,
+                                            "opt_VNVCO": 30
+                                        }
+                                    },
+                                    "LV_parameters": {
+                                        "Module": 1,
+                                        "IP": "0.0.0.0",
+                                        "Channel": 3
+                                    },
+                                    "HV_parameters": {
+                                        "Module": 3,
+                                        "IP": "0.0.0.0",
+                                        "Channel": 1
+                                    },
+                                    "Temperature_parameters": {
+                                        "submaster": "mscb334.mu3e",
+                                        "port": 1,
+                                        "channel": 6
+                                    }
+                                },
+                                "7": {
+                                    "SpecBookId": 11,
+                                    "FEB_ID": 6,
+                                    "FEB_channel": 3,
+                                    "phi": 7,
+                                    "N_Chips": 3,
+                                    "Chips": {
+                                        "0": {
+                                            "Type": "Mupix10",
+                                            "MIDAS_ID": 83,
+                                            "SpecBookId": 4,
+                                            "EventDisplayID": 21,
+                                            "LinkA": 27,
+                                            "LinkB": 28,
+                                            "LinkC": 29,
+                                            "Initial_Status": "E",
+                                            "opt_VPVCO": 28,
+                                            "opt_VNVCO": 29
+                                        },
+                                        "1": {
+                                            "Type": "Mupix10",
+                                            "MIDAS_ID": 82,
+                                            "SpecBookId": 5,
+                                            "EventDisplayID": 22,
+                                            "LinkA": 30,
+                                            "LinkB": 31,
+                                            "LinkC": 32,
+                                            "Initial_Status": "E",
+                                            "opt_VPVCO": 0,
+                                            "opt_VNVCO": 1
+                                        },
+                                        "2": {
+                                            "Type": "Mupix10",
+                                            "MIDAS_ID": 81,
+                                            "SpecBookId": 6,
+                                            "EventDisplayID": 23,
+                                            "LinkA": 33,
+                                            "LinkB": 34,
+                                            "LinkC": 35,
+                                            "Initial_Status": "E",
+                                            "opt_VPVCO": 40,
+                                            "opt_VNVCO": 41
+                                        }
+                                    },
+                                    "LV_parameters": {
+                                        "Module": 1,
+                                        "IP": "0.0.0.0",
+                                        "Channel": 3
+                                    },
+                                    "HV_parameters": {
+                                        "Module": 3,
+                                        "IP": "0.0.0.0",
+                                        "Channel": 3
+                                    },
+                                    "Temperature_parameters": {
+                                        "submaster": "mscb334.mu3e",
+                                        "port": 1,
+                                        "channel": 7
+                                    }
+                                }
+                            }
+                        },
+                        "1": {
+                            "SpecBookId": 1,
+                            "N_Ladders": 10,
+                            "Ladders": {
+                                "0": {
+                                    "SpecBookId": 0,
+                                    "FEB_ID": 7,
+                                    "FEB_channel": 0,
+                                    "phi": 0,
+                                    "N_Chips": 3,
+                                    "Chips": {
+                                        "0": {
+                                            "Type": "Mupix10",
+                                            "MIDAS_ID": 86,
+                                            "SpecBookId": 4,
+                                            "EventDisplayID": 0,
+                                            "LinkA": 0,
+                                            "LinkB": 1,
+                                            "LinkC": 2,
+                                            "Initial_Status": "C",
+                                            "opt_VPVCO": 0,
+                                            "opt_VNVCO": 1
+                                        },
+                                        "1": {
+                                            "Type": "Mupix10",
+                                            "MIDAS_ID": 85,
+                                            "SpecBookId": 5,
+                                            "EventDisplayID": 1,
+                                            "LinkA": 3,
+                                            "LinkB": 4,
+                                            "LinkC": 5,
+                                            "Initial_Status": "E",
+                                            "opt_VPVCO": 0,
+                                            "opt_VNVCO": 1
+                                        },
+                                        "2": {
+                                            "Type": "Mupix10",
+                                            "MIDAS_ID": 84,
+                                            "SpecBookId": 6,
+                                            "EventDisplayID": 2,
+                                            "LinkA": 6,
+                                            "LinkB": 7,
+                                            "LinkC": 8,
+                                            "Initial_Status": "E",
+                                            "opt_VPVCO": 0,
+                                            "opt_VNVCO": 1
+                                        }
+                                    },
+                                    "LV_parameters": {
+                                        "Module": 2,
+                                        "IP": "0.0.0.0",
+                                        "Channel": 1
+                                    },
+                                    "HV_parameters": {
+                                        "Module": 4,
+                                        "IP": "0.0.0.0",
+                                        "Channel": 1
+                                    },
+                                    "Temperature_parameters": {
+                                        "submaster": "mscb334.mu3e",
+                                        "port": 3,
+                                        "channel": 0
+                                    }
+                                },
+                                "1": {
+                                    "SpecBookId": 1,
+                                    "FEB_ID": 7,
+                                    "FEB_channel": 1,
+                                    "phi": 1,
+                                    "N_Chips": 3,
+                                    "Chips": {
+                                        "0": {
+                                            "Type": "Mupix10",
+                                            "MIDAS_ID": 89,
+                                            "SpecBookId": 4,
+                                            "EventDisplayID": 3,
+                                            "LinkA": 9,
+                                            "LinkB": 10,
+                                            "LinkC": 11,
+                                            "Initial_Status": "C",
+                                            "opt_VPVCO": 0,
+                                            "opt_VNVCO": 1
+                                        },
+                                        "1": {
+                                            "Type": "Mupix10",
+                                            "MIDAS_ID": 88,
+                                            "SpecBookId": 5,
+                                            "EventDisplayID": 4,
+                                            "LinkA": 12,
+                                            "LinkB": 13,
+                                            "LinkC": 14,
+                                            "Initial_Status": "E",
+                                            "opt_VPVCO": 0,
+                                            "opt_VNVCO": 1
+                                        },
+                                        "2": {
+                                            "Type": "Mupix10",
+                                            "MIDAS_ID": 87,
+                                            "SpecBookId": 6,
+                                            "EventDisplayID": 5,
+                                            "LinkA": 15,
+                                            "LinkB": 16,
+                                            "LinkC": 17,
+                                            "Initial_Status": "E",
+                                            "opt_VPVCO": 0,
+                                            "opt_VNVCO": 1
+                                        }
+                                    },
+                                    "LV_parameters": {
+                                        "Module": 2,
+                                        "IP": "0.0.0.0",
+                                        "Channel": 1
+                                    },
+                                    "HV_parameters": {
+                                        "Module": 4,
+                                        "IP": "0.0.0.0",
+                                        "Channel": 3
+                                    },
+                                    "Temperature_parameters": {
+                                        "submaster": "mscb334.mu3e",
+                                        "port": 3,
+                                        "channel": 1
+                                    }
+                                },
+                                "2": {
+                                    "SpecBookId": 2,
+                                    "FEB_ID": 7,
+                                    "FEB_channel": 2,
+                                    "phi": 2,
+                                    "N_Chips": 3,
+                                    "Chips": {
+                                        "0": {
+                                            "Type": "Mupix10",
+                                            "MIDAS_ID": 92,
+                                            "SpecBookId": 4,
+                                            "EventDisplayID": 6,
+                                            "LinkA": 18,
+                                            "LinkB": 19,
+                                            "LinkC": 20,
+                                            "Initial_Status": "E",
+                                            "opt_VPVCO": 0,
+                                            "opt_VNVCO": 1
+                                        },
+                                        "1": {
+                                            "Type": "Mupix10",
+                                            "MIDAS_ID": 91,
+                                            "SpecBookId": 5,
+                                            "EventDisplayID": 7,
+                                            "LinkA": 21,
+                                            "LinkB": 22,
+                                            "LinkC": 23,
+                                            "Initial_Status": "C",
+                                            "opt_VPVCO": 27,
+                                            "opt_VNVCO": 28
+                                        },
+                                        "2": {
+                                            "Type": "Mupix10",
+                                            "MIDAS_ID": 90,
+                                            "SpecBookId": 6,
+                                            "EventDisplayID": 8,
+                                            "LinkA": 24,
+                                            "LinkB": 25,
+                                            "LinkC": 26,
+                                            "Initial_Status": "E",
+                                            "opt_VPVCO": 27,
+                                            "opt_VNVCO": 28
+                                        }
+                                    },
+                                    "LV_parameters": {
+                                        "Module": 2,
+                                        "IP": "0.0.0.0",
+                                        "Channel": 3
+                                    },
+                                    "HV_parameters": {
+                                        "Module": 5,
+                                        "IP": "0.0.0.0",
+                                        "Channel": 1
+                                    },
+                                    "Temperature_parameters": {
+                                        "submaster": "mscb334.mu3e",
+                                        "port": 3,
+                                        "channel": 2
+                                    }
+                                },
+                                "3": {
+                                    "SpecBookId": 3,
+                                    "FEB_ID": 7,
+                                    "FEB_channel": 3,
+                                    "phi": 3,
+                                    "N_Chips": 3,
+                                    "Chips": {
+                                        "0": {
+                                            "Type": "Mupix10",
+                                            "MIDAS_ID": 95,
+                                            "SpecBookId": 4,
+                                            "EventDisplayID": 9,
+                                            "LinkA": 27,
+                                            "LinkB": 28,
+                                            "LinkC": 29,
+                                            "Initial_Status": "E",
+                                            "opt_VPVCO": 0,
+                                            "opt_VNVCO": 1
+                                        },
+                                        "1": {
+                                            "Type": "Mupix10",
+                                            "MIDAS_ID": 94,
+                                            "SpecBookId": 5,
+                                            "EventDisplayID": 10,
+                                            "LinkA": 30,
+                                            "LinkB": 31,
+                                            "LinkC": 32,
+                                            "Initial_Status": "A",
+                                            "opt_VPVCO": 0,
+                                            "opt_VNVCO": 1
+                                        },
+                                        "2": {
+                                            "Type": "Mupix10",
+                                            "MIDAS_ID": 93,
+                                            "SpecBookId": 6,
+                                            "EventDisplayID": 11,
+                                            "LinkA": 33,
+                                            "LinkB": 34,
+                                            "LinkC": 35,
+                                            "Initial_Status": "A",
+                                            "opt_VPVCO": 30,
+                                            "opt_VNVCO": 31
+                                        }
+                                    },
+                                    "LV_parameters": {
+                                        "Module": 2,
+                                        "IP": "0.0.0.0",
+                                        "Channel": 3
+                                    },
+                                    "HV_parameters": {
+                                        "Module": 5,
+                                        "IP": "0.0.0.0",
+                                        "Channel": 3
+                                    },
+                                    "Temperature_parameters": {
+                                        "submaster": "mscb334.mu3e",
+                                        "port": 3,
+                                        "channel": 3
+                                    }
+                                },
+                                "4": {
+                                    "SpecBookId": 4,
+                                    "FEB_ID": 8,
+                                    "FEB_channel": 0,
+                                    "phi": 4,
+                                    "N_Chips": 3,
+                                    "Chips": {
+                                        "0": {
+                                            "Type": "Mupix10",
+                                            "MIDAS_ID": 98,
+                                            "SpecBookId": 4,
+                                            "EventDisplayID": 12,
+                                            "LinkA": 0,
+                                            "LinkB": 1,
+                                            "LinkC": 2,
+                                            "Initial_Status": "A",
+                                            "opt_VPVCO": 25,
+                                            "opt_VNVCO": 26
+                                        },
+                                        "1": {
+                                            "Type": "Mupix10",
+                                            "MIDAS_ID": 97,
+                                            "SpecBookId": 5,
+                                            "EventDisplayID": 13,
+                                            "LinkA": 3,
+                                            "LinkB": 4,
+                                            "LinkC": 5,
+                                            "Initial_Status": "A",
+                                            "opt_VPVCO": 0,
+                                            "opt_VNVCO": 1
+                                        },
+                                        "2": {
+                                            "Type": "Mupix10",
+                                            "MIDAS_ID": 96,
+                                            "SpecBookId": 6,
+                                            "EventDisplayID": 14,
+                                            "LinkA": 6,
+                                            "LinkB": 7,
+                                            "LinkC": 8,
+                                            "Initial_Status": "E",
+                                            "opt_VPVCO": 0,
+                                            "opt_VNVCO": 1
+                                        }
+                                    },
+                                    "LV_parameters": {
+                                        "Module": 3,
+                                        "IP": "0.0.0.0",
+                                        "Channel": 1
+                                    },
+                                    "HV_parameters": {
+                                        "Module": 6,
+                                        "IP": "0.0.0.0",
+                                        "Channel": 1
+                                    },
+                                    "Temperature_parameters": {
+                                        "submaster": "mscb334.mu3e",
+                                        "port": 3,
+                                        "channel": 4
+                                    }
+                                },
+                                "5": {
+                                    "SpecBookId": 5,
+                                    "FEB_ID": 8,
+                                    "FEB_channel": 1,
+                                    "phi": 5,
+                                    "N_Chips": 3,
+                                    "Chips": {
+                                        "0": {
+                                            "Type": "Mupix10",
+                                            "MIDAS_ID": 101,
+                                            "SpecBookId": 4,
+                                            "EventDisplayID": 15,
+                                            "LinkA": 9,
+                                            "LinkB": 10,
+                                            "LinkC": 11,
+                                            "Initial_Status": "E",
+                                            "opt_VPVCO": 32,
+                                            "opt_VNVCO": 33
+                                        },
+                                        "1": {
+                                            "Type": "Mupix10",
+                                            "MIDAS_ID": 100,
+                                            "SpecBookId": 5,
+                                            "EventDisplayID": 16,
+                                            "LinkA": 12,
+                                            "LinkB": 13,
+                                            "LinkC": 14,
+                                            "Initial_Status": "D",
+                                            "opt_VPVCO": 21,
+                                            "opt_VNVCO": 22
+                                        },
+                                        "2": {
+                                            "Type": "Mupix10",
+                                            "MIDAS_ID": 99,
+                                            "SpecBookId": 6,
+                                            "EventDisplayID": 17,
+                                            "LinkA": 15,
+                                            "LinkB": 16,
+                                            "LinkC": 17,
+                                            "Initial_Status": "C",
+                                            "opt_VPVCO": 24,
+                                            "opt_VNVCO": 25
+                                        }
+                                    },
+                                    "LV_parameters": {
+                                        "Module": 3,
+                                        "IP": "0.0.0.0",
+                                        "Channel": 1
+                                    },
+                                    "HV_parameters": {
+                                        "Module": 6,
+                                        "IP": "0.0.0.0",
+                                        "Channel": 3
+                                    },
+                                    "Temperature_parameters": {
+                                        "submaster": "mscb334.mu3e",
+                                        "port": 3,
+                                        "channel": 5
+                                    }
+                                },
+                                "6": {
+                                    "SpecBookId": 6,
+                                    "FEB_ID": 8,
+                                    "FEB_channel": 2,
+                                    "phi": 6,
+                                    "N_Chips": 3,
+                                    "Chips": {
+                                        "0": {
+                                            "Type": "Mupix10",
+                                            "MIDAS_ID": 104,
+                                            "SpecBookId": 4,
+                                            "EventDisplayID": 18,
+                                            "LinkA": 18,
+                                            "LinkB": 19,
+                                            "LinkC": 20,
+                                            "Initial_Status": "C",
+                                            "opt_VPVCO": 11,
+                                            "opt_VNVCO": 12
+                                        },
+                                        "1": {
+                                            "Type": "Mupix10",
+                                            "MIDAS_ID": 103,
+                                            "SpecBookId": 5,
+                                            "EventDisplayID": 19,
+                                            "LinkA": 21,
+                                            "LinkB": 22,
+                                            "LinkC": 23,
+                                            "Initial_Status": "C",
+                                            "opt_VPVCO": 13,
+                                            "opt_VNVCO": 14
+                                        },
+                                        "2": {
+                                            "Type": "Mupix10",
+                                            "MIDAS_ID": 102,
+                                            "SpecBookId": 6,
+                                            "EventDisplayID": 20,
+                                            "LinkA": 24,
+                                            "LinkB": 25,
+                                            "LinkC": 26,
+                                            "Initial_Status": "C",
+                                            "opt_VPVCO": 13,
+                                            "opt_VNVCO": 14
+                                        }
+                                    },
+                                    "LV_parameters": {
+                                        "Module": 3,
+                                        "IP": "0.0.0.0",
+                                        "Channel": 3
+                                    },
+                                    "HV_parameters": {
+                                        "Module": 7,
+                                        "IP": "0.0.0.0",
+                                        "Channel": 1
+                                    },
+                                    "Temperature_parameters": {
+                                        "submaster": "mscb334.mu3e",
+                                        "port": 3,
+                                        "channel": 6
+                                    }
+                                },
+                                "7": {
+                                    "SpecBookId": 8,
+                                    "FEB_ID": 9,
+                                    "FEB_channel": 0,
+                                    "phi": 7,
+                                    "N_Chips": 3,
+                                    "Chips": {
+                                        "0": {
+                                            "Type": "Mupix10",
+                                            "MIDAS_ID": 107,
+                                            "SpecBookId": 4,
+                                            "EventDisplayID": 21,
+                                            "LinkA": 27,
+                                            "LinkB": 28,
+                                            "LinkC": 29,
+                                            "Initial_Status": "C",
+                                            "opt_VPVCO": 25,
+                                            "opt_VNVCO": 26
+                                        },
+                                        "1": {
+                                            "Type": "Mupix10",
+                                            "MIDAS_ID": 106,
+                                            "SpecBookId": 5,
+                                            "EventDisplayID": 22,
+                                            "LinkA": 30,
+                                            "LinkB": 31,
+                                            "LinkC": 32,
+                                            "Initial_Status": "C",
+                                            "opt_VPVCO": 0,
+                                            "opt_VNVCO": 1
+                                        },
+                                        "2": {
+                                            "Type": "Mupix10",
+                                            "MIDAS_ID": 105,
+                                            "SpecBookId": 6,
+                                            "EventDisplayID": 23,
+                                            "LinkA": 33,
+                                            "LinkB": 34,
+                                            "LinkC": 35,
+                                            "Initial_Status": "E",
+                                            "opt_VPVCO": 37,
+                                            "opt_VNVCO": 38
+                                        }
+                                    },
+                                    "LV_parameters": {
+                                        "Module": 3,
+                                        "IP": "0.0.0.0",
+                                        "Channel": 3
+                                    },
+                                    "HV_parameters": {
+                                        "Module": 7,
+                                        "IP": "0.0.0.0",
+                                        "Channel": 3
+                                    },
+                                    "Temperature_parameters": {
+                                        "submaster": "mscb334.mu3e",
+                                        "port": 3,
+                                        "channel": 7
+                                    }
+                                },
+                                "8": {
+                                    "SpecBookId": 9,
+                                    "FEB_ID": 9,
+                                    "FEB_channel": 1,
+                                    "phi": 8,
+                                    "N_Chips": 3,
+                                    "Chips": {
+                                        "0": {
+                                            "Type": "Mupix10",
+                                            "MIDAS_ID": 110,
+                                            "SpecBookId": 4,
+                                            "EventDisplayID": 21,
+                                            "LinkA": 0,
+                                            "LinkB": 1,
+                                            "LinkC": 2,
+                                            "Initial_Status": "E",
+                                            "opt_VPVCO": 0,
+                                            "opt_VNVCO": 1
+                                        },
+                                        "1": {
+                                            "Type": "Mupix10",
+                                            "MIDAS_ID": 109,
+                                            "SpecBookId": 5,
+                                            "EventDisplayID": 22,
+                                            "LinkA": 3,
+                                            "LinkB": 4,
+                                            "LinkC": 5,
+                                            "Initial_Status": "E",
+                                            "opt_VPVCO": 31,
+                                            "opt_VNVCO": 32
+                                        },
+                                        "2": {
+                                            "Type": "Mupix10",
+                                            "MIDAS_ID": 108,
+                                            "SpecBookId": 6,
+                                            "EventDisplayID": 23,
+                                            "LinkA": 6,
+                                            "LinkB": 7,
+                                            "LinkC": 8,
+                                            "Initial_Status": "A",
+                                            "opt_VPVCO": 0,
+                                            "opt_VNVCO": 1
+                                        }
+                                    },
+                                    "LV_parameters": {
+                                        "Module": 4,
+                                        "IP": "0.0.0.0",
+                                        "Channel": 1
+                                    },
+                                    "HV_parameters": {
+                                        "Module": 8,
+                                        "IP": "0.0.0.0",
+                                        "Channel": 1
+                                    },
+                                    "Temperature_parameters": {
+                                        "submaster": "mscb334.mu3e",
+                                        "port": 5,
+                                        "channel": 0
+                                    }
+                                },
+                                "9": {
+                                    "SpecBookId": 10,
+                                    "FEB_ID": 9,
+                                    "FEB_channel": 2,
+                                    "phi": 9,
+                                    "N_Chips": 3,
+                                    "Chips": {
+                                        "0": {
+                                            "Type": "Mupix10",
+                                            "MIDAS_ID": 113,
+                                            "SpecBookId": 4,
+                                            "EventDisplayID": 21,
+                                            "LinkA": 9,
+                                            "LinkB": 10,
+                                            "LinkC": 11,
+                                            "Initial_Status": "C",
+                                            "opt_VPVCO": 35,
+                                            "opt_VNVCO": 36
+                                        },
+                                        "1": {
+                                            "Type": "Mupix10",
+                                            "MIDAS_ID": 112,
+                                            "SpecBookId": 5,
+                                            "EventDisplayID": 22,
+                                            "LinkA": 12,
+                                            "LinkB": 13,
+                                            "LinkC": 14,
+                                            "Initial_Status": "E",
+                                            "opt_VPVCO": 0,
+                                            "opt_VNVCO": 1
+                                        },
+                                        "2": {
+                                            "Type": "Mupix10",
+                                            "MIDAS_ID": 111,
+                                            "SpecBookId": 6,
+                                            "EventDisplayID": 23,
+                                            "LinkA": 15,
+                                            "LinkB": 16,
+                                            "LinkC": 17,
+                                            "Initial_Status": "E",
+                                            "opt_VPVCO": 40,
+                                            "opt_VNVCO": 41
+                                        }
+                                    },
+                                    "LV_parameters": {
+                                        "Module": 4,
+                                        "IP": "0.0.0.0",
+                                        "Channel": 1
+                                    },
+                                    "HV_parameters": {
+                                        "Module": 8,
+                                        "IP": "0.0.0.0",
+                                        "Channel": 3
+                                    },
+                                    "Temperature_parameters": {
+                                        "submaster": "mscb334.mu3e",
+                                        "port": 5,
+                                        "channel": 1
+                                    }
+                                }
+                            }
+                        }
                     }
-                  },
-                  "LV_parameters": {
-                    "Module": 0,
-                    "IP": "0.0.0.0",
-                    "Channel": 2
-                  },
-                  "HV_parameters": {
-                    "Module": 0,
-                    "IP": "0.0.0.0",
-                    "Channel": 2
-                  },
-                  "Temperature_parameters": {
-                    "submaster": "mscb334.mu3e",
-                    "port": 0,
-                    "channel": 1
-                  }
-                },
-                "2": {
-                  "SpecBookId": 2,
-                  "FEB_ID": 0,
-                  "FEB_channel": 2,
-                  "phi": 2,
-                  "N_Chips": 3,
-                  "Chips": {
-                    "0": {
-                      "Type": "Mupix10",
-                      "MIDAS_ID": 3,
-                      "SpecBookId": 1,
-                      "EventDisplayID": 6,
-                      "LinkA": 18,
-                      "LinkB": 19,
-                      "LinkC": 20,
-                      "Initial_Status": "OK"
-                    },
-                    "1": {
-                      "Type": "Mupix10",
-                      "MIDAS_ID": 4,
-                      "SpecBookId": 2,
-                      "EventDisplayID": 7,
-                      "LinkA": 21,
-                      "LinkB": 22,
-                      "LinkC": 23,
-                      "Initial_Status": "OK"
-                    },
-                    "2": {
-                      "Type": "Mupix10",
-                      "MIDAS_ID": 5,
-                      "SpecBookId": 3,
-                      "EventDisplayID": 8,
-                      "LinkA": 24,
-                      "LinkB": 25,
-                      "LinkC": 26,
-                      "Initial_Status": "OK"
-                    }
-                  },
-                  "LV_parameters": {
-                    "Module": 1,
-                    "IP": "0.0.0.0",
-                    "Channel": 0
-                  },
-                  "HV_parameters": {
-                    "Module": 1,
-                    "IP": "0.0.0.0",
-                    "Channel": 0
-                  },
-                  "Temperature_parameters": {
-                    "submaster": "mscb334.mu3e",
-                    "port": 4,
-                    "channel": 7
-                  }
-                },
-                "3": {
-                  "SpecBookId": 3,
-                  "FEB_ID": 0,
-                  "FEB_channel": 3,
-                  "phi": 3,
-                  "N_Chips": 3,
-                  "Chips": {
-                    "0": {
-                      "Type": "Mupix10",
-                      "MIDAS_ID": 0,
-                      "SpecBookId": 1,
-                      "EventDisplayID": 9,
-                      "LinkA": 27,
-                      "LinkB": 28,
-                      "LinkC": 29,
-                      "Initial_Status": "OK"
-                    },
-                    "1": {
-                      "Type": "Mupix10",
-                      "MIDAS_ID": 1,
-                      "SpecBookId": 2,
-                      "EventDisplayID": 10,
-                      "LinkA": 30,
-                      "LinkB": 31,
-                      "LinkC": 32,
-                      "Initial_Status": "OK"
-                    },
-                    "2": {
-                      "Type": "Mupix10",
-                      "MIDAS_ID": 2,
-                      "SpecBookId": 3,
-                      "EventDisplayID": 11,
-                      "LinkA": 33,
-                      "LinkB": 34,
-                      "LinkC": 35,
-                      "Initial_Status": "OK"
-                    }
-                  },
-                  "LV_parameters": {
-                    "Module": 1,
-                    "IP": "0.0.0.0",
-                    "Channel": 2
-                  },
-                  "HV_parameters": {
-                    "Module": 1,
-                    "IP": "0.0.0.0",
-                    "Channel": 2
-                  },
-                  "Temperature_parameters": {
-                    "submaster": "mscb334.mu3e",
-                    "port": 0,
-                    "channel": 3
-                  }
-                },
-                "4": {
-                  "SpecBookId": 8,
-                  "FEB_ID": 1,
-                  "FEB_channel": 0,
-                  "phi": 4,
-                  "N_Chips": 3,
-                  "Chips": {
-                    "0": {
-                      "Type": "Mupix10",
-                      "MIDAS_ID": 9,
-                      "SpecBookId": 1,
-                      "EventDisplayID": 12,
-                      "LinkA": 0,
-                      "LinkB": 1,
-                      "LinkC": 2,
-                      "Initial_Status": "OK"
-                    },
-                    "1": {
-                      "Type": "Mupix10",
-                      "MIDAS_ID": 10,
-                      "SpecBookId": 2,
-                      "EventDisplayID": 13,
-                      "LinkA": 3,
-                      "LinkB": 4,
-                      "LinkC": 5,
-                      "Initial_Status": "OK"
-                    },
-                    "2": {
-                      "Type": "Mupix10",
-                      "MIDAS_ID": 11,
-                      "SpecBookId": 3,
-                      "EventDisplayID": 14,
-                      "LinkA": 6,
-                      "LinkB": 7,
-                      "LinkC": 8,
-                      "Initial_Status": "OK"
-                    }
-                  },
-                  "LV_parameters": {
-                    "Module": 2,
-                    "IP": "0.0.0.0",
-                    "Channel": 0
-                  },
-                  "HV_parameters": {
-                    "Module": 2,
-                    "IP": "0.0.0.0",
-                    "Channel": 0
-                  },
-                  "Temperature_parameters": {
-                    "submaster": "mscb334.mu3e",
-                    "port": 0,
-                    "channel": 4
-                  }
-                },
-                "5": {
-                  "SpecBookId": 9,
-                  "FEB_ID": 1,
-                  "FEB_channel": 1,
-                  "phi": 5,
-                  "N_Chips": 3,
-                  "Chips": {
-                    "0": {
-                      "Type": "Mupix10",
-                      "MIDAS_ID": 6,
-                      "SpecBookId": 1,
-                      "EventDisplayID": 15,
-                      "LinkA": 9,
-                      "LinkB": 10,
-                      "LinkC": 11,
-                      "Initial_Status": "OK"
-                    },
-                    "1": {
-                      "Type": "Mupix10",
-                      "MIDAS_ID": 7,
-                      "SpecBookId": 2,
-                      "EventDisplayID": 16,
-                      "LinkA": 12,
-                      "LinkB": 13,
-                      "LinkC": 14,
-                      "Initial_Status": "OK"
-                    },
-                    "2": {
-                      "Type": "Mupix10",
-                      "MIDAS_ID": 8,
-                      "SpecBookId": 3,
-                      "EventDisplayID": 17,
-                      "LinkA": 15,
-                      "LinkB": 16,
-                      "LinkC": 17,
-                      "Initial_Status": "OK"
-                    }
-                  },
-                  "LV_parameters": {
-                    "Module": 2,
-                    "IP": "0.0.0.0",
-                    "Channel": 2
-                  },
-                  "HV_parameters": {
-                    "Module": 2,
-                    "IP": "0.0.0.0",
-                    "Channel": 2
-                  },
-                  "Temperature_parameters": {
-                    "submaster": "mscb334.mu3e",
-                    "port": 0,
-                    "channel": 5
-                  }
-                },
-                "6": {
-                  "SpecBookId": 10,
-                  "FEB_ID": 1,
-                  "FEB_channel": 2,
-                  "phi": 6,
-                  "N_Chips": 3,
-                  "Chips": {
-                    "0": {
-                      "Type": "Mupix10",
-                      "MIDAS_ID": 3,
-                      "SpecBookId": 1,
-                      "EventDisplayID": 18,
-                      "LinkA": 18,
-                      "LinkB": 19,
-                      "LinkC": 20,
-                      "Initial_Status": "OK"
-                    },
-                    "1": {
-                      "Type": "Mupix10",
-                      "MIDAS_ID": 4,
-                      "SpecBookId": 2,
-                      "EventDisplayID": 19,
-                      "LinkA": 21,
-                      "LinkB": 22,
-                      "LinkC": 23,
-                      "Initial_Status": "OK"
-                    },
-                    "2": {
-                      "Type": "Mupix10",
-                      "MIDAS_ID": 5,
-                      "SpecBookId": 3,
-                      "EventDisplayID": 20,
-                      "LinkA": 24,
-                      "LinkB": 25,
-                      "LinkC": 26,
-                      "Initial_Status": "OK"
-                    }
-                  },
-                  "LV_parameters": {
-                    "Module": 3,
-                    "IP": "0.0.0.0",
-                    "Channel": 0
-                  },
-                  "HV_parameters": {
-                    "Module": 3,
-                    "IP": "0.0.0.0",
-                    "Channel": 0
-                  },
-                  "Temperature_parameters": {
-                    "submaster": "mscb334.mu3e",
-                    "port": 0,
-                    "channel": 6
-                  }
-                },
-                "7": {
-                  "SpecBookId": 11,
-                  "FEB_ID": 1,
-                  "FEB_channel": 3,
-                  "phi": 7,
-                  "N_Chips": 3,
-                  "Chips": {
-                    "0": {
-                      "Type": "Mupix10",
-                      "MIDAS_ID": 0,
-                      "SpecBookId": 1,
-                      "EventDisplayID": 21,
-                      "LinkA": 27,
-                      "LinkB": 28,
-                      "LinkC": 29,
-                      "Initial_Status": "OK"
-                    },
-                    "1": {
-                      "Type": "Mupix10",
-                      "MIDAS_ID": 1,
-                      "SpecBookId": 2,
-                      "EventDisplayID": 22,
-                      "LinkA": 30,
-                      "LinkB": 31,
-                      "LinkC": 32,
-                      "Initial_Status": "OK"
-                    },
-                    "2": {
-                      "Type": "Mupix10",
-                      "MIDAS_ID": 2,
-                      "SpecBookId": 3,
-                      "EventDisplayID": 23,
-                      "LinkA": 33,
-                      "LinkB": 34,
-                      "LinkC": 35,
-                      "Initial_Status": "Dead"
-                    }
-                  },
-                  "LV_parameters": {
-                    "Module": 3,
-                    "IP": "0.0.0.0",
-                    "Channel": 2
-                  },
-                  "HV_parameters": {
-                    "Module": 3,
-                    "IP": "0.0.0.0",
-                    "Channel": 2
-                  },
-                  "Temperature_parameters": {
-                    "submaster": "mscb334.mu3e",
-                    "port": 0,
-                    "channel": 7
-                  }
                 }
-              }
-            },
-            "1": {
-              "SpecBookId": 1,
-              "N_Ladders": 10,
-              "Ladders": {
-                "0": {
-                  "SpecBookId": 0,
-                  "FEB_ID": 2,
-                  "FEB_channel": 0,
-                  "phi": 0,
-                  "N_Chips": 3,
-                  "Chips": {
-                    "0": {
-                      "Type": "Mupix10",
-                      "MIDAS_ID": 9,
-                      "SpecBookId": 1,
-                      "EventDisplayID": 0,
-                      "LinkA": 0,
-                      "LinkB": 1,
-                      "LinkC": 2,
-                      "Initial_Status": "OK"
-                    },
-                    "1": {
-                      "Type": "Mupix10",
-                      "MIDAS_ID": 10,
-                      "SpecBookId": 2,
-                      "EventDisplayID": 1,
-                      "LinkA": 3,
-                      "LinkB": 4,
-                      "LinkC": 5,
-                      "Initial_Status": "OK"
-                    },
-                    "2": {
-                      "Type": "Mupix10",
-                      "MIDAS_ID": 11,
-                      "SpecBookId": 3,
-                      "EventDisplayID": 2,
-                      "LinkA": 6,
-                      "LinkB": 7,
-                      "LinkC": 8,
-                      "Initial_Status": "OK"
-                    }
-                  },
-                  "LV_parameters": {
-                    "Module": 4,
-                    "IP": "0.0.0.0",
-                    "Channel": 0
-                  },
-                  "HV_parameters": {
-                    "Module": 4,
-                    "IP": "0.0.0.0",
-                    "Channel": 0
-                  },
-                  "Temperature_parameters": {
-                    "submaster": "mscb334.mu3e",
-                    "port": 2,
-                    "channel": 0
-                  }
-                },
-                "1": {
-                  "SpecBookId": 1,
-                  "FEB_ID": 2,
-                  "FEB_channel": 1,
-                  "phi": 1,
-                  "N_Chips": 3,
-                  "Chips": {
-                    "0": {
-                      "Type": "Mupix10",
-                      "MIDAS_ID": 6,
-                      "SpecBookId": 1,
-                      "EventDisplayID": 3,
-                      "LinkA": 9,
-                      "LinkB": 10,
-                      "LinkC": 11,
-                      "Initial_Status": "OK"
-                    },
-                    "1": {
-                      "Type": "Mupix10",
-                      "MIDAS_ID": 7,
-                      "SpecBookId": 2,
-                      "EventDisplayID": 4,
-                      "LinkA": 12,
-                      "LinkB": 13,
-                      "LinkC": 14,
-                      "Initial_Status": "OK"
-                    },
-                    "2": {
-                      "Type": "Mupix10",
-                      "MIDAS_ID": 8,
-                      "SpecBookId": 3,
-                      "EventDisplayID": 5,
-                      "LinkA": 15,
-                      "LinkB": 16,
-                      "LinkC": 17,
-                      "Initial_Status": "OK"
-                    }
-                  },
-                  "LV_parameters": {
-                    "Module": 4,
-                    "IP": "0.0.0.0",
-                    "Channel": 2
-                  },
-                  "HV_parameters": {
-                    "Module": 4,
-                    "IP": "0.0.0.0",
-                    "Channel": 2
-                  },
-                  "Temperature_parameters": {
-                    "submaster": "mscb334.mu3e",
-                    "port": 2,
-                    "channel": 1
-                  }
-                },
-                "2": {
-                  "SpecBookId": 2,
-                  "FEB_ID": 2,
-                  "FEB_channel": 2,
-                  "phi": 2,
-                  "N_Chips": 3,
-                  "Chips": {
-                    "0": {
-                      "Type": "Mupix10",
-                      "MIDAS_ID": 3,
-                      "SpecBookId": 1,
-                      "EventDisplayID": 6,
-                      "LinkA": 18,
-                      "LinkB": 19,
-                      "LinkC": 20,
-                      "Initial_Status": "OK"
-                    },
-                    "1": {
-                      "Type": "Mupix10",
-                      "MIDAS_ID": 4,
-                      "SpecBookId": 2,
-                      "EventDisplayID": 7,
-                      "LinkA": 21,
-                      "LinkB": 22,
-                      "LinkC": 23,
-                      "Initial_Status": "OK"
-                    },
-                    "2": {
-                      "Type": "Mupix10",
-                      "MIDAS_ID": 5,
-                      "SpecBookId": 3,
-                      "EventDisplayID": 8,
-                      "LinkA": 24,
-                      "LinkB": 25,
-                      "LinkC": 26,
-                      "Initial_Status": "OK"
-                    }
-                  },
-                  "LV_parameters": {
-                    "Module": 5,
-                    "IP": "0.0.0.0",
-                    "Channel": 0
-                  },
-                  "HV_parameters": {
-                    "Module": 5,
-                    "IP": "0.0.0.0",
-                    "Channel": 0
-                  },
-                  "Temperature_parameters": {
-                    "submaster": "mscb334.mu3e",
-                    "port": 2,
-                    "channel": 2
-                  }
-                },
-                "3": {
-                  "SpecBookId": 3,
-                  "FEB_ID": 2,
-                  "FEB_channel": 3,
-                  "phi": 3,
-                  "N_Chips": 3,
-                  "Chips": {
-                    "0": {
-                      "Type": "Mupix10",
-                      "MIDAS_ID": 0,
-                      "SpecBookId": 1,
-                      "EventDisplayID": 9,
-                      "LinkA": 27,
-                      "LinkB": 28,
-                      "LinkC": 29,
-                      "Initial_Status": "OK"
-                    },
-                    "1": {
-                      "Type": "Mupix10",
-                      "MIDAS_ID": 1,
-                      "SpecBookId": 2,
-                      "EventDisplayID": 10,
-                      "LinkA": 30,
-                      "LinkB": 31,
-                      "LinkC": 32,
-                      "Initial_Status": "OK"
-                    },
-                    "2": {
-                      "Type": "Mupix10",
-                      "MIDAS_ID": 2,
-                      "SpecBookId": 3,
-                      "EventDisplayID": 11,
-                      "LinkA": 33,
-                      "LinkB": 34,
-                      "LinkC": 35,
-                      "Initial_Status": "Dead"
-                    }
-                  },
-                  "LV_parameters": {
-                    "Module": 5,
-                    "IP": "0.0.0.0",
-                    "Channel": 2
-                  },
-                  "HV_parameters": {
-                    "Module": 5,
-                    "IP": "0.0.0.0",
-                    "Channel": 2
-                  },
-                  "Temperature_parameters": {
-                    "submaster": "mscb334.mu3e",
-                    "port": 2,
-                    "channel": 3
-                  }
-                },
-                "4": {
-                  "SpecBookId": 4,
-                  "FEB_ID": 3,
-                  "FEB_channel": 0,
-                  "phi": 4,
-                  "N_Chips": 3,
-                  "Chips": {
-                    "0": {
-                      "Type": "Mupix10",
-                      "MIDAS_ID": 9,
-                      "SpecBookId": 1,
-                      "EventDisplayID": 12,
-                      "LinkA": 0,
-                      "LinkB": 1,
-                      "LinkC": 2,
-                      "Initial_Status": "Dead"
-                    },
-                    "1": {
-                      "Type": "Mupix10",
-                      "MIDAS_ID": 10,
-                      "SpecBookId": 2,
-                      "EventDisplayID": 13,
-                      "LinkA": 3,
-                      "LinkB": 4,
-                      "LinkC": 5,
-                      "Initial_Status": "Dead"
-                    },
-                    "2": {
-                      "Type": "Mupix10",
-                      "MIDAS_ID": 11,
-                      "SpecBookId": 3,
-                      "EventDisplayID": 14,
-                      "LinkA": 6,
-                      "LinkB": 7,
-                      "LinkC": 8,
-                      "Initial_Status": "OK"
-                    }
-                  },
-                  "LV_parameters": {
-                    "Module": 6,
-                    "IP": "0.0.0.0",
-                    "Channel": 0
-                  },
-                  "HV_parameters": {
-                    "Module": 6,
-                    "IP": "0.0.0.0",
-                    "Channel": 0
-                  },
-                  "Temperature_parameters": {
-                    "submaster": "mscb334.mu3e",
-                    "port": 2,
-                    "channel": 4
-                  }
-                },
-                "5": {
-                  "SpecBookId": 5,
-                  "FEB_ID": 3,
-                  "FEB_channel": 1,
-                  "phi": 5,
-                  "N_Chips": 3,
-                  "Chips": {
-                    "0": {
-                      "Type": "Mupix10",
-                      "MIDAS_ID": 6,
-                      "SpecBookId": 1,
-                      "EventDisplayID": 15,
-                      "LinkA": 9,
-                      "LinkB": 10,
-                      "LinkC": 11,
-                      "Initial_Status": "OK"
-                    },
-                    "1": {
-                      "Type": "Mupix10",
-                      "MIDAS_ID": 7,
-                      "SpecBookId": 2,
-                      "EventDisplayID": 16,
-                      "LinkA": 12,
-                      "LinkB": 13,
-                      "LinkC": 14,
-                      "Initial_Status": "Dead"
-                    },
-                    "2": {
-                      "Type": "Mupix10",
-                      "MIDAS_ID": 8,
-                      "SpecBookId": 3,
-                      "EventDisplayID": 17,
-                      "LinkA": 15,
-                      "LinkB": 16,
-                      "LinkC": 17,
-                      "Initial_Status": "Dead"
-                    }
-                  },
-                  "LV_parameters": {
-                    "Module": 6,
-                    "IP": "0.0.0.0",
-                    "Channel": 2
-                  },
-                  "HV_parameters": {
-                    "Module": 6,
-                    "IP": "0.0.0.0",
-                    "Channel": 2
-                  },
-                  "Temperature_parameters": {
-                    "submaster": "mscb334.mu3e",
-                    "port": 2,
-                    "channel": 5
-                  }
-                },
-                "6": {
-                  "SpecBookId": 6,
-                  "FEB_ID": 3,
-                  "FEB_channel": 2,
-                  "phi": 6,
-                  "N_Chips": 3,
-                  "Chips": {
-                    "0": {
-                      "Type": "Mupix10",
-                      "MIDAS_ID": 3,
-                      "SpecBookId": 1,
-                      "EventDisplayID": 18,
-                      "LinkA": 18,
-                      "LinkB": 19,
-                      "LinkC": 20,
-                      "Initial_Status": "OK"
-                    },
-                    "1": {
-                      "Type": "Mupix10",
-                      "MIDAS_ID": 4,
-                      "SpecBookId": 2,
-                      "EventDisplayID": 19,
-                      "LinkA": 21,
-                      "LinkB": 22,
-                      "LinkC": 23,
-                      "Initial_Status": "OK"
-                    },
-                    "2": {
-                      "Type": "Mupix10",
-                      "MIDAS_ID": 5,
-                      "SpecBookId": 3,
-                      "EventDisplayID": 20,
-                      "LinkA": 24,
-                      "LinkB": 25,
-                      "LinkC": 26,
-                      "Initial_Status": "OK"
-                    }
-                  },
-                  "LV_parameters": {
-                    "Module": 7,
-                    "IP": "0.0.0.0",
-                    "Channel": 0
-                  },
-                  "HV_parameters": {
-                    "Module": 7,
-                    "IP": "0.0.0.0",
-                    "Channel": 0
-                  },
-                  "Temperature_parameters": {
-                    "submaster": "mscb334.mu3e",
-                    "port": 2,
-                    "channel": 6
-                  }
-                },
-                "7": {
-                  "SpecBookId": 8,
-                  "FEB_ID": 4,
-                  "FEB_channel": 0,
-                  "phi": 7,
-                  "N_Chips": 3,
-                  "Chips": {
-                    "0": {
-                      "Type": "Mupix10",
-                      "MIDAS_ID": 0,
-                      "SpecBookId": 1,
-                      "EventDisplayID": 21,
-                      "LinkA": 27,
-                      "LinkB": 28,
-                      "LinkC": 29,
-                      "Initial_Status": "OK"
-                    },
-                    "1": {
-                      "Type": "Mupix10",
-                      "MIDAS_ID": 1,
-                      "SpecBookId": 2,
-                      "EventDisplayID": 22,
-                      "LinkA": 30,
-                      "LinkB": 31,
-                      "LinkC": 32,
-                      "Initial_Status": "Dead"
-                    },
-                    "2": {
-                      "Type": "Mupix10",
-                      "MIDAS_ID": 2,
-                      "SpecBookId": 3,
-                      "EventDisplayID": 23,
-                      "LinkA": 33,
-                      "LinkB": 34,
-                      "LinkC": 35,
-                      "Initial_Status": "OK"
-                    }
-                  },
-                  "LV_parameters": {
-                    "Module": 7,
-                    "IP": "0.0.0.0",
-                    "Channel": 2
-                  },
-                  "HV_parameters": {
-                    "Module": 7,
-                    "IP": "0.0.0.0",
-                    "Channel": 2
-                  },
-                  "Temperature_parameters": {
-                    "submaster": "mscb334.mu3e",
-                    "port": 2,
-                    "channel": 7
-                  }
-                },
-                "8": {
-                  "SpecBookId": 9,
-                  "FEB_ID": 4,
-                  "FEB_channel": 1,
-                  "phi": 8,
-                  "N_Chips": 3,
-                  "Chips": {
-                    "0": {
-                      "Type": "Mupix10",
-                      "MIDAS_ID": 9,
-                      "SpecBookId": 1,
-                      "EventDisplayID": 21,
-                      "LinkA": 0,
-                      "LinkB": 1,
-                      "LinkC": 2,
-                      "Initial_Status": "OK"
-                    },
-                    "1": {
-                      "Type": "Mupix10",
-                      "MIDAS_ID": 10,
-                      "SpecBookId": 2,
-                      "EventDisplayID": 22,
-                      "LinkA": 3,
-                      "LinkB": 4,
-                      "LinkC": 5,
-                      "Initial_Status": "OK"
-                    },
-                    "2": {
-                      "Type": "Mupix10",
-                      "MIDAS_ID": 11,
-                      "SpecBookId": 3,
-                      "EventDisplayID": 23,
-                      "LinkA": 6,
-                      "LinkB": 7,
-                      "LinkC": 8,
-                      "Initial_Status": "OK"
-                    }
-                  },
-                  "LV_parameters": {
-                    "Module": 8,
-                    "IP": "0.0.0.0",
-                    "Channel": 0
-                  },
-                  "HV_parameters": {
-                    "Module": 8,
-                    "IP": "0.0.0.0",
-                    "Channel": 0
-                  },
-                  "Temperature_parameters": {
-                    "submaster": "mscb334.mu3e",
-                    "port": 4,
-                    "channel": 0
-                  }
-                },
-                "9": {
-                  "SpecBookId": 10,
-                  "FEB_ID": 4,
-                  "FEB_channel": 2,
-                  "phi": 9,
-                  "N_Chips": 3,
-                  "Chips": {
-                    "0": {
-                      "Type": "Mupix10",
-                      "MIDAS_ID": 6,
-                      "SpecBookId": 1,
-                      "EventDisplayID": 21,
-                      "LinkA": 9,
-                      "LinkB": 10,
-                      "LinkC": 11,
-                      "Initial_Status": "Dead"
-                    },
-                    "1": {
-                      "Type": "Mupix10",
-                      "MIDAS_ID": 7,
-                      "SpecBookId": 2,
-                      "EventDisplayID": 22,
-                      "LinkA": 12,
-                      "LinkB": 13,
-                      "LinkC": 14,
-                      "Initial_Status": "OK"
-                    },
-                    "2": {
-                      "Type": "Mupix10",
-                      "MIDAS_ID": 8,
-                      "SpecBookId": 3,
-                      "EventDisplayID": 23,
-                      "LinkA": 15,
-                      "LinkB": 16,
-                      "LinkC": 17,
-                      "Initial_Status": "OK"
-                    }
-                  },
-                  "LV_parameters": {
-                    "Module": 8,
-                    "IP": "0.0.0.0",
-                    "Channel": 2
-                  },
-                  "HV_parameters": {
-                    "Module": 8,
-                    "IP": "0.0.0.0",
-                    "Channel": 2
-                  },
-                  "Temperature_parameters": {
-                    "submaster": "mscb334.mu3e",
-                    "port": 4,
-                    "channel": 1
-                  }
-                }
-              }
             }
-          }
-        },
-        "Downstream": {
-          "N_Layers": 2,
-          "Layers": {
-            "0": {
-              "SpecBookId": 0,
-              "N_Ladders": 8,
-              "Ladders": {
-                "0": {
-                  "SpecBookId": 0,
-                  "FEB_ID": 5,
-                  "FEB_channel": 0,
-                  "phi": 0,
-                  "N_Chips": 3,
-                  "Chips": {
-                    "0": {
-                      "Type": "Mupix10",
-                      "MIDAS_ID": 11,
-                      "SpecBookId": 4,
-                      "EventDisplayID": 0,
-                      "LinkA": 0,
-                      "LinkB": 1,
-                      "LinkC": 2,
-                      "Initial_Status": "OK"
-                    },
-                    "1": {
-                      "Type": "Mupix10",
-                      "MIDAS_ID": 10,
-                      "SpecBookId": 5,
-                      "EventDisplayID": 1,
-                      "LinkA": 3,
-                      "LinkB": 4,
-                      "LinkC": 5,
-                      "Initial_Status": "OK"
-                    },
-                    "2": {
-                      "Type": "Mupix10",
-                      "MIDAS_ID": 9,
-                      "SpecBookId": 6,
-                      "EventDisplayID": 2,
-                      "LinkA": 6,
-                      "LinkB": 7,
-                      "LinkC": 8,
-                      "Initial_Status": "OK"
-                    }
-                  },
-                  "LV_parameters": {
-                    "Module": 0,
-                    "IP": "0.0.0.0",
-                    "Channel": 1
-                  },
-                  "HV_parameters": {
-                    "Module": 0,
-                    "IP": "0.0.0.0",
-                    "Channel": 1
-                  },
-                  "Temperature_parameters": {
-                    "submaster": "mscb334.mu3e",
-                    "port": 1,
-                    "channel": 0
-                  }
-                },
-                "1": {
-                  "SpecBookId": 1,
-                  "FEB_ID": 5,
-                  "FEB_channel": 1,
-                  "phi": 1,
-                  "N_Chips": 3,
-                  "Chips": {
-                    "0": {
-                      "Type": "Mupix10",
-                      "MIDAS_ID": 8,
-                      "SpecBookId": 4,
-                      "EventDisplayID": 3,
-                      "LinkA": 9,
-                      "LinkB": 10,
-                      "LinkC": 11,
-                      "Initial_Status": "Dead"
-                    },
-                    "1": {
-                      "Type": "Mupix10",
-                      "MIDAS_ID": 7,
-                      "SpecBookId": 5,
-                      "EventDisplayID": 4,
-                      "LinkA": 12,
-                      "LinkB": 13,
-                      "LinkC": 14,
-                      "Initial_Status": "OK"
-                    },
-                    "2": {
-                      "Type": "Mupix10",
-                      "MIDAS_ID": 6,
-                      "SpecBookId": 6,
-                      "EventDisplayID": 5,
-                      "LinkA": 15,
-                      "LinkB": 16,
-                      "LinkC": 17,
-                      "Initial_Status": "OK"
-                    }
-                  },
-                  "LV_parameters": {
-                    "Module": 0,
-                    "IP": "0.0.0.0",
-                    "Channel": 3
-                  },
-                  "HV_parameters": {
-                    "Module": 0,
-                    "IP": "0.0.0.0",
-                    "Channel": 3
-                  },
-                  "Temperature_parameters": {
-                    "submaster": "mscb334.mu3e",
-                    "port": 1,
-                    "channel": 1
-                  }
-                },
-                "2": {
-                  "SpecBookId": 2,
-                  "FEB_ID": 5,
-                  "FEB_channel": 2,
-                  "phi": 2,
-                  "N_Chips": 3,
-                  "Chips": {
-                    "0": {
-                      "Type": "Mupix10",
-                      "MIDAS_ID": 5,
-                      "SpecBookId": 4,
-                      "EventDisplayID": 6,
-                      "LinkA": 18,
-                      "LinkB": 19,
-                      "LinkC": 20,
-                      "Initial_Status": "OK"
-                    },
-                    "1": {
-                      "Type": "Mupix10",
-                      "MIDAS_ID": 4,
-                      "SpecBookId": 5,
-                      "EventDisplayID": 7,
-                      "LinkA": 21,
-                      "LinkB": 22,
-                      "LinkC": 23,
-                      "Initial_Status": "OK"
-                    },
-                    "2": {
-                      "Type": "Mupix10",
-                      "MIDAS_ID": 3,
-                      "SpecBookId": 6,
-                      "EventDisplayID": 8,
-                      "LinkA": 24,
-                      "LinkB": 25,
-                      "LinkC": 26,
-                      "Initial_Status": "OK"
-                    }
-                  },
-                  "LV_parameters": {
-                    "Module": 1,
-                    "IP": "0.0.0.0",
-                    "Channel": 1
-                  },
-                  "HV_parameters": {
-                    "Module": 1,
-                    "IP": "0.0.0.0",
-                    "Channel": 1
-                  },
-                  "Temperature_parameters": {
-                    "submaster": "mscb334.mu3e",
-                    "port": 1,
-                    "channel": 2
-                  }
-                },
-                "3": {
-                  "SpecBookId": 3,
-                  "FEB_ID": 5,
-                  "FEB_channel": 3,
-                  "phi": 3,
-                  "N_Chips": 3,
-                  "Chips": {
-                    "0": {
-                      "Type": "Mupix10",
-                      "MIDAS_ID": 2,
-                      "SpecBookId": 4,
-                      "EventDisplayID": 9,
-                      "LinkA": 27,
-                      "LinkB": 28,
-                      "LinkC": 29,
-                      "Initial_Status": "Dead"
-                    },
-                    "1": {
-                      "Type": "Mupix10",
-                      "MIDAS_ID": 1,
-                      "SpecBookId": 5,
-                      "EventDisplayID": 10,
-                      "LinkA": 30,
-                      "LinkB": 31,
-                      "LinkC": 32,
-                      "Initial_Status": "OK"
-                    },
-                    "2": {
-                      "Type": "Mupix10",
-                      "MIDAS_ID": 0,
-                      "SpecBookId": 6,
-                      "EventDisplayID": 11,
-                      "LinkA": 33,
-                      "LinkB": 34,
-                      "LinkC": 35,
-                      "Initial_Status": "OK"
-                    }
-                  },
-                  "LV_parameters": {
-                    "Module": 1,
-                    "IP": "0.0.0.0",
-                    "Channel": 3
-                  },
-                  "HV_parameters": {
-                    "Module": 1,
-                    "IP": "0.0.0.0",
-                    "Channel": 3
-                  },
-                  "Temperature_parameters": {
-                    "submaster": "mscb334.mu3e",
-                    "port": 1,
-                    "channel": 3
-                  }
-                },
-                "4": {
-                  "SpecBookId": 8,
-                  "FEB_ID": 6,
-                  "FEB_channel": 0,
-                  "phi": 4,
-                  "N_Chips": 3,
-                  "Chips": {
-                    "0": {
-                      "Type": "Mupix10",
-                      "MIDAS_ID": 11,
-                      "SpecBookId": 4,
-                      "EventDisplayID": 12,
-                      "LinkA": 0,
-                      "LinkB": 1,
-                      "LinkC": 2,
-                      "Initial_Status": "OK"
-                    },
-                    "1": {
-                      "Type": "Mupix10",
-                      "MIDAS_ID": 10,
-                      "SpecBookId": 5,
-                      "EventDisplayID": 13,
-                      "LinkA": 3,
-                      "LinkB": 4,
-                      "LinkC": 5,
-                      "Initial_Status": "OK"
-                    },
-                    "2": {
-                      "Type": "Mupix10",
-                      "MIDAS_ID": 9,
-                      "SpecBookId": 6,
-                      "EventDisplayID": 14,
-                      "LinkA": 6,
-                      "LinkB": 7,
-                      "LinkC": 8,
-                      "Initial_Status": "OK"
-                    }
-                  },
-                  "LV_parameters": {
-                    "Module": 2,
-                    "IP": "0.0.0.0",
-                    "Channel": 1
-                  },
-                  "HV_parameters": {
-                    "Module": 2,
-                    "IP": "0.0.0.0",
-                    "Channel": 1
-                  },
-                  "Temperature_parameters": {
-                    "submaster": "mscb334.mu3e",
-                    "port": 1,
-                    "channel": 4
-                  }
-                },
-                "5": {
-                  "SpecBookId": 9,
-                  "FEB_ID": 6,
-                  "FEB_channel": 1,
-                  "phi": 5,
-                  "N_Chips": 3,
-                  "Chips": {
-                    "0": {
-                      "Type": "Mupix10",
-                      "MIDAS_ID": 8,
-                      "SpecBookId": 4,
-                      "EventDisplayID": 15,
-                      "LinkA": 9,
-                      "LinkB": 10,
-                      "LinkC": 11,
-                      "Initial_Status": "Dead"
-                    },
-                    "1": {
-                      "Type": "Mupix10",
-                      "MIDAS_ID": 7,
-                      "SpecBookId": 5,
-                      "EventDisplayID": 16,
-                      "LinkA": 12,
-                      "LinkB": 13,
-                      "LinkC": 14,
-                      "Initial_Status": "OK"
-                    },
-                    "2": {
-                      "Type": "Mupix10",
-                      "MIDAS_ID": 6,
-                      "SpecBookId": 6,
-                      "EventDisplayID": 17,
-                      "LinkA": 15,
-                      "LinkB": 16,
-                      "LinkC": 17,
-                      "Initial_Status": "OK"
-                    }
-                  },
-                  "LV_parameters": {
-                    "Module": 2,
-                    "IP": "0.0.0.0",
-                    "Channel": 3
-                  },
-                  "HV_parameters": {
-                    "Module": 2,
-                    "IP": "0.0.0.0",
-                    "Channel": 3
-                  },
-                  "Temperature_parameters": {
-                    "submaster": "mscb334.mu3e",
-                    "port": 1,
-                    "channel": 5
-                  }
-                },
-                "6": {
-                  "SpecBookId": 10,
-                  "FEB_ID": 6,
-                  "FEB_channel": 2,
-                  "phi": 6,
-                  "N_Chips": 3,
-                  "Chips": {
-                    "0": {
-                      "Type": "Mupix10",
-                      "MIDAS_ID": 5,
-                      "SpecBookId": 4,
-                      "EventDisplayID": 18,
-                      "LinkA": 18,
-                      "LinkB": 19,
-                      "LinkC": 20,
-                      "Initial_Status": "OK"
-                    },
-                    "1": {
-                      "Type": "Mupix10",
-                      "MIDAS_ID": 4,
-                      "SpecBookId": 5,
-                      "EventDisplayID": 19,
-                      "LinkA": 21,
-                      "LinkB": 22,
-                      "LinkC": 23,
-                      "Initial_Status": "OK"
-                    },
-                    "2": {
-                      "Type": "Mupix10",
-                      "MIDAS_ID": 3,
-                      "SpecBookId": 6,
-                      "EventDisplayID": 20,
-                      "LinkA": 24,
-                      "LinkB": 25,
-                      "LinkC": 26,
-                      "Initial_Status": "OK"
-                    }
-                  },
-                  "LV_parameters": {
-                    "Module": 3,
-                    "IP": "0.0.0.0",
-                    "Channel": 1
-                  },
-                  "HV_parameters": {
-                    "Module": 3,
-                    "IP": "0.0.0.0",
-                    "Channel": 1
-                  },
-                  "Temperature_parameters": {
-                    "submaster": "mscb334.mu3e",
-                    "port": 1,
-                    "channel": 6
-                  }
-                },
-                "7": {
-                  "SpecBookId": 11,
-                  "FEB_ID": 6,
-                  "FEB_channel": 3,
-                  "phi": 7,
-                  "N_Chips": 3,
-                  "Chips": {
-                    "0": {
-                      "Type": "Mupix10",
-                      "MIDAS_ID": 2,
-                      "SpecBookId": 4,
-                      "EventDisplayID": 21,
-                      "LinkA": 27,
-                      "LinkB": 28,
-                      "LinkC": 29,
-                      "Initial_Status": "OK"
-                    },
-                    "1": {
-                      "Type": "Mupix10",
-                      "MIDAS_ID": 1,
-                      "SpecBookId": 5,
-                      "EventDisplayID": 22,
-                      "LinkA": 30,
-                      "LinkB": 31,
-                      "LinkC": 32,
-                      "Initial_Status": "OK"
-                    },
-                    "2": {
-                      "Type": "Mupix10",
-                      "MIDAS_ID": 0,
-                      "SpecBookId": 6,
-                      "EventDisplayID": 23,
-                      "LinkA": 33,
-                      "LinkB": 34,
-                      "LinkC": 35,
-                      "Initial_Status": "OK"
-                    }
-                  },
-                  "LV_parameters": {
-                    "Module": 3,
-                    "IP": "0.0.0.0",
-                    "Channel": 3
-                  },
-                  "HV_parameters": {
-                    "Module": 3,
-                    "IP": "0.0.0.0",
-                    "Channel": 3
-                  },
-                  "Temperature_parameters": {
-                    "submaster": "mscb334.mu3e",
-                    "port": 1,
-                    "channel": 7
-                  }
-                }
-              }
-            },
-            "1": {
-              "SpecBookId": 1,
-              "N_Ladders": 10,
-              "Ladders": {
-                "0": {
-                  "SpecBookId": 0,
-                  "FEB_ID": 7,
-                  "FEB_channel": 0,
-                  "phi": 0,
-                  "N_Chips": 3,
-                  "Chips": {
-                    "0": {
-                      "Type": "Mupix10",
-                      "MIDAS_ID": 11,
-                      "SpecBookId": 4,
-                      "EventDisplayID": 0,
-                      "LinkA": 0,
-                      "LinkB": 1,
-                      "LinkC": 2,
-                      "Initial_Status": "Dead"
-                    },
-                    "1": {
-                      "Type": "Mupix10",
-                      "MIDAS_ID": 10,
-                      "SpecBookId": 5,
-                      "EventDisplayID": 1,
-                      "LinkA": 3,
-                      "LinkB": 4,
-                      "LinkC": 5,
-                      "Initial_Status": "OK"
-                    },
-                    "2": {
-                      "Type": "Mupix10",
-                      "MIDAS_ID": 9,
-                      "SpecBookId": 6,
-                      "EventDisplayID": 2,
-                      "LinkA": 6,
-                      "LinkB": 7,
-                      "LinkC": 8,
-                      "Initial_Status": "OK"
-                    }
-                  },
-                  "LV_parameters": {
-                    "Module": 4,
-                    "IP": "0.0.0.0",
-                    "Channel": 1
-                  },
-                  "HV_parameters": {
-                    "Module": 4,
-                    "IP": "0.0.0.0",
-                    "Channel": 1
-                  },
-                  "Temperature_parameters": {
-                    "submaster": "mscb334.mu3e",
-                    "port": 3,
-                    "channel": 0
-                  }
-                },
-                "1": {
-                  "SpecBookId": 1,
-                  "FEB_ID": 7,
-                  "FEB_channel": 1,
-                  "phi": 1,
-                  "N_Chips": 3,
-                  "Chips": {
-                    "0": {
-                      "Type": "Mupix10",
-                      "MIDAS_ID": 8,
-                      "SpecBookId": 4,
-                      "EventDisplayID": 3,
-                      "LinkA": 9,
-                      "LinkB": 10,
-                      "LinkC": 11,
-                      "Initial_Status": "OK"
-                    },
-                    "1": {
-                      "Type": "Mupix10",
-                      "MIDAS_ID": 7,
-                      "SpecBookId": 5,
-                      "EventDisplayID": 4,
-                      "LinkA": 12,
-                      "LinkB": 13,
-                      "LinkC": 14,
-                      "Initial_Status": "OK"
-                    },
-                    "2": {
-                      "Type": "Mupix10",
-                      "MIDAS_ID": 6,
-                      "SpecBookId": 6,
-                      "EventDisplayID": 5,
-                      "LinkA": 15,
-                      "LinkB": 16,
-                      "LinkC": 17,
-                      "Initial_Status": "OK"
-                    }
-                  },
-                  "LV_parameters": {
-                    "Module": 4,
-                    "IP": "0.0.0.0",
-                    "Channel": 3
-                  },
-                  "HV_parameters": {
-                    "Module": 4,
-                    "IP": "0.0.0.0",
-                    "Channel": 3
-                  },
-                  "Temperature_parameters": {
-                    "submaster": "mscb334.mu3e",
-                    "port": 3,
-                    "channel": 1
-                  }
-                },
-                "2": {
-                  "SpecBookId": 2,
-                  "FEB_ID": 7,
-                  "FEB_channel": 2,
-                  "phi": 2,
-                  "N_Chips": 3,
-                  "Chips": {
-                    "0": {
-                      "Type": "Mupix10",
-                      "MIDAS_ID": 5,
-                      "SpecBookId": 4,
-                      "EventDisplayID": 6,
-                      "LinkA": 18,
-                      "LinkB": 19,
-                      "LinkC": 20,
-                      "Initial_Status": "OK"
-                    },
-                    "1": {
-                      "Type": "Mupix10",
-                      "MIDAS_ID": 4,
-                      "SpecBookId": 5,
-                      "EventDisplayID": 7,
-                      "LinkA": 21,
-                      "LinkB": 22,
-                      "LinkC": 23,
-                      "Initial_Status": "OK"
-                    },
-                    "2": {
-                      "Type": "Mupix10",
-                      "MIDAS_ID": 3,
-                      "SpecBookId": 6,
-                      "EventDisplayID": 8,
-                      "LinkA": 24,
-                      "LinkB": 25,
-                      "LinkC": 26,
-                      "Initial_Status": "OK"
-                    }
-                  },
-                  "LV_parameters": {
-                    "Module": 5,
-                    "IP": "0.0.0.0",
-                    "Channel": 1
-                  },
-                  "HV_parameters": {
-                    "Module": 5,
-                    "IP": "0.0.0.0",
-                    "Channel": 1
-                  },
-                  "Temperature_parameters": {
-                    "submaster": "mscb334.mu3e",
-                    "port": 3,
-                    "channel": 2
-                  }
-                },
-                "3": {
-                  "SpecBookId": 3,
-                  "FEB_ID": 7,
-                  "FEB_channel": 3,
-                  "phi": 3,
-                  "N_Chips": 3,
-                  "Chips": {
-                    "0": {
-                      "Type": "Mupix10",
-                      "MIDAS_ID": 2,
-                      "SpecBookId": 4,
-                      "EventDisplayID": 9,
-                      "LinkA": 27,
-                      "LinkB": 28,
-                      "LinkC": 29,
-                      "Initial_Status": "OK"
-                    },
-                    "1": {
-                      "Type": "Mupix10",
-                      "MIDAS_ID": 1,
-                      "SpecBookId": 5,
-                      "EventDisplayID": 10,
-                      "LinkA": 30,
-                      "LinkB": 31,
-                      "LinkC": 32,
-                      "Initial_Status": "OK"
-                    },
-                    "2": {
-                      "Type": "Mupix10",
-                      "MIDAS_ID": 0,
-                      "SpecBookId": 6,
-                      "EventDisplayID": 11,
-                      "LinkA": 33,
-                      "LinkB": 34,
-                      "LinkC": 35,
-                      "Initial_Status": "OK"
-                    }
-                  },
-                  "LV_parameters": {
-                    "Module": 5,
-                    "IP": "0.0.0.0",
-                    "Channel": 3
-                  },
-                  "HV_parameters": {
-                    "Module": 5,
-                    "IP": "0.0.0.0",
-                    "Channel": 3
-                  },
-                  "Temperature_parameters": {
-                    "submaster": "mscb334.mu3e",
-                    "port": 3,
-                    "channel": 3
-                  }
-                },
-                "4": {
-                  "SpecBookId": 4,
-                  "FEB_ID": 8,
-                  "FEB_channel": 0,
-                  "phi": 4,
-                  "N_Chips": 3,
-                  "Chips": {
-                    "0": {
-                      "Type": "Mupix10",
-                      "MIDAS_ID": 11,
-                      "SpecBookId": 4,
-                      "EventDisplayID": 12,
-                      "LinkA": 0,
-                      "LinkB": 1,
-                      "LinkC": 2,
-                      "Initial_Status": "OK"
-                    },
-                    "1": {
-                      "Type": "Mupix10",
-                      "MIDAS_ID": 10,
-                      "SpecBookId": 5,
-                      "EventDisplayID": 13,
-                      "LinkA": 3,
-                      "LinkB": 4,
-                      "LinkC": 5,
-                      "Initial_Status": "OK"
-                    },
-                    "2": {
-                      "Type": "Mupix10",
-                      "MIDAS_ID": 9,
-                      "SpecBookId": 6,
-                      "EventDisplayID": 14,
-                      "LinkA": 6,
-                      "LinkB": 7,
-                      "LinkC": 8,
-                      "Initial_Status": "Dead"
-                    }
-                  },
-                  "LV_parameters": {
-                    "Module": 6,
-                    "IP": "0.0.0.0",
-                    "Channel": 1
-                  },
-                  "HV_parameters": {
-                    "Module": 6,
-                    "IP": "0.0.0.0",
-                    "Channel": 1
-                  },
-                  "Temperature_parameters": {
-                    "submaster": "mscb334.mu3e",
-                    "port": 3,
-                    "channel": 4
-                  }
-                },
-                "5": {
-                  "SpecBookId": 5,
-                  "FEB_ID": 8,
-                  "FEB_channel": 1,
-                  "phi": 5,
-                  "N_Chips": 3,
-                  "Chips": {
-                    "0": {
-                      "Type": "Mupix10",
-                      "MIDAS_ID": 8,
-                      "SpecBookId": 4,
-                      "EventDisplayID": 15,
-                      "LinkA": 9,
-                      "LinkB": 10,
-                      "LinkC": 11,
-                      "Initial_Status": "OK"
-                    },
-                    "1": {
-                      "Type": "Mupix10",
-                      "MIDAS_ID": 7,
-                      "SpecBookId": 5,
-                      "EventDisplayID": 16,
-                      "LinkA": 12,
-                      "LinkB": 13,
-                      "LinkC": 14,
-                      "Initial_Status": "OK"
-                    },
-                    "2": {
-                      "Type": "Mupix10",
-                      "MIDAS_ID": 6,
-                      "SpecBookId": 6,
-                      "EventDisplayID": 17,
-                      "LinkA": 15,
-                      "LinkB": 16,
-                      "LinkC": 17,
-                      "Initial_Status": "OK"
-                    }
-                  },
-                  "LV_parameters": {
-                    "Module": 6,
-                    "IP": "0.0.0.0",
-                    "Channel": 3
-                  },
-                  "HV_parameters": {
-                    "Module": 6,
-                    "IP": "0.0.0.0",
-                    "Channel": 3
-                  },
-                  "Temperature_parameters": {
-                    "submaster": "mscb334.mu3e",
-                    "port": 3,
-                    "channel": 5
-                  }
-                },
-                "6": {
-                  "SpecBookId": 6,
-                  "FEB_ID": 8,
-                  "FEB_channel": 2,
-                  "phi": 6,
-                  "N_Chips": 3,
-                  "Chips": {
-                    "0": {
-                      "Type": "Mupix10",
-                      "MIDAS_ID": 5,
-                      "SpecBookId": 4,
-                      "EventDisplayID": 18,
-                      "LinkA": 18,
-                      "LinkB": 19,
-                      "LinkC": 20,
-                      "Initial_Status": "OK"
-                    },
-                    "1": {
-                      "Type": "Mupix10",
-                      "MIDAS_ID": 4,
-                      "SpecBookId": 5,
-                      "EventDisplayID": 19,
-                      "LinkA": 21,
-                      "LinkB": 22,
-                      "LinkC": 23,
-                      "Initial_Status": "OK"
-                    },
-                    "2": {
-                      "Type": "Mupix10",
-                      "MIDAS_ID": 3,
-                      "SpecBookId": 6,
-                      "EventDisplayID": 20,
-                      "LinkA": 24,
-                      "LinkB": 25,
-                      "LinkC": 26,
-                      "Initial_Status": "OK"
-                    }
-                  },
-                  "LV_parameters": {
-                    "Module": 7,
-                    "IP": "0.0.0.0",
-                    "Channel": 1
-                  },
-                  "HV_parameters": {
-                    "Module": 7,
-                    "IP": "0.0.0.0",
-                    "Channel": 1
-                  },
-                  "Temperature_parameters": {
-                    "submaster": "mscb334.mu3e",
-                    "port": 3,
-                    "channel": 6
-                  }
-                },
-                "7": {
-                  "SpecBookId": 8,
-                  "FEB_ID": 9,
-                  "FEB_channel": 0,
-                  "phi": 7,
-                  "N_Chips": 3,
-                  "Chips": {
-                    "0": {
-                      "Type": "Mupix10",
-                      "MIDAS_ID": 2,
-                      "SpecBookId": 4,
-                      "EventDisplayID": 21,
-                      "LinkA": 27,
-                      "LinkB": 28,
-                      "LinkC": 29,
-                      "Initial_Status": "OK"
-                    },
-                    "1": {
-                      "Type": "Mupix10",
-                      "MIDAS_ID": 1,
-                      "SpecBookId": 5,
-                      "EventDisplayID": 22,
-                      "LinkA": 30,
-                      "LinkB": 31,
-                      "LinkC": 32,
-                      "Initial_Status": "OK"
-                    },
-                    "2": {
-                      "Type": "Mupix10",
-                      "MIDAS_ID": 0,
-                      "SpecBookId": 6,
-                      "EventDisplayID": 23,
-                      "LinkA": 33,
-                      "LinkB": 34,
-                      "LinkC": 35,
-                      "Initial_Status": "OK"
-                    }
-                  },
-                  "LV_parameters": {
-                    "Module": 7,
-                    "IP": "0.0.0.0",
-                    "Channel": 3
-                  },
-                  "HV_parameters": {
-                    "Module": 7,
-                    "IP": "0.0.0.0",
-                    "Channel": 3
-                  },
-                  "Temperature_parameters": {
-                    "submaster": "mscb334.mu3e",
-                    "port": 3,
-                    "channel": 7
-                  }
-                },
-                "8": {
-                  "SpecBookId": 9,
-                  "FEB_ID": 9,
-                  "FEB_channel": 1,
-                  "phi": 8,
-                  "N_Chips": 3,
-                  "Chips": {
-                    "0": {
-                      "Type": "Mupix10",
-                      "MIDAS_ID": 11,
-                      "SpecBookId": 4,
-                      "EventDisplayID": 21,
-                      "LinkA": 0,
-                      "LinkB": 1,
-                      "LinkC": 2,
-                      "Initial_Status": "OK"
-                    },
-                    "1": {
-                      "Type": "Mupix10",
-                      "MIDAS_ID": 10,
-                      "SpecBookId": 5,
-                      "EventDisplayID": 22,
-                      "LinkA": 3,
-                      "LinkB": 4,
-                      "LinkC": 5,
-                      "Initial_Status": "OK"
-                    },
-                    "2": {
-                      "Type": "Mupix10",
-                      "MIDAS_ID": 9,
-                      "SpecBookId": 6,
-                      "EventDisplayID": 23,
-                      "LinkA": 6,
-                      "LinkB": 7,
-                      "LinkC": 8,
-                      "Initial_Status": "OK"
-                    }
-                  },
-                  "LV_parameters": {
-                    "Module": 8,
-                    "IP": "0.0.0.0",
-                    "Channel": 1
-                  },
-                  "HV_parameters": {
-                    "Module": 8,
-                    "IP": "0.0.0.0",
-                    "Channel": 1
-                  },
-                  "Temperature_parameters": {
-                    "submaster": "mscb334.mu3e",
-                    "port": 5,
-                    "channel": 0
-                  }
-                },
-                "9": {
-                  "SpecBookId": 10,
-                  "FEB_ID": 9,
-                  "FEB_channel": 2,
-                  "phi": 9,
-                  "N_Chips": 3,
-                  "Chips": {
-                    "0": {
-                      "Type": "Mupix10",
-                      "MIDAS_ID": 8,
-                      "SpecBookId": 4,
-                      "EventDisplayID": 21,
-                      "LinkA": 9,
-                      "LinkB": 10,
-                      "LinkC": 11,
-                      "Initial_Status": "OK"
-                    },
-                    "1": {
-                      "Type": "Mupix10",
-                      "MIDAS_ID": 7,
-                      "SpecBookId": 5,
-                      "EventDisplayID": 22,
-                      "LinkA": 12,
-                      "LinkB": 13,
-                      "LinkC": 14,
-                      "Initial_Status": "OK"
-                    },
-                    "2": {
-                      "Type": "Mupix10",
-                      "MIDAS_ID": 6,
-                      "SpecBookId": 6,
-                      "EventDisplayID": 23,
-                      "LinkA": 15,
-                      "LinkB": 16,
-                      "LinkC": 17,
-                      "Initial_Status": "OK"
-                    }
-                  },
-                  "LV_parameters": {
-                    "Module": 8,
-                    "IP": "0.0.0.0",
-                    "Channel": 3
-                  },
-                  "HV_parameters": {
-                    "Module": 8,
-                    "IP": "0.0.0.0",
-                    "Channel": 3
-                  },
-                  "Temperature_parameters": {
-                    "submaster": "mscb334.mu3e",
-                    "port": 5,
-                    "channel": 1
-                  }
-                }
-              }
-            }
-          }
         }
-      }
     }
-  }
 }
