@@ -42,6 +42,7 @@ fi
 
 # setup mu3edisplay path
 ln -sf ~/analyzer/packages/mu3edisplay ~/online/online
+ln -sf ~/analyzer/packages/mu3edisplay/config ~/online/online
 
 #
 # [SR] Personal git-xy alias to be used by all of us, please add one for yourself
