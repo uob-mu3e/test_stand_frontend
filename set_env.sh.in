@@ -40,6 +40,9 @@ if test -n "${BASH}" -o -n "${ZSH_VERSION}"; then
     hash -r
 fi
 
+# setup mu3edisplay path
+ln -sf ~/analyzer/packages/mu3edisplay ~/online/online
+
 #
 # [SR] Personal git-xy alias to be used by all of us, please add one for yourself
 #
