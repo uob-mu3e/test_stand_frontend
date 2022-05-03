@@ -23,7 +23,7 @@ architecture rtl of mupix_ctrl_tb is
     signal clock            : std_logic_vector( 3 downto 0);
     signal SIN              : std_logic_vector( 3 downto 0);
     signal mosi             : std_logic_vector( 3 downto 0);
-    signal csn              : std_logic_vector(11 downto 0);
+    signal cs               : std_logic_vector(11 downto 0);
 begin
 
     clk <= not clk after (500 ns / CLK_MHZ);
@@ -45,7 +45,7 @@ begin
         o_clock             => clock,
         o_SIN               => SIN,
         o_mosi              => mosi,
-        o_csn               => csn--,
+        o_cs                => cs--,
     );
 
     process
