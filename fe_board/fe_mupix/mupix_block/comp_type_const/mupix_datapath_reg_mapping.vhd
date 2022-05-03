@@ -37,6 +37,10 @@ port (
     i_mp_hit_ena_cnt            : in std_logic_vector(31 downto 0) := (others => '0');
     i_mp_sorter_in_hit_ena_cnt  : in std_logic_vector(31 downto 0) := (others => '0');
     i_mp_sorter_out_hit_ena_cnt : in std_logic_vector(31 downto 0) := (others => '0');
+    i_trigger0                  : in std_logic_vector(31 downto 0) := (others => '0');
+    i_trigger0_reg              : in std_logic_vector(31 downto 0) := (others => '0');
+    i_trigger1                  : in std_logic_vector(31 downto 0) := (others => '0');
+    i_trigger1_reg              : in std_logic_vector(31 downto 0) := (others => '0');
 
     -- outputs 156--------------------------------------------
     o_mp_lvds_link_mask         : out std_logic_vector(35 downto 0); -- lvds link mask
@@ -68,6 +72,7 @@ architecture rtl of mupix_datapath_reg_mapping is
     signal mp_hit_ena_cnt_sorter_sel: std_logic_vector( 3 downto 0);
     signal mp_reset_n_lvds          : std_logic := '1';
     signal reg_delay                : std_logic;
+    signal trigger0_reg, trigger1_reg : std_logic_vector(31 downto 0);
 
 begin
 
@@ -93,6 +98,8 @@ begin
             mp_lvds_link_mask         <= (others => '0');
             mp_sorter_inject          <= (others => '0');
             mp_use_arrival_time       <= (others => '0');
+            trigger0_reg              <= (others => '0');
+            trigger1_reg              <= (others => '0');
 
         elsif(rising_edge(i_clk156)) then
 
@@ -164,6 +171,24 @@ begin
 
             if ( regaddr = MP_LAST_SORTER_HIT_REGISTER_R and i_reg_re = '1' ) then
                 o_reg_rdata <= i_last_sorter_hit;
+            end if;
+
+            if ( regaddr = MP_TRIGGER0_REGISTER_R and i_reg_re = '1' ) then
+                o_reg_rdata     <= i_trigger0;
+                trigger0_reg    <= i_trigger0_reg;
+            end if;
+
+            if ( regaddr = MP_TRIGGER1_REGISTER_R and i_reg_re = '1' ) then
+                o_reg_rdata     <= i_trigger1;
+                trigger1_reg    <= i_trigger1_reg;
+            end if;
+
+            if ( regaddr = MP_TRIGGER0_REG_REGISTER_R and i_reg_re = '1' ) then
+                o_reg_rdata     <= i_trigger0_reg;
+            end if;
+
+            if ( regaddr = MP_TRIGGER1_REG_REGISTER_R and i_reg_re = '1' ) then
+                o_reg_rdata     <= i_trigger1_reg;
             end if;
 
             if ( regaddr = MP_SORTER_INJECT_REGISTER_W and i_reg_we = '1' ) then
