@@ -17,6 +17,7 @@
 #include "class/generic.h"
 #include "device/mscbdev.h"
 #include "device/mdevice.h"
+#include "device/mdevice_mscb.h"
 
 /*-- Globals -------------------------------------------------------*/
 
