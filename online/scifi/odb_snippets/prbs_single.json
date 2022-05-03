@@ -2,7 +2,7 @@
   "/MIDAS version" : "2.1",
   "/MIDAS git revision" : "Tue May 25 16:38:10 2021 -0700 - midas-2020-08-a-293-gd5545ce9 on branch HEAD",
   "/filename" : "prbs_single.json",
-  "/ODB path" : "/Equipment/SciFi/Settings",
+  "/ODB path" : "/Equipment/SciFiCentral/Settings",
 
   "ASICs" : {
     "Global" : {

@@ -475,7 +475,7 @@ void SMB_t::menu_counters(){
     uint32_t lastPRBS[8] = {0, 0, 0, 0, 0, 0, 0, 0};
     uint32_t lastLVDS[8] = {0, 0, 0, 0, 0, 0, 0, 0};
     uint32_t lastEvents[8] = {0, 0, 0, 0, 0, 0, 0, 0};    
-    uint32_t counter_map[8] = {0, 3, 4, 5, 6, 7, 8, 9};
+    uint32_t counter_map[5] = {0, 3, 6, 8, 9};
     printf("Counters: press 'q' to end / 'r' to reset\n");
     while(1){
     printf("\n\n\n\n\n\n\n\n\n\n\n\n\n\n");
@@ -490,7 +490,7 @@ void SMB_t::menu_counters(){
                     case 4: printf("# SYNCLOSS  / -     "); break;
                 }
                 // loop over asics
-                for ( uint32_t asic = 0 + selected * 4; asic < 4 + selected * 4; asic++ ) {
+                for ( uint32_t asic = 0; asic < 4; asic++ ) {
                     // print event rate
                     if ( selected == 0 ) {
                         // get time
