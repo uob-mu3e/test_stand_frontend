@@ -67,9 +67,9 @@ public:
          mName.push_back(name[i]);
 
          if (hv_max != -1)
-            mOdbSettings["Voltage Limit"][chn_total + i] = hv_max;
+            mOdbSettings["Voltage Limit"][chn_total + i] = (float)hv_max;
          else if (mHvMax != -1)
-            mOdbSettings["Voltage Limit"][chn_total + i] = mHvMax;
+            mOdbSettings["Voltage Limit"][chn_total + i] = (float)mHvMax;
       }
 
       mEq->driver[mDevIndex].channels += n_channels;
