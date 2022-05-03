@@ -154,40 +154,40 @@ typedef struct {
 } MUPIX_BIASDACS;
 
 static odb MUPIX_BIASDACS_SETTINGS = {
-    {"VNTimerDel", 40}, // 20
+    {"VNTimerDel", 40},
     {"VPTimerDel", 1},
     {"VNDAC", 0},
-    {"VPFoll", 0}, // 20
+    {"VPFoll", 20},
     {"VNComp", 0},
-    {"VNHB", 0}, // 63
-    {"VPComp2", 10}, // 5
-    {"VPPump", 40}, // 63
+    {"VNHB", 20},
+    {"VPComp2", 10},
+    {"VPPump", 63},
     {"VNLVDSDel", 0},
-    {"VNLVDS", 10}, // 16
-    {"VNDcl", 9}, // martin: 10 david: 15
+    {"VNLVDS", 10},
+    {"VNDcl", 15},
     {"VPDcl", 30},
-    {"VNDelPreEmp", 15}, // 32
-    {"VPDelPreEmp", 15}, // 32
-    {"VNDelDcl", 15}, // 32
-    {"VPDelDcl", 15}, // 32
-    {"VNDelDclMux", 10}, // 32
-    {"VPDelDclMux", 10},  // 32
-    {"VNVCO", 13}, // 39
-    {"VPVCO", 12}, // 38
-    {"VNOutPix", 5}, // 10
-    {"VPLoadPix", 2}, // 10
+    {"VNDelPreEmp", 10},
+    {"VPDelPreEmp", 10},
+    {"VNDelDcl", 5},
+    {"VPDelDcl", 5},
+    {"VNDelDclMux", 10},
+    {"VPDelDclMux", 10},
+    {"VNVCO", 13},
+    {"VPVCO", 12},
+    {"VNOutPix", 5},
+    {"VPLoadPix", 2},
     {"VNBiasPix", 0},
-    {"BLResDig", 2}, // 5
+    {"BLResDig", 2},
     {"VNPix2", 0},
     {"VPDAC", 0},
-    {"VPComp1", 10}, // 0
+    {"VPComp1", 10},
     {"VNDel", 10},
     {"VNRegC", 0},
-    {"VNFollPix", 2}, // 12
-    {"VNFBPix", 5}, // 4
-    {"VNPix", 10}, // 20
+    {"VNFollPix", 2},
+    {"VNFBPix", 5},
+    {"VNPix", 10},
     {"ThRes", 0},
-    {"BLResPix", 2}, // 5
+    {"BLResPix", 2},
     {"BiasBlock_on", 5},
     {"Bandgap_on", 0}
 };
@@ -232,7 +232,7 @@ static odb MUPIX_CONFDACS_SETTINGS = {
     {"SelFast", 0},
     {"count_sheep", 0},
     {"NC1", 0},
-    {"TestOut", 0},
+    {"TestOut", 1},
     {"disable_HB", 1},
     {"conf_res_n", 1},
     {"RO_res_n", 1},
@@ -243,9 +243,9 @@ static odb MUPIX_CONFDACS_SETTINGS = {
     {"NC3", 0},
     {"Tune_Reg_R", 0},
     {"AlwaysEnable", 1},
-    {"En2thre", 1},
+    {"En2thre", 0},
     {"NC4", 0},
-    {"EnPLL", 0}, // NOTE: This is inverted 0 is on
+    {"EnPLL", 0},
     {"SelSlow", 0},
     {"SelEx", 0},
     {"invert", 0},
@@ -260,7 +260,7 @@ static odb MUPIX_CONFDACS_SETTINGS = {
     {"maxcycend", 63},
     {"slowdownend", 0},
     {"timerend", 1},
-    {"ckdivend2", 31},
+    {"ckdivend2", 15},
     {"ckdivend", 0}
 };
 
@@ -279,15 +279,15 @@ typedef struct {
 
 static odb MUPIX_VDACS_SETTINGS = {
     {"VCAL", 0},
-    {"BLPix", 141},
+    {"BLPix", 151},
     {"ThPix", 0},
-    {"ThHigh", 173},
-    {"ThLow", 166},
+    {"ThHigh", 185},
+    {"ThLow", 181},
     {"ThHigh2", 0},
     {"ThLow2", 0},
-    {"Baseline", 164},
+    {"Baseline", 167},
     {"VDAC1", 0},
-    {"ref_Vss", 195}
+    {"ref_Vss", 198}
 };
 
 #endif
