@@ -149,24 +149,24 @@ INT frontend_init()
    
 
    // define associated history panels
-   env.define_panel("Oxygen",      {"US_top_O2",
-                                    "DS_top_O2",
-                                    "US_bottom_O2",
-                                    "US_central_O2",
-                                    "DS_central_O2"});
-   env.define_panel("Temperature", {"US_central_PCMini52_T",
-                                    "US_FEC0_T",
-                                    "DS_FEC2_T",
-                                    "DS_top_T"});
-   env.define_panel("Humidity",    {"US_central_PCMini52_RH",
-                                    "US_top_RH",
-                                    "DS_top_RH",
-                                    "US_bottom_RH",
-                                    "US_central_RH",
-                                    "DS_bottom_RH",
-                                    "DS_central_RH"});
-   env.define_panel("Water",       {"US_bottom_Water",
-                                    "DS_bottom_Water"});
+   env.define_history_panel("Oxygen",      {"US_top_O2",
+                                            "DS_top_O2",
+                                            "US_bottom_O2",
+                                            "US_central_O2",
+                                           "DS_central_O2"});
+   env.define_history_panel("Temperature", {"US_central_PCMini52_T",
+                                            "US_FEC0_T",
+                                            "DS_FEC2_T",
+                                           "DS_top_T"});
+   env.define_history_panel("Humidity",    {"US_central_PCMini52_RH",
+                                            "US_top_RH",
+                                            "DS_top_RH",
+                                            "US_bottom_RH",
+                                            "US_central_RH",
+                                            "DS_bottom_RH",
+                                            "DS_central_RH"});
+   env.define_history_panel("Water",       {"US_bottom_Water",
+                                            "DS_bottom_Water"});
                                     
    mdevice_mscb water("Water", "Input", DF_INPUT, "mscb334.mu3e", "", 100);
    water.set_threshold(0.005);
@@ -187,16 +187,16 @@ INT frontend_init()
    water.define_var(1,  17, "US_In_Flow");
    water.define_var(1,  18, "DS_In_Flow");
 
-   water.define_panel("Pressure",    {"US_In_P",
-                                      "US_Out_P",
-                                      "DS_In_P",
-                                      "DS_Out_P"});
-   water.define_panel("Temperature", {"US_In_T",
-                                      "US_Out_T",
-                                      "DS_In_T",
-                                      "DS_Out_T"});
-   water.define_panel("Flow",        {"US_In_Flow",
-                                      "DS_In_Flow"});
+   water.define_history_panel("Pressure",    {"US_In_P",
+                                              "US_Out_P",
+                                              "DS_In_P",
+                                              "DS_Out_P"});
+   water.define_history_panel("Temperature", {"US_In_T",
+                                              "US_Out_T",
+                                              "DS_In_T",
+                                              "DS_Out_T"});
+   water.define_history_panel("Flow",        {"US_In_Flow",
+                                              "DS_In_Flow"});
 
 
    // Pixel Temperatures
@@ -239,10 +239,10 @@ INT frontend_init()
    //~ pix.define_var(0, 41, "DS L1-9" , 0.005, -165.9, -228);
 
    // define associated history panels
-   //~ env.define_panel("Tempreatures US L0",  0,   7);
-   //~ env.define_panel("Tempreatures US L1",  8,  17);
-   //~ env.define_panel("Tempreatures DS L0", 18,  24);
-   //~ env.define_panel("Tempreatures DS L1", 25,  34);
+   //~ env.define_history_panel("Tempreatures US L0",  0,   7);
+   //~ env.define_history_panel("Tempreatures US L1",  8,  17);
+   //~ env.define_history_panel("Tempreatures DS L0", 18,  24);
+   //~ env.define_history_panel("Tempreatures DS L1", 25,  34);
 
    return CM_SUCCESS;
 }
