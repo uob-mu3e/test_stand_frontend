@@ -27,9 +27,6 @@ using midas::odb;
 
 /*-- Globals -------------------------------------------------------*/
 
-/* The frontend name (client name) as seen by other MIDAS clients   */
-const char *frontend_name = "Stream Frontend";
-
 /* The frontend file name, don't change it */
 const char *frontend_file_name = __FILE__;
 

@@ -1,3 +1,6 @@
+/* The frontend name (client name) as seen by other MIDAS clients   */
+const char *frontend_name = "ROSWBCentral";
+
 const string eq_name = "ROSWBCentral";
 
 EQUIPMENT equipment[] = {
