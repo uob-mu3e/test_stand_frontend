@@ -210,6 +210,7 @@ var chip_clicked = function (ladname, chip) {
     for (i = 0; i < tablinks.length; i++) {
       tablinks[i].className = tablinks[i].className.replace(" active", "");
     }
+    change_qc_image()
 }
 
 var ladder_clicked = function(ladname) {
@@ -290,7 +291,32 @@ var ladder_clicked = function(ladname) {
             chip.classList.add("chip_dead")
             chip.textContent += "\nDEAD"
         }
-        else if (lads[ladname]["json_node"]["Chips"][ch_num]["Initial_Status"] == "OK") {
+        else if (lads[ladname]["json_node"]["Chips"][ch_num]["Initial_Status"] == "A") {
+            //chip.classList.add("chip_available")
+            chip.classList.add("chip_qc_a")
+            chip.textContent += "\nA"
+        }
+        else if (lads[ladname]["json_node"]["Chips"][ch_num]["Initial_Status"] == "B") {
+            //chip.classList.add("chip_available")
+            chip.classList.add("chip_qc_b")
+            chip.textContent += "\nB"
+        }
+        else if (lads[ladname]["json_node"]["Chips"][ch_num]["Initial_Status"] == "C") {
+            //chip.classList.add("chip_available")
+            chip.classList.add("chip_qc_c")
+            chip.textContent += "\nC"
+        }
+        else if (lads[ladname]["json_node"]["Chips"][ch_num]["Initial_Status"] == "D") {
+            //chip.classList.add("chip_available")
+            chip.classList.add("chip_qc_d")
+            chip.textContent += "\nD"
+        }
+        else if (lads[ladname]["json_node"]["Chips"][ch_num]["Initial_Status"] == "E") {
+            //chip.classList.add("chip_available")
+            chip.classList.add("chip_qc_e")
+            chip.textContent += "\nE"
+        }
+        else if (lads[ladname]["json_node"]["Chips"][ch_num]["Initial_Status"] == "N.A.") {
             chip.classList.add("chip_available")
         }
         chip.onclick = function () {chip_clicked(ladname, ch_num)}
@@ -307,6 +333,7 @@ var ladder_clicked = function(ladname) {
     document.getElementById("chip_dacs").style["visibility"] = "hidden"
     document.getElementById("configure_chip_div").style["visibility"] = "hidden"
     document.getElementById("pixel_configure_update").style["visibility"] = "hidden"
+    document.getElementById("qctestdiv").style["visibility"] = "hidden";
     reset_table("pixel_parameters", 0)
     reset_table("Bias_tab", 0)
     reset_table("Conf_tab", 0)
@@ -388,7 +415,7 @@ function openChipDacs(evt, dacName) {
 }
 
 function configureChip(evt) {
-    var mask_names = []
+    /*var mask_names = []
     var px_mask = []
     var num = (parseInt(lads[current_selected]["json_node"]["FEB_ID"])*12 + parseInt(current_lad_chips[current_chip_selected]["json_node"]["MIDAS_ID"]))
     for (var i = 0; i < 128; ++i) {
@@ -397,10 +424,9 @@ function configureChip(evt) {
             px_mask.push(false);
         else
             px_mask.push(true)
-    }
+    }*/
     document.getElementById("pixel_configure_update").style["visibility"] = "visible"
-    document.getElementById("pixel_configure_update_content").textContent = "Configuring chip number " + num
-    mjsonrpc_db_paste(mask_names, px_mask).then(function () {
+    /*mjsonrpc_db_paste(mask_names, px_mask).then(function () {
         mjsonrpc_db_paste(["/Equipment/SwitchingCentral/Commands/MupixConfig"], [true])
     }).catch(function(error) {
         mjsonrpc_error_alert(error);
@@ -409,8 +435,16 @@ function configureChip(evt) {
     var pos = current_lad_chips[current_chip_selected]["json_node"]["MIDAS_ID"];
     chip_select_mask &= ((~0x1) << pos);
     for (var i = 0; i < pos; ++i)
-        chip_select_mask |= (0x1 << i);
+        chip_select_mask |= (0x1 << i);*/
+
+    document.getElementById("pixel_configure_update_content").textContent = "Configuring chip number " + parseInt(current_lad_chips[current_chip_selected]["json_node"]["MIDAS_ID"])
+
     document.getElementById("debug").textContent = "0x" + chip_select_mask.toString(16);
+    mjsonrpc_db_paste(["/Equipment/SwitchingCentral/Commands/MupixChipToConfigure"], [parseInt(current_lad_chips[current_chip_selected]["json_node"]["MIDAS_ID"])]).then(function () {
+        mjsonrpc_db_paste(["/Equipment/SwitchingCentral/Commands/MupixConfig"], [true])
+    }).catch(function(error) {
+        mjsonrpc_error_alert(error);
+    });
 }
 
 function resetDACs(evt) {
@@ -601,6 +635,29 @@ var list_chips_configuration = function (ele, direction) {
             ele.appendChild(linebreak)
         }
     }
+}
+
+var change_qc_image = function () {
+
+    /*var xmlhttp = new XMLHttpRequest();
+    //xmlhttp.responseType = "arraybuffer";
+    xmlhttp.onreadystatechange = function(){
+      if(xmlhttp.status==200 && xmlhttp.readyState==4){
+        document.getElementById("QC").src = xmlhttp.responseText;
+        //document.getElementById("QC").setAttribute('src', "http://mu3ebe:8081/home/mu3e/online/online/pixels/qctest/ladder/output/IV_"+String((current_chip_selected))+".png")
+    }
+      else {
+          document.getElementById("QC").textContent = "NOOOOOOO IMAGE!!!" ;
+      }
+    }
+    xmlhttp.open("GET","http://mu3ebe:8081//home/mu3e/online/online/pixels/qctest/ladder/output/IV_"+String((current_chip_selected))+".png",true);
+    xmlhttp.send();*/
+    lad_id = parseInt(parseInt(current_lad_chips[current_chip_selected]["json_node"]["MIDAS_ID"])/3)
+    if (lad_id > 17)
+        lad_id += 2
+    document.getElementById("QC").src="http://mu3ebe:8081//home/mu3e/online/online/pixels/qctest/ladder/ana_output/ladder_" + lad_id  + "_chip_" + parseInt(current_lad_chips[current_chip_selected]["json_node"]["MIDAS_ID"])%3 + ".png";
+    document.getElementById("qctestdiv").style["visibility"] = "visible";
+
 }
 
 var setup_listeners = function () {

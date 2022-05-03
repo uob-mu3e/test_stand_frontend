@@ -202,6 +202,8 @@ LOOP i, 3
     WAIT SECONDS, 15
 ENDLOOP
 
+# Turn off LV
+# ODBSET $power_set_state_path, 1
 
 # Turn off HV
 ODBSET /Equipment/KEITHLEY0/Variables/Demand Voltage, 0

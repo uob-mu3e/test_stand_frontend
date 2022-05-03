@@ -101,3 +101,7 @@ LOOP j, 3
     diff = $current-$init_current
     ODBSET /Equipment/PixelsCentral/QCTests/Ladder/LVPowerOn/Output/current_increase[$i_], $diff
 ENDLOOP
+
+
+
+# ODBSET $power_set_state_path, 1
