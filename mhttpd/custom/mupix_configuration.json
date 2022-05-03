@@ -49,7 +49,9 @@
                                             "LinkA": 0,
                                             "LinkB": 1,
                                             "LinkC": 2,
-                                            "Initial_Status": "E"
+                                            "Initial_Status": "E",
+                                            "opt_VPVCO": 0,
+                                            "opt_VNVCO": 1
                                         },
                                         "1": {
                                             "Type": "Mupix10",
@@ -59,7 +61,9 @@
                                             "LinkA": 3,
                                             "LinkB": 4,
                                             "LinkC": 5,
-                                            "Initial_Status": "E"
+                                            "Initial_Status": "E",
+                                            "opt_VPVCO": 0,
+                                            "opt_VNVCO": 1
                                         },
                                         "2": {
                                             "Type": "Mupix10",
@@ -69,7 +73,9 @@
                                             "LinkA": 6,
                                             "LinkB": 7,
                                             "LinkC": 8,
-                                            "Initial_Status": "E"
+                                            "Initial_Status": "E",
+                                            "opt_VPVCO": 0,
+                                            "opt_VNVCO": 1
                                         }
                                     },
                                     "LV_parameters": {
@@ -103,7 +109,9 @@
                                             "LinkA": 9,
                                             "LinkB": 10,
                                             "LinkC": 11,
-                                            "Initial_Status": "A"
+                                            "Initial_Status": "A",
+                                            "opt_VPVCO": 23,
+                                            "opt_VNVCO": 24
                                         },
                                         "1": {
                                             "Type": "Mupix10",
@@ -113,7 +121,9 @@
                                             "LinkA": 12,
                                             "LinkB": 13,
                                             "LinkC": 14,
-                                            "Initial_Status": "A"
+                                            "Initial_Status": "A",
+                                            "opt_VPVCO": 14,
+                                            "opt_VNVCO": 15
                                         },
                                         "2": {
                                             "Type": "Mupix10",
@@ -123,7 +133,9 @@
                                             "LinkA": 15,
                                             "LinkB": 16,
                                             "LinkC": 17,
-                                            "Initial_Status": "E"
+                                            "Initial_Status": "E",
+                                            "opt_VPVCO": 14,
+                                            "opt_VNVCO": 15
                                         }
                                     },
                                     "LV_parameters": {
@@ -157,7 +169,9 @@
                                             "LinkA": 18,
                                             "LinkB": 19,
                                             "LinkC": 20,
-                                            "Initial_Status": "A"
+                                            "Initial_Status": "A",
+                                            "opt_VPVCO": 12,
+                                            "opt_VNVCO": 13
                                         },
                                         "1": {
                                             "Type": "Mupix10",
@@ -167,7 +181,9 @@
                                             "LinkA": 21,
                                             "LinkB": 22,
                                             "LinkC": 23,
-                                            "Initial_Status": "B"
+                                            "Initial_Status": "B",
+                                            "opt_VPVCO": 30,
+                                            "opt_VNVCO": 31
                                         },
                                         "2": {
                                             "Type": "Mupix10",
@@ -177,7 +193,9 @@
                                             "LinkA": 24,
                                             "LinkB": 25,
                                             "LinkC": 26,
-                                            "Initial_Status": "B"
+                                            "Initial_Status": "B",
+                                            "opt_VPVCO": 26,
+                                            "opt_VNVCO": 27
                                         }
                                     },
                                     "LV_parameters": {
@@ -211,7 +229,9 @@
                                             "LinkA": 27,
                                             "LinkB": 28,
                                             "LinkC": 29,
-                                            "Initial_Status": "E"
+                                            "Initial_Status": "E",
+                                            "opt_VPVCO": 0,
+                                            "opt_VNVCO": 1
                                         },
                                         "1": {
                                             "Type": "Mupix10",
@@ -221,7 +241,9 @@
                                             "LinkA": 30,
                                             "LinkB": 31,
                                             "LinkC": 32,
-                                            "Initial_Status": "E"
+                                            "Initial_Status": "E",
+                                            "opt_VPVCO": 0,
+                                            "opt_VNVCO": 1
                                         },
                                         "2": {
                                             "Type": "Mupix10",
@@ -231,7 +253,9 @@
                                             "LinkA": 33,
                                             "LinkB": 34,
                                             "LinkC": 35,
-                                            "Initial_Status": "E"
+                                            "Initial_Status": "E",
+                                            "opt_VPVCO": 40,
+                                            "opt_VNVCO": 41
                                         }
                                     },
                                     "LV_parameters": {
@@ -265,7 +289,9 @@
                                             "LinkA": 0,
                                             "LinkB": 1,
                                             "LinkC": 2,
-                                            "Initial_Status": "E"
+                                            "Initial_Status": "E",
+                                            "opt_VPVCO": 0,
+                                            "opt_VNVCO": 1
                                         },
                                         "1": {
                                             "Type": "Mupix10",
@@ -275,7 +301,9 @@
                                             "LinkA": 3,
                                             "LinkB": 4,
                                             "LinkC": 5,
-                                            "Initial_Status": "E"
+                                            "Initial_Status": "E",
+                                            "opt_VPVCO": 0,
+                                            "opt_VNVCO": 1
                                         },
                                         "2": {
                                             "Type": "Mupix10",
@@ -285,7 +313,9 @@
                                             "LinkA": 6,
                                             "LinkB": 7,
                                             "LinkC": 8,
-                                            "Initial_Status": "E"
+                                            "Initial_Status": "E",
+                                            "opt_VPVCO": 0,
+                                            "opt_VNVCO": 1
                                         }
                                     },
                                     "LV_parameters": {
@@ -319,7 +349,9 @@
                                             "LinkA": 9,
                                             "LinkB": 10,
                                             "LinkC": 11,
-                                            "Initial_Status": "N.A."
+                                            "Initial_Status": "N.A.",
+                                            "opt_VPVCO": 0,
+                                            "opt_VNVCO": 1
                                         },
                                         "1": {
                                             "Type": "Mupix10",
@@ -329,7 +361,9 @@
                                             "LinkA": 12,
                                             "LinkB": 13,
                                             "LinkC": 14,
-                                            "Initial_Status": "N.A."
+                                            "Initial_Status": "N.A.",
+                                            "opt_VPVCO": 0,
+                                            "opt_VNVCO": 1
                                         },
                                         "2": {
                                             "Type": "Mupix10",
@@ -339,7 +373,9 @@
                                             "LinkA": 15,
                                             "LinkB": 16,
                                             "LinkC": 17,
-                                            "Initial_Status": "N.A."
+                                            "Initial_Status": "N.A.",
+                                            "opt_VPVCO": 0,
+                                            "opt_VNVCO": 1
                                         }
                                     },
                                     "LV_parameters": {
@@ -373,7 +409,9 @@
                                             "LinkA": 18,
                                             "LinkB": 19,
                                             "LinkC": 20,
-                                            "Initial_Status": "E"
+                                            "Initial_Status": "E",
+                                            "opt_VPVCO": 0,
+                                            "opt_VNVCO": 0
                                         },
                                         "1": {
                                             "Type": "Mupix10",
@@ -383,7 +421,9 @@
                                             "LinkA": 21,
                                             "LinkB": 22,
                                             "LinkC": 23,
-                                            "Initial_Status": "C"
+                                            "Initial_Status": "C",
+                                            "opt_VPVCO": 20,
+                                            "opt_VNVCO": 21
                                         },
                                         "2": {
                                             "Type": "Mupix10",
@@ -393,7 +433,9 @@
                                             "LinkA": 24,
                                             "LinkB": 25,
                                             "LinkC": 26,
-                                            "Initial_Status": "E"
+                                            "Initial_Status": "E",
+                                            "opt_VPVCO": 29,
+                                            "opt_VNVCO": 30
                                         }
                                     },
                                     "LV_parameters": {
@@ -427,7 +469,9 @@
                                             "LinkA": 27,
                                             "LinkB": 28,
                                             "LinkC": 29,
-                                            "Initial_Status": "E"
+                                            "Initial_Status": "E",
+                                            "opt_VPVCO": 28,
+                                            "opt_VNVCO": 29
                                         },
                                         "1": {
                                             "Type": "Mupix10",
@@ -437,7 +481,9 @@
                                             "LinkA": 30,
                                             "LinkB": 31,
                                             "LinkC": 32,
-                                            "Initial_Status": "E"
+                                            "Initial_Status": "E",
+                                            "opt_VPVCO": 0,
+                                            "opt_VNVCO": 1
                                         },
                                         "2": {
                                             "Type": "Mupix10",
@@ -447,7 +493,9 @@
                                             "LinkA": 33,
                                             "LinkB": 34,
                                             "LinkC": 35,
-                                            "Initial_Status": "A"
+                                            "Initial_Status": "A",
+                                            "opt_VPVCO": 40,
+                                            "opt_VNVCO": 41
                                         }
                                     },
                                     "LV_parameters": {
@@ -487,7 +535,9 @@
                                             "LinkA": 0,
                                             "LinkB": 1,
                                             "LinkC": 2,
-                                            "Initial_Status": "N.A."
+                                            "Initial_Status": "N.A.",
+                                            "opt_VPVCO": 0,
+                                            "opt_VNVCO": 1
                                         },
                                         "1": {
                                             "Type": "Mupix10",
@@ -497,7 +547,9 @@
                                             "LinkA": 3,
                                             "LinkB": 4,
                                             "LinkC": 5,
-                                            "Initial_Status": "N.A."
+                                            "Initial_Status": "N.A.",
+                                            "opt_VPVCO": 0,
+                                            "opt_VNVCO": 1
                                         },
                                         "2": {
                                             "Type": "Mupix10",
@@ -507,7 +559,9 @@
                                             "LinkA": 6,
                                             "LinkB": 7,
                                             "LinkC": 8,
-                                            "Initial_Status": "N.A."
+                                            "Initial_Status": "N.A.",
+                                            "opt_VPVCO": 0,
+                                            "opt_VNVCO": 1
                                         }
                                     },
                                     "LV_parameters": {
@@ -541,7 +595,9 @@
                                             "LinkA": 9,
                                             "LinkB": 10,
                                             "LinkC": 11,
-                                            "Initial_Status": "N.A."
+                                            "Initial_Status": "N.A.",
+                                            "opt_VPVCO": 0,
+                                            "opt_VNVCO": 1
                                         },
                                         "1": {
                                             "Type": "Mupix10",
@@ -551,7 +607,9 @@
                                             "LinkA": 12,
                                             "LinkB": 13,
                                             "LinkC": 14,
-                                            "Initial_Status": "N.A."
+                                            "Initial_Status": "N.A.",
+                                            "opt_VPVCO": 0,
+                                            "opt_VNVCO": 1
                                         },
                                         "2": {
                                             "Type": "Mupix10",
@@ -561,7 +619,9 @@
                                             "LinkA": 15,
                                             "LinkB": 16,
                                             "LinkC": 17,
-                                            "Initial_Status": "N.A."
+                                            "Initial_Status": "N.A.",
+                                            "opt_VPVCO": 0,
+                                            "opt_VNVCO": 1
                                         }
                                     },
                                     "LV_parameters": {
@@ -595,7 +655,9 @@
                                             "LinkA": 18,
                                             "LinkB": 19,
                                             "LinkC": 20,
-                                            "Initial_Status": "E"
+                                            "Initial_Status": "E",
+                                            "opt_VPVCO": 0,
+                                            "opt_VNVCO": 1
                                         },
                                         "1": {
                                             "Type": "Mupix10",
@@ -605,7 +667,9 @@
                                             "LinkA": 21,
                                             "LinkB": 22,
                                             "LinkC": 23,
-                                            "Initial_Status": "B"
+                                            "Initial_Status": "B",
+                                            "opt_VPVCO": 27,
+                                            "opt_VNVCO": 28
                                         },
                                         "2": {
                                             "Type": "Mupix10",
@@ -615,7 +679,9 @@
                                             "LinkA": 24,
                                             "LinkB": 25,
                                             "LinkC": 26,
-                                            "Initial_Status": "E"
+                                            "Initial_Status": "E",
+                                            "opt_VPVCO": 27,
+                                            "opt_VNVCO": 28
                                         }
                                     },
                                     "LV_parameters": {
@@ -649,7 +715,9 @@
                                             "LinkA": 27,
                                             "LinkB": 28,
                                             "LinkC": 29,
-                                            "Initial_Status": "E"
+                                            "Initial_Status": "E",
+                                            "opt_VPVCO": 0,
+                                            "opt_VNVCO": 1
                                         },
                                         "1": {
                                             "Type": "Mupix10",
@@ -659,7 +727,9 @@
                                             "LinkA": 30,
                                             "LinkB": 31,
                                             "LinkC": 32,
-                                            "Initial_Status": "E"
+                                            "Initial_Status": "E",
+                                            "opt_VPVCO": 0,
+                                            "opt_VNVCO": 1
                                         },
                                         "2": {
                                             "Type": "Mupix10",
@@ -669,7 +739,9 @@
                                             "LinkA": 33,
                                             "LinkB": 34,
                                             "LinkC": 35,
-                                            "Initial_Status": "E"
+                                            "Initial_Status": "E",
+                                            "opt_VPVCO": 30,
+                                            "opt_VNVCO": 31
                                         }
                                     },
                                     "LV_parameters": {
@@ -703,7 +775,9 @@
                                             "LinkA": 0,
                                             "LinkB": 1,
                                             "LinkC": 2,
-                                            "Initial_Status": "E"
+                                            "Initial_Status": "E",
+                                            "opt_VPVCO": 25,
+                                            "opt_VNVCO": 26
                                         },
                                         "1": {
                                             "Type": "Mupix10",
@@ -713,7 +787,9 @@
                                             "LinkA": 3,
                                             "LinkB": 4,
                                             "LinkC": 5,
-                                            "Initial_Status": "E"
+                                            "Initial_Status": "E",
+                                            "opt_VPVCO": 0,
+                                            "opt_VNVCO": 1
                                         },
                                         "2": {
                                             "Type": "Mupix10",
@@ -723,7 +799,9 @@
                                             "LinkA": 6,
                                             "LinkB": 7,
                                             "LinkC": 8,
-                                            "Initial_Status": "E"
+                                            "Initial_Status": "E",
+                                            "opt_VPVCO": 0,
+                                            "opt_VNVCO": 1
                                         }
                                     },
                                     "LV_parameters": {
@@ -757,7 +835,9 @@
                                             "LinkA": 9,
                                             "LinkB": 10,
                                             "LinkC": 11,
-                                            "Initial_Status": "E"
+                                            "Initial_Status": "E",
+                                            "opt_VPVCO": 32,
+                                            "opt_VNVCO": 33
                                         },
                                         "1": {
                                             "Type": "Mupix10",
@@ -767,7 +847,9 @@
                                             "LinkA": 12,
                                             "LinkB": 13,
                                             "LinkC": 14,
-                                            "Initial_Status": "E"
+                                            "Initial_Status": "E",
+                                            "opt_VPVCO": 21,
+                                            "opt_VNVCO": 22
                                         },
                                         "2": {
                                             "Type": "Mupix10",
@@ -777,7 +859,9 @@
                                             "LinkA": 15,
                                             "LinkB": 16,
                                             "LinkC": 17,
-                                            "Initial_Status": "E"
+                                            "Initial_Status": "E",
+                                            "opt_VPVCO": 24,
+                                            "opt_VNVCO": 25
                                         }
                                     },
                                     "LV_parameters": {
@@ -811,7 +895,9 @@
                                             "LinkA": 18,
                                             "LinkB": 19,
                                             "LinkC": 20,
-                                            "Initial_Status": "C"
+                                            "Initial_Status": "C",
+                                            "opt_VPVCO": 11,
+                                            "opt_VNVCO": 12
                                         },
                                         "1": {
                                             "Type": "Mupix10",
@@ -821,7 +907,9 @@
                                             "LinkA": 21,
                                             "LinkB": 22,
                                             "LinkC": 23,
-                                            "Initial_Status": "C"
+                                            "Initial_Status": "C",
+                                            "opt_VPVCO": 13,
+                                            "opt_VNVCO": 14
                                         },
                                         "2": {
                                             "Type": "Mupix10",
@@ -831,7 +919,9 @@
                                             "LinkA": 24,
                                             "LinkB": 25,
                                             "LinkC": 26,
-                                            "Initial_Status": "D"
+                                            "Initial_Status": "D",
+                                            "opt_VPVCO": 13,
+                                            "opt_VNVCO": 14
                                         }
                                     },
                                     "LV_parameters": {
@@ -865,7 +955,9 @@
                                             "LinkA": 27,
                                             "LinkB": 28,
                                             "LinkC": 29,
-                                            "Initial_Status": "C"
+                                            "Initial_Status": "C",
+                                            "opt_VPVCO": 25,
+                                            "opt_VNVCO": 26
                                         },
                                         "1": {
                                             "Type": "Mupix10",
@@ -875,7 +967,9 @@
                                             "LinkA": 30,
                                             "LinkB": 31,
                                             "LinkC": 32,
-                                            "Initial_Status": "D"
+                                            "Initial_Status": "D",
+                                            "opt_VPVCO": 0,
+                                            "opt_VNVCO": 1
                                         },
                                         "2": {
                                             "Type": "Mupix10",
@@ -885,7 +979,9 @@
                                             "LinkA": 33,
                                             "LinkB": 34,
                                             "LinkC": 35,
-                                            "Initial_Status": "D"
+                                            "Initial_Status": "D",
+                                            "opt_VPVCO": 37,
+                                            "opt_VNVCO": 38
                                         }
                                     },
                                     "LV_parameters": {
@@ -919,7 +1015,9 @@
                                             "LinkA": 0,
                                             "LinkB": 1,
                                             "LinkC": 2,
-                                            "Initial_Status": "E"
+                                            "Initial_Status": "E",
+                                            "opt_VPVCO": 0,
+                                            "opt_VNVCO": 1
                                         },
                                         "1": {
                                             "Type": "Mupix10",
@@ -929,7 +1027,9 @@
                                             "LinkA": 3,
                                             "LinkB": 4,
                                             "LinkC": 5,
-                                            "Initial_Status": "E"
+                                            "Initial_Status": "E",
+                                            "opt_VPVCO": 31,
+                                            "opt_VNVCO": 32
                                         },
                                         "2": {
                                             "Type": "Mupix10",
@@ -939,7 +1039,9 @@
                                             "LinkA": 6,
                                             "LinkB": 7,
                                             "LinkC": 8,
-                                            "Initial_Status": "E"
+                                            "Initial_Status": "E",
+                                            "opt_VPVCO": 0,
+                                            "opt_VNVCO": 1
                                         }
                                     },
                                     "LV_parameters": {
@@ -973,7 +1075,9 @@
                                             "LinkA": 9,
                                             "LinkB": 10,
                                             "LinkC": 11,
-                                            "Initial_Status": "E"
+                                            "Initial_Status": "E",
+                                            "opt_VPVCO": 35,
+                                            "opt_VNVCO": 36
                                         },
                                         "1": {
                                             "Type": "Mupix10",
@@ -983,7 +1087,9 @@
                                             "LinkA": 12,
                                             "LinkB": 13,
                                             "LinkC": 14,
-                                            "Initial_Status": "E"
+                                            "Initial_Status": "E",
+                                            "opt_VPVCO": 0,
+                                            "opt_VNVCO": 1
                                         },
                                         "2": {
                                             "Type": "Mupix10",
@@ -993,7 +1099,9 @@
                                             "LinkA": 15,
                                             "LinkB": 16,
                                             "LinkC": 17,
-                                            "Initial_Status": "E"
+                                            "Initial_Status": "E",
+                                            "opt_VPVCO": 40,
+                                            "opt_VNVCO": 41
                                         }
                                     },
                                     "LV_parameters": {
@@ -1038,7 +1146,9 @@
                                             "LinkA": 0,
                                             "LinkB": 1,
                                             "LinkC": 2,
-                                            "Initial_Status": "E"
+                                            "Initial_Status": "E",
+                                            "opt_VPVCO": 0,
+                                            "opt_VNVCO": 1
                                         },
                                         "1": {
                                             "Type": "Mupix10",
@@ -1048,7 +1158,9 @@
                                             "LinkA": 3,
                                             "LinkB": 4,
                                             "LinkC": 5,
-                                            "Initial_Status": "A"
+                                            "Initial_Status": "A",
+                                            "opt_VPVCO": 0,
+                                            "opt_VNVCO": 1
                                         },
                                         "2": {
                                             "Type": "Mupix10",
@@ -1058,7 +1170,9 @@
                                             "LinkA": 6,
                                             "LinkB": 7,
                                             "LinkC": 8,
-                                            "Initial_Status": "A"
+                                            "Initial_Status": "A",
+                                            "opt_VPVCO": 0,
+                                            "opt_VNVCO": 1
                                         }
                                     },
                                     "LV_parameters": {
@@ -1092,7 +1206,9 @@
                                             "LinkA": 9,
                                             "LinkB": 10,
                                             "LinkC": 11,
-                                            "Initial_Status": "A"
+                                            "Initial_Status": "A",
+                                            "opt_VPVCO": 23,
+                                            "opt_VNVCO": 24
                                         },
                                         "1": {
                                             "Type": "Mupix10",
@@ -1102,7 +1218,9 @@
                                             "LinkA": 12,
                                             "LinkB": 13,
                                             "LinkC": 14,
-                                            "Initial_Status": "A"
+                                            "Initial_Status": "A",
+                                            "opt_VPVCO": 14,
+                                            "opt_VNVCO": 15
                                         },
                                         "2": {
                                             "Type": "Mupix10",
@@ -1112,7 +1230,9 @@
                                             "LinkA": 15,
                                             "LinkB": 16,
                                             "LinkC": 17,
-                                            "Initial_Status": "A"
+                                            "Initial_Status": "A",
+                                            "opt_VPVCO": 14,
+                                            "opt_VNVCO": 15
                                         }
                                     },
                                     "LV_parameters": {
@@ -1146,7 +1266,9 @@
                                             "LinkA": 18,
                                             "LinkB": 19,
                                             "LinkC": 20,
-                                            "Initial_Status": "E"
+                                            "Initial_Status": "E",
+                                            "opt_VPVCO": 12,
+                                            "opt_VNVCO": 13
                                         },
                                         "1": {
                                             "Type": "Mupix10",
@@ -1156,7 +1278,9 @@
                                             "LinkA": 21,
                                             "LinkB": 22,
                                             "LinkC": 23,
-                                            "Initial_Status": "A"
+                                            "Initial_Status": "A",
+                                            "opt_VPVCO": 30,
+                                            "opt_VNVCO": 31
                                         },
                                         "2": {
                                             "Type": "Mupix10",
@@ -1166,7 +1290,9 @@
                                             "LinkA": 24,
                                             "LinkB": 25,
                                             "LinkC": 26,
-                                            "Initial_Status": "A"
+                                            "Initial_Status": "A",
+                                            "opt_VPVCO": 26,
+                                            "opt_VNVCO": 27
                                         }
                                     },
                                     "LV_parameters": {
@@ -1200,7 +1326,9 @@
                                             "LinkA": 27,
                                             "LinkB": 28,
                                             "LinkC": 29,
-                                            "Initial_Status": "E"
+                                            "Initial_Status": "E",
+                                            "opt_VPVCO": 0,
+                                            "opt_VNVCO": 1
                                         },
                                         "1": {
                                             "Type": "Mupix10",
@@ -1210,7 +1338,9 @@
                                             "LinkA": 30,
                                             "LinkB": 31,
                                             "LinkC": 32,
-                                            "Initial_Status": "E"
+                                            "Initial_Status": "E",
+                                            "opt_VPVCO": 0,
+                                            "opt_VNVCO": 1
                                         },
                                         "2": {
                                             "Type": "Mupix10",
@@ -1220,7 +1350,9 @@
                                             "LinkA": 33,
                                             "LinkB": 34,
                                             "LinkC": 35,
-                                            "Initial_Status": "E"
+                                            "Initial_Status": "E",
+                                            "opt_VPVCO": 40,
+                                            "opt_VNVCO": 41
                                         }
                                     },
                                     "LV_parameters": {
@@ -1254,7 +1386,9 @@
                                             "LinkA": 0,
                                             "LinkB": 1,
                                             "LinkC": 2,
-                                            "Initial_Status": "B"
+                                            "Initial_Status": "B",
+                                            "opt_VPVCO": 0,
+                                            "opt_VNVCO": 1
                                         },
                                         "1": {
                                             "Type": "Mupix10",
@@ -1264,7 +1398,9 @@
                                             "LinkA": 3,
                                             "LinkB": 4,
                                             "LinkC": 5,
-                                            "Initial_Status": "A"
+                                            "Initial_Status": "A",
+                                            "opt_VPVCO": 0,
+                                            "opt_VNVCO": 1
                                         },
                                         "2": {
                                             "Type": "Mupix10",
@@ -1274,7 +1410,9 @@
                                             "LinkA": 6,
                                             "LinkB": 7,
                                             "LinkC": 8,
-                                            "Initial_Status": "A"
+                                            "Initial_Status": "A",
+                                            "opt_VPVCO": 0,
+                                            "opt_VNVCO": 1
                                         }
                                     },
                                     "LV_parameters": {
@@ -1308,7 +1446,9 @@
                                             "LinkA": 9,
                                             "LinkB": 10,
                                             "LinkC": 11,
-                                            "Initial_Status": "B"
+                                            "Initial_Status": "B",
+                                            "opt_VPVCO": 0,
+                                            "opt_VNVCO": 1
                                         },
                                         "1": {
                                             "Type": "Mupix10",
@@ -1318,7 +1458,9 @@
                                             "LinkA": 12,
                                             "LinkB": 13,
                                             "LinkC": 14,
-                                            "Initial_Status": "A"
+                                            "Initial_Status": "A",
+                                            "opt_VPVCO": 0,
+                                            "opt_VNVCO": 1
                                         },
                                         "2": {
                                             "Type": "Mupix10",
@@ -1328,7 +1470,9 @@
                                             "LinkA": 15,
                                             "LinkB": 16,
                                             "LinkC": 17,
-                                            "Initial_Status": "A"
+                                            "Initial_Status": "A",
+                                            "opt_VPVCO": 0,
+                                            "opt_VNVCO": 1
                                         }
                                     },
                                     "LV_parameters": {
@@ -1362,7 +1506,9 @@
                                             "LinkA": 18,
                                             "LinkB": 19,
                                             "LinkC": 20,
-                                            "Initial_Status": "A"
+                                            "Initial_Status": "A",
+                                            "opt_VPVCO": 0,
+                                            "opt_VNVCO": 0
                                         },
                                         "1": {
                                             "Type": "Mupix10",
@@ -1372,7 +1518,9 @@
                                             "LinkA": 21,
                                             "LinkB": 22,
                                             "LinkC": 23,
-                                            "Initial_Status": "A"
+                                            "Initial_Status": "A",
+                                            "opt_VPVCO": 20,
+                                            "opt_VNVCO": 21
                                         },
                                         "2": {
                                             "Type": "Mupix10",
@@ -1382,7 +1530,9 @@
                                             "LinkA": 24,
                                             "LinkB": 25,
                                             "LinkC": 26,
-                                            "Initial_Status": "A"
+                                            "Initial_Status": "A",
+                                            "opt_VPVCO": 29,
+                                            "opt_VNVCO": 30
                                         }
                                     },
                                     "LV_parameters": {
@@ -1416,7 +1566,9 @@
                                             "LinkA": 27,
                                             "LinkB": 28,
                                             "LinkC": 29,
-                                            "Initial_Status": "E"
+                                            "Initial_Status": "E",
+                                            "opt_VPVCO": 28,
+                                            "opt_VNVCO": 29
                                         },
                                         "1": {
                                             "Type": "Mupix10",
@@ -1426,7 +1578,9 @@
                                             "LinkA": 30,
                                             "LinkB": 31,
                                             "LinkC": 32,
-                                            "Initial_Status": "E"
+                                            "Initial_Status": "E",
+                                            "opt_VPVCO": 0,
+                                            "opt_VNVCO": 1
                                         },
                                         "2": {
                                             "Type": "Mupix10",
@@ -1436,7 +1590,9 @@
                                             "LinkA": 33,
                                             "LinkB": 34,
                                             "LinkC": 35,
-                                            "Initial_Status": "E"
+                                            "Initial_Status": "E",
+                                            "opt_VPVCO": 40,
+                                            "opt_VNVCO": 41
                                         }
                                     },
                                     "LV_parameters": {
@@ -1476,7 +1632,9 @@
                                             "LinkA": 0,
                                             "LinkB": 1,
                                             "LinkC": 2,
-                                            "Initial_Status": "C"
+                                            "Initial_Status": "C",
+                                            "opt_VPVCO": 0,
+                                            "opt_VNVCO": 1
                                         },
                                         "1": {
                                             "Type": "Mupix10",
@@ -1486,7 +1644,9 @@
                                             "LinkA": 3,
                                             "LinkB": 4,
                                             "LinkC": 5,
-                                            "Initial_Status": "E"
+                                            "Initial_Status": "E",
+                                            "opt_VPVCO": 0,
+                                            "opt_VNVCO": 1
                                         },
                                         "2": {
                                             "Type": "Mupix10",
@@ -1496,7 +1656,9 @@
                                             "LinkA": 6,
                                             "LinkB": 7,
                                             "LinkC": 8,
-                                            "Initial_Status": "E"
+                                            "Initial_Status": "E",
+                                            "opt_VPVCO": 0,
+                                            "opt_VNVCO": 1
                                         }
                                     },
                                     "LV_parameters": {
@@ -1530,7 +1692,9 @@
                                             "LinkA": 9,
                                             "LinkB": 10,
                                             "LinkC": 11,
-                                            "Initial_Status": "C"
+                                            "Initial_Status": "C",
+                                            "opt_VPVCO": 0,
+                                            "opt_VNVCO": 1
                                         },
                                         "1": {
                                             "Type": "Mupix10",
@@ -1540,7 +1704,9 @@
                                             "LinkA": 12,
                                             "LinkB": 13,
                                             "LinkC": 14,
-                                            "Initial_Status": "E"
+                                            "Initial_Status": "E",
+                                            "opt_VPVCO": 0,
+                                            "opt_VNVCO": 1
                                         },
                                         "2": {
                                             "Type": "Mupix10",
@@ -1550,7 +1716,9 @@
                                             "LinkA": 15,
                                             "LinkB": 16,
                                             "LinkC": 17,
-                                            "Initial_Status": "E"
+                                            "Initial_Status": "E",
+                                            "opt_VPVCO": 0,
+                                            "opt_VNVCO": 1
                                         }
                                     },
                                     "LV_parameters": {
@@ -1584,7 +1752,9 @@
                                             "LinkA": 18,
                                             "LinkB": 19,
                                             "LinkC": 20,
-                                            "Initial_Status": "E"
+                                            "Initial_Status": "E",
+                                            "opt_VPVCO": 0,
+                                            "opt_VNVCO": 1
                                         },
                                         "1": {
                                             "Type": "Mupix10",
@@ -1594,7 +1764,9 @@
                                             "LinkA": 21,
                                             "LinkB": 22,
                                             "LinkC": 23,
-                                            "Initial_Status": "C"
+                                            "Initial_Status": "C",
+                                            "opt_VPVCO": 27,
+                                            "opt_VNVCO": 28
                                         },
                                         "2": {
                                             "Type": "Mupix10",
@@ -1604,7 +1776,9 @@
                                             "LinkA": 24,
                                             "LinkB": 25,
                                             "LinkC": 26,
-                                            "Initial_Status": "E"
+                                            "Initial_Status": "E",
+                                            "opt_VPVCO": 27,
+                                            "opt_VNVCO": 28
                                         }
                                     },
                                     "LV_parameters": {
@@ -1638,7 +1812,9 @@
                                             "LinkA": 27,
                                             "LinkB": 28,
                                             "LinkC": 29,
-                                            "Initial_Status": "E"
+                                            "Initial_Status": "E",
+                                            "opt_VPVCO": 0,
+                                            "opt_VNVCO": 1
                                         },
                                         "1": {
                                             "Type": "Mupix10",
@@ -1648,7 +1824,9 @@
                                             "LinkA": 30,
                                             "LinkB": 31,
                                             "LinkC": 32,
-                                            "Initial_Status": "A"
+                                            "Initial_Status": "A",
+                                            "opt_VPVCO": 0,
+                                            "opt_VNVCO": 1
                                         },
                                         "2": {
                                             "Type": "Mupix10",
@@ -1658,7 +1836,9 @@
                                             "LinkA": 33,
                                             "LinkB": 34,
                                             "LinkC": 35,
-                                            "Initial_Status": "A"
+                                            "Initial_Status": "A",
+                                            "opt_VPVCO": 30,
+                                            "opt_VNVCO": 31
                                         }
                                     },
                                     "LV_parameters": {
@@ -1692,7 +1872,9 @@
                                             "LinkA": 0,
                                             "LinkB": 1,
                                             "LinkC": 2,
-                                            "Initial_Status": "A"
+                                            "Initial_Status": "A",
+                                            "opt_VPVCO": 25,
+                                            "opt_VNVCO": 26
                                         },
                                         "1": {
                                             "Type": "Mupix10",
@@ -1702,7 +1884,9 @@
                                             "LinkA": 3,
                                             "LinkB": 4,
                                             "LinkC": 5,
-                                            "Initial_Status": "A"
+                                            "Initial_Status": "A",
+                                            "opt_VPVCO": 0,
+                                            "opt_VNVCO": 1
                                         },
                                         "2": {
                                             "Type": "Mupix10",
@@ -1712,7 +1896,9 @@
                                             "LinkA": 6,
                                             "LinkB": 7,
                                             "LinkC": 8,
-                                            "Initial_Status": "E"
+                                            "Initial_Status": "E",
+                                            "opt_VPVCO": 0,
+                                            "opt_VNVCO": 1
                                         }
                                     },
                                     "LV_parameters": {
@@ -1746,7 +1932,9 @@
                                             "LinkA": 9,
                                             "LinkB": 10,
                                             "LinkC": 11,
-                                            "Initial_Status": "E"
+                                            "Initial_Status": "E",
+                                            "opt_VPVCO": 32,
+                                            "opt_VNVCO": 33
                                         },
                                         "1": {
                                             "Type": "Mupix10",
@@ -1756,7 +1944,9 @@
                                             "LinkA": 12,
                                             "LinkB": 13,
                                             "LinkC": 14,
-                                            "Initial_Status": "D"
+                                            "Initial_Status": "D",
+                                            "opt_VPVCO": 21,
+                                            "opt_VNVCO": 22
                                         },
                                         "2": {
                                             "Type": "Mupix10",
@@ -1766,7 +1956,9 @@
                                             "LinkA": 15,
                                             "LinkB": 16,
                                             "LinkC": 17,
-                                            "Initial_Status": "C"
+                                            "Initial_Status": "C",
+                                            "opt_VPVCO": 24,
+                                            "opt_VNVCO": 25
                                         }
                                     },
                                     "LV_parameters": {
@@ -1800,7 +1992,9 @@
                                             "LinkA": 18,
                                             "LinkB": 19,
                                             "LinkC": 20,
-                                            "Initial_Status": "C"
+                                            "Initial_Status": "C",
+                                            "opt_VPVCO": 11,
+                                            "opt_VNVCO": 12
                                         },
                                         "1": {
                                             "Type": "Mupix10",
@@ -1810,7 +2004,9 @@
                                             "LinkA": 21,
                                             "LinkB": 22,
                                             "LinkC": 23,
-                                            "Initial_Status": "C"
+                                            "Initial_Status": "C",
+                                            "opt_VPVCO": 13,
+                                            "opt_VNVCO": 14
                                         },
                                         "2": {
                                             "Type": "Mupix10",
@@ -1820,7 +2016,9 @@
                                             "LinkA": 24,
                                             "LinkB": 25,
                                             "LinkC": 26,
-                                            "Initial_Status": "C"
+                                            "Initial_Status": "C",
+                                            "opt_VPVCO": 13,
+                                            "opt_VNVCO": 14
                                         }
                                     },
                                     "LV_parameters": {
@@ -1854,7 +2052,9 @@
                                             "LinkA": 27,
                                             "LinkB": 28,
                                             "LinkC": 29,
-                                            "Initial_Status": "C"
+                                            "Initial_Status": "C",
+                                            "opt_VPVCO": 25,
+                                            "opt_VNVCO": 26
                                         },
                                         "1": {
                                             "Type": "Mupix10",
@@ -1864,7 +2064,9 @@
                                             "LinkA": 30,
                                             "LinkB": 31,
                                             "LinkC": 32,
-                                            "Initial_Status": "C"
+                                            "Initial_Status": "C",
+                                            "opt_VPVCO": 0,
+                                            "opt_VNVCO": 1
                                         },
                                         "2": {
                                             "Type": "Mupix10",
@@ -1874,7 +2076,9 @@
                                             "LinkA": 33,
                                             "LinkB": 34,
                                             "LinkC": 35,
-                                            "Initial_Status": "E"
+                                            "Initial_Status": "E",
+                                            "opt_VPVCO": 37,
+                                            "opt_VNVCO": 38
                                         }
                                     },
                                     "LV_parameters": {
@@ -1908,7 +2112,9 @@
                                             "LinkA": 0,
                                             "LinkB": 1,
                                             "LinkC": 2,
-                                            "Initial_Status": "E"
+                                            "Initial_Status": "E",
+                                            "opt_VPVCO": 0,
+                                            "opt_VNVCO": 1
                                         },
                                         "1": {
                                             "Type": "Mupix10",
@@ -1918,7 +2124,9 @@
                                             "LinkA": 3,
                                             "LinkB": 4,
                                             "LinkC": 5,
-                                            "Initial_Status": "E"
+                                            "Initial_Status": "E",
+                                            "opt_VPVCO": 31,
+                                            "opt_VNVCO": 32
                                         },
                                         "2": {
                                             "Type": "Mupix10",
@@ -1928,7 +2136,9 @@
                                             "LinkA": 6,
                                             "LinkB": 7,
                                             "LinkC": 8,
-                                            "Initial_Status": "A"
+                                            "Initial_Status": "A",
+                                            "opt_VPVCO": 0,
+                                            "opt_VNVCO": 1
                                         }
                                     },
                                     "LV_parameters": {
@@ -1962,7 +2172,9 @@
                                             "LinkA": 9,
                                             "LinkB": 10,
                                             "LinkC": 11,
-                                            "Initial_Status": "C"
+                                            "Initial_Status": "C",
+                                            "opt_VPVCO": 35,
+                                            "opt_VNVCO": 36
                                         },
                                         "1": {
                                             "Type": "Mupix10",
@@ -1972,7 +2184,9 @@
                                             "LinkA": 12,
                                             "LinkB": 13,
                                             "LinkC": 14,
-                                            "Initial_Status": "E"
+                                            "Initial_Status": "E",
+                                            "opt_VPVCO": 0,
+                                            "opt_VNVCO": 1
                                         },
                                         "2": {
                                             "Type": "Mupix10",
@@ -1982,7 +2196,9 @@
                                             "LinkA": 15,
                                             "LinkB": 16,
                                             "LinkC": 17,
-                                            "Initial_Status": "E"
+                                            "Initial_Status": "E",
+                                            "opt_VPVCO": 40,
+                                            "opt_VNVCO": 41
                                         }
                                     },
                                     "LV_parameters": {
