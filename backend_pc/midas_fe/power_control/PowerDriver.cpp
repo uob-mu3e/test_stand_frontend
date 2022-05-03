@@ -444,7 +444,7 @@ void PowerDriver::SetState(int index, bool value,INT& error)
 	{
 		if(!AskPermissionToTurnOn(index))
 		{
-			cm_msg(MERROR, "Power supply ... ", "changing of channel %d not allowed",instrumentID[index] );
+			cm_msg(MERROR, "Power supply ... ", "changing of channel %d not allowed, name = %s",instrumentID[index], name );
 			variables["Set State"][index]=false; //disable request
 			error=FE_ERR_DISABLED;
 			return;
@@ -461,13 +461,13 @@ void PowerDriver::SetState(int index, bool value,INT& error)
         if(value==true) { 
 		cmd=GenerateCommand(COMMAND_TYPE::SetState, 1);
 	       if (cmd.find("OUTP:STAT") != std::string::npos) { //This to ensure the device is a Hameg. Something better should be done
-		       settings["Current Hameg Channels On"] += 1;
+		       if(name!="HAMEG6" and name!="HAMEG5") settings["Current Hameg Channels On"] += 1;
 	       }	       
 	}
         else { 
 		cmd = GenerateCommand(COMMAND_TYPE::SetState, 0); 
 		if (cmd.find("OUTP:STAT") != std::string::npos) { //This to ensure the device is a Hameg. Something better should be done
-		     settings["Current Hameg Channels On"] -= 1;
+		     if(name!="HAMEG6" and name!="HAMEG5") settings["Current Hameg Channels On"] -= 1;
 		}
 	}
 		client->Write(cmd);
