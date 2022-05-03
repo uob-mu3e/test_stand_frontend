@@ -100,7 +100,7 @@ table {
 }
 
 .chip_selected {
-    border: 3px solid #0F0
+    border: 3px solid rgb(0, 47, 255)
 }
 
 .chip_unselected {
@@ -115,6 +115,27 @@ table {
 .chip_dead {
     background-color: #000;
     color: #F00;
+}
+
+.chip_qc_a {
+    background-color: #0F0;
+    color: #000;
+}
+.chip_qc_b {
+    background-color: #bF3;
+    color: #003;
+}
+.chip_qc_c {
+    background-color: #FF0;
+    color: #000;
+}
+.chip_qc_d {
+    background-color: #F60;
+    color: #000;
+}
+.chip_qc_e {
+    background-color: #F00;
+    color: #000;
 }
 
 .tab {

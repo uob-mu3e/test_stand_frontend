@@ -194,37 +194,37 @@ EQUIPMENT equipment[] = {
      	read_hameg_power4,    
     },
 
-//	{"HAMEG5",                       /* equipment name */
-//    	{125, 0,                       /* event ID, trigger mask */
-//     	"SYSTEM",                  /* event buffer */
-//     	EQ_PERIODIC,                   /* equipment type */
- //    	0,                         /* event source */
-//     	"MIDAS",                   /* format */
-//     	TRUE,                      /* enabled */
-//     	RO_STOPPED | RO_RUNNING | RO_PAUSE,        /* all, but not write to odb */
- //    	10000,                     /* read every 10 sec */
-//     	0,                         /* stop run after this event limit */
-//    	0,                         /* number of sub events */
-//        1,                         /* log history every event */
-//     	"", "", ""} ,                  /* device driver list */
-//     	read_hameg_power5,    
-//    },
+	{"HAMEG5",                       /* equipment name */
+    	{125, 0,                       /* event ID, trigger mask */
+     	"SYSTEM",                  /* event buffer */
+     	EQ_PERIODIC,                   /* equipment type */
+     	0,                         /* event source */
+     	"MIDAS",                   /* format */
+     	TRUE,                      /* enabled */
+     	RO_STOPPED | RO_RUNNING | RO_PAUSE,        /* all, but not write to odb */
+     	10000,                     /* read every 10 sec */
+     	0,                         /* stop run after this event limit */
+    	0,                         /* number of sub events */
+        1,                         /* log history every event */
+     	"", "", ""} ,                  /* device driver list */
+     	read_hameg_power5,    
+    },
 
-//	{"HAMEG6",                       /* equipment name */
-//    	{126, 0,                       /* event ID, trigger mask */
-//     	"SYSTEM",                  /* event buffer */
-//     	EQ_PERIODIC,                   /* equipment type */
-//     	0,                         /* event source */
-//     	"MIDAS",                   /* format */
-//     	TRUE,                      /* enabled */
-//     	RO_STOPPED | RO_RUNNING | RO_PAUSE,        /* all, but not write to odb */
-//     	10000,                     /* read every 10 sec */
-//     	0,                         /* stop run after this event limit */
-//    	0,                         /* number of sub events */
-//        1,                         /* log history every event */
-//     	"", "", ""} ,                  /* device driver list */
-//     	read_hameg_power6,    
-//    },
+	{"HAMEG6",                       /* equipment name */
+    	{126, 0,                       /* event ID, trigger mask */
+     	"SYSTEM",                  /* event buffer */
+     	EQ_PERIODIC,                   /* equipment type */
+     	0,                         /* event source */
+     	"MIDAS",                   /* format */
+     	TRUE,                      /* enabled */
+     	RO_STOPPED | RO_RUNNING | RO_PAUSE,        /* all, but not write to odb */
+     	10000,                     /* read every 10 sec */
+     	0,                         /* stop run after this event limit */
+    	0,                         /* number of sub events */
+        1,                         /* log history every event */
+     	"", "", ""} ,                  /* device driver list */
+     	read_hameg_power6,    
+    },
 
 	{"HAMEG7",                       /* equipment name */
     	{127, 0,                       /* event ID, trigger mask */
@@ -298,10 +298,10 @@ void mscb_define(std::string eq, std::string devname, DEVICE_DRIVER *driver,
       if (equal_ustring(driver[dev_index].name, devname.c_str()))
          break;
 
-   if (!driver[dev_index].name[0]) {
-      cm_msg(MERROR, "mscb_define", "Device \"%s\" not present in device driver list", devname.c_str());
-      return;
-   }
+    if (!driver[dev_index].name[0]) {
+        cm_msg(MERROR, "mscb_define", "Device \"%s\" not present in device driver list", devname.c_str());
+        return;
+    }
 
    // count total number of channels
    int chn_total = 0;
@@ -397,7 +397,7 @@ INT frontend_init()
    mscb_define("PowerDistribution", "Input",  mscb_driver, "mscb401.mu3e", 65535, 1, "OC ch1", 0.1, 1.0, 0.0);
    mscb_define("PowerDistribution", "Input",  mscb_driver, "mscb401.mu3e", 65535, 2, "OC ch2", 0.1, 1.0, 0.0);
    mscb_define("PowerDistribution", "Input",  mscb_driver, "mscb401.mu3e", 65535, 3, "OC ch3", 0.1, 1.0, 0.0);
-   mscb_define("PowerDistribution", "Input",  mscb_driver, "mscb401.mu3e", 65535, 4, "OC ch4", 0.1, 1.0, 0.0);   
+   mscb_define("PowerDistribution", "Input",  mscb_driver, "mscb401.mu3e", 65535, 4, "OC ch4", 0.1, 1.0, 0.0);
    mscb_define("PowerDistribution", "Input",  mscb_driver, "mscb401.mu3e", 65535, 9, "OC ch5", 0.1, 1.0, 0.0);
    mscb_define("PowerDistribution", "Input",  mscb_driver, "mscb401.mu3e", 65535, 10, "OC ch6", 0.1, 1.0, 0.0);
    mscb_define("PowerDistribution", "Input",  mscb_driver, "mscb401.mu3e", 65535, 11, "OC ch7", 0.1, 1.0, 0.0);
@@ -406,7 +406,7 @@ INT frontend_init()
    mscb_define("PowerDistribution", "Input",  mscb_driver, "mscb401.mu3e", 65535, 17, "Current ch1", 0.01, 5.0, 0.0);
    mscb_define("PowerDistribution", "Input",  mscb_driver, "mscb401.mu3e", 65535, 18, "Current ch2", 0.01, 5.0, 0.0);
    mscb_define("PowerDistribution", "Input",  mscb_driver, "mscb401.mu3e", 65535, 19, "Current ch3", 0.01, 5.0, 0.0);
-   mscb_define("PowerDistribution", "Input",  mscb_driver, "mscb401.mu3e", 65535, 20, "Current ch4", 0.01, 5.0, 0.0);   
+   mscb_define("PowerDistribution", "Input",  mscb_driver, "mscb401.mu3e", 65535, 20, "Current ch4", 0.01, 5.0, 0.0);
    mscb_define("PowerDistribution", "Input",  mscb_driver, "mscb401.mu3e", 65535, 42, "Current ch5", 0.01, 5.0, 0.0);
    mscb_define("PowerDistribution", "Input",  mscb_driver, "mscb401.mu3e", 65535, 43, "Current ch6", 0.01, 5.0, 0.0);
    mscb_define("PowerDistribution", "Input",  mscb_driver, "mscb401.mu3e", 65535, 44, "Current ch7", 0.01, 5.0, 0.0);
@@ -474,7 +474,6 @@ INT frontend_init()
 			continue;
 		}
 
-	
 		equipment[eqID].status = drivers.at(eqID)->Init();
 		if(equipment[eqID].status != FE_SUCCESS)
 		{
@@ -492,7 +491,7 @@ INT frontend_init()
 		printf("here\n");
         // And start the threaded reading
         drivers.at(eqID)->StartReading();
-  	}
+    }
   
     midas::odb custom;
     custom.connect("/Custom");

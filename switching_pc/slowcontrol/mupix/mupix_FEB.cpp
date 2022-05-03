@@ -49,7 +49,7 @@ uint16_t MupixFEB::ASICsPerFEB() const {
 }
 
 uint16_t MupixFEB::FPGAid_from_ID(int asic) const {
-    return asic/ASICsPerFEB();
+    return asic/12;//ASICsPerFEB();
 }
 
 uint16_t MupixFEB::MappedFPGAid_from_ID(int asic) const {
@@ -64,11 +64,11 @@ uint16_t MupixFEB::MappedFPGAid_from_ID(int asic) const {
 }
 
 uint16_t MupixFEB::ASICid_from_ID(int asic) const {
-    return asic%ASICsPerFEB();
+    return asic%12;//ASICsPerFEB();
 }
 
 uint16_t MupixFEB::GetNumASICs() const {
-    return febs.size()*ASICsPerFEB();
+    return febs.size()*12;//ASICsPerFEB();
 }
 
 //ASIC configuration:
@@ -229,6 +229,7 @@ int MupixFEB::ConfigureTDACs(){
     uint16_t N_CHIPS = 0;
     uint16_t internal_febID = 0;
     std::string path;
+    N_CHIPS = ASICsPerFEB();
 
     // preparation loop
     for (auto feb : febs){
@@ -239,7 +240,6 @@ int MupixFEB::ConfigureTDACs(){
             // run configuration init    (TODO: seperate config init from writing 0 to all tdacs in firmware)
             feb_sc.FEB_write(feb, MP_CTRL_RESET_REGISTER_W, 0x00000001);
 
-            N_CHIPS = ASICsPerFEB();
             N_PAGES_PER_CHIP=128; // will this be the same for all febs ( -> get from firmware constants) or not (-> read register from FEB) ?
             std::vector<std::vector<uint32_t>> tdac_page_this_feb;
             for(uint32_t i = 0; i < N_CHIPS; i++){
@@ -254,11 +254,13 @@ int MupixFEB::ConfigureTDACs(){
             pages_remaining.push_back(pages_remaining_this_chip);
             pages_remaining_this_chip.clear();
             internal_febID++;
+            printf(" load tdac for feb\n");
         }
     }
 
     cm_msg(MINFO, "MupixFEB" , "tdac load completed, start writing tdacs");
     uint16_t pos=0;
+    uint32_t nextchip =0;  
 
     while (! allDone){
         allDone = true;
@@ -271,6 +273,7 @@ int MupixFEB::ConfigureTDACs(){
                 // get number of free tdac pages for this feb
                 status = feb_sc.ERRCODES::OK;
                 status = feb_sc.FEB_read(feb,MP_CTRL_N_FREE_PAGES_REGISTER_R, N_free_pages);
+                //printf("free pages check: %i\n", N_free_pages);
                 if(status != feb_sc.ERRCODES::OK) {
                     cm_msg(MERROR, "MupixFEB" , "could not reach feb %i, aborting tdac wriring", internal_febID);
                     return status;
@@ -280,28 +283,38 @@ int MupixFEB::ConfigureTDACs(){
                    pages_remaining_this_feb += n;
                 if(pages_remaining_this_feb > 0)
                     allDone = false;
+                  
                 // while the feb has space left ..
                 while(N_free_pages > 0 && pages_remaining_this_feb > 0){
                     // Write one page for every chip
-                    for (uint32_t chip = 0; chip<pages_remaining.at(internal_febID).size(); chip++){
+                    for (uint32_t chip = nextchip; chip<pages_remaining.at(internal_febID).size(); chip++){
                         if (pages_remaining.at(internal_febID).at(chip) != 0){
                             if(N_free_pages > 0){
                                 current_page = N_PAGES_PER_CHIP-pages_remaining.at(internal_febID)[chip];
                                 pages_remaining.at(internal_febID)[chip] = pages_remaining.at(internal_febID)[chip] - 1;
-                                pos = ASICsPerFEB() - 1 - chip;
+                                pos = N_CHIPS - 1 - chip;
                                 std::vector<uint32_t> tdac_page(PAGESIZE);
                                 // how to do this wihout copy ?
-                                tdac_page = std::vector<uint32_t>(tdac_pages.at(internal_febID).at(chip).begin() + current_page*PAGESIZE, tdac_pages.at(internal_febID).at(chip).begin() + (current_page+1)*PAGESIZE);
+                                tdac_page = std::vector<uint32_t>(tdac_pages.at(internal_febID).at(chip).begin() + current_page*PAGESIZE, tdac_pages.at(internal_febID).at(chip).begin() + (current_page+1)*PAGESIZE - 1);
                                 feb_sc.FEB_write(feb, MP_CTRL_TDAC_START_REGISTER_W + pos, tdac_page, true, false);
+                                //printf(" write page, remaining: %i\n", pages_remaining_this_feb);
+                                printf("Writing chip %x page %x pos %x, remaining %i\n", chip, current_page, pos, pages_remaining.at(internal_febID)[chip]);
+
                                 pages_remaining_this_feb--;
                                 N_free_pages--;
-                            } else {break;}
+                                nextchip = chip + 1;
+                                if(nextchip >= pages_remaining.at(internal_febID).size())
+                                    nextchip = 0;
+                            } else {
+                                break;
+                            }
                         }
                     }
                 }
                 internal_febID++;
             }
         }
+        usleep(50000);
     }
     cm_msg(MINFO, "MupixFEB" , "tdac write completed");
     return status;

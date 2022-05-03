@@ -17,6 +17,7 @@
 #include "class/generic.h"
 #include "device/mscbdev.h"
 #include "device/mdevice.h"
+#include "device/mdevice_mscb.h"
 
 /*-- Globals -------------------------------------------------------*/
 
@@ -47,23 +48,41 @@ EQUIPMENT equipment[] = {
       cd_multi_read,          // readout routine
       cd_multi
     },
+    
+    
+   {"Water",            // equipment name
+      {153, 0,                // event ID, trigger mask
+         "SYSTEM",            // event buffer
+         EQ_SLOW,             // equipment type
+         0,                   // event source
+         "MIDAS",             // format
+         TRUE,                // enabled
+         RO_ALWAYS,
+         60000,               // read full event every 60 sec
+         1000,                // read one value every 1000 msec
+         0,                   // number of sub events
+         1,                   // log history every second
+         "", "", ""} ,
+      cd_multi_read,          // readout routine
+      cd_multi
+    },
 
-   {"Pixel Temperatures",     // equipment name
-     {203, 0,                 // event ID, trigger mask
-       "SYSTEM",              // event buffer
-       EQ_SLOW,               // equipment type
-       0,                     // event source
-       "MIDAS",               // format
-       TRUE,                  // enabled
-       RO_ALWAYS,
-       60000,                 // read full event every 60 sec
-       1000,                  // read one value every 1000 msec
-       0,                     // number of sub events
-       1,                     // log history every second
-       "", "", ""} ,
-     cd_multi_read,           // readout routine
-     cd_multi
-   },
+   //~ {"Pixel Temperatures",     // equipment name
+     //~ {203, 0,                 // event ID, trigger mask
+       //~ "SYSTEM",              // event buffer
+       //~ EQ_SLOW,               // equipment type
+       //~ 0,                     // event source
+       //~ "MIDAS",               // format
+       //~ TRUE,                  // enabled
+       //~ RO_ALWAYS,
+       //~ 60000,                 // read full event every 60 sec
+       //~ 1000,                  // read one value every 1000 msec
+       //~ 0,                     // number of sub events
+       //~ 1,                     // log history every second
+       //~ "", "", ""} ,
+     //~ cd_multi_read,           // readout routine
+     //~ cd_multi
+   //~ },
 
   {""}
 };
@@ -108,7 +127,7 @@ INT frontend_init()
    env.define_var(1,  2, "US_central_PCMini52_RH");
    env.define_var(1,  3, "US_top_O2");
    env.define_var(1,  4, "US_top_RH");
-   env.define_var(1,  5, "US_FEC1_T");
+   env.define_var(1,  5, "US_FEC0_T");
    
    // SCS3000 msc400 Port 1
    env.define_var(1,  9, "DS_bottom_Water");
@@ -131,28 +150,58 @@ INT frontend_init()
    
 
    // define associated history panels
-   env.define_panel("Oxygen",      {"US_top_O2",
-                                    "DS_top_O2",
-                                    "US_bottom_O2",
-                                    "US_central_O2",
-                                    "DS_central_O2"});
-   env.define_panel("Temperature", {"US_central_PCMini52_T",
-                                    "US_FEC1_T",
-                                    "DS_FEC2_T",
-                                    "DS_top_T"});
-   env.define_panel("Humidity",    {"US_central_PCMini52_RH",
-                                    "US_top_RH",
-                                    "DS_top_RH",
-                                    "US_bottom_RH",
-                                    "US_central_RH",
-                                    "DS_bottom_RH",
-                                    "DS_central_RH"});
-   env.define_panel("Water",       {"US_bottom_Water",
-                                    "DS_bottom_Water"});
+   env.define_history_panel("Oxygen",      {"US_top_O2",
+                                            "DS_top_O2",
+                                            "US_bottom_O2",
+                                            "US_central_O2",
+                                           "DS_central_O2"});
+   env.define_history_panel("Temperature", {"US_central_PCMini52_T",
+                                            "US_FEC0_T",
+                                            "DS_FEC2_T",
+                                           "DS_top_T"});
+   env.define_history_panel("Humidity",    {"US_central_PCMini52_RH",
+                                            "US_top_RH",
+                                            "DS_top_RH",
+                                            "US_bottom_RH",
+                                            "US_central_RH",
+                                            "DS_bottom_RH",
+                                            "DS_central_RH"});
+   env.define_history_panel("Water",       {"US_bottom_Water",
+                                            "DS_bottom_Water"});
+                                    
+   mdevice_mscb water("Water", "Input", DF_INPUT, "mscb334.mu3e", "", 100);
+   water.set_threshold(0.005);
+   
+   water.define_var(1,  0, "US_In_P");
+   water.define_var(1,  1, "DS_In_P");
+   
+   water.define_var(1,  3, "US_Out_P");
+   water.define_var(1,  4, "DS_Out_P");
+   
+   water.define_var(1,  5, "US_In_T");
+   water.define_var(1,  6, "DS_In_T");
+   
+   water.define_var(1,  7, "US_Out_T");
+   
+   water.define_var(1,  16, "DS_Out_T");
+   
+   water.define_var(1,  17, "US_In_Flow");
+   water.define_var(1,  18, "DS_In_Flow");
+
+   water.define_history_panel("Pressure",    {"US_In_P",
+                                              "US_Out_P",
+                                              "DS_In_P",
+                                              "DS_Out_P"});
+   water.define_history_panel("Temperature", {"US_In_T",
+                                              "US_Out_T",
+                                              "DS_In_T",
+                                              "DS_Out_T"});
+   water.define_history_panel("Flow",        {"US_In_Flow",
+                                              "DS_In_Flow"});
 
 
    // Pixel Temperatures
-   mdevice_mscb pix("Pixel Temperatures", "Input", DF_INPUT, "mscb334.mu3e", "", 100);
+   //mdevice_mscb pix("Pixel Temperatures", "Input", DF_INPUT, "mscb334.mu3e", "", 100);
    //~ pix.define_var(0,  0, "US L0-0" , 0.005, -165.9, -228);
    //~ pix.define_var(0,  1, "US L0-1" , 0.005, -165.9, -228);
    //~ pix.define_var(0, 39, "US L0-2" , 0.005, -165.9, -228);
@@ -191,10 +240,10 @@ INT frontend_init()
    //~ pix.define_var(0, 41, "DS L1-9" , 0.005, -165.9, -228);
 
    // define associated history panels
-   //~ env.define_panel("Tempreatures US L0",  0,   7);
-   //~ env.define_panel("Tempreatures US L1",  8,  17);
-   //~ env.define_panel("Tempreatures DS L0", 18,  24);
-   //~ env.define_panel("Tempreatures DS L1", 25,  34);
+   //~ env.define_history_panel("Tempreatures US L0",  0,   7);
+   //~ env.define_history_panel("Tempreatures US L1",  8,  17);
+   //~ env.define_history_panel("Tempreatures DS L0", 18,  24);
+   //~ env.define_history_panel("Tempreatures DS L1", 25,  34);
 
    return CM_SUCCESS;
 }

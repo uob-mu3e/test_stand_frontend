@@ -239,6 +239,8 @@ INT begin_of_run(INT, char *)
 {
     // set equipment status for status web page
     set_equipment_status("Clock Reset", "Starting run", "yellowLight");
+    cm_msg(MINFO, "begin_of_run", "Run prep from crfe instead of switch, DEBUG Me");
+    cb->write_command("Run Prepare");
     cb->write_command("Sync");
 
     cb->write_command("Start Run");
@@ -521,6 +523,8 @@ void prepare_run_on_request(odb & o){
 
     bool allok = true;
     bool notalloff = false;
+    cm_msg(MINFO, "prepare_run_on_request", "Skipping checks for RunPrepare, TODO: Debug");
+
     for(uint32_t i=0; i < MAX_N_SWITCHINGBOARDS; i++){
         printf("%i : %i : %i\n", i, request[i], active[i]);
         allok = allok && ((request[i] > 0) || (active[i] == 0));

@@ -1,17 +1,7 @@
 # Author J. Guzman-Funck, March 2022, Cosmic Run. jose.guzman-funck19@imperial.ac.uk || pepe.guzmanfunck@gmail.com
 #
-# IVCurve test with parameter specification at startup
+# IVCurve test with parameter specification at startup with LV on and chip with BiasBlock_on 0
 #
-
-
-
-# Empty all buffers at startup
-ODBSET /Equipment/PixelsCentral/QCTests/Ladder/IV/Output/V, 0
-LOOP k, 32
-    ODBSET /Equipment/PixelsCentral/QCTests/Ladder/IV/Output/Voltage[$k-1], 0
-    ODBSET /Equipment/PixelsCentral/QCTests/Ladder/IV/Output/Current[$k-1], 0
-ENDLOOP
-
 
 
 PARAM half_ladder_id, "Half ladder ID"
@@ -24,6 +14,13 @@ PARAM fine_step_size, "Fine voltage increment"
 PARAM stop_voltage, "Stop voltage"
 
 
+
+# Empty all buffers at startup
+ODBSET /Equipment/PixelsCentral/QCTests/Ladder/IV/Output/V, 0
+LOOP k, 32
+    ODBSET /Equipment/PixelsCentral/QCTests/Ladder/IV/Output/Voltage[$k-1], 0
+    ODBSET /Equipment/PixelsCentral/QCTests/Ladder/IV/Output/Current[$k-1], 0
+ENDLOOP
 
 # Turn on LV
 CAT power_get_state_path, /Equipment/HAMEG, $hameg_id, /Variables/State[, $channel,]
@@ -38,8 +35,6 @@ IF $now_state_hameg_channel == 0
     ODBSET $power_set_state_path, 1
     WAIT SECONDS, 10
 ENDIF
-
-
 
 # Turn off chips
 starting_chip_id = $half_ladder_id*3
@@ -59,10 +54,8 @@ ENDLOOP
 
 WAIT SECONDS, 15
 
-
-
 # TODO. Check
-end = 202
+end = 201
 
 # Check values
 # If $current_limit is higher than value at Keithley complain
@@ -109,17 +102,15 @@ ENDIF
 
 
 # Save values into ODB
-ODBSET /Equipment/PixelsCentral/QCTests/Ladder/current_half_ladder_id, $half_ladder_id
-ODBSET /Equipment/PixelsCentral/QCTests/Ladder/current_hameg_id, $hameg_id
-ODBSET /Equipment/PixelsCentral/QCTests/Ladder/current_channel, $channel
+#ODBSET /Equipment/PixelsCentral/QCTests/Ladder/current_half_ladder_id, $half_ladder_id
+#ODBSET /Equipment/PixelsCentral/QCTests/Ladder/current_hameg_id, $hameg_id
+#ODBSET /Equipment/PixelsCentral/QCTests/Ladder/current_channel, $channel
 
-ODBSUBDIR /Equipment/PixelsCentral/QCTests/Ladder/IV
-    ODBSET half_ladder_id, $half_ladder_id
-    ODBSET hameg_id, $hameg_id
-    ODBSET channel, $channel
-ENDODBSUBDIR
 
 ODBSUBDIR /Equipment/PixelsCentral/QCTests/Ladder/IV/Input
+    #ODBSET half_ladder_id, $half_ladder_id
+    #ODBSET hameg_id, $hameg_id
+    #ODBSET channel, $channel
     
     ODBSET hv_current_limit, $current_limit
     ODBSET start_voltage, $start_voltage
@@ -187,7 +178,7 @@ LOOP i, $num_steps
         index_j = 0
         index_ij = $index_i + $index_j +1
         LOOP j, $num_fine_steps
-            ODBSET /Equipment/KEITHLEY0/Variables/Demand Voltage, -1*($f_start_voltage+$j*$fine_step_size)
+            ODBSET /Equipment/KEITHLEY0/Variables/Demand Voltage, -1*abs($f_start_voltage+$j*$fine_step_size)
             WAIT SECONDS, 5
             ODBGET /Equipment/KEITHLEY0/Variables/Current, current
             ODBSET /Equipment/PixelsCentral/QCTests/Ladder/IV/Output/Voltage[$index_ij], $f_start_voltage+$j*$fine_step_size
@@ -201,14 +192,17 @@ LOOP i, $num_steps
 ENDLOOP
 
 
-# Turn off LV
-# ODBSET $power_set_state_path, 0
-
-
-
 # Turn off. # end
 ODBSET /Equipment/KEITHLEY0/Variables/Demand Voltage, 0
 ODBSET /Equipment/KEITHLEY0/Variables/Set State, 0
 # Wait to turn off. 
 WAIT SECONDS, 0.1
 
+
+ODBSET $power_set_state_path, 0
+
+# Save results to output folder
+CAT out_path, output/, quick_, $half_ladder_id, .json
+
+ODBSAVE /Equipment/PixelsCentral/QCTests/Ladder, $out_path
+WAIT SECONDS, 0.1

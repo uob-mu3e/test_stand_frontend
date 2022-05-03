@@ -1,0 +1,17 @@
+PARAM half_ladder_id, "half_ladder_id"
+PARAM BiasBlock_on, "BiasBlock_on"
+
+starting_chip_id = $half_ladder_id*3
+
+path_config = /Equipment/SwitchingCentral/Commands
+
+LOOP i, 3
+_i = $i - 1
+CAT path_bias_this_chip, /Equipment/PixelsCentral/Settings/BIASDACS/, $starting_chip_id+$_i, /BiasBlock_on
+
+ODBSET $path_bias_this_chip, $BiasBlock_on
+ODBSET $path_config/MupixChipToConfigure, $starting_chip_id+$_i
+ODBSET $path_config/MupixConfig, 1
+
+WAIT SECONDS, 10
+ENDLOOP

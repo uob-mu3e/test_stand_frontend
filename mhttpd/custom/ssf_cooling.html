@@ -43,45 +43,49 @@
             <tr><th colspan="7"></th></tr>
             <tr>
                 <th>1 US Inlet</th>
-                <td><div id="1_temp_v" class="modbvalue" data-odb-path="/Equipment/Environment/Variables/Input[45]"></div></td>
-                <td><div id="1_temp_c" class="modbvalue" data-odb-path="/Equipment/Environment/Converted/Temperature[0]"></div></td>
-                <td><div id="1_pres_v" class="modbvalue" data-odb-path="/Equipment/Environment/Variables/Input[46]"></div></td>
-                <td><div id="1_press_bar" class="modbvalue" data-odb-path="/Equipment/Environment/Converted/Pressure[0]"></div></td>
-                <td><div id="1_flow_v" class="modbvalue" data-odb-path="/Equipment/Environment/Variables/Input[42]"></div></td>
-                <td><div id="1_flow_lmin" class="modbvalue" data-odb-path="/Equipment/Environment/Converted/Flow[0]"></div></td>
+                <td><div id="1_temp_v" class="modbvalue" data-odb-path="/Equipment/Water/Variables/Input[4]"></div></td>
+                <td><div id="1_temp_c" class="modbvalue" data-odb-path="/Equipment/Water/Variables/Input[4]" data-format="%f1&deg;C" data-formula="79.5 * Math.exp(-0.00011 * (10000 * (x / (5 - x)))) - 1.76"></div></td>
+                <td><div id="1_pres_v" class="modbvalue" data-odb-path="/Equipment/Water/Variables/Input[0]"></div></td>
+                <td><div id="1_pres_p" class="modbvalue" data-odb-path="/Equipment/Water/Variables/Input[0]" data-format="%f2 bar" data-formula="x * 9 / 4"></div></td>
+                <td><div id="1_flow_v" class="modbvalue" data-odb-path="/Equipment/Water/Variables/Input[8]"></div></td>
+                <td><div id="1_flow_l" class="modbvalue" data-odb-path="/Equipment/Water/Variables/Input[8]" data-format="%f2 l/min" data-formula="1000 / (x / (2500 / 4095)) / (78 * 60)"></div></td>
             </tr>
             <tr><th colspan="7"></th></tr>
             <tr>
                 <th>2 DS Inlet</th>
-                <td><div id="2_temp_v" class="modbvalue" data-odb-path="/Equipment/Environment/Variables/Input[47]"></div></td>
-                <td><div id="3_temp_c" class="modbvalue" data-odb-path="/Equipment/Environment/Converted/Temperature[1]"></div></td>
-                <td><div id="2_pres_v" class="modbvalue" data-odb-path="/Equipment/Environment/Variables/Input[48]"></div></td>
-                <td><div id="2_press_bar" class="modbvalue" data-odb-path="/Equipment/Environment/Converted/Pressure[1]"></div></td>
-                <td><div id="2_flow_v" class="modbvalue" data-odb-path="/Equipment/Environment/Variables/Input[43]"></div></td>
-                <td><div id="2_flow_lmin" class="modbvalue" data-odb-path="/Equipment/Environment/Converted/Flow[1]"></div></td>
+                <td><div id="2_temp_v" class="modbvalue" data-odb-path="/Equipment/Water/Variables/Input[5]"></div></td>
+                <td><div id="2_temp_c" class="modbvalue" data-odb-path="/Equipment/Water/Variables/Input[5]" data-format="%f1&deg;C" data-formula="79.5 * Math.exp(-0.00011 * (10000 * (x / (5 - x)))) - 1.76"></div></td>
+                <td><div id="2_pres_v" class="modbvalue" data-odb-path="/Equipment/Water/Variables/Input[1]"></div></td>
+                <td><div id="2_pres_p" class="modbvalue" data-odb-path="/Equipment/Water/Variables/Input[1]" data-format="%f2 bar" data-formula="x * 9 / 4"></div></td>
+                <td><div id="2_flow_v" class="modbvalue" data-odb-path="/Equipment/Water/Variables/Input[9]"></div></td>
+                <td><div id="2_flow_l" class="modbvalue" data-odb-path="/Equipment/Water/Variables/Input[9]" data-format="%f2 l/min" data-formula="1000 / (x / (2500 / 4095)) / (78 * 60)"></div></td>
             </tr>
             <tr><th colspan="7"></th></tr>
             <tr>
                 <th>3 US Outlet</th>
-                <td><div id="3_temp_v" class="modbvalue" data-odb-path="/Equipment/Environment/Variables/Input[49]"></div></td>
-                <td><div id="3_temp_c" class="modbvalue" data-odb-path="/Equipment/Environment/Converted/Temperature[2]"></div></td>
-                <td><div id="3_pres_v" class="modbvalue" data-odb-path="/Equipment/Environment/Variables/Input[50]"></div></td>
-                <td><div id="3_press_bar" class="modbvalue" data-odb-path="/Equipment/Environment/Converted/Pressure[2]"></div></td>
+                <td><div id="3_temp_v" class="modbvalue" data-odb-path="/Equipment/Water/Variables/Input[6]"></div></td>
+                <td><div id="3_temp_c" class="modbvalue" data-odb-path="/Equipment/Water/Variables/Input[6]" data-format="%f1&deg;C" data-formula="79.5 * Math.exp(-0.00011 * (10000 * (x / (5 - x)))) - 1.76"></div></td>
+                <td><div id="3_pres_v" class="modbvalue" data-odb-path="/Equipment/Water/Variables/Input[2]"></div></td>
+                <td><div id="3_pres_p" class="modbvalue" data-odb-path="/Equipment/Water/Variables/Input[2]" data-format="%f2 bar" data-formula="x * 9 / 4"></div></td>
                 <td>N.A.</td>
                 <td>N.A.</td>
             </tr>
             <tr><th colspan="7"></th></tr>
             <tr>
                 <th>4 DS Outlet</th>
-                <td><div id="4_temp_v" class="modbvalue" data-odb-path="/Equipment/Environment/Variables/Input[51]"></div></td>
-                <td><div id="4_temp_c" class="modbvalue" data-odb-path="/Equipment/Environment/Converted/Temperature[3]"></div></td>
-                <td><div id="4_pres_v" class="modbvalue" data-odb-path="/Equipment/Environment/Variables/Input[52]"></div></td>
-                <td><div id="4_press_bar" class="modbvalue" data-odb-path="/Equipment/Environment/Converted/Pressure[3]"></div></td>
+                <td><div id="4_temp_v" class="modbvalue" data-odb-path="/Equipment/Water/Variables/Input[7]"></div></td>
+                <td><div id="4_temp_c" class="modbvalue" data-odb-path="/Equipment/Water/Variables/Input[7]" data-format="%f1&deg;C" data-formula="79.5 * Math.exp(-0.00011 * (10000 * (x / (5 - x)))) - 1.76"></div></td>
+                <td><div id="4_pres_v" class="modbvalue" data-odb-path="/Equipment/Water/Variables/Input[3]"></div></td>
+                <td><div id="4_pres_p" class="modbvalue" data-odb-path="/Equipment/Water/Variables/Input[3]" data-format="%f2 bar" data-formula="x * 9 / 4"></div></td>
                 <td>N.A.</td>
                 <td>N.A.</td>
             </tr>
         </table>
     </div>
+    <div id="debug">
 
-<!-->script src="ssf_cooling.js"></!--script-->
+    </div>
+    <script src="ssf_cooling.js"></script>
+ 
 </body>
+</html>

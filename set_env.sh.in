@@ -40,8 +40,15 @@ if test -n "${BASH}" -o -n "${ZSH_VERSION}"; then
     hash -r
 fi
 
+# setup mu3edisplay path
+ln -sf ~/analyzer/packages/mu3edisplay ~/online/online
+ln -sf ~/analyzer/packages/mu3edisplay/config ~/online/online
+
 #
 # [SR] Personal git-xy alias to be used by all of us, please add one for yourself
 #
 alias git-sr='env GIT_AUTHOR_NAME="Stefan Ritt" GIT_AUTHOR_EMAIL="stefan.ritt@psi.ch" git'
 alias git-mm='env GIT_AUTHOR_NAME="Martin Mueller" GIT_AUTHOR_EMAIL="mmarti04@students.uni-mainz.de" git'
+alias git-fw='env GIT_AUTHOR_NAME="Frederik Wauters" GIT_AUTHOR_EMAIL="fwauters@uni-mainz.de" git'
+alias git-nb='env GIT_AUTHOR_NAME="Niklaus Berger" GIT_AUTHOR_EMAIL="niberger@uni-mainz.de" git'
+alias git-mk='env GIT_AUTHOR_NAME="Marius Koeppel" GIT_AUTHOR_EMAIL="koeppel.ma@googlemail.com" git'
