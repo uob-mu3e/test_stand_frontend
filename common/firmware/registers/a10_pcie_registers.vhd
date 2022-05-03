@@ -34,6 +34,7 @@ package a10_pcie_registers is
         constant RESET_BIT_FARM_TIME_MERGER                     :  integer := 25; -- DOC: Reset bit for farm time merger | FARM
         constant RESET_BIT_LINK_LOCKED                          :  integer := 26; -- DOC: Reset bit for link locked bit | SWB/FARM
         constant RESET_BIT_GLOBAL_TS                            :  integer := 27; -- DOC: Reset bit for global time counter | SWB/FARM
+        constant RESET_BIT_FARM_BLOCK                           :  integer := 28; -- DOC: Reset bit for the data path | FARM
         constant RESET_BIT_PCIE                                 :  integer := 31; -- DOC: Not used at the moment | ALL
 
     constant DATAGENERATOR_REGISTER_W                       : integer := 16#02#; -- DOC: Register to control the datagenerator which is generating the link data from FEBs | SWB
@@ -79,7 +80,8 @@ package a10_pcie_registers is
         constant USE_BIT_PIXEL_DS                               : integer := 8;  -- DOC: Readout state to only readout DS pixel data via DMA (for debugging) |  SWB & FARM
         constant USE_BIT_SCIFI                                  : integer := 9;  -- DOC: Readout state to only readout scifi data via DMA (for debugging) |  SWB & FARM
         constant USE_BIT_TEST_ERROR                             : integer := 10; -- DOC: Readout state for testing an error handling in the time merger using generated data |  SWB & FARM
-        constant USE_BIT_DDR                                    : integer := 10; -- DOC: Readout state for using the ddr memory | FARM
+        constant USE_BIT_DDR                                    : integer := 11; -- DOC: Readout state for using the ddr memory | FARM
+        constant USE_BIT_ALL                                    : integer := 12; -- DOC: Readout state to only readout all data in round robin via DMA (for debugging) |  SWB
     constant SWB_READOUT_LINK_REGISTER_W                    : integer := 16#14#; -- DOC: Not used at the moment |  SWB & FARM
     constant SWB_COUNTER_REGISTER_W                         : integer := 16#15#; -- DOC: Addr register to readout counter values from the SWB, to have more information about the counter look at a10_counter.md | SWB
 
@@ -112,6 +114,7 @@ package a10_pcie_registers is
         subtype  RESET_LINK_COMMAND_RANGE                       is integer range 7 downto 0;
         subtype  RESET_LINK_FEB_RANGE                           is integer range 31 downto 29;
     constant RESET_LINK_RUN_NUMBER_REGISTER_W               : integer := 16#29#;
+    constant FARM_EVENT_ID_REGISTER_W                       : integer := 16#2A#; -- DOC: set MIDAS event id (15 downto 0) and trigger mask (31 downto 16) | FARM
     constant CLK_LINK_0_REGISTER_W                          : integer := 16#30#;
     constant CLK_LINK_1_REGISTER_W                          : integer := 16#31#;
     constant CLK_LINK_2_REGISTER_W                          : integer := 16#32#;
@@ -200,6 +203,7 @@ package a10_pcie_registers is
         constant SC_MAIN_DONE                                   : integer := 0;
     constant GLOBAL_TS_LOW_REGISTER_R                       : integer := 16#2A#;
     constant GLOBAL_TS_HIGH_REGISTER_R                      : integer := 16#2B#;
+    constant SERIAL_NUM_REGISTER_R                          : integer := 16#2C#;
     constant DDR_CLK_CNT_R                                  : integer := 16#30#;
     constant SC_STATE_REGISTER_R                            : integer := 16#31#;
     constant DMA_CNT_WORDS_REGISTER_R                       : integer := 16#32#;

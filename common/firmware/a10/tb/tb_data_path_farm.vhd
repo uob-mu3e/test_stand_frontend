@@ -155,8 +155,10 @@ begin
     writeregs(FARM_READOUT_STATE_REGISTER_W)(USE_BIT_MERGER)    <= '1';
     writeregs(GET_N_DMA_WORDS_REGISTER_W)                       <= (others => '1');
     writeregs(FARM_LINK_MASK_REGISTER_W)                        <= x"00000003";--x"00000048";
+    -- Data type: "00" = pixel, "01" = scifi, "10" = tiles
+    writeregs(FARM_DATA_TYPE_REGISTER_W)(FARM_DATA_TYPE_ADDR_RANGE) <= "00";
     writeregs(DMA_REGISTER_W)(DMA_BIT_ENABLE)                   <= '1';
-    writeregs(FARM_READOUT_STATE_REGISTER_W)(USE_BIT_DDR)       <= '1';
+    writeregs(FARM_READOUT_STATE_REGISTER_W)(USE_BIT_DDR)       <= '0';
 
     -- Request generation
     process begin

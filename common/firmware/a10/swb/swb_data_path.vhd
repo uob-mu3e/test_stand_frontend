@@ -69,7 +69,7 @@ architecture arch of swb_data_path is
     --! stream merger
     signal stream_rdata, stream_rdata_debug : work.mu3e.link_t;
     signal stream_counters : work.util.slv32_array_t(1 downto 0);
-    signal stream_rempty, stream_ren : std_logic;
+    signal stream_rempty, stream_ren, stream_en : std_logic;
     signal stream_rempty_debug, stream_ren_debug : std_logic;
     signal stream_rack : std_logic_vector(g_NLINKS_DATA-1 downto 0);
 
@@ -252,11 +252,11 @@ begin
 
         o_counters  => stream_counters,
 
-        i_en        => i_writeregs(SWB_READOUT_STATE_REGISTER_W)(USE_BIT_STREAM),
+        i_en        => stream_en,
         i_reset_n   => i_resets_n(RESET_BIT_SWB_STREAM_MERGER),
         i_clk       => i_clk--,
     );
-
+    stream_en <= '1' when not g_gen_time_merger else i_writeregs(SWB_READOUT_STATE_REGISTER_W)(USE_BIT_STREAM);
 
     --! time merger
     --! ------------------------------------------------------------------------
@@ -295,31 +295,30 @@ begin
         );
     end generate;
 
-
     --! readout switches
     --! ------------------------------------------------------------------------
     --! ------------------------------------------------------------------------
     --! ------------------------------------------------------------------------
-    rx_ren          <=  stream_rack when i_writeregs(SWB_READOUT_STATE_REGISTER_W)(USE_BIT_STREAM) = '1' else
+    rx_ren          <=  stream_rack when stream_en = '1' else
                         merger_rack when i_writeregs(SWB_READOUT_STATE_REGISTER_W)(USE_BIT_MERGER) = '1' else
                         (others => '0');
 
-    o_data_debug    <=  stream_rdata_debug when i_writeregs(SWB_READOUT_STATE_REGISTER_W)(USE_BIT_STREAM) = '1' else
+    o_data_debug    <=  stream_rdata_debug when stream_en = '1' else
                         merger_rdata_debug when i_writeregs(SWB_READOUT_STATE_REGISTER_W)(USE_BIT_MERGER) = '1' else
                         work.mu3e.LINK_ZERO;
-    o_rempty_debug  <=  stream_rempty_debug when i_writeregs(SWB_READOUT_STATE_REGISTER_W)(USE_BIT_STREAM) = '1' else
+    o_rempty_debug  <=  stream_rempty_debug when stream_en = '1' else
                         merger_rempty_debug when i_writeregs(SWB_READOUT_STATE_REGISTER_W)(USE_BIT_MERGER) = '1' else
                         '0';
-    stream_ren_debug <= i_rack_debug when i_writeregs(SWB_READOUT_STATE_REGISTER_W)(USE_BIT_STREAM) = '1' else '0';
+    stream_ren_debug <= i_rack_debug when stream_en = '1' else '0';
     merger_ren_debug <= i_rack_debug when i_writeregs(SWB_READOUT_STATE_REGISTER_W)(USE_BIT_MERGER) = '1' else '0';
 
-    farm_data       <=  stream_rdata when i_writeregs(SWB_READOUT_STATE_REGISTER_W)(USE_BIT_STREAM) = '1' else
+    farm_data       <=  stream_rdata when stream_en = '1' else
                         merger_rdata when i_writeregs(SWB_READOUT_STATE_REGISTER_W)(USE_BIT_MERGER) = '1' else
                         work.mu3e.LINK_ZERO;
-    farm_rempty     <=  stream_rempty when i_writeregs(SWB_READOUT_STATE_REGISTER_W)(USE_BIT_STREAM) = '1' else
+    farm_rempty     <=  stream_rempty when stream_en = '1' else
                         merger_rempty when i_writeregs(SWB_READOUT_STATE_REGISTER_W)(USE_BIT_MERGER) = '1' else
                         '0';
-    stream_ren      <=  farm_rack when i_writeregs(SWB_READOUT_STATE_REGISTER_W)(USE_BIT_STREAM) = '1' else '0';
+    stream_ren      <=  farm_rack when stream_en = '1' else '0';
     merger_ren      <=  farm_rack when i_writeregs(SWB_READOUT_STATE_REGISTER_W)(USE_BIT_MERGER) = '1' else '0';
 
 
@@ -327,7 +326,7 @@ begin
     --! ------------------------------------------------------------------------
     --! ------------------------------------------------------------------------
     --! ------------------------------------------------------------------------
-    o_farm_data  <= farm_data;
+    o_farm_data  <= farm_data when not farm_rempty else work.mu3e.LINK_IDLE;
     farm_rack    <= not farm_rempty;
 
 end architecture;

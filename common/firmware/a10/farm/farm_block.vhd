@@ -115,7 +115,7 @@ architecture arch of farm_block is
 
     --! stream signal
     signal stream_rdata : work.mu3e.link_t;
-    signal stream_counters : work.util.slv32_array_t(0 downto 0);
+    signal stream_counters : work.util.slv32_array_t(1 downto 0);
     signal stream_rempty, stream_ren : std_logic;
     signal stream_rack : std_logic_vector(g_NLINKS_TOTL - 1 downto 0);
 
@@ -173,8 +173,8 @@ architecture arch of farm_block is
     --! bank_builder_ram_full
     --! bank_builder_tag_fifo_full
     signal builder_counters : work.util.slv32_array_t(3 downto 0);
-    -- TODO: write status readout entity with ADDR to PCIe REGS and mapping to one counter REG
-    signal counter : work.util.slv32_array_t(4 + 4 + 4 + (g_NLINKS_TOTL*4) + (g_NLINKS_TOTL*5) - 1 downto 0);
+    --! total counters
+    signal counter : work.util.slv32_array_t(2 + 4 + 4 + 4 + (g_NLINKS_TOTL*4) + (g_NLINKS_TOTL*5) - 1 downto 0);
 
 begin
 
@@ -202,6 +202,8 @@ begin
     gen_builder_cnt : FOR I in (g_NLINKS_TOTL*4) + (g_NLINKS_TOTL*5) + 8 to (g_NLINKS_TOTL*4) + (g_NLINKS_TOTL*5) + 11 GENERATE
         counter(I) <= builder_counters(I-((g_NLINKS_TOTL*4) + (g_NLINKS_TOTL*5) + 8));
     END GENERATE;
+    counter(2 + 4 + 4 + 4 + (g_NLINKS_TOTL*4) + (g_NLINKS_TOTL*5) - 1 downto 4 + 4 + 4 + (g_NLINKS_TOTL*4) + (g_NLINKS_TOTL*5)) <= stream_counters;
+    o_readregs(SWB_COUNTER_REGISTER_R) <= counter(to_integer(unsigned(i_writeregs(SWB_COUNTER_REGISTER_W))));
 
     --! SWB Data Generation
     --! generate data in the format from the SWB
@@ -214,7 +216,7 @@ begin
     generic map (
         DATA_TYPE => DATA_TYPE,
         go_to_sh => 3,
-        test_error => true,
+        test_error => false,
         is_farm => true,
         go_to_trailer => 4--,
     )
@@ -238,9 +240,9 @@ begin
             rx(I)   <= work.mu3e.LINK_IDLE;
         elsif ( rising_edge( i_clk ) ) then
             if ( i_writeregs(FARM_READOUT_STATE_REGISTER_W)(USE_BIT_GEN_LINK) = '1' ) then
-                rx(I)   <= work.mu3e.to_link(gen_link.data, gen_link.datak);
+                rx(I) <= work.mu3e.to_link(gen_link.data, gen_link.datak);
             else
-                rx(I)   <= work.mu3e.to_link(i_rx(I).data, i_rx(I).datak);
+                rx(I) <= work.mu3e.to_link(i_rx(I).data, i_rx(I).datak);
             end if;
         end if;
         end process;
@@ -264,6 +266,7 @@ begin
     port map (
         --! link data
         i_rx                => rx,
+        i_mask_n            => i_writeregs(FARM_LINK_MASK_REGISTER_W)(g_NLINKS_TOTL - 1 downto 0),
         o_tx                => o_tx,
 
         --! data out
@@ -361,11 +364,11 @@ begin
     builder_rempty  <=  stream_rempty   when i_writeregs(FARM_READOUT_STATE_REGISTER_W)(USE_BIT_STREAM) = '1' else
                         merger_rempty   when i_writeregs(FARM_READOUT_STATE_REGISTER_W)(USE_BIT_MERGER) = '1' else
                         '0';
-    stream_ren      <=  ddr_rack        when i_writeregs(FARM_READOUT_STATE_REGISTER_W)(USE_BIT_STREAM) = '1' and i_writeregs(FARM_READOUT_STATE_REGISTER_W)(USE_BIT_DDR) = '1' else
-                        builder_rack    when i_writeregs(FARM_READOUT_STATE_REGISTER_W)(USE_BIT_STREAM) = '1' and i_writeregs(FARM_READOUT_STATE_REGISTER_W)(USE_BIT_DDR) = '0' else
+    stream_ren      <=  ddr_rack        when i_writeregs(FARM_READOUT_STATE_REGISTER_W)(USE_BIT_DDR) = '1' else
+                        builder_rack    when i_writeregs(FARM_READOUT_STATE_REGISTER_W)(USE_BIT_DDR) = '0' else
                         '0';
-    merger_ren      <=  ddr_rack        when i_writeregs(FARM_READOUT_STATE_REGISTER_W)(USE_BIT_MERGER) = '1' and i_writeregs(FARM_READOUT_STATE_REGISTER_W)(USE_BIT_DDR) = '1' else
-                        builder_rack    when i_writeregs(FARM_READOUT_STATE_REGISTER_W)(USE_BIT_MERGER) = '1' and i_writeregs(FARM_READOUT_STATE_REGISTER_W)(USE_BIT_DDR) = '0' else
+    merger_ren      <=  ddr_rack        when i_writeregs(FARM_READOUT_STATE_REGISTER_W)(USE_BIT_DDR) = '1' else
+                        builder_rack    when i_writeregs(FARM_READOUT_STATE_REGISTER_W)(USE_BIT_DDR) = '0' else
                         '0';
     o_dma_data      <=  ddr_dma_data        when i_writeregs(FARM_READOUT_STATE_REGISTER_W)(USE_BIT_DDR) = '1' else
                         builder_dma_data    when i_writeregs(FARM_READOUT_STATE_REGISTER_W)(USE_BIT_DDR) = '0' else
@@ -395,12 +398,14 @@ begin
         i_wen               => i_writeregs(DMA_REGISTER_W)(DMA_BIT_ENABLE),
         -- Data type: "00" = pixel, "01" = scifi, "10" = tiles
         i_data_type         => i_writeregs(FARM_DATA_TYPE_REGISTER_W)(FARM_DATA_TYPE_ADDR_RANGE),
+        i_event_id          => i_writeregs(FARM_EVENT_ID_REGISTER_W),
 
         o_data              => builder_dma_data,
         o_wen               => builder_dma_wren,
         o_ren               => builder_rack,
         o_endofevent        => builder_endofevent,
         o_dma_cnt_words     => o_readregs(DMA_CNT_WORDS_REGISTER_R),
+        o_serial_num        => o_readregs(SERIAL_NUM_REGISTER_R),
         o_done              => builder_dma_done,
 
         --! bank_builder_idle_not_header
@@ -418,100 +423,100 @@ begin
     --! ------------------------------------------------------------------------
     --! ------------------------------------------------------------------------
     --! ------------------------------------------------------------------------
-    e_farm_midas_event_builder : entity work.farm_midas_event_builder_intrun22
-    port map (
-        --! data in
-        i_rx            => builder_data,
-        i_rempty        => builder_rempty,
-        o_ren           => ddr_rack,
+    -- e_farm_midas_event_builder : entity work.farm_midas_event_builder_intrun22
+    -- port map (
+    --     --! data in
+    --     i_rx            => builder_data,
+    --     i_rempty        => builder_rempty,
+    --     o_ren           => ddr_rack,
 
-        -- Data type: "00" = pixel, "01" = scifi, "10" = tiles
-        i_data_type     => i_writeregs(FARM_DATA_TYPE_REGISTER_W)(FARM_DATA_TYPE_ADDR_RANGE),
-        i_event_id      => i_writeregs(FARM_DATA_TYPE_REGISTER_W)(FARM_EVENT_ID_ADDR_RANGE),
+    --     -- Data type: "00" = pixel, "01" = scifi, "10" = tiles
+    --     i_data_type     => i_writeregs(FARM_DATA_TYPE_REGISTER_W)(FARM_DATA_TYPE_ADDR_RANGE),
+    --     i_event_id      => i_writeregs(FARM_DATA_TYPE_REGISTER_W)(FARM_EVENT_ID_ADDR_RANGE),
 
-        --! DDR data
-        o_data          => ddr_data,
-        o_wen           => ddr_wen,
-        o_event_ts      => ddr_ts,
-        i_ddr_ready     => ddr_ready,
-        o_sop           => ddr_sop,
-        o_eop           => ddr_eop,
-        o_err           => ddr_err,
+    --     --! DDR data
+    --     o_data          => ddr_data,
+    --     o_wen           => ddr_wen,
+    --     o_event_ts      => ddr_ts,
+    --     i_ddr_ready     => ddr_ready,
+    --     o_sop           => ddr_sop,
+    --     o_eop           => ddr_eop,
+    --     o_err           => ddr_err,
 
-        --! status counters
-        --! 0: bank_builder_idle_not_header
-        --! 1: bank_builder_skip_event
-        --! 2: bank_builder_cnt_event
-        --! 3: bank_builder_tag_fifo_full
-        o_counters      => counter_midas_event_builder,
+    --     --! status counters
+    --     --! 0: bank_builder_idle_not_header
+    --     --! 1: bank_builder_skip_event
+    --     --! 2: bank_builder_cnt_event
+    --     --! 3: bank_builder_tag_fifo_full
+    --     o_counters      => counter_midas_event_builder,
 
-        i_reset_n       => i_reset_n,
-        i_clk           => i_clk--,
-    );
+    --     i_reset_n       => i_reset_n,
+    --     i_clk           => i_clk--,
+    -- );
 
 
-    --! Farm Data Path
-    --! ------------------------------------------------------------------------
-    --! ------------------------------------------------------------------------
-    --! ------------------------------------------------------------------------
-    e_farm_data_path : entity work.farm_data_path
-    port map(
-        --! input from merging (first board) or links (subsequent boards)
-        i_data           => ddr_data,
-        i_data_en        => ddr_wen,
-        i_ts             => ddr_ts(35 downto 4), -- 3:0 -> hit, 9:0 -> sub header
-        o_ddr_ready      => ddr_ready,
-        i_err            => ddr_err,
-        i_sop            => ddr_sop,
-        i_eop            => ddr_eop,
+    -- --! Farm Data Path
+    -- --! ------------------------------------------------------------------------
+    -- --! ------------------------------------------------------------------------
+    -- --! ------------------------------------------------------------------------
+    -- e_farm_data_path : entity work.farm_data_path
+    -- port map(
+    --     --! input from merging (first board) or links (subsequent boards)
+    --     i_data           => ddr_data,
+    --     i_data_en        => ddr_wen,
+    --     i_ts             => ddr_ts(35 downto 4), -- 3:0 -> hit, 9:0 -> sub header
+    --     o_ddr_ready      => ddr_ready,
+    --     i_err            => ddr_err,
+    --     i_sop            => ddr_sop,
+    --     i_eop            => ddr_eop,
 
-        --! input from PCIe demanding events
-        i_ts_req_A        => i_writeregs(DATA_REQ_A_W),
-        i_req_en_A        => i_regwritten(DATA_REQ_A_W),
-        i_ts_req_B        => i_writeregs(DATA_REQ_B_W),
-        i_req_en_B        => i_regwritten(DATA_REQ_B_W),
-        i_tsblock_done    => i_writeregs(DATA_TSBLOCK_DONE_W)(15 downto 0),
-        o_tsblocks        => o_readregs(DATA_TSBLOCKS_R),
+    --     --! input from PCIe demanding events
+    --     i_ts_req_A        => i_writeregs(DATA_REQ_A_W),
+    --     i_req_en_A        => i_regwritten(DATA_REQ_A_W),
+    --     i_ts_req_B        => i_writeregs(DATA_REQ_B_W),
+    --     i_req_en_B        => i_regwritten(DATA_REQ_B_W),
+    --     i_tsblock_done    => i_writeregs(DATA_TSBLOCK_DONE_W)(15 downto 0),
+    --     o_tsblocks        => o_readregs(DATA_TSBLOCKS_R),
 
-        --! output to DMA
-        o_dma_data       => ddr_dma_data,
-        o_dma_wren       => ddr_dma_wren,
-        o_dma_eoe        => ddr_endofevent,
-        i_dmamemhalffull => i_dmamemhalffull,
-        i_num_req_events => i_writeregs(FARM_REQ_EVENTS_W),
-        o_dma_done       => ddr_dma_done,
-        i_dma_wen        => i_writeregs(DMA_REGISTER_W)(DMA_BIT_ENABLE),
+    --     --! output to DMA
+    --     o_dma_data       => ddr_dma_data,
+    --     o_dma_wren       => ddr_dma_wren,
+    --     o_dma_eoe        => ddr_endofevent,
+    --     i_dmamemhalffull => i_dmamemhalffull,
+    --     i_num_req_events => i_writeregs(FARM_REQ_EVENTS_W),
+    --     o_dma_done       => ddr_dma_done,
+    --     i_dma_wen        => i_writeregs(DMA_REGISTER_W)(DMA_BIT_ENABLE),
 
-        --! status counters
-        --! 0: cnt_skip_event_dma
-        --! 1: A_almost_full
-        --! 2: B_almost_full
-        --! 3: i_dmamemhalffull
-        o_counters      => counter_ddr,
+    --     --! status counters
+    --     --! 0: cnt_skip_event_dma
+    --     --! 1: A_almost_full
+    --     --! 2: B_almost_full
+    --     --! 3: i_dmamemhalffull
+    --     o_counters      => counter_ddr,
 
-        --! interface to memory bank A
-        A_mem_ready     => A_mem_ready,
-        A_mem_calibrated=> A_mem_calibrated,
-        A_mem_addr      => A_mem_addr,
-        A_mem_data      => A_mem_data,
-        A_mem_write     => A_mem_write,
-        A_mem_read      => A_mem_read,
-        A_mem_q         => A_mem_q,
-        A_mem_q_valid   => A_mem_q_valid,
+    --     --! interface to memory bank A
+    --     A_mem_ready     => A_mem_ready,
+    --     A_mem_calibrated=> A_mem_calibrated,
+    --     A_mem_addr      => A_mem_addr,
+    --     A_mem_data      => A_mem_data,
+    --     A_mem_write     => A_mem_write,
+    --     A_mem_read      => A_mem_read,
+    --     A_mem_q         => A_mem_q,
+    --     A_mem_q_valid   => A_mem_q_valid,
 
-        --! interface to memory bank B
-        B_mem_ready     => B_mem_ready,
-        B_mem_calibrated=> B_mem_calibrated,
-        B_mem_addr      => B_mem_addr,
-        B_mem_data      => B_mem_data,
-        B_mem_write     => B_mem_write,
-        B_mem_read      => B_mem_read,
-        B_mem_q         => B_mem_q,
-        B_mem_q_valid   => B_mem_q_valid,
+    --     --! interface to memory bank B
+    --     B_mem_ready     => B_mem_ready,
+    --     B_mem_calibrated=> B_mem_calibrated,
+    --     B_mem_addr      => B_mem_addr,
+    --     B_mem_data      => B_mem_data,
+    --     B_mem_write     => B_mem_write,
+    --     B_mem_read      => B_mem_read,
+    --     B_mem_q         => B_mem_q,
+    --     B_mem_q_valid   => B_mem_q_valid,
 
-        i_reset_n        => i_resets_n(RESET_BIT_DDR),
-        i_clk            => i_clk--,
-    );
+    --     i_reset_n        => i_resets_n(RESET_BIT_DDR),
+    --     i_clk            => i_clk--,
+    -- );
 
 
     --! Farm DDR Block

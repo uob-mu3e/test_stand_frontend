@@ -18,6 +18,9 @@
 #include <sys/mman.h>
 
 #include <cassert>
+#include <chrono>
+
+using namespace std::chrono;
 
 
 #include "../../switching_pc/slowcontrol/FEBSlowcontrolInterface.h"
@@ -79,6 +82,7 @@ int main(int argc, char *argv[])
         switch(cmd) {
         case '1': {
             // test write
+            auto start = high_resolution_clock::now();
             const vector<uint32_t> data = {0,1,6};
             uint32_t startaddr = 0;
             uint32_t FPGA_ID = atoi(argv[1]);
@@ -132,7 +136,10 @@ int main(int argc, char *argv[])
                 cout << "ReadMem " << i << ": " << mu.read_memory_ro(i) << endl;
             }
             fpga_rmem_addrLast = fpga_rmem_addr;
+            auto stop = high_resolution_clock::now();
+            auto duration = duration_cast<microseconds>(stop - start);
 
+            cout << duration.count() << endl;
             break;
         }
         case 'q':

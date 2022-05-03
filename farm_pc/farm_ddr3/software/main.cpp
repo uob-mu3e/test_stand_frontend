@@ -44,6 +44,16 @@ void menu_spi_si5345() {
     }
 }
 
+alt_u32 xcvr0_rx_p[] = {
+     0,  1,  2,  3,  4,  5,  6,  7,  8,  9, 10, 11,
+    12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23
+};
+
+alt_u32 xcvr1_rx_p[] = {
+     0,  1,  2,  3,  4,  5,  6,  7,  8,  9, 10, 11,
+    12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23
+};
+
 int main() {
     base_init();
 
@@ -62,12 +72,20 @@ int main() {
         printf("Select entry ...\n");
         char cmd = wait_key();
         switch(cmd) {
-        case '1':
-            menu_xcvr((alt_u32*)(AVM_XCVR0_BASE | ALT_CPU_DCACHE_BYPASS_MASK));
+        case '1': {
+            xcvr_block_t xcvr_block((alt_u32*)(AVM_XCVR0_BASE | ALT_CPU_DCACHE_BYPASS_MASK), AVM_XCVR0_SPAN);
+            xcvr_block.rx_p = xcvr0_rx_p;
+            xcvr_block.n = 16;
+            xcvr_block.menu();
             break;
-        case '2':
-            menu_xcvr((alt_u32*)(AVM_XCVR1_BASE | ALT_CPU_DCACHE_BYPASS_MASK));
+	}
+        case '2': {
+            xcvr_block_t xcvr_block((alt_u32*)(AVM_XCVR1_BASE | ALT_CPU_DCACHE_BYPASS_MASK), AVM_XCVR1_SPAN);
+            xcvr_block.rx_p = xcvr1_rx_p;
+            xcvr_block.n = 16;
+            xcvr_block.menu();
             break;
+	}
         case '3':
             flash.menu();
             break;

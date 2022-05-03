@@ -82,7 +82,6 @@ architecture arch of swb_block is
     signal feb_rx : work.mu3e.link_array_t(g_NLINKS_FEB_TOTL-1 downto 0) := (others => work.mu3e.LINK_IDLE);
 
     --! farm links
-    signal farm_data       : work.mu3e.link_array_t(g_NLINKS_FARM_TOTL-1 downto 0)  := (others => work.mu3e.LINK_IDLE);
     signal pixel_farm_data : work.mu3e.link_array_t(g_NLINKS_FARM_PIXEL-1 downto 0) := (others => work.mu3e.LINK_IDLE);
     signal scifi_farm_data : work.mu3e.link_array_t(g_NLINKS_FARM_SCIFI-1 downto 0) := (others => work.mu3e.LINK_IDLE);
     
@@ -92,11 +91,19 @@ architecture arch of swb_block is
         -- Data type: "00" = pixel, "01" = scifi, "10" = tiles
     signal builder_data_type : std_logic_vector(1 downto 0);
 
+    --! debug data pixel
     signal data_debug_pixel : work.mu3e.link_array_t(g_NLINKS_FARM_PIXEL-1 downto 0);
     signal rempty_debug_pixel, rack_debug_pixel : std_logic_vector(g_NLINKS_FARM_PIXEL-1 downto 0);
     
+    --! debug scifi pixel
     signal data_debug_scifi : work.mu3e.link_array_t(g_NLINKS_FARM_SCIFI-1 downto 0);
     signal rempty_debug_scifi, rack_debug_scifi : std_logic_vector(g_NLINKS_FARM_SCIFI-1 downto 0);
+
+    --! debug data all
+    signal farm_data_debug : work.mu3e.link_array_t(g_NLINKS_FARM_TOTL-1 downto 0)  := (others => work.mu3e.LINK_IDLE);
+    signal data_debug : work.mu3e.link_t;
+    signal rempty_debug : std_logic;
+    signal all_rack, farm_empty_debug : std_logic_vector(g_NLINKS_FARM_TOTL-1 downto 0);
     
     --! demerged FEB links
     signal rx_data         : work.mu3e.link_array_t(g_NLINKS_FEB_TOTL-1 downto 0)   := (others => work.mu3e.LINK_IDLE);
@@ -235,6 +242,12 @@ begin
     o_farm_tx(g_NLINKS_FARM_PIXEL - 1 downto 0)                                          <= pixel_farm_data;
     o_farm_tx(g_NLINKS_FARM_PIXEL + g_NLINKS_FARM_SCIFI - 1 downto g_NLINKS_FARM_PIXEL)  <= scifi_farm_data;
 
+    -- farm data debug
+    farm_data_debug(g_NLINKS_FARM_PIXEL - 1 downto 0)                                          <= data_debug_pixel;
+    farm_data_debug(g_NLINKS_FARM_PIXEL + g_NLINKS_FARM_SCIFI - 1 downto g_NLINKS_FARM_PIXEL)  <= data_debug_scifi;
+    farm_empty_debug(g_NLINKS_FARM_PIXEL - 1 downto 0)                                         <= rempty_debug_pixel;
+    farm_empty_debug(g_NLINKS_FARM_PIXEL + g_NLINKS_FARM_SCIFI - 1 downto g_NLINKS_FARM_PIXEL) <= rempty_debug_scifi;
+
     -- link mapping
     gen_pixel_data_mapping : FOR i in 0 to g_NLINKS_DATA_PIXEL - 1 GENERATE
         rx_data_pixel(i)   <= rx_data(i);
@@ -250,11 +263,13 @@ begin
     counter_swb(builder_counters'left+1 + counter_swb_data_scifi'left+1 + counter_swb_data_pixel_ds'left+1 + counter_swb_data_pixel_us'left+1 - 1 downto counter_swb_data_pixel_ds'left+1 + counter_swb_data_pixel_us'left+1 + builder_counters'left+1) <= counter_swb_data_scifi;
 
     -- DAM mapping
-    builder_data    <=  data_debug_pixel(0) when i_writeregs(SWB_READOUT_STATE_REGISTER_W)(USE_BIT_PIXEL_US) = '1' else
+    builder_data    <=  data_debug          when i_writeregs(SWB_READOUT_STATE_REGISTER_W)(USE_BIT_ALL) = '1' else
+                        data_debug_pixel(0) when i_writeregs(SWB_READOUT_STATE_REGISTER_W)(USE_BIT_PIXEL_US) = '1' else
                         data_debug_pixel(1) when i_writeregs(SWB_READOUT_STATE_REGISTER_W)(USE_BIT_PIXEL_DS) = '1' else
                         data_debug_scifi(0) when i_writeregs(SWB_READOUT_STATE_REGISTER_W)(USE_BIT_SCIFI) = '1' else
                         work.mu3e.LINK_IDLE;
-    builder_rempty  <=  rempty_debug_pixel(0) when i_writeregs(SWB_READOUT_STATE_REGISTER_W)(USE_BIT_PIXEL_US) = '1' else
+    builder_rempty  <=  rempty_debug          when i_writeregs(SWB_READOUT_STATE_REGISTER_W)(USE_BIT_ALL) = '1' else
+                        rempty_debug_pixel(0) when i_writeregs(SWB_READOUT_STATE_REGISTER_W)(USE_BIT_PIXEL_US) = '1' else
                         rempty_debug_pixel(1) when i_writeregs(SWB_READOUT_STATE_REGISTER_W)(USE_BIT_PIXEL_DS) = '1' else
                         rempty_debug_scifi(0) when i_writeregs(SWB_READOUT_STATE_REGISTER_W)(USE_BIT_SCIFI) = '1' else
                         '0';
@@ -262,9 +277,15 @@ begin
                          "00" when i_writeregs(SWB_READOUT_STATE_REGISTER_W)(USE_BIT_PIXEL_DS) = '1' else
                          "01" when i_writeregs(SWB_READOUT_STATE_REGISTER_W)(USE_BIT_SCIFI) = '1' else
                          "00";
-    rack_debug_pixel(0) <=  builder_rack when i_writeregs(SWB_READOUT_STATE_REGISTER_W)(USE_BIT_PIXEL_US) = '1' else '0';
-    rack_debug_pixel(1) <=  builder_rack when i_writeregs(SWB_READOUT_STATE_REGISTER_W)(USE_BIT_PIXEL_DS) = '1' else '0';
-    rack_debug_scifi(0) <=  builder_rack when i_writeregs(SWB_READOUT_STATE_REGISTER_W)(USE_BIT_SCIFI) = '1' else '0';
+    rack_debug_pixel(0) <=  all_rack(0)     when i_writeregs(SWB_READOUT_STATE_REGISTER_W)(USE_BIT_ALL) = '1' else 
+                            builder_rack    when i_writeregs(SWB_READOUT_STATE_REGISTER_W)(USE_BIT_PIXEL_US) = '1' else 
+                            '0';
+    rack_debug_pixel(1) <=  all_rack(1)     when i_writeregs(SWB_READOUT_STATE_REGISTER_W)(USE_BIT_ALL) = '1' else 
+                            builder_rack    when i_writeregs(SWB_READOUT_STATE_REGISTER_W)(USE_BIT_PIXEL_DS) = '1' else 
+                            '0';
+    rack_debug_scifi(0) <=  all_rack(2)     when i_writeregs(SWB_READOUT_STATE_REGISTER_W)(USE_BIT_ALL) = '1' else 
+                            builder_rack    when i_writeregs(SWB_READOUT_STATE_REGISTER_W)(USE_BIT_SCIFI) = '1' else 
+                            '0';
 
 
     --! SWB data path Pixel
@@ -371,6 +392,41 @@ begin
     );
 
 
+    --! stream merger used for the debug readout on the SWB
+    --! ------------------------------------------------------------------------
+    --! ------------------------------------------------------------------------
+    --! ------------------------------------------------------------------------
+    e_stream_debug_all : entity work.swb_stream_merger
+    generic map (
+        g_set_type => true,
+        g_ADDR_WIDTH => 11,
+        N => g_NLINKS_FARM_TOTL--,
+    )
+    port map (
+        -- debug data in
+        i_rdata     => farm_data_debug,
+        i_rempty    => farm_empty_debug,
+        i_rmask_n   => (others => '1'),
+        o_rack      => all_rack,
+
+        -- debug data out
+        o_wdata     => data_debug,
+        o_rempty    => rempty_debug,
+        i_ren       => builder_rack,
+
+        -- data for debug readout
+        o_wdata_debug   => open,
+        o_rempty_debug  => open,
+        i_ren_debug     => '0',
+
+        o_counters  => open,
+
+        i_en        => i_writeregs(SWB_READOUT_STATE_REGISTER_W)(USE_BIT_ALL),
+        i_reset_n   => i_resets_n(RESET_BIT_SWB_STREAM_MERGER),
+        i_clk       => i_clk--,
+    );
+
+
     --! event builder used for the debug readout on the SWB
     --! ------------------------------------------------------------------------
     --! ------------------------------------------------------------------------
@@ -384,12 +440,15 @@ begin
         i_dmamemhalffull    => i_dmamemhalffull,
         i_wen               => i_writeregs(DMA_REGISTER_W)(DMA_BIT_ENABLE),
         i_data_type         => builder_data_type,
+        i_use_sop_type      => i_writeregs(SWB_READOUT_STATE_REGISTER_W)(USE_BIT_ALL),
+        i_event_id          => i_writeregs(FARM_EVENT_ID_REGISTER_W),
 
         o_data              => o_dma_data,
         o_wen               => o_dma_wren,
         o_ren               => builder_rack,
         o_endofevent        => o_endofevent,
         o_dma_cnt_words     => o_readregs(DMA_CNT_WORDS_REGISTER_R),
+        o_serial_num        => o_readregs(SERIAL_NUM_REGISTER_R),
         o_done              => o_readregs(EVENT_BUILD_STATUS_REGISTER_R)(EVENT_BUILD_DONE),
 
         --! bank_builder_idle_not_header

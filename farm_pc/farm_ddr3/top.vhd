@@ -310,8 +310,6 @@ begin
         o_pcie0_resets_n                => pcie0_resets_n,
 
         -- resets clk
-        top_pll_locked                  => locked_50to125,
-
         o_reset_250_n                   => reset_250_n,
         o_clk_250                       => clk_250,
         o_clk_250_hz                    => LED(2),
@@ -325,7 +323,7 @@ begin
     );
 
     --! map links
-        generate_farm_links : for i in 0 to 15 generate
+    generate_farm_links : for i in 0 to 15 generate
         farm_rx(i).data     <= farm_rx_data(i);
         farm_rx(i).datak    <= farm_rx_datak(i);
         farm_tx_data(i)     <= farm_tx(i).data;
@@ -360,10 +358,9 @@ begin
     --! ------------------------------------------------------------------------
     --! ------------------------------------------------------------------------
     --! ------------------------------------------------------------------------
-
     farm_block : entity work.farm_block
     generic map (
-        g_LOOPUP_NAME   => "intRun2021",
+        g_LOOPUP_NAME   => "", -- no lookup for the farm
         g_NLINKS_TOTL   => 3,
         g_ADDR_WIDTH    => 11,
         g_DDR4          => false--,
@@ -424,7 +421,7 @@ begin
         i_B_pll_ref_clk      => DDR3B_REFCLK_p,
 
         --! 250 MHz clock pice / reset_n
-        i_reset_n       => pcie0_reset_n,
+        i_reset_n       => pcie0_resets_n(RESET_BIT_FARM_BLOCK),
         i_clk           => pcie0_clk--,
     );
 

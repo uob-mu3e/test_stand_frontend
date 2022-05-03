@@ -145,7 +145,7 @@ void print_usage() {
     cout << " readout words: 0 = readout half of DMA buffer" << endl;
     cout << " readout words: 1 = dump DMA readout with time stop" << endl;
     cout << " link mask: 0xFFFF mask links (one is use this link)" << endl;
-    cout << " 0: pixel ds, 1: pixel us, 2: scifi" << endl;
+    cout << " 0: pixel ds, 1: pixel us, 2: scifi, 3: farm" << endl;
 }
 
 int main(int argc, char *argv[]) {
@@ -165,6 +165,7 @@ int main(int argc, char *argv[]) {
         mu.disable();
         mu.write_register(DATAGENERATOR_DIVIDER_REGISTER_W, 0x0);
         mu.write_register(SWB_READOUT_STATE_REGISTER_W, 0x0);
+        mu.write_register(FARM_READOUT_STATE_REGISTER_W, 0x0);
         mu.write_register(DATAGENERATOR_DIVIDER_REGISTER_W, 0x0);
         mu.write_register(SWB_LINK_MASK_PIXEL_REGISTER_W, 0x0);
         mu.write_register(SWB_READOUT_LINK_REGISTER_W, 0x0);
@@ -225,9 +226,12 @@ int main(int argc, char *argv[]) {
     // reset all
     uint32_t reset_regs = 0;
     reset_regs = SET_RESET_BIT_DATA_PATH(reset_regs);
+    reset_regs = SET_RESET_BIT_FARM_BLOCK(reset_regs);
     reset_regs = SET_RESET_BIT_DATAGEN(reset_regs);
     reset_regs = SET_RESET_BIT_SWB_STREAM_MERGER(reset_regs);
+    reset_regs = SET_RESET_BIT_FARM_STREAM_MERGER(reset_regs);
     reset_regs = SET_RESET_BIT_SWB_TIME_MERGER(reset_regs);
+    reset_regs = SET_RESET_BIT_FARM_TIME_MERGER(reset_regs);
     reset_regs = SET_RESET_BIT_LINK_LOCKED(reset_regs);
     cout << "Reset Regs: " << hex << reset_regs << endl;
     mu.write_register(RESET_REGISTER_W, reset_regs);
@@ -243,6 +247,7 @@ int main(int argc, char *argv[]) {
     uint32_t mask_n_add;
     if (atoi(argv[5]) == 1) mask_n_add = SWB_LINK_MASK_SCIFI_REGISTER_W;
     if (atoi(argv[5]) == 0) mask_n_add = SWB_LINK_MASK_PIXEL_REGISTER_W;
+    if (atoi(argv[5]) == 3) mask_n_add = FARM_LINK_MASK_REGISTER_W;
     uint32_t set_pixel;
     if (atoi(argv[5]) == 1) set_pixel = 0;
     if (atoi(argv[5]) == 0) set_pixel = 1;
@@ -251,12 +256,16 @@ int main(int argc, char *argv[]) {
     if (atoi(argv[5]) == 0) readout_state_regs = SET_USE_BIT_PIXEL_DS(readout_state_regs);
     if (atoi(argv[5]) == 1) readout_state_regs = SET_USE_BIT_PIXEL_US(readout_state_regs);
     if (atoi(argv[5]) == 2) readout_state_regs = SET_USE_BIT_SCIFI(readout_state_regs);
+    if (atoi(argv[5]) == 4) readout_state_regs = SET_USE_BIT_ALL(readout_state_regs);
+    
     uint32_t detector = 0;
     if (atoi(argv[5]) == 0) detector = 0;
     if (atoi(argv[5]) == 1) detector = 1;
     if (atoi(argv[5]) == 2) detector = 2;
     // set mask bits
-    mu.write_register(mask_n_add, strtol(argv[4], NULL, 16));
+    if (atoi(argv[5]) == 4) mu.write_register(SWB_LINK_MASK_PIXEL_REGISTER_W, strtol(argv[4], NULL, 16));
+    if (atoi(argv[5]) == 4) mu.write_register(SWB_LINK_MASK_SCIFI_REGISTER_W, strtol(argv[4], NULL, 16));
+    if (atoi(argv[5]) != 4) mu.write_register(mask_n_add, strtol(argv[4], NULL, 16));
     // use stream merger
     if ( atoi(argv[1]) == 0 or atoi(argv[1]) == 2 ) readout_state_regs = SET_USE_BIT_STREAM(readout_state_regs);
     // use datagen
@@ -265,6 +274,7 @@ int main(int argc, char *argv[]) {
     if ( atoi(argv[1]) == 4 or atoi(argv[1]) == 3 ) readout_state_regs = SET_USE_BIT_MERGER(readout_state_regs);
     // write regs
     mu.write_register(SWB_READOUT_STATE_REGISTER_W, readout_state_regs);
+    mu.write_register(FARM_READOUT_STATE_REGISTER_W, readout_state_regs);
 
     char cmd;
     usleep(10);
@@ -328,6 +338,7 @@ int main(int argc, char *argv[]) {
     mu.write_register(RESET_REGISTER_W, reset_regs);
     mu.write_register(DATAGENERATOR_DIVIDER_REGISTER_W, 0x0);
     mu.write_register(SWB_READOUT_STATE_REGISTER_W, 0x0);
+    mu.write_register(FARM_READOUT_STATE_REGISTER_W, 0x0);
     mu.write_register(SWB_LINK_MASK_PIXEL_REGISTER_W, 0x0);
     mu.write_register(SWB_READOUT_LINK_REGISTER_W, 0x0);
     mu.write_register(GET_N_DMA_WORDS_REGISTER_W, 0x0);

@@ -2,9 +2,12 @@ library ieee;
 use ieee.std_logic_1164.all;
 use ieee.numeric_std.all;
 
+use work.mudaq.all;
+
 -- merge packets delimited by SOP and EOP from N input streams
 entity stream_merger is
 generic (
+    g_set_type : boolean := false;
     N : positive--;
 );
 port (
@@ -57,6 +60,9 @@ begin
         for i in N-1 downto 0 loop
             if ( index(i) = '1' ) then
                 o_wdata <= i_rdata(i);
+                if ( sop(i) = '1' and g_set_type ) then
+                    o_wdata.data(25 downto 20) <= work.mudaq.link_36_to_std(i);
+                end if;
             end if;
         end loop;
         o_we <= '0';

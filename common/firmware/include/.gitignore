@@ -1,3 +1,4 @@
 scifi_registers.h
 a10_counters.h
 mupix_registers.h
+*.md
