@@ -16,6 +16,7 @@ port (
     -- Data type: "00" = pixel, "01" = scifi, "10" = tiles
     i_data_type         : std_logic_vector(1 downto 0) := "00";
     i_use_sop_type      : in  std_logic := '0';
+    i_event_id          : in  std_logic_vector (31 downto 0);
 
     i_get_n_words       : in  std_logic_vector (31 downto 0);
     i_dmamemhalffull    : in  std_logic;
@@ -24,6 +25,7 @@ port (
     o_wen               : out std_logic;
     o_ren               : out std_logic;
     o_dma_cnt_words     : out std_logic_vector (31 downto 0);
+    o_serial_num        : out std_logic_vector (31 downto 0);
     o_endofevent        : out std_logic;
     o_done              : out std_logic;
     o_state_out         : out std_logic_vector (3 downto 0);
@@ -96,6 +98,7 @@ begin
     o_data <= (others => '1')                                                       when event_counter_state = write_4kb_padding and is_error_q = '0' else
               r_ram_data(255 downto 64) & serial_number & r_ram_data(31 downto 0)   when event_counter_state = set_serial_number else
               r_ram_data;
+    o_serial_num <= serial_number;
 
     e_ram_32_256 : entity work.ip_ram
     generic map (
@@ -175,8 +178,8 @@ begin
     --
     elsif rising_edge(i_clk) then
         flags           <= x"00000031";
-        trigger_mask    <= (others => '0');
-        event_id        <= x"0001";
+        trigger_mask    <= i_event_id(31 downto 16);
+        event_id        <= i_event_id(15 downto 0);
         type_bank       <= x"00000006";
         w_ram_en        <= '0';
         w_fifo_en       <= '0';

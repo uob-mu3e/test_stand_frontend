@@ -441,12 +441,14 @@ begin
         i_wen               => i_writeregs(DMA_REGISTER_W)(DMA_BIT_ENABLE),
         i_data_type         => builder_data_type,
         i_use_sop_type      => i_writeregs(SWB_READOUT_STATE_REGISTER_W)(USE_BIT_ALL),
+        i_event_id          => i_writeregs(FARM_EVENT_ID_REGISTER_W),
 
         o_data              => o_dma_data,
         o_wen               => o_dma_wren,
         o_ren               => builder_rack,
         o_endofevent        => o_endofevent,
         o_dma_cnt_words     => o_readregs(DMA_CNT_WORDS_REGISTER_R),
+        o_serial_num        => o_readregs(SERIAL_NUM_REGISTER_R),
         o_done              => o_readregs(EVENT_BUILD_STATUS_REGISTER_R)(EVENT_BUILD_DONE),
 
         --! bank_builder_idle_not_header

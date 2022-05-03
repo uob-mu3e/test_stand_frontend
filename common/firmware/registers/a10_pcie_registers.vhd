@@ -114,6 +114,7 @@ package a10_pcie_registers is
         subtype  RESET_LINK_COMMAND_RANGE                       is integer range 7 downto 0;
         subtype  RESET_LINK_FEB_RANGE                           is integer range 31 downto 29;
     constant RESET_LINK_RUN_NUMBER_REGISTER_W               : integer := 16#29#;
+    constant FARM_EVENT_ID_REGISTER_W                       : integer := 16#2A#; -- DOC: set MIDAS event id (15 downto 0) and trigger mask (31 downto 16) | FARM
     constant CLK_LINK_0_REGISTER_W                          : integer := 16#30#;
     constant CLK_LINK_1_REGISTER_W                          : integer := 16#31#;
     constant CLK_LINK_2_REGISTER_W                          : integer := 16#32#;
@@ -202,6 +203,7 @@ package a10_pcie_registers is
         constant SC_MAIN_DONE                                   : integer := 0;
     constant GLOBAL_TS_LOW_REGISTER_R                       : integer := 16#2A#;
     constant GLOBAL_TS_HIGH_REGISTER_R                      : integer := 16#2B#;
+    constant SERIAL_NUM_REGISTER_R                          : integer := 16#2C#;
     constant DDR_CLK_CNT_R                                  : integer := 16#30#;
     constant SC_STATE_REGISTER_R                            : integer := 16#31#;
     constant DMA_CNT_WORDS_REGISTER_R                       : integer := 16#32#;

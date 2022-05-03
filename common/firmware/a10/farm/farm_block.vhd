@@ -398,12 +398,14 @@ begin
         i_wen               => i_writeregs(DMA_REGISTER_W)(DMA_BIT_ENABLE),
         -- Data type: "00" = pixel, "01" = scifi, "10" = tiles
         i_data_type         => i_writeregs(FARM_DATA_TYPE_REGISTER_W)(FARM_DATA_TYPE_ADDR_RANGE),
+        i_event_id          => i_writeregs(FARM_EVENT_ID_REGISTER_W),
 
         o_data              => builder_dma_data,
         o_wen               => builder_dma_wren,
         o_ren               => builder_rack,
         o_endofevent        => builder_endofevent,
         o_dma_cnt_words     => o_readregs(DMA_CNT_WORDS_REGISTER_R),
+        o_serial_num        => o_readregs(SERIAL_NUM_REGISTER_R),
         o_done              => builder_dma_done,
 
         --! bank_builder_idle_not_header
