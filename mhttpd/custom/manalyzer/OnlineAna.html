@@ -116,7 +116,7 @@
   var fileNameScifi = "";
   function getPageStatus() {
     startID = parseInt(document.getElementById("startID").value);
-    serverIP = parseInt(document.getElementById("serverIP").value);
+    serverIP = document.getElementById("serverIP").value;
     
     mjsonrpc_db_get_values(["/runinfo/run number"]).then(function(rpc) {
       runNumber = rpc.result.data[0];
