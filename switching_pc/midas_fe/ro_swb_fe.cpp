@@ -269,6 +269,9 @@ INT begin_of_run(INT run_number, char *error)
     // write readout register
     mu.write_register(SWB_READOUT_STATE_REGISTER_W, readout_state_regs);
 
+    // set event id for this frontedn
+    mu.write_register(FARM_EVENT_ID_REGISTER_W, eventID);
+
     // link masks 
     // Note: link masks are already set via ODB watch
     mu.write_register(SWB_LINK_MASK_PIXEL_REGISTER_W, stream_settings["mask_n_pixel"]);

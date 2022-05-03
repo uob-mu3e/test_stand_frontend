@@ -3,6 +3,8 @@ const char *frontend_name = "ROSWBCentral";
 
 const string eq_name = "ROSWBCentral";
 
+const uint16_t eventID = 0x1;
+
 EQUIPMENT equipment[] = {
 
    {"ROSWBCentral",                /* equipment name */

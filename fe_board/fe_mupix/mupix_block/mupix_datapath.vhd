@@ -461,9 +461,9 @@ begin
 
 
                 if(IS_TELESCOPE_g = '1') then
-                    hits_sorter_in(3)      <= i_trigger_in0_timestamp(20 downto 0) & counter125(10 downto 0);--counter125(10 downto 0) & ena3_counter(9 downto 0) & counter125(10 downto 0);
+                    hits_sorter_in(3)      <= counter125(20 downto 0) & counter125(10 downto 0);--i_trigger_in0_timestamp(20 downto 0) & counter125(10 downto 0);--counter125(10 downto 0) & ena3_counter(9 downto 0) & counter125(10 downto 0);
                     hits_sorter_in_ena(3)  <= i_trigger_in0;
-                    hits_sorter_in(4)      <= i_trigger_in1_timestamp(20 downto 0) & counter125(10 downto 0);--counter125(10 downto 0) & ena4_counter(9 downto 0) & counter125(10 downto 0);
+                    hits_sorter_in(4)      <= counter125(20 downto 0) & counter125(10 downto 0);--i_trigger_in1_timestamp(20 downto 0) & counter125(10 downto 0);--counter125(10 downto 0) & ena4_counter(9 downto 0) & counter125(10 downto 0);
                     hits_sorter_in_ena(4)  <= i_trigger_in1;
                 else
                     hits_sorter_in(3)      <= hits_sorter_in_buf(3);
