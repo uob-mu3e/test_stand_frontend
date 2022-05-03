@@ -53,6 +53,7 @@ architecture rtl of hitsorter_wide is
 signal running_last:   std_logic;
 signal running_read:   std_logic;
 signal running_read_last:   std_logic;
+signal running_read_last2:   std_logic;
 signal running_seq:	   std_logic;
 
 signal tslow 	: ts_t;
@@ -237,6 +238,7 @@ if(reset_n = '0') then
 	running_last 	<= '0';
 	running_read	<= '0';
 	running_read_last	<= '0';
+	running_read_last2	<= '0';
 	running_seq		<= '0';
 	
 	runstartup		<= '0';
@@ -254,6 +256,7 @@ elsif (writeclk'event and writeclk = '1') then
 
 	running_last	<= running;
 	running_read_last  <= running_read;
+	running_read_last2	<= running_read_last;
 
 	if(running = '0') then
 		runstartup		<= '0';
@@ -405,7 +408,7 @@ genmem: for i in NCHIPS-1 downto 0 generate
 			cmemwriteaddr_hitwriter(i)(k)  <= hit_last2(i)(COUNTERMEMADDRRANGE);
 		end loop;
 		
-		counterfrommem := fromcmem(i)(conv_integer(hit_last1(i)(COUNTERMEMSELRANGE)));
+		counterfrommem := fromcmem(i)(conv_integer(hit_last2(i)(COUNTERMEMSELRANGE)));
 		
 		for k in NMEMS-1 downto 0 loop
 			cmemwren_hitwriter(i)(k) <= '0'; 		
@@ -584,16 +587,17 @@ elsif (writeclk'event and writeclk = '1') then
 		
 		mem_overflow <= mem_ov;
 	
+		
 		mem_nonemptycount := (others => '0');
-
 		mem_ne := '0';
 
-		for i in NCHIPS-1 downto 0 loop
-			mem_ne := mem_ne or mem_nechips(i);
-			mem_nonemptycount := mem_nonemptycount + mem_nechips(i);
-		end loop;
-		mem_nnonempty 	<= mem_nonemptycount;
-		
+		if(running_read_last2 = '1') then
+			for i in NCHIPS-1 downto 0 loop
+				mem_ne := mem_ne or mem_nechips(i);
+				mem_nonemptycount := mem_nonemptycount + mem_nechips(i);
+			end loop;
+			mem_nnonempty 	<= mem_nonemptycount;
+		end if;
 		
 		blockchange	<= '0';
 		if((or_reduce(tsread(TSNONBLOCKRANGE))) = '0' and running_read_last = '1') then -- no block change at startup
