@@ -242,21 +242,21 @@ EQUIPMENT equipment[] = {
      	read_hameg_power7,    
       },
 
-//	{"HAMEG8",                       /* equipment name */
-//    	{128, 0,                       /* event ID, trigger mask */
-//    	"SYSTEM",                  /* event buffer */
-//     	EQ_PERIODIC,                   /* equipment type */
-//     	0,                         /* event source */
-//     	"MIDAS",                   /* format */
-//     	TRUE,                      /* enabled */
-//     	RO_STOPPED | RO_RUNNING | RO_PAUSE,        /* all, but not write to odb */
-//     	10000,                     /* read every 10 sec */
-//     	0,                         /* stop run after this event limit */
-//    	0,                         /* number of sub events */
-//        1,                         /* log history every event */
-//     	"", "", ""} ,                  /* device driver list */
-//     	read_hameg_power8,    
-//    },
+	{"HAMEG8",                       /* equipment name */
+    	{128, 0,                       /* event ID, trigger mask */
+    	"SYSTEM",                  /* event buffer */
+     	EQ_PERIODIC,                   /* equipment type */
+     	0,                         /* event source */
+     	"MIDAS",                   /* format */
+     	TRUE,                      /* enabled */
+     	RO_STOPPED | RO_RUNNING | RO_PAUSE,        /* all, but not write to odb */
+     	10000,                     /* read every 10 sec */
+     	0,                         /* stop run after this event limit */
+    	0,                         /* number of sub events */
+        1,                         /* log history every event */
+     	"", "", ""} ,                  /* device driver list */
+     	read_hameg_power8,    
+    },
    
     {""} //why is there actually this empty one here? FW
     
