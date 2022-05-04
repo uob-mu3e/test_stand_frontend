@@ -103,10 +103,10 @@ uint32_t ovrflw = 0;
 uint32_t rem    = 0;
 
 // device variable to store the counts
-/*__device__ uint32_t Evecnt;
+__device__ uint32_t Evecnt;
 __device__ uint32_t Hitcnt;
 __device__ uint32_t Overflowcnt;
-__device__ uint32_t bank_data;*/    
+__device__ uint32_t bank_data;    
 
 __device__ int sem = 0;
 
@@ -128,10 +128,10 @@ INT interrupt_configure(INT cmd, INT source, POINTER_T adr);
 void setup_odb();
 
 // device function to get counted values
-/*__device__ uint32_t get_eventcount() { return Evecnt; }
+__device__ uint32_t get_eventcount() { return Evecnt; }
 __device__ uint32_t get_hitcount() { return Hitcnt; }
 __device__ uint32_t get_subheaderoverflow() { return Overflowcnt; }
-__device__ uint32_t get_bankdata() { return bank_data; }*/ 
+__device__ uint32_t get_bankdata() { return bank_data; } 
 
 __device__ void Counter(uint32_t i, uint32_t *db, uint32_t endofevent);
 
@@ -338,10 +338,10 @@ INT begin_of_run(INT run_number, char *error)
         (dma_buf)[i] = 0;
     }
     
-    /*Set_EventCount(0);
+    Set_EventCount(0);
     Set_Hits(0);
     Set_SubHeaderOvrflw(0);
-    Set_Reminders(0);*/
+    Set_Reminders(0);
     
     // gpu job check threads
     gpu_done = false;
@@ -555,7 +555,7 @@ INT read_stream_event(char *pevent, INT off)
 
 /*------------------------GPU counters block-----------------------------*/
 
-__device__ void Counter(uint32_t i, uint32_t *db, uint32_t Evecnt, uint32_t Hitcnt, uint32_t Overflowcnt, uint32_t bank_data, uint32_t endofevent) {
+__device__ void Counter(uint32_t i, uint32_t *db, uint32_t endofevent) {
 
     uint32_t hpos = 0;
     uint32_t hitcnt = 0;
@@ -614,12 +614,11 @@ __global__ void gpu_counters(uint32_t *dest, uint32_t *src, uint32_t Endofevent,
     /*int blockid = (gridDim.x * blockIdx.y) + blockIdx.x;  // Block Id
     int i = (blockid * (blockDim.x * blockDim.y)) + (threadIdx.y * blockDim.x) + threadIdx.x; // Thread Index */
 
-    uint32_t evecnt = 0;
-    uint32_t hitcnt = 0;
-    uint32_t ovrflw = 0;
-    uint32_t bnkdata = 0;
+    uint32_t event_counter = 0;
+    uint32_t hit_counter = 0;
+    uint32_t subhead_ovrflow = 0;
+    uint32_t total_bankdata = 0;
     uint32_t reminder = 0;
-
     uint32_t thread_id = (blockIdx.x * blockDim.x) + threadIdx.x; // Thread Index
     uint32_t n_threads_per_grid = blockDim.x * gridDim.x;
 
@@ -634,25 +633,28 @@ __global__ void gpu_counters(uint32_t *dest, uint32_t *src, uint32_t Endofevent,
         //bank_data = 0;
         //unlock(&sem);
         //__syncthreads();
-        Counter(thread_id, src, evecnt, hitcnt, ovrflw, bnkdata, Endofevent);
+        Counter(thread_id, src, Endofevent);
     }
     else if (src[thread_id] == 0x00000001 and (src[thread_id-1] == 0xAFFEAFFE or src[thread_id-1] == 0xFC00009C)) {
-        Counter(thread_id, src, evecnt, hitcnt, ovrflw, bnkdata, Endofevent);
+        Counter(thread_id, src, Endofevent);
     }
     else {
-        evecnt = 0;
+        event_counter = 0;
+	hit_counter   = 0;
+	subhead_ovrflow = 0;
+	total_bankdata = 0;
     }
 
-    /*event_counter = get_eventcount();
+    event_counter = get_eventcount();
     hit_counter = get_hitcount();
     subhead_ovrflow = get_subheaderoverflow();
-    total_bankdata = get_bankdata();*/
-    reminder = bnkdata - hitcnt;
+    total_bankdata = get_bankdata();
+    reminder = total_bankdata - hit_counter;
     }
     __syncthreads();
-    *evt = evecnt;
-    *hit = hitcnt;
-    *sub_ovr = ovrflw;
+    *evt = event_counter;
+    *hit = hit_counter;
+    *sub_ovr = subhead_ovrflow;
     *bnkd = reminder;
     __syncthreads();
     *gpu_flag = 1;
