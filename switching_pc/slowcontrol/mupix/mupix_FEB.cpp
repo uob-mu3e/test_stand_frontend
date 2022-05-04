@@ -366,49 +366,10 @@ unsigned char reverse(unsigned char b) {
    return b;
 }
 
-uint32_t MupixFEB::ReadBackLVDSStatus(mappedFEB & FEB, uint16_t LVDS_ID)
-{
-   //skip disabled fibers
-    if(!FEB.IsScEnabled())
-        return 0;
-
-    //skip commands not for this SB
-    if(FEB.SB_Number()!=SB_number)
-        return 0;
-
-    if(!FEB.GetLinkStatus().LinkIsOK())
-        return 0;    
-    
-    uint32_t val;
-    feb_sc.FEB_read(FEB, MP_LVDS_STATUS_START_REGISTER_W + LVDS_ID, val);
-    
-    return val;
-}
-
 uint32_t MupixFEB::ReadBackLVDSNumHits(mappedFEB & FEB, uint16_t LVDS_ID)
 {
-    //TODO Read a hit counter here
-    //cm_msg(MINFO, "MupixFEB::ReadBackLVDSNumHits" , "Implement Me");
+   //TODO: implement me in firmware
     return 0;
-}
-
-
-DWORD* MupixFEB::ReadLVDSCounters(DWORD* pdata, mappedFEB & FEB)
-{
-    for(uint32_t i=0; i<64; i++){ 
-
-        // TODO: intrun fix for lvds configuration: The FEB should know how many links it has...
-        if (i>= MAX_LVDS_LINKS_PER_FEB) continue;
-        // Link ID
-        *pdata++ = i;
-        // read lvds status
-        *pdata++ = ReadBackLVDSStatus(FEB, i);
-        // number of hits from link
-        *pdata++ = ReadBackLVDSNumHits(FEB, i);
-
-
-    };
-    return pdata;
 }
 
 
@@ -418,17 +379,16 @@ DWORD* MupixFEB::ReadLVDSforPSLS(DWORD* pdata, mappedFEB & FEB)
     feb_sc.FEB_read(FEB, MP_LVDS_STATUS_START_REGISTER_W, status);
 
     std::vector<uint32_t> histos(MAX_LVDS_LINKS_PER_FEB*4);
-    // TODO: Uncomment when register is defined
-    //feb_sc.FEB_read(FEB, MP_HIT_ARRIVAL_START_REGISTER, histos);
+    feb_sc.FEB_read(FEB, MP_HIT_ARRIVAL_START_REGISTER_R, histos);
 
 
     for(uint32_t i=0; i<64; i++){ 
         if (i>=MAX_LVDS_LINKS_PER_FEB) continue;
         // Link ID
-        *pdata++ = i;  
+        //*pdata++ = i;
         *pdata++ = status[i];
         *pdata++ = ReadBackLVDSNumHits(FEB, i);
-        *pdata++ = histos[i*4];
+        *pdata++ = histos[i*4+0];
         *pdata++ = histos[i*4+1];
         *pdata++ = histos[i*4+2]; 
         *pdata++ = histos[i*4+3];
