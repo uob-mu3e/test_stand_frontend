@@ -79,6 +79,9 @@ uint32_t *d_evt;
 // Hit variables
 uint32_t *h_hit;
 uint32_t *d_hit;
+// Scintillator variables
+uint32_t *h_scint;
+uint32_t *d_scint;
 // SubHeader Overflow variables
 uint32_t *h_subovr;
 uint32_t *d_subovr;
@@ -99,12 +102,14 @@ uint32_t gpu_data_flag = 0;
 
 uint32_t evc    = 0;
 uint32_t hits   = 0;
+uint32_t scints  = 0;
 uint32_t ovrflw = 0;
 uint32_t rem    = 0;
 
 // device variable to store the counts
 __device__ uint32_t Evecnt;
 __device__ uint32_t Hitcnt;
+__device__ uint32_t Scintcnt;
 __device__ uint32_t Overflowcnt;
 __device__ uint32_t bank_data;    
 
@@ -130,16 +135,18 @@ void setup_odb();
 // device function to get counted values
 __device__ uint32_t get_eventcount() { return Evecnt; }
 __device__ uint32_t get_hitcount() { return Hitcnt; }
+__device__ uint32_t get_scintcount() { return Scintcnt; }
 __device__ uint32_t get_subheaderoverflow() { return Overflowcnt; }
 __device__ uint32_t get_bankdata() { return bank_data; } 
 
+__device__ bool ChipID(uint32_t *bin, uint32_t pos);
 __device__ void Counter(uint32_t i, uint32_t *db, uint32_t endofevent);
 
 //__device__ void lock(int *lk);
 
 //__device__ void unlock(int *lk);
 
-__global__ void gpu_counters(uint32_t *dest, uint32_t *src, uint32_t Endofevent, uint32_t* evt, uint32_t* hit, uint32_t* sub_ovr, uint32_t* bnkd, size_t n, uint32_t *gpu_flag);
+__global__ void gpu_counters(uint32_t *dest, uint32_t *src, uint32_t Endofevent, uint32_t* evt, uint32_t* hit, uint32_t* scint,uint32_t* sub_ovr, uint32_t* bnkd, size_t n, uint32_t *gpu_flag);
 
 void gpu_counter(uint32_t dma_bufnwords, uint32_t end_of_event);
 void data_to_gpu(volatile uint32_t* dma_buf_gpu, uint32_t numf_thr, uint32_t end_ofevent);
@@ -147,11 +154,13 @@ void gpu_check(uint32_t gpu_check_flag, uint32_t gpudata_flag);
 
 void Set_EventCount(uint32_t ec) { evc = ec; }
 void Set_Hits(uint32_t h) { hits = h; }
+void Set_ScintCount(uint32_t sh) { scints = sh; }
 void Set_SubHeaderOvrflw(uint32_t ov) { ovrflw = ov; }
 void Set_Reminders(uint32_t rm) { rem = rm; }
 
 uint32_t Get_EventCount() { return evc; }
 uint32_t Get_Hits() { return hits; }
+uint32_t Get_ScintCount() { return scints; }
 uint32_t Get_SubHeaderOvrflw() { return ovrflw; }
 uint32_t Get_Reminders() { return rem; }
 
@@ -517,6 +526,7 @@ INT read_stream_event(char *pevent, INT off)
 
    uint32_t eventcounts = Get_EventCount();
    uint32_t hits        = Get_Hits();
+   uint32_t scintcounts = Get_ScintCount();
    uint32_t subovrflows = Get_SubHeaderOvrflw();
    uint32_t reminders   = Get_Reminders();
                                                                           
@@ -527,6 +537,7 @@ INT read_stream_event(char *pevent, INT off)
    cout << "Event Count GPU" << "\t" << eventcounts << endl;
    cout << "Event Count FPGA" << "\t" << fpga_counter << endl;
    cout << "Hit Count GPU" << "\t" << hits << endl;
+   cout << "Scintillator Count GPU" << "\t" << scintcounts << endl;
    cout << "SubHeader Overflow Count GPU" << "\t" << subovrflows << endl;
    cout << "Reminder Count GPU" << "\t" << reminders << endl;
    
@@ -544,6 +555,7 @@ INT read_stream_event(char *pevent, INT off)
    *pdata++ = eventcounts;
    *pdata++ = fpga_counter;
    *pdata++ = hits;
+   *pdata++ = scintcounts;
    *pdata++ = subovrflows;
    *pdata++ = reminders;
    *pdata++ = ss_time();
@@ -555,32 +567,43 @@ INT read_stream_event(char *pevent, INT off)
 
 /*------------------------GPU counters block-----------------------------*/
 
+__device__ bool ChipID(uint32_t *bin, uint32_t pos) { 
+    bool check;
+    uint32_t dec = 0;
+    uint32_t t  = 0;
+    for (int b = (28-7); b < 28; ++b) {
+        if ((bin[pos] >> b) & 1) t = 1;
+	else t = 0;
+	dec += t << (b-(28-7));
+    }	
+    if (dec == 120) return check = true; 
+    else return check = false;
+} 
+
 __device__ void Counter(uint32_t i, uint32_t *db, uint32_t endofevent) {
 
     uint32_t hpos = 0;
     uint32_t hitcnt = 0;
+    uint32_t scintcnt = 0;
     uint32_t sbovcnt = 0;
-
     uint32_t eventlength = db[i+3]/4+3;
     uint32_t datasize = db[i+8]/4;
     int h;
     int sh;
     if (db[i] == 0x00000001 and db[i+eventlength+1] == 0x00000001) {
-
         for (int j = 0; j < datasize; j++) {
             hpos = i+13+j;
-
-            for (int b = (32-6); b < 32; ++b) {
+            for (int b = (28-7); b < 28; ++b) {
                 if ( (db[hpos] >> b) & 1) h = 1;
                 else {
                     h = 0;
                     break;
                 }
             }
-
         if (h != 1) {
             if (db[hpos] == 0xAFFEAFFE or db[hpos] == 0xFC00009C) break;
-            hitcnt++;
+	    if (ChipID(db, hpos)) scintcnt++;
+            else hitcnt++;
         }
         else {
             for (int ovr = 0; ovr < (32-16); ++ovr) {
@@ -595,6 +618,7 @@ __device__ void Counter(uint32_t i, uint32_t *db, uint32_t endofevent) {
     }
     atomicAdd(&Evecnt, 1);
     atomicAdd(&Hitcnt, hitcnt);
+    atomicAdd(&Scintcnt, scintcnt);
     atomicAdd(&Overflowcnt, sbovcnt);
     atomicAdd(&bank_data, datasize);
     }
@@ -609,16 +633,18 @@ __device__ void Counter(uint32_t i, uint32_t *db, uint32_t endofevent) {
   }*/
     
 // gpu kernel function    
-__global__ void gpu_counters(uint32_t *dest, uint32_t *src, uint32_t Endofevent, uint32_t* evt, uint32_t* hit, uint32_t* sub_ovr, uint32_t* bnkd, size_t n, uint32_t *gpu_flag)
+__global__ void gpu_counters(uint32_t *dest, uint32_t *src, uint32_t Endofevent, uint32_t* evt, uint32_t* hit, uint32_t* scint, uint32_t* sub_ovr, uint32_t* bnkd, size_t n, uint32_t *gpu_flag)
 {
     /*int blockid = (gridDim.x * blockIdx.y) + blockIdx.x;  // Block Id
     int i = (blockid * (blockDim.x * blockDim.y)) + (threadIdx.y * blockDim.x) + threadIdx.x; // Thread Index */
 
     uint32_t event_counter = 0;
     uint32_t hit_counter = 0;
+    uint32_t scint_counter = 0;
     uint32_t subhead_ovrflow = 0;
     uint32_t total_bankdata = 0;
     uint32_t reminder = 0;
+
     uint32_t thread_id = (blockIdx.x * blockDim.x) + threadIdx.x; // Thread Index
     uint32_t n_threads_per_grid = blockDim.x * gridDim.x;
 
@@ -641,12 +667,14 @@ __global__ void gpu_counters(uint32_t *dest, uint32_t *src, uint32_t Endofevent,
     else {
         event_counter = 0;
 	hit_counter   = 0;
+        scint_counter = 0;
 	subhead_ovrflow = 0;
 	total_bankdata = 0;
     }
 
     event_counter = get_eventcount();
     hit_counter = get_hitcount();
+    scint_counter = get_scintcount();
     subhead_ovrflow = get_subheaderoverflow();
     total_bankdata = get_bankdata();
     reminder = total_bankdata - hit_counter;
@@ -654,6 +682,7 @@ __global__ void gpu_counters(uint32_t *dest, uint32_t *src, uint32_t Endofevent,
     __syncthreads();
     *evt = event_counter;
     *hit = hit_counter;
+    *scint = scint_counter:
     *sub_ovr = subhead_ovrflow;
     *bnkd = reminder;
     __syncthreads();
@@ -667,12 +696,13 @@ void gpu_counter(uint32_t dma_bufnwords, uint32_t end_of_event) {
 
     //...
     // Kernel invocation with N threads
-    gpu_counters<<<numBlocks, threadsPerBlock>>>(d_B, d_A, end_of_event, d_evt, d_hit, d_subovr, d_bnkd, dma_bufnwords, d_gpucheck);
+    gpu_counters<<<numBlocks, threadsPerBlock>>>(d_B, d_A, end_of_event, d_evt, d_hit, d_scint, d_subovr, d_bnkd, dma_bufnwords, d_gpucheck);
     //...
     // end GPU calc
 
     cudaMemcpy(h_evt, d_evt, sizeof(uint32_t), cudaMemcpyDeviceToHost);
     cudaMemcpy(h_hit, d_hit, sizeof(uint32_t), cudaMemcpyDeviceToHost);
+    cudaMemcpy(h_scint, d_scint, sizeof(uint32_t), cudaMemcpyDeviceToHost);
     cudaMemcpy(h_subovr, d_subovr, sizeof(uint32_t), cudaMemcpyDeviceToHost);
     cudaMemcpy(h_bnkd, d_bnkd, sizeof(uint32_t), cudaMemcpyDeviceToHost);
     cudaMemcpy(h_gpucheck, d_gpucheck, sizeof(uint32_t), cudaMemcpyDeviceToHost);
@@ -681,12 +711,14 @@ void gpu_counter(uint32_t dma_bufnwords, uint32_t end_of_event) {
 
     uint32_t EventCount = *h_evt;
     uint32_t Hit        = *h_hit;
+    uint32_t Scint_Cnt  = *h_scint;
     uint32_t SubOvr     = *h_subovr;
     uint32_t Reminder   = *h_bnkd;
     gpu_checkflag       = *h_gpucheck;
 
     Set_EventCount(EventCount);
     Set_Hits(Hit);
+    Set_ScintCount(Scint_Cnt);
     Set_SubHeaderOvrflw(SubOvr);
     Set_Reminders(Reminder);
 }
@@ -695,6 +727,7 @@ void data_to_gpu(volatile uint32_t* dma_buf_gpu, uint32_t numf_thr, uint32_t end
 
     h_evt = (uint32_t*)malloc(sizeof(uint32_t));
     h_hit = (uint32_t*)malloc(sizeof(uint32_t));
+    h_scint = (uint32_t*)malloc(sizeof(uint32_t));
     h_subovr = (uint32_t*)malloc(sizeof(uint32_t));
     h_bnkd = (uint32_t*)malloc(sizeof(uint32_t));
     h_gpucheck = (uint32_t*)malloc(sizeof(uint32_t));
@@ -706,6 +739,7 @@ void data_to_gpu(volatile uint32_t* dma_buf_gpu, uint32_t numf_thr, uint32_t end
     cudaMalloc(&d_B, numf_thr*sizeof(uint32_t));
     cudaMalloc(&d_evt, sizeof(uint32_t));
     cudaMalloc(&d_hit, sizeof(uint32_t));
+    cudaMalloc(&d_scint, sizeof(uint32_t));
     cudaMalloc(&d_subovr, sizeof(uint32_t));
     cudaMalloc(&d_bnkd, sizeof(uint32_t));
     cudaMalloc(&d_gpucheck, sizeof(uint32_t));
@@ -827,6 +861,7 @@ INT read_stream_thread(void *param) {
         cudaFree((void *)d_B);
         cudaFree((void *)d_evt);
         cudaFree((void *)d_hit);
+	cudaFree((void *)d_scint);
         cudaFree((void *)d_subovr);
         cudaFree((void *)d_bnkd);
         cudaFree((void *)d_gpucheck);
@@ -834,6 +869,7 @@ INT read_stream_thread(void *param) {
         cudaFreeHost((void *)B);
         cudaFreeHost((void *)h_evt);
         cudaFreeHost((void *)h_hit);
+	cudaFreeHost((void *)h_scint);
         cudaFreeHost((void *)h_subovr);
         cudaFreeHost((void *)h_bnkd);
         cudaFreeHost((void *)h_gpucheck);
