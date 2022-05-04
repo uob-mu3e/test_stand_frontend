@@ -151,13 +151,15 @@ function update_pcls(valuex){
     if(typeof valuex === 'string')
         value = JSON.parse(valuex);
 
-    var offset =0;
+    var offset = 0;
+    var nlinks = 36;
     for(var f=0; f <10; f++){
-        var febindex = parseInt(value[offset+0],16);
+        // get the FEB.GetLinkID() from the bank and only update this FEB
+        var febindex = parseInt(value[offset+1],16);
         if(f != febindex)
-            console.log("Index mismatch in PCLs", f, febindex);
-        var nlinks = parseInt(value[offset +1],16);
+            continue;
         for(var l=0; l < nlinks; l++){
+            console.log(f + " " + l);
             febs[f].links[l].locked = value[offset+2+6*l] & (1<<28);
             febs[f].links[l].ready  = value[offset+2+6*l] & (1<<31);
             febs[f].links[l].disperr= value[offset+2+6*l] & 0xFFFFFFF;
