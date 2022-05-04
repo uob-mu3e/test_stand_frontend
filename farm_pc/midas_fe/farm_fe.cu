@@ -349,6 +349,7 @@ INT begin_of_run(INT run_number, char *error)
     
     Set_EventCount(0);
     Set_Hits(0);
+    Set_ScintCount(0);
     Set_SubHeaderOvrflw(0);
     Set_Reminders(0);
     
@@ -568,6 +569,7 @@ INT read_stream_event(char *pevent, INT off)
 /*------------------------GPU counters block-----------------------------*/
 
 __device__ bool ChipID(uint32_t *bin, uint32_t pos) { 
+
     bool check;
     uint32_t dec = 0;
     uint32_t t  = 0;
@@ -576,8 +578,10 @@ __device__ bool ChipID(uint32_t *bin, uint32_t pos) {
 	else t = 0;
 	dec += t << (b-(28-7));
     }	
-    if (dec == 120) return check = true; 
-    else return check = false;
+    if (dec == 120) check = true; 
+    else check = false;
+
+    return check;
 } 
 
 __device__ void Counter(uint32_t i, uint32_t *db, uint32_t endofevent) {
