@@ -686,7 +686,7 @@ __global__ void gpu_counters(uint32_t *dest, uint32_t *src, uint32_t Endofevent,
     __syncthreads();
     *evt = event_counter;
     *hit = hit_counter;
-    *scint = scint_counter:
+    *scint = scint_counter;
     *sub_ovr = subhead_ovrflow;
     *bnkd = reminder;
     __syncthreads();
