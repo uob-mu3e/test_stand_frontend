@@ -25,14 +25,12 @@ port (
     i_nout                      : in  reg32;
     i_credit                    : in  reg32;
 
-    o_zero_suppression          : out std_logic := '0';
     o_sorter_delay              : out ts_t--;
 );
 end entity;
 
 architecture rtl of mp_sorter_reg_mapping is
     signal sorter_delay              : ts_t;
-    signal zero_suppression          : std_logic := '0';
 
     signal nintime                   : reg_array;
     signal noutoftime                : reg_array;
@@ -47,10 +45,8 @@ architecture rtl of mp_sorter_reg_mapping is
         if (i_reset_n = '0') then 
             o_sorter_delay              <= (others => '0');
             sorter_delay                <= "101" & x"FC";
-            zero_suppression            <= '0';
         elsif(rising_edge(i_clk156)) then
             o_sorter_delay              <= sorter_delay;
-			o_zero_suppression			<= zero_suppression;
 
             -- register sorter signals once in 156 Mhz domain and put a false path between i_nintime and nintime, ...
             nintime                     <= i_nintime;
@@ -96,13 +92,6 @@ architecture rtl of mp_sorter_reg_mapping is
             end if;
             if ( regaddr = MP_SORTER_DELAY_REGISTER_W and i_reg_re = '1' ) then
                 o_reg_rdata(TSRANGE) <= sorter_delay;
-            end if;
-
-            if ( regaddr = MP_SORTER_ZERO_SUPPRESSION_REGISTER_W and i_reg_we = '1' ) then
-                zero_suppression <= i_reg_wdata(0);
-            end if;
-            if ( regaddr = MP_SORTER_ZERO_SUPPRESSION_REGISTER_W and i_reg_re = '1' ) then
-                o_reg_rdata <= (0 => zero_suppression, others => '0');
             end if;
         end if;
     end process;
