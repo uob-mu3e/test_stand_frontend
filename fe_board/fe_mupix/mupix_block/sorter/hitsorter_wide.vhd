@@ -188,7 +188,8 @@ constant TSONE : ts_t := "00000000001";
 constant TSZERO : ts_t := "00000000000";
 constant TSTHREE : ts_t := "00000000011";
 --constant DELAY : ts_t := "01100000000";
-constant WINDOWSIZE : ts_t := "11000000000";
+constant WINDOWSIZE : ts_t := "10000000000";
+constant READOFFSET : ts_t := "00100000011";
 
 
         COMPONENT scfifo
@@ -245,7 +246,7 @@ if(reset_n = '0') then
 	tsreadmemdelay <= TSZERO;
 elsif (writeclk'event and writeclk = '1') then
 
-	tsread	  <= tslow - "11";
+	tsread	  <= tslow - READOFFSET;
 	tsreadmemdelay <= tsread;
 
 	running_last	<= running;
@@ -273,7 +274,7 @@ elsif (writeclk'event and writeclk = '1') then
 	elsif(running = '1' and running_last = '1' and runshutdown = '0') then
 		tslow <= tslow + '1';
 		tshi  <= tshi  + '1';
-		if(running_read = '0' and tslow >= TSTHREE) then
+		if(running_read = '0' and tslow >= READOFFSET) then
 			running_read	<= '1';
 			running_seq		<= '1';
 		end if;
