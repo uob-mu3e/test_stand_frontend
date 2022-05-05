@@ -69,10 +69,13 @@ uint32_t read_counters(mudaq::DmaMudaqDevice & mu, uint32_t write_value, uint8_t
     }
 
     // readout detector
-    uint32_t nLinks[2] = {5, 5};
-    for ( int i = 0; i < detector; i++ ) {
-        //      offset: 8 for general counters   tree offset       link offset
-        write_value += (8                      + 3 * (1 + 2 + 4) + nLinks[i] * 5);
+    if (type != 3) {
+        uint32_t nLinks[2] = {5, 5};
+        write_value += SWB_DEBUG_RO_CNT;
+        for ( int i = 0; i < detector; i++ ) {
+            //      offset: 8 for general counters   tree offset       link offset
+            write_value += (8                      + 3 * (1 + 2 + 4) + nLinks[i] * 5);
+        }
     }
 
     mu.write_register(SWB_COUNTER_REGISTER_W, write_value);
@@ -81,23 +84,27 @@ uint32_t read_counters(mudaq::DmaMudaqDevice & mu, uint32_t write_value, uint8_t
 
 void print_counters(mudaq::DmaMudaqDevice & mu, uint32_t bits, uint32_t detector)
 {
+    cout << "Detector " << detector << endl;
+    cout << "Global Time 0x" << hex << mu.read_register_ro(GLOBAL_TS_LOW_REGISTER_R) << endl;
     cout << "DataPath counters" << endl;
     cout << "SWB_STREAM_FIFO_FULL_CNT: 0x" << hex << read_counters(mu, SWB_STREAM_FIFO_FULL_CNT, 0, detector, 1, 0) << endl;
     cout << "SWB_STREAM_DEBUG_FIFO_ALFULL_CNT: 0x" << hex << read_counters(mu, SWB_STREAM_DEBUG_FIFO_ALFULL_CNT, 0, detector, 1, 0) << endl;
-    cout << "SWB_BANK_BUILDER_IDLE_NOT_HEADER_CNT: 0x" << hex << read_counters(mu, SWB_BANK_BUILDER_IDLE_NOT_HEADER_CNT, 0, detector, 1, 0) << endl;
-    cout << "SWB_BANK_BUILDER_SKIP_EVENT_CNT: 0x" << hex << read_counters(mu, SWB_BANK_BUILDER_SKIP_EVENT_CNT, 0, detector, 1, 0) << endl;
-    cout << "SWB_BANK_BUILDER_EVENT_CNT: 0x" << hex << read_counters(mu, SWB_BANK_BUILDER_EVENT_CNT, 0, detector, 1, 0) << endl;
-    cout << "SWB_BANK_BUILDER_TAG_FIFO_FULL_CNT: 0x" << hex << read_counters(mu, SWB_BANK_BUILDER_TAG_FIFO_FULL_CNT, 0, detector, 1, 0) << endl;
+    cout << "DUMMY: 0x" << hex << read_counters(mu, DUMMY_0_CNT, 0, detector, 1, 0) << endl;
+    cout << "DUMMY: 0x" << hex << read_counters(mu, DUMMY_1_CNT, 0, detector, 1, 0) << endl;
+    cout << "DUMMY: 0x" << hex << read_counters(mu, DUMMY_2_CNT, 0, detector, 1, 0) << endl;
+    cout << "DUMMY: 0x" << hex << read_counters(mu, DUMMY_3_CNT, 0, detector, 1, 0) << endl;
     cout << "SWB_EVENTS_TO_FARM_CNT: 0x" << hex << read_counters(mu, SWB_EVENTS_TO_FARM_CNT, 0, detector, 1, 0) << endl;
     cout << "SWB_MERGER_DEBUG_FIFO_ALFULL_CNT: 0x" << hex << read_counters(mu, SWB_MERGER_DEBUG_FIFO_ALFULL_CNT, 0, detector, 1, 0) << endl;
 
     cout << "Link counters" << endl;
+    cout << "------------------" << endl;
     for ( uint32_t i = 0; i < bits; i++ ) {
         cout << "SWB_LINK_FIFO_ALMOST_FULL_CNT: 0x" << hex << read_counters(mu, SWB_LINK_FIFO_ALMOST_FULL_CNT, i, detector, 0, 0) << endl;
         cout << "SWB_LINK_FIFO_FULL_CNT: 0x" << hex << read_counters(mu, SWB_LINK_FIFO_FULL_CNT, i, detector, 0, 0) << endl;
         cout << "SWB_SKIP_EVENT_CNT: 0x" << hex << read_counters(mu, SWB_SKIP_EVENT_CNT, i, detector, 0, 0) << endl;
         cout << "SWB_EVENT_CNT: 0x" << hex << read_counters(mu, SWB_EVENT_CNT, i, detector, 0, 0) << endl;
         cout << "SWB_SUB_HEADER_CNT: 0x" << hex << read_counters(mu, SWB_SUB_HEADER_CNT, i, detector, 0, 0) << endl;
+        cout << "------------------" << endl;
     }
 
     cout << "Tree counters" << endl;
@@ -112,6 +119,12 @@ void print_counters(mudaq::DmaMudaqDevice & mu, uint32_t bits, uint32_t detector
         }
         cout << endl;
     }
+
+    cout << "Debug Readout Counters" << endl;
+    cout << "SWB_BANK_BUILDER_IDLE_NOT_HEADER_CNT: 0x" << hex << read_counters(mu, SWB_BANK_BUILDER_IDLE_NOT_HEADER_CNT, 0, 0, 3, 0) << endl;
+    cout << "SWB_BANK_BUILDER_SKIP_EVENT_CNT: 0x" << hex << read_counters(mu, SWB_BANK_BUILDER_SKIP_EVENT_CNT, 0, 0, 3, 0) << endl;
+    cout << "SWB_BANK_BUILDER_EVENT_CNT: 0x" << hex << read_counters(mu, SWB_BANK_BUILDER_EVENT_CNT, 0, 0, 3, 0) << endl;
+    cout << "SWB_BANK_BUILDER_TAG_FIFO_FULL_CNT: 0x" << hex << read_counters(mu, SWB_BANK_BUILDER_TAG_FIFO_FULL_CNT, 0, 0, 3, 0) << endl;
 
     cout << "Link/PLL Counters" << endl;
     cout << "TS:" << mu.read_register_ro(GLOBAL_TS_LOW_REGISTER_R) << endl;
@@ -257,11 +270,12 @@ int main(int argc, char *argv[]) {
     if (atoi(argv[5]) == 1) readout_state_regs = SET_USE_BIT_PIXEL_US(readout_state_regs);
     if (atoi(argv[5]) == 2) readout_state_regs = SET_USE_BIT_SCIFI(readout_state_regs);
     if (atoi(argv[5]) == 4) readout_state_regs = SET_USE_BIT_ALL(readout_state_regs);
-    
+
     uint32_t detector = 0;
     if (atoi(argv[5]) == 0) detector = 0;
     if (atoi(argv[5]) == 1) detector = 1;
     if (atoi(argv[5]) == 2) detector = 2;
+    if (atoi(argv[5]) == 4) detector = 3;
     // set mask bits
     if (atoi(argv[5]) == 4) mu.write_register(SWB_LINK_MASK_PIXEL_REGISTER_W, strtol(argv[4], NULL, 16));
     if (atoi(argv[5]) == 4) mu.write_register(SWB_LINK_MASK_SCIFI_REGISTER_W, strtol(argv[4], NULL, 16));
@@ -281,7 +295,6 @@ int main(int argc, char *argv[]) {
     mu.write_register(RESET_REGISTER_W, 0x0);
 
     while (1) {
-        
         cout << hex << readout_state_regs << endl;
         printf("  [1] => trigger a readout \n");
         printf("  [2] => readout counters \n");
@@ -314,12 +327,14 @@ int main(int argc, char *argv[]) {
             break;
         case '2':
             cout << "Last Word in buffer: 0x" << hex << dma_buf[mu.last_endofevent_addr() * 8 - 1] << endl;
-            print_counters(mu, cntBits(strtol(argv[4], NULL, 16)), detector);
+            if ( detector != 3) print_counters(mu, 2, detector);
+            if ( detector == 3) for ( int i = 0; i < 2; i++ ) print_counters(mu, 5, i);
             break;
         case '3':
             mu.write_register(RESET_REGISTER_W, reset_regs);
             usleep(10);
-            print_counters(mu, cntBits(strtol(argv[4], NULL, 16)), detector);
+            if ( detector != 3) print_counters(mu, 2, detector);
+            if ( detector == 3) for ( int i = 0; i < 2; i++ ) print_counters(mu, 5, i);
             mu.write_register(RESET_REGISTER_W, 0x0);
             break;
         case 'q':

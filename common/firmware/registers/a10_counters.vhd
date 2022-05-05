@@ -6,13 +6,20 @@ use ieee.std_logic_1164.all;
 package a10_counters is
 
     -- SWB Counters
+    -- debug readout counters
+    constant SWB_BANK_BUILDER_IDLE_NOT_HEADER_CNT   :  integer := 16#00#;
+    constant SWB_BANK_BUILDER_SKIP_EVENT_CNT        :  integer := 16#01#;
+    constant SWB_BANK_BUILDER_EVENT_CNT             :  integer := 16#02#;
+    constant SWB_BANK_BUILDER_TAG_FIFO_FULL_CNT     :  integer := 16#03#;
+    constant SWB_DEBUG_RO_CNT                       :  integer := 16#04#;
+
     -- datapath counters
     constant SWB_STREAM_FIFO_FULL_CNT               :  integer := 16#00#;
     constant SWB_STREAM_DEBUG_FIFO_ALFULL_CNT       :  integer := 16#01#;
-    constant SWB_BANK_BUILDER_IDLE_NOT_HEADER_CNT   :  integer := 16#02#;
-    constant SWB_BANK_BUILDER_SKIP_EVENT_CNT        :  integer := 16#03#;
-    constant SWB_BANK_BUILDER_EVENT_CNT             :  integer := 16#04#;
-    constant SWB_BANK_BUILDER_TAG_FIFO_FULL_CNT     :  integer := 16#05#;
+    constant DUMMY_0_CNT                            :  integer := 16#02#;
+    constant DUMMY_1_CNT                            :  integer := 16#03#;
+    constant DUMMY_2_CNT                            :  integer := 16#04#;
+    constant DUMMY_3_CNT                            :  integer := 16#05#;
     constant SWB_EVENTS_TO_FARM_CNT                 :  integer := 16#06#;
     constant SWB_MERGER_DEBUG_FIFO_ALFULL_CNT       :  integer := 16#07#;
     constant SWB_DATAPATH_CNT                       :  integer := 16#08#;
