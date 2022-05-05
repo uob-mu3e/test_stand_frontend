@@ -18,7 +18,6 @@
 #include <sstream>
 #include <fstream>
 
-//#include "gpu_variables.h"
 #include <condition_variable>
 #include <thread>
 #include <chrono>
