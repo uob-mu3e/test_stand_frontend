@@ -163,6 +163,7 @@ signal overflow_last2:	std_logic_vector(15 downto 0);
 signal overflow_last3:	std_logic_vector(15 downto 0);
 signal overflow_last4:	std_logic_vector(15 downto 0);
 
+signal header_counter: std_logic_vector(15 downto 0);
 
 signal memmultiplex: nots_t;
 signal tscounter: std_logic_vector(47 downto 0); --47 bit, LSB would run at double frequency, but not needed
@@ -760,6 +761,7 @@ if(reset_n = '0') then
 	nout							<= (others => '0');
 	terminate_output				<= '0';
 	terminated_output				<= '0';
+	header_counter					<= (others => '0');	
 elsif(writeclk'event and writeclk = '1') then
     noutoftime2 <= noutoftime;
     noverflow2  <= noverflow;
@@ -803,13 +805,16 @@ elsif(writeclk'event and writeclk = '1') then
 		data_out		<= tscounter(47 downto 16);
 		out_type		<= MERGER_FIFO_PAKET_START_MARKER;
 	when COMMAND_HEADER2(COMMANDBITS-1 downto COMMANDBITS-4) =>
-		data_out		<= tscounter(15 downto 0) & X"0000";
+		data_out		<= tscounter(15 downto 0) & header_counter;
 		out_type		<= "0000";
+		if(readcommand_ena_last4 = '1') then
+ 			header_counter <= header_counter + '1';
+		end if;
 	when COMMAND_SUBHEADER(COMMANDBITS-1 downto COMMANDBITS-4) =>
 		data_out		<= "111111" & "000" & readcommand_last4(TIMESTAMPSIZE-1 downto 4) & overflow_last4;
 		out_type		<= "0000";
 	when COMMAND_FOOTER(COMMANDBITS-1 downto COMMANDBITS-4) =>
-		data_out 		<= (others => '0');
+		data_out 		<= header_counter & X"0000";
 		out_type		<= MERGER_FIFO_PAKET_END_MARKER;
 		if(runshutdown = '1')then
 			terminate_output <= '1';
