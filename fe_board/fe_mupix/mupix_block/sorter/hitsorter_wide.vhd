@@ -268,7 +268,7 @@ elsif (writeclk'event and writeclk = '1') then
 	if(running = '1' and runstartup = '1') then
 		tslow <= TSONE;
 		tshi  <= WINDOWSIZE;
-		if(currentts = delay) then
+		if(currentts = WINDOWSIZE + delay - "11") then
 			runstartup <= '0';
 		end if;
 	elsif(running = '1' and running_last = '1' and runshutdown = '0') then

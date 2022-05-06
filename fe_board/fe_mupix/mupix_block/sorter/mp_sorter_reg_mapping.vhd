@@ -44,7 +44,7 @@ architecture rtl of mp_sorter_reg_mapping is
     begin
         if (i_reset_n = '0') then 
             o_sorter_delay              <= (others => '0');
-            sorter_delay                <= "101" & x"FC";
+            sorter_delay                <= (others => '0');--"101" & x"FC";
         elsif(rising_edge(i_clk156)) then
             o_sorter_delay              <= sorter_delay;
 
