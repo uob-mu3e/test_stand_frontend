@@ -53,6 +53,7 @@ architecture rtl of hitsorter_wide is
 signal running_last:   std_logic;
 signal running_read:   std_logic;
 signal running_read_last:   std_logic;
+signal running_read_last2:   std_logic;
 signal running_seq:	   std_logic;
 
 signal tslow 	: ts_t;
@@ -149,24 +150,19 @@ signal readcommand_last1: command_t;
 signal readcommand_last2: command_t;
 signal readcommand_last3: command_t;
 signal readcommand_last4: command_t;
-signal readcommand_reg  : command_t;
-signal readcommand_reg2 : command_t;
 
 signal readcommand_ena:	std_logic;
 signal readcommand_ena_last1:	std_logic;
 signal readcommand_ena_last2:	std_logic;
 signal readcommand_ena_last3:	std_logic;
 signal readcommand_ena_last4:	std_logic;
-signal readcommand_ena_reg  :	std_logic;
-signal readcommand_ena_reg2 :	std_logic;
 
 signal outoverflow:	std_logic_vector(15 downto 0);
 signal overflow_last1:	std_logic_vector(15 downto 0);
 signal overflow_last2:	std_logic_vector(15 downto 0);
 signal overflow_last3:	std_logic_vector(15 downto 0);
 signal overflow_last4:	std_logic_vector(15 downto 0);
-signal outoverflow_reg:	std_logic_vector(15 downto 0);
-signal outoverflow_reg2:std_logic_vector(15 downto 0);
+
 
 signal memmultiplex: nots_t;
 signal tscounter: std_logic_vector(47 downto 0); --47 bit, LSB would run at double frequency, but not needed
@@ -181,7 +177,6 @@ signal noverflow        : reg_array;
 signal nintime          : reg_array;
 signal nout             : reg32;
 signal delay            : ts_t;
-signal zero_suppression : std_logic;
 
 -- copy of diagnostics (timing)
 signal noutoftime2: reg_array;
@@ -193,7 +188,8 @@ constant TSONE : ts_t := "00000000001";
 constant TSZERO : ts_t := "00000000000";
 constant TSTHREE : ts_t := "00000000011";
 --constant DELAY : ts_t := "01100000000";
-constant WINDOWSIZE : ts_t := "11000000000";
+constant WINDOWSIZE : ts_t := "10000000000";
+constant READOFFSET : ts_t := "00100000011";
 
 
         COMPONENT scfifo
@@ -237,6 +233,7 @@ if(reset_n = '0') then
 	running_last 	<= '0';
 	running_read	<= '0';
 	running_read_last	<= '0';
+	running_read_last2	<= '0';
 	running_seq		<= '0';
 	
 	runstartup		<= '0';
@@ -249,11 +246,12 @@ if(reset_n = '0') then
 	tsreadmemdelay <= TSZERO;
 elsif (writeclk'event and writeclk = '1') then
 
-	tsread	  <= tslow - "11";
+	tsread	  <= tslow - READOFFSET;
 	tsreadmemdelay <= tsread;
 
 	running_last	<= running;
 	running_read_last  <= running_read;
+	running_read_last2	<= running_read_last;
 
 	if(running = '0') then
 		runstartup		<= '0';
@@ -270,13 +268,13 @@ elsif (writeclk'event and writeclk = '1') then
 	if(running = '1' and runstartup = '1') then
 		tslow <= TSONE;
 		tshi  <= WINDOWSIZE;
-		if(currentts = delay) then
+		if(currentts = WINDOWSIZE + delay - "11") then
 			runstartup <= '0';
 		end if;
 	elsif(running = '1' and running_last = '1' and runshutdown = '0') then
 		tslow <= tslow + '1';
 		tshi  <= tshi  + '1';
-		if(running_read = '0' and tslow >= TSTHREE) then
+		if(running_read = '0' and tslow >= READOFFSET) then
 			running_read	<= '1';
 			running_seq		<= '1';
 		end if;
@@ -405,7 +403,7 @@ genmem: for i in NCHIPS-1 downto 0 generate
 			cmemwriteaddr_hitwriter(i)(k)  <= hit_last2(i)(COUNTERMEMADDRRANGE);
 		end loop;
 		
-		counterfrommem := fromcmem(i)(conv_integer(hit_last1(i)(COUNTERMEMSELRANGE)));
+		counterfrommem := fromcmem(i)(conv_integer(hit_last2(i)(COUNTERMEMSELRANGE)));
 		
 		for k in NMEMS-1 downto 0 loop
 			cmemwren_hitwriter(i)(k) <= '0'; 		
@@ -584,16 +582,17 @@ elsif (writeclk'event and writeclk = '1') then
 		
 		mem_overflow <= mem_ov;
 	
+		
 		mem_nonemptycount := (others => '0');
-
 		mem_ne := '0';
 
-		for i in NCHIPS-1 downto 0 loop
-			mem_ne := mem_ne or mem_nechips(i);
-			mem_nonemptycount := mem_nonemptycount + mem_nechips(i);
-		end loop;
-		mem_nnonempty 	<= mem_nonemptycount;
-		
+		if(running_read_last2 = '1') then
+			for i in NCHIPS-1 downto 0 loop
+				mem_ne := mem_ne or mem_nechips(i);
+				mem_nonemptycount := mem_nonemptycount + mem_nechips(i);
+			end loop;
+			mem_nnonempty 	<= mem_nonemptycount;
+		end if;
 		
 		blockchange	<= '0';
 		if((or_reduce(tsread(TSNONBLOCKRANGE))) = '0' and running_read_last = '1') then -- no block change at startup
@@ -738,38 +737,10 @@ seq:entity work.sequencer_ng
 		from_fifo						=> fromfifo_counters,
 		fifo_empty						=> counterfifo_empty,
 		read_fifo						=> read_counterfifo,
-		outcommand						=> readcommand_reg,
-		command_enable					=> readcommand_ena_reg,
-		outoverflow						=> outoverflow_reg
+		outcommand						=> readcommand,
+		command_enable					=> readcommand_ena,
+		outoverflow						=> outoverflow
 		);
-process(writeclk, reset_n)
-begin
-    if(reset_n = '0') then
-    
-    elsif rising_edge(writeclk) then
-        readcommand_ena <= '0';
-        if(readcommand_ena_reg = '1' 
-         or readcommand_reg2(COMMANDBITS-1 downto COMMANDBITS-4) = COMMAND_FOOTER(COMMANDBITS-1 downto COMMANDBITS-4) -- do not wait for more if trailer
-         or  readcommand_reg(COMMANDBITS-1 downto COMMANDBITS-4) = COMMAND_FOOTER(COMMANDBITS-1 downto COMMANDBITS-4)) then
-            readcommand_reg2 <= readcommand_reg;
-            readcommand_ena_reg2 <= readcommand_ena_reg;
-            outoverflow_reg2 <= outoverflow_reg;
-            if(readcommand_reg2(COMMANDBITS-1 downto COMMANDBITS-4) = COMMAND_SUBHEADER(COMMANDBITS-1 downto COMMANDBITS-4) 
-             and readcommand_reg(COMMANDBITS-1 downto COMMANDBITS-4) = COMMAND_SUBHEADER(COMMANDBITS-1 downto COMMANDBITS-4)
-             and zero_suppression = '1') then
-                -- throw away subheader in readcommand_reg2 by doing nothing here
-			elsif(readcommand_reg2(COMMANDBITS-1 downto COMMANDBITS-4) = COMMAND_SUBHEADER(COMMANDBITS-1 downto COMMANDBITS-4) 
-             and readcommand_reg(COMMANDBITS-1 downto COMMANDBITS-4) = COMMAND_FOOTER(COMMANDBITS-1 downto COMMANDBITS-4)
-             and zero_suppression = '1') then
-				-- throw away footer in readcommand_reg2 by doing nothing here
-            else
-                readcommand <= readcommand_reg2;
-                readcommand_ena <= readcommand_ena_reg2;
-                outoverflow <= outoverflow_reg2;
-            end if;
-        end if;
-    end if;
-end process;
 
 -- The ouput command has the TS in the LSBs, followed by four bits hit address
 -- four bits channel/chip ID and the MSB inciating command (1) or hit (0)	
@@ -883,7 +854,6 @@ e_mp_sorter_reg_mapping: entity work.mp_sorter_reg_mapping
         i_noverflow         => noverflow2,
         i_nout              => nout2,
         i_credit            => credits32,
-        o_zero_suppression  => zero_suppression,
         o_sorter_delay      => delay--,
     );
 end architecture RTL;

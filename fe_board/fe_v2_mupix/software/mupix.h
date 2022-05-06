@@ -191,7 +191,6 @@ struct mupix_t {
             printf("  [5] => set lvds mask\n");
             printf("  [6] => test write all\n");
             printf("  [7] => write sorter delay\n");
-            printf("  [8] => toggle zero sup.\n");
             printf("  [q] => exit\n");
 
             printf("Select entry ...\n");
@@ -284,15 +283,6 @@ struct mupix_t {
             case '7':
                 sc->ram->data[MP_SORTER_DELAY_REGISTER_W]=10;
                 break;
-			case '8':
-				if (sc->ram->data[MP_SORTER_ZERO_SUPPRESSION_REGISTER_W]==0x1) {
-					printf("zero sup. is off now/n");
-					sc->ram->data[MP_SORTER_ZERO_SUPPRESSION_REGISTER_W]=0x0;
-				} else {
-					printf("zero sup. is on now/n");
-					sc->ram->data[MP_SORTER_ZERO_SUPPRESSION_REGISTER_W]=0x1;
-				}
-				break;
             case '9': 
 		        sc->ram->data[MP_SORTER_DELAY_REGISTER_W]=0x5FC;
 		        break;    

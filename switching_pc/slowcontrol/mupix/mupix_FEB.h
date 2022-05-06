@@ -59,30 +59,19 @@ class MupixFEB  : public MuFEB{
 
       //FEB registers and functions
       uint32_t ReadBackLVDSNumHits(mappedFEB & FEB, uint16_t LVDS_ID);
-      DWORD* ReadLVDSCounters(DWORD* pdata, mappedFEB & FEB);
-      uint32_t ReadBackLVDSStatus(mappedFEB & FEB, uint16_t LVDS_ID);
       DWORD * ReadLVDSforPSLS(DWORD* pdata, mappedFEB & FEB);
-  
-      
-      DWORD* fill_PSLL(DWORD* pdata){
-          if ( febs.size() == 0 ) {
-            // if no febs then send empty bank
-            return pdata;
-          }
-          for(auto FEB : febs){
-                pdata = ReadLVDSCounters(pdata, FEB);
-          };
-          return pdata;
-      }
 
       DWORD* fill_PSLS(DWORD* pdata){
           if ( febs.size() == 0 ) {
             // if no febs then send empty bank
             return pdata;
           }
-          for(auto FEB : febs){
+          int countFEBs = 0;    
+          for(auto FEB : febs){ 
+                *pdata++ = countFEBs;
                 *pdata++ = FEB.GetLinkID();
                 pdata = ReadLVDSforPSLS(pdata, FEB);
+                countFEBs++;
           };
           return pdata;
       }

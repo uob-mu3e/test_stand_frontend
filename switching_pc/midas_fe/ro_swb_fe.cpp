@@ -34,7 +34,7 @@ const char *frontend_file_name = __FILE__;
 BOOL frontend_call_loop = FALSE;
 
 /* Overwrite equipment struct in ODB from values in code*/
-BOOL equipment_common_overwrite = FALSE;
+BOOL equipment_common_overwrite = TRUE;
 
 /* a frontend status page is displayed with this frequency in ms */
 INT display_period = 0;
@@ -268,6 +268,9 @@ INT begin_of_run(INT run_number, char *error)
     
     // write readout register
     mu.write_register(SWB_READOUT_STATE_REGISTER_W, readout_state_regs);
+
+    // set event id for this frontedn
+    mu.write_register(FARM_EVENT_ID_REGISTER_W, eventID);
 
     // link masks 
     // Note: link masks are already set via ODB watch
