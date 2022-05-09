@@ -105,7 +105,6 @@ void sc_settings_changed(odb o);
 void switching_board_mask_changed(odb o);
 void frontend_board_mask_changed(odb o);
 void sorterdelays_changed(odb o);
-void scifi_settings_changed(odb o);
 
 uint64_t get_link_active_from_odb(odb o); //throws
 void set_feb_enable(uint64_t enablebits);
@@ -569,14 +568,7 @@ INT init_scifi() {
     
     //set custom page
     odb custom("/Custom");
-    custom["SciFi-ASICs"] = "mutrigTdc.html";
-    //
-
-    // setup watches
-    if ( scififeb->GetNumASICs() != 0 ){
-        odb scifi_setting("/Equipment/" + scifi_eq_name + "/Settings/Daq");
-        scifi_setting.watch(scifi_settings_changed);
-    }
+    custom["SciFi-ASICs&"] = "mutrigTdc.html";
 
     set_equipment_status(equipment[EQUIPMENT_ID::SciFi].name, "Ok", "var(--mgreen)");
 
@@ -1027,59 +1019,6 @@ void sorterdelays_changed(odb o)
         }
     }
 }
-
-// TODO: this is also done in the mutrig class via a lambda function
-// but this is not really working at the moment change later
-void scifi_settings_changed(odb o)
-{
-    std::string name = o.get_name();
-    bool value = o;
-
-    if (value)
-        cm_msg(MINFO, "MutrigFEB::on_settings_changed", "Setting changed (%s)", name.c_str());
-
-    if ( name == "reset_datapath" && o ) {
-        if (value) {
-            for ( auto FEB : scififeb->getFEBs() ) {
-                if (!FEB.IsScEnabled()) continue; //skip disabled
-                if (FEB.SB_Number() != scififeb->getSB_number()) continue; //skip commands not for me
-                
-                scififeb->DataPathReset(FEB);
-            }
-            o = false;
-        }
-    }
-
-    if ( name == "reset_asics" && o ) {
-        if (value) {
-            for ( auto FEB : scififeb->getFEBs() ) {
-                if (!FEB.IsScEnabled()) continue; //skip disabled
-                if (FEB.SB_Number() != scififeb->getSB_number()) continue; //skip commands not for me
-                scififeb->chipReset(FEB);
-            }
-            o = false;
-        }
-    }
-
-    if ( name == "reset_lvds" && o ) {
-        if (value) {
-            for ( auto FEB : scififeb->getFEBs() ) {
-                if (!FEB.IsScEnabled()) continue; //skip disabled
-                if (FEB.SB_Number() != scififeb->getSB_number()) continue; //skip commands not for me
-                scififeb->LVDS_RX_Reset(FEB);
-            }
-            o = false;
-        }
-    }
-
-    if ( name == "reset_counters" && o ) {
-        if (value) {
-            scififeb->ResetAllCounters();
-            o = false;
-        }
-    }
-}
-
 
 /*--- Called whenever settings have changed ------------------------*/
 

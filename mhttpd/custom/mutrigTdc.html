@@ -607,24 +607,24 @@ function readback() {
 						<td></td>
 					</tr>
 					<tr>
-						<td colspan=2><label for="dummy_data">DUMMY DATA</label></td>
+						<td colspan=2><label for="dummy_data">DataGen enable</label></td>
 						<td><input type="checkbox" name="modbcheckbox" id="dummy_data" data-odb-path="/Equipment/SciFiCentral/Settings/Daq/dummy_data" title="Enable dummy data generator on FPGA"></input></td>
 						<td></td>
 					</tr>
 					<tr>
-						<td colspan=2><label for="dummy_data_fast">DUMMY FAST</label></td>
+						<td colspan=2><label for="dummy_data_fast">DataGen Short</label></td>
 						<td><input type="checkbox" name="modbcheckbox" id="dummy_data_fast" data-odb-path="/Equipment/SciFiCentral/Settings/Daq/dummy_data_fast" title="Produce short events in dummy data generator on FPGA"></input></td>
 						<td></td>
 					</tr>
 					<tr>
-						<td colspan><label for="dummy_data_n">DUMMY NUM</label></td>
+						<td colspan><label for="dummy_data_n">DataGen nHits</label></td>
 						<td></td>
-						<!--<td><input type="number"  name="modbnumber" id="dummy_data_n" min="0" max="255" step="1" size="3" value="254"  data-odb-path="/Equipment/SciFiCentral/Settings/Daq/dummy_data_n" data-odb-editable="1" /></td> -->
+						<td><input type="number"  name="modbnumber" id="dummy_data_n" min="0" max="255" step="1" size="3" value="254"  data-odb-path="/Equipment/SciFiCentral/Settings/Daq/dummy_data_n" data-odb-editable="1" /></td>
 						<!-- FIXME: odb connection seems to be broken once id is set, thus we can not save this field to json at the moment-->
 						<td><div name="modbvalue" data-odb-path="/Equipment/SciFiCentral/Settings/Daq/dummy_data_n" data-odb-editable="1" title="Number of hits to be generated per ASIC using the FPGAs dummy data generator"></div></td>
 					</tr>
 					<tr>
-						<td colspan=2><label for="prbs_decode_disable">PRBS decoder disable</label></td>
+						<td colspan=2><label for="prbs_decode_disable">bypass PRBS FPGA</label></td>
 						<td><input type="checkbox" name="modbcheckbox" id="prbs_decode_disable" data-odb-path="/Equipment/SciFiCentral/Settings/Daq/prbs_decode_disable" title="bypass PRBS decoder on the FPGA"></input></td>
 						<td></td>
 					</tr>

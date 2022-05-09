@@ -78,11 +78,10 @@ int MutrigFEB::WriteAll(){
         m_reg_shadow[i][FE_DPCTRL_REG] = 0x1FFFFFFF;
     }
 
+    // setup watches
     odb odb_set_str(odb_prefix+"/Settings/Daq");
-    // use lambda function for passing this
-//    odb_set_str.watch([this](odb &o){
-//        on_settings_changed(o, this);
-//    });
+    odb_set_str.watch(on_settings_changed);
+
     return 0;
 }
 
@@ -344,8 +343,10 @@ int MutrigFEB::ReadBackDatapathStatus(mappedFEB & FEB){
 void MutrigFEB::on_settings_changed(odb o, void * userdata)
 {
     std::string name = o.get_name();
+    bool value = o;
 
-    cm_msg(MINFO, "MutrigFEB::on_settings_changed", "Setting changed (%s)", name.c_str());
+    if (value)
+        cm_msg(MINFO, "MutrigFEB::on_settings_changed", "Setting changed (%s)", name.c_str());
 
     MutrigFEB* _this=static_cast<MutrigFEB*>(userdata);
 
