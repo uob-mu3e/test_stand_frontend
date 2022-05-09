@@ -311,30 +311,27 @@ begin
                     is_error <= '1';
                 end if;
                 if (  i_rx.eop = '1' ) then
-                    shead_cnt                   <= i_rx.data(15 downto 8);
-                    header_cnt                  <= i_rx.data(23 downto 16);
+                    shead_cnt                   <= i_rx.data(23 downto 8);
+                    header_cnt                  <= i_rx.data(31 downto 24);
                     w_ram_data(31 downto 12)    <= x"FC000";
                     w_ram_data(11 downto 8)     <= "00" & i_rx.data(9 downto 8);
                     w_ram_data(7 downto 0)      <= x"9C";
+                    event_tagging_state <= set_header_cnt;
                 else
                     w_ram_data      <= i_rx.data;
                 end if;
                 event_size_cnt      <= event_size_cnt + 4;
                 bank_size_cnt       <= bank_size_cnt + 4;
-                if ( i_rx.eop = '1' or i_rx.err = '1' ) then
-                    event_tagging_state <= set_header_cnt;
-                    align_event_size    <= w_ram_add + 1 - last_event_add;
-                end if;
             end if;
 
         when set_header_cnt =>
             w_ram_en            <= '1';
             w_ram_add           <= w_ram_add + 1;
-            w_ram_add_reg       <= w_ram_add + 1;
             w_ram_data          <= x"FF" & shead_cnt & header_cnt;
             event_size_cnt      <= event_size_cnt + 4;
             bank_size_cnt       <= bank_size_cnt + 4;
             event_tagging_state <= set_algin_word;
+            align_event_size    <= w_ram_add + 1 - last_event_add;
 
         when set_algin_word =>
             w_ram_en            <= '1';
