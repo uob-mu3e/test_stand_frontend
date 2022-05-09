@@ -23,11 +23,11 @@ febTrailerCnt = {0:[],1:[],2:[],3:[],4:[],5:[],6:[],7:[],8:[],9:[]}
 last_d = 0
 curFEB = -999
 for idx, d in enumerate(data):
+    if d == "FFFFFFFF" and data[idx+1] == "FFFFFFFF": break
     if curFEB != -999:
         curEvent.append(hex(int(d, 16)))
-    if d == "FC00009C":
-        febTrailerCnt[curFEB].append(hex(int(data[idx+1], 16) & 0xFFFF))
-        print(hex(int(data[idx+1], 16)))
+    if d == "FC00019C" or d == "FC00009C":
+        febTrailerCnt[curFEB].append(hex(((int(data[idx+1], 16) >> 8) & 0xFFFF)-1))
         febDict[curFEB].append(curEvent)
         curFEB = -999
 
@@ -44,7 +44,7 @@ for feb in febDict:
         startEventCnt = int(febDict[feb][0][2], 16) & 0xFFFF
         trailerEventCnt = 0
     for idx_e, event in enumerate(febDict[feb]):
-        print("Trailer Ecnt", febTrailerCnt[feb][idx_e], "Start Cnt", startEventCnt)
+        print("Trailer Ecnt", febTrailerCnt[feb][idx_e], "Start Cnt", hex(startEventCnt))
         febCnt[feb] += 1
         if event[0] != hex(int("E8100" + str(feb) + "BC", 16)):
             print(f"FebCnt: {febCnt[feb]} of FEB: {feb} had no header")
@@ -63,11 +63,10 @@ for feb in febDict:
                     break
                 startSubheader += 1
             else:
-                if hit != hex(0xFC00009C): febCntHits[feb] += 1
+                if hit != hex(0xFC00019C) or hit != hex(0xFC00009C): febCntHits[feb] += 1
         if startSubheader != 128:
             print(f"FebCnt: {febCnt[feb]} of FEB: {feb} wrong subheader ending {startSubheader}")
-        if (int(event[2], 16) & 0xFFFF) != startEventCnt:
-            print("We miss an event")
+        if (int(event[2], 16) & 0xFFFF) != startEventCnt: print("We miss an event")
 
         startEventCnt += 1
 
