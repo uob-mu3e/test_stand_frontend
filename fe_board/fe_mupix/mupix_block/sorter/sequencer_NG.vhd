@@ -195,7 +195,7 @@ elsif (clk'event and clk = '1') then
 	end if;
 
 	-- When to continue reading the FIFO
-	if(from_fifo(HASMEMBIT) = '0' or fifo_empty = '1' or (from_fifo(3 downto 0) = "0001" and from_fifo(11 downto 8) = "0000")
+	if(((from_fifo(HASMEMBIT) = '0' or fifo_empty = '1' or (from_fifo(3 downto 0) = "0001" and from_fifo(11 downto 8) = "0000")) and fifo_new = '0')
 		or copy_fifo = '1') then
 		read_fifo_int <= '1';
 	else

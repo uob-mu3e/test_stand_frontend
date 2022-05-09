@@ -120,6 +120,7 @@ signal block_empty_del2 : std_logic;
 signal stopwrite : std_logic;
 signal stopwrite_del1 : std_logic;
 signal stopwrite_del2 : std_logic;
+signal stopwrite_del3 : std_logic;
 
 signal blockchange : std_logic;
 signal blockchange_del1 : std_logic;
@@ -144,6 +145,7 @@ signal credittemp : integer range -256 to 255;
 signal hitcounter_sum_m3_mem : hitcounter_sum3_type;
 signal hitcounter_sum_mem : integer;
 signal hitcounter_sum : integer;
+signal creditchange_reg : integer;
 
 signal readcommand: 	command_t;
 signal readcommand_last1: command_t;
@@ -537,7 +539,7 @@ process(reset_n, writeclk)
 	
 	variable countersum_temp : integer;
 	
-	variable creditchange : integer;
+	variable creditchange : integer range -2048 to 2047;
 	
 begin
 if (reset_n = '0') then
@@ -570,7 +572,7 @@ elsif (writeclk'event and writeclk = '1') then
 	mem_countchips_m1	<= (others => '0');
 	mem_countchips_m2	<= (others => '0');
 
-
+	
 	if(running_read = '1')then
 		cmemreadaddr_hitreader	<= tsread(COUNTERMEMADDRRANGE)+'1';
 		
@@ -686,12 +688,16 @@ elsif (writeclk'event and writeclk = '1') then
 		mem_overflow_del2 	<= mem_overflow_del1;
 		stopwrite_del2		<= stopwrite_del1;
 		blockchange_del2	<= blockchange_del1;
+
+		-- one more delay cycle for stopwrite, as it supresses the NEXT block
+		stopwrite_del3		<= stopwrite_del2;
 		
 		tofifo_counters <=  tsread - "100" & hashits & mem_overflow_del2 & mem_countchips_m2;
 		--X"000000000000" &
-	
 		creditchange := 1;
-		if(stopwrite_del2 = '0' and (hashits = '1' or block_empty_del2 = '1')) then
+
+		
+		if(stopwrite_del3 = '0' and (hashits = '1' or block_empty_del2 = '1')) then
 			write_counterfifo <= '1';
 			if(hitcounter_sum_mem < 48) then -- limit number of hits per ts
 				creditchange := creditchange - hitcounter_sum_mem;
@@ -706,19 +712,20 @@ elsif (writeclk'event and writeclk = '1') then
 				creditchange := creditchange  -1;
 			end if;
 
-		elsif(stopwrite_del2 ='1' and blockchange_del2 = '1' and block_empty_del2 = '1') then -- we were overfull but just got an empty block
+		elsif(stopwrite_del3 ='1' and blockchange_del2 = '1' and block_empty_del2 = '1') then -- we were overfull but just got an empty block
 			write_counterfifo <= '1';
 			creditchange := creditchange  -1;
-		elsif(stopwrite_del2 ='1' and blockchange_del2 = '1') then -- we were overfull and have suppressed hits
+		elsif(stopwrite_del3 ='1' and blockchange_del2 = '1') then -- we were overfull and have suppressed hits
 			write_counterfifo <= '1';
 			tofifo_counters <= tsread - "100" & "0" & "1" & counter2chipszero;
 			creditchange := creditchange  -1;
 		end if;
 		credittemp <= credittemp + creditchange;
-		if(credittemp > 127) then
+		creditchange_reg  <= creditchange;
+		if(credittemp  + creditchange > 127) then
 			credits <= 127;
 			credittemp <= 127;
-		elsif(credittemp < -128) then
+		elsif(credittemp +creditchange < -128) then
 			credits <= -128;
 			credittemp <= -128;
 		else
