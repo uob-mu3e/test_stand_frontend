@@ -37,6 +37,7 @@ for idx, d in enumerate(data):
             if len(d.split('E8')[1].split('BC')) == 2:
                 curFEB = int(d.split('E8')[1].split('BC')[0].split('0')[2])
                 curEvent = [hex(int(d, 16))]
+                febTS[curFEB].append((int(data[idx+1], 16) << 5) | (int(data[idx+2], 16) >> 27))
     last_d = d
 
 for feb in febDict:
@@ -44,11 +45,10 @@ for feb in febDict:
         startEventCnt = int(febDict[feb][0][2], 16) & 0xFFFF
         trailerEventCnt = 0
     for idx_e, event in enumerate(febDict[feb]):
-        print("Trailer Ecnt", febTrailerCnt[feb][idx_e], "Start Cnt", hex(startEventCnt))
+#print("Trailer Ecnt", febTrailerCnt[feb][idx_e], "Start Cnt", hex(startEventCnt))
         febCnt[feb] += 1
         if event[0] != hex(int("E8100" + str(feb) + "BC", 16)):
             print(f"FebCnt: {febCnt[feb]} of FEB: {feb} had no header")
-        febTS[feb].append((int(event[2], 16) >> 16) & 0xFFFF)#(int(event[1], 16) << 5) | (int(event[2], 16) >> 27))
 
         if str(event[3]) != hex(0xfe00000):
             print(f"FebCnt: {febCnt[feb]} of FEB: {feb} did not start with subheader")
@@ -66,18 +66,19 @@ for feb in febDict:
                 if hit != hex(0xFC00019C) or hit != hex(0xFC00009C): febCntHits[feb] += 1
         if startSubheader != 128:
             print(f"FebCnt: {febCnt[feb]} of FEB: {feb} wrong subheader ending {startSubheader}")
-        if (int(event[2], 16) & 0xFFFF) != startEventCnt: print("We miss an event")
+#if (int(event[2], 16) & 0xFFFF) != startEventCnt: print("We miss an event")
 
         startEventCnt += 1
 
 for i in range(10): print("Events: " + str(febCnt[i]), "Hits: " + str(febCntHits[i]))
 
-plt.plot(febTS[5])
-plt.plot(febTS[6])
-plt.plot(febTS[7])
-plt.plot(febTS[8])
-plt.plot(febTS[9])
+plt.plot(febTS[5], label="FEB5")
+plt.plot(febTS[6], label="FEB6")
+plt.plot(febTS[7], label="FEB7")
+plt.plot(febTS[8], label="FEB8")
+plt.plot(febTS[9], label="FEB9")
 plt.xlabel("Events")
 plt.ylabel("HeadTS")
-plt.show()
+plt.legend()
+plt.savefig("headerTS.pdf")
 
