@@ -61,6 +61,28 @@ add wave -noupdate -radix hexadecimal /hitsorter_scint_tb/dut/read_counterfifo
 add wave -noupdate -radix hexadecimal /hitsorter_scint_tb/dut/write_counterfifo
 add wave -noupdate -radix hexadecimal /hitsorter_scint_tb/dut/counterfifo_almostfull
 add wave -noupdate -radix hexadecimal /hitsorter_scint_tb/dut/counterfifo_empty
+add wave -noupdate -expand -group Sequencer /hitsorter_scint_tb/dut/seq/running
+add wave -noupdate -expand -group Sequencer /hitsorter_scint_tb/dut/seq/running_last
+add wave -noupdate -expand -group Sequencer /hitsorter_scint_tb/dut/seq/stopped
+add wave -noupdate -expand -group Sequencer /hitsorter_scint_tb/dut/seq/output
+add wave -noupdate -expand -group Sequencer /hitsorter_scint_tb/dut/seq/current_block
+add wave -noupdate -expand -group Sequencer /hitsorter_scint_tb/dut/seq/current_ts
+add wave -noupdate -expand -group Sequencer /hitsorter_scint_tb/dut/seq/ts_to_out
+add wave -noupdate -expand -group Sequencer -radix hexadecimal /hitsorter_scint_tb/dut/seq/counters_reg
+add wave -noupdate -expand -group Sequencer /hitsorter_scint_tb/dut/seq/subaddr
+add wave -noupdate -expand -group Sequencer /hitsorter_scint_tb/dut/seq/subaddr_to_out
+add wave -noupdate -expand -group Sequencer /hitsorter_scint_tb/dut/seq/chip_to_out
+add wave -noupdate -expand -group Sequencer /hitsorter_scint_tb/dut/seq/hasmem
+add wave -noupdate -expand -group Sequencer /hitsorter_scint_tb/dut/seq/hasoverflow
+add wave -noupdate -expand -group Sequencer /hitsorter_scint_tb/dut/seq/fifo_empty_last
+add wave -noupdate -expand -group Sequencer /hitsorter_scint_tb/dut/seq/fifo_new
+add wave -noupdate -expand -group Sequencer /hitsorter_scint_tb/dut/seq/line__95/copy_fifo
+add wave -noupdate -expand -group Sequencer /hitsorter_scint_tb/dut/seq/read_fifo_int
+add wave -noupdate -expand -group Sequencer /hitsorter_scint_tb/dut/seq/make_header
+add wave -noupdate -expand -group Sequencer /hitsorter_scint_tb/dut/seq/blockchange
+add wave -noupdate -expand -group Sequencer /hitsorter_scint_tb/dut/seq/no_copy_next
+add wave -noupdate -expand -group Sequencer /hitsorter_scint_tb/dut/seq/overflowts
+add wave -noupdate -expand -group Sequencer /hitsorter_scint_tb/dut/seq/overflow_to_out
 add wave -noupdate -radix hexadecimal /hitsorter_scint_tb/dut/block_nonempty_accumulate
 add wave -noupdate -radix hexadecimal /hitsorter_scint_tb/dut/block_empty
 add wave -noupdate -radix hexadecimal /hitsorter_scint_tb/dut/block_empty_del1
@@ -81,9 +103,11 @@ add wave -noupdate -radix hexadecimal /hitsorter_scint_tb/dut/hashits
 add wave -noupdate -radix hexadecimal /hitsorter_scint_tb/dut/mem_overflow
 add wave -noupdate -radix hexadecimal /hitsorter_scint_tb/dut/mem_overflow_del1
 add wave -noupdate -radix hexadecimal /hitsorter_scint_tb/dut/mem_overflow_del2
-add wave -noupdate -radix hexadecimal /hitsorter_scint_tb/dut/credits
+add wave -noupdate -radix decimal /hitsorter_scint_tb/dut/credits
+add wave -noupdate -radix decimal /hitsorter_scint_tb/dut/line__533/creditchange
+add wave -noupdate /hitsorter_scint_tb/dut/creditchange_reg
 add wave -noupdate -radix hexadecimal /hitsorter_scint_tb/dut/credits32
-add wave -noupdate -radix hexadecimal /hitsorter_scint_tb/dut/credittemp
+add wave -noupdate -radix decimal /hitsorter_scint_tb/dut/credittemp
 add wave -noupdate -radix hexadecimal /hitsorter_scint_tb/dut/hitcounter_sum_m3_mem
 add wave -noupdate -radix hexadecimal /hitsorter_scint_tb/dut/hitcounter_sum_mem
 add wave -noupdate -radix hexadecimal /hitsorter_scint_tb/dut/hitcounter_sum
@@ -92,22 +116,16 @@ add wave -noupdate -radix hexadecimal /hitsorter_scint_tb/dut/readcommand_last1
 add wave -noupdate -radix hexadecimal /hitsorter_scint_tb/dut/readcommand_last2
 add wave -noupdate -radix hexadecimal /hitsorter_scint_tb/dut/readcommand_last3
 add wave -noupdate -radix hexadecimal /hitsorter_scint_tb/dut/readcommand_last4
-add wave -noupdate -radix hexadecimal /hitsorter_scint_tb/dut/readcommand_reg
-add wave -noupdate -radix hexadecimal /hitsorter_scint_tb/dut/readcommand_reg2
 add wave -noupdate -radix hexadecimal /hitsorter_scint_tb/dut/readcommand_ena
 add wave -noupdate -radix hexadecimal /hitsorter_scint_tb/dut/readcommand_ena_last1
 add wave -noupdate -radix hexadecimal /hitsorter_scint_tb/dut/readcommand_ena_last2
 add wave -noupdate -radix hexadecimal /hitsorter_scint_tb/dut/readcommand_ena_last3
 add wave -noupdate -radix hexadecimal /hitsorter_scint_tb/dut/readcommand_ena_last4
-add wave -noupdate -radix hexadecimal /hitsorter_scint_tb/dut/readcommand_ena_reg
-add wave -noupdate -radix hexadecimal /hitsorter_scint_tb/dut/readcommand_ena_reg2
 add wave -noupdate -radix hexadecimal /hitsorter_scint_tb/dut/outoverflow
 add wave -noupdate -radix hexadecimal /hitsorter_scint_tb/dut/overflow_last1
 add wave -noupdate -radix hexadecimal /hitsorter_scint_tb/dut/overflow_last2
 add wave -noupdate -radix hexadecimal /hitsorter_scint_tb/dut/overflow_last3
 add wave -noupdate -radix hexadecimal /hitsorter_scint_tb/dut/overflow_last4
-add wave -noupdate -radix hexadecimal /hitsorter_scint_tb/dut/outoverflow_reg
-add wave -noupdate -radix hexadecimal /hitsorter_scint_tb/dut/outoverflow_reg2
 add wave -noupdate -radix hexadecimal /hitsorter_scint_tb/dut/memmultiplex
 add wave -noupdate -radix hexadecimal /hitsorter_scint_tb/dut/tscounter
 add wave -noupdate -radix hexadecimal /hitsorter_scint_tb/dut/terminate_output
@@ -117,36 +135,14 @@ add wave -noupdate -radix hexadecimal /hitsorter_scint_tb/dut/noverflow
 add wave -noupdate -radix hexadecimal /hitsorter_scint_tb/dut/nintime
 add wave -noupdate -radix hexadecimal /hitsorter_scint_tb/dut/nout
 add wave -noupdate -radix hexadecimal /hitsorter_scint_tb/dut/delay
-add wave -noupdate -radix hexadecimal /hitsorter_scint_tb/dut/zero_suppression
 add wave -noupdate -radix hexadecimal /hitsorter_scint_tb/dut/noutoftime2
 add wave -noupdate -radix hexadecimal /hitsorter_scint_tb/dut/noverflow2
 add wave -noupdate -radix hexadecimal /hitsorter_scint_tb/dut/nintime2
 add wave -noupdate -radix hexadecimal /hitsorter_scint_tb/dut/nout2
-add wave -noupdate -expand -group Sequencer /hitsorter_scint_tb/dut/seq/running
-add wave -noupdate -expand -group Sequencer /hitsorter_scint_tb/dut/seq/running_last
-add wave -noupdate -expand -group Sequencer /hitsorter_scint_tb/dut/seq/stopped
-add wave -noupdate -expand -group Sequencer /hitsorter_scint_tb/dut/seq/output
-add wave -noupdate -expand -group Sequencer /hitsorter_scint_tb/dut/seq/current_block
-add wave -noupdate -expand -group Sequencer /hitsorter_scint_tb/dut/seq/current_ts
-add wave -noupdate -expand -group Sequencer /hitsorter_scint_tb/dut/seq/ts_to_out
-add wave -noupdate -expand -group Sequencer /hitsorter_scint_tb/dut/seq/counters_reg
-add wave -noupdate -expand -group Sequencer /hitsorter_scint_tb/dut/seq/subaddr
-add wave -noupdate -expand -group Sequencer /hitsorter_scint_tb/dut/seq/subaddr_to_out
-add wave -noupdate -expand -group Sequencer /hitsorter_scint_tb/dut/seq/chip_to_out
-add wave -noupdate -expand -group Sequencer /hitsorter_scint_tb/dut/seq/hasmem
-add wave -noupdate -expand -group Sequencer /hitsorter_scint_tb/dut/seq/hasoverflow
-add wave -noupdate -expand -group Sequencer /hitsorter_scint_tb/dut/seq/fifo_empty_last
-add wave -noupdate -expand -group Sequencer /hitsorter_scint_tb/dut/seq/fifo_new
-add wave -noupdate -expand -group Sequencer /hitsorter_scint_tb/dut/seq/read_fifo_int
-add wave -noupdate -expand -group Sequencer /hitsorter_scint_tb/dut/seq/make_header
-add wave -noupdate -expand -group Sequencer /hitsorter_scint_tb/dut/seq/blockchange
-add wave -noupdate -expand -group Sequencer /hitsorter_scint_tb/dut/seq/no_copy_next
-add wave -noupdate -expand -group Sequencer /hitsorter_scint_tb/dut/seq/overflowts
-add wave -noupdate -expand -group Sequencer /hitsorter_scint_tb/dut/seq/overflow_to_out
 TreeUpdate [SetDefaultTree]
-WaveRestoreCursors {{Cursor 1} {22040345 ps} 0}
+WaveRestoreCursors {{Cursor 1} {14331439 ps} 0}
 quietly wave cursor active 1
-configure wave -namecolwidth 367
+configure wave -namecolwidth 583
 configure wave -valuecolwidth 100
 configure wave -justifyvalue left
 configure wave -signalnamewidth 0
@@ -160,4 +156,4 @@ configure wave -griddelta 40
 configure wave -timeline 0
 configure wave -timelineunits ns
 update
-WaveRestoreZoom {0 ps} {1080192 ps}
+WaveRestoreZoom {14133522 ps} {14343988 ps}

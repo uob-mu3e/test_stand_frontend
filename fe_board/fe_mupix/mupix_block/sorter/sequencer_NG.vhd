@@ -137,6 +137,7 @@ elsif (clk'event and clk = '1') then
 		if(blockchange = '1') then
 			output		<= subheader;
 			copy_fifo		:= '0';
+			no_copy_next	<= '0';
 			blockchange 	<= '0';
 			overflow_to_out		<= overflowts;
 			overflowts			<= (others => '0');
@@ -194,7 +195,7 @@ elsif (clk'event and clk = '1') then
 	end if;
 
 	-- When to continue reading the FIFO
-	if(from_fifo(HASMEMBIT) = '0' or fifo_empty = '1' or (from_fifo(3 downto 0) = "0001" and from_fifo(11 downto 8) = "0000")
+	if(((from_fifo(HASMEMBIT) = '0' or fifo_empty = '1' or (from_fifo(3 downto 0) = "0001" and from_fifo(11 downto 8) = "0000")) and fifo_new = '0')
 		or copy_fifo = '1') then
 		read_fifo_int <= '1';
 	else
@@ -206,8 +207,8 @@ elsif (clk'event and clk = '1') then
 	-- to the respective variables
 	-- copy_fifo means that the current set of variables was processed and they can be replaced
 	-- with the fifo output
-	
-	if(read_fifo_int = '1' and fifo_empty_last = '0')then
+	--if(read_fifo_int = '1' and fifo_empty_last = '0')then
+	if(fifo_empty_last = '0')then
 		if(copy_fifo = '1')then
 			fifo_new		<= '0';
 		else
@@ -216,8 +217,8 @@ elsif (clk'event and clk = '1') then
 	elsif(copy_fifo = '1' and fifo_new = '1')then
 		fifo_new		<= '0';
 	end if;	
-
-	if(copy_fifo = '1' and ((read_fifo_int = '1' and fifo_empty_last = '0') or fifo_new = '1'))then
+	--if(copy_fifo = '1' and ((read_fifo_int = '1' and fifo_empty_last = '0') or fifo_new = '1'))then
+	if(copy_fifo = '1' and ((fifo_empty_last = '0') or fifo_new = '1'))then
 		current_block 	<= from_fifo(TSBLOCKINFIFORANGE);
 		current_ts	 	<= from_fifo(TSINFIFORANGE);
 		counters_reg	<= from_fifo(MEMCOUNTERRANGE);
@@ -230,6 +231,10 @@ elsif (clk'event and clk = '1') then
 		end if;
 		if(from_fifo(TSBLOCKINFIFORANGE) /= current_block)then
 			blockchange <= '1';
+			if(from_fifo(HASMEMBIT)='1' and from_fifo(3 downto 0) /= "0000") then
+				no_copy_next <= '1';
+				read_fifo_int <= '0';
+			end if;
 			if(from_fifo(TSBLOCKINFIFORANGE) = block_zero)then
 				make_header  <= "1" & running_last; -- this ensures that we do not output a footer at run start
 				no_copy_next <= '1';

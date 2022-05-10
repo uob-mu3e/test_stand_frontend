@@ -622,16 +622,16 @@ begin
     gen_seed <= i_fpga_id & not i_fpga_id & i_fpga_id & not i_fpga_id & not i_fpga_id & i_fpga_id & i_fpga_id & not i_fpga_id & '0';
 
     -- get frequency of trigger
-    process(i_clk125)
+    process(i_clk156)
     begin
-    if(rising_edge(i_clk125))then
-        if ( fifo_write = '1' and fifo_wdata(27 downto 22) = "000011" ) then
-            trigger0        <= fifo_wdata(31 downto 0);
+    if(rising_edge(i_clk156))then
+        if ( sync_fifo_empty = '0' and sync_fifo_wdata_out(27 downto 22) = "000011" ) then
+            trigger0        <= sync_fifo_wdata_out(31 downto 0);
             trigger0_reg    <= trigger0;
         end if;
 
-        if ( fifo_write = '1' and fifo_wdata(27 downto 22) = "000100" ) then
-            trigger1        <= fifo_wdata(31 downto 0);
+        if ( sync_fifo_empty = '0' and sync_fifo_wdata_out(27 downto 22) = "000100" ) then
+            trigger1        <= sync_fifo_wdata_out(31 downto 0);
             trigger1_reg    <= trigger1;
         end if;
     end if;
