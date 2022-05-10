@@ -23,11 +23,11 @@ struct SMB_t {
     //=========================
     //ASIC configuration
     //write slow control pattern over SPI, returns 0 if readback value matches written, otherwise -1. Does not include CSn line switching.
-    int spi_write_pattern(alt_u32 spi_slave, const alt_u8* bitpattern);
+    int spi_write_pattern(alt_u32 spi_slave, const alt_u8* bitpattern, bool print);
     int spi2_write_pattern(alt_u32 spi_slave, const alt_u8* bitpattern);
     int spi_write_pattern_nb(alt_u32 spi_slave, alt_u16 nBytes, alt_u8 byteValue); 
     //write and verify pattern twice, toggle i2c lines via i2c
-    alt_u16     configure_asic(alt_u32 asic, const alt_u8* bitpattern);
+    alt_u16     configure_asic(alt_u32 asic, const alt_u8* bitpattern, bool print);
     alt_u16     configure_asic_nb(alt_u32 asic, alt_u16 nBytes, alt_u8 byteValue);
     //print out a given pattern for debugging
     void        print_config(const alt_u8* bitpattern);
@@ -54,7 +54,7 @@ struct SMB_t {
     alt_u16 reset_counters();
     alt_u16 store_counters(volatile alt_u32* data);
     //Slow control callback
-    alt_u16 sc_callback(alt_u16 cmd, volatile alt_u32* data, alt_u16 n);
+    alt_u16 sc_callback(alt_u16 cmd, volatile alt_u32* data, alt_u16 n, bool print);
     alt_u16 sc_callback_nb(alt_u16 cmd,  alt_u16 nBytes, alt_u8 byteValue);
 
 };

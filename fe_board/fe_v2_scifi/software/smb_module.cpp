@@ -15,7 +15,7 @@ char wait_key(useconds_t us = 100000);
 #include "include/scifi_registers.h"
 
 //write slow control pattern over SPI, returns 0 if readback value matches written, otherwise -1. Does not include CSn line switching.
-int SMB_t::spi_write_pattern(alt_u32 spi_slave, const alt_u8* bitpattern) {
+int SMB_t::spi_write_pattern(alt_u32 spi_slave, const alt_u8* bitpattern, bool print) {
     char tx_string[681]; //cmp
     char rx_string[681]; //cmp
     int result_i=0;
@@ -57,8 +57,10 @@ int SMB_t::spi_write_pattern(alt_u32 spi_slave, const alt_u8* bitpattern) {
     }while(nb>0);
     //rx_string[680]=0; //cmp
     //tx_string[680]=0; //cmp
-    printf("TX = %s\n", tx_string); //cmp
-    printf("RX = %s\n", rx_string); //cmp
+    if (print) {
+        printf("TX = %s\n", tx_string); //cmp
+        printf("RX = %s\n", rx_string); //cmp
+    }
     //printf("Status = %u\n", status); //cmp
     return status;
 }
@@ -76,13 +78,13 @@ void SMB_t::print_config(const alt_u8* bitpattern) {
 
 
 //configure ASIC
-alt_u16 SMB_t::configure_asic(alt_u32 asic, const alt_u8* bitpattern) {
+alt_u16 SMB_t::configure_asic(alt_u32 asic, const alt_u8* bitpattern, bool print) {
     printf("[SMB] chip_configure(%u)\n", asic); //cmp
 
     int ret;
-    ret = spi_write_pattern(asic, bitpattern);
+    ret = spi_write_pattern(asic, bitpattern, print);
     //     usleep(1e5);
-    ret = spi_write_pattern(asic, bitpattern);
+    ret = spi_write_pattern(asic, bitpattern, print);
 
     if(ret != 0) {
         //Commented out for headless operation
@@ -98,12 +100,12 @@ alt_u16 SMB_t::configure_asic(alt_u32 asic, const alt_u8* bitpattern) {
 //#include "../../../../common/include/feb.h"
 using namespace mu3e::daq::feb;
 //TODO: add list&document in specbook
-alt_u16 SMB_t::sc_callback(alt_u16 cmd, volatile alt_u32* data, alt_u16 n) {
+alt_u16 SMB_t::sc_callback(alt_u16 cmd, volatile alt_u32* data, alt_u16 n, bool print=false) {
     alt_u16 status=FEB_REPLY_SUCCESS;
     switch (cmd){
         case CMD_MUTRIG_ASIC_OFF:
-            for(alt_u8 asic = 0; asic < 8; asic++){
-                if(sc_callback(CMD_MUTRIG_ASIC_CFG | asic, (alt_u32*) config_ALL_OFF, 0) == FEB_REPLY_ERROR)
+            for(alt_u8 asic = 0; asic < 8; asic++) {
+                if(sc_callback(CMD_MUTRIG_ASIC_CFG | asic, (alt_u32*) config_ALL_OFF, 0, print) == FEB_REPLY_ERROR)
                     status=FEB_REPLY_ERROR;
             }
             return status;
@@ -121,7 +123,7 @@ alt_u16 SMB_t::sc_callback(alt_u16 cmd, volatile alt_u32* data, alt_u16 n) {
         default:
             if((cmd & 0xFFF0) == CMD_MUTRIG_ASIC_CFG) {
                 int asic = cmd & 0x000F;
-                return configure_asic(asic, (alt_u8*)data);
+                return configure_asic(asic, (alt_u8*)data, print);
             }
             else {
                 //printf("[sc_callback] unknown command: 0x%X\n", cmd);
@@ -165,12 +167,12 @@ void SMB_t::menu_SMB_main() {
             case '0':
                 sc.ram->data[SCIFI_CNT_CTRL_REGISTER_W] = sc.ram->data[SCIFI_CNT_CTRL_REGISTER_W] & ~(1<<31);
                 for(alt_u8 asic = 0; asic < 8; asic++)
-                    sc_callback(CMD_MUTRIG_ASIC_CFG | asic, (alt_u32*) config_ALL_OFF, 0);
+                    sc_callback(CMD_MUTRIG_ASIC_CFG | asic, (alt_u32*) config_ALL_OFF, 0, true);
                 break;
             case '1':
                 sc.ram->data[SCIFI_CNT_CTRL_REGISTER_W] = sc.ram->data[SCIFI_CNT_CTRL_REGISTER_W] & ~(1<<31);
                 for(alt_u8 asic = 0; asic < 8; asic++)
-                    sc_callback(CMD_MUTRIG_ASIC_CFG | asic, (alt_u32*) config_PRBS_single, 0);
+                    sc_callback(CMD_MUTRIG_ASIC_CFG | asic, (alt_u32*) config_PRBS_single, 0, true);
                 break;
             case 't':
                 sc.ram->data[SCIFI_CNT_CTRL_REGISTER_W] = sc.ram->data[SCIFI_CNT_CTRL_REGISTER_W] | (1<<31);
@@ -180,13 +182,13 @@ void SMB_t::menu_SMB_main() {
                 break;
             case '2':
                 for(alt_u8 asic = 0; asic < 8; asic++)
-                    sc_callback(CMD_MUTRIG_ASIC_CFG | asic, (alt_u32*) config_plltest, 0);
+                    sc_callback(CMD_MUTRIG_ASIC_CFG | asic, (alt_u32*) config_plltest, 0, true);
                 sc.ram->data[SCIFI_CNT_CTRL_REGISTER_W] = sc.ram->data[SCIFI_CNT_CTRL_REGISTER_W] | (1<<31);
                 break;
             case '3':
                 sc.ram->data[SCIFI_CNT_CTRL_REGISTER_W] = sc.ram->data[SCIFI_CNT_CTRL_REGISTER_W] & ~(1<<31);
                 for(alt_u8 asic = 0; asic < 8; asic++)
-                    sc_callback(CMD_MUTRIG_ASIC_CFG | asic, (alt_u32*) no_tdc_power, 0);
+                    sc_callback(CMD_MUTRIG_ASIC_CFG | asic, (alt_u32*) no_tdc_power, 0, true);
                 break;
             case '8':
                 printf("buffer_full / frame_desync / rx_pll_lock : 0x%03X\n", sc.ram->data[SCIFI_MON_STATUS_REGISTER_R]);

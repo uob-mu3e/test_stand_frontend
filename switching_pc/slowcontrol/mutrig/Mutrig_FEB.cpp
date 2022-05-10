@@ -78,9 +78,19 @@ int MutrigFEB::WriteAll(){
         m_reg_shadow[i][FE_DPCTRL_REG] = 0x1FFFFFFF;
     }
 
-    // setup watches
+    // setup watches settings
     odb odb_set_str(odb_prefix+"/Settings/Daq");
-    odb_set_str.watch(on_settings_changed);
+    //use lambda function for passing this
+    odb_set_str.watch([this](odb &o){
+        on_settings_changed(o, this);
+    });
+
+    // setup watches commands
+    odb odb_com_str(odb_prefix+"/Commands");
+    //use lambda function for passing this
+    odb_com_str.watch([this](odb &o){
+        on_commands_changed(o, this);
+    });
 
     return 0;
 }
@@ -164,6 +174,7 @@ int MutrigFEB::ConfigureASICs(){
     return status; //status of foreach function, SUCCESS when no error.
 }
 
+
 int MutrigFEB::ChangeTDCTest(bool o){
     cm_msg(MINFO, "SciFi ChangeTDCTest" , o ? "Turning on test pulses" : "Turning off test pulses");
     int status = feb_sc.ERRCODES::OK;
@@ -187,6 +198,8 @@ int MutrigFEB::ChangeTDCTest(bool o){
     }
     return status;
 }
+
+
 int MutrigFEB::ConfigureASICsAllOff(){
     cm_msg(MINFO, "ConfigureASICsAllOff" , "Configuring all SciFi ASICs in the ALL_OFF Mode");
     int status = SUCCESS;
@@ -194,6 +207,8 @@ int MutrigFEB::ConfigureASICsAllOff(){
         auto FEB = febs[FPGA_ID];
         if(!FEB.IsScEnabled())
             continue; //skip disabled fibers
+        if(FEB.SB_Number()!= SB_number)
+            continue; //skip commands not for this SB
         auto rpc_ret = feb_sc.FEBsc_NiosRPC(FEB, feb::CMD_MUTRIG_ASIC_OFF, {});
         if (rpc_ret < 0){
             cm_msg(MERROR, "ConfigureASICsAllOff" , "Received negative return value from FEBsc_NiosRPC()");
@@ -203,6 +218,7 @@ int MutrigFEB::ConfigureASICsAllOff(){
     return status;
 }
 
+
 int MutrigFEB::ResetCounters(mappedFEB & FEB){
 
     if(!FEB.IsScEnabled()) return SUCCESS; //skip disabled fibers
@@ -211,6 +227,7 @@ int MutrigFEB::ResetCounters(mappedFEB & FEB){
     auto rpc_ret = feb_sc.FEBsc_NiosRPC(FEB, feb::CMD_MUTRIG_CNT_RESET, {});
     return rpc_ret;
 }
+
 
 int MutrigFEB::ReadBackCounters(mappedFEB & FEB){
 
@@ -301,6 +318,7 @@ int MutrigFEB::ReadBackCounters(mappedFEB & FEB){
    return SUCCESS;
 }
 
+
 int MutrigFEB::ReadBackDatapathStatus(mappedFEB & FEB){
 
    if(!FEB.IsScEnabled()) return SUCCESS; //skip disabled fibers
@@ -336,8 +354,43 @@ int MutrigFEB::ReadBackDatapathStatus(mappedFEB & FEB){
 }
 
 
+// MIDAS callback function commands changed
+void MutrigFEB::on_commands_changed(odb o, void * userdata)
+{
+    std::string name = o.get_name();
+    bool value = o;
 
+    if (value)
+        cm_msg(MINFO, "MutrigFEB::on_commands_changed", "Setting changed (%s)", name.c_str());
 
+    MutrigFEB* _this=static_cast<MutrigFEB*>(userdata);
+
+    if (name == "SciFiConfig" && o) {
+          int status=_this->ConfigureASICs();
+          if(status!=SUCCESS){ 
+              cm_msg(MERROR, "SciFiConfig" , "ASIC Configuration failed.");
+         	//TODO: what to do? 
+          }
+       o = false;
+       return;
+    }
+    if (name == "SciFiAllOff" && o) {
+        int status=_this->ConfigureASICsAllOff();
+        if(status!=SUCCESS){
+            cm_msg(MERROR, "SciFiAllOff" , "ASIC all off configuration failed. Return value was %d, expected %d.", status, SUCCESS);
+            //TODO: what to do?
+        }
+       o = false;
+       return;
+    }
+    if (name == "SciFiTDCTest") {
+          int status=_this->ChangeTDCTest(o);
+          if(status!=SUCCESS){
+              cm_msg(MERROR, "SciFiConfig" , "Changing SciFi test pulses failed");
+          }
+          return;
+    }
+}
 
 // MIDAS callback function for FEB register Setter functions
 void MutrigFEB::on_settings_changed(odb o, void * userdata)

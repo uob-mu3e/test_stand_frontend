@@ -64,6 +64,12 @@ static odb MUTRIG_DAQ_SETTINGS = {
     {"resetskew_phases", {false, false, false, false}},
 };
 
+static odb ScifiCentralCommands = {
+    {"SciFiConfig", false},
+    {"SciFiAllOff", false},
+    {"SciFiTDCTest", false}
+};
+
 #endif
 
 #ifndef MUTRIG_TDC_DEFINED

@@ -279,10 +279,6 @@ void setup_odb(){
             {"MupixChipToConfigure", 999}, // 999 means all
             {"MupixTDACConfig", false},
             {"MupixBoard", false},
-            {"Sorter Zero Suppression Mupix", false},
-            {"SciFiConfig", false},
-            {"SciFiAllOff", false},
-            {"SciFiTDCTest", false},
             {"SciTilesConfig", false},
             {"Reset Bypass Payload", 0},
             {"Reset Bypass Command", 0},
@@ -548,12 +544,12 @@ INT init_scifi() {
     // SciFi setup part
     set_equipment_status(equipment[EQUIPMENT_ID::SciFi].name, "Initializing...", "var(--myellow)");
     scififeb = new SciFiFEB(*feb_sc,
-                     feblist->getSciFiFEBs(),
-                     feblist->getSciFiFEBMask(),
-                     equipment[EQUIPMENT_ID::Switching].name,
-                     equipment[EQUIPMENT_ID::Links].name,
-                     equipment[EQUIPMENT_ID::SciFi].name,
-                      switch_id); //create FEB interface signleton for scifi
+                    feblist->getSciFiFEBs(),
+                    feblist->getSciFiFEBMask(),
+                    equipment[EQUIPMENT_ID::Switching].name,
+                    equipment[EQUIPMENT_ID::Links].name,
+                    equipment[EQUIPMENT_ID::SciFi].name,
+                    switch_id); //create FEB interface signleton for scifi
 
     
     int status=mutrig::midasODB::setup_db("/Equipment/" + scifi_eq_name,*scififeb);
@@ -1151,33 +1147,6 @@ void sc_settings_changed(odb o)
         o = false;
         return;
     }
-
-    if (name == "SciFiConfig" && o) {
-          int status=scififeb->ConfigureASICs();
-          if(status!=SUCCESS){ 
-              cm_msg(MERROR, "SciFiConfig" , "ASIC Configuration failed.");
-         	//TODO: what to do? 
-          }
-       o = false;
-       return;
-    }
-    if (name == "SciFiAllOff" && o) {
-        cm_msg(MERROR, "SciFiAllOff", "Configuring all SciFi ASICs in All Off mode.");
-        int status=scififeb->ConfigureASICsAllOff();
-        if(status!=SUCCESS){
-            cm_msg(MERROR, "SciFiAllOff" , "ASIC all off configuration failed. Return value was %d, expected %d.", status, SUCCESS);
-            //TODO: what to do?
-        }
-       o = false;
-       return;
-    }
-    if (name == "SciFiTDCTest") {
-          int status=scififeb->ChangeTDCTest(o);
-          if(status!=SUCCESS){
-              cm_msg(MERROR, "SciFiConfig" , "Changing SciFi test pulses failed");
-          }
-          return;
-    }
     if (name == "SciTilesConfig" && o) {
           int status=tilefeb->ConfigureASICs();
           if(status!=SUCCESS){
@@ -1222,16 +1191,6 @@ void sc_settings_changed(odb o)
           command=command&(1<<8);
           o = command;
           return;
-    }
-    if (name == "Sorter Zero Suppression Mupix") {
-        if (o) {
-            cm_msg(MINFO, "sc_settings_changed", "Sorter Zero Suppression Mupix on");
-            feb_sc->FEB_broadcast(MP_SORTER_ZERO_SUPPRESSION_REGISTER_W, 0x1);
-        } else {
-            cm_msg(MINFO, "sc_settings_changed", "Sorter Zero Suppression Mupix off");
-            feb_sc->FEB_broadcast(MP_SORTER_ZERO_SUPPRESSION_REGISTER_W, 0x0);
-        }
-        return;
     }
     if (name == "Load Firmware" && o) {
         cm_msg(MINFO, "sc_settings_changed", "Load firmware triggered");

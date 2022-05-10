@@ -416,7 +416,7 @@ function loadFromDisk(event) {
 }
 
 function configure() {
-	var paths       = ["/Equipment/Switching/Settings/SciFiConfig"];
+	var paths       = ["/Equipment/SciFiCentral/Commands/SciFiConfig"];
 	var values      = [1];
 
 	mjsonrpc_db_paste(paths, values).then(function(rpc) {
@@ -640,7 +640,7 @@ function readback() {
 					</tr>
 					<tr>
 						<td colspan=2><label for="lvds_waitforall_sticky">Send TDC injections</label></td>
-                                                <td><input type="checkbox" name="modbcheckbox" id="send_tdc_injections" data-odb-path="/Equipment/Switching/Settings/SciFiTDCTest" title="Set the register on the FEB to send a 100 kHz differential signal to the TDC. To be used with the 'PLL test'."></input></td>
+                                                <td><input type="checkbox" name="modbcheckbox" id="send_tdc_injections" data-odb-path="/Equipment/SciFiCentral/Commands/SciFiTDCTest" title="Set the register on the FEB to send a 100 kHz differential signal to the TDC. To be used with the 'PLL test'."></input></td>
                                                 <td></td>
 					</tr>
 					<tr>
@@ -1130,7 +1130,7 @@ title="1: disable TDC test input to this channel. (0 enables TDC input and short
                     <button class="button_2" type="submit" onclick="storeODB()">Set ODB</button>
 		    <button class="button_2" type="submit" onclick="loadODB(false)">Reload ODB</button>
 		    <button name="modbbutton" class="button_2" id="config"
-			    data-odb-path="/Equipment/Switching/Settings/SciFiConfig"
+			    data-odb-path="/Equipment/SciFiCentral/Commands/SciFiConfig"
 			    data-odb-value="1">
 			Configure
 		    </button>
@@ -1145,7 +1145,7 @@ title="1: disable TDC test input to this channel. (0 enables TDC input and short
                    </div>
                <div style="text-align:center;">
                     <button name="modbbutton" class="button_2" id="config"
-			        data-odb-path="/Equipment/Switching/Settings/SciFiAllOff"
+			        data-odb-path="/Equipment/SciFiCentral/Commands/SciFiAllOff"
 			        data-odb-value="1">
                     Configure all off
 		            </button>

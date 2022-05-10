@@ -49,6 +49,8 @@ int setup_db(std::string prefix, MutrigFEB & FEB_interface){
     settings_daq["resetskew_phases"].resize(FEB_interface.GetNumModules());
     settings_daq.connect(prefix + "/Settings/Daq");
 
+    auto commands = ScifiCentralCommands;
+    commands.connect(prefix + "/Commands");
 
     // use lambda function for passing FEB_interface
     // TODO: don't set watch here for the moment use the one in switch_fe
