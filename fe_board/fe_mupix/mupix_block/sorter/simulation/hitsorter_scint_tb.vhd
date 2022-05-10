@@ -45,6 +45,7 @@ signal 		reg_rdata     					: std_logic_vector(31 downto 0);
 signal		reg_we        					: std_logic;
 signal 		reg_wdata     					: std_logic_vector(31 downto 0);
 
+signal		genmode							: std_logic_vector(3 downto 0);
 
 begin
 
@@ -137,7 +138,9 @@ elsif(tsclk'event and tsclk = '1') then
 	end if;
 end if;
 end process;
-	
+
+genmode <= "0000";
+
 hitgen: process
 begin
 	counter <= (others => '0');
@@ -149,7 +152,8 @@ begin
 	wait for 100*WRITECLK_PERIOD;
 	localts			<= currentts;
 	wait for WRITECLK_PERIOD;
-	for i in 0 to 2048 loop
+	if(genmode = "0000") then
+	for i in 0 to 222048 loop
 		hit_in(0)		<= counter & counter & "00000" & localts(TSBLOCKRANGE) & X"0";
 		hit_ena_in(0)	<= '1';
 		wait for WRITECLK_PERIOD;
@@ -162,6 +166,7 @@ begin
 		localts			<= localts +  X"10";
 		wait for WRITECLK_PERIOD;
 	end loop;
+	end if;
 	wait;
 end process;
 
