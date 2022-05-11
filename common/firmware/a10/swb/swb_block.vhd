@@ -248,10 +248,15 @@ begin
     farm_empty_debug(g_NLINKS_FARM_PIXEL - 1 downto 0)                                         <= rempty_debug_pixel;
     farm_empty_debug(g_NLINKS_FARM_PIXEL + g_NLINKS_FARM_SCIFI - 1 downto g_NLINKS_FARM_PIXEL) <= rempty_debug_scifi;
 
-    -- link mapping
-    gen_pixel_data_mapping : FOR i in 0 to g_NLINKS_DATA_PIXEL - 1 GENERATE
-        rx_data_pixel(i)   <= rx_data(i);
+    -- map pixel cosmic run
+    gen_pixel_data_mapping : FOR i in 0 to g_NLINKS_DATA_PIXEL - 2 GENERATE
+        rx_data_pixel(i) <= rx_data(i);
     END GENERATE gen_pixel_data_mapping;
+    
+    -- map trigger cosmic run
+    rx_data_pixel(g_NLINKS_DATA_PIXEL-1) <= rx_data(12);
+
+    -- map scifi comsic run
     gen_scifi_data_mapping : FOR i in g_NLINKS_DATA_PIXEL to g_NLINKS_DATA_PIXEL + g_NLINKS_DATA_SCIFI - 1 GENERATE
         rx_data_scifi(i-g_NLINKS_DATA_PIXEL)   <= rx_data(i);
     END GENERATE gen_scifi_data_mapping;
