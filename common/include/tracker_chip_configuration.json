@@ -1,0 +1,4235 @@
+{
+    "description": [
+        "Tracker configuration chip-by-chip",
+        "'Chips' is a dictionary with a unique chip identifier as key. This is NOT related to any ID used in the experiment (configuration, analysis,...).",
+        "Every value of the dictionary then corresponds to a chip, and it is a dictionary itself. The element of the dictionary are the following:",
+        "- confChip: the chip ID used for configuring the chip with MIDAS and switch_fe. Unique for all chips. from 0 to 119 in Cosmic Run",
+        "- runChip: the chip ID from the data stream. (Same as confChip at the moment)",
+        "- ladderChip: the chip ID on the physical ladder (from 0 to 5)",
+        "- simChip: the chip ID as in the simulation and specbook",
+        "- layer: layer to which the chip belongs (0 or 1 for cosmic run)",
+        "- direction: upstream (US) or downstream (DS)",
+        "- localLadder: ladder to which the chip belongs, as seen inside the layer (from 0 to 7 for Layer 0, from 0 to 9 for layer 1)",
+        "- confLadder: ladder to which the chip belongs, using the ladder unique ID for configuration (global ID, from 0 to 39)",
+        "- simLadder: ladder to which the chip belongs, using the ladder simulation and specbook ID",
+        "- phi: the phi position of the ladder to which the chip belongs",
+        "- dataLinkA_onFEB: the FEB data link number to which the chip's link A is connected",
+        "- dataLinkB_onFEB: the FEB data link number to which the chip's link B is connected",
+        "- dataLinkC_onFEB: the FEB data link number to which the chip's link C is connected",
+        "- dataLinkD_onFEB: the FEB data link number to which the chip's link D is connected (-1 if not connected)"
+    ],
+    "chips": {
+        "0": {
+            "confChip": 0,
+            "runChip": 0,
+            "ladderChip": 0,
+            "simChip": 1,
+            "layer": 0,
+            "direction": "US",
+            "localLadder": 0,
+            "confLadder": 0,
+            "simLadder": 0,
+            "dataLinkA_onFEB": 0,
+            "dataLinkB_onFEB": 1,
+            "dataLinkC_onFEB": 2,
+            "dataLinkD_onFEB": -1,
+            "phi": 0.8887261646305953,
+            "alignment": {
+                "v": {
+                    "x": 20.085124500804714,
+                    "y": 24.732602285401295,
+                    "z": 41.6602083333333
+                },
+                "drow": {
+                    "x": 0.057235690060379596,
+                    "y": -0.05589343238082689,
+                    "z": 0.0
+                },
+                "dcol": {
+                    "x": 0.0,
+                    "y": 0.0,
+                    "z": 0.08
+                },
+                "nrow": 250,
+                "ncol": 256,
+                "width": 19.999999999999954,
+                "length": 20.479999999999997,
+                "thickness": 0.05,
+                "pixelSize": 0.08
+            }
+        },
+        "1": {
+            "confChip": 1,
+            "runChip": 1,
+            "ladderChip": 1,
+            "simChip": 2,
+            "layer": 0,
+            "direction": "US",
+            "localLadder": 0,
+            "confLadder": 0,
+            "simLadder": 0,
+            "dataLinkA_onFEB": 3,
+            "dataLinkB_onFEB": 4,
+            "dataLinkC_onFEB": 5,
+            "dataLinkD_onFEB": -1,
+            "phi": 0.8887261646305953,
+            "alignment": {
+                "v": {
+                    "x": 20.085124500804714,
+                    "y": 24.732602285401295,
+                    "z": 20.9002083333333
+                },
+                "drow": {
+                    "x": 0.057235690060379596,
+                    "y": -0.05589343238082689,
+                    "z": 0.0
+                },
+                "dcol": {
+                    "x": 0.0,
+                    "y": 0.0,
+                    "z": 0.08
+                },
+                "nrow": 250,
+                "ncol": 256,
+                "width": 19.999999999999954,
+                "length": 20.48,
+                "thickness": 0.05,
+                "pixelSize": 0.08
+            }
+        },
+        "2": {
+            "confChip": 2,
+            "runChip": 2,
+            "ladderChip": 2,
+            "simChip": 3,
+            "layer": 0,
+            "direction": "US",
+            "localLadder": 0,
+            "confLadder": 0,
+            "simLadder": 0,
+            "dataLinkA_onFEB": 6,
+            "dataLinkB_onFEB": 7,
+            "dataLinkC_onFEB": 8,
+            "dataLinkD_onFEB": -1,
+            "phi": 0.8887261646305952,
+            "alignment": {
+                "v": {
+                    "x": 20.08512450080475,
+                    "y": 24.732602285401335,
+                    "z": 0.140208333333343
+                },
+                "drow": {
+                    "x": 0.057235690060379596,
+                    "y": -0.05589343238083036,
+                    "z": 0.0
+                },
+                "dcol": {
+                    "x": 0.0,
+                    "y": 0.0,
+                    "z": 0.08
+                },
+                "nrow": 250,
+                "ncol": 256,
+                "width": 19.99999999999996,
+                "length": 20.479999999999958,
+                "thickness": 0.05,
+                "pixelSize": 0.08
+            }
+        },
+        "3": {
+            "confChip": 62,
+            "runChip": 62,
+            "ladderChip": 3,
+            "simChip": 4,
+            "layer": 0,
+            "direction": "DS",
+            "localLadder": 0,
+            "confLadder": 20,
+            "simLadder": 0,
+            "dataLinkA_onFEB": 6,
+            "dataLinkB_onFEB": 7,
+            "dataLinkC_onFEB": 8,
+            "dataLinkD_onFEB": -1,
+            "phi": 0.8887261646305952,
+            "alignment": {
+                "v": {
+                    "x": 20.08512450080476,
+                    "y": 24.732602285401345,
+                    "z": -20.6202916666667
+                },
+                "drow": {
+                    "x": 0.05723569006042817,
+                    "y": -0.05589343238087893,
+                    "z": 0.0
+                },
+                "dcol": {
+                    "x": 0.0,
+                    "y": 0.0,
+                    "z": 0.08
+                },
+                "nrow": 250,
+                "ncol": 256,
+                "width": 20.00000000000003,
+                "length": 20.480500000000042,
+                "thickness": 0.05,
+                "pixelSize": 0.08
+            }
+        },
+        "4": {
+            "confChip": 61,
+            "runChip": 61,
+            "ladderChip": 4,
+            "simChip": 5,
+            "layer": 0,
+            "direction": "DS",
+            "localLadder": 0,
+            "confLadder": 20,
+            "simLadder": 0,
+            "dataLinkA_onFEB": 3,
+            "dataLinkB_onFEB": 4,
+            "dataLinkC_onFEB": 5,
+            "dataLinkD_onFEB": -1,
+            "phi": 0.8887261646305953,
+            "alignment": {
+                "v": {
+                    "x": 20.085124500804714,
+                    "y": 24.732602285401295,
+                    "z": -41.3802916666667
+                },
+                "drow": {
+                    "x": 0.057235690060379596,
+                    "y": -0.05589343238082689,
+                    "z": 0.0
+                },
+                "dcol": {
+                    "x": 0.0,
+                    "y": 0.0,
+                    "z": 0.08
+                },
+                "nrow": 250,
+                "ncol": 256,
+                "width": 19.999999999999954,
+                "length": 20.48,
+                "thickness": 0.05,
+                "pixelSize": 0.08
+            }
+        },
+        "5": {
+            "confChip": 60,
+            "runChip": 60,
+            "ladderChip": 5,
+            "simChip": 6,
+            "layer": 0,
+            "direction": "DS",
+            "localLadder": 0,
+            "confLadder": 20,
+            "simLadder": 0,
+            "dataLinkA_onFEB": 0,
+            "dataLinkB_onFEB": 1,
+            "dataLinkC_onFEB": 2,
+            "dataLinkD_onFEB": -1,
+            "phi": 0.8887261646305953,
+            "alignment": {
+                "v": {
+                    "x": 20.085124500804728,
+                    "y": 24.732602285401313,
+                    "z": -62.1402916666667
+                },
+                "drow": {
+                    "x": 0.057235690060379596,
+                    "y": -0.05589343238083036,
+                    "z": 0.0
+                },
+                "dcol": {
+                    "x": 0.0,
+                    "y": 0.0,
+                    "z": 0.08
+                },
+                "nrow": 250,
+                "ncol": 256,
+                "width": 19.99999999999996,
+                "length": 20.480000000000103,
+                "thickness": 0.05,
+                "pixelSize": 0.08
+            }
+        },
+        "6": {
+            "confChip": 3,
+            "runChip": 3,
+            "ladderChip": 0,
+            "simChip": 33,
+            "layer": 0,
+            "direction": "US",
+            "localLadder": 1,
+            "confLadder": 1,
+            "simLadder": 1,
+            "dataLinkA_onFEB": 9,
+            "dataLinkB_onFEB": 10,
+            "dataLinkC_onFEB": 11,
+            "dataLinkD_onFEB": -1,
+            "phi": 0.10332605193080951,
+            "alignment": {
+                "v": {
+                    "x": 31.690946030690135,
+                    "y": 3.2862034693684428,
+                    "z": 41.6602083333333
+                },
+                "drow": {
+                    "x": 0.0009488688276493296,
+                    "y": -0.07999437260175404,
+                    "z": 0.0
+                },
+                "dcol": {
+                    "x": 0.0,
+                    "y": 0.0,
+                    "z": 0.08
+                },
+                "nrow": 250,
+                "ncol": 256,
+                "width": 19.99999999999999,
+                "length": 20.479999999999997,
+                "thickness": 0.05,
+                "pixelSize": 0.08
+            }
+        },
+        "7": {
+            "confChip": 4,
+            "runChip": 4,
+            "ladderChip": 1,
+            "simChip": 34,
+            "layer": 0,
+            "direction": "US",
+            "localLadder": 1,
+            "confLadder": 1,
+            "simLadder": 1,
+            "dataLinkA_onFEB": 12,
+            "dataLinkB_onFEB": 13,
+            "dataLinkC_onFEB": 14,
+            "dataLinkD_onFEB": -1,
+            "phi": 0.10332605193080951,
+            "alignment": {
+                "v": {
+                    "x": 31.690946030690135,
+                    "y": 3.2862034693684428,
+                    "z": 20.9002083333333
+                },
+                "drow": {
+                    "x": 0.0009488688276493296,
+                    "y": -0.07999437260175404,
+                    "z": 0.0
+                },
+                "dcol": {
+                    "x": 0.0,
+                    "y": 0.0,
+                    "z": 0.08
+                },
+                "nrow": 250,
+                "ncol": 256,
+                "width": 19.99999999999999,
+                "length": 20.48,
+                "thickness": 0.05,
+                "pixelSize": 0.08
+            }
+        },
+        "8": {
+            "confChip": 5,
+            "runChip": 5,
+            "ladderChip": 2,
+            "simChip": 35,
+            "layer": 0,
+            "direction": "US",
+            "localLadder": 1,
+            "confLadder": 1,
+            "simLadder": 1,
+            "dataLinkA_onFEB": 15,
+            "dataLinkB_onFEB": 16,
+            "dataLinkC_onFEB": 17,
+            "dataLinkD_onFEB": -1,
+            "phi": 0.10332605193080993,
+            "alignment": {
+                "v": {
+                    "x": 31.69094603068999,
+                    "y": 3.286203469368441,
+                    "z": 0.140208333333343
+                },
+                "drow": {
+                    "x": 0.0009488688276493296,
+                    "y": -0.07999437260175274,
+                    "z": 0.0
+                },
+                "dcol": {
+                    "x": 0.0,
+                    "y": 0.0,
+                    "z": 0.08
+                },
+                "nrow": 250,
+                "ncol": 256,
+                "width": 19.99999999999999,
+                "length": 20.479999999999958,
+                "thickness": 0.05,
+                "pixelSize": 0.08
+            }
+        },
+        "9": {
+            "confChip": 65,
+            "runChip": 65,
+            "ladderChip": 3,
+            "simChip": 36,
+            "layer": 0,
+            "direction": "DS",
+            "localLadder": 1,
+            "confLadder": 21,
+            "simLadder": 1,
+            "dataLinkA_onFEB": 15,
+            "dataLinkB_onFEB": 16,
+            "dataLinkC_onFEB": 17,
+            "dataLinkD_onFEB": -1,
+            "phi": 0.1033260519308095,
+            "alignment": {
+                "v": {
+                    "x": 31.690946030690142,
+                    "y": 3.2862034693684428,
+                    "z": -20.6202916666667
+                },
+                "drow": {
+                    "x": 0.0009488688276493296,
+                    "y": -0.07999437260175404,
+                    "z": 0.0
+                },
+                "dcol": {
+                    "x": 0.0,
+                    "y": 0.0,
+                    "z": 0.08
+                },
+                "nrow": 250,
+                "ncol": 256,
+                "width": 19.999999999999986,
+                "length": 20.480500000000042,
+                "thickness": 0.05,
+                "pixelSize": 0.08
+            }
+        },
+        "10": {
+            "confChip": 64,
+            "runChip": 64,
+            "ladderChip": 4,
+            "simChip": 37,
+            "layer": 0,
+            "direction": "DS",
+            "localLadder": 1,
+            "confLadder": 21,
+            "simLadder": 1,
+            "dataLinkA_onFEB": 12,
+            "dataLinkB_onFEB": 13,
+            "dataLinkC_onFEB": 14,
+            "dataLinkD_onFEB": -1,
+            "phi": 0.10332605193080951,
+            "alignment": {
+                "v": {
+                    "x": 31.690946030690135,
+                    "y": 3.2862034693684428,
+                    "z": -41.3802916666667
+                },
+                "drow": {
+                    "x": 0.0009488688276493296,
+                    "y": -0.07999437260175404,
+                    "z": 0.0
+                },
+                "dcol": {
+                    "x": 0.0,
+                    "y": 0.0,
+                    "z": 0.08
+                },
+                "nrow": 250,
+                "ncol": 256,
+                "width": 19.99999999999999,
+                "length": 20.48,
+                "thickness": 0.05,
+                "pixelSize": 0.08
+            }
+        },
+        "11": {
+            "confChip": 63,
+            "runChip": 63,
+            "ladderChip": 5,
+            "simChip": 38,
+            "layer": 0,
+            "direction": "DS",
+            "localLadder": 1,
+            "confLadder": 21,
+            "simLadder": 1,
+            "dataLinkA_onFEB": 9,
+            "dataLinkB_onFEB": 10,
+            "dataLinkC_onFEB": 11,
+            "dataLinkD_onFEB": -1,
+            "phi": 0.10332605193080929,
+            "alignment": {
+                "v": {
+                    "x": 31.690946030690213,
+                    "y": 3.2862034693684437,
+                    "z": -62.1402916666667
+                },
+                "drow": {
+                    "x": 0.0009488688276493296,
+                    "y": -0.07999437260175533,
+                    "z": 0.0
+                },
+                "dcol": {
+                    "x": 0.0,
+                    "y": 0.0,
+                    "z": 0.08
+                },
+                "nrow": 250,
+                "ncol": 256,
+                "width": 19.999999999999993,
+                "length": 20.480000000000103,
+                "thickness": 0.05,
+                "pixelSize": 0.08
+            }
+        },
+        "12": {
+            "confChip": 6,
+            "runChip": 6,
+            "ladderChip": 0,
+            "simChip": 65,
+            "layer": 0,
+            "direction": "US",
+            "localLadder": 2,
+            "confLadder": 2,
+            "simLadder": 2,
+            "dataLinkA_onFEB": 18,
+            "dataLinkB_onFEB": 19,
+            "dataLinkC_onFEB": 20,
+            "dataLinkD_onFEB": -1,
+            "phi": -0.6820724097453852,
+            "alignment": {
+                "v": {
+                    "x": 24.73251902329762,
+                    "y": -20.085149132965427,
+                    "z": 41.6602083333333
+                },
+                "drow": {
+                    "x": -0.05589325434108422,
+                    "y": -0.057235863924306324,
+                    "z": 0.0
+                },
+                "dcol": {
+                    "x": 0.0,
+                    "y": 0.0,
+                    "z": 0.08
+                },
+                "nrow": 250,
+                "ncol": 256,
+                "width": 20.00000000000001,
+                "length": 20.479999999999997,
+                "thickness": 0.05,
+                "pixelSize": 0.08
+            }
+        },
+        "13": {
+            "confChip": 7,
+            "runChip": 7,
+            "ladderChip": 1,
+            "simChip": 66,
+            "layer": 0,
+            "direction": "US",
+            "localLadder": 2,
+            "confLadder": 2,
+            "simLadder": 2,
+            "dataLinkA_onFEB": 21,
+            "dataLinkB_onFEB": 22,
+            "dataLinkC_onFEB": 23,
+            "dataLinkD_onFEB": -1,
+            "phi": -0.6820724097453852,
+            "alignment": {
+                "v": {
+                    "x": 24.73251902329762,
+                    "y": -20.085149132965427,
+                    "z": 20.9002083333333
+                },
+                "drow": {
+                    "x": -0.05589325434108422,
+                    "y": -0.057235863924306324,
+                    "z": 0.0
+                },
+                "dcol": {
+                    "x": 0.0,
+                    "y": 0.0,
+                    "z": 0.08
+                },
+                "nrow": 250,
+                "ncol": 256,
+                "width": 20.00000000000001,
+                "length": 20.48,
+                "thickness": 0.05,
+                "pixelSize": 0.08
+            }
+        },
+        "14": {
+            "confChip": 8,
+            "runChip": 8,
+            "ladderChip": 2,
+            "simChip": 67,
+            "layer": 0,
+            "direction": "US",
+            "localLadder": 2,
+            "confLadder": 2,
+            "simLadder": 2,
+            "dataLinkA_onFEB": 24,
+            "dataLinkB_onFEB": 25,
+            "dataLinkC_onFEB": 26,
+            "dataLinkD_onFEB": -1,
+            "phi": -0.6820724097453853,
+            "alignment": {
+                "v": {
+                    "x": 24.732519023297648,
+                    "y": -20.085149132965455,
+                    "z": 0.140208333333343
+                },
+                "drow": {
+                    "x": -0.05589325434113626,
+                    "y": -0.057235863924358366,
+                    "z": 0.0
+                },
+                "dcol": {
+                    "x": 0.0,
+                    "y": 0.0,
+                    "z": 0.08
+                },
+                "nrow": 250,
+                "ncol": 256,
+                "width": 20.00000000000001,
+                "length": 20.479999999999958,
+                "thickness": 0.05,
+                "pixelSize": 0.08
+            }
+        },
+        "15": {
+            "confChip": 68,
+            "runChip": 68,
+            "ladderChip": 3,
+            "simChip": 68,
+            "layer": 0,
+            "direction": "DS",
+            "localLadder": 2,
+            "confLadder": 22,
+            "simLadder": 2,
+            "dataLinkA_onFEB": 24,
+            "dataLinkB_onFEB": 25,
+            "dataLinkC_onFEB": 26,
+            "dataLinkD_onFEB": -1,
+            "phi": -0.682072409745385,
+            "alignment": {
+                "v": {
+                    "x": 24.732519023297577,
+                    "y": -20.085149132965384,
+                    "z": -20.6202916666667
+                },
+                "drow": {
+                    "x": -0.05589325434108422,
+                    "y": -0.057235863924306324,
+                    "z": 0.0
+                },
+                "dcol": {
+                    "x": 0.0,
+                    "y": 0.0,
+                    "z": 0.08
+                },
+                "nrow": 250,
+                "ncol": 256,
+                "width": 20.00000000000001,
+                "length": 20.480500000000042,
+                "thickness": 0.05,
+                "pixelSize": 0.08
+            }
+        },
+        "16": {
+            "confChip": 67,
+            "runChip": 67,
+            "ladderChip": 4,
+            "simChip": 69,
+            "layer": 0,
+            "direction": "DS",
+            "localLadder": 2,
+            "confLadder": 22,
+            "simLadder": 2,
+            "dataLinkA_onFEB": 21,
+            "dataLinkB_onFEB": 22,
+            "dataLinkC_onFEB": 23,
+            "dataLinkD_onFEB": -1,
+            "phi": -0.6820724097453852,
+            "alignment": {
+                "v": {
+                    "x": 24.73251902329762,
+                    "y": -20.085149132965427,
+                    "z": -41.3802916666667
+                },
+                "drow": {
+                    "x": -0.05589325434108422,
+                    "y": -0.057235863924306324,
+                    "z": 0.0
+                },
+                "dcol": {
+                    "x": 0.0,
+                    "y": 0.0,
+                    "z": 0.08
+                },
+                "nrow": 250,
+                "ncol": 256,
+                "width": 20.00000000000001,
+                "length": 20.48,
+                "thickness": 0.05,
+                "pixelSize": 0.08
+            }
+        },
+        "17": {
+            "confChip": 66,
+            "runChip": 66,
+            "ladderChip": 5,
+            "simChip": 70,
+            "layer": 0,
+            "direction": "DS",
+            "localLadder": 2,
+            "confLadder": 22,
+            "simLadder": 2,
+            "dataLinkA_onFEB": 18,
+            "dataLinkB_onFEB": 19,
+            "dataLinkC_onFEB": 20,
+            "dataLinkD_onFEB": -1,
+            "phi": -0.6820724097453852,
+            "alignment": {
+                "v": {
+                    "x": 24.732519023297638,
+                    "y": -20.08514913296544,
+                    "z": -62.1402916666667
+                },
+                "drow": {
+                    "x": -0.05589325434108769,
+                    "y": -0.057235863924306324,
+                    "z": 0.0
+                },
+                "dcol": {
+                    "x": 0.0,
+                    "y": 0.0,
+                    "z": 0.08
+                },
+                "nrow": 250,
+                "ncol": 256,
+                "width": 20.000000000000014,
+                "length": 20.480000000000103,
+                "thickness": 0.05,
+                "pixelSize": 0.08
+            }
+        },
+        "18": {
+            "confChip": 9,
+            "runChip": 9,
+            "ladderChip": 0,
+            "simChip": 97,
+            "layer": 0,
+            "direction": "US",
+            "localLadder": 3,
+            "confLadder": 3,
+            "simLadder": 3,
+            "dataLinkA_onFEB": 27,
+            "dataLinkB_onFEB": 28,
+            "dataLinkC_onFEB": 29,
+            "dataLinkD_onFEB": -1,
+            "phi": -1.4674697397928933,
+            "alignment": {
+                "v": {
+                    "x": 3.2862134898454896,
+                    "y": -31.690877380237804,
+                    "z": 41.6602083333333
+                },
+                "drow": {
+                    "x": -0.07999436847577279,
+                    "y": -0.0009492166045052541,
+                    "z": 0.0
+                },
+                "dcol": {
+                    "x": 0.0,
+                    "y": 0.0,
+                    "z": 0.08
+                },
+                "nrow": 250,
+                "ncol": 256,
+                "width": 20.000000000000014,
+                "length": 20.479999999999997,
+                "thickness": 0.05,
+                "pixelSize": 0.08
+            }
+        },
+        "19": {
+            "confChip": 10,
+            "runChip": 10,
+            "ladderChip": 1,
+            "simChip": 98,
+            "layer": 0,
+            "direction": "US",
+            "localLadder": 3,
+            "confLadder": 3,
+            "simLadder": 3,
+            "dataLinkA_onFEB": 30,
+            "dataLinkB_onFEB": 31,
+            "dataLinkC_onFEB": 32,
+            "dataLinkD_onFEB": -1,
+            "phi": -1.4674697397928933,
+            "alignment": {
+                "v": {
+                    "x": 3.2862134898454896,
+                    "y": -31.690877380237804,
+                    "z": 20.9002083333333
+                },
+                "drow": {
+                    "x": -0.07999436847577279,
+                    "y": -0.0009492166045052541,
+                    "z": 0.0
+                },
+                "dcol": {
+                    "x": 0.0,
+                    "y": 0.0,
+                    "z": 0.08
+                },
+                "nrow": 250,
+                "ncol": 256,
+                "width": 20.000000000000014,
+                "length": 20.48,
+                "thickness": 0.05,
+                "pixelSize": 0.08
+            }
+        },
+        "20": {
+            "confChip": 11,
+            "runChip": 11,
+            "ladderChip": 2,
+            "simChip": 99,
+            "layer": 0,
+            "direction": "US",
+            "localLadder": 3,
+            "confLadder": 3,
+            "simLadder": 3,
+            "dataLinkA_onFEB": 33,
+            "dataLinkB_onFEB": 34,
+            "dataLinkC_onFEB": 35,
+            "dataLinkD_onFEB": -1,
+            "phi": -1.4674697397928935,
+            "alignment": {
+                "v": {
+                    "x": 3.2862134898454904,
+                    "y": -31.690877380237875,
+                    "z": 0.140208333333343
+                },
+                "drow": {
+                    "x": -0.07999436847577367,
+                    "y": -0.0009492166045052541,
+                    "z": 0.0
+                },
+                "dcol": {
+                    "x": 0.0,
+                    "y": 0.0,
+                    "z": 0.08
+                },
+                "nrow": 250,
+                "ncol": 256,
+                "width": 20.000000000000014,
+                "length": 20.479999999999958,
+                "thickness": 0.05,
+                "pixelSize": 0.08
+            }
+        },
+        "21": {
+            "confChip": 71,
+            "runChip": 71,
+            "ladderChip": 3,
+            "simChip": 100,
+            "layer": 0,
+            "direction": "DS",
+            "localLadder": 3,
+            "confLadder": 23,
+            "simLadder": 3,
+            "dataLinkA_onFEB": 33,
+            "dataLinkB_onFEB": 34,
+            "dataLinkC_onFEB": 35,
+            "dataLinkD_onFEB": -1,
+            "phi": -1.4674697397928937,
+            "alignment": {
+                "v": {
+                    "x": 3.2862134898454913,
+                    "y": -31.69087738023795,
+                    "z": -20.6202916666667
+                },
+                "drow": {
+                    "x": -0.07999436847577367,
+                    "y": -0.0009492166045052541,
+                    "z": 0.0
+                },
+                "dcol": {
+                    "x": 0.0,
+                    "y": 0.0,
+                    "z": 0.08
+                },
+                "nrow": 250,
+                "ncol": 256,
+                "width": 20.000000000000014,
+                "length": 20.480500000000042,
+                "thickness": 0.05,
+                "pixelSize": 0.08
+            }
+        },
+        "22": {
+            "confChip": 70,
+            "runChip": 70,
+            "ladderChip": 4,
+            "simChip": 101,
+            "layer": 0,
+            "direction": "DS",
+            "localLadder": 3,
+            "confLadder": 23,
+            "simLadder": 3,
+            "dataLinkA_onFEB": 30,
+            "dataLinkB_onFEB": 31,
+            "dataLinkC_onFEB": 32,
+            "dataLinkD_onFEB": -1,
+            "phi": -1.4674697397928933,
+            "alignment": {
+                "v": {
+                    "x": 3.2862134898454896,
+                    "y": -31.690877380237804,
+                    "z": -41.3802916666667
+                },
+                "drow": {
+                    "x": -0.07999436847577279,
+                    "y": -0.0009492166045052541,
+                    "z": 0.0
+                },
+                "dcol": {
+                    "x": 0.0,
+                    "y": 0.0,
+                    "z": 0.08
+                },
+                "nrow": 250,
+                "ncol": 256,
+                "width": 20.000000000000014,
+                "length": 20.48,
+                "thickness": 0.05,
+                "pixelSize": 0.08
+            }
+        },
+        "23": {
+            "confChip": 69,
+            "runChip": 69,
+            "ladderChip": 5,
+            "simChip": 102,
+            "layer": 0,
+            "direction": "DS",
+            "localLadder": 3,
+            "confLadder": 23,
+            "simLadder": 3,
+            "dataLinkA_onFEB": 27,
+            "dataLinkB_onFEB": 28,
+            "dataLinkC_onFEB": 29,
+            "dataLinkD_onFEB": -1,
+            "phi": -1.4674697397928935,
+            "alignment": {
+                "v": {
+                    "x": 3.2862134898454904,
+                    "y": -31.690877380237882,
+                    "z": -62.1402916666667
+                },
+                "drow": {
+                    "x": -0.07999436847577367,
+                    "y": -0.0009492166045052541,
+                    "z": 0.0
+                },
+                "dcol": {
+                    "x": 0.0,
+                    "y": 0.0,
+                    "z": 0.08
+                },
+                "nrow": 250,
+                "ncol": 256,
+                "width": 20.000000000000014,
+                "length": 20.480000000000103,
+                "thickness": 0.05,
+                "pixelSize": 0.08
+            }
+        },
+        "24": {
+            "confChip": 12,
+            "runChip": 12,
+            "ladderChip": 0,
+            "simChip": 257,
+            "layer": 0,
+            "direction": "US",
+            "localLadder": 4,
+            "confLadder": 4,
+            "simLadder": 4,
+            "dataLinkA_onFEB": 0,
+            "dataLinkB_onFEB": 1,
+            "dataLinkC_onFEB": 2,
+            "dataLinkD_onFEB": -1,
+            "phi": -2.252868136397251,
+            "alignment": {
+                "v": {
+                    "x": -20.08513796025806,
+                    "y": -24.73253559686307,
+                    "z": 41.6602083333333
+                },
+                "drow": {
+                    "x": -0.057235829967132446,
+                    "y": 0.055893289113938954,
+                    "z": 0.0
+                },
+                "dcol": {
+                    "x": 0.0,
+                    "y": 0.0,
+                    "z": 0.08
+                },
+                "nrow": 250,
+                "ncol": 256,
+                "width": 19.999999999999975,
+                "length": 20.479999999999997,
+                "thickness": 0.05,
+                "pixelSize": 0.08
+            }
+        },
+        "25": {
+            "confChip": 13,
+            "runChip": 13,
+            "ladderChip": 1,
+            "simChip": 258,
+            "layer": 0,
+            "direction": "US",
+            "localLadder": 4,
+            "confLadder": 4,
+            "simLadder": 4,
+            "dataLinkA_onFEB": 3,
+            "dataLinkB_onFEB": 4,
+            "dataLinkC_onFEB": 5,
+            "dataLinkD_onFEB": -1,
+            "phi": -2.252868136397251,
+            "alignment": {
+                "v": {
+                    "x": -20.08513796025806,
+                    "y": -24.73253559686307,
+                    "z": 20.9002083333333
+                },
+                "drow": {
+                    "x": -0.057235829967132446,
+                    "y": 0.055893289113938954,
+                    "z": 0.0
+                },
+                "dcol": {
+                    "x": 0.0,
+                    "y": 0.0,
+                    "z": 0.08
+                },
+                "nrow": 250,
+                "ncol": 256,
+                "width": 19.999999999999975,
+                "length": 20.48,
+                "thickness": 0.05,
+                "pixelSize": 0.08
+            }
+        },
+        "26": {
+            "confChip": 14,
+            "runChip": 14,
+            "ladderChip": 2,
+            "simChip": 259,
+            "layer": 0,
+            "direction": "US",
+            "localLadder": 4,
+            "confLadder": 4,
+            "simLadder": 4,
+            "dataLinkA_onFEB": 6,
+            "dataLinkB_onFEB": 7,
+            "dataLinkC_onFEB": 8,
+            "dataLinkD_onFEB": -1,
+            "phi": -2.252868136397251,
+            "alignment": {
+                "v": {
+                    "x": -20.08513796025809,
+                    "y": -24.7325355968631,
+                    "z": 0.140208333333343
+                },
+                "drow": {
+                    "x": -0.057235829967132446,
+                    "y": 0.055893289113942424,
+                    "z": 0.0
+                },
+                "dcol": {
+                    "x": 0.0,
+                    "y": 0.0,
+                    "z": 0.08
+                },
+                "nrow": 250,
+                "ncol": 256,
+                "width": 19.999999999999975,
+                "length": 20.479999999999958,
+                "thickness": 0.05,
+                "pixelSize": 0.08
+            }
+        },
+        "27": {
+            "confChip": 74,
+            "runChip": 74,
+            "ladderChip": 3,
+            "simChip": 260,
+            "layer": 0,
+            "direction": "DS",
+            "localLadder": 4,
+            "confLadder": 24,
+            "simLadder": 4,
+            "dataLinkA_onFEB": 6,
+            "dataLinkB_onFEB": 7,
+            "dataLinkC_onFEB": 8,
+            "dataLinkD_onFEB": -1,
+            "phi": -2.2528681363972507,
+            "alignment": {
+                "v": {
+                    "x": -20.08513796025806,
+                    "y": -24.732535596863073,
+                    "z": -20.6202916666667
+                },
+                "drow": {
+                    "x": -0.057235829967135915,
+                    "y": 0.055893289113942424,
+                    "z": 0.0
+                },
+                "dcol": {
+                    "x": 0.0,
+                    "y": 0.0,
+                    "z": 0.08
+                },
+                "nrow": 250,
+                "ncol": 256,
+                "width": 19.999999999999975,
+                "length": 20.480500000000042,
+                "thickness": 0.05,
+                "pixelSize": 0.08
+            }
+        },
+        "28": {
+            "confChip": 73,
+            "runChip": 73,
+            "ladderChip": 4,
+            "simChip": 261,
+            "layer": 0,
+            "direction": "DS",
+            "localLadder": 4,
+            "confLadder": 24,
+            "simLadder": 4,
+            "dataLinkA_onFEB": 3,
+            "dataLinkB_onFEB": 4,
+            "dataLinkC_onFEB": 5,
+            "dataLinkD_onFEB": -1,
+            "phi": -2.252868136397251,
+            "alignment": {
+                "v": {
+                    "x": -20.08513796025806,
+                    "y": -24.73253559686307,
+                    "z": -41.3802916666667
+                },
+                "drow": {
+                    "x": -0.057235829967132446,
+                    "y": 0.055893289113938954,
+                    "z": 0.0
+                },
+                "dcol": {
+                    "x": 0.0,
+                    "y": 0.0,
+                    "z": 0.08
+                },
+                "nrow": 250,
+                "ncol": 256,
+                "width": 19.999999999999975,
+                "length": 20.48,
+                "thickness": 0.05,
+                "pixelSize": 0.08
+            }
+        },
+        "29": {
+            "confChip": 72,
+            "runChip": 72,
+            "ladderChip": 5,
+            "simChip": 262,
+            "layer": 0,
+            "direction": "DS",
+            "localLadder": 4,
+            "confLadder": 24,
+            "simLadder": 4,
+            "dataLinkA_onFEB": 0,
+            "dataLinkB_onFEB": 1,
+            "dataLinkC_onFEB": 2,
+            "dataLinkD_onFEB": -1,
+            "phi": -2.252868136397251,
+            "alignment": {
+                "v": {
+                    "x": -20.085137960258105,
+                    "y": -24.732535596863116,
+                    "z": -62.1402916666667
+                },
+                "drow": {
+                    "x": -0.057235829967132446,
+                    "y": 0.055893289113938954,
+                    "z": 0.0
+                },
+                "dcol": {
+                    "x": 0.0,
+                    "y": 0.0,
+                    "z": 0.08
+                },
+                "nrow": 250,
+                "ncol": 256,
+                "width": 19.999999999999975,
+                "length": 20.480000000000103,
+                "thickness": 0.05,
+                "pixelSize": 0.08
+            }
+        },
+        "30": {
+            "confChip": 15,
+            "runChip": 15,
+            "ladderChip": 0,
+            "simChip": 289,
+            "layer": 0,
+            "direction": "US",
+            "localLadder": 5,
+            "confLadder": 5,
+            "simLadder": 5,
+            "dataLinkA_onFEB": 9,
+            "dataLinkB_onFEB": 10,
+            "dataLinkC_onFEB": 11,
+            "dataLinkD_onFEB": -1,
+            "phi": -3.03826562178286,
+            "alignment": {
+                "v": {
+                    "x": -31.69091214597463,
+                    "y": -3.28623134275878,
+                    "z": 41.6602083333333
+                },
+                "drow": {
+                    "x": -0.0009490774937684354,
+                    "y": 0.07999437012634528,
+                    "z": 0.0
+                },
+                "dcol": {
+                    "x": 0.0,
+                    "y": 0.0,
+                    "z": 0.08
+                },
+                "nrow": 250,
+                "ncol": 256,
+                "width": 19.99999999999996,
+                "length": 20.479999999999997,
+                "thickness": 0.05,
+                "pixelSize": 0.08
+            }
+        },
+        "31": {
+            "confChip": 16,
+            "runChip": 16,
+            "ladderChip": 1,
+            "simChip": 290,
+            "layer": 0,
+            "direction": "US",
+            "localLadder": 5,
+            "confLadder": 5,
+            "simLadder": 5,
+            "dataLinkA_onFEB": 12,
+            "dataLinkB_onFEB": 13,
+            "dataLinkC_onFEB": 14,
+            "dataLinkD_onFEB": -1,
+            "phi": -3.03826562178286,
+            "alignment": {
+                "v": {
+                    "x": -31.69091214597463,
+                    "y": -3.28623134275878,
+                    "z": 20.9002083333333
+                },
+                "drow": {
+                    "x": -0.0009490774937684354,
+                    "y": 0.07999437012634528,
+                    "z": 0.0
+                },
+                "dcol": {
+                    "x": 0.0,
+                    "y": 0.0,
+                    "z": 0.08
+                },
+                "nrow": 250,
+                "ncol": 256,
+                "width": 19.99999999999996,
+                "length": 20.48,
+                "thickness": 0.05,
+                "pixelSize": 0.08
+            }
+        },
+        "32": {
+            "confChip": 17,
+            "runChip": 17,
+            "ladderChip": 2,
+            "simChip": 291,
+            "layer": 0,
+            "direction": "US",
+            "localLadder": 5,
+            "confLadder": 5,
+            "simLadder": 5,
+            "dataLinkA_onFEB": 15,
+            "dataLinkB_onFEB": 16,
+            "dataLinkC_onFEB": 17,
+            "dataLinkD_onFEB": -1,
+            "phi": -3.0382656217828594,
+            "alignment": {
+                "v": {
+                    "x": -31.690912145974483,
+                    "y": -3.286231342758778,
+                    "z": 0.140208333333343
+                },
+                "drow": {
+                    "x": -0.0009490774937684354,
+                    "y": 0.07999437012634397,
+                    "z": 0.0
+                },
+                "dcol": {
+                    "x": 0.0,
+                    "y": 0.0,
+                    "z": 0.08
+                },
+                "nrow": 250,
+                "ncol": 256,
+                "width": 19.999999999999957,
+                "length": 20.479999999999958,
+                "thickness": 0.05,
+                "pixelSize": 0.08
+            }
+        },
+        "33": {
+            "confChip": 77,
+            "runChip": 77,
+            "ladderChip": 3,
+            "simChip": 292,
+            "layer": 0,
+            "direction": "DS",
+            "localLadder": 5,
+            "confLadder": 25,
+            "simLadder": 5,
+            "dataLinkA_onFEB": 15,
+            "dataLinkB_onFEB": 16,
+            "dataLinkC_onFEB": 17,
+            "dataLinkD_onFEB": -1,
+            "phi": -3.03826562178286,
+            "alignment": {
+                "v": {
+                    "x": -31.690912145974583,
+                    "y": -3.286231342758779,
+                    "z": -20.6202916666667
+                },
+                "drow": {
+                    "x": -0.0009490774937614965,
+                    "y": 0.07999437012634528,
+                    "z": 0.0
+                },
+                "dcol": {
+                    "x": 0.0,
+                    "y": 0.0,
+                    "z": 0.08
+                },
+                "nrow": 250,
+                "ncol": 256,
+                "width": 19.99999999999996,
+                "length": 20.480500000000042,
+                "thickness": 0.05,
+                "pixelSize": 0.08
+            }
+        },
+        "34": {
+            "confChip": 76,
+            "runChip": 76,
+            "ladderChip": 4,
+            "simChip": 293,
+            "layer": 0,
+            "direction": "DS",
+            "localLadder": 5,
+            "confLadder": 25,
+            "simLadder": 5,
+            "dataLinkA_onFEB": 12,
+            "dataLinkB_onFEB": 13,
+            "dataLinkC_onFEB": 14,
+            "dataLinkD_onFEB": -1,
+            "phi": -3.03826562178286,
+            "alignment": {
+                "v": {
+                    "x": -31.69091214597463,
+                    "y": -3.28623134275878,
+                    "z": -41.3802916666667
+                },
+                "drow": {
+                    "x": -0.0009490774937684354,
+                    "y": 0.07999437012634528,
+                    "z": 0.0
+                },
+                "dcol": {
+                    "x": 0.0,
+                    "y": 0.0,
+                    "z": 0.08
+                },
+                "nrow": 250,
+                "ncol": 256,
+                "width": 19.99999999999996,
+                "length": 20.48,
+                "thickness": 0.05,
+                "pixelSize": 0.08
+            }
+        },
+        "35": {
+            "confChip": 75,
+            "runChip": 75,
+            "ladderChip": 5,
+            "simChip": 294,
+            "layer": 0,
+            "direction": "DS",
+            "localLadder": 5,
+            "confLadder": 25,
+            "simLadder": 5,
+            "dataLinkA_onFEB": 9,
+            "dataLinkB_onFEB": 10,
+            "dataLinkC_onFEB": 11,
+            "dataLinkD_onFEB": -1,
+            "phi": -3.0382656217828594,
+            "alignment": {
+                "v": {
+                    "x": -31.690912145974497,
+                    "y": -3.286231342758778,
+                    "z": -62.1402916666667
+                },
+                "drow": {
+                    "x": -0.0009490774937684354,
+                    "y": 0.07999437012634397,
+                    "z": 0.0
+                },
+                "dcol": {
+                    "x": 0.0,
+                    "y": 0.0,
+                    "z": 0.08
+                },
+                "nrow": 250,
+                "ncol": 256,
+                "width": 19.999999999999957,
+                "length": 20.480000000000103,
+                "thickness": 0.05,
+                "pixelSize": 0.08
+            }
+        },
+        "36": {
+            "confChip": 18,
+            "runChip": 18,
+            "ladderChip": 0,
+            "simChip": 321,
+            "layer": 0,
+            "direction": "US",
+            "localLadder": 6,
+            "confLadder": 6,
+            "simLadder": 6,
+            "dataLinkA_onFEB": 18,
+            "dataLinkB_onFEB": 19,
+            "dataLinkC_onFEB": 20,
+            "dataLinkD_onFEB": -1,
+            "phi": 2.459519269654677,
+            "alignment": {
+                "v": {
+                    "x": -24.732548971854094,
+                    "y": 20.08521343832929,
+                    "z": 41.6602083333333
+                },
+                "drow": {
+                    "x": 0.05589346423103686,
+                    "y": 0.05723565895710686,
+                    "z": 0.0
+                },
+                "dcol": {
+                    "x": 0.0,
+                    "y": 0.0,
+                    "z": 0.08
+                },
+                "nrow": 250,
+                "ncol": 256,
+                "width": 19.999999999999996,
+                "length": 20.479999999999997,
+                "thickness": 0.05,
+                "pixelSize": 0.08
+            }
+        },
+        "37": {
+            "confChip": 19,
+            "runChip": 19,
+            "ladderChip": 1,
+            "simChip": 322,
+            "layer": 0,
+            "direction": "US",
+            "localLadder": 6,
+            "confLadder": 6,
+            "simLadder": 6,
+            "dataLinkA_onFEB": 21,
+            "dataLinkB_onFEB": 22,
+            "dataLinkC_onFEB": 23,
+            "dataLinkD_onFEB": -1,
+            "phi": 2.459519269654677,
+            "alignment": {
+                "v": {
+                    "x": -24.732548971854094,
+                    "y": 20.08521343832929,
+                    "z": 20.9002083333333
+                },
+                "drow": {
+                    "x": 0.05589346423103686,
+                    "y": 0.05723565895710686,
+                    "z": 0.0
+                },
+                "dcol": {
+                    "x": 0.0,
+                    "y": 0.0,
+                    "z": 0.08
+                },
+                "nrow": 250,
+                "ncol": 256,
+                "width": 19.999999999999996,
+                "length": 20.48,
+                "thickness": 0.05,
+                "pixelSize": 0.08
+            }
+        },
+        "38": {
+            "confChip": 20,
+            "runChip": 20,
+            "ladderChip": 2,
+            "simChip": 323,
+            "layer": 0,
+            "direction": "US",
+            "localLadder": 6,
+            "confLadder": 6,
+            "simLadder": 6,
+            "dataLinkA_onFEB": 24,
+            "dataLinkB_onFEB": 25,
+            "dataLinkC_onFEB": 26,
+            "dataLinkD_onFEB": -1,
+            "phi": 2.4595192696546775,
+            "alignment": {
+                "v": {
+                    "x": -24.73254897185398,
+                    "y": 20.085213438329184,
+                    "z": 0.140208333333343
+                },
+                "drow": {
+                    "x": 0.05589346423103339,
+                    "y": 0.05723565895710339,
+                    "z": 0.0
+                },
+                "dcol": {
+                    "x": 0.0,
+                    "y": 0.0,
+                    "z": 0.08
+                },
+                "nrow": 250,
+                "ncol": 256,
+                "width": 19.999999999999993,
+                "length": 20.479999999999958,
+                "thickness": 0.05,
+                "pixelSize": 0.08
+            }
+        },
+        "39": {
+            "confChip": 80,
+            "runChip": 80,
+            "ladderChip": 3,
+            "simChip": 324,
+            "layer": 0,
+            "direction": "DS",
+            "localLadder": 6,
+            "confLadder": 26,
+            "simLadder": 6,
+            "dataLinkA_onFEB": 24,
+            "dataLinkB_onFEB": 25,
+            "dataLinkC_onFEB": 26,
+            "dataLinkD_onFEB": -1,
+            "phi": 2.4595192696546775,
+            "alignment": {
+                "v": {
+                    "x": -24.73254897185404,
+                    "y": 20.08521343832924,
+                    "z": -20.6202916666667
+                },
+                "drow": {
+                    "x": 0.05589346423103339,
+                    "y": 0.05723565895710339,
+                    "z": 0.0
+                },
+                "dcol": {
+                    "x": 0.0,
+                    "y": 0.0,
+                    "z": 0.08
+                },
+                "nrow": 250,
+                "ncol": 256,
+                "width": 19.999999999999993,
+                "length": 20.480500000000042,
+                "thickness": 0.05,
+                "pixelSize": 0.08
+            }
+        },
+        "40": {
+            "confChip": 79,
+            "runChip": 79,
+            "ladderChip": 4,
+            "simChip": 325,
+            "layer": 0,
+            "direction": "DS",
+            "localLadder": 6,
+            "confLadder": 26,
+            "simLadder": 6,
+            "dataLinkA_onFEB": 21,
+            "dataLinkB_onFEB": 22,
+            "dataLinkC_onFEB": 23,
+            "dataLinkD_onFEB": -1,
+            "phi": 2.459519269654677,
+            "alignment": {
+                "v": {
+                    "x": -24.732548971854094,
+                    "y": 20.08521343832929,
+                    "z": -41.3802916666667
+                },
+                "drow": {
+                    "x": 0.05589346423103686,
+                    "y": 0.05723565895710686,
+                    "z": 0.0
+                },
+                "dcol": {
+                    "x": 0.0,
+                    "y": 0.0,
+                    "z": 0.08
+                },
+                "nrow": 250,
+                "ncol": 256,
+                "width": 19.999999999999996,
+                "length": 20.48,
+                "thickness": 0.05,
+                "pixelSize": 0.08
+            }
+        },
+        "41": {
+            "confChip": 78,
+            "runChip": 78,
+            "ladderChip": 5,
+            "simChip": 326,
+            "layer": 0,
+            "direction": "DS",
+            "localLadder": 6,
+            "confLadder": 26,
+            "simLadder": 6,
+            "dataLinkA_onFEB": 18,
+            "dataLinkB_onFEB": 19,
+            "dataLinkC_onFEB": 20,
+            "dataLinkD_onFEB": -1,
+            "phi": 2.459519269654677,
+            "alignment": {
+                "v": {
+                    "x": -24.732548971854087,
+                    "y": 20.085213438329287,
+                    "z": -62.1402916666667
+                },
+                "drow": {
+                    "x": 0.05589346423103339,
+                    "y": 0.05723565895710686,
+                    "z": 0.0
+                },
+                "dcol": {
+                    "x": 0.0,
+                    "y": 0.0,
+                    "z": 0.08
+                },
+                "nrow": 250,
+                "ncol": 256,
+                "width": 19.999999999999996,
+                "length": 20.480000000000103,
+                "thickness": 0.05,
+                "pixelSize": 0.08
+            }
+        },
+        "42": {
+            "confChip": 21,
+            "runChip": 21,
+            "ladderChip": 0,
+            "simChip": 353,
+            "layer": 0,
+            "direction": "US",
+            "localLadder": 7,
+            "confLadder": 7,
+            "simLadder": 7,
+            "dataLinkA_onFEB": 27,
+            "dataLinkB_onFEB": 28,
+            "dataLinkC_onFEB": 29,
+            "dataLinkD_onFEB": -1,
+            "phi": 1.6741230440025308,
+            "alignment": {
+                "v": {
+                    "x": -3.2862214816476576,
+                    "y": 31.690914229307776,
+                    "z": 41.6602083333333
+                },
+                "drow": {
+                    "x": 0.07999437012634397,
+                    "y": 0.0009490774937684354,
+                    "z": 0.0
+                },
+                "dcol": {
+                    "x": 0.0,
+                    "y": 0.0,
+                    "z": 0.08
+                },
+                "nrow": 250,
+                "ncol": 256,
+                "width": 19.999999999999943,
+                "length": 20.479999999999997,
+                "thickness": 0.05,
+                "pixelSize": 0.08
+            }
+        },
+        "43": {
+            "confChip": 22,
+            "runChip": 22,
+            "ladderChip": 1,
+            "simChip": 354,
+            "layer": 0,
+            "direction": "US",
+            "localLadder": 7,
+            "confLadder": 7,
+            "simLadder": 7,
+            "dataLinkA_onFEB": 30,
+            "dataLinkB_onFEB": 31,
+            "dataLinkC_onFEB": 32,
+            "dataLinkD_onFEB": -1,
+            "phi": 1.67412304400253,
+            "alignment": {
+                "v": {
+                    "x": -3.2862214816476603,
+                    "y": 31.69091422930798,
+                    "z": 20.9002083333333
+                },
+                "drow": {
+                    "x": 0.07999437012634657,
+                    "y": 0.0009490774937684354,
+                    "z": 0.0
+                },
+                "dcol": {
+                    "x": 0.0,
+                    "y": 0.0,
+                    "z": 0.08
+                },
+                "nrow": 250,
+                "ncol": 256,
+                "width": 19.999999999999943,
+                "length": 20.48,
+                "thickness": 0.05,
+                "pixelSize": 0.08
+            }
+        },
+        "44": {
+            "confChip": 23,
+            "runChip": 23,
+            "ladderChip": 2,
+            "simChip": 355,
+            "layer": 0,
+            "direction": "US",
+            "localLadder": 7,
+            "confLadder": 7,
+            "simLadder": 7,
+            "dataLinkA_onFEB": 33,
+            "dataLinkB_onFEB": 34,
+            "dataLinkC_onFEB": 35,
+            "dataLinkD_onFEB": -1,
+            "phi": 1.6741230440025305,
+            "alignment": {
+                "v": {
+                    "x": -3.2862214816476585,
+                    "y": 31.690914229307843,
+                    "z": 0.140208333333343
+                },
+                "drow": {
+                    "x": 0.07999437012634397,
+                    "y": 0.0009490774937684354,
+                    "z": 0.0
+                },
+                "dcol": {
+                    "x": 0.0,
+                    "y": 0.0,
+                    "z": 0.08
+                },
+                "nrow": 250,
+                "ncol": 256,
+                "width": 19.999999999999943,
+                "length": 20.479999999999958,
+                "thickness": 0.05,
+                "pixelSize": 0.08
+            }
+        },
+        "45": {
+            "confChip": 83,
+            "runChip": 83,
+            "ladderChip": 3,
+            "simChip": 356,
+            "layer": 0,
+            "direction": "DS",
+            "localLadder": 7,
+            "confLadder": 27,
+            "simLadder": 7,
+            "dataLinkA_onFEB": 33,
+            "dataLinkB_onFEB": 34,
+            "dataLinkC_onFEB": 35,
+            "dataLinkD_onFEB": -1,
+            "phi": 1.6741230440025303,
+            "alignment": {
+                "v": {
+                    "x": -3.28622148164766,
+                    "y": 31.690914229307936,
+                    "z": -20.6202916666667
+                },
+                "drow": {
+                    "x": 0.07999437012634528,
+                    "y": 0.0009490774937684354,
+                    "z": 0.0
+                },
+                "dcol": {
+                    "x": 0.0,
+                    "y": 0.0,
+                    "z": 0.08
+                },
+                "nrow": 250,
+                "ncol": 256,
+                "width": 19.999999999999943,
+                "length": 20.480500000000042,
+                "thickness": 0.05,
+                "pixelSize": 0.08
+            }
+        },
+        "46": {
+            "confChip": 82,
+            "runChip": 82,
+            "ladderChip": 4,
+            "simChip": 357,
+            "layer": 0,
+            "direction": "DS",
+            "localLadder": 7,
+            "confLadder": 27,
+            "simLadder": 7,
+            "dataLinkA_onFEB": 30,
+            "dataLinkB_onFEB": 31,
+            "dataLinkC_onFEB": 32,
+            "dataLinkD_onFEB": -1,
+            "phi": 1.67412304400253,
+            "alignment": {
+                "v": {
+                    "x": -3.2862214816476603,
+                    "y": 31.69091422930798,
+                    "z": -41.3802916666667
+                },
+                "drow": {
+                    "x": 0.07999437012634657,
+                    "y": 0.0009490774937684354,
+                    "z": 0.0
+                },
+                "dcol": {
+                    "x": 0.0,
+                    "y": 0.0,
+                    "z": 0.08
+                },
+                "nrow": 250,
+                "ncol": 256,
+                "width": 19.999999999999943,
+                "length": 20.48,
+                "thickness": 0.05,
+                "pixelSize": 0.08
+            }
+        },
+        "47": {
+            "confChip": 81,
+            "runChip": 81,
+            "ladderChip": 5,
+            "simChip": 358,
+            "layer": 0,
+            "direction": "DS",
+            "localLadder": 7,
+            "confLadder": 27,
+            "simLadder": 7,
+            "dataLinkA_onFEB": 27,
+            "dataLinkB_onFEB": 28,
+            "dataLinkC_onFEB": 29,
+            "dataLinkD_onFEB": -1,
+            "phi": 1.6741230440025305,
+            "alignment": {
+                "v": {
+                    "x": -3.2862214816476585,
+                    "y": 31.69091422930785,
+                    "z": -62.1402916666667
+                },
+                "drow": {
+                    "x": 0.07999437012634397,
+                    "y": 0.0009490774937684354,
+                    "z": 0.0
+                },
+                "dcol": {
+                    "x": 0.0,
+                    "y": 0.0,
+                    "z": 0.08
+                },
+                "nrow": 250,
+                "ncol": 256,
+                "width": 19.999999999999943,
+                "length": 20.480000000000103,
+                "thickness": 0.05,
+                "pixelSize": 0.08
+            }
+        },
+        "48": {
+            "confChip": 24,
+            "runChip": 24,
+            "ladderChip": 0,
+            "simChip": 1025,
+            "layer": 1,
+            "direction": "US",
+            "localLadder": 0,
+            "confLadder": 8,
+            "simLadder": 0,
+            "dataLinkA_onFEB": 0,
+            "dataLinkB_onFEB": 1,
+            "dataLinkC_onFEB": 2,
+            "dataLinkD_onFEB": -1,
+            "phi": 0.7828083152018471,
+            "alignment": {
+                "v": {
+                    "x": 31.969787119490523,
+                    "y": 31.804620715159963,
+                    "z": 41.6602083333333
+                },
+                "drow": {
+                    "x": 0.04778747306841136,
+                    "y": -0.06415884520259013,
+                    "z": 0.0
+                },
+                "dcol": {
+                    "x": 0.0,
+                    "y": 0.0,
+                    "z": 0.08
+                },
+                "nrow": 250,
+                "ncol": 256,
+                "width": 20.00000000000002,
+                "length": 20.479999999999997,
+                "thickness": 0.05,
+                "pixelSize": 0.08
+            }
+        },
+        "49": {
+            "confChip": 25,
+            "runChip": 25,
+            "ladderChip": 1,
+            "simChip": 1026,
+            "layer": 1,
+            "direction": "US",
+            "localLadder": 0,
+            "confLadder": 8,
+            "simLadder": 0,
+            "dataLinkA_onFEB": 3,
+            "dataLinkB_onFEB": 4,
+            "dataLinkC_onFEB": 5,
+            "dataLinkD_onFEB": -1,
+            "phi": 0.7828083152018471,
+            "alignment": {
+                "v": {
+                    "x": 31.969787119490523,
+                    "y": 31.804620715159963,
+                    "z": 20.9002083333333
+                },
+                "drow": {
+                    "x": 0.04778747306841136,
+                    "y": -0.06415884520259013,
+                    "z": 0.0
+                },
+                "dcol": {
+                    "x": 0.0,
+                    "y": 0.0,
+                    "z": 0.08
+                },
+                "nrow": 250,
+                "ncol": 256,
+                "width": 20.00000000000002,
+                "length": 20.48,
+                "thickness": 0.05,
+                "pixelSize": 0.08
+            }
+        },
+        "50": {
+            "confChip": 26,
+            "runChip": 26,
+            "ladderChip": 2,
+            "simChip": 1027,
+            "layer": 1,
+            "direction": "US",
+            "localLadder": 0,
+            "confLadder": 8,
+            "simLadder": 0,
+            "dataLinkA_onFEB": 6,
+            "dataLinkB_onFEB": 7,
+            "dataLinkC_onFEB": 8,
+            "dataLinkD_onFEB": -1,
+            "phi": 0.782808315201847,
+            "alignment": {
+                "v": {
+                    "x": 31.96978711949057,
+                    "y": 31.80462071516,
+                    "z": 0.140208333333343
+                },
+                "drow": {
+                    "x": 0.04778747306845299,
+                    "y": -0.06415884520263176,
+                    "z": 0.0
+                },
+                "dcol": {
+                    "x": 0.0,
+                    "y": 0.0,
+                    "z": 0.08
+                },
+                "nrow": 250,
+                "ncol": 256,
+                "width": 20.00000000000002,
+                "length": 20.479999999999958,
+                "thickness": 0.05,
+                "pixelSize": 0.08
+            }
+        },
+        "51": {
+            "confChip": 86,
+            "runChip": 86,
+            "ladderChip": 3,
+            "simChip": 1028,
+            "layer": 1,
+            "direction": "DS",
+            "localLadder": 0,
+            "confLadder": 28,
+            "simLadder": 0,
+            "dataLinkA_onFEB": 6,
+            "dataLinkB_onFEB": 7,
+            "dataLinkC_onFEB": 8,
+            "dataLinkD_onFEB": -1,
+            "phi": 0.7828083152018471,
+            "alignment": {
+                "v": {
+                    "x": 31.96978711949053,
+                    "y": 31.80462071515997,
+                    "z": -20.6202916666667
+                },
+                "drow": {
+                    "x": 0.04778747306841136,
+                    "y": -0.06415884520258319,
+                    "z": 0.0
+                },
+                "dcol": {
+                    "x": 0.0,
+                    "y": 0.0,
+                    "z": 0.08
+                },
+                "nrow": 250,
+                "ncol": 256,
+                "width": 20.0,
+                "length": 20.480500000000042,
+                "thickness": 0.05,
+                "pixelSize": 0.08
+            }
+        },
+        "52": {
+            "confChip": 85,
+            "runChip": 85,
+            "ladderChip": 4,
+            "simChip": 1029,
+            "layer": 1,
+            "direction": "DS",
+            "localLadder": 0,
+            "confLadder": 28,
+            "simLadder": 0,
+            "dataLinkA_onFEB": 3,
+            "dataLinkB_onFEB": 4,
+            "dataLinkC_onFEB": 5,
+            "dataLinkD_onFEB": -1,
+            "phi": 0.7828083152018471,
+            "alignment": {
+                "v": {
+                    "x": 31.969787119490523,
+                    "y": 31.804620715159963,
+                    "z": -41.3802916666667
+                },
+                "drow": {
+                    "x": 0.04778747306841136,
+                    "y": -0.06415884520259013,
+                    "z": 0.0
+                },
+                "dcol": {
+                    "x": 0.0,
+                    "y": 0.0,
+                    "z": 0.08
+                },
+                "nrow": 250,
+                "ncol": 256,
+                "width": 20.00000000000002,
+                "length": 20.48,
+                "thickness": 0.05,
+                "pixelSize": 0.08
+            }
+        },
+        "53": {
+            "confChip": 84,
+            "runChip": 84,
+            "ladderChip": 5,
+            "simChip": 1030,
+            "layer": 1,
+            "direction": "DS",
+            "localLadder": 0,
+            "confLadder": 28,
+            "simLadder": 0,
+            "dataLinkA_onFEB": 0,
+            "dataLinkB_onFEB": 1,
+            "dataLinkC_onFEB": 2,
+            "dataLinkD_onFEB": -1,
+            "phi": 0.7828083152018475,
+            "alignment": {
+                "v": {
+                    "x": 31.969787119490473,
+                    "y": 31.80462071515993,
+                    "z": -62.1402916666667
+                },
+                "drow": {
+                    "x": 0.04778747306845993,
+                    "y": -0.06415884520265258,
+                    "z": 0.0
+                },
+                "dcol": {
+                    "x": 0.0,
+                    "y": 0.0,
+                    "z": 0.08
+                },
+                "nrow": 250,
+                "ncol": 256,
+                "width": 20.00000000000002,
+                "length": 20.480000000000103,
+                "thickness": 0.05,
+                "pixelSize": 0.08
+            }
+        },
+        "54": {
+            "confChip": 27,
+            "runChip": 27,
+            "ladderChip": 0,
+            "simChip": 1057,
+            "layer": 1,
+            "direction": "US",
+            "localLadder": 1,
+            "confLadder": 9,
+            "simLadder": 1,
+            "dataLinkA_onFEB": 9,
+            "dataLinkB_onFEB": 10,
+            "dataLinkC_onFEB": 11,
+            "dataLinkD_onFEB": -1,
+            "phi": 0.15448975857280978,
+            "alignment": {
+                "v": {
+                    "x": 44.55835946357122,
+                    "y": 6.9391036287343715,
+                    "z": 41.6602083333333
+                },
+                "drow": {
+                    "x": 0.0009492166045052541,
+                    "y": -0.0799943684757741,
+                    "z": 0.0
+                },
+                "dcol": {
+                    "x": 0.0,
+                    "y": 0.0,
+                    "z": 0.08
+                },
+                "nrow": 250,
+                "ncol": 256,
+                "width": 19.999999999999996,
+                "length": 20.479999999999997,
+                "thickness": 0.05,
+                "pixelSize": 0.08
+            }
+        },
+        "55": {
+            "confChip": 28,
+            "runChip": 28,
+            "ladderChip": 1,
+            "simChip": 1058,
+            "layer": 1,
+            "direction": "US",
+            "localLadder": 1,
+            "confLadder": 9,
+            "simLadder": 1,
+            "dataLinkA_onFEB": 12,
+            "dataLinkB_onFEB": 13,
+            "dataLinkC_onFEB": 14,
+            "dataLinkD_onFEB": -1,
+            "phi": 0.15448975857280978,
+            "alignment": {
+                "v": {
+                    "x": 44.55835946357122,
+                    "y": 6.9391036287343715,
+                    "z": 20.9002083333333
+                },
+                "drow": {
+                    "x": 0.0009492166045052541,
+                    "y": -0.0799943684757741,
+                    "z": 0.0
+                },
+                "dcol": {
+                    "x": 0.0,
+                    "y": 0.0,
+                    "z": 0.08
+                },
+                "nrow": 250,
+                "ncol": 256,
+                "width": 19.999999999999996,
+                "length": 20.48,
+                "thickness": 0.05,
+                "pixelSize": 0.08
+            }
+        },
+        "56": {
+            "confChip": 29,
+            "runChip": 29,
+            "ladderChip": 2,
+            "simChip": 1059,
+            "layer": 1,
+            "direction": "US",
+            "localLadder": 1,
+            "confLadder": 9,
+            "simLadder": 1,
+            "dataLinkA_onFEB": 15,
+            "dataLinkB_onFEB": 16,
+            "dataLinkC_onFEB": 17,
+            "dataLinkD_onFEB": -1,
+            "phi": 0.15448975857281014,
+            "alignment": {
+                "v": {
+                    "x": 44.5583594635711,
+                    "y": 6.93910362873437,
+                    "z": 0.140208333333343
+                },
+                "drow": {
+                    "x": 0.0009492166045052541,
+                    "y": -0.07999436847577236,
+                    "z": 0.0
+                },
+                "dcol": {
+                    "x": 0.0,
+                    "y": 0.0,
+                    "z": 0.08
+                },
+                "nrow": 250,
+                "ncol": 256,
+                "width": 19.999999999999996,
+                "length": 20.479999999999958,
+                "thickness": 0.05,
+                "pixelSize": 0.08
+            }
+        },
+        "57": {
+            "confChip": 89,
+            "runChip": 89,
+            "ladderChip": 3,
+            "simChip": 1060,
+            "layer": 1,
+            "direction": "DS",
+            "localLadder": 1,
+            "confLadder": 29,
+            "simLadder": 1,
+            "dataLinkA_onFEB": 15,
+            "dataLinkB_onFEB": 16,
+            "dataLinkC_onFEB": 17,
+            "dataLinkD_onFEB": -1,
+            "phi": 0.15448975857280964,
+            "alignment": {
+                "v": {
+                    "x": 44.558359463571264,
+                    "y": 6.939103628734372,
+                    "z": -20.6202916666667
+                },
+                "drow": {
+                    "x": 0.0009492166045052541,
+                    "y": -0.07999436847577583,
+                    "z": 0.0
+                },
+                "dcol": {
+                    "x": 0.0,
+                    "y": 0.0,
+                    "z": 0.08
+                },
+                "nrow": 250,
+                "ncol": 256,
+                "width": 19.999999999999993,
+                "length": 20.480500000000042,
+                "thickness": 0.05,
+                "pixelSize": 0.08
+            }
+        },
+        "58": {
+            "confChip": 88,
+            "runChip": 88,
+            "ladderChip": 4,
+            "simChip": 1061,
+            "layer": 1,
+            "direction": "DS",
+            "localLadder": 1,
+            "confLadder": 29,
+            "simLadder": 1,
+            "dataLinkA_onFEB": 12,
+            "dataLinkB_onFEB": 13,
+            "dataLinkC_onFEB": 14,
+            "dataLinkD_onFEB": -1,
+            "phi": 0.15448975857280978,
+            "alignment": {
+                "v": {
+                    "x": 44.55835946357122,
+                    "y": 6.9391036287343715,
+                    "z": -41.3802916666667
+                },
+                "drow": {
+                    "x": 0.0009492166045052541,
+                    "y": -0.0799943684757741,
+                    "z": 0.0
+                },
+                "dcol": {
+                    "x": 0.0,
+                    "y": 0.0,
+                    "z": 0.08
+                },
+                "nrow": 250,
+                "ncol": 256,
+                "width": 19.999999999999996,
+                "length": 20.48,
+                "thickness": 0.05,
+                "pixelSize": 0.08
+            }
+        },
+        "59": {
+            "confChip": 87,
+            "runChip": 87,
+            "ladderChip": 5,
+            "simChip": 1062,
+            "layer": 1,
+            "direction": "DS",
+            "localLadder": 1,
+            "confLadder": 29,
+            "simLadder": 1,
+            "dataLinkA_onFEB": 9,
+            "dataLinkB_onFEB": 10,
+            "dataLinkC_onFEB": 11,
+            "dataLinkD_onFEB": -1,
+            "phi": 0.1544897585728097,
+            "alignment": {
+                "v": {
+                    "x": 44.55835946357124,
+                    "y": 6.9391036287343715,
+                    "z": -62.1402916666667
+                },
+                "drow": {
+                    "x": 0.0009492166045052541,
+                    "y": -0.07999436847577324,
+                    "z": 0.0
+                },
+                "dcol": {
+                    "x": 0.0,
+                    "y": 0.0,
+                    "z": 0.08
+                },
+                "nrow": 250,
+                "ncol": 256,
+                "width": 19.999999999999996,
+                "length": 20.480000000000103,
+                "thickness": 0.05,
+                "pixelSize": 0.08
+            }
+        },
+        "60": {
+            "confChip": 30,
+            "runChip": 30,
+            "ladderChip": 0,
+            "simChip": 1089,
+            "layer": 1,
+            "direction": "US",
+            "localLadder": 2,
+            "confLadder": 10,
+            "simLadder": 2,
+            "dataLinkA_onFEB": 18,
+            "dataLinkB_onFEB": 19,
+            "dataLinkC_onFEB": 20,
+            "dataLinkD_onFEB": -1,
+            "phi": -0.4738292823468892,
+            "alignment": {
+                "v": {
+                    "x": 40.12721685219483,
+                    "y": -20.576942231127305,
+                    "z": 41.6602083333333
+                },
+                "drow": {
+                    "x": -0.0462518866026565,
+                    "y": -0.06527452018741109,
+                    "z": 0.0
+                },
+                "dcol": {
+                    "x": 0.0,
+                    "y": 0.0,
+                    "z": 0.08
+                },
+                "nrow": 250,
+                "ncol": 256,
+                "width": 20.00000000000002,
+                "length": 20.479999999999997,
+                "thickness": 0.05,
+                "pixelSize": 0.08
+            }
+        },
+        "61": {
+            "confChip": 31,
+            "runChip": 31,
+            "ladderChip": 1,
+            "simChip": 1090,
+            "layer": 1,
+            "direction": "US",
+            "localLadder": 2,
+            "confLadder": 10,
+            "simLadder": 2,
+            "dataLinkA_onFEB": 21,
+            "dataLinkB_onFEB": 22,
+            "dataLinkC_onFEB": 23,
+            "dataLinkD_onFEB": -1,
+            "phi": -0.4738292823468892,
+            "alignment": {
+                "v": {
+                    "x": 40.12721685219483,
+                    "y": -20.576942231127305,
+                    "z": 20.9002083333333
+                },
+                "drow": {
+                    "x": -0.0462518866026565,
+                    "y": -0.06527452018741109,
+                    "z": 0.0
+                },
+                "dcol": {
+                    "x": 0.0,
+                    "y": 0.0,
+                    "z": 0.08
+                },
+                "nrow": 250,
+                "ncol": 256,
+                "width": 20.00000000000002,
+                "length": 20.48,
+                "thickness": 0.05,
+                "pixelSize": 0.08
+            }
+        },
+        "62": {
+            "confChip": 32,
+            "runChip": 32,
+            "ladderChip": 2,
+            "simChip": 1091,
+            "layer": 1,
+            "direction": "US",
+            "localLadder": 2,
+            "confLadder": 10,
+            "simLadder": 2,
+            "dataLinkA_onFEB": 24,
+            "dataLinkB_onFEB": 25,
+            "dataLinkC_onFEB": 26,
+            "dataLinkD_onFEB": -1,
+            "phi": -0.47382928234688965,
+            "alignment": {
+                "v": {
+                    "x": 40.127216852194934,
+                    "y": -20.576942231127383,
+                    "z": 0.140208333333343
+                },
+                "drow": {
+                    "x": -0.04625188660267038,
+                    "y": -0.06527452018742844,
+                    "z": 0.0
+                },
+                "dcol": {
+                    "x": 0.0,
+                    "y": 0.0,
+                    "z": 0.08
+                },
+                "nrow": 250,
+                "ncol": 256,
+                "width": 20.000000000000018,
+                "length": 20.479999999999958,
+                "thickness": 0.05,
+                "pixelSize": 0.08
+            }
+        },
+        "63": {
+            "confChip": 92,
+            "runChip": 92,
+            "ladderChip": 3,
+            "simChip": 1092,
+            "layer": 1,
+            "direction": "DS",
+            "localLadder": 2,
+            "confLadder": 30,
+            "simLadder": 2,
+            "dataLinkA_onFEB": 24,
+            "dataLinkB_onFEB": 25,
+            "dataLinkC_onFEB": 26,
+            "dataLinkD_onFEB": -1,
+            "phi": -0.4738292823468891,
+            "alignment": {
+                "v": {
+                    "x": 40.127216852194806,
+                    "y": -20.57694223112729,
+                    "z": -20.6202916666667
+                },
+                "drow": {
+                    "x": -0.0462518866026565,
+                    "y": -0.06527452018741109,
+                    "z": 0.0
+                },
+                "dcol": {
+                    "x": 0.0,
+                    "y": 0.0,
+                    "z": 0.08
+                },
+                "nrow": 250,
+                "ncol": 256,
+                "width": 20.000000000000018,
+                "length": 20.480500000000042,
+                "thickness": 0.05,
+                "pixelSize": 0.08
+            }
+        },
+        "64": {
+            "confChip": 91,
+            "runChip": 91,
+            "ladderChip": 4,
+            "simChip": 1093,
+            "layer": 1,
+            "direction": "DS",
+            "localLadder": 2,
+            "confLadder": 30,
+            "simLadder": 2,
+            "dataLinkA_onFEB": 21,
+            "dataLinkB_onFEB": 22,
+            "dataLinkC_onFEB": 23,
+            "dataLinkD_onFEB": -1,
+            "phi": -0.4738292823468892,
+            "alignment": {
+                "v": {
+                    "x": 40.12721685219483,
+                    "y": -20.576942231127305,
+                    "z": -41.3802916666667
+                },
+                "drow": {
+                    "x": -0.0462518866026565,
+                    "y": -0.06527452018741109,
+                    "z": 0.0
+                },
+                "dcol": {
+                    "x": 0.0,
+                    "y": 0.0,
+                    "z": 0.08
+                },
+                "nrow": 250,
+                "ncol": 256,
+                "width": 20.00000000000002,
+                "length": 20.48,
+                "thickness": 0.05,
+                "pixelSize": 0.08
+            }
+        },
+        "65": {
+            "confChip": 90,
+            "runChip": 90,
+            "ladderChip": 5,
+            "simChip": 1094,
+            "layer": 1,
+            "direction": "DS",
+            "localLadder": 2,
+            "confLadder": 30,
+            "simLadder": 2,
+            "dataLinkA_onFEB": 18,
+            "dataLinkB_onFEB": 19,
+            "dataLinkC_onFEB": 20,
+            "dataLinkD_onFEB": -1,
+            "phi": -0.4738292823468894,
+            "alignment": {
+                "v": {
+                    "x": 40.1272168521949,
+                    "y": -20.576942231127354,
+                    "z": -62.1402916666667
+                },
+                "drow": {
+                    "x": -0.04625188660267038,
+                    "y": -0.0652745201874319,
+                    "z": 0.0
+                },
+                "dcol": {
+                    "x": 0.0,
+                    "y": 0.0,
+                    "z": 0.08
+                },
+                "nrow": 250,
+                "ncol": 256,
+                "width": 19.99999999999999,
+                "length": 20.480000000000103,
+                "thickness": 0.05,
+                "pixelSize": 0.08
+            }
+        },
+        "66": {
+            "confChip": 33,
+            "runChip": 33,
+            "ladderChip": 0,
+            "simChip": 1153,
+            "layer": 1,
+            "direction": "US",
+            "localLadder": 3,
+            "confLadder": 11,
+            "simLadder": 4,
+            "dataLinkA_onFEB": 27,
+            "dataLinkB_onFEB": 28,
+            "dataLinkC_onFEB": 29,
+            "dataLinkD_onFEB": -1,
+            "phi": -1.102147948241451,
+            "alignment": {
+                "v": {
+                    "x": 20.368766883216267,
+                    "y": -40.23327537671062,
+                    "z": 41.6602083333333
+                },
+                "drow": {
+                    "x": -0.07578586638199575,
+                    "y": -0.025622303891810472,
+                    "z": 0.0
+                },
+                "dcol": {
+                    "x": 0.0,
+                    "y": 0.0,
+                    "z": 0.08
+                },
+                "nrow": 250,
+                "ncol": 256,
+                "width": 19.999999999999968,
+                "length": 20.479999999999997,
+                "thickness": 0.05,
+                "pixelSize": 0.08
+            }
+        },
+        "67": {
+            "confChip": 34,
+            "runChip": 34,
+            "ladderChip": 1,
+            "simChip": 1154,
+            "layer": 1,
+            "direction": "US",
+            "localLadder": 3,
+            "confLadder": 11,
+            "simLadder": 4,
+            "dataLinkA_onFEB": 30,
+            "dataLinkB_onFEB": 31,
+            "dataLinkC_onFEB": 32,
+            "dataLinkD_onFEB": -1,
+            "phi": -1.10214794824145,
+            "alignment": {
+                "v": {
+                    "x": 20.368766883216203,
+                    "y": -40.23327537671042,
+                    "z": 20.9002083333333
+                },
+                "drow": {
+                    "x": -0.07578586638202697,
+                    "y": -0.02562230389182435,
+                    "z": 0.0
+                },
+                "dcol": {
+                    "x": 0.0,
+                    "y": 0.0,
+                    "z": 0.08
+                },
+                "nrow": 250,
+                "ncol": 256,
+                "width": 19.99999999999997,
+                "length": 20.48,
+                "thickness": 0.05,
+                "pixelSize": 0.08
+            }
+        },
+        "68": {
+            "confChip": 35,
+            "runChip": 35,
+            "ladderChip": 2,
+            "simChip": 1155,
+            "layer": 1,
+            "direction": "US",
+            "localLadder": 3,
+            "confLadder": 11,
+            "simLadder": 4,
+            "dataLinkA_onFEB": 33,
+            "dataLinkB_onFEB": 34,
+            "dataLinkC_onFEB": 35,
+            "dataLinkD_onFEB": -1,
+            "phi": -1.1021479482414507,
+            "alignment": {
+                "v": {
+                    "x": 20.36876688321624,
+                    "y": -40.233275376710544,
+                    "z": 0.140208333333343
+                },
+                "drow": {
+                    "x": -0.07578586638205473,
+                    "y": -0.02562230389182435,
+                    "z": 0.0
+                },
+                "dcol": {
+                    "x": 0.0,
+                    "y": 0.0,
+                    "z": 0.08
+                },
+                "nrow": 250,
+                "ncol": 256,
+                "width": 19.999999999999964,
+                "length": 20.479999999999958,
+                "thickness": 0.05,
+                "pixelSize": 0.08
+            }
+        },
+        "69": {
+            "confChip": 95,
+            "runChip": 95,
+            "ladderChip": 3,
+            "simChip": 1156,
+            "layer": 1,
+            "direction": "DS",
+            "localLadder": 3,
+            "confLadder": 31,
+            "simLadder": 4,
+            "dataLinkA_onFEB": 33,
+            "dataLinkB_onFEB": 34,
+            "dataLinkC_onFEB": 35,
+            "dataLinkD_onFEB": -1,
+            "phi": -1.1021479482414502,
+            "alignment": {
+                "v": {
+                    "x": 20.368766883216207,
+                    "y": -40.23327537671044,
+                    "z": -20.6202916666667
+                },
+                "drow": {
+                    "x": -0.07578586638202697,
+                    "y": -0.02562230389182435,
+                    "z": 0.0
+                },
+                "dcol": {
+                    "x": 0.0,
+                    "y": 0.0,
+                    "z": 0.08
+                },
+                "nrow": 250,
+                "ncol": 256,
+                "width": 19.99999999999996,
+                "length": 20.480500000000042,
+                "thickness": 0.05,
+                "pixelSize": 0.08
+            }
+        },
+        "70": {
+            "confChip": 94,
+            "runChip": 94,
+            "ladderChip": 4,
+            "simChip": 1157,
+            "layer": 1,
+            "direction": "DS",
+            "localLadder": 3,
+            "confLadder": 31,
+            "simLadder": 4,
+            "dataLinkA_onFEB": 30,
+            "dataLinkB_onFEB": 31,
+            "dataLinkC_onFEB": 32,
+            "dataLinkD_onFEB": -1,
+            "phi": -1.10214794824145,
+            "alignment": {
+                "v": {
+                    "x": 20.368766883216203,
+                    "y": -40.23327537671042,
+                    "z": -41.3802916666667
+                },
+                "drow": {
+                    "x": -0.07578586638202697,
+                    "y": -0.02562230389182435,
+                    "z": 0.0
+                },
+                "dcol": {
+                    "x": 0.0,
+                    "y": 0.0,
+                    "z": 0.08
+                },
+                "nrow": 250,
+                "ncol": 256,
+                "width": 19.99999999999997,
+                "length": 20.48,
+                "thickness": 0.05,
+                "pixelSize": 0.08
+            }
+        },
+        "71": {
+            "confChip": 93,
+            "runChip": 93,
+            "ladderChip": 5,
+            "simChip": 1158,
+            "layer": 1,
+            "direction": "DS",
+            "localLadder": 3,
+            "confLadder": 31,
+            "simLadder": 4,
+            "dataLinkA_onFEB": 27,
+            "dataLinkB_onFEB": 28,
+            "dataLinkC_onFEB": 29,
+            "dataLinkD_onFEB": -1,
+            "phi": -1.1021479482414505,
+            "alignment": {
+                "v": {
+                    "x": 20.36876688321624,
+                    "y": -40.23327537671054,
+                    "z": -62.1402916666667
+                },
+                "drow": {
+                    "x": -0.07578586638205473,
+                    "y": -0.02562230389183129,
+                    "z": 0.0
+                },
+                "dcol": {
+                    "x": 0.0,
+                    "y": 0.0,
+                    "z": 0.08
+                },
+                "nrow": 250,
+                "ncol": 256,
+                "width": 19.999999999999968,
+                "length": 20.480000000000103,
+                "thickness": 0.05,
+                "pixelSize": 0.08
+            }
+        },
+        "72": {
+            "confChip": 36,
+            "runChip": 36,
+            "ladderChip": 0,
+            "simChip": 1185,
+            "layer": 1,
+            "direction": "US",
+            "localLadder": 4,
+            "confLadder": 12,
+            "simLadder": 5,
+            "dataLinkA_onFEB": 0,
+            "dataLinkB_onFEB": 1,
+            "dataLinkC_onFEB": 2,
+            "dataLinkD_onFEB": -1,
+            "phi": -1.7304651522842036,
+            "alignment": {
+                "v": {
+                    "x": -7.169789537210002,
+                    "y": -44.521881564616216,
+                    "z": 41.6602083333333
+                },
+                "drow": {
+                    "x": -0.07637244037365323,
+                    "y": 0.02381701810414555,
+                    "z": 0.0
+                },
+                "dcol": {
+                    "x": 0.0,
+                    "y": 0.0,
+                    "z": 0.08
+                },
+                "nrow": 250,
+                "ncol": 256,
+                "width": 20.00000000000003,
+                "length": 20.479999999999997,
+                "thickness": 0.05,
+                "pixelSize": 0.08
+            }
+        },
+        "73": {
+            "confChip": 37,
+            "runChip": 37,
+            "ladderChip": 1,
+            "simChip": 1186,
+            "layer": 1,
+            "direction": "US",
+            "localLadder": 4,
+            "confLadder": 12,
+            "simLadder": 5,
+            "dataLinkA_onFEB": 3,
+            "dataLinkB_onFEB": 4,
+            "dataLinkC_onFEB": 5,
+            "dataLinkD_onFEB": -1,
+            "phi": -1.7304651522842036,
+            "alignment": {
+                "v": {
+                    "x": -7.169789537210002,
+                    "y": -44.521881564616216,
+                    "z": 20.9002083333333
+                },
+                "drow": {
+                    "x": -0.07637244037365323,
+                    "y": 0.02381701810414555,
+                    "z": 0.0
+                },
+                "dcol": {
+                    "x": 0.0,
+                    "y": 0.0,
+                    "z": 0.08
+                },
+                "nrow": 250,
+                "ncol": 256,
+                "width": 20.00000000000003,
+                "length": 20.48,
+                "thickness": 0.05,
+                "pixelSize": 0.08
+            }
+        },
+        "74": {
+            "confChip": 38,
+            "runChip": 38,
+            "ladderChip": 2,
+            "simChip": 1187,
+            "layer": 1,
+            "direction": "US",
+            "localLadder": 4,
+            "confLadder": 12,
+            "simLadder": 5,
+            "dataLinkA_onFEB": 6,
+            "dataLinkB_onFEB": 7,
+            "dataLinkC_onFEB": 8,
+            "dataLinkD_onFEB": -1,
+            "phi": -1.730465152284204,
+            "alignment": {
+                "v": {
+                    "x": -7.1697895372100335,
+                    "y": -44.521881564616315,
+                    "z": 0.140208333333343
+                },
+                "drow": {
+                    "x": -0.07637244037365237,
+                    "y": 0.02381701810414555,
+                    "z": 0.0
+                },
+                "dcol": {
+                    "x": 0.0,
+                    "y": 0.0,
+                    "z": 0.08
+                },
+                "nrow": 250,
+                "ncol": 256,
+                "width": 20.000000000000032,
+                "length": 20.479999999999958,
+                "thickness": 0.05,
+                "pixelSize": 0.08
+            }
+        },
+        "75": {
+            "confChip": 98,
+            "runChip": 98,
+            "ladderChip": 3,
+            "simChip": 1188,
+            "layer": 1,
+            "direction": "DS",
+            "localLadder": 4,
+            "confLadder": 32,
+            "simLadder": 5,
+            "dataLinkA_onFEB": 6,
+            "dataLinkB_onFEB": 7,
+            "dataLinkC_onFEB": 8,
+            "dataLinkD_onFEB": -1,
+            "phi": -1.730465152284204,
+            "alignment": {
+                "v": {
+                    "x": -7.169789537210032,
+                    "y": -44.52188156461631,
+                    "z": -20.6202916666667
+                },
+                "drow": {
+                    "x": -0.07637244037365237,
+                    "y": 0.02381701810414555,
+                    "z": 0.0
+                },
+                "dcol": {
+                    "x": 0.0,
+                    "y": 0.0,
+                    "z": 0.08
+                },
+                "nrow": 250,
+                "ncol": 256,
+                "width": 20.000000000000032,
+                "length": 20.480500000000042,
+                "thickness": 0.05,
+                "pixelSize": 0.08
+            }
+        },
+        "76": {
+            "confChip": 97,
+            "runChip": 97,
+            "ladderChip": 4,
+            "simChip": 1189,
+            "layer": 1,
+            "direction": "DS",
+            "localLadder": 4,
+            "confLadder": 32,
+            "simLadder": 5,
+            "dataLinkA_onFEB": 3,
+            "dataLinkB_onFEB": 4,
+            "dataLinkC_onFEB": 5,
+            "dataLinkD_onFEB": -1,
+            "phi": -1.7304651522842036,
+            "alignment": {
+                "v": {
+                    "x": -7.169789537210002,
+                    "y": -44.521881564616216,
+                    "z": -41.3802916666667
+                },
+                "drow": {
+                    "x": -0.07637244037365323,
+                    "y": 0.02381701810414555,
+                    "z": 0.0
+                },
+                "dcol": {
+                    "x": 0.0,
+                    "y": 0.0,
+                    "z": 0.08
+                },
+                "nrow": 250,
+                "ncol": 256,
+                "width": 20.00000000000003,
+                "length": 20.48,
+                "thickness": 0.05,
+                "pixelSize": 0.08
+            }
+        },
+        "77": {
+            "confChip": 96,
+            "runChip": 96,
+            "ladderChip": 5,
+            "simChip": 1190,
+            "layer": 1,
+            "direction": "DS",
+            "localLadder": 4,
+            "confLadder": 32,
+            "simLadder": 5,
+            "dataLinkA_onFEB": 0,
+            "dataLinkB_onFEB": 1,
+            "dataLinkC_onFEB": 2,
+            "dataLinkD_onFEB": -1,
+            "phi": -1.7304651522842038,
+            "alignment": {
+                "v": {
+                    "x": -7.169789537210009,
+                    "y": -44.52188156461624,
+                    "z": -62.1402916666667
+                },
+                "drow": {
+                    "x": -0.07637244037366278,
+                    "y": 0.02381701810414555,
+                    "z": 0.0
+                },
+                "dcol": {
+                    "x": 0.0,
+                    "y": 0.0,
+                    "z": 0.08
+                },
+                "nrow": 250,
+                "ncol": 256,
+                "width": 20.000000000000032,
+                "length": 20.480000000000103,
+                "thickness": 0.05,
+                "pixelSize": 0.08
+            }
+        },
+        "78": {
+            "confChip": 39,
+            "runChip": 39,
+            "ladderChip": 0,
+            "simChip": 1281,
+            "layer": 1,
+            "direction": "US",
+            "localLadder": 5,
+            "confLadder": 13,
+            "simLadder": 6,
+            "dataLinkA_onFEB": 9,
+            "dataLinkB_onFEB": 10,
+            "dataLinkC_onFEB": 11,
+            "dataLinkD_onFEB": -1,
+            "phi": -2.358784902990203,
+            "alignment": {
+                "v": {
+                    "x": -31.969773640122884,
+                    "y": -31.80457139106341,
+                    "z": 41.6602083333333
+                },
+                "drow": {
+                    "x": -0.04778722620959325,
+                    "y": 0.06415902906992815,
+                    "z": 0.0
+                },
+                "dcol": {
+                    "x": 0.0,
+                    "y": 0.0,
+                    "z": 0.08
+                },
+                "nrow": 250,
+                "ncol": 256,
+                "width": 19.999999999999996,
+                "length": 20.479999999999997,
+                "thickness": 0.05,
+                "pixelSize": 0.08
+            }
+        },
+        "79": {
+            "confChip": 40,
+            "runChip": 40,
+            "ladderChip": 1,
+            "simChip": 1282,
+            "layer": 1,
+            "direction": "US",
+            "localLadder": 5,
+            "confLadder": 13,
+            "simLadder": 6,
+            "dataLinkA_onFEB": 12,
+            "dataLinkB_onFEB": 13,
+            "dataLinkC_onFEB": 14,
+            "dataLinkD_onFEB": -1,
+            "phi": -2.358784902990203,
+            "alignment": {
+                "v": {
+                    "x": -31.969773640122884,
+                    "y": -31.80457139106341,
+                    "z": 20.9002083333333
+                },
+                "drow": {
+                    "x": -0.04778722620959325,
+                    "y": 0.06415902906992815,
+                    "z": 0.0
+                },
+                "dcol": {
+                    "x": 0.0,
+                    "y": 0.0,
+                    "z": 0.08
+                },
+                "nrow": 250,
+                "ncol": 256,
+                "width": 19.999999999999957,
+                "length": 20.48,
+                "thickness": 0.05,
+                "pixelSize": 0.08
+            }
+        },
+        "80": {
+            "confChip": 41,
+            "runChip": 41,
+            "ladderChip": 2,
+            "simChip": 1283,
+            "layer": 1,
+            "direction": "US",
+            "localLadder": 5,
+            "confLadder": 13,
+            "simLadder": 6,
+            "dataLinkA_onFEB": 15,
+            "dataLinkB_onFEB": 16,
+            "dataLinkC_onFEB": 17,
+            "dataLinkD_onFEB": -1,
+            "phi": -2.358784902990203,
+            "alignment": {
+                "v": {
+                    "x": -31.96977364012283,
+                    "y": -31.804571391063366,
+                    "z": 0.140208333333343
+                },
+                "drow": {
+                    "x": -0.047787226209551614,
+                    "y": 0.06415902906987958,
+                    "z": 0.0
+                },
+                "dcol": {
+                    "x": 0.0,
+                    "y": 0.0,
+                    "z": 0.08
+                },
+                "nrow": 250,
+                "ncol": 256,
+                "width": 19.99999999999996,
+                "length": 20.479999999999958,
+                "thickness": 0.05,
+                "pixelSize": 0.08
+            }
+        },
+        "81": {
+            "confChip": 101,
+            "runChip": 101,
+            "ladderChip": 3,
+            "simChip": 1284,
+            "layer": 1,
+            "direction": "DS",
+            "localLadder": 5,
+            "confLadder": 33,
+            "simLadder": 6,
+            "dataLinkA_onFEB": 15,
+            "dataLinkB_onFEB": 16,
+            "dataLinkC_onFEB": 17,
+            "dataLinkD_onFEB": -1,
+            "phi": -2.3587849029902035,
+            "alignment": {
+                "v": {
+                    "x": -31.969773640122934,
+                    "y": -31.804571391063444,
+                    "z": -20.6202916666667
+                },
+                "drow": {
+                    "x": -0.04778722620958631,
+                    "y": 0.06415902906992815,
+                    "z": 0.0
+                },
+                "dcol": {
+                    "x": 0.0,
+                    "y": 0.0,
+                    "z": 0.08
+                },
+                "nrow": 250,
+                "ncol": 256,
+                "width": 20.00000000000002,
+                "length": 20.480500000000042,
+                "thickness": 0.05,
+                "pixelSize": 0.08
+            }
+        },
+        "82": {
+            "confChip": 100,
+            "runChip": 100,
+            "ladderChip": 4,
+            "simChip": 1285,
+            "layer": 1,
+            "direction": "DS",
+            "localLadder": 5,
+            "confLadder": 33,
+            "simLadder": 6,
+            "dataLinkA_onFEB": 12,
+            "dataLinkB_onFEB": 13,
+            "dataLinkC_onFEB": 14,
+            "dataLinkD_onFEB": -1,
+            "phi": -2.358784902990203,
+            "alignment": {
+                "v": {
+                    "x": -31.969773640122884,
+                    "y": -31.80457139106341,
+                    "z": -41.3802916666667
+                },
+                "drow": {
+                    "x": -0.04778722620959325,
+                    "y": 0.06415902906992815,
+                    "z": 0.0
+                },
+                "dcol": {
+                    "x": 0.0,
+                    "y": 0.0,
+                    "z": 0.08
+                },
+                "nrow": 250,
+                "ncol": 256,
+                "width": 19.999999999999957,
+                "length": 20.48,
+                "thickness": 0.05,
+                "pixelSize": 0.08
+            }
+        },
+        "83": {
+            "confChip": 99,
+            "runChip": 99,
+            "ladderChip": 5,
+            "simChip": 1286,
+            "layer": 1,
+            "direction": "DS",
+            "localLadder": 5,
+            "confLadder": 33,
+            "simLadder": 6,
+            "dataLinkA_onFEB": 9,
+            "dataLinkB_onFEB": 10,
+            "dataLinkC_onFEB": 11,
+            "dataLinkD_onFEB": -1,
+            "phi": -2.358784902990203,
+            "alignment": {
+                "v": {
+                    "x": -31.96977364012289,
+                    "y": -31.804571391063416,
+                    "z": -62.1402916666667
+                },
+                "drow": {
+                    "x": -0.04778722620959325,
+                    "y": 0.06415902906992815,
+                    "z": 0.0
+                },
+                "dcol": {
+                    "x": 0.0,
+                    "y": 0.0,
+                    "z": 0.08
+                },
+                "nrow": 250,
+                "ncol": 256,
+                "width": 20.0,
+                "length": 20.480000000000103,
+                "thickness": 0.05,
+                "pixelSize": 0.08
+            }
+        },
+        "84": {
+            "confChip": 42,
+            "runChip": 42,
+            "ladderChip": 0,
+            "simChip": 1313,
+            "layer": 1,
+            "direction": "US",
+            "localLadder": 6,
+            "confLadder": 14,
+            "simLadder": 7,
+            "dataLinkA_onFEB": 18,
+            "dataLinkB_onFEB": 19,
+            "dataLinkC_onFEB": 20,
+            "dataLinkD_onFEB": -1,
+            "phi": -2.987102313863172,
+            "alignment": {
+                "v": {
+                    "x": -44.55836751912682,
+                    "y": -6.939131406512171,
+                    "z": 41.6602083333333
+                },
+                "drow": {
+                    "x": -0.0009492166045052541,
+                    "y": 0.0799943684757741,
+                    "z": 0.0
+                },
+                "dcol": {
+                    "x": 0.0,
+                    "y": 0.0,
+                    "z": 0.08
+                },
+                "nrow": 250,
+                "ncol": 256,
+                "width": 19.999999999999993,
+                "length": 20.479999999999997,
+                "thickness": 0.05,
+                "pixelSize": 0.08
+            }
+        },
+        "85": {
+            "confChip": 43,
+            "runChip": 43,
+            "ladderChip": 1,
+            "simChip": 1314,
+            "layer": 1,
+            "direction": "US",
+            "localLadder": 6,
+            "confLadder": 14,
+            "simLadder": 7,
+            "dataLinkA_onFEB": 21,
+            "dataLinkB_onFEB": 22,
+            "dataLinkC_onFEB": 23,
+            "dataLinkD_onFEB": -1,
+            "phi": -2.987102313863172,
+            "alignment": {
+                "v": {
+                    "x": -44.55836751912682,
+                    "y": -6.939131406512171,
+                    "z": 20.9002083333333
+                },
+                "drow": {
+                    "x": -0.0009492166045052541,
+                    "y": 0.0799943684757741,
+                    "z": 0.0
+                },
+                "dcol": {
+                    "x": 0.0,
+                    "y": 0.0,
+                    "z": 0.08
+                },
+                "nrow": 250,
+                "ncol": 256,
+                "width": 19.999999999999993,
+                "length": 20.48,
+                "thickness": 0.05,
+                "pixelSize": 0.08
+            }
+        },
+        "86": {
+            "confChip": 44,
+            "runChip": 44,
+            "ladderChip": 2,
+            "simChip": 1315,
+            "layer": 1,
+            "direction": "US",
+            "localLadder": 6,
+            "confLadder": 14,
+            "simLadder": 7,
+            "dataLinkA_onFEB": 24,
+            "dataLinkB_onFEB": 25,
+            "dataLinkC_onFEB": 26,
+            "dataLinkD_onFEB": -1,
+            "phi": -2.9871023138631716,
+            "alignment": {
+                "v": {
+                    "x": -44.558367519126705,
+                    "y": -6.939131406512169,
+                    "z": 0.140208333333343
+                },
+                "drow": {
+                    "x": -0.0009492166045052541,
+                    "y": 0.07999436847577236,
+                    "z": 0.0
+                },
+                "dcol": {
+                    "x": 0.0,
+                    "y": 0.0,
+                    "z": 0.08
+                },
+                "nrow": 250,
+                "ncol": 256,
+                "width": 19.999999999999993,
+                "length": 20.479999999999958,
+                "thickness": 0.05,
+                "pixelSize": 0.08
+            }
+        },
+        "87": {
+            "confChip": 104,
+            "runChip": 104,
+            "ladderChip": 3,
+            "simChip": 1316,
+            "layer": 1,
+            "direction": "DS",
+            "localLadder": 6,
+            "confLadder": 34,
+            "simLadder": 7,
+            "dataLinkA_onFEB": 24,
+            "dataLinkB_onFEB": 25,
+            "dataLinkC_onFEB": 26,
+            "dataLinkD_onFEB": -1,
+            "phi": -2.987102313863172,
+            "alignment": {
+                "v": {
+                    "x": -44.55836751912686,
+                    "y": -6.939131406512171,
+                    "z": -20.6202916666667
+                },
+                "drow": {
+                    "x": -0.0009492166045052541,
+                    "y": 0.07999436847577496,
+                    "z": 0.0
+                },
+                "dcol": {
+                    "x": 0.0,
+                    "y": 0.0,
+                    "z": 0.08
+                },
+                "nrow": 250,
+                "ncol": 256,
+                "width": 19.999999999999993,
+                "length": 20.480500000000042,
+                "thickness": 0.05,
+                "pixelSize": 0.08
+            }
+        },
+        "88": {
+            "confChip": 103,
+            "runChip": 103,
+            "ladderChip": 4,
+            "simChip": 1317,
+            "layer": 1,
+            "direction": "DS",
+            "localLadder": 6,
+            "confLadder": 34,
+            "simLadder": 7,
+            "dataLinkA_onFEB": 21,
+            "dataLinkB_onFEB": 22,
+            "dataLinkC_onFEB": 23,
+            "dataLinkD_onFEB": -1,
+            "phi": -2.987102313863172,
+            "alignment": {
+                "v": {
+                    "x": -44.55836751912682,
+                    "y": -6.939131406512171,
+                    "z": -41.3802916666667
+                },
+                "drow": {
+                    "x": -0.0009492166045052541,
+                    "y": 0.0799943684757741,
+                    "z": 0.0
+                },
+                "dcol": {
+                    "x": 0.0,
+                    "y": 0.0,
+                    "z": 0.08
+                },
+                "nrow": 250,
+                "ncol": 256,
+                "width": 19.999999999999993,
+                "length": 20.48,
+                "thickness": 0.05,
+                "pixelSize": 0.08
+            }
+        },
+        "89": {
+            "confChip": 102,
+            "runChip": 102,
+            "ladderChip": 5,
+            "simChip": 1318,
+            "layer": 1,
+            "direction": "DS",
+            "localLadder": 6,
+            "confLadder": 34,
+            "simLadder": 7,
+            "dataLinkA_onFEB": 18,
+            "dataLinkB_onFEB": 19,
+            "dataLinkC_onFEB": 20,
+            "dataLinkD_onFEB": -1,
+            "phi": -2.9871023138631716,
+            "alignment": {
+                "v": {
+                    "x": -44.55836751912669,
+                    "y": -6.939131406512169,
+                    "z": -62.1402916666667
+                },
+                "drow": {
+                    "x": -0.0009492166045052541,
+                    "y": 0.07999436847577324,
+                    "z": 0.0
+                },
+                "dcol": {
+                    "x": 0.0,
+                    "y": 0.0,
+                    "z": 0.08
+                },
+                "nrow": 250,
+                "ncol": 256,
+                "width": 19.999999999999996,
+                "length": 20.480000000000103,
+                "thickness": 0.05,
+                "pixelSize": 0.08
+            }
+        },
+        "90": {
+            "confChip": 45,
+            "runChip": 45,
+            "ladderChip": 0,
+            "simChip": 1345,
+            "layer": 1,
+            "direction": "US",
+            "localLadder": 7,
+            "confLadder": 15,
+            "simLadder": 8,
+            "dataLinkA_onFEB": 27,
+            "dataLinkB_onFEB": 28,
+            "dataLinkC_onFEB": 29,
+            "dataLinkD_onFEB": -1,
+            "phi": 2.6677639896607808,
+            "alignment": {
+                "v": {
+                    "x": -40.127227808219175,
+                    "y": 20.57691650854635,
+                    "z": 41.6602083333333
+                },
+                "drow": {
+                    "x": 0.04625181150963442,
+                    "y": 0.06527457339639345,
+                    "z": 0.0
+                },
+                "dcol": {
+                    "x": 0.0,
+                    "y": 0.0,
+                    "z": 0.08
+                },
+                "nrow": 250,
+                "ncol": 256,
+                "width": 19.999999999999986,
+                "length": 20.479999999999997,
+                "thickness": 0.05,
+                "pixelSize": 0.08
+            }
+        },
+        "91": {
+            "confChip": 46,
+            "runChip": 46,
+            "ladderChip": 1,
+            "simChip": 1346,
+            "layer": 1,
+            "direction": "US",
+            "localLadder": 7,
+            "confLadder": 15,
+            "simLadder": 8,
+            "dataLinkA_onFEB": 30,
+            "dataLinkB_onFEB": 31,
+            "dataLinkC_onFEB": 32,
+            "dataLinkD_onFEB": -1,
+            "phi": 2.6677639896607808,
+            "alignment": {
+                "v": {
+                    "x": -40.127227808219175,
+                    "y": 20.57691650854635,
+                    "z": 20.9002083333333
+                },
+                "drow": {
+                    "x": 0.04625181150963442,
+                    "y": 0.06527457339639345,
+                    "z": 0.0
+                },
+                "dcol": {
+                    "x": 0.0,
+                    "y": 0.0,
+                    "z": 0.08
+                },
+                "nrow": 250,
+                "ncol": 256,
+                "width": 19.999999999999986,
+                "length": 20.48,
+                "thickness": 0.05,
+                "pixelSize": 0.08
+            }
+        },
+        "92": {
+            "confChip": 47,
+            "runChip": 47,
+            "ladderChip": 2,
+            "simChip": 1347,
+            "layer": 1,
+            "direction": "US",
+            "localLadder": 7,
+            "confLadder": 15,
+            "simLadder": 8,
+            "dataLinkA_onFEB": 33,
+            "dataLinkB_onFEB": 34,
+            "dataLinkC_onFEB": 35,
+            "dataLinkD_onFEB": -1,
+            "phi": 2.6677639896607817,
+            "alignment": {
+                "v": {
+                    "x": -40.1272278082189,
+                    "y": 20.57691650854616,
+                    "z": 0.140208333333343
+                },
+                "drow": {
+                    "x": 0.04625181150963442,
+                    "y": 0.06527457339640386,
+                    "z": 0.0
+                },
+                "dcol": {
+                    "x": 0.0,
+                    "y": 0.0,
+                    "z": 0.08
+                },
+                "nrow": 250,
+                "ncol": 256,
+                "width": 19.999999999999986,
+                "length": 20.479999999999958,
+                "thickness": 0.05,
+                "pixelSize": 0.08
+            }
+        },
+        "93": {
+            "confChip": 107,
+            "runChip": 107,
+            "ladderChip": 3,
+            "simChip": 1348,
+            "layer": 1,
+            "direction": "DS",
+            "localLadder": 7,
+            "confLadder": 35,
+            "simLadder": 8,
+            "dataLinkA_onFEB": 33,
+            "dataLinkB_onFEB": 34,
+            "dataLinkC_onFEB": 35,
+            "dataLinkD_onFEB": -1,
+            "phi": 2.667763989660782,
+            "alignment": {
+                "v": {
+                    "x": -40.127227808218755,
+                    "y": 20.576916508546056,
+                    "z": -20.6202916666667
+                },
+                "drow": {
+                    "x": 0.04625181150962748,
+                    "y": 0.06527457339638304,
+                    "z": 0.0
+                },
+                "dcol": {
+                    "x": 0.0,
+                    "y": 0.0,
+                    "z": 0.08
+                },
+                "nrow": 250,
+                "ncol": 256,
+                "width": 20.000000000000046,
+                "length": 20.480500000000042,
+                "thickness": 0.05,
+                "pixelSize": 0.08
+            }
+        },
+        "94": {
+            "confChip": 106,
+            "runChip": 106,
+            "ladderChip": 4,
+            "simChip": 1349,
+            "layer": 1,
+            "direction": "DS",
+            "localLadder": 7,
+            "confLadder": 35,
+            "simLadder": 8,
+            "dataLinkA_onFEB": 30,
+            "dataLinkB_onFEB": 31,
+            "dataLinkC_onFEB": 32,
+            "dataLinkD_onFEB": -1,
+            "phi": 2.6677639896607808,
+            "alignment": {
+                "v": {
+                    "x": -40.127227808219175,
+                    "y": 20.57691650854635,
+                    "z": -41.3802916666667
+                },
+                "drow": {
+                    "x": 0.04625181150963442,
+                    "y": 0.06527457339639345,
+                    "z": 0.0
+                },
+                "dcol": {
+                    "x": 0.0,
+                    "y": 0.0,
+                    "z": 0.08
+                },
+                "nrow": 250,
+                "ncol": 256,
+                "width": 19.999999999999986,
+                "length": 20.48,
+                "thickness": 0.05,
+                "pixelSize": 0.08
+            }
+        },
+        "95": {
+            "confChip": 105,
+            "runChip": 105,
+            "ladderChip": 5,
+            "simChip": 1350,
+            "layer": 1,
+            "direction": "DS",
+            "localLadder": 7,
+            "confLadder": 35,
+            "simLadder": 8,
+            "dataLinkA_onFEB": 27,
+            "dataLinkB_onFEB": 28,
+            "dataLinkC_onFEB": 29,
+            "dataLinkD_onFEB": -1,
+            "phi": 2.667763989660781,
+            "alignment": {
+                "v": {
+                    "x": -40.127227808219,
+                    "y": 20.57691650854623,
+                    "z": -62.1402916666667
+                },
+                "drow": {
+                    "x": 0.04625181150959973,
+                    "y": 0.06527457339635528,
+                    "z": 0.0
+                },
+                "dcol": {
+                    "x": 0.0,
+                    "y": 0.0,
+                    "z": 0.08
+                },
+                "nrow": 250,
+                "ncol": 256,
+                "width": 19.999999999999986,
+                "length": 20.480000000000103,
+                "thickness": 0.05,
+                "pixelSize": 0.08
+            }
+        },
+        "96": {
+            "confChip": 48,
+            "runChip": 48,
+            "ladderChip": 0,
+            "simChip": 1409,
+            "layer": 1,
+            "direction": "US",
+            "localLadder": 8,
+            "confLadder": 16,
+            "simLadder": 10,
+            "dataLinkA_onFEB": 0,
+            "dataLinkB_onFEB": 1,
+            "dataLinkC_onFEB": 2,
+            "dataLinkD_onFEB": -1,
+            "phi": 2.039445243107583,
+            "alignment": {
+                "v": {
+                    "x": -20.368774938771875,
+                    "y": 40.23323759893284,
+                    "z": 41.6602083333333
+                },
+                "drow": {
+                    "x": 0.07578586638199575,
+                    "y": 0.025622303891810472,
+                    "z": 0.0
+                },
+                "dcol": {
+                    "x": 0.0,
+                    "y": 0.0,
+                    "z": 0.08
+                },
+                "nrow": 250,
+                "ncol": 256,
+                "width": 20.000000000000046,
+                "length": 20.479999999999997,
+                "thickness": 0.05,
+                "pixelSize": 0.08
+            }
+        },
+        "97": {
+            "confChip": 49,
+            "runChip": 49,
+            "ladderChip": 1,
+            "simChip": 1410,
+            "layer": 1,
+            "direction": "US",
+            "localLadder": 8,
+            "confLadder": 16,
+            "simLadder": 10,
+            "dataLinkA_onFEB": 3,
+            "dataLinkB_onFEB": 4,
+            "dataLinkC_onFEB": 5,
+            "dataLinkD_onFEB": -1,
+            "phi": 2.039445243107583,
+            "alignment": {
+                "v": {
+                    "x": -20.368774938771875,
+                    "y": 40.23323759893284,
+                    "z": 20.9002083333333
+                },
+                "drow": {
+                    "x": 0.07578586638199575,
+                    "y": 0.025622303891810472,
+                    "z": 0.0
+                },
+                "dcol": {
+                    "x": 0.0,
+                    "y": 0.0,
+                    "z": 0.08
+                },
+                "nrow": 250,
+                "ncol": 256,
+                "width": 20.000000000000046,
+                "length": 20.48,
+                "thickness": 0.05,
+                "pixelSize": 0.08
+            }
+        },
+        "98": {
+            "confChip": 50,
+            "runChip": 50,
+            "ladderChip": 2,
+            "simChip": 1411,
+            "layer": 1,
+            "direction": "US",
+            "localLadder": 8,
+            "confLadder": 16,
+            "simLadder": 10,
+            "dataLinkA_onFEB": 6,
+            "dataLinkB_onFEB": 7,
+            "dataLinkC_onFEB": 8,
+            "dataLinkD_onFEB": -1,
+            "phi": 2.039445243107583,
+            "alignment": {
+                "v": {
+                    "x": -20.368774938771846,
+                    "y": 40.23323759893276,
+                    "z": 0.140208333333343
+                },
+                "drow": {
+                    "x": 0.07578586638208595,
+                    "y": 0.025622303891838227,
+                    "z": 0.0
+                },
+                "dcol": {
+                    "x": 0.0,
+                    "y": 0.0,
+                    "z": 0.08
+                },
+                "nrow": 250,
+                "ncol": 256,
+                "width": 20.000000000000043,
+                "length": 20.479999999999958,
+                "thickness": 0.05,
+                "pixelSize": 0.08
+            }
+        },
+        "99": {
+            "confChip": 110,
+            "runChip": 110,
+            "ladderChip": 3,
+            "simChip": 1412,
+            "layer": 1,
+            "direction": "DS",
+            "localLadder": 8,
+            "confLadder": 36,
+            "simLadder": 10,
+            "dataLinkA_onFEB": 6,
+            "dataLinkB_onFEB": 7,
+            "dataLinkC_onFEB": 8,
+            "dataLinkD_onFEB": -1,
+            "phi": 2.0394452431075827,
+            "alignment": {
+                "v": {
+                    "x": -20.368774938771878,
+                    "y": 40.23323759893286,
+                    "z": -20.6202916666667
+                },
+                "drow": {
+                    "x": 0.0757858663820235,
+                    "y": 0.02562230389181741,
+                    "z": 0.0
+                },
+                "dcol": {
+                    "x": 0.0,
+                    "y": 0.0,
+                    "z": 0.08
+                },
+                "nrow": 250,
+                "ncol": 256,
+                "width": 20.00000000000004,
+                "length": 20.480500000000042,
+                "thickness": 0.05,
+                "pixelSize": 0.08
+            }
+        },
+        "100": {
+            "confChip": 109,
+            "runChip": 109,
+            "ladderChip": 4,
+            "simChip": 1413,
+            "layer": 1,
+            "direction": "DS",
+            "localLadder": 8,
+            "confLadder": 36,
+            "simLadder": 10,
+            "dataLinkA_onFEB": 3,
+            "dataLinkB_onFEB": 4,
+            "dataLinkC_onFEB": 5,
+            "dataLinkD_onFEB": -1,
+            "phi": 2.039445243107583,
+            "alignment": {
+                "v": {
+                    "x": -20.368774938771875,
+                    "y": 40.23323759893284,
+                    "z": -41.3802916666667
+                },
+                "drow": {
+                    "x": 0.07578586638199575,
+                    "y": 0.025622303891810472,
+                    "z": 0.0
+                },
+                "dcol": {
+                    "x": 0.0,
+                    "y": 0.0,
+                    "z": 0.08
+                },
+                "nrow": 250,
+                "ncol": 256,
+                "width": 20.000000000000046,
+                "length": 20.48,
+                "thickness": 0.05,
+                "pixelSize": 0.08
+            }
+        },
+        "101": {
+            "confChip": 108,
+            "runChip": 108,
+            "ladderChip": 5,
+            "simChip": 1414,
+            "layer": 1,
+            "direction": "DS",
+            "localLadder": 8,
+            "confLadder": 36,
+            "simLadder": 10,
+            "dataLinkA_onFEB": 0,
+            "dataLinkB_onFEB": 1,
+            "dataLinkC_onFEB": 2,
+            "dataLinkD_onFEB": -1,
+            "phi": 2.039445243107583,
+            "alignment": {
+                "v": {
+                    "x": -20.36877493877186,
+                    "y": 40.233237598932796,
+                    "z": -62.1402916666667
+                },
+                "drow": {
+                    "x": 0.07578586638199575,
+                    "y": 0.025622303891810472,
+                    "z": 0.0
+                },
+                "dcol": {
+                    "x": 0.0,
+                    "y": 0.0,
+                    "z": 0.08
+                },
+                "nrow": 250,
+                "ncol": 256,
+                "width": 20.000000000000043,
+                "length": 20.480000000000103,
+                "thickness": 0.05,
+                "pixelSize": 0.08
+            }
+        },
+        "102": {
+            "confChip": 51,
+            "runChip": 51,
+            "ladderChip": 0,
+            "simChip": 1441,
+            "layer": 1,
+            "direction": "US",
+            "localLadder": 9,
+            "confLadder": 17,
+            "simLadder": 11,
+            "dataLinkA_onFEB": 9,
+            "dataLinkB_onFEB": 10,
+            "dataLinkC_onFEB": 11,
+            "dataLinkD_onFEB": -1,
+            "phi": 1.411127540432478,
+            "alignment": {
+                "v": {
+                    "x": 7.169781863488006,
+                    "y": 44.52184501123945,
+                    "z": 41.6602083333333
+                },
+                "drow": {
+                    "x": 0.07637245025932538,
+                    "y": -0.023816986404454066,
+                    "z": 0.0
+                },
+                "dcol": {
+                    "x": 0.0,
+                    "y": 0.0,
+                    "z": 0.08
+                },
+                "nrow": 250,
+                "ncol": 256,
+                "width": 20.000000000000018,
+                "length": 20.479999999999997,
+                "thickness": 0.05,
+                "pixelSize": 0.08
+            }
+        },
+        "103": {
+            "confChip": 52,
+            "runChip": 52,
+            "ladderChip": 1,
+            "simChip": 1442,
+            "layer": 1,
+            "direction": "US",
+            "localLadder": 9,
+            "confLadder": 17,
+            "simLadder": 11,
+            "dataLinkA_onFEB": 12,
+            "dataLinkB_onFEB": 13,
+            "dataLinkC_onFEB": 14,
+            "dataLinkD_onFEB": -1,
+            "phi": 1.411127540432478,
+            "alignment": {
+                "v": {
+                    "x": 7.169781863488006,
+                    "y": 44.52184501123945,
+                    "z": 20.9002083333333
+                },
+                "drow": {
+                    "x": 0.07637245025932538,
+                    "y": -0.023816986404454066,
+                    "z": 0.0
+                },
+                "dcol": {
+                    "x": 0.0,
+                    "y": 0.0,
+                    "z": 0.08
+                },
+                "nrow": 250,
+                "ncol": 256,
+                "width": 20.000000000000018,
+                "length": 20.48,
+                "thickness": 0.05,
+                "pixelSize": 0.08
+            }
+        },
+        "104": {
+            "confChip": 53,
+            "runChip": 53,
+            "ladderChip": 2,
+            "simChip": 1443,
+            "layer": 1,
+            "direction": "US",
+            "localLadder": 9,
+            "confLadder": 17,
+            "simLadder": 11,
+            "dataLinkA_onFEB": 15,
+            "dataLinkB_onFEB": 16,
+            "dataLinkC_onFEB": 17,
+            "dataLinkD_onFEB": -1,
+            "phi": 1.4111275404324781,
+            "alignment": {
+                "v": {
+                    "x": 7.169781863487971,
+                    "y": 44.52184501123934,
+                    "z": 0.140208333333343
+                },
+                "drow": {
+                    "x": 0.07637245025931758,
+                    "y": -0.023816986404447127,
+                    "z": 0.0
+                },
+                "dcol": {
+                    "x": 0.0,
+                    "y": 0.0,
+                    "z": 0.08
+                },
+                "nrow": 250,
+                "ncol": 256,
+                "width": 20.000000000000014,
+                "length": 20.479999999999958,
+                "thickness": 0.05,
+                "pixelSize": 0.08
+            }
+        },
+        "105": {
+            "confChip": 113,
+            "runChip": 113,
+            "ladderChip": 3,
+            "simChip": 1444,
+            "layer": 1,
+            "direction": "DS",
+            "localLadder": 9,
+            "confLadder": 37,
+            "simLadder": 11,
+            "dataLinkA_onFEB": 15,
+            "dataLinkB_onFEB": 16,
+            "dataLinkC_onFEB": 17,
+            "dataLinkD_onFEB": -1,
+            "phi": 1.4111275404324783,
+            "alignment": {
+                "v": {
+                    "x": 7.1697818634879535,
+                    "y": 44.521845011239286,
+                    "z": -20.6202916666667
+                },
+                "drow": {
+                    "x": 0.07637245025930023,
+                    "y": -0.023816986404440188,
+                    "z": 0.0
+                },
+                "dcol": {
+                    "x": 0.0,
+                    "y": 0.0,
+                    "z": 0.08
+                },
+                "nrow": 250,
+                "ncol": 256,
+                "width": 19.999999999999975,
+                "length": 20.480500000000042,
+                "thickness": 0.05,
+                "pixelSize": 0.08
+            }
+        },
+        "106": {
+            "confChip": 112,
+            "runChip": 112,
+            "ladderChip": 4,
+            "simChip": 1445,
+            "layer": 1,
+            "direction": "DS",
+            "localLadder": 9,
+            "confLadder": 37,
+            "simLadder": 11,
+            "dataLinkA_onFEB": 12,
+            "dataLinkB_onFEB": 13,
+            "dataLinkC_onFEB": 14,
+            "dataLinkD_onFEB": -1,
+            "phi": 1.411127540432478,
+            "alignment": {
+                "v": {
+                    "x": 7.169781863488006,
+                    "y": 44.52184501123945,
+                    "z": -41.3802916666667
+                },
+                "drow": {
+                    "x": 0.07637245025932538,
+                    "y": -0.023816986404454066,
+                    "z": 0.0
+                },
+                "dcol": {
+                    "x": 0.0,
+                    "y": 0.0,
+                    "z": 0.08
+                },
+                "nrow": 250,
+                "ncol": 256,
+                "width": 20.000000000000018,
+                "length": 20.48,
+                "thickness": 0.05,
+                "pixelSize": 0.08
+            }
+        },
+        "107": {
+            "confChip": 111,
+            "runChip": 111,
+            "ladderChip": 5,
+            "simChip": 1446,
+            "layer": 1,
+            "direction": "DS",
+            "localLadder": 9,
+            "confLadder": 37,
+            "simLadder": 11,
+            "dataLinkA_onFEB": 9,
+            "dataLinkB_onFEB": 10,
+            "dataLinkC_onFEB": 11,
+            "dataLinkD_onFEB": -1,
+            "phi": 1.4111275404324781,
+            "alignment": {
+                "v": {
+                    "x": 7.169781863487981,
+                    "y": 44.52184501123937,
+                    "z": -62.1402916666667
+                },
+                "drow": {
+                    "x": 0.0763724502592985,
+                    "y": -0.023816986404440188,
+                    "z": 0.0
+                },
+                "dcol": {
+                    "x": 0.0,
+                    "y": 0.0,
+                    "z": 0.08
+                },
+                "nrow": 250,
+                "ncol": 256,
+                "width": 20.000000000000014,
+                "length": 20.480000000000103,
+                "thickness": 0.05,
+                "pixelSize": 0.08
+            }
+        }
+    }
+}
