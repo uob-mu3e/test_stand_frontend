@@ -430,7 +430,6 @@ alt_u16 scifi_module_t::callback(alt_u16 cmd, volatile alt_u32* data, alt_u16 n)
     alt_u16 status=FEB_REPLY_SUCCESS; 
     switch(cmd){
     case CMD_MUTRIG_ASIC_OFF: //configure all off
-	//printf("[scifi] configuring all off\n");
         for(int i=0;i<n_MODULES*4;i++)
            if(configure_asic(i,mutrig_config_ALL_OFF)==FEB_REPLY_ERROR)
               status=FEB_REPLY_ERROR;

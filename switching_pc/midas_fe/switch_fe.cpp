@@ -105,7 +105,6 @@ void sc_settings_changed(odb o);
 void switching_board_mask_changed(odb o);
 void frontend_board_mask_changed(odb o);
 void sorterdelays_changed(odb o);
-void scifi_settings_changed(odb o);
 
 uint64_t get_link_active_from_odb(odb o); //throws
 void set_feb_enable(uint64_t enablebits);
@@ -280,10 +279,6 @@ void setup_odb(){
             {"MupixChipToConfigure", 999}, // 999 means all
             {"MupixTDACConfig", false},
             {"MupixBoard", false},
-            {"Sorter Zero Suppression Mupix", false},
-            {"SciFiConfig", false},
-            {"SciFiAllOff", false},
-            {"SciFiTDCTest", false},
             {"SciTilesConfig", false},
             {"Reset Bypass Payload", 0},
             {"Reset Bypass Command", 0},
@@ -549,12 +544,12 @@ INT init_scifi() {
     // SciFi setup part
     set_equipment_status(equipment[EQUIPMENT_ID::SciFi].name, "Initializing...", "var(--myellow)");
     scififeb = new SciFiFEB(*feb_sc,
-                     feblist->getSciFiFEBs(),
-                     feblist->getSciFiFEBMask(),
-                     equipment[EQUIPMENT_ID::Switching].name,
-                     equipment[EQUIPMENT_ID::Links].name,
-                     equipment[EQUIPMENT_ID::SciFi].name,
-                      switch_id); //create FEB interface signleton for scifi
+                    feblist->getSciFiFEBs(),
+                    feblist->getSciFiFEBMask(),
+                    equipment[EQUIPMENT_ID::Switching].name,
+                    equipment[EQUIPMENT_ID::Links].name,
+                    equipment[EQUIPMENT_ID::SciFi].name,
+                    switch_id); //create FEB interface signleton for scifi
 
     
     int status=mutrig::midasODB::setup_db("/Equipment/" + scifi_eq_name,*scififeb);
@@ -569,14 +564,7 @@ INT init_scifi() {
     
     //set custom page
     odb custom("/Custom");
-    custom["SciFi-ASICs"] = "mutrigTdc.html";
-    //
-
-    // setup watches
-    if ( scififeb->GetNumASICs() != 0 ){
-        odb scifi_setting("/Equipment/" + scifi_eq_name + "/Settings/Daq");
-        scifi_setting.watch(scifi_settings_changed);
-    }
+    custom["SciFi-ASICs&"] = "mutrigTdc.html";
 
     set_equipment_status(equipment[EQUIPMENT_ID::SciFi].name, "Ok", "var(--mgreen)");
 
@@ -1028,59 +1016,6 @@ void sorterdelays_changed(odb o)
     }
 }
 
-// TODO: this is also done in the mutrig class via a lambda function
-// but this is not really working at the moment change later
-void scifi_settings_changed(odb o)
-{
-    std::string name = o.get_name();
-    bool value = o;
-
-    if (value)
-        cm_msg(MINFO, "MutrigFEB::on_settings_changed", "Setting changed (%s)", name.c_str());
-
-    if ( name == "reset_datapath" && o ) {
-        if (value) {
-            for ( auto FEB : scififeb->getFEBs() ) {
-                if (!FEB.IsScEnabled()) continue; //skip disabled
-                if (FEB.SB_Number() != scififeb->getSB_number()) continue; //skip commands not for me
-                
-                scififeb->DataPathReset(FEB);
-            }
-            o = false;
-        }
-    }
-
-    if ( name == "reset_asics" && o ) {
-        if (value) {
-            for ( auto FEB : scififeb->getFEBs() ) {
-                if (!FEB.IsScEnabled()) continue; //skip disabled
-                if (FEB.SB_Number() != scififeb->getSB_number()) continue; //skip commands not for me
-                scififeb->chipReset(FEB);
-            }
-            o = false;
-        }
-    }
-
-    if ( name == "reset_lvds" && o ) {
-        if (value) {
-            for ( auto FEB : scififeb->getFEBs() ) {
-                if (!FEB.IsScEnabled()) continue; //skip disabled
-                if (FEB.SB_Number() != scififeb->getSB_number()) continue; //skip commands not for me
-                scififeb->LVDS_RX_Reset(FEB);
-            }
-            o = false;
-        }
-    }
-
-    if ( name == "reset_counters" && o ) {
-        if (value) {
-            scififeb->ResetAllCounters();
-            o = false;
-        }
-    }
-}
-
-
 /*--- Called whenever settings have changed ------------------------*/
 
 void sc_settings_changed(odb o)
@@ -1212,33 +1147,6 @@ void sc_settings_changed(odb o)
         o = false;
         return;
     }
-
-    if (name == "SciFiConfig" && o) {
-          int status=scififeb->ConfigureASICs();
-          if(status!=SUCCESS){ 
-              cm_msg(MERROR, "SciFiConfig" , "ASIC Configuration failed.");
-         	//TODO: what to do? 
-          }
-       o = false;
-       return;
-    }
-    if (name == "SciFiAllOff" && o) {
-        cm_msg(MERROR, "SciFiAllOff", "Configuring all SciFi ASICs in All Off mode.");
-        int status=scififeb->ConfigureASICsAllOff();
-        if(status!=SUCCESS){
-            cm_msg(MERROR, "SciFiAllOff" , "ASIC all off configuration failed. Return value was %d, expected %d.", status, SUCCESS);
-            //TODO: what to do?
-        }
-       o = false;
-       return;
-    }
-    if (name == "SciFiTDCTest") {
-          int status=scififeb->ChangeTDCTest(o);
-          if(status!=SUCCESS){
-              cm_msg(MERROR, "SciFiConfig" , "Changing SciFi test pulses failed");
-          }
-          return;
-    }
     if (name == "SciTilesConfig" && o) {
           int status=tilefeb->ConfigureASICs();
           if(status!=SUCCESS){
@@ -1283,16 +1191,6 @@ void sc_settings_changed(odb o)
           command=command&(1<<8);
           o = command;
           return;
-    }
-    if (name == "Sorter Zero Suppression Mupix") {
-        if (o) {
-            cm_msg(MINFO, "sc_settings_changed", "Sorter Zero Suppression Mupix on");
-            feb_sc->FEB_broadcast(MP_SORTER_ZERO_SUPPRESSION_REGISTER_W, 0x1);
-        } else {
-            cm_msg(MINFO, "sc_settings_changed", "Sorter Zero Suppression Mupix off");
-            feb_sc->FEB_broadcast(MP_SORTER_ZERO_SUPPRESSION_REGISTER_W, 0x0);
-        }
-        return;
     }
     if (name == "Load Firmware" && o) {
         cm_msg(MINFO, "sc_settings_changed", "Load firmware triggered");

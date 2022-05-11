@@ -41,6 +41,7 @@ class MutrigFEB : public MuFEB{
       //MIDAS callback for all setters below (DAQ related, mapped to functions on FEB / settings from the DAQ subdirectory).
       //Made static and using the user data argument as "this" to ease binding to C-style midas-callbacks
       static void on_settings_changed(odb o, void * userdata);
+      static void on_commands_changed(odb o, void * userdata);
 
       //Write all registers based on ODB values
       int WriteAll();

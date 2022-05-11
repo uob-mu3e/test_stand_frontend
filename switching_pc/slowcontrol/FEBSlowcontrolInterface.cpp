@@ -49,18 +49,18 @@ int FEBSlowcontrolInterface::FEB_write(const mappedFEB & FEB, const uint32_t sta
     if(broadcast)
         FPGA_ID = ADDRS::BROADCAST_ADDR;
 
-     if(startaddr >= pow(2,16)){
-        cout << "Address out of range: " << std::hex << startaddr << endl;
+    if(startaddr >= pow(2,16)){
+        cout << "FEB_write Address out of range: " << std::hex << startaddr << endl;
         return ERRCODES::ADDR_INVALID;
-     }
+    }
 
     if(FPGA_ID > 15 and FPGA_ID != ADDRS::BROADCAST_ADDR){
-        cout << "FPGA ID out of range: " << FPGA_ID << endl;
+        cout << "FEB_write  ID out of range: " << FPGA_ID << endl;
         return ERRCODES::ADDR_INVALID;
-     }
+    }
 
     if(!data.size()){
-        cout << "Length zero" << endl;
+        cout << "FEB_write Length zero" << endl;
         return ERRCODES::SIZE_ZERO;
      }
 
@@ -174,17 +174,17 @@ int FEBSlowcontrolInterface::FEB_read(const mappedFEB & FEB, const uint32_t star
     uint32_t FPGA_ID = FEB.SB_Port();
 
      if(startaddr >= pow(2,16)){
-        cout << "Address out of range: " << std::hex << startaddr << endl;
+        cout << "FEB_read Address out of range: " << std::hex << startaddr << endl;
         return ERRCODES::ADDR_INVALID;
      }
 
     if(FPGA_ID > 15){
-        cout << "FPGA ID out of range: " << FPGA_ID << endl;
+        cout << "FEB_read FPGA ID out of range: " << FPGA_ID << endl;
         return ERRCODES::ADDR_INVALID;
      }
 
     if(!data.size()){
-        cout << "Length zero" << endl;
+        cout << "FEB_read Length zero" << endl;
         return ERRCODES::SIZE_ZERO;
      }
 
