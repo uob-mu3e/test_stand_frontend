@@ -332,8 +332,8 @@ begin
         i_clk                           => clk_100--,
     );
 
-    --! map pixel links comsicRun22
-    gen_pixel_feb_links : for i in 0 to g_NLINKS_DATA_PIXEL_US + g_NLINKS_DATA_PIXEL_DS - 1 generate
+    --! map links comsicRun22
+    gen_pixel_feb_links : for i in 0 to g_NLINKS_DATA_PIXEL_US + g_NLINKS_DATA_PIXEL_DS + g_NLINKS_DATA_SCIFI - 1 generate
         feb_rx(i).data     <= feb_rx_data(i);
         feb_rx(i).datak    <= feb_rx_datak(i);
         feb_tx_data(i)     <= feb_tx(i).data;
@@ -341,14 +341,8 @@ begin
     end generate;
 
     --! trigger data for cosmicRun22
-    feb_rx(10).data     <= feb_rx_data(14);
-    feb_rx(10).datak    <= feb_rx_datak(14);
-
-    --! map scifi links cosmicRun22
-    gen_scifi_feb_links : for i in g_NLINKS_DATA_PIXEL_US + g_NLINKS_DATA_PIXEL_DS to g_NLINKS_DATA_PIXEL_US + g_NLINKS_DATA_PIXEL_DS + g_NLINKS_DATA_SCIFI - 1 generate
-        feb_rx(i+1).data     <= feb_rx_data(i);
-        feb_rx(i+1).datak    <= feb_rx_datak(i);
-    end generate;
+    feb_rx(12).data     <= feb_rx_data(14);
+    feb_rx(12).datak    <= feb_rx_datak(14);
 
     generate_farm_links : for i in 0 to g_NLINKS_FARM_TOTL - 1 generate
         farm_rx(i).data     <= farm_rx_data(i);
