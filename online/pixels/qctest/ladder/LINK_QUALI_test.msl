@@ -11,6 +11,9 @@ PARAM hameg_id, "HAMEG ID"
 PARAM channel, "HAMEG Channel"
 
 
+
+# Checks for inconsistencies in given half_ladder_id
+
 #ODBGET /Equipment/PixelsCentral/QCTests/Ladder/half_ladder_id, _g_ladder_id
 #IF $_g_ladder_id != half_ladder_id
 #    MESSAGE "Input half_ladder_id at Link Quality Test different than the one inputed in IV curve test", 0
@@ -32,8 +35,8 @@ ODBSET /Equipment/PixelsCentral/QCTests/Ladder/LINKQUALIcheck/hameg_id, $hameg_i
 ODBSET /Equipment/PixelsCentral/QCTests/Ladder/LINKQUALIcheck/channel, $channel
 
 
-CAT power_get_state_path, /Equipment/HAMEG, $hameg_id, /Variables/State[, $channel,]
-CAT power_set_state_path, /Equipment/HAMEG, $hameg_id, /Variables/Set State[, $channel,]
+CAT power_get_state_path, /Equipment/HAMEG, $hameg_id, /Variables/State[, $channel, ]
+CAT power_set_state_path, /Equipment/HAMEG, $hameg_id, /Variables/Set State[, $channel, ]
 
 
 PARAM hv_voltage, "HV voltage"
@@ -74,7 +77,7 @@ ODBSET /Equipment/KEITHLEY0/Variables/Demand Voltage, -1*abs($hv_voltage)
 ODBSET /Equipment/KEITHLEY0/Variables/Set State, 1
 WAIT SECONDS, 2
 
-# ID of each mupix
+# ID of each mupix. TODO correct
 mupixID0 = 0 + ($half_ladder_id % 4)*3
 mupixID1 = 1 + ($half_ladder_id % 4)*3
 mupixID2 = 2 + ($half_ladder_id % 4)*3
@@ -94,16 +97,19 @@ globalMupixID1 = $half_ladder_id*3 + 1
 globalMupixID2 = $half_ladder_id*3 + 2
 
 # Initialize errors as big as possible
-norm0 = 1000000.0
-norm1 = 1000000.0
-norm2 = 1000000.0
+norm0 = 100000000000.0
+norm1 = 100000000000.0
+norm2 = 100000000000.0
 
-SET error0, 0
-SET error0_final, 0
+error0 = 0
+error0_final = 0
 
 out0 = 0
 out1 = 0
 out2 = 0
+
+
+# TODO do linkquality check at feb level
 
 # Loop over all possible magic values
 index_j = 0
@@ -112,23 +118,18 @@ LOOP j, ($stop_magic_value-$start_magic_value)+1
     vpvco = $j -1 + $start_magic_value
     vnvco = $vpvco + 1
 
-
-    # Configure chip
     LOOP i, 3
-        i_ = $i-1
-        mupixID = $i_ + $half_ladder_id*3
-
-        ODBSET /Equipment/PixelsCentral/Settings/BIASDACS/$mupixID/VPVCO, $vpvco
-        ODBSET /Equipment/PixelsCentral/Settings/BIASDACS/$mupixID/VNVCO, $vnvco
-        ODBSET /Equipment/PixelsCentral/Settings/BIASDACS/$mupixID/BiasBlock_On, 5
-
-        # Upload config
-        ODBSET /Equipment/SwitchingCentral/Commands/MupixChipToConfigure, $mupixID
-        ODBSET /Equipment/SwitchingCentral/Commands/MupixConfig, 1
-        WAIT 10
+        _i = $half_ladder_id*3 + $i - 1
+        ODBSET /Equipment/PixelsCentral/Settings/BIASDACS/$_i/VPVCO, $vpvco
+        ODBSET /Equipment/PixelsCentral/Settings/BIASDACS/$_i/VNVCO, $vnvco
+        ODBSET /Equipment/PixelsCentral/Settings/BIASDACS/$_i/BiasBlock_On, 5
     ENDLOOP
-
-    WAIT 5
+     
+    # Upload config
+    ODBSET /Equipment/SwitchingCentral/Commands/MupixChipToConfigure, 999
+    ODBSET /Equipment/SwitchingCentral/Commands/MupixConfig, 1
+    # TODO check waiting time
+    WAIT 30 
 
     # Get errors
         ODBGET $chip0_linkA, error0
@@ -226,24 +227,21 @@ ODBSET /Equipment/PixelsCentral/QCTests/Ladder/LINKQUALIcheck/Output/2/opt_VPVCO
 ODBSET /Equipment/PixelsCentral/QCTests/Ladder/LINKQUALIcheck/Output/2/opt_VNVCO, $out2 +1 
 ODBSET /Equipment/PixelsCentral/QCTests/Ladder/LINKQUALIcheck/Output/2/ErrorRate, $norm2
 
-# Set chips to that values and configure all
+
+
 ODBSET /Equipment/PixelsCentral/Settings/BIASDACS/$globalMupixID0/VPVCO, $out0
 ODBSET /Equipment/PixelsCentral/Settings/BIASDACS/$globalMupixID0/VNVCO, $out0+1
-ODBSET /Equipment/SwitchingCentral/Commands/MupixChipToConfigure, $globalMupixID0
-ODBSET /Equipment/SwitchingCentral/Commands/MupixConfig, 1
-WAIT SECONDS, 15
 
 ODBSET /Equipment/PixelsCentral/Settings/BIASDACS/$globalMupixID1/VPVCO, $out1
 ODBSET /Equipment/PixelsCentral/Settings/BIASDACS/$globalMupixID1/VNVCO, $out1+1
-ODBSET /Equipment/SwitchingCentral/Commands/MupixChipToConfigure, $globalMupixID1
-ODBSET /Equipment/SwitchingCentral/Commands/MupixConfig, 1
-WAIT SECONDS, 15
 
 ODBSET /Equipment/PixelsCentral/Settings/BIASDACS/$globalMupixID2/VPVCO, $out2
 ODBSET /Equipment/PixelsCentral/Settings/BIASDACS/$globalMupixID2/VNVCO, $out2+1
-ODBSET /Equipment/SwitchingCentral/Commands/MupixChipToConfigure, $globalMupixID2
+
+ODBSET /Equipment/SwitchingCentral/Commands/MupixChipToConfigure, 999
 ODBSET /Equipment/SwitchingCentral/Commands/MupixConfig, 1
-WAIT SECONDS, 15
+# TODO Check waiting time
+WAIT 30
 
 # Turn off HV
 ODBSET /Equipment/KEITHLEY0/Variables/Demand Voltage, 0
