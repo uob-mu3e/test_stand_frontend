@@ -67,9 +67,9 @@ using midas::odb;
 #define FEB_REPLY_ERROR   1
 
 
-int MutrigFEB::WriteAll(){
+int MutrigFEB::WriteAll(uint32_t nasics){
 
-    if(GetNumASICs() == 0) return 0;
+    if ( nasics == 0 ) return 0;
     //initial Shadow register values
 
     //as a starting point, set all mask bits to 1. in the shadow register and override after.
@@ -99,8 +99,12 @@ int MutrigFEB::WriteAll(){
 int MutrigFEB::MapForEach(std::function<int(mutrig::MutrigConfig* /*mutrig config*/,int /*ASIC #*/)> func)
 {
     INT status = DB_SUCCESS;
+    // get asics from ODB
+    odb odb_set_str(odb_prefix+"/Settings/Daq");
+    uint32_t nasics = odb_set_str["num_asics"];
+
     //Iterate over ASICs
-    for(unsigned int asic = 0; asic < GetNumASICs(); ++asic) {
+    for(unsigned int asic = 0; asic < nasics; ++asic) {
         //ddprintf("mutrig_midasodb: Mapping %s, asic %d\n",prefix, asic);
         mutrig::MutrigConfig config(mutrig::midasODB::MapConfigFromDB(odb_prefix,asic));
         //note: this needs to be passed as pointer, otherwise there is a memory corruption after exiting the lambda
@@ -201,7 +205,7 @@ int MutrigFEB::ChangeTDCTest(bool o){
 
 
 int MutrigFEB::ConfigureASICsAllOff(){
-    cm_msg(MINFO, "ConfigureASICsAllOff" , "Configuring all SciFi ASICs in the ALL_OFF Mode");
+    cm_msg(MINFO, "ConfigureASICsAllOff" , "Configuring all SciFi ASICs of nFEBs: %d in the ALL_OFF Mode", febs.size());
     int status = SUCCESS;
     for(size_t FPGA_ID = 0; FPGA_ID < febs.size(); FPGA_ID++){
         auto FEB = febs[FPGA_ID];

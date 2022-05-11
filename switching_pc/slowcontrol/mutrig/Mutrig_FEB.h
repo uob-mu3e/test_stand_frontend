@@ -44,7 +44,7 @@ class MutrigFEB : public MuFEB{
       static void on_commands_changed(odb o, void * userdata);
 
       //Write all registers based on ODB values
-      int WriteAll();
+      int WriteAll(uint32_t nasics);
 
       //ASIC configuration:
       //Configure all asics under prefix (e.g. prefix="/Equipment/SciFi"), report any errors as equipment_name

@@ -44,7 +44,7 @@
 
 #include "missing_hardware.h"
 
-
+#include "odb_cosmic_run_scifi_2022.inc"
 
 using namespace std;
 using midas::odb;
@@ -542,7 +542,6 @@ INT init_febs() {
 INT init_scifi() {
 
     // SciFi setup part
-    set_equipment_status(equipment[EQUIPMENT_ID::SciFi].name, "Initializing...", "var(--myellow)");
     scififeb = new SciFiFEB(*feb_sc,
                     feblist->getSciFiFEBs(),
                     feblist->getSciFiFEBMask(),
@@ -550,18 +549,15 @@ INT init_scifi() {
                     equipment[EQUIPMENT_ID::Links].name,
                     equipment[EQUIPMENT_ID::SciFi].name,
                     switch_id); //create FEB interface signleton for scifi
-
-    
-    int status=mutrig::midasODB::setup_db("/Equipment/" + scifi_eq_name,*scififeb);
+    int status = mutrig::midasODB::setup_db("/Equipment/" + scifi_eq_name, *scififeb, nasics_scifi, scifi_num_modules_per_feb, scifi_num_asics_per_module);
     if(status != SUCCESS){
         set_equipment_status(equipment[EQUIPMENT_ID::SciFi].name, "Start up failed", "var(--mred)");
         return status;
     }
     //init all values on FEB
-    scififeb->WriteAll();
+    scififeb->WriteAll(nasics_scifi);
     scififeb->WriteFEBIDs();
 
-    
     //set custom page
     odb custom("/Custom");
     custom["SciFi-ASICs&"] = "mutrigTdc.html";
@@ -573,9 +569,7 @@ INT init_scifi() {
 
 INT init_scitiles() {
 
-    
     //SciTiles setup part
-    set_equipment_status(equipment[EQUIPMENT_ID::Tiles].name, "Initializing...", "var(--myellow)");
     tilefeb = new TilesFEB(*feb_sc,
                      feblist->getTileFEBs(),
                      feblist->getTileFEBMask(),
@@ -583,20 +577,21 @@ INT init_scitiles() {
                      equipment[EQUIPMENT_ID::Links].name,
                      equipment[EQUIPMENT_ID::Tiles].name,
                       switch_id); //create FEB interface signleton for scitiles
-    int status=mutrig::midasODB::setup_db("/Equipment/" + tile_eq_name, *tilefeb);
+    int status = mutrig::midasODB::setup_db("/Equipment/" + tile_eq_name, *tilefeb, nasics_tile, tile_num_modules_per_feb, tile_num_modules_per_feb);
     if(status != SUCCESS){
         set_equipment_status(equipment[EQUIPMENT_ID::Tiles].name, "Start up failed", "var(--mred)");
         return status;
     }
+    
     //init all values on FEB
-    tilefeb->WriteAll();
+    tilefeb->WriteAll(nasics_tile);
     tilefeb->WriteFEBIDs();
-
-    set_equipment_status(equipment[EQUIPMENT_ID::Tiles].name, "Ok", "var(--mgreen)");
 
     //set custom page
     odb custom("/Custom");
     custom["SciTiles-ASICs&"] = "tile_custompage.html";
+
+    set_equipment_status(equipment[EQUIPMENT_ID::Tiles].name, "Ok", "var(--mgreen)");
     
     return SUCCESS;
 }

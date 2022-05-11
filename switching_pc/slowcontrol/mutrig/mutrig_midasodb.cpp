@@ -19,7 +19,7 @@ namespace mutrig { namespace midasODB {
 //#endif
 
 
-int setup_db(std::string prefix, MutrigFEB & FEB_interface){
+int setup_db(std::string prefix, MutrigFEB & FEB_interface, uint32_t nasics, uint32_t nModules, uint32_t nAsicsPerFeb){
     /* Book Setting space */
     INT status = DB_SUCCESS;
 
@@ -28,9 +28,6 @@ int setup_db(std::string prefix, MutrigFEB & FEB_interface){
     auto settings_asics = MUTRIG_GLOBAL_SETTINGS;
      // global mutrig setting are from mutrig_MIDAS_config.h
     settings_asics.connect(prefix + "/Settings/ASICs/Global");
- 
-    //Set number of ASICs, derived from mapping
-    unsigned int nasics = FEB_interface.GetNumASICs();
 
     if(nasics == 0){
         cm_msg(MINFO, "mutrig_midasodb::setup_db", "Number of MuTRiGs is 0, will not continue to build DB. Consider to delete ODB subtree %s", prefix.c_str());
@@ -43,10 +40,12 @@ int setup_db(std::string prefix, MutrigFEB & FEB_interface){
     settings_daq.connect(prefix + "/Settings/Daq");
     //update length flags for DAQ section
     settings_daq["num_asics"]=nasics;
+    settings_daq["num_modules_per_feb"]=nModules;
+    settings_daq["num_asics_per_module"]=nAsicsPerFeb;
     settings_daq["mask"].resize(nasics);
-    settings_daq["resetskew_cphase"].resize(FEB_interface.GetNumModules());
-    settings_daq["resetskew_cdelay"].resize(FEB_interface.GetNumModules());
-    settings_daq["resetskew_phases"].resize(FEB_interface.GetNumModules());
+    settings_daq["resetskew_cphase"].resize(nModules);
+    settings_daq["resetskew_cdelay"].resize(nModules);
+    settings_daq["resetskew_phases"].resize(nModules);
     settings_daq.connect(prefix + "/Settings/Daq");
 
     auto commands = ScifiCentralCommands;
