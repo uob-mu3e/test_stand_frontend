@@ -19,6 +19,7 @@ febCnt = {0:0,1:0,2:0,3:0,4:0,5:0,6:0,7:0,8:0,9:0}
 febCntHits = {0:0,1:0,2:0,3:0,4:0,5:0,6:0,7:0,8:0,9:0}
 febTS = {0:[],1:[],2:[],3:[],4:[],5:[],6:[],7:[],8:[],9:[]}
 febTrailerCnt = {0:[],1:[],2:[],3:[],4:[],5:[],6:[],7:[],8:[],9:[]}
+febHeaderCnt = {0:[],1:[],2:[],3:[],4:[],5:[],6:[],7:[],8:[],9:[]}
 headerList=["E80000BC","E80001BC","E80002BC","E80003BC","E80004BC","E81005BC","E81006BC","E81007BC","E81008BC","E81009BC","E81000BC"]
 
 last_d = 0
@@ -35,6 +36,7 @@ for idx, d in enumerate(data):
     if last_d == '00000000' and d in headerList:
         curFEB = int(d.split('E8')[1].split('BC')[0].split('0')[2])
         curEvent = [hex(int(d, 16))]
+        febHeaderCnt[curFEB].append(int(data[idx+2], 16) & 0xFFFF)
         febTS[curFEB].append((int(data[idx+1], 16) << 5) | (int(data[idx+2], 16) >> 27))
     last_d = d
 
@@ -82,4 +84,35 @@ plt.xlabel("Events")
 plt.ylabel("HeadTS")
 plt.legend()
 plt.savefig("headerTS.pdf")
+plt.close()
+
+plt.plot(febHeaderCnt[5], label="H_FEB5")
+plt.plot(febHeaderCnt[6], label="H_FEB6")
+plt.plot(febHeaderCnt[7], label="H_FEB7")
+plt.plot(febHeaderCnt[8], label="H_FEB8")
+plt.plot(febHeaderCnt[9], label="H_FEB9")
+plt.xlabel("Events")
+plt.ylabel("HeadCnt")
+plt.legend()
+plt.savefig("headerCnt.pdf")
+plt.close()
+
+lastj = 0
+feb5 = []
+feb6 = []
+for idx, v in enumerate(febHeaderCnt[5]):
+    for jdx, u in enumerate(febHeaderCnt[6][lastj:]):
+        if v==u:
+            #print(idx, jdx, v, u, febTS[5][idx], febTS[6][lastj])
+            lastj = idx + jdx
+            feb5.append(v)
+            feb6.append(v)
+            break
+plt.plot(feb5, label="FEB5")
+plt.plot(feb6, label="FEB6", alpha=0.3)
+plt.xlabel("Events")
+plt.ylabel("HeadTS")
+plt.legend()
+plt.savefig("headerTS2.pdf")
+                                                
 
