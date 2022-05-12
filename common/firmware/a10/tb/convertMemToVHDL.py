@@ -19,6 +19,7 @@ febCnt = {0:0,1:0,2:0,3:0,4:0,5:0,6:0,7:0,8:0,9:0}
 febCntHits = {0:0,1:0,2:0,3:0,4:0,5:0,6:0,7:0,8:0,9:0}
 febTS = {0:[],1:[],2:[],3:[],4:[],5:[],6:[],7:[],8:[],9:[]}
 febTrailerCnt = {0:[],1:[],2:[],3:[],4:[],5:[],6:[],7:[],8:[],9:[]}
+headerList=["E80000BC","E80001BC","E80002BC","E80003BC","E80004BC","E81005BC","E81006BC","E81007BC","E81008BC","E81009BC","E81000BC"]
 
 last_d = 0
 curFEB = -999
@@ -31,13 +32,10 @@ for idx, d in enumerate(data):
         febDict[curFEB].append(curEvent)
         curFEB = -999
 
-    if last_d == '00000000':
-        if type(d) == int: d = str(d)
-        if len(d.split('E8')) == 2:
-            if len(d.split('E8')[1].split('BC')) == 2:
-                curFEB = int(d.split('E8')[1].split('BC')[0].split('0')[2])
-                curEvent = [hex(int(d, 16))]
-                febTS[curFEB].append((int(data[idx+1], 16) << 5) | (int(data[idx+2], 16) >> 27))
+    if last_d == '00000000' and d in headerList:
+        curFEB = int(d.split('E8')[1].split('BC')[0].split('0')[2])
+        curEvent = [hex(int(d, 16))]
+        febTS[curFEB].append((int(data[idx+1], 16) << 5) | (int(data[idx+2], 16) >> 27))
     last_d = d
 
 for feb in febDict:
@@ -70,7 +68,10 @@ for feb in febDict:
 
         startEventCnt += 1
 
-for i in range(10): print("Events: " + str(febCnt[i]), "Hits: " + str(febCntHits[i]))
+for i in range(10): print("Events: " + str(len(febTS[i])) + " " + str(len(febDict[i])), "Hits: " + str(febCntHits[i]))
+
+#4D2C F811A59F
+#4D2C F020A59E
 
 plt.plot(febTS[5], label="FEB5")
 plt.plot(febTS[6], label="FEB6")
