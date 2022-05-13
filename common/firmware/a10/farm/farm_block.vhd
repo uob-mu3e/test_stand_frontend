@@ -20,6 +20,7 @@ generic (
     g_NLINKS_TOTL           : positive  := 3;
     g_ADDR_WIDTH            : positive  := 11;
     g_DDR4                  : boolean   := false;
+    g_ADD_SUB               : boolean   := false;
     -- Data type: x"00" = pixel, x"01" = scifi, "10" = tiles
     DATA_TYPE               : std_logic_vector(1 downto 0) := "00";
     LINK_FIFO_ADDR_WIDTH    : positive  := 10--;
@@ -325,6 +326,7 @@ begin
     generic map (
         g_ADDR_WIDTH    => g_ADDR_WIDTH,
         g_NLINKS_DATA   => g_NLINKS_TOTL,
+        g_ADD_SUB       => g_ADD_SUB,
         DATA_TYPE       => DATA_TYPE--,
     )
     port map (

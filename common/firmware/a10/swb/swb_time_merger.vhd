@@ -1,5 +1,6 @@
 library ieee;
 use ieee.std_logic_1164.all;
+use ieee.std_logic_unsigned.all;
 use ieee.numeric_std.all;
 
 use work.mudaq.all;
@@ -9,6 +10,7 @@ entity swb_time_merger is
 generic (
     g_ADDR_WIDTH : positive := 11;
     g_NLINKS_DATA : positive := 8;
+    g_ADD_SUB : boolean := false;
     -- Data type: x"00" = pixel, x"01" = scifi, "10" = tiles
     DATA_TYPE : std_logic_vector(1 downto 0) := "00"--;
 );
@@ -50,6 +52,12 @@ architecture arch of swb_time_merger is
     -- data path farm signals
     signal rdata : work.mu3e.link_t;
 
+    -- add subh signals
+    signal w_rx, q_rx, curSub : work.mu3e.link_array_t(g_NLINKS_DATA-1 downto 0);
+    signal rempty, rack, alfull, we : std_logic_vector(g_NLINKS_DATA - 1 downto 0) := (others => '1');
+    signal wrusedw_v : work.util.slv11_array_t(g_NLINKS_DATA - 1 downto 0);
+    signal cntSubH, subH : work.util.slv7_array_t(g_NLINKS_DATA - 1 downto 0);
+
     -- debug path signals
     type write_debug_type is (idle, write_data, skip_data);
     signal write_debug_state : write_debug_type;
@@ -64,6 +72,71 @@ begin
     generic map ( WRAP => true, W => 32 )
     port map ( o_cnt => o_counters(0), i_ena => almost_full, i_reset_n => i_reset_n, i_clk => i_clk );
 
+    generate_subh_block : if ( g_ADD_SUB ) generate
+        gen_subh : FOR i in 0 to g_NLINKS_DATA - 1 GENERATE
+
+            process(i_clk, i_reset_n)
+            begin
+            if ( i_reset_n /= '1' ) then
+                alfull(i)       <= '0';
+                cntSubH(i)      <= (others => '0');
+                --
+            elsif ( rising_edge(i_clk) ) then
+                -- check if the buffer fifo is half full
+                if ( wrusedw_v(i)(10) = '1' ) then
+                    alfull(i) <= '1';
+                else
+                    alfull(i) <= '0';
+                end if;
+
+                if ( i_rx(i).sbhdr = '1' or i_rx(i).eop = '1' ) then
+                    cntSubH(i) <= cntSubH(i) + '1';
+                end if;
+
+            end if;
+            end process;
+
+            subH(i)         <= i_rx(i).data(29 downto 28) & i_rx(i).data(20 downto 16);
+            we(i)           <= '1' when i_rempty(i) = '0' and alfull(i) = '0' else '0';
+            --              mark wrong subheader with 01
+            curSub(i).data  <=  "01" & cntSubH(i)(6 downto 5) & "1111111" & cntSubH(i)(4 downto 0) & x"0000" when i_rx(i).sbhdr = '1' and subH(i) > cntSubH(i) else
+                                "01" & cntSubH(i)(6 downto 5) & "1111111" & cntSubH(i)(4 downto 0) & x"0000" when i_rx(i).eop = '1' and work.util.or_reduce(cntSubH(i)) /= '0' else
+                                i_rx(i).data;
+            curSub(i).sbhdr <= '1';
+            w_rx(i)         <= curSub(i) when i_rx(i).sbhdr = '1' and subH(i) > cntSubH(i) else
+                               curSub(i) when i_rx(i).eop = '1' and work.util.or_reduce(cntSubH(i)) /= '0' else
+                               i_rx(i);
+            o_rack(i)       <= '1' when we(i) = '1' and not ( i_rx(i).sbhdr = '1' and subH(i) > cntSubH(i) ) and not ( i_rx(i).eop = '1' and work.util.or_reduce(cntSubH(i)) /= '0' ) else '0';
+
+            e_subh_fifo : entity work.link_scfifo
+            generic map (
+                g_ADDR_WIDTH=> 11,
+                g_WREG_N    => 1,
+                g_RREG_N    => 1--,
+            )
+            port map (
+                i_wdata     => w_rx(i),
+                i_we        => we(i),
+                o_wfull     => open,
+                o_usedw     => wrusedw_v(i),
+
+                o_rdata     => q_rx(i),
+                i_rack      => rack(i),
+                o_rempty    => rempty(i),
+
+                i_clk       => i_clk,
+                i_reset_n   => i_reset_n--;
+            );
+
+        END GENERATE gen_subh;
+    end generate;
+
+    generate_not_subh_block : if ( not g_ADD_SUB ) generate
+        q_rx    <= i_rx;
+        rempty  <= i_rempty;
+        o_rack  <= rack;
+    end generate;
+
     e_time_merger : entity work.time_merger
     generic map (
         g_ADDR_WIDTH => g_ADDR_WIDTH,
@@ -72,10 +145,10 @@ begin
     )
     port map (
         -- input streams
-        i_data                  => i_rx,
-        i_empty                 => i_rempty,
+        i_data                  => q_rx,
+        i_empty                 => rempty,
         i_mask_n                => i_rmask_n,
-        o_rack                  => o_rack,
+        o_rack                  => rack,
 
         -- output stream
         --! TODO: cnt errors, at the moment they are sent out at the end of normal event

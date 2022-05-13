@@ -23,6 +23,7 @@ generic (
     g_NLINKS_DATA                               : positive := 8;
     LINK_FIFO_ADDR_WIDTH                        : positive := 10;
     g_gen_time_merger                           : boolean := true;
+    g_ADD_SUB                                   : boolean := false;
     SWB_ID : std_logic_vector(7 downto 0)       := x"01";
     -- Data type: "00" = pixel, "01" = scifi, "10" = tiles
     DATA_TYPE : std_logic_vector(1 downto 0)    := "00"--;
@@ -59,7 +60,7 @@ architecture arch of swb_data_path is
     signal reset_250_n : std_logic;
 
     --! data gen links
-    signal gen_link, gen_link_error : work.mu3e.link_t;
+    signal gen_link, gen_link_error, gen_test_data0, gen_test_data1 : work.mu3e.link_t;
 
     --! data link signals
     signal rx : work.mu3e.link_array_t(g_NLINKS_DATA-1 downto 0);
@@ -165,6 +166,19 @@ begin
         i_clk               => i_clk--,
     );
 
+    -- synthesis translate_off
+    e_a10_real_data_gen : entity work.a10_real_data_gen
+        port map (
+        i_enable            => i_writeregs(SWB_READOUT_STATE_REGISTER_W)(USE_BIT_TEST_DATA),
+        o_data0             => gen_test_data0,
+        o_data1             => gen_test_data1,
+        i_slow_down         => i_writeregs(DATAGENERATOR_DIVIDER_REGISTER_W),
+
+        i_reset_n           => i_resets_n(RESET_BIT_DATAGEN),
+        i_clk               => i_clk--,
+    );
+    -- synthesis translate_on
+
     gen_link_data : FOR i in 0 to g_NLINKS_DATA - 1 GENERATE
 
         process(i_clk, i_reset_n)
@@ -172,7 +186,13 @@ begin
         if ( i_reset_n = '0' ) then
             rx(i) <= work.mu3e.LINK_ZERO;
         elsif ( rising_edge(i_clk) ) then
-            if ( i_writeregs(SWB_READOUT_STATE_REGISTER_W)(USE_BIT_GEN_LINK) = '1' ) then
+            if ( i_writeregs(SWB_READOUT_STATE_REGISTER_W)(USE_BIT_TEST_DATA) = '1' ) then
+                if ( i mod 2 = 0) then
+                    rx(i) <= work.mu3e.to_link(gen_test_data0.data, gen_test_data0.datak);
+                else
+                    rx(i) <= work.mu3e.to_link(gen_test_data1.data, gen_test_data1.datak);
+                end if;
+            elsif ( i_writeregs(SWB_READOUT_STATE_REGISTER_W)(USE_BIT_GEN_LINK) = '1' ) then
                 if ( i_writeregs(SWB_READOUT_STATE_REGISTER_W)(USE_BIT_TEST_ERROR) = '1' and i = 0 ) then
                     rx(i) <= work.mu3e.to_link(gen_link_error.data, gen_link_error.datak);
                 else
@@ -267,6 +287,7 @@ begin
         generic map (
             g_ADDR_WIDTH    => g_ADDR_WIDTH,
             g_NLINKS_DATA   => g_NLINKS_DATA,
+            g_ADD_SUB       => g_ADD_SUB,
             DATA_TYPE       => DATA_TYPE--,
         )
         port map (

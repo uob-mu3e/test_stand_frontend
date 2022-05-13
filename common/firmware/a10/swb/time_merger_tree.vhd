@@ -258,7 +258,7 @@ begin
 
         -- set data for no hit types
         headerHit(i).data  <= x"E80000BC";
-        sbhdrHit(i).data   <= a_h(i).data(31 downto 16) & overflow(i);
+        sbhdrHit(i).data   <= (a_h(i).data(31 downto 16) or b_h(i).data(31 downto 16)) & overflow(i);
         trailerHit(i).data <= overflow(i) & x"009C";
         errorHit(i).data   <= error_s(i) & "00" & x"FFFFF9C";
 
@@ -291,7 +291,7 @@ begin
         process(i_clk, reset_n)
         begin
         if ( reset_n /= '1' ) then
-            last_state(i) <= SWB_IDLE;
+            last_state(i)   <= SWB_IDLE;
             --
         elsif ( rising_edge(i_clk) ) then
             -- TODO: should we do a counter here -> leading to an error?

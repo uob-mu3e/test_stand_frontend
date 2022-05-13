@@ -27,6 +27,7 @@ generic (
     g_NLINKS_DATA_PIXEL_DS  : positive := 5;
     g_NLINKS_FARM_SCIFI     : positive := 1;
     g_NLINKS_DATA_SCIFI     : positive := 2;
+    g_ADD_SUB               : boolean := true;
     -- needed for simulation
     g_SC_SEC_SKIP_INIT      : std_logic := '0';
     SWB_ID                  : std_logic_vector(7 downto 0) := x"01"--;
@@ -304,6 +305,7 @@ begin
         g_NLINKS_DATA           => g_NLINKS_DATA_PIXEL_US,
         LINK_FIFO_ADDR_WIDTH    => 13,
         SWB_ID                  => SWB_ID,
+        g_ADD_SUB               => g_ADD_SUB,
         -- Data type: "00" = pixel, "01" = scifi, "10" = tiles
         DATA_TYPE               => "00"--,
     )
@@ -335,6 +337,7 @@ begin
         g_NLINKS_DATA           => g_NLINKS_DATA_PIXEL_DS,
         LINK_FIFO_ADDR_WIDTH    => 13,
         SWB_ID                  => SWB_ID,
+        g_ADD_SUB               => g_ADD_SUB,
         -- Data type: "00" = pixel, "01" = scifi, "10" = tiles
         DATA_TYPE               => "00"--,
     )
@@ -372,6 +375,7 @@ begin
         LINK_FIFO_ADDR_WIDTH    => 13,
         SWB_ID                  => SWB_ID,
         g_gen_time_merger       => false,
+        g_ADD_SUB               => g_ADD_SUB,
         -- Data type: "00" = pixel, "01" = scifi, "10" = tiles
         DATA_TYPE               => "01"--,
     )
