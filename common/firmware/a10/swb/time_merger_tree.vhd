@@ -262,6 +262,20 @@ begin
         trailerHit(i).data <= overflow(i) & x"009C";
         errorHit(i).data   <= error_s(i) & "00" & x"FFFFF9C";
 
+        -- synthesis translate_off
+        assert ( work.util.or_reduce(error_s(i)) = '1'
+        ) report "Tree ERROR"
+            & ", a_h = " & work.util.to_hstring(a_h(i).data)
+            & ", b_h = " & work.util.to_hstring(b_h(i).data)
+            & ", a_ts = " & work.util.to_hstring(shop_time0(i))
+            & ", b_ts = " & work.util.to_hstring(shop_time1(i))
+            & ", sbhdr = " & work.util.to_hstring(a_h(i).sbhdr & b_h(i).sbhdr)
+            & ", layer_state = " & work.util.to_hstring(layer_state(i))
+            & ", last_state = " & work.util.to_hstring(last_state(i))
+            & ", error = " & work.util.to_hstring(error_s(i))
+        severity note;
+        -- synthesis translate_on
+
         -- write out data
         data(i)         <=  errorHit(i) when work.util.or_reduce(error_s(i)) = '1' else
                             headerHit(i) when layer_state(i) = HEADER else

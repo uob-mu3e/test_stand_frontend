@@ -93,6 +93,10 @@ begin
                     cntSubH(i) <= cntSubH(i) + '1';
                 end if;
 
+                if ( i_rx(i).sop = '1' ) then
+                    cntSubH(i)      <= (others => '0');
+                end if;
+
             end if;
             end process;
 
