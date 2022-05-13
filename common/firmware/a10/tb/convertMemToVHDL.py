@@ -133,6 +133,7 @@ begin\n\
     if ( i_reset_n = '0' ) then\n\
         o_data0              <= work.mu3e.LINK_ZERO;\n\
         o_data1              <= work.mu3e.LINK_ZERO;\n\
+        state_counter        <= (others => '0');\n\
         --\n\
     elsif rising_edge(i_clk) then\n\
         o_data0  <= work.mu3e.LINK_IDLE;\n\
@@ -142,6 +143,7 @@ begin\n\
 "
 
 for idx, v in enumerate(outData[5]):
+    state_counter = idx + 2
     if idx < len(outData[6]):
         data0 = str(v).split("x")[-1]
         data1 = str(outData[6][idx]).split("x")[-1]
@@ -168,7 +170,7 @@ for idx, v in enumerate(outData[5]):
         data0 = '{:08X}'.format(int(data0, 16) & ((1 << 32) - 1))
         data1 = '{:08X}'.format(int(data1, 16) & ((1 << 32) - 1))
         outTxt += f"\
-        if ( to_integer(unsigned(state_counter)) = {idx} ) then\n\
+        if ( to_integer(unsigned(state_counter)) = {state_counter} ) then\n\
                 o_data0.data <= x\"{data0}\";\n\
                 o_data1.data <= x\"{data1}\";\n\
                 o_data0.datak <= \"{datak0}\";\n\
@@ -191,13 +193,13 @@ for idx, v in enumerate(outData[5]):
             datak0 = "0000"
         data0 = '{:08X}'.format(int(data0, 16) & ((1 << 32) - 1))
         outTxt += f"\
-            if ( to_integer(unsigned(state_counter)) = {idx} ) then\n\
+            if ( to_integer(unsigned(state_counter)) = {state_counter} ) then\n\
                 o_data0.data <= x\"{data0}\";\n\
                 o_data0.datak <= \"{datak0}\";\n\
                 o_data0.eop <= '{isTrailerZero}';\n\
             end if;\n\
             "
-lenData5 = len(outData[5])
+lenData5 = len(outData[5])+5
 outTxt += f"\
     if ( to_integer(unsigned(state_counter)) = {lenData5} ) then\n\
             state_counter <= (others => '0');\n\

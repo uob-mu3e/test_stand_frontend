@@ -100,7 +100,7 @@ architecture arch of tb_swb_block is
 
     writeregs(SWB_LINK_MASK_PIXEL_REGISTER_W)(4 downto 0)   <= '1' & x"F";--x"00000048";
     writeregs(SWB_LINK_MASK_PIXEL_REGISTER_W)(9 downto 5)   <= '1' & x"F";--x"00000048";
-    writeregs(SWB_LINK_MASK_SCIFI_REGISTER_W)(1 downto 0)   <= "01";
+    writeregs(SWB_LINK_MASK_SCIFI_REGISTER_W)(1 downto 0)   <= "00";
     writeregs(FEB_ENABLE_REGISTER_W)                        <= x"0000001F";--x"00000048";
     writeregs(SWB_READOUT_LINK_REGISTER_W)                  <= x"00000001";
     writeregs(GET_N_DMA_WORDS_REGISTER_W)                   <= (others => '1');
