@@ -8,7 +8,10 @@ cmake_minimum_required(VERSION 3.0)
 project(env_fe)
 
 # set C++ standard
-set(CMAKE_CXX_STANDARD 11)
+# set C++ standard
+if (NOT CMAKE_CXX_STANDARD)    # let top-level project overwrite c++ standard
+   set(CMAKE_CXX_STANDARD 11)
+endif()
 
 # Check for environment variables
 if (NOT DEFINED ENV{MIDASSYS})
