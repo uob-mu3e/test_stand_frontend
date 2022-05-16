@@ -187,9 +187,9 @@ begin
                     o_data.data(15 downto 0)    <= lsfr_overflow;
                 else
                     if ( DATA_TYPE = "00" ) then
-                        o_data.data <= DATA_SUB_HEADER_ID & "000" & global_time(10 downto 4) & lsfr_overflow;
+                        o_data.data <= DATA_SUB_HEADER_ID & "000" & global_time(10-4 downto 4-4) & lsfr_overflow;
                     elsif ( DATA_TYPE = "01" ) then
-                        o_data.data <= DATA_SUB_HEADER_ID & global_time(13 downto 4) & lsfr_overflow;
+                        o_data.data <= DATA_SUB_HEADER_ID & global_time(13-4 downto 4-4) & lsfr_overflow;
                     end if;
                 end if;
                 o_data.datak <= "0000";
@@ -205,9 +205,9 @@ begin
                     o_data.data(15 downto 0)    <= lsfr_overflow;
                 else
                     if ( DATA_TYPE = "00" ) then
-                        o_data.data <= DATA_SUB_HEADER_ID & "000" & global_time(10 downto 4) & lsfr_overflow;
+                        o_data.data <= DATA_SUB_HEADER_ID & "000" & global_time(10-4 downto 4-4) & lsfr_overflow;
                     elsif ( DATA_TYPE = "01" ) then
-                        o_data.data <= DATA_SUB_HEADER_ID & global_time(13 downto 4) & lsfr_overflow;
+                        o_data.data <= DATA_SUB_HEADER_ID & global_time(13-4 downto 4-4) & lsfr_overflow;
                     end if;
                 end if;
                 o_data.datak <= "0000";
