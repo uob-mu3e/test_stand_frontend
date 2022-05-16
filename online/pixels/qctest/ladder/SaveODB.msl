@@ -1,0 +1,6 @@
+PARAM half_ladder_id, "half_ladder_id"
+
+path_root = "/Equipment/PixelsCentral/QCTests/Ladder"
+
+CAT path, output/link_quali_run/link_, $half_ladder_id, .json
+ODBSAVE $path_root, $path

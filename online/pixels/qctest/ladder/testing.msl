@@ -1,0 +1,18 @@
+#ODBSET /Equipment/PixelsCentral/Settings/BIASDACS/3/VPVCO, 20
+#ODBSET /Equipment/PixelsCentral/Settings/BIASDACS/3/VNVCO, 21
+#ODBSET /Equipment/PixelsCentral/Settings/BIASDACS/4/VPVCO, 20
+#ODBSET /Equipment/PixelsCentral/Settings/BIASDACS/4/VNVCO, 21
+#ODBSET /Equipment/PixelsCentral/Settings/BIASDACS/5/VPVCO, 20
+#ODBSET /Equipment/PixelsCentral/Settings/BIASDACS/5/VNVCO, 21
+
+#ODBSET /Equipment/PixelsCentral/Settings/BIASDACS/3/BiasBlock_On, 5
+#ODBSET /Equipment/PixelsCentral/Settings/BIASDACS/4/BiasBlock_On, 5
+#ODBSET /Equipment/PixelsCentral/Settings/BIASDACS/5/BiasBlock_On, 5
+ 
+# Upload config
+#ODBSET /Equipment/SwitchingCentral/Commands/MupixChipToConfigure, 999
+#ODBSET /Equipment/SwitchingCentral/Commands/MupixConfig, 1
+#WAIT 10
+
+ODBSET  /Equipment/PixelsCentral/QCTests/Ladder/LINKQUALIcheck/Output/*/Scan/VPVCO[*], 0
+
