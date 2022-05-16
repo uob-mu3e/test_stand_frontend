@@ -154,8 +154,11 @@ elsif (clk'event and clk = '1') then
 			overflowts(conv_integer(current_ts(TSINBLOCKRANGE))) <= hasoverflow;
 			if(counters_reg(3 downto 0) = "0001" and counters_reg(11 downto 8) = "0000")then
 				hasmem					<= '0';
+				copy_fifo				:= '1';
 			end if;
-
+			if(counters_reg(3 downto 0) = "0010" and counters_reg(11 downto 8) = "0000")then
+				copy_fifo				:= '1';
+			end if;
 			if(counters_reg(3 downto 0) = "0001") then -- switch chip
 				counters_reg(counters_reg'left-8 downto 0)	 <= counters_reg(counters_reg'left downto 8);
 				counters_reg(counters_reg'left downto counters_reg'left-7)	 <= (others => '0');
@@ -168,9 +171,8 @@ elsif (clk'event and clk = '1') then
 				subaddr_to_out			 <= subaddr;
 				chip_to_out				<=  counters_reg(7 downto 4);
 			end if;
-			if(counters_reg(3 downto 0) = "0001" and counters_reg(11 downto 8) = "0000") then
-				copy_fifo				:= '1';
-			end if;
+
+
 		else
 			output			<= none;
 			copy_fifo		:= '1';
@@ -195,7 +197,10 @@ elsif (clk'event and clk = '1') then
 	end if;
 
 	-- When to continue reading the FIFO
-	if(((from_fifo(HASMEMBIT) = '0' or fifo_empty = '1' or (from_fifo(3 downto 0) = "0001" and from_fifo(11 downto 8) = "0000")) and fifo_new = '0')
+	if(((from_fifo(HASMEMBIT) = '0' or fifo_empty = '1' 
+		or (from_fifo(3 downto 0) = "0010" and from_fifo(11 downto 8) = "0000") 
+		or (from_fifo(3 downto 0) = "0001" and from_fifo(11 downto 8) = "0000"))
+		and fifo_new = '0')
 		or copy_fifo = '1') then
 		read_fifo_int <= '1';
 	else
@@ -209,7 +214,7 @@ elsif (clk'event and clk = '1') then
 	-- with the fifo output
 	--if(read_fifo_int = '1' and fifo_empty_last = '0')then
 	if(fifo_empty_last = '0')then
-		if(copy_fifo = '1')then
+		if(copy_fifo = '1' and fifo_new = '0')then
 			fifo_new		<= '0';
 		else
 			fifo_new		<= '1';
