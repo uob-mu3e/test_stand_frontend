@@ -96,19 +96,22 @@ int MutrigFEB::WriteAll(uint32_t nasics){
 }
 
 
-int MutrigFEB::MapForEach(std::function<int(mutrig::MutrigConfig* /*mutrig config*/,int /*ASIC #*/)> func)
+int MutrigFEB::MapForEach(std::function<int(mutrig::MutrigConfig* /*mutrig config*/,int /*ASIC #*/, int /*nModule #*/, int /*nASICperModule #*/)> func)
 {
     INT status = DB_SUCCESS;
     // get asics from ODB
     odb odb_set_str(odb_prefix+"/Settings/Daq");
+    odb settings_asics(odb_prefix + "/Settings/ASICs");
     uint32_t nasics = odb_set_str["num_asics"];
+    uint32_t num_modules_per_feb = odb_set_str["num_modules_per_feb"];
+    uint32_t num_asics_per_module = odb_set_str["num_asics_per_module"];
 
     //Iterate over ASICs
     for(unsigned int asic = 0; asic < nasics; ++asic) {
         //ddprintf("mutrig_midasodb: Mapping %s, asic %d\n",prefix, asic);
-        mutrig::MutrigConfig config(mutrig::midasODB::MapConfigFromDB(odb_prefix,asic));
+        mutrig::MutrigConfig config(mutrig::midasODB::MapConfigFromDB(settings_asics, asic));
         //note: this needs to be passed as pointer, otherwise there is a memory corruption after exiting the lambda
-        status=func(&config,asic);
+        status=func(&config, asic, num_modules_per_feb, num_asics_per_module);
         if (status != SUCCESS) break;
     }
     return status;
@@ -119,11 +122,18 @@ int MutrigFEB::MapForEach(std::function<int(mutrig::MutrigConfig* /*mutrig confi
 //Configure all asics under prefix (e.g. prefix="/Equipment/SciFi")
 int MutrigFEB::ConfigureASICs(){
     cm_msg(MINFO, "setup_mutrig" , "Configuring MuTRiG asics under prefix %s/Settings/ASICs/", odb_prefix.c_str());
-    int status = MapForEach([this](mutrig::MutrigConfig* config, int asic){
+    int status = MapForEach([this](mutrig::MutrigConfig* config, int asic, int nModule, int nASICperModule){
             uint32_t rpc_status;
+
+            // TODO: rework FEB mapping
+            uint32_t FEB_ID = asic / (nASICperModule * nModule);
+            if ( FEB_ID > febs.size() - 1 ) {
+                printf(" [skipped -nofeb]\n");
+                return FE_SUCCESS;
+            }
             
             //mapping
-            mappedFEB FEB = febs[FPGAid_from_ID(asic)];
+            mappedFEB FEB = febs[FEB_ID];
             uint16_t SB_ID=FEB.SB_Number();
             uint16_t SP_ID=FEB.SB_Port();
             uint16_t FA_ID=ASICid_from_ID(asic);

@@ -26,11 +26,11 @@ namespace midasODB {
 // /Equipment/SciFi/Settings/ASICs/%d/TDC
 // /Equipment/SciFi/Settings/ASICs/%d/Channels/%d/Conf
 //Relies on {prefix}/Settings/ASICs/Global/Num asics to build the tree of the right size
-int setup_db(std::string prefix, MutrigFEB & FEB_inteface, uint32_t nasics, uint32_t nModules, uint32_t nAsicsPerFeb);
+int setup_db(std::string prefix, MutrigFEB & FEB_inteface, uint32_t nasics, uint32_t nModules, uint32_t nAsicsPerFeb, bool write_defaults);
 
 //Map ODB structure under prefix (e.g. /Equipment/SciFi) to a Config instance (i.e. build the configuration pattern) for this asic.
 //Returns configuration class holding the pattern.
-MutrigConfig MapConfigFromDB(std::string prefix, int asic);
+MutrigConfig MapConfigFromDB(odb settings_asics, int asic);
 
 } } // namespace mutrig::midasODB
 

@@ -549,7 +549,7 @@ INT init_scifi() {
                     equipment[EQUIPMENT_ID::Links].name,
                     equipment[EQUIPMENT_ID::SciFi].name,
                     switch_id); //create FEB interface signleton for scifi
-    int status = mutrig::midasODB::setup_db("/Equipment/" + scifi_eq_name, *scififeb, nasics_scifi, scifi_num_modules_per_feb, scifi_num_asics_per_module);
+    int status = mutrig::midasODB::setup_db("/Equipment/" + scifi_eq_name, *scififeb, nasics_scifi, scifi_num_modules_per_feb, scifi_num_asics_per_module, true);
     if(status != SUCCESS){
         set_equipment_status(equipment[EQUIPMENT_ID::SciFi].name, "Start up failed", "var(--mred)");
         return status;
@@ -577,7 +577,7 @@ INT init_scitiles() {
                      equipment[EQUIPMENT_ID::Links].name,
                      equipment[EQUIPMENT_ID::Tiles].name,
                       switch_id); //create FEB interface signleton for scitiles
-    int status = mutrig::midasODB::setup_db("/Equipment/" + tile_eq_name, *tilefeb, nasics_tile, tile_num_modules_per_feb, tile_num_modules_per_feb);
+    int status = mutrig::midasODB::setup_db("/Equipment/" + tile_eq_name, *tilefeb, nasics_tile, tile_num_modules_per_feb, tile_num_modules_per_feb, true);
     if(status != SUCCESS){
         set_equipment_status(equipment[EQUIPMENT_ID::Tiles].name, "Start up failed", "var(--mred)");
         return status;

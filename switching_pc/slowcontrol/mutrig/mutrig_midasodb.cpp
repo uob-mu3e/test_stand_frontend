@@ -19,7 +19,7 @@ namespace mutrig { namespace midasODB {
 //#endif
 
 
-int setup_db(std::string prefix, MutrigFEB & FEB_interface, uint32_t nasics, uint32_t nModules, uint32_t nAsicsPerFeb){
+int setup_db(std::string prefix, MutrigFEB & FEB_interface, uint32_t nasics, uint32_t nModules, uint32_t nAsicsPerFeb, bool write_defaults = true){
     /* Book Setting space */
     INT status = DB_SUCCESS;
 
@@ -37,7 +37,7 @@ int setup_db(std::string prefix, MutrigFEB & FEB_interface, uint32_t nasics, uin
 
     // Add [prefix]/Daq (structure defined in mutrig_MIDAS_config.h) 
     auto settings_daq = MUTRIG_DAQ_SETTINGS; // gloabl setting for daq/fpga from mutrig_MIDAS_config.h
-    settings_daq.connect(prefix + "/Settings/Daq");
+    settings_daq.connect(prefix + "/Settings/Daq", write_defaults);
     //update length flags for DAQ section
     settings_daq["num_asics"]=nasics;
     settings_daq["num_modules_per_feb"]=nModules;
@@ -46,10 +46,10 @@ int setup_db(std::string prefix, MutrigFEB & FEB_interface, uint32_t nasics, uin
     settings_daq["resetskew_cphase"].resize(nModules);
     settings_daq["resetskew_cdelay"].resize(nModules);
     settings_daq["resetskew_phases"].resize(nModules);
-    settings_daq.connect(prefix + "/Settings/Daq");
+    settings_daq.connect(prefix + "/Settings/Daq", write_defaults);
 
     auto commands = ScifiCentralCommands;
-    commands.connect(prefix + "/Commands");
+    commands.connect(prefix + "/Commands", write_defaults);
 
     // use lambda function for passing FEB_interface
     // TODO: don't set watch here for the moment use the one in switch_fe
@@ -123,12 +123,10 @@ int setup_db(std::string prefix, MutrigFEB & FEB_interface, uint32_t nasics, uin
     return status;
 }
 
-mutrig::MutrigConfig MapConfigFromDB(std::string prefix, int asic) {
+mutrig::MutrigConfig MapConfigFromDB(odb settings_asics, int asic) {
 
     MutrigConfig ret;
     ret.reset();
-
-    odb settings_asics(prefix + "/Settings/ASICs");
 
     // get global asic settings from odb;
     ret.Parse_GLOBAL_from_struct(settings_asics["Global"]);
