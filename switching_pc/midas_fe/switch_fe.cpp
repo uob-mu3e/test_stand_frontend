@@ -374,11 +374,11 @@ void setup_odb(){
 
     // add custom pages to ODB
     odb custom("/Custom");
-    custom["Links"] = "links.html";
-    custom["Febs&"] = "febs.html";
-    custom["DAQcounters&"] = "daqcounters.html";
-    custom["Data Flow&"] = "dataflow.html";
-    custom["Pixel LVDS&"] = "pixel_lvds.html";
+    custom["DAQ"]["Links"] = "links.html";
+    custom["DAQ"]["FEBs"] = "febs.html";
+    //custom["DAQcounters&"] = "daqcounters.html";
+    custom["DAQ"]["Data Flow"] = "dataflow.html";
+    custom["DAQ"]["Pixel LVDS"] = "pixel_lvds.html";
 
     // Inculde the line below to set up the FEBs and their mapping for the 2021 integration run
     //#include "odb_feb_mapping_integration_run_2021.h"
@@ -560,7 +560,7 @@ INT init_scifi() {
 
     //set custom page
     odb custom("/Custom");
-    custom["SciFi-ASICs&"] = "mutrigTdc.html";
+    custom["SciFi"]["SciFi-ASICs"] = "mutrigTdc.html";
 
     set_equipment_status(equipment[EQUIPMENT_ID::SciFi].name, "Ok", "var(--mgreen)");
 
@@ -589,9 +589,7 @@ INT init_scitiles() {
 
     //set custom page
     odb custom("/Custom");
-    custom["SciTiles-ASICs&"] = "tile_custompage.html";
-
-    set_equipment_status(equipment[EQUIPMENT_ID::Tiles].name, "Ok", "var(--mgreen)");
+    custom["Tile"]["SciTiles-ASICs"] = "tile_custompage.html";
     
     return SUCCESS;
 }
@@ -622,7 +620,7 @@ INT init_mupix() {
 
     //TODO: set custom page
     odb custom("/Custom");
-    custom["Pixel Control"] = "pixel_tracker.html";
+    custom["DAQ"]["Pixel Control"] = "pixel_tracker.html";
     //custom["Mupix&"] = "mupix_custompage.html";
 
     return SUCCESS;
