@@ -342,7 +342,7 @@ void setup_odb(){
 
     // add custom page to ODB
     odb custom("/Custom");
-    custom["FEBcrates&"] = "crates.html";
+    custom["DAQ"]["FEB crates"] = "crates.html";
 }
 
 void setup_history(){

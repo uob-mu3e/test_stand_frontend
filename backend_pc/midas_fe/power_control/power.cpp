@@ -369,7 +369,7 @@ INT frontend_init()
   
     midas::odb custom;
     custom.connect("/Custom");
-    custom["Low Voltage&"] = "lowvoltage.html";
+    custom["Services"]["Low Voltage"] = "lowvoltage.html";
 
     setup_history();
 
