@@ -81,6 +81,7 @@ signal hasoverflow:		std_logic;
 signal fifo_empty_last:	std_logic;
 signal fifo_new: 		std_logic;
 signal read_fifo_int: 	std_logic;
+signal read_fifo_last: 	std_logic;
 signal make_header:		std_logic_vector(1 downto 0);
 signal blockchange:		std_logic;
 signal no_copy_next:	std_logic;
@@ -100,6 +101,7 @@ if (reset_n = '0') then
 	running_last 	<= '0';
 	stopped			<= '0';
 	read_fifo_int	<= '0';
+	read_fifo_last	<= '0';
 	fifo_empty_last	<= '1';
 	output 			<= none;
 	fifo_new		<= '0';
@@ -118,6 +120,7 @@ elsif (clk'event and clk = '1') then
 
 
 	fifo_empty_last	<= fifo_empty;
+	read_fifo_last	<= read_fifo_int;
 
 	copy_fifo	:= '1';
 
@@ -213,7 +216,7 @@ elsif (clk'event and clk = '1') then
 	-- copy_fifo means that the current set of variables was processed and they can be replaced
 	-- with the fifo output
 	--if(read_fifo_int = '1' and fifo_empty_last = '0')then
-	if(fifo_empty_last = '0')then
+	if(fifo_empty_last = '0' and read_fifo_last = '1')then
 		if(copy_fifo = '1' and fifo_new = '0')then
 			fifo_new		<= '0';
 		else
@@ -223,7 +226,7 @@ elsif (clk'event and clk = '1') then
 		fifo_new		<= '0';
 	end if;	
 	--if(copy_fifo = '1' and ((read_fifo_int = '1' and fifo_empty_last = '0') or fifo_new = '1'))then
-	if(copy_fifo = '1' and ((fifo_empty_last = '0') or fifo_new = '1'))then
+	if(copy_fifo = '1' and ((fifo_empty_last = '0' and read_fifo_last = '1') or fifo_new = '1'))then
 		current_block 	<= from_fifo(TSBLOCKINFIFORANGE);
 		current_ts	 	<= from_fifo(TSINFIFORANGE);
 		counters_reg	<= from_fifo(MEMCOUNTERRANGE);
