@@ -171,7 +171,7 @@ int MutrigFEB::ConfigureASICs(){
                 payload.push_back(vector<uint32_t>(reinterpret_cast<uint32_t*>(config->bitpattern_w),reinterpret_cast<uint32_t*>(config->bitpattern_w)+config->length_32bits));
                 // TODO: we make modulo number of asics per module here since each FEB has only # ASIC from 0 to asics per module but
                 // here we loop until total number of asics which is asics per module times # of FEBs
-                rpc_status = feb_sc.FEBsc_NiosRPC(FEB, feb::CMD_MUTRIG_ASIC_CFG | (asic % GetASICSPerFEB()), payload);
+                rpc_status = feb_sc.FEBsc_NiosRPC(FEB, feb::CMD_MUTRIG_ASIC_CFG | (asic % (nModule * nASICperModule)), payload);
             } catch(std::exception& e) {
                 cm_msg(MERROR, "setup_mutrig", "Communication error while configuring MuTRiG %d: %s", asic, e.what());
                 set_equipment_status(equipment_name.c_str(), "SB-FEB Communication error", "red");
