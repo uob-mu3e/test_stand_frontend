@@ -258,8 +258,8 @@ begin
     rx_data_pixel(g_NLINKS_DATA_PIXEL-1) <= rx_data(12);
 
     -- map scifi comsic run
-    gen_scifi_data_mapping : FOR i in g_NLINKS_DATA_PIXEL to g_NLINKS_DATA_PIXEL + g_NLINKS_DATA_SCIFI - 1 GENERATE
-        rx_data_scifi(i-g_NLINKS_DATA_PIXEL)   <= rx_data(i);
+    gen_scifi_data_mapping : FOR i in g_NLINKS_DATA_PIXEL_US + g_NLINKS_DATA_PIXEL_DS to g_NLINKS_DATA_PIXEL_US + g_NLINKS_DATA_PIXEL_DS + g_NLINKS_DATA_SCIFI - 1 GENERATE
+        rx_data_scifi(i-g_NLINKS_DATA_PIXEL_US + g_NLINKS_DATA_PIXEL_DS)   <= rx_data(i);
     END GENERATE gen_scifi_data_mapping;
 
     -- counter mapping
