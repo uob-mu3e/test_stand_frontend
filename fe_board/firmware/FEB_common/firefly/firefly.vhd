@@ -195,11 +195,12 @@ begin
     if rising_edge(i_clk) then
         -- spending a round of registers for timing improvement
         if ( USE_FIREFLY_2 ) then
-            o_data_fast_parallel    <= av_rx_data_parallel(31 downto 0) & av_rx_data_parallel(127 downto 96) &av_rx_data_parallel(95 downto 64) &av_rx_data_parallel(63 downto 32);
+            o_data_fast_parallel    <= av_rx_data_parallel(31 downto 0) & av_rx_data_parallel(127 downto 96) & av_rx_data_parallel(95 downto 64) & av_rx_data_parallel(63 downto 32);
+            o_datak                 <= av_rx_datak(3 downto 0)          & av_rx_datak(15 downto 12)          & av_rx_datak(11 downto 8)          & av_rx_datak(7 downto 4);
         else
             o_data_fast_parallel    <= av_rx_data_parallel;
+            o_datak                 <= av_rx_datak;
         end if;
-        o_datak                 <= av_rx_datak;
     end if;
     end process;
 

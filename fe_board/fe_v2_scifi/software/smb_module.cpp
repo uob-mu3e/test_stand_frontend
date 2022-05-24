@@ -149,6 +149,7 @@ void SMB_t::menu_SMB_main() {
         printf("  [3] => Write no TDC power config to all ASICs\n");
         printf("  [4] => Write DCR config to all ASICs\n");
         printf("  [5] => Write high TThreshold config to all ASICs\n");
+        printf("  [6] => Write mask PLL test\n");
         printf("  [8] => data\n");
         printf("  [9] => monitor test\n");
         printf("  [a] => counters\n");
@@ -196,13 +197,18 @@ void SMB_t::menu_SMB_main() {
                 sc.ram->data[SCIFI_CNT_CTRL_REGISTER_W] = sc.ram->data[SCIFI_CNT_CTRL_REGISTER_W] & ~(1<<31);
                 for(alt_u8 asic = 0; asic < 8; asic++) {
                     sc_callback(CMD_MUTRIG_ASIC_CFG | asic, (alt_u32*) config_DCR, 0);
-                               }
-                               break;
+                }
+                break;
              case '5':
                 sc.ram->data[SCIFI_CNT_CTRL_REGISTER_W] = sc.ram->data[SCIFI_CNT_CTRL_REGISTER_W] & ~(1<<31);
                 for(alt_u8 asic = 0; asic < 8; asic++) {
-                                       sc_callback(CMD_MUTRIG_ASIC_CFG | asic, (alt_u32*) config_HighTTh, 0);
-                               }
+                    sc_callback(CMD_MUTRIG_ASIC_CFG | asic, (alt_u32*) config_HighTTh, 0);
+                }
+                break;
+            case '6':
+                for(alt_u8 asic = 0; asic < 8; asic++)
+                    sc_callback(CMD_MUTRIG_ASIC_CFG | asic, (alt_u32*) config_plltest_mask, 0, true);
+                sc.ram->data[SCIFI_CNT_CTRL_REGISTER_W] = sc.ram->data[SCIFI_CNT_CTRL_REGISTER_W] | (1<<31);
                 break;
             case '8':
                 printf("buffer_full / frame_desync / rx_pll_lock : 0x%03X\n", sc.ram->data[SCIFI_MON_STATUS_REGISTER_R]);

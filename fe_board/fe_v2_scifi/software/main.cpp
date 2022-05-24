@@ -22,15 +22,17 @@ mscb_t mscb;
 #include "smb_module.h"
 SMB_t SMB(sc);
 
-
 //definition of callback function for slow control packets
 alt_u16 sc_t::callback(alt_u16 cmd, volatile alt_u32* data, alt_u16 n) {
     return SMB.sc_callback(cmd,data,n,false);
 }
 
-
 int main() {
     base_init();
+
+    si5345_2.init();
+    usleep(5000000);
+    si5345_1.init();
 
     volatile sc_ram_t* ram = (sc_ram_t*) AVM_SC_BASE;
 
@@ -38,9 +40,6 @@ int main() {
     ram->data[CMD_LEN_REGISTER_RW] = 0x0;
     ram->data[CMD_OFFSET_REGISTER_RW] = 0x0;
 
-    si5345_2.init();
-    usleep(5000000);
-    si5345_1.init();
     //mscb.init();
     sc.init();
 
