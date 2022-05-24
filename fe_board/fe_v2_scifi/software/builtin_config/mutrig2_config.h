@@ -8,4 +8,5 @@ const uint32_t MUTRIG_CONFIG_LEN_BITS =2719;
 #include "mutrig2/PRBS_single.h"
 #include "mutrig2/No_TDC_Power.h"
 #include "mutrig2/PLL_TEST.h"
-
+#include "mutrig2/mutrig2_DCR.h"
+#include "mutrig2/mutrig2_HighTTh.h"
