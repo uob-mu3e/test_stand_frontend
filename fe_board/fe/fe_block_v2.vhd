@@ -14,6 +14,7 @@ generic (
     PHASE_WIDTH_g : positive := 16;
     NIOS_CLK_MHZ_g : real;
     N_LINKS : positive := 1;
+    USE_FIREFLY_2 : boolean  := false;
     SC_READ_DELAY_g : positive := 7--;
 );
 port (
@@ -619,6 +620,9 @@ begin
     );
 
     firefly : entity work.firefly
+    generic map (
+        USE_FIREFLY_2 => USE_FIREFLY_2--,
+    )
     port map (
         i_clk                           => i_clk_156,
         i_sysclk                        => i_nios_clk,
