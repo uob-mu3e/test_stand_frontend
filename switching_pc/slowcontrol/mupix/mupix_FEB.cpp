@@ -84,7 +84,7 @@ int MupixFEB::ConfigureASICs(){
         feb_sc.FEB_write(feb, MP_LVDS_LINK_MASK_REGISTER_W, (uint32_t) FEBsSettings["MP_LVDS_LINK_MASK"]);
         feb_sc.FEB_write(feb, MP_LVDS_LINK_MASK2_REGISTER_W, (uint32_t) FEBsSettings["MP_LVDS_LINK_MASK2"]);
         feb_sc.FEB_write(feb, MP_CTRL_SPI_ENABLE_REGISTER_W, 0x00000001);
-        feb_sc.FEB_write(feb, MP_CTRL_SLOW_DOWN_REGISTER_W, 0x0000000F);
+        feb_sc.FEB_write(feb, MP_CTRL_SLOW_DOWN_REGISTER_W, 0x0000001F);
     }
 
     // configure each asic
@@ -296,7 +296,7 @@ int MupixFEB::ConfigureTDACs(){
                                 std::vector<uint32_t> tdac_page(PAGESIZE);
                                 // how to do this wihout copy ?
                                 tdac_page = std::vector<uint32_t>(tdac_pages.at(internal_febID).at(chip).begin() + current_page*PAGESIZE, tdac_pages.at(internal_febID).at(chip).begin() + (current_page+1)*PAGESIZE);
-                                feb_sc.FEB_write(feb, MP_CTRL_TDAC_START_REGISTER_W + pos, tdac_page, true, false);
+                                feb_sc.FEB_write(feb, MP_CTRL_TDAC_START_REGISTER_W + chip, tdac_page, true, false);
                                 //printf(" write page, remaining: %i\n", pages_remaining_this_feb);
                                 printf("Writing chip %x page %x pos %x, remaining %i\n", chip, current_page, pos, pages_remaining.at(internal_febID)[chip]);
                                 usleep(100000);
