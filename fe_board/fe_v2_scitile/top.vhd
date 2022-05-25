@@ -27,18 +27,38 @@ port (
     clk_125_bottom              : in    std_logic; -- 125 Mhz clock spare // SI5345
     spare_clk_osc               : in    std_logic; -- Spare clock // 50 MHz oscillator
 
-    -- tile DAB signals
-    tile_din                    : in    std_logic_vector(13 downto 1);
-    tile_pll_test               : out   std_logic;
-    tile_chip_reset             : out   std_logic;
-    tile_i2c_sda                : inout std_logic;
-    tile_i2c_scl                : inout std_logic;
-    tile_cec                    : in    std_logic;
-    tile_spi_miso               : in    std_logic;
-    tile_i2c_int                : in    std_logic;
-    tile_pll_reset              : out   std_logic;
-    tile_spi_scl                : out   std_logic;
-    tile_spi_mosi               : out   std_logic;
+    -- Tile DAB signals for FEB connector #3  / Inner Ring on SSW
+    tileA_din                    : in    std_logic_vector(12 downto 0);
+    tileA_pll_test               : out   std_logic; -- test pulse injection
+    tileA_pll_reset              : out   std_logic; -- main reset (synchronisation and ASIC state machines)
+    --SPI interface for ASICs
+    tileA_spi_sclk               : out   std_logic;
+    tileA_spi_mosi               : out   std_logic;
+    tileA_spi_miso               : in    std_logic;
+    tileA_cec_miso               : in    std_logic; -- channel event counter output, deprecated for mutrig3
+    --I2C interface for TMB control/monitoring
+    tileA_i2c_sda_io             : inout std_logic;
+    tileA_i2c_scl_io             : inout std_logic;
+
+    -- Tile DAB signals for FEB connector #2  / Outer Ring on SSW
+    tileB_din                    : in    std_logic_vector(12 downto 0);
+    tileB_pll_test               : out   std_logic; -- test pulse injection
+    tileB_pll_reset              : out   std_logic; -- main reset (synchronisation and ASIC state machines)
+    --SPI interface for ASICs
+    tileB_spi_sclk               : out   std_logic;
+    tileB_spi_mosi               : out   std_logic;
+    tileB_spi_miso               : in    std_logic;
+    tileB_cec_miso               : in    std_logic; -- channel event counter output, deprecated for mutrig3
+    --I2C interface for TMB control/monitoring
+    tileB_i2c_sda_io             : inout std_logic;
+    tileB_i2c_scl_io             : inout std_logic;
+
+
+    --DEPRECATED signals
+--    tile_i2c_int                : in    std_logic;
+--    tile_chip_reset             : out   std_logic;
+
+
 
     -- Fireflies
     firefly1_tx_data            : out   std_logic_vector(3 downto 0); -- transceiver
@@ -124,8 +144,21 @@ architecture rtl of top is
     signal s_run_state_all_done     : std_logic;
     signal s_MON_rxrdy              : std_logic_vector(N_MODULES*N_ASICS-1 downto 0);
 
+
+ 
+    -- TMB interface / internal signals after selecting connector
+    tile_din                    : std_logic_vector(12 downto 0);
+    tile_pll_test               : std_logic; -- test pulse injection
+    tile_pll_reset              : std_logic; -- main reset (synchronisation and ASIC state machines)
+    --SPI interface for ASICs
+    tile_spi_sclk               : std_logic;
+    tile_spi_mosi               : std_logic;
+    tile_spi_miso               : std_logic;
+    tile_cec_miso               : std_logic; -- channel event counter output, deprecated for mutrig3
+
     -- i2c interface (fe_block to io buffers)
-    signal i2c_scl, i2c_scl_oe, i2c_sda, i2c_sda_oe : std_logic;
+    signal tileA_i2c_scl, tileA_i2c_scl_oe, tileA_i2c_sda, tileA_i2c_sda_oe : std_logic;
+    signal tileB_i2c_scl, tileB_i2c_scl_oe, tileB_i2c_sda, tileB_i2c_sda_oe : std_logic;
 
     -- spi multiplexing
     signal tmb_miso : std_logic;
@@ -137,32 +170,85 @@ begin
 ----TILE SUB-DETECTOR FIRMWARE -------------------------------------
 --------------------------------------------------------------------
 --------------------------------------------------------------------
-
 -- IO buffers for I2C
-    iobuf_sda: entity work.ip_iobuf
+    iobuf_tileA_sda: entity work.ip_iobuf
     port map(
         datain(0)   => '0',
-        oe(0)       => i2c_sda_oe,
-        dataout(0)  => i2c_sda,
-        dataio(0)   => tile_i2c_sda--,
+        oe(0)       => tileA_i2c_sda_oe,
+        dataout(0)  => tileA_i2c_sda,
+        dataio(0)   => tileA_i2c_sda_io
     );
 
-    iobuf_scl: entity work.ip_iobuf
+    iobuf_tileA_scl: entity work.ip_iobuf
     port map(
         datain(0)   => '0',
-        oe(0)       => i2c_scl_oe,
-        dataout(0)  => i2c_scl,
-        dataio(0)   => tile_i2c_scl--,
+        oe(0)       => tileA_i2c_scl_oe,
+        dataout(0)  => tileA_i2c_scl,
+        dataio(0)   => tileA_i2c_scl_io--,
+    );
+
+    iobuf_tileB_sda: entity work.ip_iobuf
+    port map(
+        datain(0)   => '0',
+        oe(0)       => tileB_i2c_sda_oe,
+        dataout(0)  => tileB_i2c_sda,
+        dataio(0)   => tileB_i2c_sda_io
+    );
+
+    iobuf_tileB_scl: entity work.ip_iobuf
+    port map(
+        datain(0)   => '0',
+        oe(0)       => tileB_i2c_scl_oe,
+        dataout(0)  => tileB_i2c_scl,
+        dataio(0)   => tileB_i2c_scl_io--,
     );
 
 
 
-    -- SPI input multiplexing (CEC / configuration)
-    -- only input multiplexing is done here, the rest is done on the TMB
-    -- "not" for polarity flip on DAB PCB
-    tmb_miso <=
-        not tile_cec      when tmb_ss_n(1)='0' else
-        not tile_spi_miso; --when tmb_ss_n(0)='0' else
+    
+    
+-- Selection of connector.
+--g_DAB_interconnect_A: if C_DAB_PORT='1' generate
+    tile_din        <= tileA_din;
+    tileA_pll_test   <= tile_pll_test;
+    tileA_pll_reset  <= tile_pll_reset;
+    tileA_spi_sclk   <= tile_spi_sclk;
+    tileA_spi_mosi   <= tileA_spi_mosi;
+    tile_spi_miso   <= tileA_spi_miso;
+    tile_cec_miso   <= tileA_cec_miso;
+
+    tileB_pll_test   <= '0';
+    tileB_pll_reset  <= '0';
+    tileB_spi_sclk   <= '0';
+    tileB_spi_mosi   <= '0';
+
+    tileB_i2c_scl_oe <= '0';
+    tileB_i2c_sda_oe <= '0';
+--end generate;
+--g_DAB_interconnect_B: if B_DBA_PORT='0' generate
+--  tile_din        <= tileB_din;
+--  tileB_pll_test   <= tile_pll_test;
+--  tileB_pll_reset  <= tile_pll_reset;
+--  tileB_spi_sclk   <= tile_spi_sclk;
+--  tileB_spi_mosi   <= tileB_spi_mosi;
+--  tile_spi_miso   <= tileB_spi_miso;
+--  tile_cec_miso   <= tileB_cec_miso;
+--
+--  tileA_pll_test   <= '0';
+--  tileA_pll_reset  <= '0';
+--  tileA_spi_sclk   <= '0';
+--  tileA_spi_mosi   <= '0';
+--
+--  tileA_i2c_scl_oe <= '0';
+--  tileA_i2c_sda_oe <= '0';
+--end generate;
+
+
+
+
+-- SPI input multiplexing (CEC / configuration)
+-- only input multiplexing is done here, the rest is done on the TMB
+tmb_miso <= tile_cec_miso when tmb_ss_n(1)='0' else tile_spi_miso; --when tmb_ss_n(0)='0' else
 
 -- main datapath
     e_tile_path : entity work.tile_path
@@ -249,10 +335,10 @@ begin
         o_spi_sclk          => tile_spi_scl,
         o_spi_ss_n          => tmb_ss_n,
 
-        i_i2c_scl           => i2c_scl,
-        o_i2c_scl_oe        => i2c_scl_oe,
-        i_i2c_sda           => i2c_sda,
-        o_i2c_sda_oe        => i2c_sda_oe,
+        i_i2c_scl           => tileA_i2c_scl,
+        o_i2c_scl_oe        => tileA_i2c_scl_oe,
+        i_i2c_sda           => tileA_i2c_sda,
+        o_i2c_sda_oe        => tileA_i2c_sda_oe,
 
         i_spi_si_miso       => si45_spi_out,
         o_spi_si_mosi       => si45_spi_in,
