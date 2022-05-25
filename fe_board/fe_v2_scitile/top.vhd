@@ -147,14 +147,14 @@ architecture rtl of top is
 
  
     -- TMB interface / internal signals after selecting connector
-    tile_din                    : std_logic_vector(12 downto 0);
-    tile_pll_test               : std_logic; -- test pulse injection
-    tile_pll_reset              : std_logic; -- main reset (synchronisation and ASIC state machines)
+    signal tile_din                    : std_logic_vector(12 downto 0);
+    signal tile_pll_test               : std_logic; -- test pulse injection
+    signal tile_pll_reset              : std_logic; -- main reset (synchronisation and ASIC state machines)
     --SPI interface for ASICs
-    tile_spi_sclk               : std_logic;
-    tile_spi_mosi               : std_logic;
-    tile_spi_miso               : std_logic;
-    tile_cec_miso               : std_logic; -- channel event counter output, deprecated for mutrig3
+    signal tile_spi_sclk               : std_logic;
+    signal tile_spi_mosi               : std_logic;
+    signal tile_spi_miso               : std_logic;
+    signal tile_cec_miso               : std_logic; -- channel event counter output, deprecated for mutrig3
 
     -- i2c interface (fe_block to io buffers)
     signal tileA_i2c_scl, tileA_i2c_scl_oe, tileA_i2c_sda, tileA_i2c_sda_oe : std_logic;
@@ -267,11 +267,11 @@ tmb_miso <= tile_cec_miso when tmb_ss_n(1)='0' else tile_spi_miso; --when tmb_ss
         i_reg_we                    => malibu_reg.we,
         i_reg_wdata                 => malibu_reg.wdata,
 
-        o_chip_reset                => tile_chip_reset,
+        o_chip_reset                => open, --tile_chip_reset, --deprecated
         o_pll_test                  => tile_pll_test,
         i_data                      => tile_din,
 
-        i_i2c_int                   => tile_i2c_int,
+        i_i2c_int                   => '1', -- tile_i2c_int, --deprecated
         o_pll_reset                 => tile_pll_reset,
 
         o_fifo_write                => fifo_write,
@@ -332,7 +332,7 @@ tmb_miso <= tile_cec_miso when tmb_ss_n(1)='0' else tile_spi_miso; --when tmb_ss
 
         i_spi_miso          => tmb_miso,
         o_spi_mosi          => tile_spi_mosi,
-        o_spi_sclk          => tile_spi_scl,
+        o_spi_sclk          => tile_spi_sclk,
         o_spi_ss_n          => tmb_ss_n,
 
         i_i2c_scl           => tileA_i2c_scl,
