@@ -28,7 +28,7 @@ port (
     spare_clk_osc               : in    std_logic; -- Spare clock // 50 MHz oscillator
 
     -- Tile DAB signals for FEB connector #3  / Inner Ring on SSW
-    tileA_din                    : in    std_logic_vector(12 downto 0);
+    tileA_din                    : in    std_logic_vector(13 downto 1);
     tileA_pll_test               : out   std_logic; -- test pulse injection
     tileA_pll_reset              : out   std_logic; -- main reset (synchronisation and ASIC state machines)
     --SPI interface for ASICs
@@ -41,7 +41,7 @@ port (
     tileA_i2c_scl_io             : inout std_logic;
 
     -- Tile DAB signals for FEB connector #2  / Outer Ring on SSW
-    tileB_din                    : in    std_logic_vector(12 downto 0);
+    tileB_din                    : in    std_logic_vector(13 downto 1);
     tileB_pll_test               : out   std_logic; -- test pulse injection
     tileB_pll_reset              : out   std_logic; -- main reset (synchronisation and ASIC state machines)
     --SPI interface for ASICs
@@ -239,7 +239,7 @@ begin
     
 -- Selection of connector.
 --g_DAB_interconnect_A: if C_DAB_PORT='1' generate
-    tile_din        <= tileA_din;
+    tile_din        <= tileA_din(13 downto 1);
     tileA_pll_test   <= tile_pll_test;
     tileA_pll_reset  <= tile_pll_reset;
     tileA_spi_sclk   <= tile_spi_sclk;
@@ -256,7 +256,7 @@ begin
     tileB_i2c_sda_oe <= '0';
 --end generate;
 --g_DAB_interconnect_B: if B_DBA_PORT='0' generate
---  tile_din        <= tileB_din;
+--  tile_din        <= tileB_din(13 downto 1);
 --  tileB_pll_test   <= tile_pll_test;
 --  tileB_pll_reset  <= tile_pll_reset;
 --  tileB_spi_sclk   <= tile_spi_sclk;
