@@ -126,6 +126,9 @@ end top;
 
 architecture rtl of top is
 
+    signal clk_125, reset_125_n : std_logic;
+    signal clk_156, reset_156_n : std_logic;
+
     -- Debouncers
     signal pb_db                    : std_logic_vector(1 downto 0);
 
@@ -164,6 +167,16 @@ architecture rtl of top is
     signal tmb_miso : std_logic;
     signal tmb_ss_n : std_logic_vector(15 downto 0);
 begin
+
+    e_reset_125_n : entity work.reset_sync
+    port map ( o_reset_n => reset_125_n, i_reset_n => pb_db(0), i_clk => clk_125 );
+
+    clk_156 <= transceiver_pll_clock(0);
+
+    e_reset_156_n : entity work.reset_sync
+    port map ( o_reset_n => reset_156_n, i_reset_n => pb_db(0), i_clk => clk_156 );
+
+
 
 --------------------------------------------------------------------
 --------------------------------------------------------------------
@@ -290,6 +303,8 @@ tmb_miso <= tile_cec_miso when tmb_ss_n(1)='0' else tile_spi_miso; --when tmb_ss
         i_clk_ref_B                 => LVDS_clk_si1_fpga_B,
 
         o_test_led                  => lcd_data(4),
+        i_reset_125_n               => reset_125_n,
+        i_reset_156_n               => reset_156_n,
         i_reset                     => not pb_db(0)--,
     );
 
