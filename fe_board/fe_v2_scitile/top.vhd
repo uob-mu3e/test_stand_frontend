@@ -32,9 +32,9 @@ port (
     tileA_pll_test               : out   std_logic; -- test pulse injection
     tileA_pll_reset              : out   std_logic; -- main reset (synchronisation and ASIC state machines)
     --SPI interface for ASICs
-    tileA_spi_sclk               : out   std_logic;
-    tileA_spi_mosi               : out   std_logic;
-    tileA_spi_miso               : in    std_logic;
+    tileA_spi_sclk_n             : out   std_logic;
+    tileA_spi_mosi_n             : out   std_logic;
+    tileA_spi_miso_n             : in    std_logic;
     tileA_cec_miso               : in    std_logic; -- channel event counter output, deprecated for mutrig3
     --I2C interface for TMB control/monitoring
     tileA_i2c_sda_io             : inout std_logic;
@@ -46,8 +46,8 @@ port (
     tileB_pll_reset              : out   std_logic; -- main reset (synchronisation and ASIC state machines)
     --SPI interface for ASICs
     tileB_spi_sclk               : out   std_logic;
-    tileB_spi_mosi               : out   std_logic;
-    tileB_spi_miso               : in    std_logic;
+    tileB_spi_mosi_n             : out   std_logic;
+    tileB_spi_miso_n             : in    std_logic;
     tileB_cec_miso               : in    std_logic; -- channel event counter output, deprecated for mutrig3
     --I2C interface for TMB control/monitoring
     tileB_i2c_sda_io             : inout std_logic;
@@ -125,9 +125,16 @@ port (
 end top;
 
 architecture rtl of top is
+    -- non-inverted io signals
+    signal tileA_spi_sclk           : std_logic;
+    signal tileA_spi_mosi           : std_logic;
+    signal tileB_spi_mosi           : std_logic;
+    signal tileA_spi_miso           : std_logic;
+    signal tileB_spi_miso           : std_logic;
 
-    signal clk_125, reset_125_n : std_logic;
-    signal clk_156, reset_156_n : std_logic;
+    -- clocks & resets
+    signal clk_125, reset_125_n     : std_logic;
+    signal clk_156, reset_156_n     : std_logic;
 
     -- Debouncers
     signal pb_db                    : std_logic_vector(1 downto 0);
@@ -167,6 +174,16 @@ architecture rtl of top is
     signal tmb_miso : std_logic;
     signal tmb_ss_n : std_logic_vector(15 downto 0);
 begin
+
+    -- io inversions:
+    tileA_spi_sclk <= not tileA_spi_sclk_n;
+    tileA_spi_mosi <= not tileA_spi_mosi_n;
+    tileB_spi_mosi <= not tileB_spi_mosi_n;
+    tileA_spi_miso <= not tileA_spi_miso_n;
+    tileB_spi_miso <= not tileB_spi_miso_n;
+
+
+
 
     e_reset_125_n : entity work.reset_sync
     port map ( o_reset_n => reset_125_n, i_reset_n => pb_db(0), i_clk => clk_125 );
