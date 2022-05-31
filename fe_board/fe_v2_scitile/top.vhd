@@ -170,6 +170,7 @@ architecture rtl of top is
     -- i2c interface (fe_block to io buffers)
     signal tileA_i2c_scl, tileA_i2c_scl_oe, tileA_i2c_sda, tileA_i2c_sda_oe : std_logic;
     signal tileB_i2c_scl, tileB_i2c_scl_oe, tileB_i2c_sda, tileB_i2c_sda_oe : std_logic;
+    signal tile_i2c_scl_oe, tile_i2c_sda_oe : std_logic;
 
     -- spi multiplexing
     signal tmb_miso : std_logic;
@@ -245,6 +246,9 @@ begin
         tile_spi_miso    <= tileA_spi_miso;
         tile_cec_miso    <= tileA_cec_miso;
 
+        tileA_i2c_scl_oe <= tile_i2c_scl_oe;
+        tileA_i2c_sda_oe <= tile_i2c_sda_oe;
+
         tileB_pll_test   <= '0';
         tileB_pll_reset  <= '0';
         tileB_spi_sclk   <= '0';
@@ -259,8 +263,11 @@ begin
         tileB_pll_reset  <= tile_pll_reset;
         tileB_spi_sclk   <= tile_spi_sclk;
         tileB_spi_mosi   <= tileB_spi_mosi;
-        tile_spi_miso   <= tileB_spi_miso;
-        tile_cec_miso   <= tileB_cec_miso;
+        tile_spi_miso    <= tileB_spi_miso;
+        tile_cec_miso    <= tileB_cec_miso;
+
+        tileB_i2c_scl_oe <= tile_i2c_scl_oe;
+        tileB_i2c_sda_oe <= tile_i2c_sda_oe;
 
         tileA_pll_test   <= '0';
         tileA_pll_reset  <= '0';
@@ -368,9 +375,9 @@ tmb_miso <= tile_cec_miso when tmb_ss_n(1)='0' else tile_spi_miso; --when tmb_ss
         o_spi_ss_n          => tmb_ss_n,
 
         i_i2c_scl           => tileA_i2c_scl,
-        o_i2c_scl_oe        => tileA_i2c_scl_oe,
+        o_i2c_scl_oe        => tile_i2c_scl_oe,
         i_i2c_sda           => tileA_i2c_sda,
-        o_i2c_sda_oe        => tileA_i2c_sda_oe,
+        o_i2c_sda_oe        => tile_i2c_sda_oe,
 
         i_spi_si_miso       => si45_spi_out,
         o_spi_si_mosi       => si45_spi_in,
