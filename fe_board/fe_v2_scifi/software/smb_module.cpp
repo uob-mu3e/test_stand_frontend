@@ -22,9 +22,9 @@ int SMB_t::spi_write_pattern(alt_u32 spi_slave, const alt_u8* bitpattern, bool p
     int status=0;
     int return_code=0;
     uint16_t rx_pre=0xff00;
-    uint16_t nb=MUTRIG_CONFIG_LEN_BYTES;
-    do{
-        nb--;
+
+    for ( int nb = MUTRIG_CONFIG_LEN_BYTES-1; nb>=0; nb--) {
+
         //do spi transaction, one byte at a time
         alt_u8 rx = 0xCC;
         alt_u8 tx = bitpattern[nb];
@@ -32,23 +32,25 @@ int SMB_t::spi_write_pattern(alt_u32 spi_slave, const alt_u8* bitpattern, bool p
         return_code = alt_avalon_spi_command(SPI_BASE, spi_slave, 1, &tx, 0, &rx, nb==0?0:ALT_AVALON_SPI_COMMAND_MERGE);
         rx = IORD_8DIRECT(SPI_BASE, 0);
 
-        //printf("tx:%2.2X rx:%2.2x nb:%d\n",tx,rx,nb);//cmp
-        char result_hex[3]; //cmp
-        char tx_hex[3]; //cmp
-        sprintf(result_hex,"%2.2X",rx); //cmp
-        sprintf(tx_hex,"%2.2X",tx); //cmp
-        rx_string[result_i] = result_hex[0]; //cmp
-        tx_string[result_i] = tx_hex[0]; //cmp
-        result_i++; //cmp
-        rx_string[result_i] = result_hex[1]; //cmp
-        tx_string[result_i] = tx_hex[1]; //cmp
-        result_i++; //cmp
-
         //pattern is not in full units of bytes, so shift back while receiving to check the correct configuration state
         unsigned char rx_check= (rx_pre | rx ) >> (8-MUTRIG_CONFIG_LEN_BITS%8);
         if(nb==MUTRIG_CONFIG_LEN_BYTES-1){
             rx_check &= 0xff>>(8-MUTRIG_CONFIG_LEN_BITS%8);
         };
+
+        if (print) {
+            //printf("tx:%2.2X rx:%2.2x nb:%d\n",tx,rx,nb);//cmp
+            char result_hex[3]; //cmp
+            char tx_hex[3]; //cmp
+            sprintf(result_hex,"%2.2X",rx_check); //cmp
+            sprintf(tx_hex,"%2.2X",tx); //cmp
+            rx_string[result_i] = result_hex[0]; //cmp
+            tx_string[result_i] = tx_hex[0]; //cmp
+            result_i++; //cmp
+            rx_string[result_i] = result_hex[1]; //cmp
+            tx_string[result_i] = tx_hex[1]; //cmp
+            result_i++; //cmp
+        }
 
         if(rx_check!=bitpattern[nb]){
             //printf("Error in byte %d: received %2.2x expected %2.2x\n",nb,rx_check,bitpattern[nb]);
@@ -59,7 +61,7 @@ int SMB_t::spi_write_pattern(alt_u32 spi_slave, const alt_u8* bitpattern, bool p
             printf("ERROR SPI TX RET = %x \n" , return_code);
 
         rx_pre=rx<<8;
-    } while(nb>0);
+    }
 
     if (print) {
         printf("TX = %s\n", tx_string);
