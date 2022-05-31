@@ -142,6 +142,7 @@ architecture rtl of top is
     constant N_LINKS                : integer := 1;
     constant N_ASICS                : integer := 13;
     constant N_MODULES              : integer := 1;
+    constant IS_TILE_B              : boolean := false;
 
     signal fifo_write               : std_logic_vector(N_LINKS-1 downto 0);
     signal fifo_wdata               : std_logic_vector(36*(N_LINKS-1)+35 downto 0);
@@ -154,10 +155,7 @@ architecture rtl of top is
     signal s_run_state_all_done     : std_logic;
     signal s_MON_rxrdy              : std_logic_vector(N_MODULES*N_ASICS-1 downto 0);
 
-
- 
     -- TMB interface / internal signals after selecting connector
-    signal tile_din                    : std_logic_vector(12 downto 0);
     signal tile_pll_test               : std_logic; -- test pulse injection
     signal tile_pll_reset              : std_logic; -- main reset (synchronisation and ASIC state machines)
     --SPI interface for ASICs
@@ -165,6 +163,9 @@ architecture rtl of top is
     signal tile_spi_mosi               : std_logic;
     signal tile_spi_miso               : std_logic;
     signal tile_cec_miso               : std_logic; -- channel event counter output, deprecated for mutrig3
+
+    -- tile_din cannot be a signal just for the selected connector since we need all 26 inputs to go to the same rx_block
+    signal tile_din                    : std_logic_vector(12 downto 0);
 
     -- i2c interface (fe_block to io buffers)
     signal tileA_i2c_scl, tileA_i2c_scl_oe, tileA_i2c_sda, tileA_i2c_sda_oe : std_logic;
@@ -233,45 +234,42 @@ begin
         dataio(0)   => tileB_i2c_scl_io--,
     );
 
-
-
-    
     
 -- Selection of connector.
---g_DAB_interconnect_A: if C_DAB_PORT='1' generate
-    tile_din        <= tileA_din(13 downto 1);
-    tileA_pll_test   <= tile_pll_test;
-    tileA_pll_reset  <= tile_pll_reset;
-    tileA_spi_sclk   <= tile_spi_sclk;
-    tileA_spi_mosi   <= tileA_spi_mosi;
-    tile_spi_miso   <= tileA_spi_miso;
-    tile_cec_miso   <= tileA_cec_miso;
+    g_DAB_interconnect_A: if IS_TILE_B=false generate
+        tile_din         <= tileA_din(13 downto 1);
+        tileA_pll_test   <= tile_pll_test;
+        tileA_pll_reset  <= tile_pll_reset;
+        tileA_spi_sclk   <= tile_spi_sclk;
+        tileA_spi_mosi   <= tileA_spi_mosi;
+        tile_spi_miso    <= tileA_spi_miso;
+        tile_cec_miso    <= tileA_cec_miso;
 
-    tileB_pll_test   <= '0';
-    tileB_pll_reset  <= '0';
-    tileB_spi_sclk   <= '0';
-    tileB_spi_mosi   <= '0';
+        tileB_pll_test   <= '0';
+        tileB_pll_reset  <= '0';
+        tileB_spi_sclk   <= '0';
+        tileB_spi_mosi   <= '0';
 
-    tileB_i2c_scl_oe <= '0';
-    tileB_i2c_sda_oe <= '0';
---end generate;
---g_DAB_interconnect_B: if B_DBA_PORT='0' generate
---  tile_din        <= tileB_din(13 downto 1);
---  tileB_pll_test   <= tile_pll_test;
---  tileB_pll_reset  <= tile_pll_reset;
---  tileB_spi_sclk   <= tile_spi_sclk;
---  tileB_spi_mosi   <= tileB_spi_mosi;
---  tile_spi_miso   <= tileB_spi_miso;
---  tile_cec_miso   <= tileB_cec_miso;
---
---  tileA_pll_test   <= '0';
---  tileA_pll_reset  <= '0';
---  tileA_spi_sclk   <= '0';
---  tileA_spi_mosi   <= '0';
---
---  tileA_i2c_scl_oe <= '0';
---  tileA_i2c_sda_oe <= '0';
---end generate;
+        tileB_i2c_scl_oe <= '0';
+        tileB_i2c_sda_oe <= '0';
+    end generate;
+    g_DAB_interconnect_B: if IS_TILE_B=true generate
+        tile_din         <= tileB_din(13 downto 1);
+        tileB_pll_test   <= tile_pll_test;
+        tileB_pll_reset  <= tile_pll_reset;
+        tileB_spi_sclk   <= tile_spi_sclk;
+        tileB_spi_mosi   <= tileB_spi_mosi;
+        tile_spi_miso   <= tileB_spi_miso;
+        tile_cec_miso   <= tileB_cec_miso;
+
+        tileA_pll_test   <= '0';
+        tileA_pll_reset  <= '0';
+        tileA_spi_sclk   <= '0';
+        tileA_spi_mosi   <= '0';
+
+        tileA_i2c_scl_oe <= '0';
+        tileA_i2c_sda_oe <= '0';
+    end generate;
 
 
 
@@ -286,6 +284,8 @@ tmb_miso <= tile_cec_miso when tmb_ss_n(1)='0' else tile_spi_miso; --when tmb_ss
         N_MODULES       => N_MODULES,
         N_ASICS         => N_ASICS,
         N_LINKS         => N_LINKS,
+        N_INPUTSRX      => 13,
+        IS_TILE_B       => IS_TILE_B,
         INPUT_SIGNFLIP  => x"0000"&"0001111110000001",
         LVDS_PLL_FREQ   => 125.0,
         LVDS_DATA_RATE  => 1250.0--,

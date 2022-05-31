@@ -17,6 +17,7 @@ generic(
     IS_SCITILE          : std_logic := '1';
     N_MODULES           : integer range 1 to 2 := 1;
     N_INPUTSRX          : positive := 8;
+    IS_TILE_B           : boolean := false;
     N_ASICS             : positive := 1;
     N_LINKS             : positive := 1;
     N_CC                : positive := 15; -- will be always 15
@@ -197,6 +198,7 @@ begin
     -- u_rxdeser: entity work.receiver_block
     -- generic map(
     --     IS_SCITILE      => IS_SCITILE,
+    --     IS_TILE_B       => IS_TILE_B,
     --     NINPUT          => N_INPUTSRX,
     --     LVDS_PLL_FREQ   => LVDS_PLL_FREQ,
     --     LVDS_DATA_RATE  => LVDS_DATA_RATE,

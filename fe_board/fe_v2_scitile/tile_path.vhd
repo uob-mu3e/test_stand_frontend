@@ -9,6 +9,8 @@ generic (
     N_MODULES : positive;
     N_ASICS : positive;
     N_LINKS : positive;
+    N_INPUTSRX : positive := 13;
+    IS_TILE_B : boolean := false;
     N_CC : positive := 15; -- will be always 15
     INPUT_SIGNFLIP : std_logic_vector := (31 downto 0 => '0');
     LVDS_PLL_FREQ : real;
@@ -25,7 +27,7 @@ port (
     -- to detector module
     o_chip_reset    : out   std_logic;
     o_pll_test      : out   std_logic;
-    i_data          : in    std_logic_vector(N_MODULES*N_ASICS-1 downto 0);
+    i_data          : in    std_logic_vector(N_INPUTSRX-1 downto 0);
     i_i2c_int       : in    std_logic;
     o_pll_reset     : out   std_logic;
 
@@ -228,9 +230,10 @@ begin
     e_mutrig_datapath : entity work.mutrig_datapath
     generic map (
         N_MODULES => N_MODULES,
-        N_INPUTSRX => 13,
+        N_INPUTSRX => N_INPUTSRX,
         N_ASICS => N_ASICS,
         N_LINKS => N_LINKS,
+        IS_TILE_B => IS_TILE_B,
         N_CC => 15,
         LVDS_PLL_FREQ => LVDS_PLL_FREQ,
         LVDS_DATA_RATE => LVDS_DATA_RATE,

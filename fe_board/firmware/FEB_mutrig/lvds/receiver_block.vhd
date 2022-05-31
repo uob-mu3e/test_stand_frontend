@@ -21,6 +21,7 @@ use work.mudaq.all;
 entity receiver_block is
 generic (
     IS_SCITILE : std_logic := '1';
+    IS_TILE_B : boolean := false;
     NINPUT : positive := 1;
     LVDS_PLL_FREQ : real := 125.0;
     LVDS_DATA_RATE : real := 1250.0;
@@ -115,25 +116,6 @@ begin
             locked   => rx_locked_A--,
         );
 
-        -- D4, D1, D2, D3, D7, D6, D9
-        lvds_rx_A: entity work.lvds_receiver_small
-        PORT MAP (
-            pll_areset                              => not rx_locked_A,
-            rx_channel_data_align                   => '0' & rx_bitslip(12 downto 7) & rx_bitslip(1 downto 0),
-            rx_dpaclock                             => rx_dpaclock_A,
-            rx_enable                               => rx_enable_A,
-            rx_fifo_reset(7 downto 0)               => rx_fifo_reset(12 downto 7) & rx_fifo_reset(1 downto 0),
-            rx_in(7 downto 0)                       => rx_in(12 downto 7) & rx_in(1 downto 0),
-            rx_in(8 downto 8)                       => (others => '0'),
-            rx_inclock                              => rx_inclock_A_pll,
-            rx_reset(7 downto 0)                    => rx_reset(12 downto 7) & rx_reset(1 downto 0),
-            rx_syncclock                            => rx_syncclock_A,
-            rx_dpa_locked(7 downto 2)               => rx_dpa_locked(12 downto 7),
-            rx_dpa_locked(1 downto 0)               => rx_dpa_locked(1 downto 0),
-            rx_out(79 downto 20)                    => rx_out(129 downto 70),
-            rx_out(19 downto  0)                    => rx_out(19 downto 0)--,
-        );
-
         clk_ctrl_B : component work.cmp.clk_ctrl_single
             port map (
                 inclk  => rx_inclock_B,
@@ -153,23 +135,90 @@ begin
             locked   => rx_locked_B
         );
 
-        -- C7, C8, C3, C6, C4, inclock_B
-        lvds_rx_B: entity work.lvds_receiver_small
-        PORT MAP
-        (
-            pll_areset                  => not rx_locked_B,
-            rx_channel_data_align       => "0000" & rx_bitslip(6 downto 2),
-            rx_dpaclock                 => rx_dpaclock_B,
-            rx_enable                   => rx_enable_B,
-            rx_fifo_reset(4 downto 0)   => rx_fifo_reset(6 downto 2),
-            rx_in(4 downto 0)           => rx_in(6 downto 2),
-            rx_in(8 downto 5)           => (others => '0'),
-            rx_inclock                  => rx_inclock_B_pll,
-            rx_reset(4 downto 0)        => rx_reset(6 downto 2),
-            rx_syncclock                => rx_syncclock_B,
-            rx_dpa_locked(4 downto 0)   => rx_dpa_locked(6 downto 2),
-            rx_out(49 downto 0)         => rx_out(69 downto 20)--,
-        );
+        -----------------------------------------------------------
+        ---------------SciTile lvds rx B---------------------------
+        -----------------------------------------------------------
+        gen_scitile_B: if (IS_TILE_B=true) generate
+            -- D4, D1, D2, D3, D7, D6, D9
+            lvds_rx_A: entity work.lvds_receiver_small
+            PORT MAP (
+                pll_areset                              => not rx_locked_A,
+                rx_channel_data_align                   => '0' & rx_bitslip(12 downto 7) & rx_bitslip(1 downto 0),
+                rx_dpaclock                             => rx_dpaclock_A,
+                rx_enable                               => rx_enable_A,
+                rx_fifo_reset(7 downto 0)               => rx_fifo_reset(12 downto 7) & rx_fifo_reset(1 downto 0),
+                rx_in(7 downto 0)                       => rx_in(12 downto 7) & rx_in(1 downto 0),
+                rx_in(8 downto 8)                       => (others => '0'),
+                rx_inclock                              => rx_inclock_A_pll,
+                rx_reset(7 downto 0)                    => rx_reset(12 downto 7) & rx_reset(1 downto 0),
+                rx_syncclock                            => rx_syncclock_A,
+                rx_dpa_locked(7 downto 2)               => rx_dpa_locked(12 downto 7),
+                rx_dpa_locked(1 downto 0)               => rx_dpa_locked(1 downto 0),
+                rx_out(79 downto 20)                    => rx_out(129 downto 70),
+                rx_out(19 downto  0)                    => rx_out(19 downto 0)--,
+            );
+
+            -- C7, C8, C3, C6, C4, inclock_B
+            lvds_rx_B: entity work.lvds_receiver_small
+            PORT MAP
+            (
+                pll_areset                  => not rx_locked_B,
+                rx_channel_data_align       => "0000" & rx_bitslip(6 downto 2),
+                rx_dpaclock                 => rx_dpaclock_B,
+                rx_enable                   => rx_enable_B,
+                rx_fifo_reset(4 downto 0)   => rx_fifo_reset(6 downto 2),
+                rx_in(4 downto 0)           => rx_in(6 downto 2),
+                rx_in(8 downto 5)           => (others => '0'),
+                rx_inclock                  => rx_inclock_B_pll,
+                rx_reset(4 downto 0)        => rx_reset(6 downto 2),
+                rx_syncclock                => rx_syncclock_B,
+                rx_dpa_locked(4 downto 0)   => rx_dpa_locked(6 downto 2),
+                rx_out(49 downto 0)         => rx_out(69 downto 20)--,
+            );
+        end generate;
+
+        -----------------------------------------------------------
+        ---------------SciTile lvds rx A---------------------------
+        -----------------------------------------------------------
+        gen_scitile_A: if (IS_TILE_B=false) generate
+            -- D4, D1, D2, D3, D7, D6, D9
+            lvds_rx_A: entity work.lvds_receiver_small
+            PORT MAP (
+                pll_areset                              => not rx_locked_A,
+                rx_channel_data_align                   => '0' & rx_bitslip(12 downto 7) & rx_bitslip(1 downto 0),
+                rx_dpaclock                             => rx_dpaclock_A,
+                rx_enable                               => rx_enable_A,
+                rx_fifo_reset(7 downto 0)               => rx_fifo_reset(12 downto 7) & rx_fifo_reset(1 downto 0),
+                rx_in(7 downto 0)                       => rx_in(12 downto 7) & rx_in(1 downto 0),
+                rx_in(8 downto 8)                       => (others => '0'),
+                rx_inclock                              => rx_inclock_A_pll,
+                rx_reset(7 downto 0)                    => rx_reset(12 downto 7) & rx_reset(1 downto 0),
+                rx_syncclock                            => rx_syncclock_A,
+                rx_dpa_locked(7 downto 2)               => rx_dpa_locked(12 downto 7),
+                rx_dpa_locked(1 downto 0)               => rx_dpa_locked(1 downto 0),
+                rx_out(79 downto 20)                    => rx_out(129 downto 70),
+                rx_out(19 downto  0)                    => rx_out(19 downto 0)--,
+            );
+
+            -- C7, C8, C3, C6, C4, inclock_B
+            lvds_rx_B: entity work.lvds_receiver_small
+            PORT MAP
+            (
+                pll_areset                  => not rx_locked_B,
+                rx_channel_data_align       => "0000" & rx_bitslip(6 downto 2),
+                rx_dpaclock                 => rx_dpaclock_B,
+                rx_enable                   => rx_enable_B,
+                rx_fifo_reset(4 downto 0)   => rx_fifo_reset(6 downto 2),
+                rx_in(4 downto 0)           => rx_in(6 downto 2),
+                rx_in(8 downto 5)           => (others => '0'),
+                rx_inclock                  => rx_inclock_B_pll,
+                rx_reset(4 downto 0)        => rx_reset(6 downto 2),
+                rx_syncclock                => rx_syncclock_B,
+                rx_dpa_locked(4 downto 0)   => rx_dpa_locked(6 downto 2),
+                rx_out(49 downto 0)         => rx_out(69 downto 20)--,
+            );
+        end generate;
+
     end generate;
 
 -----------------------------------------------------------
@@ -215,6 +264,10 @@ begin
             rx_out(79 downto 0)         => rx_out(79 downto 0)--,
         );
     end generate;
+
+-----------------------------------------------------------
+---------------SciFi & SciTile 8b10b decode and sync-------
+-----------------------------------------------------------
 
     -- sync rx ready bits
     e_rx_ready : entity work.ff_sync
