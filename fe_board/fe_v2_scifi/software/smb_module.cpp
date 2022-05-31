@@ -20,6 +20,7 @@ int SMB_t::spi_write_pattern(alt_u32 spi_slave, const alt_u8* bitpattern, bool p
     char rx_string[681]; //cmp
     int result_i=0;
     int status=0;
+    int return_code=0;
     uint16_t rx_pre=0xff00;
     uint16_t nb=MUTRIG_CONFIG_LEN_BYTES;
     do{
@@ -28,7 +29,7 @@ int SMB_t::spi_write_pattern(alt_u32 spi_slave, const alt_u8* bitpattern, bool p
         alt_u8 rx = 0xCC;
         alt_u8 tx = bitpattern[nb];
 
-        alt_avalon_spi_command(SPI_BASE, spi_slave, 1, &tx, 0, &rx, nb==0?0:ALT_AVALON_SPI_COMMAND_MERGE);
+        return_code = alt_avalon_spi_command(SPI_BASE, spi_slave, 1, &tx, 0, &rx, nb==0?0:ALT_AVALON_SPI_COMMAND_MERGE);
         rx = IORD_8DIRECT(SPI_BASE, 0);
 
         //printf("tx:%2.2X rx:%2.2x nb:%d\n",tx,rx,nb);//cmp
@@ -53,15 +54,18 @@ int SMB_t::spi_write_pattern(alt_u32 spi_slave, const alt_u8* bitpattern, bool p
             //printf("Error in byte %d: received %2.2x expected %2.2x\n",nb,rx_check,bitpattern[nb]);
             status=-1;
         }
+
+        if(return_code < 0 && print)
+            printf("ERROR SPI TX RET = %x \n" , return_code);
+
         rx_pre=rx<<8;
-    }while(nb>0);
-    //rx_string[680]=0; //cmp
-    //tx_string[680]=0; //cmp
+    } while(nb>0);
+
     if (print) {
-        printf("TX = %s\n", tx_string); //cmp
-        printf("RX = %s\n", rx_string); //cmp
+        printf("TX = %s\n", tx_string);
+        printf("RX = %s\n", rx_string);
+        printf("Status = %i\n", status);
     }
-    //printf("Status = %u\n", status); //cmp
     return status;
 }
 
@@ -142,6 +146,7 @@ void SMB_t::menu_SMB_main() {
     char str[2] = {0};
 
     while(1) {
+        printf("MISO REG = 0x%08X\n", ram->data[SCIFI_CNT_MISO_TRANSITION_REGISTER_R]);
         //        TODO: Define menu
         printf("  [0] => Write ALL_OFF config to all ASICs\n");
         printf("  [1] => Write PRBS_single config to all ASICs\n");
