@@ -510,13 +510,14 @@ void SMB_t::menu_counters(){
     printf("\n\n\n\n\n\n\n\n\n\n\n\n\n\n");
         for ( uint32_t mod = 0; mod < 2; mod++ ) {
             printf("ASIC %i to %i\n", mod * 4, 3 + mod * 4);
-            for ( uint32_t selected = 0; selected < 5; selected++ ) {
+            for ( uint32_t selected = 0; selected < 6; selected++ ) {
                 switch ( selected ) {
                     case 0: printf("Events / 8ns        "); break;
                     case 1: printf("CRC-Errors / Frame  "); break;
                     case 2: printf("PRBS-Errors / Words "); break;
                     case 3: printf("LVDS-Errors / Words "); break;
                     case 4: printf("# SYNCLOSS  / -     "); break;
+                    case 5: printf("Frame / 8ns         "); break;
                 }
                 // loop over asics
                 for ( uint32_t asic = 0; asic < 4; asic++ ) {
@@ -533,7 +534,7 @@ void SMB_t::menu_counters(){
                         lastTS = curDeNom;
                     } else if ( selected == 1 ) {
                         // get frame
-                        sc.ram->data[SCIFI_CNT_ADDR_REGISTER_W] = 4;
+                        sc.ram->data[SCIFI_CNT_ADDR_REGISTER_W] = 4 + asic * 10 + mod * 4 * 10;
                         curDeNom = sc.ram->data[SCIFI_CNT_VALUE_REGISTER_R];
                         // get crc errors
                         sc.ram->data[SCIFI_CNT_ADDR_REGISTER_W] = counter_map[selected] + asic * 10 + mod * 4 * 10;
@@ -543,7 +544,7 @@ void SMB_t::menu_counters(){
                         lastFrame[mod * asic] = curDeNom;
                     } else if ( selected == 2 ) {
                         // get words
-                        sc.ram->data[SCIFI_CNT_ADDR_REGISTER_W] = 5;
+                        sc.ram->data[SCIFI_CNT_ADDR_REGISTER_W] = 5 + asic * 10 + mod * 4 * 10;
                         curDeNom = sc.ram->data[SCIFI_CNT_VALUE_REGISTER_R];
                         // get prbs errors
                         sc.ram->data[SCIFI_CNT_ADDR_REGISTER_W] = counter_map[selected] + asic * 10 + mod * 4 * 10;
@@ -553,7 +554,7 @@ void SMB_t::menu_counters(){
                         lastWords[mod * asic] = curDeNom;
                     } else if ( selected == 3 ) {
                         // get words
-                        sc.ram->data[SCIFI_CNT_ADDR_REGISTER_W] = 5;
+                        sc.ram->data[SCIFI_CNT_ADDR_REGISTER_W] = 5 + asic * 10 + mod * 4 * 10;
                         curDeNom = sc.ram->data[SCIFI_CNT_VALUE_REGISTER_R];
                         // get lvds errors
                         sc.ram->data[SCIFI_CNT_ADDR_REGISTER_W] = counter_map[selected] + asic * 10 + mod * 4 * 10;
@@ -566,6 +567,14 @@ void SMB_t::menu_counters(){
                         sc.ram->data[SCIFI_CNT_ADDR_REGISTER_W] = counter_map[selected] + asic * 10 + mod * 4 * 10;
                         curNom = sc.ram->data[SCIFI_CNT_VALUE_REGISTER_R];
                         printf("| %10u / %10u |", curNom, counter_map[selected] + asic * 10 + mod * 4 * 10);
+                    } else if ( selected == 5 ) {
+                        // get time
+                        sc.ram->data[SCIFI_CNT_ADDR_REGISTER_W] = 1;
+                        curDeNom = sc.ram->data[SCIFI_CNT_VALUE_REGISTER_R];
+                        // get frame
+                        sc.ram->data[SCIFI_CNT_ADDR_REGISTER_W] = 4 + asic * 10 + mod * 4 * 10;
+                        curNom = sc.ram->data[SCIFI_CNT_VALUE_REGISTER_R];
+                        printf("| %10u / %10u |", curNom, curDeNom);
                     }
                 }
                 printf("\n");
@@ -593,24 +602,13 @@ alt_u16 SMB_t::reset_counters(){
 }
 //write counter values of all channels to memory address *data and following. Return number of asic channels written.
 alt_u16 SMB_t::store_counters(volatile alt_u32* data){
-    for(uint8_t i=0;i<4*n_MODULES;i++){
-        for(uint8_t selected=0;selected<5; selected++){
-            //sc.ram->data[SCIFI_CNT_CTRL_REGISTER_W] = (sc.ram->data[SCIFI_CNT_CTRL_REGISTER_W] & ~0xF) | ((selected&0x7) + (i<<3));
-            //*data = sc.ram->data[SCIFI_CNT_NOM_REGISTER_REGISTER_R];
-            //printf("%u: %8.8x\n", sc.ram->data[SCIFI_CNT_CTRL_REGISTER_W], *data);
-            //data++;
-            //*data = sc.ram->data[SCIFI_CNT_DENOM_UPPER_REGISTER_R];
-            //printf("%u: %8.8x\n", sc.ram->data[SCIFI_CNT_DENOM_UPPER_REGISTER_R],*data);
-            //data++;
-            //*data = sc.ram->data[SCIFI_CNT_DENOM_LOWER_REGISTER_R];
-            //printf("%u: %8.8x\n", sc.ram->data[SCIFI_CNT_DENOM_LOWER_REGISTER_R],*data);
-            //data++;
-            //*data=(sc.ram->regs.SMB.counters.denom>>32)&0xffffffff;
-            //printf("%u: %8.8x\n", sc.ram->regs.SMB.counters.ctrl,*data);
-            //data++;
-            //*data=(sc.ram->regs.SMB.counters.denom    )&0xffffffff;
-            //printf("%u: %8.8x\n", sc.ram->regs.SMB.counters.ctrl,*data);
-            //data++;
+    for ( uint32_t mod = 0; mod < n_MODULES; mod++ ) {
+        for ( uint32_t asic = 0; asic < 4; asic++ ) {
+            for ( uint32_t cnt = 0; cnt < 10; cnt++ ) {
+                sc.ram->data[SCIFI_CNT_ADDR_REGISTER_W] = mod * 4 * 10 + asic * 10 + cnt;
+                *data = sc.ram->data[SCIFI_CNT_VALUE_REGISTER_R];
+                data++;
+            }
         }
     }
     return 4*n_MODULES; //return number of asic channels written so we can parse correctly later

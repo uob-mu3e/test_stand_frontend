@@ -245,88 +245,60 @@ int MutrigFEB::ResetCounters(mappedFEB & FEB){
 
 int MutrigFEB::ReadBackCounters(mappedFEB & FEB){
 
-   if(!FEB.IsScEnabled())
-       return SUCCESS; //skip disabled fibers
-   if(FEB.SB_Number()!= SB_number)
-       return SUCCESS; //skip commands not for this SB
+    if(!FEB.IsScEnabled())
+        return SUCCESS; //skip disabled fibers
+    if(FEB.SB_Number()!= SB_number)
+        return SUCCESS; //skip commands not for this SB
 
-   auto rpc_ret = feb_sc.FEBsc_NiosRPC(FEB, feb::CMD_MUTRIG_CNT_READ, {});
-   //retrieve results
+    auto rpc_ret = feb_sc.FEBsc_NiosRPC(FEB, feb::CMD_MUTRIG_CNT_READ, {});
+    //retrieve results
 
-   if(rpc_ret < 0) {
-       cm_msg(MINFO, "ReadBackCounters", "RPC Returned %d for FPGA_ID %u", rpc_ret, FEB.SB_Port());
-       return SUCCESS; // TODO: Proper error code
-   }
+    if(rpc_ret < 0) {
+        cm_msg(MINFO, "ReadBackCounters", "RPC Returned %d for FPGA_ID %u", rpc_ret, FEB.SB_Port());
+        return SUCCESS; // TODO: Proper error code
+    }
 
-   // rpc_ret is number of ASICs n, times 5 counters,
-   // times (1 nominator + 2 denominator values)
-   // The vector val is filled like
-   // asic 1 counter 1 nominator
-   // asic 1 counter 1 denominator upper 32 bit
-   // asic 1 counter 1 denominator lower 32 bit
-   // asic 1 counter 2 nominator
-   // [...]
-   // asic n counter 5 denominator lower 32 bit
-   vector<uint32_t> val(rpc_ret*5*3);
+    // rpc_ret is number of total ASICs n
+    // Scifi Counters per ASIC N_ASICS_TOTAL
+    // mutrig store:
+    //  0: s_eventcounter
+    //  1: s_timecounter low
+    //  2: s_timecounter high
+    //  3: s_crcerrorcounter
+    //  4: s_framecounter
+    //  5: s_prbs_wrd_cnt
+    //  6: s_prbs_err_cnt
+    // rx
+    //  7: s_receivers_runcounter
+    //  8: s_receivers_errorcounter
+    //  9: s_receivers_synclosscounter
+   
+    // we have 10 counters per ASIC
+    // read them back
+    vector<uint32_t> val(rpc_ret*10);
+    feb_sc.FEB_read(FEB, FEBSlowcontrolInterface::OFFSETS::FEBsc_RPC_DATAOFFSET, val);
+    
+    // get ASICs from ODB
+    odb odb_set_str(odb_prefix+"/Settings/Daq");
+    uint32_t num_asics_per_module = odb_set_str["num_asics_per_module"];
+    uint32_t num_modules_per_feb = odb_set_str["num_modules_per_feb"];
+    uint32_t num_asics_per_feb = num_asics_per_module * num_modules_per_feb;
 
-   feb_sc.FEB_read(FEB, FEBSlowcontrolInterface::OFFSETS::FEBsc_RPC_DATAOFFSET,
-                   val);
+   for(auto nASIC = 0 + FEB.SB_Port() * num_asics_per_feb; nASIC < num_asics_per_feb + FEB.SB_Port() * num_asics_per_feb; nASIC++){
 
-   static std::array<std::array<uint32_t,9>,8> last_counters;
+        odb variables_counters(odb_prefix + "/Variables/Counters");
 
-   uint32_t value;
-   uint32_t odbval;
-   for(auto nASIC=0 + FEB.SB_Port() * GetASICSPerFEB(); nASIC < rpc_ret + FEB.SB_Port() * GetASICSPerFEB(); nASIC++){
-
- 
-       odb variables_counters(odb_prefix + "/Variables/Counters");
-
-       // db_set_value_index
-       value=val[nASIC*15+0];
-       odbval=value-last_counters[nASIC][0];
-       variables_counters["nHits"][nASIC] = odbval;
-       last_counters[nASIC][0]=value;
-
-       value=val[nASIC*15+2];
-       odbval=value-last_counters[nASIC][1];
-       variables_counters["Time"][nASIC] = odbval;
-       last_counters[nASIC][1]=value;
-
-       value=val[nASIC*15+3];
-       odbval=value-last_counters[nASIC][2];
-       variables_counters["nBadFrames"][nASIC] = odbval;
-       last_counters[nASIC][2]=value;
-
-       value=val[nASIC*15+5];
-       odbval=value-last_counters[nASIC][3];
-       variables_counters["nFrames"][nASIC] = odbval;
-       last_counters[nASIC][3]=value;
-
-       value=val[nASIC*15+6];
-       odbval=value-last_counters[nASIC][4];
-       variables_counters["nErrorsPRBS"][nASIC] = odbval;
-       last_counters[nASIC][4]=value;
-
-       value=val[nASIC*15+8];
-       odbval=value-last_counters[nASIC][5];
-       variables_counters["nWordsPRBS"][nASIC] = odbval;
-       last_counters[nASIC][5]=value;
-
-       value=val[nASIC*15+9];
-       odbval=value-last_counters[nASIC][6];
-       variables_counters["nErrorsLVDS"][nASIC] = odbval;
-       last_counters[nASIC][6]=value;
-
-       value=val[nASIC*15+11];
-       odbval=value-last_counters[nASIC][7];
-       variables_counters["nWordsLVDS"][nASIC] = odbval;
-       last_counters[nASIC][7]=value;
-
-       value=val[nASIC*15+12];
-       odbval=value-last_counters[nASIC][8];
-       variables_counters["nDatasyncloss"][nASIC] = odbval;
-       last_counters[nASIC][8]=value;
-
+        // db_set_value_index
+        variables_counters["nHits"][nASIC] = val[nASIC * 10 + 0];
+        // For time we always get the first lower bits of time 1
+        variables_counters["Time"][nASIC] = val[1];
+        variables_counters["nBadFrames"][nASIC] = val[nASIC * 10 + 3];
+        variables_counters["nFrames"][nASIC] = val[nASIC * 10 + 4];
+        variables_counters["nErrorsPRBS"][nASIC] = val[nASIC * 10 + 6];
+        variables_counters["nWordsPRBS"][nASIC] = val[nASIC * 10 + 5];
+        variables_counters["nErrorsLVDS"][nASIC] = val[nASIC * 10 + 8];
+        variables_counters["nWordsLVDS"][nASIC] = val[nASIC * 10 + 7];
+        variables_counters["nDatasyncloss"][nASIC] = val[nASIC * 10 + 9];
    }
 
    return SUCCESS;
