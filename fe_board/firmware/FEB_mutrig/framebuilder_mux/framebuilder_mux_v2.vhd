@@ -40,6 +40,7 @@ port (
 
     --monitoring, write-when-fill is prevented internally
     o_sync_error    : out std_logic;
+    o_cc_diff       : out std_logic_vector(14 downto 0);
     -- mask input of asic
     i_mask          : in  std_logic_vector(N_INPUTS-1 downto 0);
 
@@ -89,6 +90,9 @@ architecture rtl of framebuilder_mux_v2 is
     signal index, index_last : std_logic_vector(N_INPUTS-1 downto 0) := (0 => '1', others => '0');
     signal last_hit_type : std_logic_vector(1 downto 0);
     signal s_sel_index : natural;
+
+    -- PLL test value
+    signal cc_prev : std_logic_vector(14 downto 0);
 
 begin
 
@@ -217,8 +221,10 @@ begin
     begin
     if ( i_reset_n /= '1' ) then
         index_last      <= (0 => '1', others => '0');
-        last_hit_type  <= (others => '0');
+        last_hit_type   <= (others => '0');
         rd_state_last   <= IDLE;
+        cc_prev         <= (others => '0');
+        o_cc_diff       <= (others => '0');
         --
     elsif rising_edge(i_clk) then
         index_last <= index;
@@ -232,6 +238,10 @@ begin
         end if;
         if ( rd_state /= WAITING ) then
             rd_state_last <= rd_state;
+        end if;
+        if ( rd_state = HIT and rd_state_last = HIT ) then
+            cc_prev     <= w_hit(20 downto 6);
+            o_cc_diff   <= cc_prev - w_hit(20 downto 6);
         end if;
         --
     end if;

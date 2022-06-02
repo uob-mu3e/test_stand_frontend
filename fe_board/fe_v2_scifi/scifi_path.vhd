@@ -82,6 +82,7 @@ architecture arch of scifi_path is
     -- counters
     signal s_fifos_full                 : std_logic_vector(N_MODULES*N_ASICS-1 downto 0);
     signal s_counters                   : work.util.slv32_array_t(10 * N_MODULES*N_ASICS-1 downto 0);
+    signal cc_diff                      : std_logic_vector(14 downto 0);
 
     -- registers controlled from midas
     signal s_cntreg_ctrl                    : std_logic_vector(31 downto 0);
@@ -260,6 +261,7 @@ begin
         i_rx_ready                  => rx_ready,
         i_miso_transition_count     => miso_transition_count,
         i_fifos_full                => s_fifos_full,
+        i_cc_diff                   => cc_diff,
 
         -- outputs
         o_cntreg_ctrl                   => s_cntreg_ctrl,
@@ -371,6 +373,7 @@ begin
         o_receivers_dpa_lock        => rx_dpa_lock,
         o_receivers_ready           => rx_ready,
         o_frame_desync              => frame_desync,
+        o_cc_diff                   => cc_diff,
 
         i_SC_reset_counters         => s_cntreg_ctrl(15),
         o_fifos_full                => s_fifos_full,

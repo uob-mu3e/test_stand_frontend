@@ -68,6 +68,7 @@ port (
     o_receivers_dpa_lock        : out std_logic_vector(N_MODULES*N_ASICS-1 downto 0); -- dpa lock flag per channel
     o_receivers_ready           : out std_logic_vector(N_MODULES*N_ASICS-1 downto 0); -- receiver output ready flag
     o_frame_desync              : out std_logic_vector(1 downto 0);
+    o_cc_diff                   : out std_logic_vector(14 downto 0);
 
     i_SC_reset_counters         : in  std_logic; --synchronous to i_clk_core
     o_fifos_full                : out std_logic_vector(N_MODULES*N_ASICS-1 downto 0); -- mutrig store fifo full
@@ -483,6 +484,7 @@ begin
             -- monitoring, errors, slow control
             o_busy       => s_B_mux_busy,
             o_sync_error => o_frame_desync(1),
+            o_cc_diff    => o_cc_diff,
             i_mask       => i_SC_mask(N_ASICS_TOTAL-1 downto N_ASICS),
             -- reset / clk
             i_ts_reset_n => not i_ts_rst,
