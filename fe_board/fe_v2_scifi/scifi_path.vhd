@@ -352,6 +352,7 @@ begin
         i_SC_disable_dec            => s_dpctrl_reg(31),
         i_SC_rx_wait_for_all        => s_dpctrl_reg(30),
         i_SC_rx_wait_for_all_sticky => s_dpctrl_reg(29),
+        i_enable_length             => s_dpctrl_reg(28),
         i_SC_mask                   => s_dpctrl_reg(N_MODULES*N_ASICS-1 downto 0),
         i_SC_mask_rx                => s_dpctrl_reg(N_MODULES*N_ASICS-1 downto 0),
         i_SC_datagen_enable         => s_dummyctrl_reg(1),

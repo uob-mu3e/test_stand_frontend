@@ -12,6 +12,7 @@ set_global_assignment -name VERILOG_FILE [file join $::quartus(qip_path) "../../
 #set_global_assignment -name VHDL_FILE [file join $::quartus(qip_path) "lvds/lvds_receiver.vhd"]
 set_global_assignment -name VHDL_FILE [file join $::quartus(qip_path) "lvds/receiver_block.vhd"]
 set_global_assignment -name VHDL_FILE [file join $::quartus(qip_path) "frame_rcv/crc16_calc.vhd"]
+set_global_assignment -name VHDL_FILE [file join $::quartus(qip_path) "frame_rcv/replace_length.vhd"]
 set_global_assignment -name VHDL_FILE [file join $::quartus(qip_path) "dummys/stic_dummy_data.vhd"]
 set_global_assignment -name VHDL_FILE [file join $::quartus(qip_path) "dummys/spi_config_dummy.vhd"]
 set_global_assignment -name VHDL_FILE [file join $::quartus(qip_path) "frame_rcv/frame_rcv.vhd"]

@@ -54,8 +54,9 @@ port (
     i_SC_rx_wait_for_all_sticky : in  std_logic;
     
     -- run control
-    i_RC_may_generate           : in  std_logic; --do not generate new frames for runstates that are not RUNNING, allows to let fifos run empty
-    o_RC_all_done               : out std_logic; --all fifos empty, all data read
+    i_RC_may_generate           : in  std_logic; -- do not generate new frames for runstates that are not RUNNING, allows to let fifos run empty
+    o_RC_all_done               : out std_logic; -- all fifos empty, all data read
+    i_enable_length             : in  std_logic; -- enable to replace the length
 
     -- lapse lapse counter
     i_en_lapse_counter          : in  std_logic;
@@ -95,8 +96,8 @@ architecture rtl of mutrig_datapath is
     -- serdes-frame_rcv
     signal s_receivers_state        : std_logic_vector(2*N_ASICS_TOTAL-1 downto 0);
     signal s_receivers_ready        : t_vector;
-    signal s_receivers_data         : std_logic_vector(8*N_ASICS_TOTAL-1 downto 0);
-    signal s_receivers_data_isk     : t_vector;
+    signal s_receivers_data, s_receivers_data_length            : std_logic_vector(8*N_ASICS_TOTAL-1 downto 0);
+    signal s_receivers_data_isk, s_receivers_data_isk_length    : t_vector;
     signal s_receivers_all_ready    : std_logic;
     signal s_receivers_block        : std_logic;
 
@@ -286,66 +287,79 @@ begin
     );
 
     gen_frame: for i in 0 to N_ASICS_TOTAL-1 generate begin
-            u_frame_rcv : entity work.frame_rcv
-            generic map(
-                EVENT_DATA_WIDTH        => 48,
-                N_BYTES_PER_WORD        => 6,
-                N_BYTES_PER_WORD_SHORT  => 3
-            )
-            port map (
-                i_rst               => i_rst_rx,
-                i_clk               => i_clk_125,
-                i_data              => s_receivers_data((i+1)*8-1 downto i*8),
-                i_byteisk           => s_receivers_data_isk(i),
-                i_enable            => i_RC_may_generate and not (s_receivers_block or (not s_receivers_ready(i) and not i_SC_rx_wait_for_all)),
 
-                -- to mutrig-store instance
-                o_frame_number      => s_rec_frame_number(i),
-                o_frame_info        => s_rec_frame_info(i),
-                o_frame_info_ready  => s_rec_frame_info_rdy(i),
-                o_new_frame         => s_rec_new_frame(i),
-                o_word              => s_rec_event_data(i),
-                o_new_word          => s_rec_event_ready(i),
-                o_end_of_frame      => s_rec_end_of_frame(i),
-                o_busy              => s_frec_busy(i),
+        u_replace_length : entity work.replace_length
+        port map (
+            i_reset_n => not i_rst_rx,
+            i_clk     => i_clk_125,
+            i_data    => s_receivers_data((i+1)*8-1 downto i*8),
+            i_datak   => s_receivers_data_isk(i),
+            i_enable  => i_enable_length,
 
-                o_crc_error         => s_crc_error(i),
-                o_crc_err_count     => open
-            );
+            o_data    => s_receivers_data_length((i+1)*8-1 downto i*8),
+            o_datak   => s_receivers_data_isk_length(i)--,
+        );
 
-            -- multiplex between physical and generated data sent to the elastic buffers
-            process(i_clk_125, i_reset_125_n)
-            begin
-            if ( i_reset_125_n /= '1' ) then
-                s_frame_number(i)   <= (others => '0');
-                s_frame_info(i)     <= (others => '0');
-                s_event_data(i)     <= (others => '0');
-                s_event_ready(i)    <= '0';
-                s_frame_info_rdy(i) <= '0';
-                s_new_frame(i)      <= '0';
-                s_end_of_frame(i)   <= '0';
-                --
-            elsif ( rising_edge(i_clk_125) ) then
-                -- use busy from datagenerator to ensure safe takeover
-                if ( i_SC_datagen_enable = '1' or s_gen_busy = '1' ) then
-                    s_frame_number(i)   <= s_gen_frame_number;
-                    s_frame_info(i)     <= s_gen_frame_info;
-                    s_event_data(i)     <= s_gen_event_data;
-                    s_event_ready(i)    <= s_gen_event_ready;
-                    s_frame_info_rdy(i) <= s_gen_frame_info_rdy;
-                    s_new_frame(i)      <= s_gen_new_frame;
-                    s_end_of_frame(i)   <= s_gen_end_of_frame;
-                else
-                    s_frame_number(i)   <= s_rec_frame_number(i);
-                    s_frame_info(i)     <= s_rec_frame_info(i);
-                    s_event_data(i)     <= s_rec_event_data(i);
-                    s_event_ready(i)    <= s_rec_event_ready(i);
-                    s_frame_info_rdy(i) <= s_rec_frame_info_rdy(i);
-                    s_new_frame(i)      <= s_rec_new_frame(i);
-                    s_end_of_frame(i)   <= s_rec_end_of_frame(i);
-                end if;
+        u_frame_rcv : entity work.frame_rcv
+        generic map(
+            EVENT_DATA_WIDTH        => 48,
+            N_BYTES_PER_WORD        => 6,
+            N_BYTES_PER_WORD_SHORT  => 3
+        )
+        port map (
+            i_rst               => i_rst_rx,
+            i_clk               => i_clk_125,
+            i_data              => s_receivers_data_length((i+1)*8-1 downto i*8),
+            i_byteisk           => s_receivers_data_isk_length(i),
+            i_enable            => i_RC_may_generate and not (s_receivers_block or (not s_receivers_ready(i) and not i_SC_rx_wait_for_all)),
+
+            -- to mutrig-store instance
+            o_frame_number      => s_rec_frame_number(i),
+            o_frame_info        => s_rec_frame_info(i),
+            o_frame_info_ready  => s_rec_frame_info_rdy(i),
+            o_new_frame         => s_rec_new_frame(i),
+            o_word              => s_rec_event_data(i),
+            o_new_word          => s_rec_event_ready(i),
+            o_end_of_frame      => s_rec_end_of_frame(i),
+            o_busy              => s_frec_busy(i),
+
+            o_crc_error         => s_crc_error(i),
+            o_crc_err_count     => open
+        );
+
+        -- multiplex between physical and generated data sent to the elastic buffers
+        process(i_clk_125, i_reset_125_n)
+        begin
+        if ( i_reset_125_n /= '1' ) then
+            s_frame_number(i)   <= (others => '0');
+            s_frame_info(i)     <= (others => '0');
+            s_event_data(i)     <= (others => '0');
+            s_event_ready(i)    <= '0';
+            s_frame_info_rdy(i) <= '0';
+            s_new_frame(i)      <= '0';
+            s_end_of_frame(i)   <= '0';
+            --
+        elsif ( rising_edge(i_clk_125) ) then
+            -- use busy from datagenerator to ensure safe takeover
+            if ( i_SC_datagen_enable = '1' or s_gen_busy = '1' ) then
+                s_frame_number(i)   <= s_gen_frame_number;
+                s_frame_info(i)     <= s_gen_frame_info;
+                s_event_data(i)     <= s_gen_event_data;
+                s_event_ready(i)    <= s_gen_event_ready;
+                s_frame_info_rdy(i) <= s_gen_frame_info_rdy;
+                s_new_frame(i)      <= s_gen_new_frame;
+                s_end_of_frame(i)   <= s_gen_end_of_frame;
+            else
+                s_frame_number(i)   <= s_rec_frame_number(i);
+                s_frame_info(i)     <= s_rec_frame_info(i);
+                s_event_data(i)     <= s_rec_event_data(i);
+                s_event_ready(i)    <= s_rec_event_ready(i);
+                s_frame_info_rdy(i) <= s_rec_frame_info_rdy(i);
+                s_new_frame(i)      <= s_rec_new_frame(i);
+                s_end_of_frame(i)   <= s_rec_end_of_frame(i);
             end if;
-            end process;
+        end if;
+        end process;
 
     end generate;
 
@@ -397,57 +411,57 @@ begin
     end generate;
 
     --mux between asic channels
-    u_mux_A : entity work.framebuilder_mux_v2
-    generic map( 
-        N_INPUTS => N_ASICS,
-        -- NOTE: N_INPUTS_INDEX = log2(N_ASICS)
-        N_INPUTS_INDEX => 2,
-        C_ASICNO_PREFIX => C_ASICNO_PREFIX_A--,
-    )
-    port map(
-        -- event data inputs interface
-        i_data       => s_fifos_data(N_ASICS-1 downto 0),
-        i_rempty     => s_fifos_empty(N_ASICS-1 downto 0),
-        o_ren        => s_fifos_rd(N_ASICS-1 downto 0),
-        -- event data output interface to big buffer storage
-        o_data       => s_A_buf_predec_data,
-        i_wfull      => s_A_buf_predec_full,
-        o_wen        => s_A_buf_predec_wr,
-        -- monitoring, errors, slow control
-        o_busy       => s_A_mux_busy,
-        o_sync_error => o_frame_desync(0),
-        i_mask       => i_SC_mask(N_ASICS-1 downto 0),
-        -- reset / clk
-        i_ts_reset_n => not i_ts_rst,
-        i_clk        => i_clk_125,
-        i_reset_n    => not i_rst_core--,
-    );
-    --mux between asic channels
-    -- u_mux_A : entity work.framebuilder_mux
+    -- u_mux_A : entity work.framebuilder_mux_v2
     -- generic map( 
     --     N_INPUTS => N_ASICS,
-    --     N_INPUTID_BITS => 4,
-    --     C_CHANNELNO_PREFIX => C_ASICNO_PREFIX_A--,
+    --     -- NOTE: N_INPUTS_INDEX = log2(N_ASICS)
+    --     N_INPUTS_INDEX => 2,
+    --     C_ASICNO_PREFIX => C_ASICNO_PREFIX_A--,
     -- )
     -- port map(
-    --     i_coreclk           => i_clk_125,
-    --     i_rst               => i_rst_core,
-    --     i_timestamp_clk     => i_clk_125,
-    --     i_timestamp_rst     => i_ts_rst,
-    --     --event data inputs interface
-    --     i_source_data       => s_fifos_data(N_ASICS-1 downto 0),
-    --     i_source_empty      => s_fifos_empty(N_ASICS-1 downto 0),
-    --     o_source_rd         => s_fifos_rd(N_ASICS-1 downto 0),
-    --     --event data output interface to big buffer storage
-    --     o_sink_data         => s_A_buf_predec_data,
-    --     i_sink_full         => s_A_buf_predec_full,
-    --     o_sink_wr           => s_A_buf_predec_wr,
-    --     --monitoring, errors, slow control
-    --     o_busy              => s_A_mux_busy,
-    --     o_sync_error        => o_frame_desync(0),
-    --     i_SC_mask           => i_SC_mask(N_ASICS-1 downto 0),
-    --     i_SC_nomerge        => '0'--,
+    --     -- event data inputs interface
+    --     i_data       => s_fifos_data(N_ASICS-1 downto 0),
+    --     i_rempty     => s_fifos_empty(N_ASICS-1 downto 0),
+    --     o_ren        => s_fifos_rd(N_ASICS-1 downto 0),
+    --     -- event data output interface to big buffer storage
+    --     o_data       => s_A_buf_predec_data,
+    --     i_wfull      => s_A_buf_predec_full,
+    --     o_wen        => s_A_buf_predec_wr,
+    --     -- monitoring, errors, slow control
+    --     o_busy       => s_A_mux_busy,
+    --     o_sync_error => o_frame_desync(0),
+    --     i_mask       => i_SC_mask(N_ASICS-1 downto 0),
+    --     -- reset / clk
+    --     i_ts_reset_n => not i_ts_rst,
+    --     i_clk        => i_clk_125,
+    --     i_reset_n    => not i_rst_core--,
     -- );
+    --mux between asic channels
+    u_mux_A : entity work.framebuilder_mux
+    generic map( 
+        N_INPUTS => N_ASICS,
+        N_INPUTID_BITS => 4,
+        C_CHANNELNO_PREFIX => C_ASICNO_PREFIX_A--,
+    )
+    port map(
+        i_coreclk           => i_clk_125,
+        i_rst               => i_rst_core,
+        i_timestamp_clk     => i_clk_125,
+        i_timestamp_rst     => i_ts_rst,
+        --event data inputs interface
+        i_source_data       => s_fifos_data(N_ASICS-1 downto 0),
+        i_source_empty      => s_fifos_empty(N_ASICS-1 downto 0),
+        o_source_rd         => s_fifos_rd(N_ASICS-1 downto 0),
+        --event data output interface to big buffer storage
+        o_sink_data         => s_A_buf_predec_data,
+        i_sink_full         => s_A_buf_predec_full,
+        o_sink_wr           => s_A_buf_predec_wr,
+        --monitoring, errors, slow control
+        o_busy              => s_A_mux_busy,
+        o_sync_error        => o_frame_desync(0),
+        i_SC_mask           => i_SC_mask(N_ASICS-1 downto 0),
+        i_SC_nomerge        => '0'--,
+    );
 
     gen_dual_mux : if( N_MODULES > 1 ) generate
         u_mux_B : entity work.framebuilder_mux_v2

@@ -149,6 +149,9 @@ void SMB_t::menu_SMB_main() {
 
     while(1) {
         printf("MISO REG = 0x%08X\n", ram->data[SCIFI_CNT_MISO_TRANSITION_REGISTER_R]);
+        printf("CC Diff = 0x%08X\n", ram->data[SCIFI_CC_DIFF_REGISTER_R]);
+        printf("CTRL DP = 0x%08X\n", ram->data[SCIFI_CTRL_DP_REGISTER_W]);
+        printf("CNT CTRL = 0x%08X\n", ram->data[SCIFI_CNT_CTRL_REGISTER_W]);
         //        TODO: Define menu
         printf("  [0] => Write ALL_OFF config to all ASICs\n");
         printf("  [1] => Write PRBS_single config to all ASICs\n");
@@ -164,10 +167,11 @@ void SMB_t::menu_SMB_main() {
         printf("  [s] => get slow control registers\n");
         printf("  [d] => get datapath status\n");
         printf("  [f] => dummy generator settings\n");
-        //printf("  [7] => datapath settings\n");
         printf("  [r] => reset things\n");
-        //printf(" [b] test led off");
-        //printf("[n] test led on");
+        printf("  [t] => enable PLL test pulse\n");
+        printf("  [y] => disable PLL test pulse\n");
+        printf("  [w] => enable length replace\n");
+        printf("  [u] => disable length replace\n");
         printf("  [q] => exit\n");
 
         printf("Select entry ...\n");
@@ -189,6 +193,12 @@ void SMB_t::menu_SMB_main() {
                 break;
             case 'y':
                 sc.ram->data[SCIFI_CNT_CTRL_REGISTER_W] = sc.ram->data[SCIFI_CNT_CTRL_REGISTER_W] & ~(1<<31);
+                break;
+            case 'w':
+                sc.ram->data[SCIFI_CTRL_DP_REGISTER_W] = sc.ram->data[SCIFI_CTRL_DP_REGISTER_W] | (1<<28);
+                break;
+            case 'u':
+                sc.ram->data[SCIFI_CTRL_DP_REGISTER_W] = sc.ram->data[SCIFI_CTRL_DP_REGISTER_W] & ~(1<<28);
                 break;
             case '2':
                 for(alt_u8 asic = 0; asic < 8; asic++)
@@ -228,12 +238,6 @@ void SMB_t::menu_SMB_main() {
             case 'a':
                 menu_counters();
                 break;
-                //case 'b':
-                //    sc.ram->data[SCIFI_CNT_CTRL_REGISTER_W]=0xFFFFFFFF;
-                //    break;
-                //case 'n':
-                //    sc.ram->data[SCIFI_CNT_CTRL_REGISTER_W]=0x00000000;
-                //    break;
             case 's': //get slowcontrol registers
                 //printf("dummyctrl_reg:    0x%08X\n", regs.ctrl.dummy);
                 printf("dummyctrl_reg:    0x%08X\n", sc.ram->data[SCIFI_CTRL_DUMMY_REGISTER_W]);
@@ -269,8 +273,6 @@ void SMB_t::menu_SMB_main() {
             case 'f':
                 menu_reg_dummyctrl();
                 break;
-                //case 'p':
-                //    break;
             case 'r':
                 menu_reset();
 		break;
