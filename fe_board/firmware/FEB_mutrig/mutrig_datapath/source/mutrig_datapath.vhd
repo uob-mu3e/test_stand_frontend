@@ -412,57 +412,57 @@ begin
     end generate;
 
     --mux between asic channels
-    -- u_mux_A : entity work.framebuilder_mux_v2
-    -- generic map( 
-    --     N_INPUTS => N_ASICS,
-    --     -- NOTE: N_INPUTS_INDEX = log2(N_ASICS)
-    --     N_INPUTS_INDEX => 2,
-    --     C_ASICNO_PREFIX => C_ASICNO_PREFIX_A--,
-    -- )
-    -- port map(
-    --     -- event data inputs interface
-    --     i_data       => s_fifos_data(N_ASICS-1 downto 0),
-    --     i_rempty     => s_fifos_empty(N_ASICS-1 downto 0),
-    --     o_ren        => s_fifos_rd(N_ASICS-1 downto 0),
-    --     -- event data output interface to big buffer storage
-    --     o_data       => s_A_buf_predec_data,
-    --     i_wfull      => s_A_buf_predec_full,
-    --     o_wen        => s_A_buf_predec_wr,
-    --     -- monitoring, errors, slow control
-    --     o_busy       => s_A_mux_busy,
-    --     o_sync_error => o_frame_desync(0),
-    --     i_mask       => i_SC_mask(N_ASICS-1 downto 0),
-    --     -- reset / clk
-    --     i_ts_reset_n => not i_ts_rst,
-    --     i_clk        => i_clk_125,
-    --     i_reset_n    => not i_rst_core--,
-    -- );
-    --mux between asic channels
-    u_mux_A : entity work.framebuilder_mux
+    u_mux_A : entity work.framebuilder_mux_v2
     generic map( 
         N_INPUTS => N_ASICS,
-        N_INPUTID_BITS => 4,
-        C_CHANNELNO_PREFIX => C_ASICNO_PREFIX_A--,
+        -- NOTE: N_INPUTS_INDEX = log2(N_ASICS)
+        N_INPUTS_INDEX => 2,
+        C_ASICNO_PREFIX => C_ASICNO_PREFIX_A--,
     )
     port map(
-        i_coreclk           => i_clk_125,
-        i_rst               => i_rst_core,
-        i_timestamp_clk     => i_clk_125,
-        i_timestamp_rst     => i_ts_rst,
-        --event data inputs interface
-        i_source_data       => s_fifos_data(N_ASICS-1 downto 0),
-        i_source_empty      => s_fifos_empty(N_ASICS-1 downto 0),
-        o_source_rd         => s_fifos_rd(N_ASICS-1 downto 0),
-        --event data output interface to big buffer storage
-        o_sink_data         => s_A_buf_predec_data,
-        i_sink_full         => s_A_buf_predec_full,
-        o_sink_wr           => s_A_buf_predec_wr,
-        --monitoring, errors, slow control
-        o_busy              => s_A_mux_busy,
-        o_sync_error        => o_frame_desync(0),
-        i_SC_mask           => i_SC_mask(N_ASICS-1 downto 0),
-        i_SC_nomerge        => '0'--,
-    );
+        -- event data inputs interface
+        i_data       => s_fifos_data(N_ASICS-1 downto 0),
+        i_rempty     => s_fifos_empty(N_ASICS-1 downto 0),
+        o_ren        => s_fifos_rd(N_ASICS-1 downto 0),
+        -- event data output interface to big buffer storage
+        o_data       => s_A_buf_predec_data,
+        i_wfull      => s_A_buf_predec_full,
+        o_wen        => s_A_buf_predec_wr,
+        -- monitoring, errors, slow control
+        o_busy       => s_A_mux_busy,
+        o_sync_error => o_frame_desync(0),
+        i_mask       => i_SC_mask(N_ASICS-1 downto 0),
+        -- reset / clk
+        i_ts_reset_n => not i_ts_rst,
+        i_clk        => i_clk_125,
+        i_reset_n    => not i_rst_core--,
+        );
+    --mux between asic channels
+    --u_mux_A : entity work.framebuilder_mux
+    --generic map( 
+    --    N_INPUTS => N_ASICS,
+    --    N_INPUTID_BITS => 4,
+    --    C_CHANNELNO_PREFIX => C_ASICNO_PREFIX_A--,
+    --)
+    --port map(
+    --    i_coreclk           => i_clk_125,
+    --    i_rst               => i_rst_core,
+    --    i_timestamp_clk     => i_clk_125,
+    --    i_timestamp_rst     => i_ts_rst,
+    --    --event data inputs interface
+    --    i_source_data       => s_fifos_data(N_ASICS-1 downto 0),
+    --    i_source_empty      => s_fifos_empty(N_ASICS-1 downto 0),
+    --    o_source_rd         => s_fifos_rd(N_ASICS-1 downto 0),
+    --    --event data output interface to big buffer storage
+    --    o_sink_data         => s_A_buf_predec_data,
+    --    i_sink_full         => s_A_buf_predec_full,
+    --    o_sink_wr           => s_A_buf_predec_wr,
+    --    --monitoring, errors, slow control
+    --    o_busy              => s_A_mux_busy,
+    --    o_sync_error        => o_frame_desync(0),
+    --    i_SC_mask           => i_SC_mask(N_ASICS-1 downto 0),
+    --    i_SC_nomerge        => '0'--,
+    --);
 
     gen_dual_mux : if( N_MODULES > 1 ) generate
         u_mux_B : entity work.framebuilder_mux_v2

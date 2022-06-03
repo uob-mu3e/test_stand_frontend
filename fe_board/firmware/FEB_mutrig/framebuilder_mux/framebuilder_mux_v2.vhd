@@ -56,13 +56,14 @@ architecture rtl of framebuilder_mux_v2 is
 
     -- intput-data based combinatorics
     signal l_all_header, l_all_trailer, l_all_header_trailer : std_logic;
-    signal l_header, l_trailer, l_crc_err, l_asic_drop, l_asic_over, l_frameid_nonsync_all : std_logic_vector(N_INPUTS-1 downto 0);
+    signal l_header, l_trailer, l_crc_err, l_asic_drop, l_asic_bad_trailer, l_asic_over, l_frameid_nonsync_all : std_logic_vector(N_INPUTS-1 downto 0);
 
     -- combining header, frame numbers do not match
-    signal l_frameid_nonsync    : std_logic; 
-    signal l_any_crc_err        : std_logic;
-    signal l_any_asic_overflow  : std_logic;
-    signal l_any_asic_hitdropped: std_logic;
+    signal l_frameid_nonsync      : std_logic; 
+    signal l_any_crc_err          : std_logic;
+    signal l_any_asic_overflow    : std_logic;
+    signal l_any_asic_hitdropped  : std_logic;
+    signal l_any_asic_bad_trailer : std_logic;
 
     -- select first non-masked data input for retreiving header and trailer 
     signal l_common_data : std_logic_vector(55 downto 0);
@@ -120,11 +121,12 @@ begin
     --! source data inspection: all trailer, all header, hit requests.
     --! define signals l_all_header, l_all_trailer, l_request, common data (l_common_data, l_any_crc_err, l_any_asic_*, l_frameid_nonsync)
     gen_header_trailer : FOR i in 0 to N_INPUTS - 1 GENERATE
-        l_header(i)     <= '1' when (i_data(i)(51 downto 50) = "10" and i_rempty(i) = '0') or i_mask(i) = '1' else '0';
-        l_trailer(i)    <= '1' when (i_data(i)(51 downto 50) = "11" and i_rempty(i) = '0') or i_mask(i) = '1' else '0';
-        l_crc_err(i)    <= '1' when i_mask(i) = '0' and i_data(i)(16) = '1' else '0';
-        l_asic_over(i)  <= '1' when i_mask(i) = '0' and i_data(i)(17) = '1' else '0';
-        l_asic_drop(i)  <= '1' when i_mask(i) = '0' and i_data(i)(18) = '1' else '0';
+        l_header(i)             <= '1' when (i_data(i)(51 downto 50) = "10" and i_rempty(i) = '0') or i_mask(i) = '1' else '0';
+        l_trailer(i)            <= '1' when (i_data(i)(51 downto 50) = "11" and i_rempty(i) = '0') or i_mask(i) = '1' else '0';
+        l_crc_err(i)            <= '1' when i_mask(i) = '0' and i_data(i)(16) = '1' else '0';
+        l_asic_over(i)          <= '1' when i_mask(i) = '0' and i_data(i)(17) = '1' else '0';
+        l_asic_drop(i)          <= '1' when i_mask(i) = '0' and i_data(i)(18) = '1' else '0';
+        l_asic_bad_trailer(i)   <= '1' when i_mask(i) = '0' and i_data(i)(19) = '1' else '0';
         -- check frameID
         l_frameid_nonsync_all(i) <= '1' when l_all_header = '1' and i_mask(i) = '0' and i_data(i)(15 downto 0) /= l_common_data(15 downto 0) else '0';
     END GENERATE;
@@ -136,13 +138,15 @@ begin
     l_all_header_trailer    <=  '1' when work.util.and_reduce(l_header or l_trailer) = '1' else
                                 '0';
 
-    -- common data: 
-    -- TODO:    find a candidate for common frame delimiter data (frameID)
-    --          at the moment we always take input 0
-    l_common_data           <= i_data(0);
+    -- common data take the first non mask one
+    l_common_data           <=  i_data(0) when i_mask(0) = '0' else
+                                i_data(1) when i_mask(1) = '0' else
+                                i_data(2) when i_mask(2) = '0' else
+                                i_data(3) when i_mask(3) = '0';
     l_any_crc_err           <= '1' when work.util.or_reduce(l_crc_err) = '1' else '0';
     l_any_asic_overflow     <= '1' when work.util.or_reduce(l_asic_over) = '1' else '0';
     l_any_asic_hitdropped   <= '1' when work.util.or_reduce(l_asic_drop) = '1' else '0';
+    l_any_asic_bad_trailer  <= '1' when work.util.or_reduce(l_asic_bad_trailer) = '1' else '0';
     l_frameid_nonsync       <= '1' when work.util.or_reduce(l_frameid_nonsync_all) = '1' else '0';
 
     -- readout state
@@ -167,7 +171,7 @@ begin
              -- read when when we are in state header or trailer
              (others => '1') when rd_state = HEADER or rd_state = TRAILER else
              -- read the once with a trailer
-             not l_trailer   when rd_state = HATR else
+             l_trailer       when rd_state = HATR else
              -- read from inputs which dont have a header
              not l_header    when rd_state = IDLE else
              -- read from the current merged asic
@@ -186,7 +190,9 @@ begin
     w_t1(14 downto 0)       <= l_common_data(14 downto 0);              --frameID
     -- trailer word
     w_trailer(33 downto 32)  <= MERGER_FIFO_PAKET_END_MARKER(1 downto 0);   --identifier for trailer
-    w_trailer(31 downto 3)   <= (others => '0');                            --filler
+    w_trailer(31 downto 5)   <= (others => '0');                            --filler
+    w_trailer(4)             <= '1' when rd_state = HATR else '0';          --mark header/trailer state
+    w_trailer(3)             <= l_any_asic_bad_trailer;                     --asic package had a bad trailer
     w_trailer(2)             <= l_any_asic_hitdropped;                      --fpga fifo overflow flag
     w_trailer(1)             <= l_any_asic_overflow;                        --asic fifo overflow flag
     w_trailer(0)             <= l_any_crc_err;                              --crc error flag

@@ -165,8 +165,8 @@ begin
         --selection of output data
         if ( i_end_of_frame = '1' ) then -- the MSB of the event data is '0' for frame info data
             ----------- TRAILER -----------
-            --                   4bit - & 2bit identifier   & filler           & hit-dropped-flag & 1bit l2 overflow & 1bit crc_error   & frame id
-            s_full_event_data <= "0000" & "11"              & X"0000000"&"000" & s_have_dropped   & i_frame_info(11) & i_crc_error      & i_frame_number;
+            --                   4bit - & 2bit identifier   & filler            & had bad trailer  & hit-dropped-flag & 1bit l2 overflow & 1bit crc_error   & frame id
+            s_full_event_data <= "0000" & "11"              & X"0000000" & "00" & i_frame_info(10) & s_have_dropped   & i_frame_info(11) & i_crc_error      & i_frame_number;
         elsif ( i_frame_info_rdy= '1' ) then -- by defenition the first thing that happens
             ----------- HEADER -----------
             --                   4bit - & 2bit identifier   & filler             & frame id

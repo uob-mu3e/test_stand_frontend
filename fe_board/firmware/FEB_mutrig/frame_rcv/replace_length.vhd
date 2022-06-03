@@ -22,7 +22,7 @@ end entity;
 architecture rtl of replace_length is
 
     -- ram
-    signal w_ram_en, read, valid : std_logic;
+    signal w_ram_en, read, valid, wrong_trailer : std_logic;
     signal w_ram_add, r_ram_add, length_add0, length_add1, w_ram_add_reg : std_logic_vector(10 downto 0);
     signal w_ram_data, r_ram_data : std_logic_vector(8 downto 0);
     signal data_flags : std_logic_vector(5 downto 0);
@@ -64,15 +64,16 @@ begin
     process(i_clk, i_reset_n)
     begin
     if ( i_reset_n /= '1' ) then
-        package_cnt <= (others => '0');
-        byte_cnt    <= (others => '0');
-        w_ram_add   <= (others => '1');
-        r_ram_add   <= (others => '1');
-        length_add0 <= (others => '0');
-        length_add1 <= (others => '0');
-        read        <= '0';
-        valid       <= '0';
-        FSM_state   <= IDLE;
+        package_cnt     <= (others => '0');
+        byte_cnt        <= (others => '0');
+        w_ram_add       <= (others => '1');
+        r_ram_add       <= (others => '1');
+        length_add0     <= (others => '0');
+        length_add1     <= (others => '0');
+        read            <= '0';
+        valid           <= '0';
+        wrong_trailer   <= '0';
+        FSM_state       <= IDLE;
         --
     elsif rising_edge(i_clk) then
 
@@ -97,10 +98,11 @@ begin
 
         case FSM_state is
             when IDLE =>
-                length_add0 <= (others => '0');
-                length_add1 <= (others => '0');
-                package_cnt <= (others => '0');
-                byte_cnt    <= (others => '0');
+                length_add0     <= (others => '0');
+                length_add1     <= (others => '0');
+                package_cnt     <= (others => '0');
+                byte_cnt        <= (others => '0');
+                wrong_trailer   <= '0';
 
                 if ( i_datak = '1' and i_data = c_header ) then
                     FSM_state   <= FRAME_CNT1;
@@ -130,26 +132,30 @@ begin
                 end if;
 
             when TRAILER =>
+                -- we now have to wait two cycles with reading
+                -- since we dont write when we set the length
                 if ( i_datak = '1' and i_data = x"9C" ) then
-                    -- we now have to wait two cycles with reading
-                    -- since we dont write when we set the length
+                    wrong_trailer <= '0';
                     read <= '0';
                     FSM_state   <= SET_LEN0;
-                else
-                    -- cnt all non comma words
-                    if ( not ( i_datak = '1' and i_data = x"BC" ) ) then
-                        byte_cnt <= byte_cnt + 1;
-                        if ( byte_cnt + 1 = 5 ) then
-                            package_cnt <= package_cnt + 1;
-                            byte_cnt <= (others => '0');
-                        end if;
+                -- we stop at any comma word but mark such a package
+                elsif ( i_datak = '1' and i_data /= x"BC" ) then
+                    wrong_trailer <= '1';
+                    read <= '0';
+                    FSM_state   <= SET_LEN0;
+                -- cnt all non comma idle
+                elsif ( not ( i_datak = '1' and i_data = x"BC" ) ) then
+                    byte_cnt <= byte_cnt + 1;
+                    if ( byte_cnt + 1 = 6 ) then
+                        package_cnt <= package_cnt + 1;
+                        byte_cnt <= (others => '0');
                     end if;
                 end if;
 
             when SET_LEN0 =>
                 w_ram_en   <= '1';
                 w_ram_add  <= length_add0;
-                w_ram_data <= '0' & data_flags & package_cnt(9 downto 8);
+                w_ram_data <= '0' & data_flags(5 downto 1) & wrong_trailer & package_cnt(9 downto 8);
 
                 FSM_state   <= SET_LEN1;
 
@@ -159,7 +165,7 @@ begin
                 w_ram_data <= '0' & package_cnt(7 downto 0);
 
                 read        <= '1';
-                r_ram_add   <= r_ram_add + '1';
+                --r_ram_add   <= r_ram_add + '1';
 
                 FSM_state   <= SET_ADD;
 
