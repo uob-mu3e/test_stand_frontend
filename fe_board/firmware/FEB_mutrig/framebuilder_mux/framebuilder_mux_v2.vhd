@@ -199,6 +199,7 @@ begin
     -- hit word
     w_hit(33 downto 32) <= "00";                        --identifier: data T part
     w_hit(31 downto 28) <= s_asicnum;                   -- asic number
+    -- TODO: handle T/E part correctly here
     w_hit(27)           <= s_sel_data(48);              -- type (1=TPART, 0=EPART)
     w_hit(26 downto 22) <= s_sel_data(47 downto 43);    -- event data: chnum
     w_hit(21 downto 0)  <= s_sel_data(42 downto 21) when s_sel_data(48) = '0' else --T event data: ttime, eflag
