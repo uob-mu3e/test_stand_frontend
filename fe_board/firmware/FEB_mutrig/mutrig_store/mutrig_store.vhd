@@ -60,6 +60,10 @@ architecture rtl of mutrig_store is
     signal s_fifofull_almost : std_logic;
     -- save data loss implementation
     signal s_have_dropped    : std_logic;
+    
+    -- simulation signals
+    signal hit_type : std_logic;
+    signal channel : std_logic_vector(4 downto 0);
 
 begin
 
@@ -185,6 +189,11 @@ begin
         end if;
     end if;
     end process;
+    
+    -- simulation signals
+    hit_type <= i_frame_info(14);
+    channel  <= i_event_data(47 downto 43);
+    
 
     rst_sync_clear : entity work.reset_sync
     port map( i_reset_n => not i_aclear, o_reset_n => s_clear_rxclk_n, i_clk => i_clk_deser);

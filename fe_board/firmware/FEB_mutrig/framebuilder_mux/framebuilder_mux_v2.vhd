@@ -94,6 +94,10 @@ architecture rtl of framebuilder_mux_v2 is
 
     -- PLL test value
     signal cc_prev : std_logic_vector(14 downto 0);
+    
+    -- simulation signals
+    signal hit_type : std_logic;
+    signal channel : std_logic_vector(4 downto 0);
 
 begin
 
@@ -104,6 +108,10 @@ begin
     ) report "framebuilder_mux_v2"
         & "N_INPUTS_INDEX needs to be sqrt(N_INPUTS) see work.util.one_hot_to_index"
     severity failure;
+    
+    -- simulation signals
+    hit_type <= s_sel_data(48);
+    channel  <= s_sel_data(47 downto 43);
 
     --! generate busy signal for run end
     o_busy <= '1' when unsigned(i_rempty) /= 0 and rd_state /= IDLE else '0';

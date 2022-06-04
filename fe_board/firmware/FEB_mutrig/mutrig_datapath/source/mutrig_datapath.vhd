@@ -69,6 +69,11 @@ port (
     o_receivers_ready           : out std_logic_vector(N_MODULES*N_ASICS-1 downto 0); -- receiver output ready flag
     o_frame_desync              : out std_logic_vector(1 downto 0);
     o_cc_diff                   : out std_logic_vector(14 downto 0);
+    
+    -- simulation input
+    i_enablesim                 : in  std_logic := '0';
+    i_simdata                   : in  std_logic_vector(8*N_MODULES * N_ASICS-1 downto 0) := (others => '0');
+    i_simdatak                  : in  std_logic_vector(N_MODULES * N_ASICS-1 downto 0) := (others => '0');
 
     i_SC_reset_counters         : in  std_logic; --synchronous to i_clk_core
     o_fifos_full                : out std_logic_vector(N_MODULES*N_ASICS-1 downto 0); -- mutrig store fifo full
@@ -97,8 +102,8 @@ architecture rtl of mutrig_datapath is
     -- serdes-frame_rcv
     signal s_receivers_state        : std_logic_vector(2*N_ASICS_TOTAL-1 downto 0);
     signal s_receivers_ready        : t_vector;
-    signal s_receivers_data, s_receivers_data_length            : std_logic_vector(8*N_ASICS_TOTAL-1 downto 0);
-    signal s_receivers_data_isk, s_receivers_data_isk_length    : t_vector;
+    signal s_receivers_data, s_receivers_data_length, s_receivers_data_reg : std_logic_vector(8*N_ASICS_TOTAL-1 downto 0);
+    signal s_receivers_data_isk, s_receivers_data_isk_length, s_receivers_data_isk_reg : t_vector;
     signal s_receivers_all_ready    : std_logic;
     signal s_receivers_block        : std_logic;
 
@@ -285,16 +290,34 @@ begin
         o_event_ready       => s_gen_event_ready,
         o_end_of_frame      => s_gen_end_of_frame,
         o_busy              => s_gen_busy--,
-    );
+    );    
 
     gen_frame: for i in 0 to N_ASICS_TOTAL-1 generate begin
+    
+        process(i_clk_125, i_reset_125_n)
+        begin
+        if ( i_reset_125_n /= '1' ) then
+            s_receivers_data_reg((i+1)*8-1 downto i*8) <= x"BC";
+            s_receivers_data_isk_reg(i) <= '1';
+            --
+        elsif rising_edge(i_clk_125) then
+            if ( i_enablesim = '0' ) then
+                s_receivers_data_reg((i+1)*8-1 downto i*8) <= s_receivers_data((i+1)*8-1 downto i*8);
+                s_receivers_data_isk_reg(i) <= s_receivers_data_isk(i);
+            else
+                s_receivers_data_reg((i+1)*8-1 downto i*8) <= i_simdata((i+1)*8-1 downto i*8);
+                s_receivers_data_isk_reg(i) <= i_simdatak(i);
+            end if;
+            --
+        end if;
+        end process;
 
         u_replace_length : entity work.replace_length
         port map (
             i_reset_n => not i_rst_rx,
             i_clk     => i_clk_125,
-            i_data    => s_receivers_data((i+1)*8-1 downto i*8),
-            i_datak   => s_receivers_data_isk(i),
+            i_data    => s_receivers_data_reg((i+1)*8-1 downto i*8),
+            i_datak   => s_receivers_data_isk_reg(i),
             i_enable  => i_enable_length,
 
             o_data    => s_receivers_data_length((i+1)*8-1 downto i*8),
@@ -312,7 +335,7 @@ begin
             i_clk               => i_clk_125,
             i_data              => s_receivers_data_length((i+1)*8-1 downto i*8),
             i_byteisk           => s_receivers_data_isk_length(i),
-            i_enable            => i_RC_may_generate and not (s_receivers_block or (not s_receivers_ready(i) and not i_SC_rx_wait_for_all)),
+            i_enable            => i_enablesim or (i_RC_may_generate and not (s_receivers_block or (not s_receivers_ready(i) and not i_SC_rx_wait_for_all))),
 
             -- to mutrig-store instance
             o_frame_number      => s_rec_frame_number(i),

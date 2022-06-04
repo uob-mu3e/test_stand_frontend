@@ -43,6 +43,11 @@ port (
 
     i_common_fifos_almost_full : in std_logic_vector(N_LINKS-1 downto 0); 
 
+    -- simulation inputs
+    i_enablesim             : in  std_logic := '0';
+    i_simdata               : in  std_logic_vector(8*N_MODULES * N_ASICS-1 downto 0) := (others => '0');
+    i_simdatak              : in  std_logic_vector(N_MODULES * N_ASICS-1 downto 0) := (others => '0');
+    
     -- reset system
     i_run_state             : in  run_state_t; --run state sync to i_clk_g125
     o_run_state_all_done    : out std_logic; -- all fifos empty, all data read
@@ -374,6 +379,11 @@ begin
         o_receivers_ready           => rx_ready,
         o_frame_desync              => frame_desync,
         o_cc_diff                   => cc_diff,
+        
+        -- simulation input
+        i_enablesim                 => i_enablesim,
+        i_simdata                   => i_simdata,
+        i_simdatak                  => i_simdatak,
 
         i_SC_reset_counters         => s_cntreg_ctrl(15),
         o_fifos_full                => s_fifos_full,
