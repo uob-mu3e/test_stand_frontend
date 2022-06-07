@@ -56,7 +56,7 @@ architecture rtl of framebuilder_mux_v2 is
 
     -- intput-data based combinatorics
     signal l_all_header, l_all_trailer, l_all_header_trailer : std_logic;
-    signal l_header, l_trailer, l_crc_err, l_asic_drop, l_asic_bad_trailer, l_asic_over, l_frameid_nonsync_all : std_logic_vector(N_INPUTS-1 downto 0);
+    signal l_header, l_trailer, l_crc_err, l_asic_drop, l_asic_bad_trailer, l_asic_over, l_frameid_nonsync_all, l_longhit : std_logic_vector(N_INPUTS-1 downto 0);
 
     -- combining header, frame numbers do not match
     signal l_frameid_nonsync      : std_logic; 
@@ -79,17 +79,17 @@ architecture rtl of framebuilder_mux_v2 is
     constant WAITING: std_logic_vector(3 downto 0) := x"5";
     constant TRAILER: std_logic_vector(3 downto 0) := x"6";
     constant HATR   : std_logic_vector(3 downto 0) := x"7";
+    constant LHIT   : std_logic_vector(3 downto 0) := x"8";
     signal rd_state, rd_state_last : std_logic_vector(3 downto 0) := IDLE;
 
     -- output words
     signal w_t0, w_t1, w_trailer, w_hit : std_logic_vector(33 downto 0);
     signal s_sel_data : std_logic_vector(55 downto 0);
     signal s_asicnum : std_logic_vector(3 downto 0);
-    signal ren : std_logic_vector(N_INPUTS-1 downto 0);
+    signal ren, can_ren : std_logic_vector(N_INPUTS-1 downto 0);
 
     -- one hot signal indicating current active input stream
     signal index, index_last : std_logic_vector(N_INPUTS-1 downto 0) := (0 => '1', others => '0');
-    signal last_hit_type : std_logic_vector(1 downto 0);
     signal s_sel_index : natural;
 
     -- PLL test value
@@ -108,9 +108,9 @@ begin
     ) report "framebuilder_mux_v2"
         & "N_INPUTS_INDEX needs to be sqrt(N_INPUTS) see work.util.one_hot_to_index"
     severity failure;
-    
-    -- simulation signals
-    hit_type <= s_sel_data(48);
+
+    --! simulation signals
+    hit_type <= s_sel_data(48); -- if '0' -> long event else short event
     channel  <= s_sel_data(47 downto 43);
 
     --! generate busy signal for run end
@@ -131,6 +131,7 @@ begin
     gen_header_trailer : FOR i in 0 to N_INPUTS - 1 GENERATE
         l_header(i)             <= '1' when (i_data(i)(51 downto 50) = "10" and i_rempty(i) = '0') or i_mask(i) = '1' else '0';
         l_trailer(i)            <= '1' when (i_data(i)(51 downto 50) = "11" and i_rempty(i) = '0') or i_mask(i) = '1' else '0';
+        l_longhit(i)            <= '1' when i_data(i)(48) = '0' and i_rempty(i) = '0' else '0';
         l_crc_err(i)            <= '1' when i_mask(i) = '0' and i_data(i)(16) = '1' else '0';
         l_asic_over(i)          <= '1' when i_mask(i) = '0' and i_data(i)(17) = '1' else '0';
         l_asic_drop(i)          <= '1' when i_mask(i) = '0' and i_data(i)(18) = '1' else '0';
@@ -142,11 +143,11 @@ begin
                                 '0';
     l_all_trailer           <=  '1' when work.util.and_reduce(l_trailer) = '1' else
                                 '0';
-    -- FIXME (MK): this is bad here should work without
+    --! FIXME (MK): this is bad here should work without
     l_all_header_trailer    <=  '1' when work.util.and_reduce(l_header or l_trailer) = '1' else
                                 '0';
 
-    -- common data take the first non mask one
+    --! common data take the first non mask one
     l_common_data           <=  i_data(0) when i_mask(0) = '0' else
                                 i_data(1) when i_mask(1) = '0' else
                                 i_data(2) when i_mask(2) = '0' else
@@ -157,23 +158,27 @@ begin
     l_any_asic_bad_trailer  <= '1' when work.util.or_reduce(l_asic_bad_trailer) = '1' else '0';
     l_frameid_nonsync       <= '1' when work.util.or_reduce(l_frameid_nonsync_all) = '1' else '0';
 
-    -- readout state
+    --! readout state
     rd_state <= IDLE    when i_reset_n /= '1' else
                 WAITING when i_wfull = '1' else
                 HEADER  when l_all_header = '1' and (rd_state_last = IDLE or rd_state_last = TRAILER or rd_state_last = HATR) else
                 T1      when rd_state_last = HEADER else
                 TRAILER when l_all_trailer = '1' and (rd_state_last = T1 or rd_state_last = HIT) else
                 HATR    when l_all_header_trailer = '1' and (rd_state_last = T1 or rd_state_last = HIT) else
-                HIT     when rd_state_last = T1 or rd_state_last = HIT else
+                -- we have a long hit mode if at least one ASIC is config. to have long events
+                LHIT    when rd_state_last = HIT and work.util.or_reduce(l_longhit) = '1' else
+                HIT     when rd_state_last = T1 or rd_state_last = HIT or rd_state_last = LHIT else
                 IDLE    when l_all_header = '0' else
                 WAITING;
 
-    -- generate write signal
+    --! generate write signal
     o_wen <= '1' when rd_state = HEADER or rd_state = T1 or rd_state = TRAILER or rd_state = HATR else
-             '1' when work.util.or_reduce(ren) = '1' and rd_state = HIT else
+             '1' when work.util.or_reduce(can_ren) = '1' and rd_state = HIT else
+             '1' when work.util.or_reduce(ren) = '1' and rd_state = LHIT else
              '0';
 
-    -- generate read signal
+    --! generate read signal
+    can_ren <= index and (not (i_rempty or i_mask or l_header or l_trailer));
              -- do not read when we are in reset or the output is full
     ren   <= (others => '0') when i_wfull = '1' or i_reset_n /= '1' or rd_state = WAITING else
              -- read when when we are in state header or trailer
@@ -182,15 +187,17 @@ begin
              l_trailer       when rd_state = HATR else
              -- read from inputs which dont have a header
              not l_header    when rd_state = IDLE else
-             -- read from the current merged asic
-             index and (not (i_rempty or i_mask or l_header or l_trailer)) when rd_state = HIT else
+             -- read from the current merged asic when we have a hit and we are in short mode
+             can_ren         when rd_state = HIT and work.util.or_reduce(l_longhit) = '0' else
+             -- read from the current merged asic when we have a hit and we are reading the second hit in long mode
+             can_ren         when rd_state = LHIT else
              (others => '0');
     o_ren <= ren;
 
-    -- generate output data
+    --! generate output data
     -- header word
-    w_t0(33 downto 32)  <= MERGER_FIFO_PAKET_START_MARKER(1 downto 0);  --identifier (type header)
-    w_t0(31 downto 0)   <= s_global_timestamp(47 downto 16);            --global timestamp
+    w_t0(33 downto 32)      <= MERGER_FIFO_PAKET_START_MARKER(1 downto 0);  --identifier (type header)
+    w_t0(31 downto 0)       <= s_global_timestamp(47 downto 16);            --global timestamp
     -- t1 word
     w_t1(33 downto 32)      <= MERGER_FIFO_PAKET_T1_MARKER(1 downto 0); --identifier for t1
     w_t1(31 downto 16)      <= s_global_timestamp(15 downto 0);         --global timestamp
@@ -205,14 +212,15 @@ begin
     w_trailer(1)             <= l_any_asic_overflow;                        --asic fifo overflow flag
     w_trailer(0)             <= l_any_crc_err;                              --crc error flag
     -- hit word
-    w_hit(33 downto 32) <= "00";                        --identifier: data T part
-    w_hit(31 downto 28) <= s_asicnum;                   -- asic number
-    -- TODO: handle T/E part correctly here
-    w_hit(27)           <= s_sel_data(48);              -- type (1=TPART, 0=EPART)
-    w_hit(26 downto 22) <= s_sel_data(47 downto 43);    -- event data: chnum
-    w_hit(21 downto 0)  <= s_sel_data(42 downto 21) when s_sel_data(48) = '0' else --T event data: ttime, eflag
-                           s_sel_data(20 downto 0) & s_sel_data(21);               --E event data: etime, eflag(redun)
+    w_hit(33 downto 32) <= "00";                                -- identifier for data
+    w_hit(31 downto 28) <= s_asicnum;                           -- asic number
+    w_hit(27)           <= '1' when rd_state = LHIT else '0';   -- type (0=TPART, 1=EPART)
+    w_hit(26 downto 22) <= channel;                             -- event data: chnum
+    w_hit(21 downto 0)  <= s_sel_data(42 downto 21)                 when rd_state = HIT  else --T event data: ttime, eflag
+                           s_sel_data(20 downto 0) & s_sel_data(21) when rd_state = LHIT else --E event data: etime, eflag(redun)
+                           (others => '0');
 
+    --! output data word
     o_data <=   w_t0 when rd_state = HEADER else
                 w_t1 when rd_state = T1 else
                 w_trailer when rd_state = TRAILER or rd_state = HATR else
@@ -227,37 +235,30 @@ begin
                     C_ASICNO_PREFIX & "11" when s_sel_index = 3 else
                     (others => '0');
 
-    -- TODO: add long mode index_last when last_hit_tpart = '0' and rd_state = HIT else
-    index <=    work.util.round_robin_next(index_last, not (i_rempty or i_mask or l_header or l_trailer)) when rd_state = HIT and last_hit_type = "00" else
-                index_last when rd_state = HIT and last_hit_type = "01" else -- last hit was epart so we read now the tpart
+    --! generate new index
+    index <=    index_last when rd_state = LHIT else -- last hit was tpart so we read now the epart
+                work.util.round_robin_next(index_last, not (i_rempty or i_mask or l_header or l_trailer)) when rd_state = HIT and rd_state_last = LHIT else
+                work.util.round_robin_next(index_last, not (i_rempty or i_mask or l_header or l_trailer)) when rd_state = HIT and work.util.or_reduce(l_longhit) = '0' else
                 (0 => '1', others => '0');
 
     process(i_clk, i_reset_n)
     begin
     if ( i_reset_n /= '1' ) then
         index_last      <= (0 => '1', others => '0');
-        last_hit_type   <= (others => '0');
         rd_state_last   <= IDLE;
         cc_prev         <= (others => '0');
         o_cc_diff       <= (others => '0');
         --
     elsif rising_edge(i_clk) then
         index_last <= index;
-        if ( rd_state = HIT ) then
-            if ( last_hit_type = "01" and i_rempty(s_sel_index) = '0' ) then
-                last_hit_type  <= (others => '0');
-            -- we have a epart hit
-            elsif ( last_hit_type = "00" and s_sel_data(48) = '0') then
-                last_hit_type <= "01";
-            end if;
-        end if;
         if ( rd_state /= WAITING ) then
             rd_state_last <= rd_state;
         end if;
         if ( rd_state = HIT and rd_state_last = HIT ) then
             cc_prev     <= w_hit(20 downto 6);
-            o_cc_diff   <= cc_prev - w_hit(20 downto 6);
+            --o_cc_diff   <= cc_prev - w_hit(20 downto 6);
         end if;
+        o_cc_diff(4 downto 0) <= channel;
         --
     end if;
     end process;

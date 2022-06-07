@@ -200,6 +200,12 @@ void SMB_t::menu_SMB_main() {
             case 'u':
                 sc.ram->data[SCIFI_CTRL_DP_REGISTER_W] = sc.ram->data[SCIFI_CTRL_DP_REGISTER_W] & ~(1<<28);
                 break;
+            case 'e':
+                sc.ram->data[SCIFI_CTRL_DP_REGISTER_W] = sc.ram->data[SCIFI_CTRL_DP_REGISTER_W] | (1<<31);
+                break;
+            case 'i':
+                sc.ram->data[SCIFI_CTRL_DP_REGISTER_W] = sc.ram->data[SCIFI_CTRL_DP_REGISTER_W] & ~(1<<31);
+                break;
             case '2':
                 for(alt_u8 asic = 0; asic < 8; asic++)
                     sc_callback(CMD_MUTRIG_ASIC_CFG | asic, (alt_u32*) config_plltest, 0, true);
