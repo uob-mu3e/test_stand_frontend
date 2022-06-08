@@ -1,15 +1,15 @@
 [*]
 [*] GTKWave Analyzer v3.3.111 (w)1999-2020 BSI
-[*] Sat Jun  4 13:24:31 2022
+[*] Wed Jun  8 12:06:53 2022
 [*]
 [dumpfile] "/home/makoeppel/mu3e/online/fe_board/firmware/FEB_mutrig/tb/.cache/tb_scifi_data_path.ghw"
-[dumpfile_mtime] "Sat Jun  4 13:21:31 2022"
-[dumpfile_size] 2756699
+[dumpfile_mtime] "Wed Jun  8 12:06:10 2022"
+[dumpfile_size] 2751044
 [savefile] "/home/makoeppel/mu3e/online/fe_board/firmware/FEB_mutrig/tb/tb_scifi_data_path.gtkw"
-[timestart] 1450000
+[timestart] 0
 [size] 1366 768
 [pos] -683 27
-*-21.000000 4350000 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
+*-20.000000 1908000 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
 [treeopen] top.
 [treeopen] top.tb_scifi_data_path.
 [treeopen] top.tb_scifi_data_path.e_merger.g_merger[0].e_common_fifo_data.
@@ -18,11 +18,11 @@
 [treeopen] top.tb_scifi_data_path.e_scifi_path.e_mutrig_datapath.g_buffer[1].u_elastic_buffer.
 [treeopen] top.tb_scifi_data_path.e_scifi_path.e_mutrig_datapath.g_buffer[1].u_elastic_buffer.u_channel_data_fifo.
 [treeopen] top.tb_scifi_data_path.e_scifi_path.e_mutrig_datapath.g_buffer[2].u_elastic_buffer.
-[treeopen] top.tb_scifi_data_path.e_scifi_path.e_mutrig_datapath.u_mux_a.
+[treeopen] top.tb_scifi_data_path.e_scifi_path.e_mutrig_datapath.u_link_data.
 [sst_width] 332
 [signals_width] 423
 [sst_expanded] 1
-[sst_vpaned_height] 344
+[sst_vpaned_height] 371
 @200
 -Clk / Reset
 @28
@@ -80,31 +80,10 @@ top.tb_scifi_data_path.e_scifi_path.e_mutrig_datapath.g_buffer[0].u_elastic_buff
 top.tb_scifi_data_path.e_scifi_path.e_mutrig_datapath.g_buffer[0].u_elastic_buffer.hit_type
 @200
 -Frame Mux
-@22
-#{top.tb_scifi_data_path.e_scifi_path.e_mutrig_datapath.u_mux_a.l_header[3:0]} top.tb_scifi_data_path.e_scifi_path.e_mutrig_datapath.u_mux_a.l_header[3] top.tb_scifi_data_path.e_scifi_path.e_mutrig_datapath.u_mux_a.l_header[2] top.tb_scifi_data_path.e_scifi_path.e_mutrig_datapath.u_mux_a.l_header[1] top.tb_scifi_data_path.e_scifi_path.e_mutrig_datapath.u_mux_a.l_header[0]
-@23
-#{top.tb_scifi_data_path.e_scifi_path.e_mutrig_datapath.u_mux_a.l_trailer[3:0]} top.tb_scifi_data_path.e_scifi_path.e_mutrig_datapath.u_mux_a.l_trailer[3] top.tb_scifi_data_path.e_scifi_path.e_mutrig_datapath.u_mux_a.l_trailer[2] top.tb_scifi_data_path.e_scifi_path.e_mutrig_datapath.u_mux_a.l_trailer[1] top.tb_scifi_data_path.e_scifi_path.e_mutrig_datapath.u_mux_a.l_trailer[0]
-@22
-#{top.tb_scifi_data_path.e_scifi_path.e_mutrig_datapath.u_mux_a.rd_state[3:0]} top.tb_scifi_data_path.e_scifi_path.e_mutrig_datapath.u_mux_a.rd_state[3] top.tb_scifi_data_path.e_scifi_path.e_mutrig_datapath.u_mux_a.rd_state[2] top.tb_scifi_data_path.e_scifi_path.e_mutrig_datapath.u_mux_a.rd_state[1] top.tb_scifi_data_path.e_scifi_path.e_mutrig_datapath.u_mux_a.rd_state[0]
 @28
 top.tb_scifi_data_path.e_scifi_path.e_mutrig_datapath.u_mux_a.l_all_header
 top.tb_scifi_data_path.e_scifi_path.e_mutrig_datapath.u_mux_a.l_all_trailer
 top.tb_scifi_data_path.e_scifi_path.e_mutrig_datapath.s_a_buf_predec_wr
-@22
-#{top.tb_scifi_data_path.e_scifi_path.e_mutrig_datapath.u_mux_a.index_last[3:0]} top.tb_scifi_data_path.e_scifi_path.e_mutrig_datapath.u_mux_a.index_last[3] top.tb_scifi_data_path.e_scifi_path.e_mutrig_datapath.u_mux_a.index_last[2] top.tb_scifi_data_path.e_scifi_path.e_mutrig_datapath.u_mux_a.index_last[1] top.tb_scifi_data_path.e_scifi_path.e_mutrig_datapath.u_mux_a.index_last[0]
-@28
-#{top.tb_scifi_data_path.e_scifi_path.e_mutrig_datapath.u_mux_a.index[3:0]} top.tb_scifi_data_path.e_scifi_path.e_mutrig_datapath.u_mux_a.index[3] top.tb_scifi_data_path.e_scifi_path.e_mutrig_datapath.u_mux_a.index[2] top.tb_scifi_data_path.e_scifi_path.e_mutrig_datapath.u_mux_a.index[1] top.tb_scifi_data_path.e_scifi_path.e_mutrig_datapath.u_mux_a.index[0]
-@22
-#{top.tb_scifi_data_path.e_scifi_path.e_mutrig_datapath.u_mux_a.o_data[33:0]} top.tb_scifi_data_path.e_scifi_path.e_mutrig_datapath.u_mux_a.o_data[33] top.tb_scifi_data_path.e_scifi_path.e_mutrig_datapath.u_mux_a.o_data[32] top.tb_scifi_data_path.e_scifi_path.e_mutrig_datapath.u_mux_a.o_data[31] top.tb_scifi_data_path.e_scifi_path.e_mutrig_datapath.u_mux_a.o_data[30] top.tb_scifi_data_path.e_scifi_path.e_mutrig_datapath.u_mux_a.o_data[29] top.tb_scifi_data_path.e_scifi_path.e_mutrig_datapath.u_mux_a.o_data[28] top.tb_scifi_data_path.e_scifi_path.e_mutrig_datapath.u_mux_a.o_data[27] top.tb_scifi_data_path.e_scifi_path.e_mutrig_datapath.u_mux_a.o_data[26] top.tb_scifi_data_path.e_scifi_path.e_mutrig_datapath.u_mux_a.o_data[25] top.tb_scifi_data_path.e_scifi_path.e_mutrig_datapath.u_mux_a.o_data[24] top.tb_scifi_data_path.e_scifi_path.e_mutrig_datapath.u_mux_a.o_data[23] top.tb_scifi_data_path.e_scifi_path.e_mutrig_datapath.u_mux_a.o_data[22] top.tb_scifi_data_path.e_scifi_path.e_mutrig_datapath.u_mux_a.o_data[21] top.tb_scifi_data_path.e_scifi_path.e_mutrig_datapath.u_mux_a.o_data[20] top.tb_scifi_data_path.e_scifi_path.e_mutrig_datapath.u_mux_a.o_data[19] top.tb_scifi_data_path.e_scifi_path.e_mutrig_datapath.u_mux_a.o_data[18] top.tb_scifi_data_path.e_scifi_path.e_mutrig_datapath.u_mux_a.o_data[17] top.tb_scifi_data_path.e_scifi_path.e_mutrig_datapath.u_mux_a.o_data[16] top.tb_scifi_data_path.e_scifi_path.e_mutrig_datapath.u_mux_a.o_data[15] top.tb_scifi_data_path.e_scifi_path.e_mutrig_datapath.u_mux_a.o_data[14] top.tb_scifi_data_path.e_scifi_path.e_mutrig_datapath.u_mux_a.o_data[13] top.tb_scifi_data_path.e_scifi_path.e_mutrig_datapath.u_mux_a.o_data[12] top.tb_scifi_data_path.e_scifi_path.e_mutrig_datapath.u_mux_a.o_data[11] top.tb_scifi_data_path.e_scifi_path.e_mutrig_datapath.u_mux_a.o_data[10] top.tb_scifi_data_path.e_scifi_path.e_mutrig_datapath.u_mux_a.o_data[9] top.tb_scifi_data_path.e_scifi_path.e_mutrig_datapath.u_mux_a.o_data[8] top.tb_scifi_data_path.e_scifi_path.e_mutrig_datapath.u_mux_a.o_data[7] top.tb_scifi_data_path.e_scifi_path.e_mutrig_datapath.u_mux_a.o_data[6] top.tb_scifi_data_path.e_scifi_path.e_mutrig_datapath.u_mux_a.o_data[5] top.tb_scifi_data_path.e_scifi_path.e_mutrig_datapath.u_mux_a.o_data[4] top.tb_scifi_data_path.e_scifi_path.e_mutrig_datapath.u_mux_a.o_data[3] top.tb_scifi_data_path.e_scifi_path.e_mutrig_datapath.u_mux_a.o_data[2] top.tb_scifi_data_path.e_scifi_path.e_mutrig_datapath.u_mux_a.o_data[1] top.tb_scifi_data_path.e_scifi_path.e_mutrig_datapath.u_mux_a.o_data[0]
-@28
-top.tb_scifi_data_path.e_scifi_path.e_mutrig_datapath.u_mux_a.s_sel_index
-#{top.tb_scifi_data_path.e_scifi_path.e_mutrig_datapath.u_mux_a.last_hit_type[1:0]} top.tb_scifi_data_path.e_scifi_path.e_mutrig_datapath.u_mux_a.last_hit_type[1] top.tb_scifi_data_path.e_scifi_path.e_mutrig_datapath.u_mux_a.last_hit_type[0]
-top.tb_scifi_data_path.e_scifi_path.e_mutrig_datapath.u_mux_a.o_wen
-#{top.tb_scifi_data_path.e_scifi_path.e_mutrig_datapath.u_mux_a.o_ren[3:0]} top.tb_scifi_data_path.e_scifi_path.e_mutrig_datapath.u_mux_a.o_ren[3] top.tb_scifi_data_path.e_scifi_path.e_mutrig_datapath.u_mux_a.o_ren[2] top.tb_scifi_data_path.e_scifi_path.e_mutrig_datapath.u_mux_a.o_ren[1] top.tb_scifi_data_path.e_scifi_path.e_mutrig_datapath.u_mux_a.o_ren[0]
-@22
-#{top.tb_scifi_data_path.e_scifi_path.e_mutrig_datapath.u_mux_a.channel[4:0]} top.tb_scifi_data_path.e_scifi_path.e_mutrig_datapath.u_mux_a.channel[4] top.tb_scifi_data_path.e_scifi_path.e_mutrig_datapath.u_mux_a.channel[3] top.tb_scifi_data_path.e_scifi_path.e_mutrig_datapath.u_mux_a.channel[2] top.tb_scifi_data_path.e_scifi_path.e_mutrig_datapath.u_mux_a.channel[1] top.tb_scifi_data_path.e_scifi_path.e_mutrig_datapath.u_mux_a.channel[0]
-@28
-top.tb_scifi_data_path.e_scifi_path.e_mutrig_datapath.u_mux_a.hit_type
 @200
 -Decoder
 @28
@@ -168,5 +147,20 @@ top.tb_scifi_data_path.e_scifi_path.e_mutrig_datapath.gen_frame[0].u_frame_rcv.o
 #{top.tb_scifi_data_path.e_scifi_path.e_mutrig_datapath.gen_frame[0].u_frame_rcv.n_frame_len[9:0]} top.tb_scifi_data_path.e_scifi_path.e_mutrig_datapath.gen_frame[0].u_frame_rcv.n_frame_len[9] top.tb_scifi_data_path.e_scifi_path.e_mutrig_datapath.gen_frame[0].u_frame_rcv.n_frame_len[8] top.tb_scifi_data_path.e_scifi_path.e_mutrig_datapath.gen_frame[0].u_frame_rcv.n_frame_len[7] top.tb_scifi_data_path.e_scifi_path.e_mutrig_datapath.gen_frame[0].u_frame_rcv.n_frame_len[6] top.tb_scifi_data_path.e_scifi_path.e_mutrig_datapath.gen_frame[0].u_frame_rcv.n_frame_len[5] top.tb_scifi_data_path.e_scifi_path.e_mutrig_datapath.gen_frame[0].u_frame_rcv.n_frame_len[4] top.tb_scifi_data_path.e_scifi_path.e_mutrig_datapath.gen_frame[0].u_frame_rcv.n_frame_len[3] top.tb_scifi_data_path.e_scifi_path.e_mutrig_datapath.gen_frame[0].u_frame_rcv.n_frame_len[2] top.tb_scifi_data_path.e_scifi_path.e_mutrig_datapath.gen_frame[0].u_frame_rcv.n_frame_len[1] top.tb_scifi_data_path.e_scifi_path.e_mutrig_datapath.gen_frame[0].u_frame_rcv.n_frame_len[0]
 @420
 top.tb_scifi_data_path.e_scifi_path.e_mutrig_datapath.gen_frame[0].u_frame_rcv.n_state
+@200
+-Link Data
+@22
+#{top.tb_scifi_data_path.e_scifi_path.e_mutrig_datapath.u_link_data.o_data[33:0]} top.tb_scifi_data_path.e_scifi_path.e_mutrig_datapath.u_link_data.o_data[33] top.tb_scifi_data_path.e_scifi_path.e_mutrig_datapath.u_link_data.o_data[32] top.tb_scifi_data_path.e_scifi_path.e_mutrig_datapath.u_link_data.o_data[31] top.tb_scifi_data_path.e_scifi_path.e_mutrig_datapath.u_link_data.o_data[30] top.tb_scifi_data_path.e_scifi_path.e_mutrig_datapath.u_link_data.o_data[29] top.tb_scifi_data_path.e_scifi_path.e_mutrig_datapath.u_link_data.o_data[28] top.tb_scifi_data_path.e_scifi_path.e_mutrig_datapath.u_link_data.o_data[27] top.tb_scifi_data_path.e_scifi_path.e_mutrig_datapath.u_link_data.o_data[26] top.tb_scifi_data_path.e_scifi_path.e_mutrig_datapath.u_link_data.o_data[25] top.tb_scifi_data_path.e_scifi_path.e_mutrig_datapath.u_link_data.o_data[24] top.tb_scifi_data_path.e_scifi_path.e_mutrig_datapath.u_link_data.o_data[23] top.tb_scifi_data_path.e_scifi_path.e_mutrig_datapath.u_link_data.o_data[22] top.tb_scifi_data_path.e_scifi_path.e_mutrig_datapath.u_link_data.o_data[21] top.tb_scifi_data_path.e_scifi_path.e_mutrig_datapath.u_link_data.o_data[20] top.tb_scifi_data_path.e_scifi_path.e_mutrig_datapath.u_link_data.o_data[19] top.tb_scifi_data_path.e_scifi_path.e_mutrig_datapath.u_link_data.o_data[18] top.tb_scifi_data_path.e_scifi_path.e_mutrig_datapath.u_link_data.o_data[17] top.tb_scifi_data_path.e_scifi_path.e_mutrig_datapath.u_link_data.o_data[16] top.tb_scifi_data_path.e_scifi_path.e_mutrig_datapath.u_link_data.o_data[15] top.tb_scifi_data_path.e_scifi_path.e_mutrig_datapath.u_link_data.o_data[14] top.tb_scifi_data_path.e_scifi_path.e_mutrig_datapath.u_link_data.o_data[13] top.tb_scifi_data_path.e_scifi_path.e_mutrig_datapath.u_link_data.o_data[12] top.tb_scifi_data_path.e_scifi_path.e_mutrig_datapath.u_link_data.o_data[11] top.tb_scifi_data_path.e_scifi_path.e_mutrig_datapath.u_link_data.o_data[10] top.tb_scifi_data_path.e_scifi_path.e_mutrig_datapath.u_link_data.o_data[9] top.tb_scifi_data_path.e_scifi_path.e_mutrig_datapath.u_link_data.o_data[8] top.tb_scifi_data_path.e_scifi_path.e_mutrig_datapath.u_link_data.o_data[7] top.tb_scifi_data_path.e_scifi_path.e_mutrig_datapath.u_link_data.o_data[6] top.tb_scifi_data_path.e_scifi_path.e_mutrig_datapath.u_link_data.o_data[5] top.tb_scifi_data_path.e_scifi_path.e_mutrig_datapath.u_link_data.o_data[4] top.tb_scifi_data_path.e_scifi_path.e_mutrig_datapath.u_link_data.o_data[3] top.tb_scifi_data_path.e_scifi_path.e_mutrig_datapath.u_link_data.o_data[2] top.tb_scifi_data_path.e_scifi_path.e_mutrig_datapath.u_link_data.o_data[1] top.tb_scifi_data_path.e_scifi_path.e_mutrig_datapath.u_link_data.o_data[0]
+@28
+top.tb_scifi_data_path.e_scifi_path.e_mutrig_datapath.u_link_data.o_data_en
+@22
+#{top.tb_scifi_data_path.e_scifi_path.e_mutrig_datapath.u_link_data.i_link[3:0]} top.tb_scifi_data_path.e_scifi_path.e_mutrig_datapath.u_link_data.i_link[3] top.tb_scifi_data_path.e_scifi_path.e_mutrig_datapath.u_link_data.i_link[2] top.tb_scifi_data_path.e_scifi_path.e_mutrig_datapath.u_link_data.i_link[1] top.tb_scifi_data_path.e_scifi_path.e_mutrig_datapath.u_link_data.i_link[0]
+@420
+top.tb_scifi_data_path.e_scifi_path.e_mutrig_datapath.u_link_data.fsm_state
+@22
+#{top.tb_scifi_data_path.e_scifi_path.e_mutrig_datapath.u_link_data.data[7:0]} top.tb_scifi_data_path.e_scifi_path.e_mutrig_datapath.u_link_data.data[7] top.tb_scifi_data_path.e_scifi_path.e_mutrig_datapath.u_link_data.data[6] top.tb_scifi_data_path.e_scifi_path.e_mutrig_datapath.u_link_data.data[5] top.tb_scifi_data_path.e_scifi_path.e_mutrig_datapath.u_link_data.data[4] top.tb_scifi_data_path.e_scifi_path.e_mutrig_datapath.u_link_data.data[3] top.tb_scifi_data_path.e_scifi_path.e_mutrig_datapath.u_link_data.data[2] top.tb_scifi_data_path.e_scifi_path.e_mutrig_datapath.u_link_data.data[1] top.tb_scifi_data_path.e_scifi_path.e_mutrig_datapath.u_link_data.data[0]
+#{top.tb_scifi_data_path.e_scifi_path.e_mutrig_datapath.u_link_data.i_byteisk[3:0]} top.tb_scifi_data_path.e_scifi_path.e_mutrig_datapath.u_link_data.i_byteisk[3] top.tb_scifi_data_path.e_scifi_path.e_mutrig_datapath.u_link_data.i_byteisk[2] top.tb_scifi_data_path.e_scifi_path.e_mutrig_datapath.u_link_data.i_byteisk[1] top.tb_scifi_data_path.e_scifi_path.e_mutrig_datapath.u_link_data.i_byteisk[0]
+@28
+top.tb_scifi_data_path.e_scifi_path.e_mutrig_datapath.u_link_data.byteisk
 [pattern_trace] 1
 [pattern_trace] 0

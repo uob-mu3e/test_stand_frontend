@@ -73,6 +73,11 @@ begin
                 --scifi_reg.addr(15 downto 0) <= std_logic_vector(to_unsigned(SCIFI_CTRL_DUMMY_REGISTER_W, 16));
                 --scifi_reg.wdata(11 downto 0)<= "000000000001";
                 --scifi_reg.we                <= '1';
+                -- enable direct link readout
+                scifi_reg.addr(15 downto 0) <= std_logic_vector(to_unsigned(SCIFI_LINK_DATA_REGISTER_W, 16));
+                scifi_reg.wdata(31)         <= '1';
+                scifi_reg.wdata(3 downto 0) <= x"1";
+                scifi_reg.we                <= '1';
                 reset_state                 <= "00001";
                 
             when "00001" =>

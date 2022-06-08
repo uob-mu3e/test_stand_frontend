@@ -95,6 +95,7 @@ architecture arch of scifi_path is
     signal s_dpctrl_reg                     : std_logic_vector(31 downto 0);
     signal s_subdet_reset_reg               : std_logic_vector(31 downto 0);
     signal s_subdet_resetdly_reg            : std_logic_vector(31 downto 0);
+    signal s_link_data_reg                  : std_logic_vector(31 downto 0);
     signal s_subdet_resetdly_reg_written    : std_logic;
     -- reset synchronizers
     signal s_datapath_rst, s_datapath_rst_n : std_logic;
@@ -276,6 +277,7 @@ begin
         o_subdet_resetdly_reg_written   => s_subdet_resetdly_reg_written,
         o_subdet_resetdly_reg           => s_subdet_resetdly_reg,
         o_ctrl_lapse_counter_reg        => ctrl_lapse_counter_reg,
+        o_link_data_reg                 => s_link_data_reg,
 
         i_clk_125                       => i_clk_125,
         i_reset_n                       => i_reset_156_n,
@@ -365,6 +367,7 @@ begin
         i_SC_datagen_enable         => s_dummyctrl_reg(1),
         i_SC_datagen_shortmode      => s_dummyctrl_reg(2),
         i_SC_datagen_count          => s_dummyctrl_reg(12 downto 3),
+        i_link_data_reg             => s_link_data_reg,
 
         -- run control
         i_RC_may_generate           => i_run_state(RUN_STATE_BITPOS_RUNNING),

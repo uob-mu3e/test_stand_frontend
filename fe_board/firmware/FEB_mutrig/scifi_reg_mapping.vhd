@@ -39,6 +39,7 @@ port (
     o_subdet_resetdly_reg_written : out std_logic;
     o_subdet_resetdly_reg       : out std_logic_vector(31 downto 0);
     o_ctrl_lapse_counter_reg    : out std_logic_vector(31 downto 0);
+    o_link_data_reg             : out std_logic_vector(31 downto 0);
 
     i_clk_125                   : in    std_logic;
 
@@ -61,6 +62,7 @@ architecture rtl of scifi_reg_mapping is
     signal subdet_reset_reg     : std_logic_vector(31 downto 0);
     signal subdet_reset_reg_125 : std_logic_vector(31 downto 0);
     signal subdet_resetdly_reg  : std_logic_vector(31 downto 0);
+    signal link_data_reg        : std_logic_vector(31 downto 0);
 
     -- rx monitor
     signal sync_rx_dpa_lock_reg : std_logic_vector(N_MODULES*N_ASICS - 1 downto 0);
@@ -147,6 +149,12 @@ begin
     generic map ( W => subdet_reset_reg_125'length )
     port map (
         i_d => subdet_reset_reg, o_q => subdet_reset_reg_125,
+        i_reset_n => i_reset_n, i_clk => i_clk_125--,
+    );
+    e_link_data_reg : entity work.ff_sync
+    generic map ( W => link_data_reg'length )
+    port map (
+        i_d => link_data_reg, o_q => o_link_data_reg,
         i_reset_n => i_reset_n, i_clk => i_clk_125--,
     );
     ----------------------------------------------------------------------------
@@ -238,6 +246,13 @@ begin
 
             if ( i_reg_re = '1' and regaddr = SCIFI_CC_DIFF_REGISTER_R ) then
                 o_reg_rdata(14 downto 0) <= cc_diff;
+            end if;
+
+            if ( i_reg_we = '1' and regaddr = SCIFI_LINK_DATA_REGISTER_W ) then
+                link_data_reg <= i_reg_wdata;
+            end if;
+            if ( i_reg_re = '1' and regaddr = SCIFI_LINK_DATA_REGISTER_W ) then
+                o_reg_rdata <= link_data_reg;
             end if;
 
     end if;

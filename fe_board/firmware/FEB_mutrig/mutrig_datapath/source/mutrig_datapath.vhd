@@ -52,6 +52,7 @@ port (
     i_SC_datagen_count          : in  std_logic_vector(9 downto 0);
     i_SC_rx_wait_for_all        : in  std_logic;
     i_SC_rx_wait_for_all_sticky : in  std_logic;
+    i_link_data_reg             : in  std_logic_vector(31 downto 0);
     
     -- run control
     i_RC_may_generate           : in  std_logic; -- do not generate new frames for runstates that are not RUNNING, allows to let fifos run empty
@@ -146,6 +147,10 @@ architecture rtl of mutrig_datapath is
     signal s_B_buf_data_reg : std_logic_vector(33 downto 0);
     signal s_B_buf_wr       : std_logic;
 
+    -- readout link directly
+    signal link_data : std_logic_vector(33 downto 0);
+    signal link_en : std_logic;
+
     -- Scifi Counters per ASIC N_ASICS_TOTAL
     -- mutrig store:
     --  0: s_eventcounter
@@ -177,6 +182,7 @@ architecture rtl of mutrig_datapath is
 
     -- signals for inputs / outputs
     signal fifo_data, sync_fifo_data        : std_logic_vector(N_LINKS*36-1 downto 0);
+    signal fifo_we                          : std_logic_vector(N_LINKS-1 downto 0);
     signal RC_all_done                      : std_logic_vector(0 downto 0) := (others => '0');
     signal sync_fifo_read, sync_fifo_empty  : std_logic_vector(N_LINKS-1 downto 0);
 
@@ -290,7 +296,23 @@ begin
         o_event_ready       => s_gen_event_ready,
         o_end_of_frame      => s_gen_end_of_frame,
         o_busy              => s_gen_busy--,
-    );    
+    );
+    
+    u_link_data : entity work.link_data
+    generic map (
+        N_ASICS_TOTAL => N_ASICS_TOTAL--,
+    )
+    port map (
+        i_clk       => i_clk_125,
+        i_reset_n   => not i_rst_rx,
+
+        i_data      => s_receivers_data_reg,
+        i_byteisk   => s_receivers_data_isk_reg,
+        i_link      => i_link_data_reg(3 downto 0),
+        
+        o_data      => link_data,
+        o_data_en   => link_en--,
+    );
 
     gen_frame: for i in 0 to N_ASICS_TOTAL-1 generate begin
     
@@ -566,8 +588,9 @@ begin
         i_upper_bnd => i_upper_bnd, i_lower_bnd => i_lower_bnd, o_CC => CC_corrected_A, o_cnt => open );
 
     -- to fifo_out_1
-    fifo_data(35 downto 0) <=
-        "00" & s_A_buf_data;-- when i_en_lapse_counter = '0' else
+    fifo_data(35 downto 0) <= "00" & link_data when i_link_data_reg(31) = '1' else "00" & s_A_buf_data;
+    fifo_we(0)             <= link_en          when i_link_data_reg(31) = '1' else s_A_buf_wr;
+        -- when i_en_lapse_counter = '0' else
         --"00" & s_A_buf_data(33 downto 21) & CC_corrected_A(14 downto 0) & s_A_buf_data(5 downto 0) when ( s_A_buf_data(33 downto 32) = "00" ) else
         --"00" & s_A_buf_data;
 
@@ -578,7 +601,7 @@ begin
     )
     port map (
         i_wdata     => fifo_data(35 downto 0),
-        i_we        => s_A_buf_wr,
+        i_we        => fifo_we(0),
         o_wfull     => open,
         i_wclk      => i_clk_125,
 
@@ -610,8 +633,11 @@ begin
             i_upper_bnd => i_upper_bnd, i_lower_bnd => i_lower_bnd, o_CC => CC_corrected_B, o_cnt => open );
 
         -- to fifo_out_2
-        fifo_data(71 downto 36) <=
-            "00" & s_B_buf_data;-- when i_en_lapse_counter = '0' else
+        -- we just send the same data from the link directly on both fifos
+        fifo_data(71 downto 36) <= "00" & link_data when i_link_data_reg(31) = '1' else "00" & s_B_buf_data;
+        fifo_we(1)              <= link_en          when i_link_data_reg(31) = '1' else s_B_buf_wr;    
+            
+            -- when i_en_lapse_counter = '0' else
             --"00" & s_B_buf_data(33 downto 21) & CC_corrected_B(14 downto 0) & s_B_buf_data(5 downto 0) when ( s_B_buf_data(33 downto 32) = "00" ) else
             --"00" & s_B_buf_data;
 
@@ -622,7 +648,7 @@ begin
         )
         port map (
             i_wdata     => fifo_data(71 downto 36),
-            i_we        => s_B_buf_wr,
+            i_we        => fifo_we(1),
             o_wfull     => open,
             i_wclk      => i_clk_125,
 
