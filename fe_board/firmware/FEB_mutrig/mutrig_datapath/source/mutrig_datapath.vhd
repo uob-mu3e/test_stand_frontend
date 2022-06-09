@@ -297,7 +297,7 @@ begin
         o_end_of_frame      => s_gen_end_of_frame,
         o_busy              => s_gen_busy--,
     );
-    
+
     u_link_data : entity work.link_data
     generic map (
         N_ASICS_TOTAL => N_ASICS_TOTAL--,
@@ -636,7 +636,6 @@ begin
         -- we just send the same data from the link directly on both fifos
         fifo_data(71 downto 36) <= "00" & link_data when i_link_data_reg(31) = '1' else "00" & s_B_buf_data;
         fifo_we(1)              <= link_en          when i_link_data_reg(31) = '1' else s_B_buf_wr;    
-            
             -- when i_en_lapse_counter = '0' else
             --"00" & s_B_buf_data(33 downto 21) & CC_corrected_B(14 downto 0) & s_B_buf_data(5 downto 0) when ( s_B_buf_data(33 downto 32) = "00" ) else
             --"00" & s_B_buf_data;

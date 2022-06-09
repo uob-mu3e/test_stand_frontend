@@ -152,6 +152,7 @@ void SMB_t::menu_SMB_main() {
         printf("CC Diff = 0x%08X\n", ram->data[SCIFI_CC_DIFF_REGISTER_R]);
         printf("CTRL DP = 0x%08X\n", ram->data[SCIFI_CTRL_DP_REGISTER_W]);
         printf("CNT CTRL = 0x%08X\n", ram->data[SCIFI_CNT_CTRL_REGISTER_W]);
+        printf("Link Data = 0x%08X\n", ram->data[SCIFI_LINK_DATA_REGISTER_W]);
         //        TODO: Define menu
         printf("  [0] => Write ALL_OFF config to all ASICs\n");
         printf("  [1] => Write PRBS_single config to all ASICs\n");
@@ -202,6 +203,15 @@ void SMB_t::menu_SMB_main() {
                 break;
             case 'e':
                 sc.ram->data[SCIFI_CTRL_DP_REGISTER_W] = sc.ram->data[SCIFI_CTRL_DP_REGISTER_W] | (1<<31);
+                break;
+            case 'p':
+                sc.ram->data[SCIFI_LINK_DATA_REGISTER_W] = sc.ram->data[SCIFI_LINK_DATA_REGISTER_W] | (1<<31);
+                // readout link 2
+                sc.ram->data[SCIFI_LINK_DATA_REGISTER_W] = sc.ram->data[SCIFI_LINK_DATA_REGISTER_W] | (1<<1);
+                break;
+            case 'o':
+                sc.ram->data[SCIFI_LINK_DATA_REGISTER_W] = sc.ram->data[SCIFI_LINK_DATA_REGISTER_W] & ~(1<<31);
+                sc.ram->data[SCIFI_LINK_DATA_REGISTER_W] = sc.ram->data[SCIFI_LINK_DATA_REGISTER_W] & ~(1<<1);
                 break;
             case 'i':
                 sc.ram->data[SCIFI_CTRL_DP_REGISTER_W] = sc.ram->data[SCIFI_CTRL_DP_REGISTER_W] & ~(1<<31);
