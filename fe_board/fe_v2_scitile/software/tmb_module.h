@@ -1,7 +1,8 @@
 #ifndef TMB_MODULE_H_
 #define TMB_MODULE_H_
-
+/* FEB
 #include <sys/alt_alarm.h>
+*/
 #include <fcntl.h>
 #include <stdio.h>
 #include <unistd.h>
@@ -14,7 +15,7 @@ struct sc_t;
 
 #include "tmb_constants.h"
 
-struct TMB_t {
+struct TMB_t{
     i2c_t& i2c;
     sc_t& sc;
     //TODO: add spi in parameters
@@ -22,12 +23,15 @@ struct TMB_t {
 
     //=========================
     // higher level functions
-    void        power_TMB(bool enable=true);
+    void        init_TMB(bool enable=true);
     void        power_ASIC(int asic, bool enable=true);
-    
-    //void    GPIO_sel(){};
+
+    //control the ASIC power domains of the TMB
     void        power_VCC18A(int asic, bool enable=true);
     void        power_VCC18D(int asic, bool enable=true);
+    void	power_ASIC_all(bool enable);
+    //control the pulse injection (pll_test) distribution tree of the TMB - output enable signal
+    void	setInject(bool enable);
 
     //ASIC configuration
     void        SPI_sel(int asic, bool enable=true);
@@ -50,11 +54,14 @@ struct TMB_t {
    
     //=========================
     //lower level functions
-    void    I2C_mux_sel(int id);
-    void    read_temperature_sensor(int z, int phi);//id 0 to 13
+    void    I2C_mux_sel(int gid);
+    void    I2C_bus_sel(int id);
+    alt_u8  get_temperature_address(int id);
+    alt_u16 read_temperature_sensor(int id);//id 0 to 25
+    alt_u16 switch_readout(alt_u16 tmp);
     alt_u16 read_vsense(int id, int ch);
     alt_u16 read_vsource(int id,int ch); // call I2C_mux_sel inside
-    void    read_pow_limit(int id);// purpose: to check which measuremen is out of limit
+    void    read_pow_limit(int id);// purpose: to check which measurement is out of limit
     //TODO add function to check alert line and handling of interrupt - polled with some timer, fw interrupt?
 
     //periperal access for communication with TMB    
@@ -67,23 +74,26 @@ struct TMB_t {
     void        I2C_write(alt_u8 slave, alt_u8 addr, alt_u8 data);
     
 
-    alt_u16* data_all_tmp;//[32];//TODO this should be the point to register addr in sc_ram
-    alt_u16* data_all_power;//[64];//TODO this should be the point to register addr in sc_ram
+    alt_u16 data_all_tmp[32];//TODO this should be the point to register addr in sc_ram
+    alt_u16 data_all_power[64];//TODO this should be the point to register addr in sc_ram
     alt_u8*  data_all_powerStat;//[16];//TODO this should be the point to register addr in sc_ram
 
 
 
     //Read back PAC1720 ProductID to check response
-    bool check_power_monitor(int z);
+    bool check_power_monitor(int id, int ch);
+    void check_power_monitor_all();
 
     //Read back the TMP117 deviceid to check if the sensor responds
-    bool check_temperature_sensor(int z, int phi); //z from 0 to 12; phi from 0 to 1
+    bool check_temperature_sensor(int id); //z from 0 to 25;
+    void check_temperature_sensor_all();
 
     //=========================
     //Menu functions for command line use
     void menu_TMB_monitors();
     void menu_TMB_debug();
     void menu_TMB_main();
+    void menu_TMB_ASIC();
     //Slow control callback
     alt_u16 sc_callback(alt_u16 cmd, volatile alt_u32* data, alt_u16 n);
 

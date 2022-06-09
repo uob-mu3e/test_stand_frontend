@@ -9,7 +9,7 @@ struct i2c_reg_t {
     alt_u8 data;
 };
 
-const i2c_reg_t TMB_init_regs[18] = { //TODO add the monitor init
+const i2c_reg_t TMB_init_regs[20] = { //TODO add the monitor init
     {0x38,0x01,0x0C^0x20},
     {0x38,0x03,0x00},
     {0x38,0x01,0x0D^0x20},
@@ -27,7 +27,9 @@ const i2c_reg_t TMB_init_regs[18] = { //TODO add the monitor init
     {0x3d,0x01,0x3C},
     {0x3d,0x03,0x00},
     {0x3f,0x01,0x3C},
-    {0x3f,0x03,0x00}
+    {0x3f,0x03,0x00},
+    {0x44,0x01,0x00}, // mux gpio
+    {0x44,0x02,0x1C}  // mux gpio
 };
 
 /**
@@ -55,24 +57,39 @@ const i2c_reg_t TMB_powerdown_regs[17] = {
     {0x38,0x01,0x0C}
 };
 
+const alt_u8 GPIO_config_reg[2] = {0x06,0x07};
+const alt_u8 GPIO_init_values[4] = {0x94,0xe2,0b00,0x08};
+
+const int VCCA18_first3_index[3] = {13,14,0};
+const int VCCD18_first3_index[3] = {1,6,5};
+const int VCCA18_4_index[4] = {16,17,3,1};
+const int VCCD18_4_index[4] = {15,11,10,2};
+
+const int SPI_first3_index[3] = {10,3,12};
+const int SPI_4_index[4] = {12,6,14,0};
 
 //====monitor related=====
-const int I2C_mux_index[4] = {3,0,1,2};         // this is the I2C mux fanout 
+const int I2C_mux_index[4] = {3,0,1,2}; // this is the I2C mux fanout 
+const int I2C_bus_index[7] = {3,2,4,1,3,2,1};
 
+const int I2C_tmp_bus_over23[4] = {6,6,1,5}; //subbus used for Temp 24,25,26,27
+const alt_u8 I2C_tmp_addr_over23[4] = {0x48,0x49,0x4d,0x4e}; //adresses for Temp 24,25,26,27
 
 // address
-const alt_u8 addr_tmp[2] = {0x48,0x49};
+const alt_u8 addr_tmp[4] = {0x48,0x49,0x4a,0x4b};
 //7-bit I2C addr; addr==0xff: skip this mon\\TODO add the TMB I2C address //this is the address of all the power monitor 13(VCC18) + 2(VCC33)//
-const alt_u8 addr_pow_mon[15]={0x4e,0x4f,0x4d,0x4c,0x4a,0x4b,0x28,0x29,0x2a,0x2b,0x2c,0x2d,0x2e,0x18,0xff};//TMB - reordering needed
+const alt_u8 addr_pow_mon[3]={0x28,0x29,0x4f};//TMB - reordering needed
 //const alt_u8 addr_MUX[4]={0x40,0x41,0x42,0x43}; //TMB schematic
-const alt_u8 addr_MUX[4]={0x40,0x41,0x48,0x50}; //TMB #1 actual configuration + fix un U27
-const alt_u8 addr_GPIO[7]={0x39,0x3a,0x3b,0x3c,0x3d,0x3e,0x3f};
+const alt_u8 addr_MUX[2]={0x45,0x44}; //TMB #2 actual configuration + fix un U27
+const alt_u8 addr_GPIO[4]={0x21,0x22,0x23,0x24};
 
 
 // TMP117 related reg address 
 const alt_u8 reg_temp_result = 0x00;
 const alt_u8 reg_temp_config = 0x01;
-const alt_u8 reg_temp_deviceID= 0x0f; //should the readback should be 0x117
+const alt_u8 reg_temp_deviceID[2] = {0x0f, 0x07}; //should the readback should be 0x117
+const alt_u16 temp_deviceID_result[2] = {0x0117, 0x0190};
+const alt_u8 reg_GPIO_out[2] = {0x02,0x03};
 
 //{{{//current monitor related register address and command [PAC1720]
 //=================configuration register========
