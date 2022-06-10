@@ -163,6 +163,8 @@ package mupix is
     constant COMMAND_HEADER2        :  command_t := X"90000";
     constant COMMAND_SUBHEADER      :  command_t := X"C0000";
     constant COMMAND_FOOTER         :  command_t := X"E0000";
+    constant COMMAND_DEBUGHEADER1   :  command_t := X"A0000";
+    constant COMMAND_DEBUGHEADER2   :  command_t := X"B0000";
 
     subtype doublecounter_t         is std_logic_vector(COUNTERMEMDATASIZE-1 downto 0);
     type doublecounter_array        is array (NMEMS-1 downto 0) of doublecounter_t;
