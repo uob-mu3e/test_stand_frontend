@@ -14,14 +14,18 @@ architecture arch of tb_scifi_data_path is
     constant CLK_MHZ    : real := 10000.0; -- MHz
     constant N_LINKS    : integer := 2;
     constant N_ASICS    : integer := 4;
-    constant N_MODULES  : integer := 2;
+    constant N_MODULES  : integer := 1;
+    constant N_ASICS_TOTAL : natural := N_MODULES * N_ASICS;
 
     signal clk, reset_n : std_logic := '0';
 
     signal scifi_reg        : work.util.rw_t;    
     signal run_state_125    : run_state_t;
     signal delay            : std_logic_vector(1 downto 0);
-    signal reset_state      : std_logic_vector(3 downto 0);
+    signal reset_state      : std_logic_vector(4 downto 0);
+    
+    signal i_simdata        : std_logic_vector(8*N_ASICS_TOTAL-1 downto 0) := (others => '0');
+    signal i_simdatak       : std_logic_vector(N_ASICS_TOTAL-1 downto 0) := (others => '0');
 
     signal fifo_wdata       : std_logic_vector(36*N_LINKS-1 downto 0);
     signal fifo_write       : std_logic_vector(N_LINKS-1 downto 0);
@@ -55,69 +59,154 @@ begin
         scifi_reg.re    <= '0';
         scifi_reg.we    <= '0';
         
+        for i in 0 to N_ASICS_TOTAL-1 loop
+            i_simdata((i+1)*8-1 downto i*8) <= x"BC";
+            i_simdatak(i) <= '1';
+        end loop;
+        
         if ( delay = "00" ) then
 
         case reset_state is
             
             -- first we enable the data generator config
-            when "0000" =>
-                scifi_reg.addr(15 downto 0) <= std_logic_vector(to_unsigned(SCIFI_CTRL_DUMMY_REGISTER_W, 16));
-                scifi_reg.wdata(11 downto 0)<= "000000000001";
+            when "00000" =>
+                --scifi_reg.addr(15 downto 0) <= std_logic_vector(to_unsigned(SCIFI_CTRL_DUMMY_REGISTER_W, 16));
+                --scifi_reg.wdata(11 downto 0)<= "000000000001";
+                --scifi_reg.we                <= '1';
+                -- enable direct link readout
+                scifi_reg.addr(15 downto 0) <= std_logic_vector(to_unsigned(SCIFI_LINK_DATA_REGISTER_W, 16));
+                scifi_reg.wdata(31)         <= '1';
+                scifi_reg.wdata(3 downto 0) <= x"1";
                 scifi_reg.we                <= '1';
-                reset_state                 <= "0001";
+                reset_state                 <= "00001";
                 
-            when "0001" =>
-                scifi_reg.addr(15 downto 0) <= std_logic_vector(to_unsigned(SCIFI_CTRL_DUMMY_REGISTER_W, 16));
-                scifi_reg.wdata(11 downto 0)<= "000000000011";
-                scifi_reg.we                <= '1';
-                reset_state                 <= "0010";
+            when "00001" =>
+                --scifi_reg.addr(15 downto 0) <= std_logic_vector(to_unsigned(SCIFI_CTRL_DUMMY_REGISTER_W, 16));
+                --scifi_reg.wdata(11 downto 0)<= "000000000011";
+                --scifi_reg.we                <= '1';
+                reset_state                 <= "00010";
             
-            when "0010" =>
-                scifi_reg.addr(15 downto 0) <= std_logic_vector(to_unsigned(SCIFI_CTRL_DUMMY_REGISTER_W, 16));
-                scifi_reg.wdata(11 downto 0)<= "000000001011";
-                scifi_reg.we                <= '1';
-                reset_state <= "0011";
+            when "00010" =>
+                --scifi_reg.addr(15 downto 0) <= std_logic_vector(to_unsigned(SCIFI_CTRL_DUMMY_REGISTER_W, 16));
+                --scifi_reg.wdata(11 downto 0)<= "000000001011";
+                --scifi_reg.we                <= '1';
+                reset_state <= "00011";
 
             -- disable the PRBS decoder
-            when "0011" =>
+            when "00011" =>
                 scifi_reg.addr(15 downto 0) <= std_logic_vector(to_unsigned(SCIFI_CTRL_DP_REGISTER_W, 16));
                 scifi_reg.wdata(31)         <= '1';      -- i_SC_disable_dec PRBS
                 scifi_reg.wdata(3 downto 0) <= "0100";   -- mask inputs
                 scifi_reg.we                <= '1';
-                reset_state <= "0100";
+                reset_state <= "00100";
             
-            when "0100" =>
-                reset_state <= "0101";
+            when "00100" =>
+                for i in 0 to N_ASICS_TOTAL-1 loop
+                    i_simdata((i+1)*8-1 downto i*8) <= x"1C";
+                    i_simdatak(i) <= '1';
+                end loop;
             
-            when "0101" =>
-                reset_state <= "0110";
+                reset_state <= "00101";
+            
+            when "00101" =>
+                for i in 0 to N_ASICS_TOTAL-1 loop
+                    i_simdata((i+1)*8-1 downto i*8) <= x"32";
+                    i_simdatak(i) <= '0';
+                end loop;
+                reset_state <= "00110";
                 
-            when "0110" =>
-                reset_state <= "0111";
+            when "00110" =>
+                for i in 0 to N_ASICS_TOTAL-1 loop
+                    i_simdata((i+1)*8-1 downto i*8) <= x"8F";
+                    i_simdatak(i) <= '0';
+                end loop;
+                reset_state <= "00111";
             
-            when "0111" =>
-                reset_state <= "1000";
+            when "00111" =>
+                for i in 0 to N_ASICS_TOTAL-1 loop
+                    i_simdata((i+1)*8-1 downto i*8) <= x"50";
+                    i_simdatak(i) <= '0';
+                end loop;
+                reset_state <= "01000";
                 
-            when "1000" =>
+            when "01000" =>
+                for i in 0 to N_ASICS_TOTAL-1 loop
+                    i_simdata((i+1)*8-1 downto i*8) <= x"01";
+                    i_simdatak(i) <= '0';
+                end loop;
                 run_state_125 <= RUN_STATE_PREP;
-                reset_state <= "1001";
+                reset_state <= "01001";
                 
-            when "1001" =>
+            when "01001" =>
+                for i in 0 to N_ASICS_TOTAL-1 loop
+                    i_simdata((i+1)*8-1 downto i*8) <= x"CC";
+                    i_simdatak(i) <= '0';
+                end loop;
                 run_state_125 <= RUN_STATE_SYNC;
-                reset_state <= "1010";
+                reset_state <= "01010";
                 
-            when "1010" =>
+            when "01010" =>
+                for i in 0 to N_ASICS_TOTAL-1 loop
+                    i_simdata((i+1)*8-1 downto i*8) <= x"5F";
+                    i_simdatak(i) <= '0';
+                end loop;
                 run_state_125 <= RUN_STATE_RUNNING;
-                --reset_state <= "1011";
+                reset_state <= "01011";
                 
-            when "1011" =>
-                reset_state <= "1100";
+            when "01011" =>
+                for i in 0 to N_ASICS_TOTAL-1 loop
+                    i_simdata((i+1)*8-1 downto i*8) <= x"D0";
+                    i_simdatak(i) <= '0';
+                end loop;
+                reset_state <= "01100";
                 
-            when "1100" =>
-                reset_state <= "0000";
+            when "01100" =>
+                for i in 0 to N_ASICS_TOTAL-1 loop
+                    i_simdata((i+1)*8-1 downto i*8) <= x"C7";
+                    i_simdatak(i) <= '0';
+                end loop;
+                reset_state <= "01101";
+                
+            when "01101" =>
+                for i in 0 to N_ASICS_TOTAL-1 loop
+                    i_simdata((i+1)*8-1 downto i*8) <= x"A5";
+                    i_simdatak(i) <= '0';
+                end loop;
+                reset_state <= "01110";
+
+            when "01110" =>
+                for i in 0 to N_ASICS_TOTAL-1 loop
+                    i_simdata((i+1)*8-1 downto i*8) <= x"69";
+                    i_simdatak(i) <= '0';
+                end loop;
+                reset_state <= "01111";
+
+            when "01111" =>
+                for i in 0 to N_ASICS_TOTAL-1 loop
+                    i_simdata((i+1)*8-1 downto i*8) <= x"52";
+                    i_simdatak(i) <= '0';
+                end loop;
+                reset_state <= "10000";
+                
+            when "10000" =>
+                for i in 0 to N_ASICS_TOTAL-1 loop
+                    i_simdata((i+1)*8-1 downto i*8) <= x"68";
+                    i_simdatak(i) <= '0';
+                end loop;
+                reset_state <= "10001";
+                
+            when "10001" =>
+                for i in 0 to N_ASICS_TOTAL-1 loop
+                    i_simdata((i+1)*8-1 downto i*8) <= x"9C";
+                    i_simdatak(i) <= '1';
+                end loop;
+                reset_state <= "10010";
+                
+            when "10010" =>
+                --
                 
             when others =>
-                reset_state <= "0000";
+                reset_state <= "00000";
                 
         end case;
         end if;
@@ -177,6 +266,11 @@ begin
 
         o_fast_pll_clk              => open,
         o_test_led                  => open,
+        
+        -- simulation input
+        i_enablesim                 => '1',
+        i_simdata                   => i_simdata,
+        i_simdatak                  => i_simdatak,
 
         i_reset_156_n               => reset_n,
         i_clk_156                   => clk,

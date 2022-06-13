@@ -29,6 +29,7 @@ port (
     i_rx_ready                  : in  std_logic_vector(N_MODULES*N_ASICS - 1 downto 0);
     i_miso_transition_count     : in  std_logic_vector(31 downto 0);
     i_fifos_full                : in  std_logic_vector(N_MODULES*N_ASICS - 1 downto 0);
+    i_cc_diff                   : in  std_logic_vector(14 downto 0);
 
     -- outputs
     o_cntreg_ctrl               : out std_logic_vector(31 downto 0);
@@ -38,6 +39,7 @@ port (
     o_subdet_resetdly_reg_written : out std_logic;
     o_subdet_resetdly_reg       : out std_logic_vector(31 downto 0);
     o_ctrl_lapse_counter_reg    : out std_logic_vector(31 downto 0);
+    o_link_data_reg             : out std_logic_vector(31 downto 0);
 
     i_clk_125                   : in    std_logic;
 
@@ -60,12 +62,14 @@ architecture rtl of scifi_reg_mapping is
     signal subdet_reset_reg     : std_logic_vector(31 downto 0);
     signal subdet_reset_reg_125 : std_logic_vector(31 downto 0);
     signal subdet_resetdly_reg  : std_logic_vector(31 downto 0);
+    signal link_data_reg        : std_logic_vector(31 downto 0);
 
     -- rx monitor
     signal sync_rx_dpa_lock_reg : std_logic_vector(N_MODULES*N_ASICS - 1 downto 0);
     signal rx_ready             : std_logic_vector(N_MODULES*N_ASICS - 1 downto 0);
     signal frame_desync         : std_logic_vector(1 downto 0);
     signal ctrl_lapse_counter_reg : std_logic_vector(31 downto 0);
+    signal cc_diff              : std_logic_vector(14 downto 0);
 
 begin
 
@@ -97,6 +101,12 @@ begin
     generic map ( W => fifos_full'length )
     port map (
         i_d => i_fifos_full, o_q => fifos_full,
+        i_reset_n => i_reset_n, i_clk => i_clk--,
+    );
+    e_cc_diff : entity work.ff_sync
+        generic map ( W => i_cc_diff'length )
+    port map (
+        i_d => i_cc_diff, o_q => cc_diff,
         i_reset_n => i_reset_n, i_clk => i_clk--,
     );
     gen_counters : for i in 10 * N_MODULES*N_ASICS - 1 downto 0 generate
@@ -139,6 +149,12 @@ begin
     generic map ( W => subdet_reset_reg_125'length )
     port map (
         i_d => subdet_reset_reg, o_q => subdet_reset_reg_125,
+        i_reset_n => i_reset_n, i_clk => i_clk_125--,
+    );
+    e_link_data_reg : entity work.ff_sync
+    generic map ( W => link_data_reg'length )
+    port map (
+        i_d => link_data_reg, o_q => o_link_data_reg,
         i_reset_n => i_reset_n, i_clk => i_clk_125--,
     );
     ----------------------------------------------------------------------------
@@ -224,8 +240,19 @@ begin
                 o_reg_rdata <= i_miso_transition_count;
             end if;
 
-            if ( i_reg_re = '1' and regaddr = SCIFI_CTRL_LAPSE_COUNTER_REGISTER_W ) then
+            if ( i_reg_we = '1' and regaddr = SCIFI_CTRL_LAPSE_COUNTER_REGISTER_W ) then
                 ctrl_lapse_counter_reg <= i_reg_wdata;
+            end if;
+
+            if ( i_reg_re = '1' and regaddr = SCIFI_CC_DIFF_REGISTER_R ) then
+                o_reg_rdata(14 downto 0) <= cc_diff;
+            end if;
+
+            if ( i_reg_we = '1' and regaddr = SCIFI_LINK_DATA_REGISTER_W ) then
+                link_data_reg <= i_reg_wdata;
+            end if;
+            if ( i_reg_re = '1' and regaddr = SCIFI_LINK_DATA_REGISTER_W ) then
+                o_reg_rdata <= link_data_reg;
             end if;
 
     end if;
