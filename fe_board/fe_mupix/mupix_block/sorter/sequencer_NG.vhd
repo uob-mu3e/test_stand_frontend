@@ -147,7 +147,7 @@ elsif (clk'event and clk = '1') then
 		no_copy_next	<= '0';
 	else
 		if(blockchange = '1') then
-			output		<= subheader;
+			output			<= subheader;
 			copy_fifo		:= '0';
 			no_copy_next	<= '0';
 			blockchange 	<= '0';
@@ -155,6 +155,10 @@ elsif (clk'event and clk = '1') then
 			overflowts			<= (others => '0');
 			if(hasmem = '0' and hasoverflow = '1') then
 				overflowts		<= (others => '1'); -- Note that overflow gets sent with the next subheader!
+			end if;
+			if(hasmem = '1' and hasoverflow = '1' and counters_reg(3 downto 0) = "0000")then -- This is the case for more than 48 hits per TS
+				overflowts(conv_integer(current_ts(TSINBLOCKRANGE))) <= hasoverflow;
+				copy_fifo				:= '1';
 			end if;
 			-- Why 11 downto 8? We should be able to remove that
 			if(counters_reg(3 downto 0) = "0000" and counters_reg(11 downto 8) = "0000")then
@@ -168,9 +172,12 @@ elsif (clk'event and clk = '1') then
 				hasmem					<= '0';
 				copy_fifo				:= '1';
 			end if;
-			--if(counters_reg(3 downto 0) = "0010" and counters_reg(11 downto 8) = "0000")then
-			--	copy_fifo				:= '1';
-			--end if;
+			if(hasmem = '1' and hasoverflow = '1' and counters_reg(3 downto 0) = "0000")then -- This is the case for more than 48 hits per TS
+				overflowts(conv_integer(current_ts(TSINBLOCKRANGE))) <= hasoverflow;
+				output 					<= none;
+				copy_fifo				:= '1';
+			end if;
+
 			if(counters_reg(3 downto 0) = "0001") then -- switch chip
 				counters_reg(counters_reg'left-8 downto 0)	 <= counters_reg(counters_reg'left downto 8);
 				counters_reg(counters_reg'left downto counters_reg'left-7)	 <= (others => '0');
