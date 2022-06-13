@@ -261,10 +261,59 @@ int MupixFEB::ConfigureTDACs(){
     cm_msg(MINFO, "MupixFEB" , "tdac load completed, start writing tdacs");
     uint16_t pos=0;
     uint32_t nextchip =0;  
+    uint16_t active_febs = 0;
+
+
+    // hack to make tdac writing faster with the speed-bug firmware
+    // normal code below
+
+    for (auto feb : febs){
+        active_febs++;
+    }
 
     while (! allDone){
         allDone = true;
+        cm_yield(1);
+
+        for(uint32_t chip = 0; chip<12; chip++){
+            internal_febID = 0;
+            for (auto feb : febs){
+                if(feb.IsScEnabled()){
+                    pages_remaining_this_feb = 0;
+                    N_free_pages = 1;
+
+                    for (auto& n : pages_remaining.at(internal_febID))
+                        pages_remaining_this_feb += n;
+                    if(pages_remaining_this_feb > 0)
+                        allDone = false;
+                    
+                    if (pages_remaining.at(internal_febID).at(chip) != 0){
+                        current_page = N_PAGES_PER_CHIP-pages_remaining.at(internal_febID)[chip];
+                        pages_remaining.at(internal_febID)[chip] = pages_remaining.at(internal_febID)[chip] - 1;
+                        pos = N_CHIPS - 1 - chip;
+                        std::vector<uint32_t> tdac_page(PAGESIZE);
+                        // how to do this wihout copy ?
+                        tdac_page = std::vector<uint32_t>(tdac_pages.at(internal_febID).at(chip).begin() + current_page*PAGESIZE, tdac_pages.at(internal_febID).at(chip).begin() + (current_page+1)*PAGESIZE);
+                        feb_sc.FEB_write(feb, MP_CTRL_TDAC_START_REGISTER_W + chip, tdac_page, true, false);
+                        //printf(" write page, remaining: %i\n", pages_remaining_this_feb);
+                        printf("Writing feb %x chip %x page %x remaining %i\n",feb.GetLinkID(), chip, current_page, pages_remaining.at(internal_febID)[chip]);
+                        pages_remaining_this_feb--;
+                        N_free_pages--;
+                    }
+                    internal_febID++;   
+                }
+            }
+            usleep(100000); 
+        }
+    }
+
+
+
+    /*
+    while (! allDone){
+        allDone = true;
         internal_febID = 0;
+        cm_yield(1);
 
         for (auto feb : febs){
             if(feb.IsScEnabled()){
@@ -316,6 +365,8 @@ int MupixFEB::ConfigureTDACs(){
         }
         usleep(50000);
     }
+    */
+
     cm_msg(MINFO, "MupixFEB" , "tdac write completed");
     return status;
 }
