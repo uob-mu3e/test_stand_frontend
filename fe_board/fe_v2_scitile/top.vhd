@@ -32,10 +32,9 @@ port (
     tileA_pll_test               : out   std_logic; -- test pulse injection
     tileA_pll_reset              : out   std_logic; -- main reset (synchronisation and ASIC state machines)
     --SPI interface for ASICs
-    tileA_spi_sclk_n             : out   std_logic;
+    tileA_spi_sclk               : out   std_logic;
     tileA_spi_mosi_n             : out   std_logic;
     tileA_spi_miso_n             : in    std_logic;
-    tileA_cec_miso               : in    std_logic; -- channel event counter output, deprecated for mutrig3
     --I2C interface for TMB control/monitoring
     tileA_i2c_sda_io             : inout std_logic;
     tileA_i2c_scl_io             : inout std_logic;
@@ -48,7 +47,6 @@ port (
     tileB_spi_sclk               : out   std_logic;
     tileB_spi_mosi_n             : out   std_logic;
     tileB_spi_miso_n             : in    std_logic;
-    tileB_cec_miso               : in    std_logic; -- channel event counter output, deprecated for mutrig3
     --I2C interface for TMB control/monitoring
     tileB_i2c_sda_io             : inout std_logic;
     tileB_i2c_scl_io             : inout std_logic;
@@ -125,8 +123,9 @@ port (
 end top;
 
 architecture rtl of top is
+
+
     -- non-inverted io signals
-    signal tileA_spi_sclk           : std_logic;
     signal tileA_spi_mosi           : std_logic;
     signal tileB_spi_mosi           : std_logic;
     signal tileA_spi_miso           : std_logic;
@@ -157,12 +156,13 @@ architecture rtl of top is
 
     -- TMB interface / internal signals after selecting connector
     signal tile_pll_test               : std_logic; -- test pulse injection
-    signal tile_pll_reset              : std_logic; -- main reset (synchronisation and ASIC state machines)
+    signal tile_pll_reset              : std_logic_vector(0 downto 0); -- main reset (synchronisation and ASIC state machines)
+    signal tile_pll_reset_shifted      : std_logic_vector(0 downto 0);
+	 
     --SPI interface for ASICs
     signal tile_spi_sclk               : std_logic;
     signal tile_spi_mosi               : std_logic;
     signal tile_spi_miso               : std_logic;
-    signal tile_cec_miso               : std_logic; -- channel event counter output, deprecated for mutrig3
 
     -- tile_din cannot be a signal just for the selected connector since we need all 26 inputs to go to the same rx_block
     signal tile_din                    : std_logic_vector(12 downto 0);
@@ -173,14 +173,12 @@ architecture rtl of top is
     signal tile_i2c_scl_oe, tile_i2c_sda_oe : std_logic;
 
     -- spi multiplexing
-    signal tmb_miso : std_logic;
     signal tmb_ss_n : std_logic_vector(15 downto 0);
 begin
 
     -- io inversions:
-    tileA_spi_sclk <= not tileA_spi_sclk_n;
-    tileA_spi_mosi <= not tileA_spi_mosi_n;
-    tileB_spi_mosi <= not tileB_spi_mosi_n;
+    tileA_spi_mosi_n <= not tileA_spi_mosi;
+    tileB_spi_mosi_n <= not tileB_spi_mosi;
     tileA_spi_miso <= not tileA_spi_miso_n;
     tileB_spi_miso <= not tileB_spi_miso_n;
 
@@ -240,11 +238,10 @@ begin
     g_DAB_interconnect_A: if IS_TILE_B=false generate
         tile_din         <= tileA_din(13 downto 1);
         tileA_pll_test   <= tile_pll_test;
-        tileA_pll_reset  <= tile_pll_reset;
+        tileA_pll_reset  <= tile_pll_reset_shifted(0);
         tileA_spi_sclk   <= tile_spi_sclk;
-        tileA_spi_mosi   <= tileA_spi_mosi;
+        tileA_spi_mosi   <= tile_spi_mosi;
         tile_spi_miso    <= tileA_spi_miso;
-        tile_cec_miso    <= tileA_cec_miso;
 
         tileA_i2c_scl_oe <= tile_i2c_scl_oe;
         tileA_i2c_sda_oe <= tile_i2c_sda_oe;
@@ -260,11 +257,10 @@ begin
     g_DAB_interconnect_B: if IS_TILE_B=true generate
         tile_din         <= tileB_din(13 downto 1);
         tileB_pll_test   <= tile_pll_test;
-        tileB_pll_reset  <= tile_pll_reset;
+        tileB_pll_reset  <= tile_pll_reset_shifted(0);
         tileB_spi_sclk   <= tile_spi_sclk;
-        tileB_spi_mosi   <= tileB_spi_mosi;
+        tileB_spi_mosi   <= tile_spi_mosi;
         tile_spi_miso    <= tileB_spi_miso;
-        tile_cec_miso    <= tileB_cec_miso;
 
         tileB_i2c_scl_oe <= tile_i2c_scl_oe;
         tileB_i2c_sda_oe <= tile_i2c_sda_oe;
@@ -278,12 +274,24 @@ begin
         tileA_i2c_sda_oe <= '0';
     end generate;
 
+-- Fast reset io/phase shifting
+--ip_altiobuf_reset_inst : ip_altiobuf_reset
+--port map(
+--	datain => tile_pll_reset,
+--	io_config_clk => spare_clk_osc,
+--	io_config_clkena => "1",
+--	io_config_datain => '1',
+--	io_config_update  => '1',
+--	dataout => tile_pll_reset_shifted--,
+--	--dataout_b 
+--	);
+tile_pll_reset_shifted(0)<= tile_pll_reset;
+	 
 
 
 
 -- SPI input multiplexing (CEC / configuration)
 -- only input multiplexing is done here, the rest is done on the TMB
-tmb_miso <= tile_cec_miso when tmb_ss_n(1)='0' else tile_spi_miso; --when tmb_ss_n(0)='0' else
 
 -- main datapath
     e_tile_path : entity work.tile_path
@@ -309,7 +317,7 @@ tmb_miso <= tile_cec_miso when tmb_ss_n(1)='0' else tile_spi_miso; --when tmb_ss
         i_data                      => tile_din,
 
         i_i2c_int                   => '1', -- tile_i2c_int, --deprecated
-        o_pll_reset                 => tile_pll_reset,
+        o_pll_reset                 => tile_pll_reset(0),
 
         o_fifo_write                => fifo_write,
         o_fifo_wdata                => fifo_wdata,
@@ -369,7 +377,7 @@ tmb_miso <= tile_cec_miso when tmb_ss_n(1)='0' else tile_spi_miso; --when tmb_ss
         i_ffly_Int_n        => Firefly_Int_n,
         i_ffly_ModPrs_n     => Firefly_ModPrs_n,
 
-        i_spi_miso          => tmb_miso,
+        i_spi_miso          => tile_spi_miso,
         o_spi_mosi          => tile_spi_mosi,
         o_spi_sclk          => tile_spi_sclk,
         o_spi_ss_n          => tmb_ss_n,
