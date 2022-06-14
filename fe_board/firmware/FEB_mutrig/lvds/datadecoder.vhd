@@ -63,6 +63,11 @@ signal k_seen 			: std_logic_vector(EVAL_WINDOW_PATTERN_BITS-1 downto 0);
 
 signal ready_buf		: std_logic;
 
+signal current_disparity, new_disparity : std_logic;
+signal disp_error, data_error : std_logic;
+signal new_datak : std_logic;
+signal new_data : std_logic_vector(7 downto 0);
+
 begin
 
 ready <= ready_buf;
@@ -159,27 +164,50 @@ end if;
 
 end process;
 
-d_checker : entity work.disparity_checker
-	port map(
-		reset_n				=> reset_n,
-		clk					=> clk,
-		rx_in					=> rx_in,	
-		ready					=> ready_buf,
-		disp_err				=> disp_err
-		);
+--    d_checker : entity work.disparity_checker
+--    port map(
+--        reset_n     => reset_n,
+--        clk         => clk,
+--        rx_in       => rx_in,
+--        ready       => ready_buf,
+--        disp_err    => disp_err--,
+--    );
+--
+--    dec8b10b: entity work.decode8b10b 
+--    port map(
+--        reset_n => reset_n,
+--        clk     => clk,
+--        input   => rx_in,
+--        output  => rx_decoded,
+--        k       => rx_k--,
+--    );
+--
+--    data <= rx_decoded;
+--    k    <= rx_k;
 
+    e_8b10b_dec : entity work.dec_8b10b
+    port map (
+        i_data => rx_in,
+        i_disp => current_disparity,
+        o_data(7 downto 0) => new_data,
+        o_data(8) => new_datak,
+        o_disp => new_disparity,
+        o_disperr => disp_error,
+        o_err => data_error--,
+    );
 
-dec8b10b: entity work.decode8b10b 
-	port map(
-		reset_n				=> reset_n,
-		clk					=> clk,
-		input					=> rx_in,
-		output				=> rx_decoded,
-		k						=> rx_k
-		);
+    data <= rx_decoded;
+    k    <= rx_k;
 
-		data 	<= rx_decoded;
-		k		<= rx_k;
-		
+    process(clk)
+    begin
+    if rising_edge(clk) then
+        rx_decoded <= new_data;
+        rx_k <= new_datak;
+        current_disparity <= new_disparity;
+        disp_err <= disp_error or data_error;
+    end if;
+    end process;
+        
+        
 end RTL;
-		

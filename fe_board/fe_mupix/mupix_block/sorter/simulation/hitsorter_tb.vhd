@@ -45,6 +45,7 @@ signal 		reg_rdata     					: std_logic_vector(31 downto 0);
 signal		reg_we        					: std_logic;
 signal 		reg_wdata     					: std_logic_vector(31 downto 0);
 
+signal 		currentblock					: std_logic_vector(6 downto 0);
 
 begin
 
@@ -137,6 +138,22 @@ elsif(tsclk'event and tsclk = '1') then
 	end if;
 end if;
 end process;
+
+subheadtest: process(reset_n, tsclk)
+begin
+if(reset_n = '0') then
+	currentblock	<= (others => '1');
+elsif(tsclk'event and tsclk = '1') then
+	if(running = '1') then
+		if(out_ena = '1' and data_out(31 downto 24) = X"FC")then
+			currentblock 	<= data_out(22 downto 16);
+			assert(data_out(22 downto 16) = currentblock + '1') report"Subheader Mismatch" severity error;
+		end if;
+	end if;
+end if;
+end process;
+
+
 	
 hitgen: process
 begin

@@ -354,13 +354,13 @@ int FEBSlowcontrolInterface::FEBsc_NiosRPC(const mappedFEB & FEB, uint16_t comma
     vector<uint32_t> readback(1,0);
     while(1){
         if(++timeout_cnt >= 500) return ERRCODES::NIOS_RPC_TIMEOUT;
-        std::this_thread::sleep_for(std::chrono::milliseconds(2));
         status=FEB_read(FEB, CMD_LEN_REGISTER_RW, readback);
         if(status < 0)
             return status;
 
         if(timeout_cnt > 5) printf("MudaqDevice::FEBsc_NiosRPC(): Polling for command %x @%d: %x, %x\n",command,timeout_cnt,readback[0],readback[0]&0xffff0000);
         if((readback[0]&0xffff0000) == 0) break;
+        std::this_thread::sleep_for(std::chrono::milliseconds(10));
     }
     return readback[0]&0xffff;
 }

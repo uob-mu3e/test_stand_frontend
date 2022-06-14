@@ -71,6 +71,7 @@ architecture rtl of receiver_block is
     signal rx_dpaclock_A        : std_logic;
     signal rx_syncclock_A       : std_logic;
     signal rx_enable_A          : std_logic;
+    signal rx_250_clk_A         : std_logic;
 
     signal rx_inclock_B_ctrl    : std_logic;
     signal rx_inclock_B_pll     : std_logic;
@@ -78,6 +79,7 @@ architecture rtl of receiver_block is
     signal rx_dpaclock_B        : std_logic;
     signal rx_syncclock_B       : std_logic;
     signal rx_enable_B          : std_logic;
+    signal rx_250_clk_B         : std_logic;
 
     signal rx_data  : std_logic_vector(NINPUT*8-1 downto 0);
     signal rx_datak : std_logic_vector(NINPUT-1 downto 0);
@@ -111,7 +113,7 @@ begin
             outclk_1 => rx_enable_A,
             outclk_2 => rx_syncclock_A,
             outclk_3 => rx_dpaclock_A,
-            outclk_4 => open,
+            outclk_4 => rx_250_clk_A,
             locked   => rx_locked_A--,
         );
 
@@ -149,7 +151,7 @@ begin
             outclk_1 => rx_enable_B,
             outclk_2 => rx_syncclock_B,
             outclk_3 => rx_dpaclock_B,
-            outclk_4 => open,
+            outclk_4 => rx_250_clk_B,
             locked   => rx_locked_B
         );
 
@@ -193,7 +195,7 @@ begin
             outclk_1 => rx_enable_B,
             outclk_2 => rx_syncclock_B,
             outclk_3 => rx_dpaclock_B,
-            outclk_4 => open,
+            outclk_4 => rx_250_clk_B,
             locked   => rx_locked_B
         );
 
@@ -225,14 +227,20 @@ begin
     );
 
     -- flip bit order of received data (msb-lsb)
-    flip_bits: process(rx_out)
-    begin
-    for i in NINPUT-1 downto 0 loop
-        for n in 9 downto 0 loop
-            rx_out_order(10*i+n) <= INPUT_SIGNFLIP(i) xor rx_out(10*i+9-n);
-        end loop;
-    end loop;
-    end process flip_bits;
+--    flip_bits: process(rx_out)
+--    begin
+--    for i in NINPUT-1 downto 0 loop
+--        for n in 9 downto 0 loop
+--           rx_out_order(10*i+n) <= INPUT_SIGNFLIP(i) xor rx_out(10*i+9-n);
+--        end loop;
+--    end loop;
+--    end process flip_bits;
+    
+    geninvert_n: FOR i in 0 to NINPUT - 1 GENERATE
+        genflip_n: FOR n in 0 to 9 GENERATE
+            rx_out_order(10*i+n) <= not rx_out(10*i+9-n) when INPUT_SIGNFLIP(i) = '0' else rx_out(10*i+9-n);
+        end generate genflip_n;
+    end generate geninvert_n;
 
     gen_channels: for i in NINPUT-1 downto 0 generate
         e_data_decoder : entity work.data_decoder

@@ -36,7 +36,7 @@ for idx, d in enumerate(data):
         curFEB = -999
 
     if last_d == '00000000' and d in headerList:
-        curFEB = int(d.split('E8')[1].split('BC')[0].split('0')[2])
+        curFEB = int(d.split('E8')[1].split('BC')[0].split('0')[-1])
         curEvent = [hex(int(d, 16))]
         febHeaderCnt[curFEB].append(int(data[idx+2], 16) & 0xFFFF)
         febTS[curFEB].append((int(data[idx+1], 16) << 5) | (int(data[idx+2], 16) >> 27))
@@ -50,7 +50,8 @@ for feb in febDict:
     for idx_e, event in enumerate(febDict[feb]):
 #print("Trailer Ecnt", febTrailerCnt[feb][idx_e], "Start Cnt", hex(startEventCnt))
         febCnt[feb] += 1
-        if event[0] != hex(int("E8100" + str(feb) + "BC", 16)):
+        if not (event[0] == hex(int("E8100" + str(feb) + "BC", 16)) or event[0] == hex(int("E8000" + str(feb) + "BC", 16))):
+            print(event[0])
             print(f"FebCnt: {febCnt[feb]} of FEB: {feb} had no header")
         curData = [event[0], event[1], event[2]]
         haveWrongSub = False
@@ -63,7 +64,9 @@ for feb in febDict:
                 curSubheader = ((int(hit, 16) >> 28) << 5) | ((int(hit, 16) >> 16) & 0x1F)
                 if curSubheader != startSubheader and not haveWrongSub:
                     print(f"FebCnt: {febCnt[feb]} of FEB: {feb} Skip Subheader subheader {curSubheader} {startSubheader}")
-                    for i in range(-50, 20): 
+                    for i in range(-50, 20):
+                        if 3+i+idx >= len(event): 
+                            continue
                         print(event[3+i+idx], "chipID: ", (int(event[3+i+idx], 16) >> 21) & 0x7F, 3+i+idx)
                         haveWrongSub = True
                 startSubheader += 1
@@ -77,7 +80,8 @@ for feb in febDict:
 
         startEventCnt += 1
 
-for i in range(10): print("Events: " + str(len(febTS[i])) + " " + str(len(febDict[i])), "Hits: " + str(febCntHits[i]))
+for i in range(10): 
+    print("Events: " + str(len(febTS[i])) + " " + str(len(febDict[i])), "Hits: " + str(febCntHits[i]))
 
 outData[6][1] = outData[5][1]
 outData[6][2] = outData[5][2]
