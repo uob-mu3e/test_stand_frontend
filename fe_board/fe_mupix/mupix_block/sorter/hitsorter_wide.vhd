@@ -175,6 +175,9 @@ signal tscounter: std_logic_vector(47 downto 0); --47 bit, LSB would run at doub
 signal terminate_output : std_logic;
 signal terminated_output : std_logic;
 
+signal debug_subheadercounter : std_logic_vector(15 downto 0);
+signal debug_hitcounter 	  : std_logic_vector(15 downto 0);
+
 -- diagnostics
 signal noutoftime       : reg_array;
 signal noverflow        : reg_array;
@@ -753,7 +756,7 @@ seq:entity work.sequencer_ng
 
 -- The ouput command has the TS in the LSBs, followed by four bits hit address
 -- four bits channel/chip ID and the MSB inciating command (1) or hit (0)	
-				
+
 -- And the reading (use writeclk for the moment, FIFO comes after)
 process(writeclk, reset_n)
 begin
@@ -771,6 +774,8 @@ if(reset_n = '0') then
 	terminated_output				<= '0';
 	header_counter					<= (others => '0');	
 	subheader_counter				<= (others => '0');	
+	debug_subheadercounter			<= (others => '0');
+	debug_hitcounter				<= (others => '0');
 elsif(writeclk'event and writeclk = '1') then
     noutoftime2 <= noutoftime;
     noverflow2  <= noverflow;
@@ -819,14 +824,24 @@ elsif(writeclk'event and writeclk = '1') then
 		if(readcommand_ena_last4 = '1') then
  			header_counter <= header_counter + '1';
 		end if;
+	when COMMAND_DEBUGHEADER1(COMMANDBITS-1 downto COMMANDBITS-4) =>
+		data_out		<= "0" & debug_subheadercounter(14 downto 0) & debug_hitcounter;
+		out_type		<= "0000";
+		debug_subheadercounter <= (others => '0');
+		debug_hitcounter	   <= (others => '0');
+	when COMMAND_DEBUGHEADER2(COMMANDBITS-1 downto COMMANDBITS-4) =>
+		data_out		<= x"0AFEBABE";
+		out_type		<= "0000";
+
 	when COMMAND_SUBHEADER(COMMANDBITS-1 downto COMMANDBITS-4) =>
 		data_out		<= "111111" & "000" & readcommand_last4(TIMESTAMPSIZE-1 downto 4) & overflow_last4;
 		out_type		<= "0000";
 		if(readcommand_ena_last4 = '1') then
  			subheader_counter <= subheader_counter + '1';
+			debug_subheadercounter <= debug_subheadercounter + '1';
 		end if;
 	when COMMAND_FOOTER(COMMANDBITS-1 downto COMMANDBITS-4) =>
-		data_out 		<= header_counter & subheader_counter;
+		data_out 		<= header_counter & overflow_last4;
 		out_type		<= MERGER_FIFO_PAKET_END_MARKER;
 		if(runshutdown = '1')then
 			terminate_output <= '1';
@@ -838,6 +853,7 @@ elsif(writeclk'event and writeclk = '1') then
 		out_is_hit		<= '1';
 		if(readcommand_ena_last4 = '1') then
 			nout <= nout + '1';
+			debug_hitcounter <= debug_hitcounter + '1';
 		end if;
 	end case;
 	if(terminate_output = '1') then

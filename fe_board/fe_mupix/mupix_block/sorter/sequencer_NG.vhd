@@ -65,7 +65,7 @@ architecture rtl of sequencer_ng is
 signal running: std_logic;
 signal running_last: std_logic;
 signal stopped:	std_logic;
-type output_type is(none, header1, header2, subheader, hits, footer);
+type output_type is(none, header1, header2, debugheader1, debugheader2, subheader, hits, footer);
 signal output: output_type;
 signal current_block:	block_t;
 constant block_max:		block_t := (others => '1');
@@ -82,7 +82,7 @@ signal fifo_empty_last:	std_logic;
 signal fifo_new: 		std_logic;
 signal read_fifo_int: 	std_logic;
 signal read_fifo_last: 	std_logic;
-signal make_header:		std_logic_vector(1 downto 0);
+signal make_header:		std_logic_vector(2 downto 0);
 signal blockchange:		std_logic;
 signal no_copy_next:	std_logic;
 signal force_copy_next: std_logic;
@@ -110,7 +110,7 @@ if (reset_n = '0') then
 	no_copy_next	<= '0';
 	force_copy_next <= '0';
 	overflowts		<= (others => '0');
-	make_header 	<= "00";
+	make_header 	<= "000";
 elsif (clk'event and clk = '1') then
 	
 	running_last 	<= running;
@@ -129,19 +129,25 @@ elsif (clk'event and clk = '1') then
 
 	ts_to_out		<= current_ts;
 
-	if(make_header = "11")then
+	if(make_header = "011")then
 		output 			<= footer;
-		make_header 	<= "10";
-	elsif(make_header = "10")then
+		make_header 	<= "010";
+	elsif(make_header = "010")then
 		output 			<= header1;
-		make_header 	<= "01";
-	elsif(make_header = "01")then
+		make_header 	<= "001";
+	elsif(make_header = "001")then
 		output 			<= header2;
-		make_header 	<= "00";
+		make_header 	<= "100";
+	elsif(make_header = "100")then
+		output 			<= debugheader1;
+		make_header 	<= "110";
+	elsif(make_header = "110")then
+		output 			<= debugheader2;		
+		make_header 	<= "000";
 		no_copy_next	<= '0';
 	else
 		if(blockchange = '1') then
-			output		<= subheader;
+			output			<= subheader;
 			copy_fifo		:= '0';
 			no_copy_next	<= '0';
 			blockchange 	<= '0';
@@ -149,6 +155,10 @@ elsif (clk'event and clk = '1') then
 			overflowts			<= (others => '0');
 			if(hasmem = '0' and hasoverflow = '1') then
 				overflowts		<= (others => '1'); -- Note that overflow gets sent with the next subheader!
+			end if;
+			if(hasmem = '1' and hasoverflow = '1' and counters_reg(3 downto 0) = "0000")then -- This is the case for more than 48 hits per TS
+				overflowts(conv_integer(current_ts(TSINBLOCKRANGE))) <= hasoverflow;
+				copy_fifo				:= '1';
 			end if;
 			-- Why 11 downto 8? We should be able to remove that
 			if(counters_reg(3 downto 0) = "0000" and counters_reg(11 downto 8) = "0000")then
@@ -162,9 +172,12 @@ elsif (clk'event and clk = '1') then
 				hasmem					<= '0';
 				copy_fifo				:= '1';
 			end if;
-			--if(counters_reg(3 downto 0) = "0010" and counters_reg(11 downto 8) = "0000")then
-			--	copy_fifo				:= '1';
-			--end if;
+			if(hasmem = '1' and hasoverflow = '1' and counters_reg(3 downto 0) = "0000")then -- This is the case for more than 48 hits per TS
+				overflowts(conv_integer(current_ts(TSINBLOCKRANGE))) <= hasoverflow;
+				output 					<= none;
+				copy_fifo				:= '1';
+			end if;
+
 			if(counters_reg(3 downto 0) = "0001") then -- switch chip
 				counters_reg(counters_reg'left-8 downto 0)	 <= counters_reg(counters_reg'left downto 8);
 				counters_reg(counters_reg'left downto counters_reg'left-7)	 <= (others => '0');
@@ -241,7 +254,7 @@ elsif (clk'event and clk = '1') then
 		if(from_fifo(TSBLOCKINFIFORANGE) /= current_block)then
 			blockchange <= '1';
 			if(from_fifo(TSBLOCKINFIFORANGE) = block_zero)then
-				make_header  <= "1" & running_last; -- this ensures that we do not output a footer at run start
+				make_header  <= "01" & running_last; -- this ensures that we do not output a footer at run start
 			end if;
 		else
 			blockchange <= '0';
@@ -287,6 +300,13 @@ elsif(clk'event and clk = '1') then
 		when header2 =>
 			outcommand 		<= COMMAND_HEADER2;
 			command_enable 	<= '1';
+		when debugheader1 =>
+			outcommand 		<= COMMAND_DEBUGHEADER1;
+			command_enable 	<= '1';
+		when debugheader2 =>
+			outcommand 		<= COMMAND_DEBUGHEADER2;
+			command_enable 	<= '1';
+
 		when subheader =>
 			outcommand 					<= COMMAND_SUBHEADER;
 			outcommand(TSBLOCKRANGE)	<= ts_to_out(TSBLOCKRANGE);
