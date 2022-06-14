@@ -825,12 +825,12 @@ elsif(writeclk'event and writeclk = '1') then
  			header_counter <= header_counter + '1';
 		end if;
 	when COMMAND_DEBUGHEADER1(COMMANDBITS-1 downto COMMANDBITS-4) =>
-		data_out		<= debug_subheadercounter & debug_hitcounter;
+		data_out		<= "0" & debug_subheadercounter(14 downto 0) & debug_hitcounter;
 		out_type		<= "0000";
 		debug_subheadercounter <= (others => '0');
 		debug_hitcounter	   <= (others => '0');
 	when COMMAND_DEBUGHEADER2(COMMANDBITS-1 downto COMMANDBITS-4) =>
-		data_out		<= x"CAFEBABE";
+		data_out		<= x"0AFEBABE";
 		out_type		<= "0000";
 
 	when COMMAND_SUBHEADER(COMMANDBITS-1 downto COMMANDBITS-4) =>
