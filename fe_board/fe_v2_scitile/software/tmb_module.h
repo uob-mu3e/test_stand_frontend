@@ -1,8 +1,8 @@
 #ifndef TMB_MODULE_H_
 #define TMB_MODULE_H_
-/* FEB
+//FEB
 #include <sys/alt_alarm.h>
-*/
+
 #include <fcntl.h>
 #include <stdio.h>
 #include <unistd.h>
@@ -23,7 +23,7 @@ struct TMB_t{
 
     //=========================
     // higher level functions
-    void        init_TMB(bool enable=true);
+    void        init_TMB();
     void        power_ASIC(int asic, bool enable=true);
 
     //control the ASIC power domains of the TMB
@@ -42,13 +42,18 @@ struct TMB_t{
     //print out a given pattern for debugging
     void        print_config(const alt_u8* bitpattern);
 
- 
+
+    alt_u16 data_all_power[64];//TODO this should be the point to register addr in sc_ram
+    alt_u16 data_all_tmp[32];//TODO this should be the point to register addr in sc_ram
+    alt_u8*  data_all_powerStat;//[16];//TODO this should be the point to register addr in sc_ram
+    
+    
     void        read_CEC(int asic){asic++;};//TODO
     //monitoring 
     void        init_current_monitor();
     void        init_tmp_monitor(){}; 
-    void        read_tmp_all();
-    void        read_power_all();
+    void        read_tmp_all(alt_u16 * pointer = 0);
+    void        read_power_all(alt_u16 * pointer = 0);
     void        print_tmp_all();
     void        print_power_all();
    
@@ -64,6 +69,7 @@ struct TMB_t{
     void    read_pow_limit(int id);// purpose: to check which measurement is out of limit
     //TODO add function to check alert line and handling of interrupt - polled with some timer, fw interrupt?
 
+    
     //periperal access for communication with TMB    
     //I2C R/W related functions - KB: needed?
     void        i2c_write_regs(const i2c_reg_t* regs, int n);
@@ -74,9 +80,6 @@ struct TMB_t{
     void        I2C_write(alt_u8 slave, alt_u8 addr, alt_u8 data);
     
 
-    alt_u16 data_all_tmp[32];//TODO this should be the point to register addr in sc_ram
-    alt_u16 data_all_power[64];//TODO this should be the point to register addr in sc_ram
-    alt_u8*  data_all_powerStat;//[16];//TODO this should be the point to register addr in sc_ram
 
 
 
@@ -93,7 +96,8 @@ struct TMB_t{
     void menu_TMB_monitors();
     void menu_TMB_debug();
     void menu_TMB_main();
-    void menu_TMB_ASIC();
+    void menu_ASIC_pwr();
+    void menu_ASIC_config();
     //Slow control callback
     alt_u16 sc_callback(alt_u16 cmd, volatile alt_u32* data, alt_u16 n);
 

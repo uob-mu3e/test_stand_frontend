@@ -57,8 +57,7 @@ const i2c_reg_t TMB_powerdown_regs[17] = {
     {0x38,0x01,0x0C}
 };
 
-const alt_u8 GPIO_config_reg[2] = {0x06,0x07};
-const alt_u8 GPIO_init_values[4] = {0x94,0xe2,0b00,0x08};
+const alt_u8 GPIO_out_reg[2] = {0x02,0x03};
 
 const int VCCA18_first3_index[3] = {13,14,0};
 const int VCCD18_first3_index[3] = {1,6,5};
@@ -89,7 +88,6 @@ const alt_u8 reg_temp_result = 0x00;
 const alt_u8 reg_temp_config = 0x01;
 const alt_u8 reg_temp_deviceID[2] = {0x0f, 0x07}; //should the readback should be 0x117
 const alt_u16 temp_deviceID_result[2] = {0x0117, 0x0190};
-const alt_u8 reg_GPIO_out[2] = {0x02,0x03};
 
 //{{{//current monitor related register address and command [PAC1720]
 //=================configuration register========

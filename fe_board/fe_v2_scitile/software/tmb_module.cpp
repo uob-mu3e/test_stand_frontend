@@ -2,16 +2,17 @@
 
 #include "tmb_module.h"
 #include "tmb_constants.h"
-#include "builtin_config/mutrig1_config.h"
+#include "builtin_config/mutrig2_config.h"
 
 //from base.h
-#include <stdio.h>
-char wait_key(useconds_t us = 100000){return getchar();}
+//
+//#include <stdio.h>
+char wait_key(useconds_t us = 100000);//{return getchar();}
 
 
-//#include "../../fe/software/sc.h"
-//#include "../../../common/include/feb.h"
-//#include <altera_avalon_spi.h>
+#include "../../fe/software/sc.h"
+#include "../../../common/include/feb.h"
+#include <altera_avalon_spi.h>
 
 
 alt_u8 TMB_t::I2C_read(alt_u8 slave, alt_u8 addr) {
@@ -23,7 +24,8 @@ alt_u8 TMB_t::I2C_read(alt_u8 slave, alt_u8 addr) {
 alt_u16 TMB_t::I2C_read_16(alt_u8 slave, alt_u8 addr) {
     	alt_u16 data = i2c.get16(slave, addr);
     	printf("i2c_read: 0x%02X[0x%02X] is 0x%04X\n", slave, addr, data);
-    	data = switch_readout(data);
+	//note: required for raspberry pi, not for nios processor
+    	//data = switch_readout(data);
     	return data;
 }
 
@@ -43,28 +45,30 @@ void TMB_t::i2c_write_regs(const i2c_reg_t* regs, int n) {
     }
 }
 
-void TMB_t::init_TMB(bool enable){
-	//set GPIOs
-	for(int id = 0; id <= 3; id++){
-		I2C_write(addr_GPIO[id], reg_GPIO_out[0], 0x00);
-		I2C_write(addr_GPIO[id], reg_GPIO_out[1], 0x00);
-	}
+void TMB_t::init_TMB(){
+	//set GPIO value registers (everything '0' except CSn signals)
+	I2C_write(addr_GPIO[0], 0x02, 0x08);
+	I2C_write(addr_GPIO[0], 0x03, 0x05);
+	I2C_write(addr_GPIO[1], 0x02, 0x08);
+	I2C_write(addr_GPIO[1], 0x03, 0x05);
+	I2C_write(addr_GPIO[2], 0x02, 0x08);
+	I2C_write(addr_GPIO[2], 0x03, 0x05);
+	I2C_write(addr_GPIO[3], 0x02, 0x41);
+	I2C_write(addr_GPIO[3], 0x03, 0x14);
+	//set GPIO direction registers (0 sets to output)
+	I2C_write(addr_GPIO[0], 0x06, ~0xeb);
+	I2C_write(addr_GPIO[1], 0x06, ~0xeb);
+	I2C_write(addr_GPIO[2], 0x06, ~0xeb);
+	I2C_write(addr_GPIO[0], 0x07, ~0xfd);
+	I2C_write(addr_GPIO[1], 0x07, ~0xfd);
+	I2C_write(addr_GPIO[2], 0x07, ~0xfd);
+	I2C_write(addr_GPIO[3], 0x06, ~0x4f);
+	I2C_write(addr_GPIO[3], 0x07, ~0x7f);
+
+
 	//set i2c multiplexer GPIOs
 	I2C_write(addr_MUX[1], 0x01, 0x00);
 	I2C_write(addr_MUX[1], 0x02, 0x1C);
-
-	if(enable){
-		for(int id = 0;id <= 3; id++){
-			int GPIO_init_id = 2 * (id/3);
-			I2C_write(addr_GPIO[id], GPIO_config_reg[0], GPIO_init_values[GPIO_init_id]);
-			I2C_write(addr_GPIO[id], GPIO_config_reg[1], GPIO_init_values[GPIO_init_id + 1]);
-		}
-	}else{
-		for(int id = 0;id <=3; id++){
-			I2C_write(addr_GPIO[id], GPIO_config_reg[0], 0xff);
-			I2C_write(addr_GPIO[id], GPIO_config_reg[1], 0xff);
-		}
-	}
 }
 
 /**
@@ -83,7 +87,7 @@ void TMB_t::power_ASIC(int asic, bool enable){
     if(enable){
         //power up
         power_VCC18D(asic,true);
-        if(configure_asic(asic, mutrig_config_ALL_OFF) != FEB_REPLY_SUCCESS){
+        if(configure_asic(asic, config_ALL_OFF) != FEB_REPLY_SUCCESS){
             printf("Configuration error, powering off again\n");
             power_VCC18D(asic,false);
             return;
@@ -120,9 +124,9 @@ void TMB_t::power_VCC18A(int asic, bool enable){
 	}
 
     	if(enable){
-        	I2C_write(addr_GPIO[GPIO_id], reg_GPIO_out[reg_id], I2C_read(addr_GPIO[GPIO_id], reg_GPIO_out[reg_id]) | (0x01 << A_bit)); 
+        	I2C_write(addr_GPIO[GPIO_id], GPIO_out_reg[reg_id], I2C_read(addr_GPIO[GPIO_id], GPIO_out_reg[reg_id]) | (0x01 << A_bit)); 
     	}else{
-        	I2C_write(addr_GPIO[GPIO_id], reg_GPIO_out[reg_id], I2C_read(addr_GPIO[GPIO_id], reg_GPIO_out[reg_id]) & ~(0x01 << A_bit)); 
+        	I2C_write(addr_GPIO[GPIO_id], GPIO_out_reg[reg_id], I2C_read(addr_GPIO[GPIO_id], GPIO_out_reg[reg_id]) & ~(0x01 << A_bit)); 
     	}
        
 }
@@ -149,9 +153,9 @@ void TMB_t::power_VCC18D(int asic, bool enable){
 	}
 
     	if(enable){
-        	I2C_write(addr_GPIO[GPIO_id], reg_GPIO_out[reg_id], I2C_read(addr_GPIO[GPIO_id], reg_GPIO_out[reg_id]) | (0x01 << D_bit)); 
+        	I2C_write(addr_GPIO[GPIO_id], GPIO_out_reg[reg_id], I2C_read(addr_GPIO[GPIO_id], GPIO_out_reg[reg_id]) | (0x01 << D_bit)); 
     	}else{
-		I2C_write(addr_GPIO[GPIO_id], reg_GPIO_out[reg_id], I2C_read(addr_GPIO[GPIO_id], reg_GPIO_out[reg_id]) & ~(0x01 << D_bit)); 
+		I2C_write(addr_GPIO[GPIO_id], GPIO_out_reg[reg_id], I2C_read(addr_GPIO[GPIO_id], GPIO_out_reg[reg_id]) & ~(0x01 << D_bit)); 
     	}
      
 }
@@ -186,20 +190,23 @@ void TMB_t::SPI_sel(int asic, bool enable){
     	int CS_bit;
 	int reg_id = 0;
 	int GPIO_id = (asic == 12 ? 3 : asic / 3);
-	if(asic <= 2){
+	if(GPIO_id <= 2){
 		CS_bit = SPI_first3_index[asic % 3];
 	}else{
-		CS_bit = SPI_first3_index[asic - 9];
+		CS_bit = SPI_4_index[asic - 9];
 	}
 	if(CS_bit > 9){
 		reg_id = 1;
 		CS_bit -= 10;
 	}
-    	if(enable){
-        	I2C_write(addr_GPIO[GPIO_id], reg_GPIO_out[reg_id], I2C_read(addr_GPIO[asic/2], reg_GPIO_out[reg_id]) | (0x01 << CS_bit));
-    	}else{
-        	I2C_write(addr_GPIO[GPIO_id], reg_GPIO_out[reg_id], I2C_read(addr_GPIO[asic/2], reg_GPIO_out[reg_id]) & ~(0x01 << CS_bit));
-    	}
+	printf("GPIO: %d BIT %d\n",GPIO_id,CS_bit);
+	alt_u8 val=I2C_read(addr_GPIO[GPIO_id], GPIO_out_reg[reg_id]);
+        
+	val &= ~(0x01 << CS_bit);
+    	if(enable)
+        	val |= (0x01 << CS_bit);
+
+        I2C_write(addr_GPIO[GPIO_id], GPIO_out_reg[reg_id],  val);
 }
 
 
@@ -244,7 +251,7 @@ void    TMB_t::init_current_monitor(){
 }
 
 void TMB_t::I2C_mux_sel(int gid){
-    int id=I2C_bus_index[id];
+    int id=I2C_bus_index[gid];
     int mux_id  = id/4;
     int bus     = id%4; 
     printf("mux: id=%d ->[muxid=%d,bus=%d]\n",id,mux_id,bus);
@@ -334,13 +341,13 @@ void TMB_t::read_pow_limit(int id){
 
 alt_u16 TMB_t::read_temperature_sensor(int id){
 	alt_u8 addr = get_temperature_address(id);
-	data_all_tmp[id] = I2C_read_16(addr,reg_temp_result);
+	alt_u16 data = I2C_read_16(addr,reg_temp_result);
 	if(id < 26){
  	   	printf("TMP %d: 0x%04X => %d [*7.8125C]!!\n",id,data_all_tmp[id],data_all_tmp[id]);
 	}else{
 		printf("TMP %d: 0x %04X => %d [*0.0078125C]!!\n",id,data_all_tmp[id],data_all_tmp[id]);
 	}
-	return data_all_tmp[id];
+	return data;
 }
 
 alt_u16 TMB_t::switch_readout(alt_u16 tmp){
@@ -419,18 +426,24 @@ void TMB_t::check_temperature_sensor_all(){
 	printf("\n");
 }
 
-void TMB_t::read_tmp_all(){
+void TMB_t::read_tmp_all(alt_u16 * pointer){
+	if(pointer == 0){
+		pointer = data_all_tmp;
+	}
     	for(int id = 0; id<28; id++){
-        	read_temperature_sensor(id);
+        	pointer[id] = read_temperature_sensor(id);
     	}
 }
 
-void TMB_t::read_power_all(){
+void TMB_t::read_power_all(alt_u16 * pointer){
+	if(pointer == 0){
+		pointer = data_all_power;
+	}
     	for(int id = 0; id<14; id++){
         	for(int ch=0; ch<2; ch++){
 			printf("ID,A/D: [%d,%d]\n",id,ch);
-            		data_all_power[id*4+ch*2]=read_vsource(id, ch);
-            		data_all_power[id*4+ch*2+1]=read_vsense(id,ch);
+            		pointer[id*4+ch*2]=read_vsource(id, ch);
+            		pointer[id*4+ch*2+1]=read_vsense(id, ch);
         	}
     	}
 }
@@ -465,9 +478,9 @@ void TMB_t::print_power_all(){
 //write slow control pattern over SPI, returns 0 if readback value matches written, otherwise -1. Does not include CSn line switching.
 int TMB_t::spi_write_pattern(alt_u32 spi_slave, const alt_u8* bitpattern) {
 	int status=0;
-/* FEB
+//FEB
 	uint16_t rx_pre=0xff00;
-//        printf("tx | rx\n");
+        printf("tx | rx\n");
 	uint16_t nb=MUTRIG_CONFIG_LEN_BYTES;
        	do{
 		nb--;
@@ -477,7 +490,7 @@ int TMB_t::spi_write_pattern(alt_u32 spi_slave, const alt_u8* bitpattern) {
 
                 alt_avalon_spi_command(SPI_BASE, spi_slave, 1, &tx, 0, &rx, nb==0?0:ALT_AVALON_SPI_COMMAND_MERGE);
                 rx = IORD_8DIRECT(SPI_BASE, 0);
-//                printf("%02X %02x\n",tx,rx);
+                printf("%02X %02x\n",tx,rx);
 //                printf("%02X ",tx);
 
 		//pattern is not in full units of bytes, so shift back while receiving to check the correct configuration state
@@ -487,13 +500,13 @@ int TMB_t::spi_write_pattern(alt_u32 spi_slave, const alt_u8* bitpattern) {
 		};
 
 		if(rx_check!=bitpattern[nb]){
-//			printf("Error in byte %d: received %2.2x expected %2.2x\n",nb,rx_check,bitpattern[nb]);
+			printf("Error in byte %d: received %2.2x expected %2.2x\n",nb,rx_check,bitpattern[nb]);
 			status=-1;
 		}
 		rx_pre=rx<<8;
 	}while(nb>0);
 //        printf("\n");
-*/
+
 	return status;
 }
 
@@ -513,13 +526,13 @@ alt_u16 TMB_t::configure_asic(alt_u32 asic, const alt_u8* bitpattern) {
     printf("[TMB] chip_configure(%u)\n", asic);
 
     int ret;
-    SPI_sel(asic,true);
-    ret = spi_write_pattern(0, bitpattern);
     SPI_sel(asic,false);
+    ret = spi_write_pattern(0, bitpattern);
+    SPI_sel(asic,true);
     usleep(0);
-    SPI_sel(asic,true);
-    ret = spi_write_pattern(0, bitpattern);
     SPI_sel(asic,false);
+    ret = spi_write_pattern(0, bitpattern);
+    SPI_sel(asic,true);
 
     if(ret != 0) {
 //        printf("[scifi] Configuration error\n");
@@ -530,70 +543,73 @@ alt_u16 TMB_t::configure_asic(alt_u32 asic, const alt_u8* bitpattern) {
 }
 
 
-//FEB using namespace mu3e::daq::feb;
+using namespace mu3e::daq::feb;
 //TODO: add list&document in specbook
 //TODO: update functions
 //Callback function called after receiving a command from the FEB slow control interface
 alt_u16 TMB_t::sc_callback(alt_u16 cmd, volatile alt_u32* data, alt_u16 n) {
-/* FEB
-    switch(cmd) {
-    case CMD_TILE_TMB_ON:
-        power_TMB(true);
-        break;
-    case CMD_TILE_TMB_OFF:
-        power_TMB(false);
-        break;
-
-    case CMD_TILE_ON:
-        power_TMB(true);
-	//TODO: automatic ASIC powering
-        break;
-    case CMD_TILE_OFF:
-        power_TMB(false);
-	//TODO: automatic ASIC powering
-	//TODO: test if this kind of slow powering down scheme is needed
-        break;
-	alt_u16 test[4] = {0xf50f,0xf68f,0xf65f,0xf51f};
-	alt_u16 out;
-	for(int i = 0; i<4; i++){	
-		out = test[i] / 0x0020;
-		printf("\n %04X	\n", out);
-	}
-	return 0;
-    case CMD_TILE_TEMPERATURES_READ:
-	data_all_tmp=(alt_u16*)data;
-	read_tmp_all();
-        break;
-    case CMD_TILE_POWERMONITORS_READ:
-	data_all_power=(alt_u16*)data;
-	read_power_all();
-        break;
-    default:
-        int asic = cmd & 0x000F;
-    	switch(cmd & 0xFFF0){
-            case CMD_MUTRIG_ASIC_CFG:
+//FEB
+	int asic = cmd & 0xFFF0;
+    	switch(cmd & 0xFFF0) {
+    	case CMD_TILE_TMB_INIT:
+        	//init_TMB();
+		printf("initialize TMB");
+        	break;
+        case CMD_TILE_ASIC_ON:
+    	    	//init_TMB();
+		//TODO: automatic ASIC powering
+		printf("powering ASIC %d",asic);
+        	break;
+    	case CMD_TILE_ASIC_OFF:
+		//if(asic == 0xF){
+		//	for(int i = 0; i <= 12; i++){
+		//		power_ASIC(asic,false);
+		//	}
+		//}
+		//power_ASIC(asic,false);
+		//TODO: automatic ASIC powering
+		//TODO: test if this kind of slow powering down scheme is needed
+        	printf("powering down ASIC %d",asic);
+		break;
+	case CMD_TILE_TEMPERATURES_READ:
+		//read_tmp_all((alt_u16 *) data);
+		printf("reading temperature sensors");
+        	break;
+    	case CMD_TILE_POWERMONITORS_READ:
+		//read_power_all((alt_u16 *) data);
+		printf("reading powermonitors");
+        	break;
+	case CMD_TILE_TMB_STATUS:
+		printf("reading status of TMB");
+		break;
+	case CMD_TILE_INJECTION_SETTING:
+		if(asic == 0){
+			printf("disabled pulse injection");
+		}else{
+			printf("enable pulse injection");
+		}
+		break;
+	case CMD_TILE_ENABLE_VDDA:
+		printf("enable Analog power for ASIC %d",asic);
+		break;
+	case CMD_TILE_DISABLE_VDDA:
+		printf("disable Analog power for ASIC %d",asic);
+		break;
+	case CMD_TILE_ENABLE_VDDD:
+		printf("enable digital power for ASIC %d",asic);
+		break;
+	case CMD_TILE_DISABLE_VDDD:
+		printf("disable digital power for ASIC %d",asic);
+		break;
+	case CMD_MUTRIG_ASIC_CFG:
                 printf("configuring ASIC\n");
                 configure_asic(asic, (alt_u8*)data);
                 break;
-            case CMD_TILE_ASIC_ON:
-                power_ASIC(asic,true);
-	alt_u16 test[4] = {0xf50f,0xf68f,0xf65f,0xf51f};
-	alt_u16 out;
-	for(int i = 0; i<4; i++){	
-		out = test[i] / 0x0020;
-		printf("\n %04X	\n", out);
-	}
-	return 0;
-                break;
-            case CMD_TILE_ASIC_OFF:
-                power_ASIC(asic,false);
-                break;
-            default:
+        default:
                 printf("[sc_callback] unknown command\n");
                 break;
-            }
-    }
-*/
+        
+    	}
         return 0;
 }
 void TMB_t::menu_TMB_main(){
@@ -601,8 +617,8 @@ void TMB_t::menu_TMB_main(){
 
     while(1) {
 //        printf("  [0] => reset\n");
-        printf("  [1] => powerup MALIBU\n");
-        printf("  [2] => powerdown MALIBU\n");
+        printf("  [1] => init TMB\n");
+        printf("  [2] => ASIC configuration\n");
         printf("  [3] => ASIC power control\n");
         printf("  [4] => datapath status\n");
         printf("  [5] => tmb debug menu\n");
@@ -615,13 +631,13 @@ void TMB_t::menu_TMB_main(){
         char cmd = wait_key();
         switch(cmd) {
         case '1':
-            init_TMB(true);
+            init_TMB();
             break;
         case '2':
-            init_TMB(false);
+	    menu_ASIC_config();
             break;
         case '3':
-	    menu_TMB_ASIC();
+	    menu_ASIC_pwr();
             //power_ASIC(0);
             break;
         case '4':
@@ -651,14 +667,15 @@ void TMB_t::menu_TMB_main(){
 void TMB_t::menu_TMB_debug() {
     alt_u8 rx = 0xCC;
     alt_u8 tx = 0xAA;
-
+    alt_u8 i =0;
     while(1) {
         printf("  [0] => check power monitors\n");
         printf("  [1] => check temperature sensors\n");
         printf("  [2] => try all I2C addresses\n");
-        printf("  [3] => try SPI 32b transaction\n");
+        printf("  [3] => try SPI 32b transaction (CS #%u)\n",i);
         printf("  [i] => disable pulse injection\n");
         printf("  [I] => enable pulse injection\n");
+        printf("  +-  => set ASIC #\n");
 
         printf("  [q] => exit\n");
 
@@ -678,8 +695,9 @@ void TMB_t::menu_TMB_debug() {
             }
             break;
         case '3':
-            printf("// not implemented\n");
-            //  alt_avalon_spi_command(SPI_BASE, 0, 1, &tx, 0, &rx, 0);
+    		SPI_sel(i,false);
+                alt_avalon_spi_command(SPI_BASE, 0, 1, &tx, 0, &rx, 0);
+    		SPI_sel(i,true);
             break;
         case 'I':
 	    setInject(true);
@@ -689,6 +707,13 @@ void TMB_t::menu_TMB_debug() {
 	    break;
         case 'q':
             return;
+	case '+':
+		i = (i + 1) % 13;
+		break;
+	case '-':
+		i = (i - 1) % 13;
+		break;
+
         default:
             printf("invalid command: '%c'\n", cmd);
         }
@@ -721,12 +746,13 @@ void TMB_t::menu_TMB_monitors() {
     }
 }
 
-void TMB_t::menu_TMB_ASIC(){
+void TMB_t::menu_ASIC_pwr(){
 	
 	int i=0;
 	int a_d=0;
 	while(1){
-		printf("CURRENTLY SELECTED ASIC: %d%c\n", i, (a_d == 0 ? 'a' : 'd'));
+		printf("** TMB ASIC POWER CONTROL **\n");
+		printf("SELECTED POWER DOMAIN: %d:%c\n", i, (a_d == 0 ? 'a' : 'd'));
 		printf("  [0] => turn off ASIC\n");
 		printf("  [1] => turn on ASIC\n");
 		printf("  [+] => increase ASIC id\n");
@@ -774,6 +800,36 @@ void TMB_t::menu_TMB_ASIC(){
 				break;
 			case 'e':
 				power_ASIC_all(false);
+				break;
+			case 'q':
+				return;
+		}
+	}
+}
+
+
+void TMB_t::menu_ASIC_config(){
+	int i=0;
+	while(1){
+		printf("** TMB ASIC CONFIGURATION **\n");
+		printf("CURRENTLY SELECTED ASIC: %d\n", i);
+		printf("  [+] => increase ASIC id\n");
+	       	printf("  [-] => decrease ASIC id\n");
+	       	printf("  [1] => configure ALL_OFF\n");
+
+		printf("  [q] => exit\n");
+
+		printf("Select entry ...\n");
+		char cmd = wait_key();
+		switch(cmd){
+			case '1':
+				configure_asic(i,config_ALL_OFF);
+				break;
+			case '+':
+				i = (i + 1) % 13;
+				break;
+			case '-':
+				i = (i - 1) % 13;
 				break;
 			case 'q':
 				return;
