@@ -108886,19 +108886,27 @@ async function updateGUI() {
   // draw global maps
   for (let i = 0; i < gHistos.length; i++) {
 //       let gH = await httpRequest('http://'+serverIP+'/Files/'+fileName+'/HitData/exe.json?method=Draw&prototype="Option_t*"&opt="'+gHistos[i]+'>>h1"&_ret_object_=h1', 'object');
-console.log('http://'+serverIP+'/Files/'+fileName+'/'+gHistos[i]+'/root.json');    
-    let gH = await httpRequest(serverIP+'/Files/'+fileName+'/'+gHistos[i]+'/root.json', 'object');
-    redraw('global'+i, gH, 'hist');
+console.log('http://'+serverIP+'/Files/'+fileName+'/'+gHistos[i]+'/root.json');   
+    try {
+    	let gH = await httpRequest(serverIP+'/Files/'+fileName+'/'+gHistos[i]+'/root.json', 'object');
+    	redraw('global'+i, gH, 'hist');
+    } catch (error) {
+	console.log('Could not find ' + serverIP+'/Files/'+fileName+'/'+gHistos[i]+'/root.json', 'object');
+    }
   }
   
   // draw chipCor
   for (let i = 0; i < gChipCor.length; i++) {
 //       let gH = await httpRequest('http://'+serverIP+'/Files/'+fileName+'/HitData/exe.json?method=Draw&prototype="Option_t*"&opt="'+gHistos[i]+'>>h1"&_ret_object_=h1', 'object');
-    let gH = await httpRequest(serverIP+'/Files/'+fileName+'/'+gChipCor[i]+'/root.json', 'object');
-    if (gChipCor[i] == "timeDiff") {
-      redraw('chipcor'+i, gH, 'hist');
-    } else {
-      redraw('chipcor'+i, gH, 'colz');
+    try {
+    	let gH = await httpRequest(serverIP+'/Files/'+fileName+'/'+gChipCor[i]+'/root.json', 'object');
+	if (gChipCor[i] == "timeDiff") {
+      		redraw('chipcor'+i, gH, 'hist');
+    	} else {
+      		redraw('chipcor'+i, gH, 'colz');
+    	}
+    } catch (error) {
+	    console.log('Could not find ' + serverIP+'/Files/'+fileName+'/'+gChipCor[i]+'/root.json', 'object');
     }
   }
   
@@ -108906,17 +108914,25 @@ console.log('http://'+serverIP+'/Files/'+fileName+'/'+gHistos[i]+'/root.json');
   for (let i = 0; i < 10; i++) {
     let curI = i + startID;
     if (isNaN(curI)) curI = i;
-    let hitmap = await httpRequest(serverIP+'/Files/'+fileName+'/chip'+curI+'_hitmap/root.json', 'object');
-    let timestamp = await httpRequest(serverIP+'/Files/'+fileName+'/chip'+curI+'_ts/root.json', 'object');
-    redraw('hitmap'+i, hitmap, 'colz');
-    redraw('timestamp'+i, timestamp, 'hist');
+    try {
+    	let hitmap = await httpRequest(serverIP+'/Files/'+fileName+'/chip'+curI+'_hitmap/root.json', 'object');
+    	let timestamp = await httpRequest(serverIP+'/Files/'+fileName+'/chip'+curI+'_ts/root.json', 'object');
+    	redraw('hitmap'+i, hitmap, 'colz');
+    	redraw('timestamp'+i, timestamp, 'hist');
+    } catch (error) {
+	console.log('Could not find ' + serverIP+'/Files/'+fileName+'/chip'+curI+'_hitmap/root.json', 'object');
+    }
   }
   
   // draw global maps scifi
   for (let i = 0; i < gHistosScifi.length; i++) {
 //       let gH = await httpRequest('http://'+serverIP+'/Files/'+fileName+'/HitData/exe.json?method=Draw&prototype="Option_t*"&opt="'+gHistos[i]+'>>h1"&_ret_object_=h1', 'object');
-    let gH = await httpRequest(serverIP+'/Files/'+fileNameScifi+'/ScifiSW_DQ_histograms/'+gHistosScifi[i]+'/root.json', 'object');
-    redraw('globalScifi'+i, gH, 'hist');
+    try {
+    	let gH = await httpRequest(serverIP+'/Files/'+fileNameScifi+'/ScifiSW_DQ_histograms/'+gHistosScifi[i]+'/root.json', 'object');
+    	redraw('globalScifi'+i, gH, 'hist');
+    } catch (error) {
+	console.log('Could not find ' + serverIP+'/Files/'+fileNameScifi+'/ScifiSW_DQ_histograms/'+gHistosScifi[i]+'/root.json', 'object');
+    }
   }
 }
 
