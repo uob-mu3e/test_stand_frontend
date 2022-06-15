@@ -211,9 +211,11 @@ begin
 
 
     -- 100 kHz for PLL test
-    e_test_pulse : entity work.clkdiv
-    generic map ( P => 1250 )
-    port map ( o_clk => s_testpulse, i_reset_n => i_reset_125_n, i_clk => i_clk_125 ); -- i_run_state(RUN_STATE_BITPOS_SYNC), i_clk => i_clk_125 );
+    --e_test_pulse : entity work.clkdiv
+    --generic map ( P => 1250 )
+    --port map ( o_clk => s_testpulse, i_reset_n => i_reset_125_n, i_clk => i_clk_125 ); -- i_run_state(RUN_STATE_BITPOS_SYNC), i_clk => i_clk_125 );
+    e_test_pulse : entity work.clkdiv_dynamic
+    port map ( o_clk => s_testpulse, i_reset_n => i_reset_125_n, i_clk => i_clk_125, i_P => "00" & s_cntreg_ctrl(29 downto 0) );
     o_pll_test <= '0' when s_cntreg_ctrl(31) = '0' else s_testpulse;
 
     o_test_led(1) <= s_cntreg_ctrl(0);
@@ -388,7 +390,7 @@ begin
         i_simdata                   => i_simdata,
         i_simdatak                  => i_simdatak,
 
-        i_SC_reset_counters         => s_cntreg_ctrl(15),
+        i_SC_reset_counters         => s_cntreg_ctrl(30),
         o_fifos_full                => s_fifos_full,
         o_counters                  => s_counters,
 
