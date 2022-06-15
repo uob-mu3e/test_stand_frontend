@@ -1,7 +1,7 @@
 #
 # CON3 = tileB, CON2 = tileA
 
-set_location_assignment PIN_AG16 -to tileA_spi_sclk
+set_location_assignment PIN_AG16 -to tileA_spi_sclk_n
 set_location_assignment PIN_B10  -to tileB_spi_sclk
 
 set_location_assignment PIN_AD15 -to tileA_spi_mosi_n ; # inverted

@@ -32,7 +32,7 @@ port (
     tileA_pll_test               : out   std_logic; -- test pulse injection
     tileA_pll_reset              : out   std_logic; -- main reset (synchronisation and ASIC state machines)
     --SPI interface for ASICs
-    tileA_spi_sclk               : out   std_logic;
+    tileA_spi_sclk_n             : out   std_logic; --spare out is inverted on CON2 of FEB, the equivalent net on CON2 is not.
     tileA_spi_mosi_n             : out   std_logic;
     tileA_spi_miso_n             : in    std_logic;
     --I2C interface for TMB control/monitoring
@@ -239,7 +239,7 @@ begin
         tile_din         <= tileA_din(13 downto 1);
         tileA_pll_test   <= tile_pll_test;
         tileA_pll_reset  <= tile_pll_reset_shifted(0);
-        tileA_spi_sclk   <= tile_spi_sclk;
+        tileA_spi_sclk_n <= not tile_spi_sclk;
         tileA_spi_mosi   <= tile_spi_mosi;
         tile_spi_miso    <= tileA_spi_miso;
 
@@ -267,7 +267,7 @@ begin
 
         tileA_pll_test   <= '0';
         tileA_pll_reset  <= '0';
-        tileA_spi_sclk   <= '0';
+        tileA_spi_sclk_n <= '1';
         tileA_spi_mosi   <= '0';
 
         tileA_i2c_scl_oe <= '0';
@@ -285,7 +285,7 @@ begin
 --	dataout => tile_pll_reset_shifted--,
 --	--dataout_b 
 --	);
-tile_pll_reset_shifted(0)<= tile_pll_reset;
+tile_pll_reset_shifted<= tile_pll_reset;
 	 
 
 
