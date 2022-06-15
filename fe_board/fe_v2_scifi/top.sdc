@@ -63,3 +63,5 @@ set_output_delay -clock { spare_clk_osc } -max 0 [get_ports {max10_spi_csn}]
 
 # false paths
 set_false_path -from {*} -to {scifi_path:e_scifi_path|miso_156}
+set_false_path -from {scifi_path:e_scifi_path|scifi_reg_mapping:e_scifi_reg_mapping|ff_sync:e_cntreg_ctrl|ff[*][*]} -to {scifi_path:e_scifi_path|clkdiv_dynamic:e_test_pulse|cnt2_odd[*]}
+set_false_path -from {scifi_path:e_scifi_path|scifi_reg_mapping:e_scifi_reg_mapping|ff_sync:e_cntreg_ctrl|ff[*][*]} -to {scifi_path:e_scifi_path|clkdiv_dynamic:e_test_pulse|clk2_odd}

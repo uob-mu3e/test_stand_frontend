@@ -309,7 +309,7 @@ begin
         i_data      => s_receivers_data_reg,
         i_byteisk   => s_receivers_data_isk_reg,
         i_link      => i_link_data_reg(3 downto 0),
-        
+
         o_data      => link_data,
         o_data_en   => link_en--,
     );
@@ -593,6 +593,17 @@ begin
         -- when i_en_lapse_counter = '0' else
         --"00" & s_A_buf_data(33 downto 21) & CC_corrected_A(14 downto 0) & s_A_buf_data(5 downto 0) when ( s_A_buf_data(33 downto 32) = "00" ) else
         --"00" & s_A_buf_data;
+
+--    e_channel_rate_1 : entity work.ch_rate
+--    port map(
+--        i_hits      => fifo_data(35 downto 0),
+--        i_en        => fifo_we(0),
+--
+--        o_ch_rate   => o_ch_rate,
+--
+--        i_clk       => i_clk_125,
+--        i_reset_n   => i_reset_125_n--,
+--    )
 
     e_fifo_out_1 : entity work.ip_dcfifo_v2
     generic map (

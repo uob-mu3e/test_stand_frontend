@@ -146,6 +146,7 @@ void SMB_t::menu_SMB_main() {
     volatile sc_ram_t* ram = (sc_ram_t*) AVM_SC_BASE;
     uint32_t value = 0x0;
     char str[2] = {0};
+    uint32_t pll_f = 0;
 
     while(1) {
         printf("MISO REG = 0x%08X\n", ram->data[SCIFI_CNT_MISO_TRANSITION_REGISTER_R]);
@@ -161,6 +162,7 @@ void SMB_t::menu_SMB_main() {
         printf("  [4] => Write DCR config to all ASICs\n");
         printf("  [5] => Write high TThreshold config to all ASICs\n");
         printf("  [6] => Write mask PLL test\n");
+        printf("  [7] => Enter Injection Freq. [kHz]\n");
         printf("  [8] => data\n");
         printf("  [9] => monitor test\n");
         printf("  [a] => counters\n");
@@ -207,11 +209,14 @@ void SMB_t::menu_SMB_main() {
             case 'p':
                 sc.ram->data[SCIFI_LINK_DATA_REGISTER_W] = sc.ram->data[SCIFI_LINK_DATA_REGISTER_W] | (1<<31);
                 // readout link 2
-                sc.ram->data[SCIFI_LINK_DATA_REGISTER_W] = sc.ram->data[SCIFI_LINK_DATA_REGISTER_W] | (1<<1);
+                sc.ram->data[SCIFI_LINK_DATA_REGISTER_W] = sc.ram->data[SCIFI_LINK_DATA_REGISTER_W] | (1<<3);
                 break;
             case 'o':
                 sc.ram->data[SCIFI_LINK_DATA_REGISTER_W] = sc.ram->data[SCIFI_LINK_DATA_REGISTER_W] & ~(1<<31);
+                sc.ram->data[SCIFI_LINK_DATA_REGISTER_W] = sc.ram->data[SCIFI_LINK_DATA_REGISTER_W] & ~(1<<0);
                 sc.ram->data[SCIFI_LINK_DATA_REGISTER_W] = sc.ram->data[SCIFI_LINK_DATA_REGISTER_W] & ~(1<<1);
+                sc.ram->data[SCIFI_LINK_DATA_REGISTER_W] = sc.ram->data[SCIFI_LINK_DATA_REGISTER_W] & ~(1<<2);
+                sc.ram->data[SCIFI_LINK_DATA_REGISTER_W] = sc.ram->data[SCIFI_LINK_DATA_REGISTER_W] & ~(1<<3);
                 break;
             case 'i':
                 sc.ram->data[SCIFI_CTRL_DP_REGISTER_W] = sc.ram->data[SCIFI_CTRL_DP_REGISTER_W] & ~(1<<31);
@@ -242,6 +247,23 @@ void SMB_t::menu_SMB_main() {
                 for(alt_u8 asic = 0; asic < 8; asic++)
                     sc_callback(CMD_MUTRIG_ASIC_CFG | asic, (alt_u32*) config_plltest_mask, 0, true);
                 sc.ram->data[SCIFI_CNT_CTRL_REGISTER_W] = sc.ram->data[SCIFI_CNT_CTRL_REGISTER_W] | (1<<31);
+                break;
+            case '7':
+                pll_f = 0;
+                for ( int i = 0; i < 3; i++ ) {
+			        printf("Enter Freq in kHz curValue: %d\n", pll_f);
+			        str[0] = wait_key();
+			        pll_f = pll_f*10+strtol(str,NULL,10);
+		        }
+                printf("pll_f %d\n", pll_f);
+                pll_f = 125000 / pll_f;
+                if ( pll_f > 16777215 ) {
+                    printf("Value not possible\n");
+                    pll_f = 0;
+                }
+                printf("pll_f %d\n", pll_f);
+                sc.ram->data[SCIFI_CNT_CTRL_REGISTER_W] = sc.ram->data[SCIFI_CNT_CTRL_REGISTER_W] & 0xF0000000;
+                sc.ram->data[SCIFI_CNT_CTRL_REGISTER_W] = sc.ram->data[SCIFI_CNT_CTRL_REGISTER_W] | pll_f;
                 break;
             case '8':
                 printf("buffer_full / frame_desync / rx_pll_lock : 0x%03X\n", sc.ram->data[SCIFI_MON_STATUS_REGISTER_R]);
@@ -614,8 +636,8 @@ void SMB_t::menu_counters(){
 }
 
 alt_u16 SMB_t::reset_counters(){
-    sc.ram->data[SCIFI_CNT_CTRL_REGISTER_W] = sc.ram->data[SCIFI_CNT_CTRL_REGISTER_W] | 1<<15;
-    sc.ram->data[SCIFI_CNT_CTRL_REGISTER_W] = sc.ram->data[SCIFI_CNT_CTRL_REGISTER_W] ^ 1<<15;
+    sc.ram->data[SCIFI_CNT_CTRL_REGISTER_W] = sc.ram->data[SCIFI_CNT_CTRL_REGISTER_W] | 1<<30;
+    sc.ram->data[SCIFI_CNT_CTRL_REGISTER_W] = sc.ram->data[SCIFI_CNT_CTRL_REGISTER_W] ^ 1<<30;
     return 0;
 }
 //write counter values of all channels to memory address *data and following. Return number of asic channels written.
