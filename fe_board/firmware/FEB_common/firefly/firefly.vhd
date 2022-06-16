@@ -42,7 +42,6 @@ port (
     i_reset_n               : in    std_logic;
     i_reset_156_n           : in    std_logic;
     i_reset_125_rx_n        : in    std_logic;
-    i_lvds_align_reset_n    : in    std_logic;
 
     --rx
     i_data_fast_serial      : in    std_logic_vector(      3 downto 0);
@@ -149,6 +148,7 @@ architecture rtl of firefly is
     signal lvds_8b10b_out                   : std_logic_vector(7 downto 0);
     signal lvds_rx_clk                      : std_logic;
     signal lvds_8b10b_out_in_clk125_global  : std_logic_vector(7 downto 0);
+    signal lvds_align_reset_n               : std_logic;
 
     -- avalon interface
     signal av_ctrl              : work.util.avalon_t;
@@ -398,7 +398,7 @@ begin
     e_lvds_controller : entity work.lvds_controller
     port map(
         i_clk               => i_clk_lvds,                      -- controller MUST run on 125 Global. DO NOT CHANGE TO lvds_rx_clk !!!
-        i_areset_n          => i_lvds_align_reset_n,
+        i_areset_n          => lvds_align_reset_n,
         i_data              => lvds_8b10b_out_in_clk125_global, -- feed alignment with 8b10b decoded data in global clk domain
         i_cda_max           => lvds_cda_max,
         i_dpa_locked        => lvds_dpa_locked,
@@ -496,6 +496,7 @@ begin
         o_loopback        => rx_seriallpbken,
         o_tx_reset        => open,
         o_rx_reset        => open,
+        o_lvds_align_reset_n => lvds_align_reset_n,
 
         i_tx_status       => av_tx_ready,
         i_rx_ready        => av_rx_ready,
@@ -555,7 +556,7 @@ begin
             DEVICE      => "Arria V"--,
         )
         port map (
-            aclr            => not i_lvds_align_reset_n,--'0',
+            aclr            => not lvds_align_reset_n,--'0',
             data            =>  disperr
                                 & errdetect & syncstatus
                                 & rx_is_lockedtodata & rx_is_lockedtoref
@@ -586,7 +587,7 @@ begin
             DEVICE      => "Arria V"--,
         )
         port map (
-            aclr            => not i_lvds_align_reset_n,--'0',
+            aclr            => not lvds_align_reset_n,--'0',
             data            =>  disperr
                                 & errdetect & syncstatus
                                 & rx_is_lockedtodata & rx_is_lockedtoref

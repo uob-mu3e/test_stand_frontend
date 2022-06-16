@@ -79,6 +79,7 @@ package feb_sc_registers is
 
     constant SI_STATUS_REGISTER                 :   integer := 16#FC2B#;
     constant TEST_OUT_REGISTER                  :   integer := 16#FC2C#;
+    constant REBOOT_REGISTER_RW                 :   integer := 16#FC2D#;
 
     constant FIREFLY_XCVR_CH_SEL_REGISTER_RW    :   integer := 16#FF00#;
     constant FIREFLY_XCVR_N_CH_REGISTER_R       :   integer := 16#FF01#;
@@ -97,5 +98,6 @@ package feb_sc_registers is
     constant FIREFLY_XCVR_GBIT_REGISTER_R       :   integer := 16#FF2C#;
     constant FIREFLY_XCVR_LOOPBACK_REGISTER_RW  :   integer := 16#FF2F#;
 
+    constant RESET_LINK_RESTART_REGISTER_RW     :   integer := 16#FF30#;
 
 end package;

@@ -28,6 +28,7 @@ port (
     o_loopback                  : out std_logic_vector(N_CHANNELS_g-1 downto 0);
     o_tx_reset                  : out std_logic_vector(N_CHANNELS_g-1 downto 0);
     o_rx_reset                  : out std_logic_vector(N_CHANNELS_g-1 downto 0);
+    o_lvds_align_reset_n        : out std_logic;
     i_tx_status                 : in  std_logic_vector(N_CHANNELS_g-1 downto 0) := (others => '0');
     i_tx_errors                 : in  std_logic_vector(N_CHANNELS_g-1 downto 0) := (others => '0');
 
@@ -54,6 +55,8 @@ architecture rtl of firefly_reg_mapping is
     signal rx_reset        : std_logic_vector(N_CHANNELS_g - 1 downto 0);
     signal loopback        : std_logic_vector(N_CHANNELS_g - 1 downto 0);
 
+    signal lvds_align_reset_delay : std_logic_vector(5 downto 0);
+
 begin
 
     channel_sel_int <= to_integer(unsigned(channel_sel));
@@ -64,6 +67,8 @@ begin
     if (i_reset_n = '0') then
         channel_sel <= (others => '0');
         loopback    <= (others => '0');
+        o_lvds_align_reset_n <= '0';
+        lvds_align_reset_delay <= (others => '0');
 
     elsif(rising_edge(i_clk156)) then
 
@@ -75,6 +80,12 @@ begin
         o_tx_reset          <= tx_reset;
         o_rx_reset          <= rx_reset;
         o_loopback          <= loopback;
+
+        o_lvds_align_reset_n        <= lvds_align_reset_delay(0);
+        lvds_align_reset_delay(5)   <= '1';
+        for I in 0 to 4 loop
+            lvds_align_reset_delay(I) <= lvds_align_reset_delay(I+1);
+        end loop;
 
         -- channel select
         if ( regaddr = FIREFLY_XCVR_CH_SEL_REGISTER_RW and i_reg_re = '1' ) then
@@ -175,6 +186,11 @@ begin
         end if;
         if ( regaddr = FIREFLY_XCVR_LOOPBACK_REGISTER_RW and i_reg_we = '1' ) then
             loopback(channel_sel_int) <= i_reg_wdata(0);
+        end if;
+
+        if ( regaddr = RESET_LINK_RESTART_REGISTER_RW and i_reg_we = '1' ) then
+            lvds_align_reset_delay <= (others => '0');
+            o_lvds_align_reset_n   <= '0';
         end if;
 
     end if;
