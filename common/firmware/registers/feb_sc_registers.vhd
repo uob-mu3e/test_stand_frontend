@@ -99,5 +99,6 @@ package feb_sc_registers is
     constant FIREFLY_XCVR_LOOPBACK_REGISTER_RW  :   integer := 16#FF2F#;
 
     constant RESET_LINK_RESTART_REGISTER_RW     :   integer := 16#FF30#;
+    constant LVDS_CONTROLLER_STATE_REGISTER_R   :   integer := 16#FF31#;
 
 end package;

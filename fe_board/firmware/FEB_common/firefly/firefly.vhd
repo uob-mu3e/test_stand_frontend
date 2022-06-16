@@ -141,6 +141,7 @@ architecture rtl of firefly is
     signal lvds_rx_locked       : std_logic;
     signal lvds_align_clicks    : std_logic_vector(7 downto 0);
     signal lvds_o_ready         : std_logic;
+    signal lvds_controller_state: std_logic_vector(3 downto 0);
 
     -- lvds data signals
     signal lvds_in_10b                      : std_logic_vector(9 downto 0);
@@ -410,7 +411,8 @@ begin
         o_fifo_reset        => lvds_fifo_reset,
         o_rx_reset          => lvds_rx_reset,
         o_cda_reset         => open, --not available on ArriaV
-        o_align_clicks      => lvds_align_clicks
+        o_align_clicks      => lvds_align_clicks,
+        o_lvds_state        => lvds_controller_state--,
     );
 
     process (lvds_rx_clk)
@@ -496,7 +498,8 @@ begin
         o_loopback        => rx_seriallpbken,
         o_tx_reset        => open,
         o_rx_reset        => open,
-        o_lvds_align_reset_n => lvds_align_reset_n,
+        o_lvds_align_reset_n    => lvds_align_reset_n,
+        i_lvds_controller_state => lvds_controller_state,
 
         i_tx_status       => av_tx_ready,
         i_rx_ready        => av_rx_ready,

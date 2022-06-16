@@ -31,6 +31,7 @@ port (
     o_lvds_align_reset_n        : out std_logic;
     i_tx_status                 : in  std_logic_vector(N_CHANNELS_g-1 downto 0) := (others => '0');
     i_tx_errors                 : in  std_logic_vector(N_CHANNELS_g-1 downto 0) := (others => '0');
+    i_lvds_controller_state     : in  std_logic_vector(3 downto 0);
 
     i_rx_ready                  : in  std_logic_vector(N_CHANNELS_g-1 downto 0) := (others => '0');
     i_rx_lockedtoref            : in  std_logic_vector(N_CHANNELS_g-1 downto 0) := (others => '0');
@@ -191,6 +192,11 @@ begin
         if ( regaddr = RESET_LINK_RESTART_REGISTER_RW and i_reg_we = '1' ) then
             lvds_align_reset_delay <= (others => '0');
             o_lvds_align_reset_n   <= '0';
+        end if;
+
+        if ( regaddr = LVDS_CONTROLLER_STATE_REGISTER_R and i_reg_re = '1' ) then
+            o_reg_rdata(3 downto 0)  <= i_lvds_controller_state;
+            o_reg_rdata(31 downto 4) <= (others => '0');
         end if;
 
     end if;
