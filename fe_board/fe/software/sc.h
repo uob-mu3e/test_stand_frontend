@@ -25,7 +25,7 @@ struct sc_t {
         }
         usleep(5000000); // wait for 2nd SI chip lock
         ram->data[RESET_LINK_RESTART_REGISTER_RW] = 0x1; // realign reset link
-        usleep(500000) // wait for reset link restart
+        usleep(500000); // wait for reset link restart
 
         // move FEB into idle state on Nios boot, disable optical reset rx, run prep with IP != 0.0.0.0 will broadcast enable of optical reset rx via SW board)
         auto& reset_bypass = ram->data[RUN_STATE_RESET_BYPASS_REGISTER_RW];
