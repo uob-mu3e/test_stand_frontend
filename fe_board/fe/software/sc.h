@@ -23,6 +23,10 @@ struct sc_t {
         if(int err = alt_ic_isr_register(0, 12, callback, this, nullptr)) {
             printf("[sc] ERROR: alt_ic_isr_register => %d\n", err);
         }
+        usleep(5000000); // wait for 2nd SI chip lock
+        ram->data[RESET_LINK_RESTART_REGISTER_RW] = 0x1; // realign reset link
+        usleep(500000) // wait for reset link restart
+
         // move FEB into idle state on Nios boot, disable optical reset rx, run prep with IP != 0.0.0.0 will broadcast enable of optical reset rx via SW board)
         auto& reset_bypass = ram->data[RUN_STATE_RESET_BYPASS_REGISTER_RW];
         reset_bypass = 0x0200;
