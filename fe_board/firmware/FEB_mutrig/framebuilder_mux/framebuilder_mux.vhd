@@ -29,14 +29,14 @@ port (
     i_timestamp_clk  : in  std_logic;	--125M timestamp clock
     i_timestamp_rst  : in  std_logic;	--timestamp reset, synced to i_timestamp_clk, high active
 --event data inputs interface
-    i_source_data	 : in mutrig_evtdata_array_t(N_INPUTS-1 downto 0);
+    i_source_data    : in mutrig_evtdata_array_t(N_INPUTS-1 downto 0);
     i_source_empty   : in std_logic_vector(N_INPUTS-1 downto 0);
-    o_source_rd   	 : out std_logic_vector(N_INPUTS-1 downto 0);
+    o_source_rd      : out std_logic_vector(N_INPUTS-1 downto 0);
 
 --event data output interface to big buffer storage
-    o_sink_data	 : out std_logic_vector(33 downto 0);		      -- event data output, asic number appended
+    o_sink_data	     : out std_logic_vector(33 downto 0);		      -- event data output, asic number appended
     i_sink_full      :  in std_logic;
-    o_sink_wr   	 : out std_logic;
+    o_sink_wr        : out std_logic;
 --still data to process. Does not check packet state, only if there is data in the chain.
     o_busy           : out std_logic;
 
@@ -164,10 +164,10 @@ begin
 
     --common data: find a candidate for common frame delimiter data (frameID)
     --TODO: separate selection (may be slow based on flag, even false_path) and multiplexing (synchronous)
-    l_common_data <=i_source_data(0);
-    --for i in 1 to N_INPUTS-1 loop
-    --	if(i_SC_mask(i)='0') then l_common_data<= i_source_data(i); end if;
-    --end loop;
+    --l_common_data <=i_source_data(0);
+    for i in 1 to N_INPUTS-1 loop
+        if(i_SC_mask(i)='0') then l_common_data <= i_source_data(i); end if;
+    end loop;
     --common data: "ERROR" flags : valid during trailer
     l_any_crc_err <= '0';
     l_any_asic_overflow <= '0';

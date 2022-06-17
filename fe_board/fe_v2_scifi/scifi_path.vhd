@@ -72,7 +72,7 @@ end entity;
 architecture arch of scifi_path is
 
     -- MuTrig PLL test
-    signal s_testpulse : std_logic;
+    signal s_testpulse : std_logic_vector(3 downto 0);
 
     -- rx signals
     signal rx_pll_lock                  : std_logic;
@@ -211,13 +211,32 @@ begin
 
 
     -- 100 kHz for PLL test
-    --e_test_pulse : entity work.clkdiv
-    --generic map ( P => 1250 )
-    --port map ( o_clk => s_testpulse, i_reset_n => i_reset_125_n, i_clk => i_clk_125 ); -- i_run_state(RUN_STATE_BITPOS_SYNC), i_clk => i_clk_125 );
-    e_test_pulse : entity work.clkdiv_dynamic
-    port map ( o_clk => s_testpulse, i_reset_n => i_reset_125_n, i_clk => i_clk_125, i_P => "00" & s_cntreg_ctrl(29 downto 0) );
-    o_pll_test <= '0' when s_cntreg_ctrl(31) = '0' else s_testpulse;
+    e_test_pulse_100 : entity work.clkdiv
+    generic map ( P => 1250 )
+    port map ( o_clk => s_testpulse(0), i_reset_n => i_reset_125_n, i_clk => i_clk_125 );
 
+    -- 10 kHz for PLL test
+    e_test_pulse_10 : entity work.clkdiv
+    generic map ( P => 12500 )
+    port map ( o_clk => s_testpulse(1), i_reset_n => i_reset_125_n, i_clk => i_clk_125 );
+
+    -- 1 kHz for PLL test
+    e_test_pulse_1 : entity work.clkdiv
+    generic map ( P => 125000 )
+    port map ( o_clk => s_testpulse(2), i_reset_n => i_reset_125_n, i_clk => i_clk_125 );
+
+    -- 0.1 kHz for PLL test
+    e_test_pulse_0_1 : entity work.clkdiv
+    generic map ( P => 1250000 )
+    port map ( o_clk => s_testpulse(3), i_reset_n => i_reset_125_n, i_clk => i_clk_125 );
+
+    -- MUX for output testpulse
+    o_pll_test <= '0'               when s_cntreg_ctrl(31) = '0' else
+                  s_testpulse(0)    when s_cntreg_ctrl(30) = '1' else
+                  s_testpulse(1)    when s_cntreg_ctrl(29) = '1' else
+                  s_testpulse(2)    when s_cntreg_ctrl(28) = '1' else
+                  s_testpulse(3)    when s_cntreg_ctrl(27) = '1' else
+                  '0';
     o_test_led(1) <= s_cntreg_ctrl(0);
 
     ---- REGISTER MAPPING ----
@@ -390,7 +409,7 @@ begin
         i_simdata                   => i_simdata,
         i_simdatak                  => i_simdatak,
 
-        i_SC_reset_counters         => s_cntreg_ctrl(30),
+        i_SC_reset_counters         => s_cntreg_ctrl(15),
         o_fifos_full                => s_fifos_full,
         o_counters                  => s_counters,
 

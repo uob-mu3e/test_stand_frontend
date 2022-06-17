@@ -44,6 +44,7 @@ struct SMB_t {
    
     //=========================
     //Menu functions for command line use
+    void menu_pll_injection();
     void menu_SMB_monitors();
     void menu_SMB_main();
     void menu_reset();

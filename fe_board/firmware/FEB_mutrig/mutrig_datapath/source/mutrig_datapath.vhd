@@ -91,6 +91,9 @@ architecture rtl of mutrig_datapath is
 
     constant N_ASICS_TOTAL : natural := N_MODULES * N_ASICS;
 
+    type t_mask is array (N_ASICS_TOTAL-1 downto 0) of std_logic_vector(N_MODULES*N_ASICS-1 downto 0);
+    signal mask_array : t_mask;
+
     -- TODO: add this to a header file
     subtype t_vector is std_logic_vector(N_ASICS_TOTAL-1 downto 0);
     type t_array_64b is array (N_ASICS_TOTAL-1 downto 0) of std_logic_vector(64-1 downto 0);
@@ -129,6 +132,11 @@ architecture rtl of mutrig_datapath is
     signal s_fifos_empty    : std_logic_vector(N_ASICS_TOTAL-1 downto 0):=(others =>'1');
     signal s_fifos_data     : mutrig_evtdata_array_t(N_ASICS_TOTAL-1 downto 0);
     signal s_fifos_rd       : std_logic_vector(N_ASICS_TOTAL-1 downto 0);
+
+    -- frame data for mux
+    signal s_buf_data, s_buf_q : work.util.slv34_array_t(N_ASICS_TOTAL-1 downto 0);
+    signal out_fifo_full : std_logic_vector(1 downto 0);
+    signal s_buf_we, s_buf_full, s_buf_re, s_buf_empty, s_buf_sop, s_buf_eop : std_logic_vector(N_ASICS_TOTAL-1 downto 0);
 
     -- frame collector mux - prbs decoder
     signal s_A_mux_busy, s_B_mux_busy   : std_logic :='0';
@@ -454,6 +462,65 @@ begin
 
             i_SC_mask           => i_SC_mask_rx(i)
         );
+
+        -- we only go with 4 asics now
+        mask_array(i) <=    "1110" when i = 0 else
+                            "1101" when i = 1 else
+                            "1011" when i = 2 else
+                            "0111" when i = 3 else
+                            "1111";
+
+        --use mux for creating format
+        u_mux : entity work.framebuilder_mux
+        generic map( 
+            N_INPUTS => N_ASICS,
+            N_INPUTID_BITS => 4,
+            C_CHANNELNO_PREFIX => C_ASICNO_PREFIX_A--,
+        )
+        port map(
+            i_coreclk           => i_clk_125,
+            i_rst               => i_rst_core,
+            i_timestamp_clk     => i_clk_125,
+            i_timestamp_rst     => i_ts_rst,
+            --event data inputs interface
+            i_source_data       => s_fifos_data(N_ASICS-1 downto 0),
+            i_source_empty      => s_fifos_empty(N_ASICS-1 downto 0),
+            o_source_rd(i)      => s_fifos_rd(i),
+            --event data output interface to big buffer storage
+            o_sink_data         => s_buf_data(i),
+            i_sink_full         => s_buf_full(i),
+            o_sink_wr           => s_buf_we(i),
+            --monitoring, errors, slow control
+            o_busy              => open,
+            o_sync_error        => open,
+            i_SC_mask           => mask_array(i),
+            i_SC_nomerge        => '0'--,
+        );
+
+        u_mux_fifo : entity work.ip_dcfifo_v2
+        generic map (
+            g_ADDR_WIDTH => 8,
+            g_DATA_WIDTH => 34,
+            g_WREG_N => 1,
+            g_RREG_N => 1--,
+        )
+        port map (
+            i_wdata     => s_buf_data(i),
+            i_we        => s_buf_we(i),
+            o_wfull     => s_buf_full(i),
+            i_wclk      => i_clk_125,
+
+            o_rdata     => s_buf_q(i),
+            i_rack      => s_buf_re(i),
+            o_rempty    => s_buf_empty(i),
+            i_rclk      => i_clk_125,
+
+            i_reset_n   => not i_rst_core--,
+        );
+
+        s_buf_sop(i) <= '1' when s_buf_q(i)(33 downto 32) = "10" else '0';
+        s_buf_eop(i) <= '1' when s_buf_q(i)(33 downto 32) = "11" else '0';
+
     end generate;
 
     --mux between asic channels
@@ -483,30 +550,54 @@ begin
 --        i_reset_n    => not i_rst_core--,
 --    );
     --mux between asic channels
-    u_mux_A : entity work.framebuilder_mux
-    generic map( 
-        N_INPUTS => N_ASICS,
-        N_INPUTID_BITS => 4,
-        C_CHANNELNO_PREFIX => C_ASICNO_PREFIX_A--,
+--    u_mux_A : entity work.framebuilder_mux
+--    generic map( 
+--        N_INPUTS => N_ASICS,
+--        N_INPUTID_BITS => 4,
+--        C_CHANNELNO_PREFIX => C_ASICNO_PREFIX_A--,
+--    )
+--    port map(
+--        i_coreclk           => i_clk_125,
+--        i_rst               => i_rst_core,
+--        i_timestamp_clk     => i_clk_125,
+--        i_timestamp_rst     => i_ts_rst,
+--        --event data inputs interface
+--        i_source_data       => s_fifos_data(N_ASICS-1 downto 0),
+--        i_source_empty      => s_fifos_empty(N_ASICS-1 downto 0),
+--        o_source_rd         => s_fifos_rd(N_ASICS-1 downto 0),
+--        --event data output interface to big buffer storage
+--        o_sink_data         => s_A_buf_predec_data,
+--        i_sink_full         => s_A_buf_predec_full,
+--        o_sink_wr           => s_A_buf_predec_wr,
+--        --monitoring, errors, slow control
+--        o_busy              => s_A_mux_busy,
+--        o_sync_error        => o_frame_desync(0),
+--        i_SC_mask           => i_SC_mask(N_ASICS-1 downto 0),
+--        i_SC_nomerge        => '0'--,
+--    );
+
+    -- round robin between asics
+    e_stream_merger : entity work.stream_merger_vector
+    generic map (
+        g_set_type => false,
+        N => 4--,
     )
-    port map(
-        i_coreclk           => i_clk_125,
-        i_rst               => i_rst_core,
-        i_timestamp_clk     => i_clk_125,
-        i_timestamp_rst     => i_ts_rst,
-        --event data inputs interface
-        i_source_data       => s_fifos_data(N_ASICS-1 downto 0),
-        i_source_empty      => s_fifos_empty(N_ASICS-1 downto 0),
-        o_source_rd         => s_fifos_rd(N_ASICS-1 downto 0),
-        --event data output interface to big buffer storage
-        o_sink_data         => s_A_buf_predec_data,
-        i_sink_full         => s_A_buf_predec_full,
-        o_sink_wr           => s_A_buf_predec_wr,
-        --monitoring, errors, slow control
-        o_busy              => s_A_mux_busy,
-        o_sync_error        => o_frame_desync(0),
-        i_SC_mask           => i_SC_mask(N_ASICS-1 downto 0),
-        i_SC_nomerge        => '0'--,
+    port map (
+        -- input stream
+        i_rdata     => s_buf_data(3 downto 0),
+        i_sop       => s_buf_sop(3 downto 0),
+        i_eop       => s_buf_eop(3 downto 0),
+        i_rempty    => s_buf_empty(3 downto 0),-- or not i_SC_mask(3 downto 0),
+        o_rack      => s_buf_re(3 downto 0),
+
+        -- output stream
+        o_wdata     => s_A_buf_predec_data,
+        i_wfull     => out_fifo_full(0),
+        o_we        => s_A_buf_predec_wr,
+        o_busy      => s_A_mux_busy,
+
+        i_reset_n   => not i_rst_core,
+        i_clk       => i_clk_125--,
     );
 
     gen_dual_mux : if( N_MODULES > 1 ) generate
@@ -613,7 +704,7 @@ begin
     port map (
         i_wdata     => fifo_data(35 downto 0),
         i_we        => fifo_we(0),
-        o_wfull     => open,
+        o_wfull     => out_fifo_full(0),
         i_wclk      => i_clk_125,
 
         o_rdata     => sync_fifo_data(35 downto 0),
@@ -659,7 +750,7 @@ begin
         port map (
             i_wdata     => fifo_data(71 downto 36),
             i_we        => fifo_we(1),
-            o_wfull     => open,
+            o_wfull     => out_fifo_full(1),
             i_wclk      => i_clk_125,
 
             o_rdata     => sync_fifo_data(71 downto 36),
