@@ -1,0 +1,2 @@
+killall mhttpd
+killall mlogger

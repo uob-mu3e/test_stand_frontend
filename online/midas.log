@@ -1,0 +1,51 @@
+10:14:59.992 2022/06/17 [Temperature and humidity,LOG] Program Temperature and humidity on host localhost started
+10:20:42.695 2022/06/17 [Temperature and humidity,LOG] Program Temperature and humidity on host localhost stopped
+11:27:53.749 2022/06/17 [Logger,LOG] Program Logger on host localhost started
+11:27:53.750 2022/06/17 [mhttpd,LOG] Program mhttpd on host localhost started
+11:27:53.765 2022/06/17 [mhttpd,INFO] ODB subtree /Runinfo corrected successfully
+11:27:53.770 2022/06/17 [Logger,INFO] Equipment "ArduinoTestStation" history is enabled, but there are no Variables in ODB
+11:27:53.770 2022/06/17 [Sequencer,LOG] Program Sequencer on host localhost started
+11:27:53.771 2022/06/17 [Logger,ERROR] [history.cxx:97:xread,ERROR] Error: Unexpected end-of-file when reading file "/software/mu3e/midas_installations/midas_v1/mu3eSummer22/packages/online/220617.hst"
+11:27:53.773 2022/06/17 [Logger,ERROR] [history.cxx:97:xread,ERROR] Error: Unexpected end-of-file when reading file "/software/mu3e/midas_installations/midas_v1/mu3eSummer22/packages/online/220617.hst"
+11:27:53.775 2022/06/17 [Logger,ERROR] [history.cxx:97:xread,ERROR] Error: Unexpected end-of-file when reading file "/software/mu3e/midas_installations/midas_v1/mu3eSummer22/packages/online/220617.hst"
+11:27:54.291 2022/06/17 [Temperature and humidity,LOG] Program Temperature and humidity on host localhost started
+11:28:07.381 2022/06/17 [Temperature and humidity,LOG] Program Temperature and humidity on host localhost stopped
+11:28:07.514 2022/06/17 [Logger,LOG] Program Logger on host localhost stopped
+11:28:07.534 2022/06/17 [Sequencer,LOG] Program Sequencer on host localhost stopped
+11:28:07.567 2022/06/17 [mhttpd,LOG] Program mhttpd on host localhost stopped
+11:28:28.098 2022/06/17 [mhttpd,LOG] Program mhttpd on host localhost started
+11:28:31.302 2022/06/17 [mhttpd,LOG] Program mhttpd on host localhost stopped
+11:28:38.366 2022/06/17 [Logger,LOG] Program Logger on host localhost started
+11:28:38.381 2022/06/17 [Logger,INFO] Equipment "ArduinoTestStation" history is enabled, but there are no Variables in ODB
+11:28:41.989 2022/06/17 [Logger,LOG] Program Logger on host localhost stopped
+11:28:47.599 2022/06/17 [Sequencer,LOG] Program Sequencer on host localhost started
+11:28:51.763 2022/06/17 [Sequencer,LOG] Program Sequencer on host localhost stopped
+11:44:30.354 2022/06/17 [Logger,LOG] Program Logger on host localhost started
+11:44:30.355 2022/06/17 [mhttpd,LOG] Program mhttpd on host localhost started
+11:44:30.372 2022/06/17 [Logger,INFO] Equipment "ArduinoTestStation" history is enabled, but there are no Variables in ODB
+11:44:30.373 2022/06/17 [Sequencer,LOG] Program Sequencer on host localhost started
+11:44:30.890 2022/06/17 [Temperature and humidity,LOG] Program Temperature and humidity on host localhost started
+11:44:46.992 2022/06/17 [Temperature and humidity,LOG] Program Temperature and humidity on host localhost stopped
+11:44:47.145 2022/06/17 [Sequencer,LOG] Program Sequencer on host localhost stopped
+11:44:47.174 2022/06/17 [mhttpd,LOG] Program mhttpd on host localhost stopped
+11:44:47.218 2022/06/17 [Logger,LOG] Program Logger on host localhost stopped
+11:44:52.192 2022/06/17 [Temperature and humidity,LOG] Program Temperature and humidity on host localhost started
+11:44:57.968 2022/06/17 [Temperature and humidity,LOG] Program Temperature and humidity on host localhost stopped
+11:46:43.234 2022/06/17 [Logger,LOG] Program Logger on host localhost started
+11:46:43.237 2022/06/17 [mhttpd,LOG] Program mhttpd on host localhost started
+11:46:43.244 2022/06/17 [Logger,INFO] Equipment "ArduinoTestStation" history is enabled, but there are no Variables in ODB
+11:46:43.255 2022/06/17 [Sequencer,LOG] Program Sequencer on host localhost started
+11:46:43.770 2022/06/17 [Temperature and humidity,LOG] Program Temperature and humidity on host localhost started
+11:46:45.858 2022/06/17 [Temperature and humidity,LOG] Program Temperature and humidity on host localhost stopped
+11:46:45.939 2022/06/17 [mhttpd,LOG] Program mhttpd on host localhost stopped
+11:46:45.996 2022/06/17 [Sequencer,LOG] Program Sequencer on host localhost stopped
+11:46:46.061 2022/06/17 [Logger,LOG] Program Logger on host localhost stopped
+11:47:19.032 2022/06/17 [Logger,LOG] Program Logger on host localhost started
+11:47:19.038 2022/06/17 [mhttpd,LOG] Program mhttpd on host localhost started
+11:47:19.050 2022/06/17 [Logger,INFO] Equipment "ArduinoTestStation" history is enabled, but there are no Variables in ODB
+11:47:19.055 2022/06/17 [Sequencer,LOG] Program Sequencer on host localhost started
+11:47:19.572 2022/06/17 [Temperature and humidity,LOG] Program Temperature and humidity on host localhost started
+11:47:23.863 2022/06/17 [Temperature and humidity,LOG] Program Temperature and humidity on host localhost stopped
+11:47:23.942 2022/06/17 [mhttpd,LOG] Program mhttpd on host localhost stopped
+11:47:23.962 2022/06/17 [Logger,LOG] Program Logger on host localhost stopped
+11:47:23.962 2022/06/17 [Sequencer,LOG] Program Sequencer on host localhost stopped
