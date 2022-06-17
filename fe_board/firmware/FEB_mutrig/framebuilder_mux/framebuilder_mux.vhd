@@ -218,10 +218,10 @@ begin
         --issue read from fifo when appropriate
         --read next when selected
         --read next when available and not valid
-        if( (s_is_valid(i)='0' or s_read(i)='1') and i_source_empty(i)='0') then
+        if( (s_is_valid(i)='0' or s_read(i)='1') and i_source_empty(i)='0' and i_sink_full = '0' ) then
             o_source_rd(i)<= '1';
             n_is_valid(i) <= '1';
-        elsif(s_read(i)='1') then
+        elsif(s_read(i)='1' and i_sink_full = '0') then
             n_is_valid(i)<='0';
         end if;
     end loop;
@@ -233,44 +233,60 @@ p_fsm_async : process(s_state, l_all_header, l_all_trailer, l_request, l_request
 begin
     n_state <= s_state;
     n_sel_gnt <= s_sel_gnt;
-    s_sink_wr <= '0';
-    n_Hpart <= '0';
     s_read <= (others =>'0');
-    n_Tpart <= '0';
-    case s_state is
-        when fs_idle =>
-            --wait for request -- TODO: move next selection to common part to speed up process
+    s_sink_wr <= '0';
+    if ( i_sink_full = '1' ) then
+        n_Hpart <= s_Hpart;
+        n_Tpart <= s_Tpart;
+    else
+        n_Hpart <= '0';
+        n_Tpart <= '0';
+    end if;
+    if ( i_sink_full = '0' ) then
+        case s_state is
+            when fs_idle =>
+                --wait for request -- TODO: move next selection to common part to speed up process
 
-            --deadlock fix: check only first asic for header or trailer, then write it.
-            if(l_all_header='1') then
-                n_state <= fs_headerH;
-            elsif(l_all_trailer='1') then
-                n_state <= fs_trailer;
-            elsif(unsigned(l_request_next) /= 0) then
-                n_sel_gnt <= Priority_Select(l_request_next);--,s_sel_gnt);
-                n_state <= fs_hitH;
-            else
-                n_sel_gnt <= (others => '0');
-            end if;
+                --deadlock fix: check only first asic for header or trailer, then write it.
+                if(l_all_header='1') then
+                    n_state <= fs_headerH;
+                elsif(l_all_trailer='1') then
+                    n_state <= fs_trailer;
+                elsif(unsigned(l_request_next) /= 0) then
+                    n_sel_gnt <= Priority_Select(l_request_next);--,s_sel_gnt);
+                    n_state <= fs_hitH;
+                else
+                    n_sel_gnt <= (others => '0');
+                end if;
 
-        when fs_headerH =>
-            s_sink_wr <= '1';
-            n_Hpart <= '1';
-            n_state <= fs_headerL;
-        when fs_headerL =>
-            s_read <= (others =>'1');
-            s_sink_wr <= '1';
-            n_state <= fs_idle;
-        when fs_trailer =>
-            s_read <= (others =>'1');
-            s_sink_wr <= '1';
-            n_state <= fs_idle; -- TODO: select next already here
-        when fs_hitH =>
-            if(s_sel_data(48)='0') then --long event, continue with writing E-part
+            when fs_headerH =>
                 s_sink_wr <= '1';
-                n_state <= fs_hitL;
-                n_Tpart <= '1';
-            else
+                n_Hpart <= '1';
+                n_state <= fs_headerL;
+            when fs_headerL =>
+                s_read <= (others =>'1');
+                s_sink_wr <= '1';
+                n_state <= fs_idle;
+            when fs_trailer =>
+                s_read <= (others =>'1');
+                s_sink_wr <= '1';
+                n_state <= fs_idle; -- TODO: select next already here
+            when fs_hitH =>
+                if(s_sel_data(48)='0') then --long event, continue with writing E-part
+                    s_sink_wr <= '1';
+                    n_state <= fs_hitL;
+                    n_Tpart <= '1';
+                else
+                    s_sink_wr <= '1';
+                    s_read <= s_sel_gnt;
+                    n_state <= fs_idle;
+                    if(unsigned(l_request_next) /= 0) then
+                        --n_sel_gnt <= RR_Select(l_request,s_sel_gnt);
+                        n_sel_gnt <= Priority_Select(l_request_next);
+                        n_state <= fs_hitH;
+                    end if;
+                end if;
+            when fs_hitL =>
                 s_sink_wr <= '1';
                 s_read <= s_sel_gnt;
                 n_state <= fs_idle;
@@ -279,17 +295,8 @@ begin
                     n_sel_gnt <= Priority_Select(l_request_next);
                     n_state <= fs_hitH;
                 end if;
-            end if;
-        when fs_hitL =>
-            s_sink_wr <= '1';
-            s_read <= s_sel_gnt;
-            n_state <= fs_idle;
-            if(unsigned(l_request_next) /= 0) then
-                --n_sel_gnt <= RR_Select(l_request,s_sel_gnt);
-                n_sel_gnt <= Priority_Select(l_request_next);
-                n_state <= fs_hitH;
-            end if;
-    end case;
+        end case;
+    end if;
 end process;
 
 p_sync: process(i_coreclk)

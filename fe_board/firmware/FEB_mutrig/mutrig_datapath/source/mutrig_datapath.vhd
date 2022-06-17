@@ -499,7 +499,7 @@ begin
 
         u_mux_fifo : entity work.ip_dcfifo_v2
         generic map (
-            g_ADDR_WIDTH => 8,
+            g_ADDR_WIDTH => 10,
             g_DATA_WIDTH => 34,
             g_WREG_N => 1,
             g_RREG_N => 1--,
@@ -587,7 +587,7 @@ begin
         i_rdata     => s_buf_data(3 downto 0),
         i_sop       => s_buf_sop(3 downto 0),
         i_eop       => s_buf_eop(3 downto 0),
-        i_rempty    => s_buf_empty(3 downto 0),-- or not i_SC_mask(3 downto 0),
+        i_rempty    => s_buf_empty(3 downto 0) or i_SC_mask(3 downto 0),
         o_rack      => s_buf_re(3 downto 0),
 
         -- output stream
