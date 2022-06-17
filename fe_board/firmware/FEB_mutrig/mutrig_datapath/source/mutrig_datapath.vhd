@@ -507,7 +507,7 @@ begin
         port map (
             i_wdata     => s_buf_data(i),
             i_we        => s_buf_we(i),
-            o_wfull     => s_buf_full(i),
+            o_wfull     => s_buf_full(i), -- TODO: we don't look at this at the moment
             i_wclk      => i_clk_125,
 
             o_rdata     => s_buf_q(i),
@@ -584,7 +584,7 @@ begin
     )
     port map (
         -- input stream
-        i_rdata     => s_buf_data(3 downto 0),
+        i_rdata     => s_buf_q(3 downto 0),
         i_sop       => s_buf_sop(3 downto 0),
         i_eop       => s_buf_eop(3 downto 0),
         i_rempty    => s_buf_empty(3 downto 0) or i_SC_mask(3 downto 0),
