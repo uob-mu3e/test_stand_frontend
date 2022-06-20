@@ -53,6 +53,7 @@ port (
     i_SC_rx_wait_for_all        : in  std_logic;
     i_SC_rx_wait_for_all_sticky : in  std_logic;
     i_link_data_reg             : in  std_logic_vector(31 downto 0);
+    o_ch_rate                   : out work.util.slv32_array_t(127 downto 0);
     
     -- run control
     i_RC_may_generate           : in  std_logic; -- do not generate new frames for runstates that are not RUNNING, allows to let fifos run empty
@@ -90,9 +91,7 @@ end entity;
 architecture rtl of mutrig_datapath is
 
     constant N_ASICS_TOTAL : natural := N_MODULES * N_ASICS;
-
-    type t_mask is array (N_ASICS_TOTAL-1 downto 0) of std_logic_vector(N_MODULES*N_ASICS-1 downto 0);
-    signal mask_array : t_mask;
+    constant asicnum : std_logic_vector(4*8-1 downto 0) := x"76543210";
 
     -- TODO: add this to a header file
     subtype t_vector is std_logic_vector(N_ASICS_TOTAL-1 downto 0);
@@ -136,7 +135,7 @@ architecture rtl of mutrig_datapath is
     -- frame data for mux
     signal s_buf_data, s_buf_q : work.util.slv34_array_t(N_ASICS_TOTAL-1 downto 0);
     signal out_fifo_full : std_logic_vector(1 downto 0);
-    signal s_buf_we, s_buf_full, s_buf_re, s_buf_empty, s_buf_sop, s_buf_eop : std_logic_vector(N_ASICS_TOTAL-1 downto 0);
+    signal s_buf_we, s_buf_full, s_buf_re, s_buf_empty, s_buf_sop, s_buf_eop, rempty : std_logic_vector(N_ASICS_TOTAL-1 downto 0);
 
     -- frame collector mux - prbs decoder
     signal s_A_mux_busy, s_B_mux_busy   : std_logic :='0';
@@ -463,38 +462,26 @@ begin
             i_SC_mask           => i_SC_mask_rx(i)
         );
 
-        -- we only go with 4 asics now
-        mask_array(i) <=    "1110" when i = 0 else
-                            "1101" when i = 1 else
-                            "1011" when i = 2 else
-                            "0111" when i = 3 else
-                            "1111";
-
         --use mux for creating format
-        u_mux : entity work.framebuilder_mux
+        u_data_unpacker : entity work.data_unpacker
         generic map( 
-            N_INPUTS => N_ASICS,
-            N_INPUTID_BITS => 4,
-            C_CHANNELNO_PREFIX => C_ASICNO_PREFIX_A--,
+            asicnum      => asicnum((i+1)*4 - 1 downto i*4)--,
         )
         port map(
-            i_coreclk           => i_clk_125,
-            i_rst               => i_rst_core,
-            i_timestamp_clk     => i_clk_125,
-            i_timestamp_rst     => i_ts_rst,
-            --event data inputs interface
-            i_source_data       => s_fifos_data(N_ASICS-1 downto 0),
-            i_source_empty      => s_fifos_empty(N_ASICS-1 downto 0),
-            o_source_rd(i)      => s_fifos_rd(i),
-            --event data output interface to big buffer storage
-            o_sink_data         => s_buf_data(i),
-            i_sink_full         => s_buf_full(i),
-            o_sink_wr           => s_buf_we(i),
-            --monitoring, errors, slow control
-            o_busy              => open,
-            o_sync_error        => open,
-            i_SC_mask           => mask_array(i),
-            i_SC_nomerge        => '0'--,
+            -- event data input
+            i_data       => s_fifos_data(i),
+            i_mask       => i_SC_mask(i),
+            i_rempty     => s_fifos_empty(i),
+            o_ren        => s_fifos_rd(i),
+            
+            -- event data output
+            o_data       => s_buf_data(i),
+            i_wfull      => s_buf_full(i),
+            o_wen        => s_buf_we(i),
+            
+            i_clk        => i_clk_125,
+            i_ts_reset_n => not i_ts_rst,
+            i_reset_n    => not i_rst_core--,
         );
 
         u_mux_fifo : entity work.ip_dcfifo_v2
@@ -507,7 +494,7 @@ begin
         port map (
             i_wdata     => s_buf_data(i),
             i_we        => s_buf_we(i),
-            o_wfull     => s_buf_full(i), -- TODO: we don't look at this at the moment
+            o_wfull     => s_buf_full(i),
             i_wclk      => i_clk_125,
 
             o_rdata     => s_buf_q(i),
@@ -576,6 +563,7 @@ begin
 --        i_SC_nomerge        => '0'--,
 --    );
 
+    rempty(3 downto 0) <= s_buf_empty(3 downto 0) or i_SC_mask(3 downto 0);
     -- round robin between asics
     e_stream_merger : entity work.stream_merger_vector
     generic map (
@@ -587,7 +575,7 @@ begin
         i_rdata     => s_buf_q(3 downto 0),
         i_sop       => s_buf_sop(3 downto 0),
         i_eop       => s_buf_eop(3 downto 0),
-        i_rempty    => s_buf_empty(3 downto 0) or i_SC_mask(3 downto 0),
+        i_rempty    => rempty(3 downto 0),
         o_rack      => s_buf_re(3 downto 0),
 
         -- output stream
@@ -685,16 +673,19 @@ begin
         --"00" & s_A_buf_data(33 downto 21) & CC_corrected_A(14 downto 0) & s_A_buf_data(5 downto 0) when ( s_A_buf_data(33 downto 32) = "00" ) else
         --"00" & s_A_buf_data;
 
---    e_channel_rate_1 : entity work.ch_rate
---    port map(
---        i_hits      => fifo_data(35 downto 0),
---        i_en        => fifo_we(0),
---
---        o_ch_rate   => o_ch_rate,
---
---        i_clk       => i_clk_125,
---        i_reset_n   => i_reset_125_n--,
---    )
+    e_channel_rate_1 : entity work.ch_rate
+    generic map(
+        num_ch => 128
+    )
+    port map(
+        i_hit       => fifo_data(35 downto 0),
+        i_en        => fifo_we(0),
+
+        o_ch_rate   => o_ch_rate,
+
+        i_clk       => i_clk_125,
+        i_reset_n   => i_reset_125_n--,
+    );
 
     e_fifo_out_1 : entity work.ip_dcfifo_v2
     generic map (

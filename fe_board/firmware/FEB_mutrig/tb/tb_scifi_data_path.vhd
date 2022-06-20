@@ -74,10 +74,10 @@ begin
                 --scifi_reg.wdata(11 downto 0)<= "000000000001";
                 --scifi_reg.we                <= '1';
                 -- enable direct link readout
-                scifi_reg.addr(15 downto 0) <= std_logic_vector(to_unsigned(SCIFI_LINK_DATA_REGISTER_W, 16));
-                scifi_reg.wdata(31)         <= '1';
-                scifi_reg.wdata(3 downto 0) <= x"1";
-                scifi_reg.we                <= '1';
+                --scifi_reg.addr(15 downto 0) <= std_logic_vector(to_unsigned(SCIFI_LINK_DATA_REGISTER_W, 16));
+                --scifi_reg.wdata(31)         <= '1';
+                --scifi_reg.wdata(3 downto 0) <= x"1";
+                --scifi_reg.we                <= '1';
                 reset_state                 <= "00001";
                 
             when "00001" =>
@@ -124,7 +124,7 @@ begin
             
             when "00111" =>
                 for i in 0 to N_ASICS_TOTAL-1 loop
-                    i_simdata((i+1)*8-1 downto i*8) <= x"50";
+                    i_simdata((i+1)*8-1 downto i*8) <= x"90"; -- x"50" is short mode
                     i_simdatak(i) <= '0';
                 end loop;
                 reset_state <= "01000";
