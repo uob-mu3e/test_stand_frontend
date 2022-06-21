@@ -27,18 +27,36 @@ port (
     clk_125_bottom              : in    std_logic; -- 125 Mhz clock spare // SI5345
     spare_clk_osc               : in    std_logic; -- Spare clock // 50 MHz oscillator
 
-    -- tile DAB signals
-    tile_din                    : in    std_logic_vector(13 downto 1);
-    tile_pll_test               : out   std_logic;
-    tile_chip_reset             : out   std_logic;
-    tile_i2c_sda                : inout std_logic;
-    tile_i2c_scl                : inout std_logic;
-    tile_cec                    : in    std_logic;
-    tile_spi_miso               : in    std_logic;
-    tile_i2c_int                : in    std_logic;
-    tile_pll_reset              : out   std_logic;
-    tile_spi_scl                : out   std_logic;
-    tile_spi_mosi               : out   std_logic;
+    -- Tile DAB signals for FEB connector #3  / Inner Ring on SSW
+    tileA_din                    : in    std_logic_vector(13 downto 1);
+    tileA_pll_test               : out   std_logic; -- test pulse injection
+    tileA_pll_reset              : out   std_logic; -- main reset (synchronisation and ASIC state machines)
+    --SPI interface for ASICs
+    tileA_spi_sclk_n             : out   std_logic; --spare out is inverted on CON2 of FEB, the equivalent net on CON2 is not.
+    tileA_spi_mosi_n             : out   std_logic;
+    tileA_spi_miso_n             : in    std_logic;
+    --I2C interface for TMB control/monitoring
+    tileA_i2c_sda_io             : inout std_logic;
+    tileA_i2c_scl_io             : inout std_logic;
+
+    -- Tile DAB signals for FEB connector #2  / Outer Ring on SSW
+    tileB_din                    : in    std_logic_vector(13 downto 1);
+    tileB_pll_test               : out   std_logic; -- test pulse injection
+    tileB_pll_reset              : out   std_logic; -- main reset (synchronisation and ASIC state machines)
+    --SPI interface for ASICs
+    tileB_spi_sclk               : out   std_logic;
+    tileB_spi_mosi_n             : out   std_logic;
+    tileB_spi_miso_n             : in    std_logic;
+    --I2C interface for TMB control/monitoring
+    tileB_i2c_sda_io             : inout std_logic;
+    tileB_i2c_scl_io             : inout std_logic;
+
+
+    --DEPRECATED signals
+--    tile_i2c_int                : in    std_logic;
+--    tile_chip_reset             : out   std_logic;
+
+
 
     -- Fireflies
     firefly1_tx_data            : out   std_logic_vector(3 downto 0); -- transceiver
@@ -106,12 +124,24 @@ end top;
 
 architecture rtl of top is
 
+
+    -- non-inverted io signals
+    signal tileA_spi_mosi           : std_logic;
+    signal tileB_spi_mosi           : std_logic;
+    signal tileA_spi_miso           : std_logic;
+    signal tileB_spi_miso           : std_logic;
+
+    -- clocks & resets
+    signal clk_125, reset_125_n     : std_logic;
+    signal clk_156, reset_156_n     : std_logic;
+
     -- Debouncers
     signal pb_db                    : std_logic_vector(1 downto 0);
 
     constant N_LINKS                : integer := 1;
     constant N_ASICS                : integer := 13;
     constant N_MODULES              : integer := 1;
+    constant IS_TILE_B              : boolean := false;
 
     signal fifo_write               : std_logic_vector(N_LINKS-1 downto 0);
     signal fifo_wdata               : std_logic_vector(36*(N_LINKS-1)+35 downto 0);
@@ -124,45 +154,144 @@ architecture rtl of top is
     signal s_run_state_all_done     : std_logic;
     signal s_MON_rxrdy              : std_logic_vector(N_MODULES*N_ASICS-1 downto 0);
 
+    -- TMB interface / internal signals after selecting connector
+    signal tile_pll_test               : std_logic; -- test pulse injection
+    signal tile_pll_reset              : std_logic_vector(0 downto 0); -- main reset (synchronisation and ASIC state machines)
+    signal tile_pll_reset_shifted      : std_logic_vector(0 downto 0);
+	 
+    --SPI interface for ASICs
+    signal tile_spi_sclk               : std_logic;
+    signal tile_spi_mosi               : std_logic;
+    signal tile_spi_miso               : std_logic;
+
+    -- tile_din cannot be a signal just for the selected connector since we need all 26 inputs to go to the same rx_block
+    signal tile_din                    : std_logic_vector(12 downto 0);
+
     -- i2c interface (fe_block to io buffers)
-    signal i2c_scl, i2c_scl_oe, i2c_sda, i2c_sda_oe : std_logic;
+    signal tileA_i2c_scl, tileA_i2c_scl_oe, tileA_i2c_sda, tileA_i2c_sda_oe : std_logic;
+    signal tileB_i2c_scl, tileB_i2c_scl_oe, tileB_i2c_sda, tileB_i2c_sda_oe : std_logic;
+    signal tile_i2c_scl_oe, tile_i2c_sda_oe : std_logic;
 
     -- spi multiplexing
-    signal tmb_miso : std_logic;
     signal tmb_ss_n : std_logic_vector(15 downto 0);
 begin
+
+    -- io inversions:
+    tileA_spi_mosi_n <= not tileA_spi_mosi;
+    tileB_spi_mosi_n <= not tileB_spi_mosi;
+    tileA_spi_miso <= not tileA_spi_miso_n;
+    tileB_spi_miso <= not tileB_spi_miso_n;
+
+
+
+
+    e_reset_125_n : entity work.reset_sync
+    port map ( o_reset_n => reset_125_n, i_reset_n => pb_db(0), i_clk => clk_125 );
+
+    clk_156 <= transceiver_pll_clock(0);
+
+    e_reset_156_n : entity work.reset_sync
+    port map ( o_reset_n => reset_156_n, i_reset_n => pb_db(0), i_clk => clk_156 );
+
+
 
 --------------------------------------------------------------------
 --------------------------------------------------------------------
 ----TILE SUB-DETECTOR FIRMWARE -------------------------------------
 --------------------------------------------------------------------
 --------------------------------------------------------------------
-
 -- IO buffers for I2C
-    iobuf_sda: entity work.ip_iobuf
+    iobuf_tileA_sda: entity work.ip_iobuf
     port map(
         datain(0)   => '0',
-        oe(0)       => i2c_sda_oe,
-        dataout(0)  => i2c_sda,
-        dataio(0)   => tile_i2c_sda--,
+        oe(0)       => tileA_i2c_sda_oe,
+        dataout(0)  => tileA_i2c_sda,
+        dataio(0)   => tileA_i2c_sda_io
     );
 
-    iobuf_scl: entity work.ip_iobuf
+    iobuf_tileA_scl: entity work.ip_iobuf
     port map(
         datain(0)   => '0',
-        oe(0)       => i2c_scl_oe,
-        dataout(0)  => i2c_scl,
-        dataio(0)   => tile_i2c_scl--,
+        oe(0)       => tileA_i2c_scl_oe,
+        dataout(0)  => tileA_i2c_scl,
+        dataio(0)   => tileA_i2c_scl_io--,
     );
 
+    iobuf_tileB_sda: entity work.ip_iobuf
+    port map(
+        datain(0)   => '0',
+        oe(0)       => tileB_i2c_sda_oe,
+        dataout(0)  => tileB_i2c_sda,
+        dataio(0)   => tileB_i2c_sda_io
+    );
+
+    iobuf_tileB_scl: entity work.ip_iobuf
+    port map(
+        datain(0)   => '0',
+        oe(0)       => tileB_i2c_scl_oe,
+        dataout(0)  => tileB_i2c_scl,
+        dataio(0)   => tileB_i2c_scl_io--,
+    );
+
+    
+-- Selection of connector.
+    g_DAB_interconnect_A: if IS_TILE_B=false generate
+        tile_din         <= tileA_din(13 downto 1);
+        tileA_pll_test   <= tile_pll_test;
+        tileA_pll_reset  <= tile_pll_reset_shifted(0);
+        tileA_spi_sclk_n <= not tile_spi_sclk;
+        tileA_spi_mosi   <= tile_spi_mosi;
+        tile_spi_miso    <= tileA_spi_miso;
+
+        tileA_i2c_scl_oe <= tile_i2c_scl_oe;
+        tileA_i2c_sda_oe <= tile_i2c_sda_oe;
+
+        tileB_pll_test   <= '0';
+        tileB_pll_reset  <= '0';
+        tileB_spi_sclk   <= '0';
+        tileB_spi_mosi   <= '0';
+
+        tileB_i2c_scl_oe <= '0';
+        tileB_i2c_sda_oe <= '0';
+    end generate;
+    g_DAB_interconnect_B: if IS_TILE_B=true generate
+        tile_din         <= tileB_din(13 downto 1);
+        tileB_pll_test   <= tile_pll_test;
+        tileB_pll_reset  <= tile_pll_reset_shifted(0);
+        tileB_spi_sclk   <= tile_spi_sclk;
+        tileB_spi_mosi   <= tile_spi_mosi;
+        tile_spi_miso    <= tileB_spi_miso;
+
+        tileB_i2c_scl_oe <= tile_i2c_scl_oe;
+        tileB_i2c_sda_oe <= tile_i2c_sda_oe;
+
+        tileA_pll_test   <= '0';
+        tileA_pll_reset  <= '0';
+        tileA_spi_sclk_n <= '1';
+        tileA_spi_mosi   <= '0';
+
+        tileA_i2c_scl_oe <= '0';
+        tileA_i2c_sda_oe <= '0';
+    end generate;
+
+-- Fast reset io/phase shifting
+--ip_altiobuf_reset_inst : ip_altiobuf_reset
+--port map(
+--	datain => tile_pll_reset,
+--	io_config_clk => spare_clk_osc,
+--	io_config_clkena => "1",
+--	io_config_datain => '1',
+--	io_config_update  => '1',
+--	dataout => tile_pll_reset_shifted--,
+--	--dataout_b 
+--	);
+tile_pll_reset_shifted<= tile_pll_reset;
+	 
 
 
-    -- SPI input multiplexing (CEC / configuration)
-    -- only input multiplexing is done here, the rest is done on the TMB
-    -- "not" for polarity flip on DAB PCB
-    tmb_miso <=
-        not tile_cec      when tmb_ss_n(1)='0' else
-        not tile_spi_miso; --when tmb_ss_n(0)='0' else
+
+-- SPI input multiplexing (CEC / configuration)
+-- only input multiplexing is done here, the rest is done on the TMB
 
 -- main datapath
     e_tile_path : entity work.tile_path
@@ -170,6 +299,8 @@ begin
         N_MODULES       => N_MODULES,
         N_ASICS         => N_ASICS,
         N_LINKS         => N_LINKS,
+        N_INPUTSRX      => 13,
+        IS_TILE_B       => IS_TILE_B,
         INPUT_SIGNFLIP  => x"0000"&"0001111110000001",
         LVDS_PLL_FREQ   => 125.0,
         LVDS_DATA_RATE  => 1250.0--,
@@ -181,12 +312,12 @@ begin
         i_reg_we                    => malibu_reg.we,
         i_reg_wdata                 => malibu_reg.wdata,
 
-        o_chip_reset                => tile_chip_reset,
+        o_chip_reset                => open, --tile_chip_reset, --deprecated
         o_pll_test                  => tile_pll_test,
         i_data                      => tile_din,
 
-        i_i2c_int                   => tile_i2c_int,
-        o_pll_reset                 => tile_pll_reset,
+        i_i2c_int                   => '1', -- tile_i2c_int, --deprecated
+        o_pll_reset                 => tile_pll_reset(0),
 
         o_fifo_write                => fifo_write,
         o_fifo_wdata                => fifo_wdata,
@@ -204,6 +335,8 @@ begin
         i_clk_ref_B                 => LVDS_clk_si1_fpga_B,
 
         o_test_led                  => lcd_data(4),
+        i_reset_125_n               => reset_125_n,
+        i_reset_156_n               => reset_156_n,
         i_reset                     => not pb_db(0)--,
     );
 
@@ -244,15 +377,15 @@ begin
         i_ffly_Int_n        => Firefly_Int_n,
         i_ffly_ModPrs_n     => Firefly_ModPrs_n,
 
-        i_spi_miso          => tmb_miso,
+        i_spi_miso          => tile_spi_miso,
         o_spi_mosi          => tile_spi_mosi,
-        o_spi_sclk          => tile_spi_scl,
+        o_spi_sclk          => tile_spi_sclk,
         o_spi_ss_n          => tmb_ss_n,
 
-        i_i2c_scl           => i2c_scl,
-        o_i2c_scl_oe        => i2c_scl_oe,
-        i_i2c_sda           => i2c_sda,
-        o_i2c_sda_oe        => i2c_sda_oe,
+        i_i2c_scl           => tileA_i2c_scl,
+        o_i2c_scl_oe        => tile_i2c_scl_oe,
+        i_i2c_sda           => tileA_i2c_sda,
+        o_i2c_sda_oe        => tile_i2c_sda_oe,
 
         i_spi_si_miso       => si45_spi_out,
         o_spi_si_mosi       => si45_spi_in,

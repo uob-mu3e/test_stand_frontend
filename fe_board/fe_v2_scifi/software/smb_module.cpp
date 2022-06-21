@@ -100,7 +100,12 @@ using namespace mu3e::daq::feb;
 //TODO: add list&document in specbook
 alt_u16 SMB_t::sc_callback(alt_u16 cmd, volatile alt_u32* data, alt_u16 n) {
     alt_u16 status=FEB_REPLY_SUCCESS;
-    switch (cmd){
+    alt_u16 asic = cmd & 0x000F;
+    switch (cmd & 0xFFF0){
+        case CMD_MUTRIG_ASIC_CFG:
+	    return configure_asic(asic, (alt_u8*)data);
+            break;
+
         case CMD_MUTRIG_ASIC_OFF:
             for(alt_u8 asic = 0; asic < 8; asic++){
                 if(sc_callback(CMD_MUTRIG_ASIC_CFG | asic, (alt_u32*) config_ALL_OFF, 0) == FEB_REPLY_ERROR)
@@ -108,27 +113,24 @@ alt_u16 SMB_t::sc_callback(alt_u16 cmd, volatile alt_u32* data, alt_u16 n) {
             }
             return status;
             break;
+
         case CMD_MUTRIG_CNT_READ:
             return store_counters(data);
             break;
+
         case CMD_MUTRIG_CNT_RESET:
             reset_counters();
             break;
+
         case CMD_MUTRIG_SKEW_RESET:
             for(int i=0;i<8;i++)
                 RSTSKWctrl_Set(i,data[i]);
             break;
+
         default:
-            if((cmd & 0xFFF0) == CMD_MUTRIG_ASIC_CFG) {
-                int asic = cmd & 0x000F;
-                return configure_asic(asic, (alt_u8*)data);
-            }
-            else {
-                //printf("[sc_callback] unknown command: 0x%X\n", cmd);
-                //Commented out for headless
-                return FEB_REPLY_ERROR;
-            }
-            break;
+            //printf("[sc_callback] unknown command: 0x%X\n", cmd);
+            //Commented out for headless
+            return FEB_REPLY_ERROR;
     }
     return 0;
 }

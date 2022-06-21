@@ -9,6 +9,8 @@ generic (
     N_MODULES : positive;
     N_ASICS : positive;
     N_LINKS : positive;
+    N_INPUTSRX : positive := 13;
+    IS_TILE_B : boolean := false;
     N_CC : positive := 15; -- will be always 15
     INPUT_SIGNFLIP : std_logic_vector := (31 downto 0 => '0');
     LVDS_PLL_FREQ : real;
@@ -25,7 +27,7 @@ port (
     -- to detector module
     o_chip_reset    : out   std_logic;
     o_pll_test      : out   std_logic;
-    i_data          : in    std_logic_vector(N_MODULES*N_ASICS-1 downto 0);
+    i_data          : in    std_logic_vector(N_INPUTSRX-1 downto 0);
     i_i2c_int       : in    std_logic;
     o_pll_reset     : out   std_logic;
 
@@ -49,7 +51,9 @@ port (
     i_clk_g125      : in    std_logic; -- global 125 MHz clock, signals to ASIC from this
 
     o_test_led      : out   std_logic;
-    i_reset         : in    std_logic--;
+    i_reset         : in    std_logic;
+    i_reset_125_n   : in    std_logic;
+    i_reset_156_n   : in    std_logic--;
 );
 end entity;
 
@@ -65,6 +69,9 @@ architecture arch of tile_path is
     signal buffer_full : std_logic_vector(1 downto 0);
 
     -- counters
+    signal s_fifos_full                 : std_logic_vector(N_MODULES*N_ASICS-1 downto 0);
+    signal s_counters                   : work.util.slv32_array_t(10 * N_MODULES*N_ASICS-1 downto 0);
+
     signal s_cntreg_ctrl : std_logic_vector(31 downto 0);
     signal s_cntreg_num_g, s_cntreg_num : std_logic_vector(31 downto 0);
     signal s_cntreg_denom_g, s_cntreg_denom_g_156 : std_logic_vector(63 downto 0);
@@ -78,8 +85,8 @@ architecture arch of tile_path is
     signal s_subdet_resetdly_reg_written : std_logic;
 
     -- reset synchronizers
-    signal s_datapath_rst,s_datapath_rst_n_156 : std_logic;
-    signal s_lvds_rx_rst, s_lvds_rx_rst_n_125 : std_logic;
+    signal s_datapath_rst,s_datapath_rst_n : std_logic;
+    signal s_lvds_rx_rst, s_lvds_rx_rst_n : std_logic;
 
     -- chip reset synchronization/shift
     signal s_chip_rst : std_logic;
@@ -88,6 +95,7 @@ architecture arch of tile_path is
     -- lapse counter
     signal s_en_lapse_counter : std_logic;
     signal s_upper_bnd, s_lower_bnd : std_logic_vector(N_CC - 1 downto 0);
+    signal ctrl_lapse_counter_reg       : std_logic_vector(31 downto 0);
 
     signal iram         : work.util.rw_t;
     signal scitile_regs : work.util.rw_t;
@@ -111,7 +119,7 @@ begin
       )
       port map (
         i_clk          => i_clk_core,
-        i_reset_n      => not i_reset,
+        i_reset_n      => i_reset_156_n,
 
         i_master_addr  => i_reg_addr,
         i_master_re    => i_reg_re,
@@ -140,7 +148,7 @@ begin
     )
     port map (
         i_clk                       => i_clk_core,
-        i_reset_n                   => not i_reset,
+        i_reset_n                   => i_reset_156_n,
         
         i_receivers_usrclk          => s_receivers_usrclk,
 
@@ -194,9 +202,9 @@ begin
     s_lvds_rx_rst <= i_reset or s_subdet_reset_reg(2)  or i_run_state(RUN_STATE_BITPOS_RESET);
 
     rst_sync_dprst : entity work.reset_sync
-    port map( i_reset_n => not s_datapath_rst, o_reset_n => s_datapath_rst_n_156, i_clk => i_clk_core);
+    port map( i_reset_n => not s_datapath_rst, o_reset_n => s_datapath_rst_n, i_clk => i_clk_g125);
     rst_sync_lvdsrst : entity work.reset_sync
-    port map( i_reset_n => not s_lvds_rx_rst, o_reset_n => s_lvds_rx_rst_n_125, i_clk => i_clk_g125);
+    port map( i_reset_n => not s_lvds_rx_rst, o_reset_n => s_lvds_rx_rst_n, i_clk => i_clk_g125);
 
 
 --    u_resetshift: entity work.clockalign_block
@@ -222,60 +230,64 @@ begin
     e_mutrig_datapath : entity work.mutrig_datapath
     generic map (
         N_MODULES => N_MODULES,
+        N_INPUTSRX => N_INPUTSRX,
         N_ASICS => N_ASICS,
         N_LINKS => N_LINKS,
-        N_CC => N_CC,
+        IS_TILE_B => IS_TILE_B,
+        N_CC => 15,
         LVDS_PLL_FREQ => LVDS_PLL_FREQ,
         LVDS_DATA_RATE => LVDS_DATA_RATE,
         INPUT_SIGNFLIP => INPUT_SIGNFLIP,
-        C_CHANNELNO_PREFIX_A => "00",
-        C_CHANNELNO_PREFIX_B => "01"--,
+        GEN_DUMMIES => TRUE,
+        C_ASICNO_PREFIX_A => "00",
+        C_ASICNO_PREFIX_b => "01"--,
     )
     port map (
-        i_rst_core => not s_datapath_rst_n_156,
-        i_rst_rx => not s_lvds_rx_rst_n_125,
-        i_stic_txd => i_data,
-        i_refclk_125_A => i_clk_ref_A,
-        i_refclk_125_B => i_clk_ref_B,
-        i_ts_clk => i_clk_g125,
-        i_ts_rst => i_run_state(RUN_STATE_BITPOS_SYNC),
+        i_rst_core      => not s_datapath_rst_n,
+        i_rst_rx        => not s_lvds_rx_rst_n,
+        i_stic_txd      => i_data,
+        i_refclk_125_A  => i_clk_ref_A,
+        i_refclk_125_B  => i_clk_ref_B,
+        i_ts_clk        => i_clk_g125,
+        i_ts_rst        => i_run_state(RUN_STATE_BITPOS_SYNC),
 
         -- interface to asic fifos
-        i_clk_core => i_clk_core,
-        o_fifo_data => o_fifo_wdata,
-        o_fifo_wr => o_fifo_write,
+        o_fifo_data     => o_fifo_wdata,
+        o_fifo_wr       => o_fifo_write,
+
         i_common_fifos_almost_full => i_common_fifos_almost_full,
 
         -- slow control
-        i_SC_disable_dec => s_dpctrl_reg(31),
-        i_SC_rx_wait_for_all => s_dpctrl_reg(30),
+        i_SC_disable_dec            => s_dpctrl_reg(31),
+        i_SC_rx_wait_for_all        => s_dpctrl_reg(30),
         i_SC_rx_wait_for_all_sticky => s_dpctrl_reg(29),
-        i_SC_mask => s_dpctrl_reg(N_MODULES*N_ASICS-1 downto 0),
-        i_SC_datagen_enable => s_dummyctrl_reg(1),
-        i_SC_datagen_shortmode => s_dummyctrl_reg(2),
-        i_SC_datagen_count => s_dummyctrl_reg(12 downto 3),
-        
-        --run control
-        i_RC_may_generate => i_run_state(RUN_STATE_BITPOS_RUNNING),
-        o_RC_all_done => o_run_state_all_done,
+        i_SC_mask                   => s_dpctrl_reg(N_MODULES*N_ASICS-1 downto 0),
+        i_SC_mask_rx                => s_dpctrl_reg(N_MODULES*N_ASICS-1 downto 0),
+        i_SC_datagen_enable         => s_dummyctrl_reg(1),
+        i_SC_datagen_shortmode      => s_dummyctrl_reg(2),
+        i_SC_datagen_count          => s_dummyctrl_reg(12 downto 3),
 
-        -- lapse lapse counter
-        i_en_lapse_counter => s_en_lapse_counter,
-        i_lower_bnd => s_lower_bnd,
-        i_upper_bnd => s_upper_bnd,
+        -- run control
+        i_RC_may_generate           => i_run_state(RUN_STATE_BITPOS_RUNNING),
+        o_RC_all_done               => o_run_state_all_done,
+        i_en_lapse_counter          => ctrl_lapse_counter_reg(31),
+        i_upper_bnd                 => ctrl_lapse_counter_reg(14 downto 0),
+        i_lower_bnd                 => ctrl_lapse_counter_reg(29 downto 15),
 
         -- monitors
-        o_receivers_usrclk => s_receivers_usrclk,
-        o_receivers_pll_lock => rx_pll_lock,
-        o_receivers_dpa_lock => rx_dpa_lock,
-        o_receivers_ready => rx_ready,
-        o_frame_desync => frame_desync,
+        o_receivers_pll_lock        => rx_pll_lock,
+        o_receivers_dpa_lock        => rx_dpa_lock,
+        o_receivers_ready           => rx_ready,
+        o_frame_desync              => frame_desync,
 
-        i_SC_reset_counters => s_cntreg_ctrl(15),
-        i_SC_counterselect => s_cntreg_ctrl(6 downto 0),
-        o_counter_numerator => s_cntreg_num_g,
-        o_counter_denominator_low => s_cntreg_denom_g(31 downto 0),
-        o_counter_denominator_high => s_cntreg_denom_g(63 downto 32)
+        i_SC_reset_counters         => s_cntreg_ctrl(15),
+        o_fifos_full                => s_fifos_full,
+        o_counters                  => s_counters,
+
+        i_reset_156_n               => i_reset_156_n,
+        i_clk_156                   => i_clk_core,
+        i_reset_125_n               => i_reset_125_n,
+        i_clk_125                   => i_clk_g125--,
     );
 
     o_MON_rxrdy <= rx_ready;
