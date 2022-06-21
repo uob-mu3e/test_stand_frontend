@@ -227,7 +227,7 @@ begin
 
     -- 0.1 kHz for PLL test
     e_test_pulse_0_1 : entity work.clkdiv
-    generic map ( P => 1250000 )
+    generic map ( P => 625 )
     port map ( o_clk => s_testpulse(3), i_reset_n => i_reset_125_n, i_clk => i_clk_125 );
 
     -- MUX for output testpulse

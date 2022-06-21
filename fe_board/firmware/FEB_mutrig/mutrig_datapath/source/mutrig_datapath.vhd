@@ -473,12 +473,12 @@ begin
             i_mask       => i_SC_mask(i),
             i_rempty     => s_fifos_empty(i),
             o_ren        => s_fifos_rd(i),
-            
+
             -- event data output
             o_data       => s_buf_data(i),
             i_wfull      => s_buf_full(i),
             o_wen        => s_buf_we(i),
-            
+
             i_clk        => i_clk_125,
             i_ts_reset_n => not i_ts_rst,
             i_reset_n    => not i_rst_core--,

@@ -22,6 +22,7 @@ set_global_assignment -name VHDL_FILE [file join $::quartus(qip_path) "mutrig_st
 set_global_assignment -name VHDL_FILE [file join $::quartus(qip_path) "mutrig_store/mutrig_store.vhd"]
 set_global_assignment -name VHDL_FILE [file join $::quartus(qip_path) "framebuilder_mux/framebuilder_mux.vhd"]
 set_global_assignment -name VHDL_FILE [file join $::quartus(qip_path) "framebuilder_mux/framebuilder_mux_v2.vhd"]
+set_global_assignment -name VHDL_FILE [file join $::quartus(qip_path) "framebuilder_mux/data_unpacker.vhd"]
 set_global_assignment -name VHDL_FILE [file join $::quartus(qip_path) "prbs_dec/source/prbs_decoder.vhd"]
 set_global_assignment -name VHDL_FILE [file join $::quartus(qip_path) "mutrig_datapath/source/mutrig_datapath.vhd"]
 set_global_assignment -name VHDL_FILE [file join $::quartus(qip_path) "mutrig_datapath/source/ch_rate.vhd"]

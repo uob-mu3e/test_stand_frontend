@@ -27,7 +27,7 @@ port (
     o_ren        : out std_logic;
 
     -- event data output, asic number appended
-    o_data	     : out std_logic_vector(33 downto 0);
+    o_data       : out std_logic_vector(33 downto 0);
     i_wfull      : in  std_logic;
     o_wen        : out std_logic;
 
@@ -79,7 +79,7 @@ begin
     --! generate write signal
     o_wen <=    '1'  when rd_state = HEADER or rd_state = T1 or rd_state = TRAILER or rd_state = HIT else
                 '0';
-    
+
     o_ren <=    -- read when when we are in state T1 or TRAILER
                 '1' when rd_state = T1 or rd_state = TRAILER else
                 -- read from inputs until we have a header
@@ -112,8 +112,9 @@ begin
     h_hit(31 downto 28) <= asicnum;                                         --asic number
     h_hit(27)           <= Epart;                                           -- type (0=TPART, 1=EPART)
     h_hit(26 downto 22) <= i_data(47 downto 43);                            -- event data: chnum
-    h_hit(21 downto 0)  <= i_data(42 downto 21)             when i_data(48) = '1' else  --T event data: ttime, eflag - short event
-                           i_data(20 downto 0) & i_data(21) when Epart = '1' else       --E event data: etime, eflag(redun) - long event
+    h_hit(21 downto 0)  <= i_data(42 downto 21)                 when i_data(48) = '1' else  --T event data: ttime, eflag        - short event
+                           i_data(42 downto 21)                 when Epart = '0' else       --T event data: etime, eflag(redun) - long event
+                           i_data(20 downto 0) & i_data(21)     when Epart = '1' else       --E event data: etime, eflag(redun) - long event
                            (others => '0');
 
      --! output data word
@@ -121,7 +122,7 @@ begin
                 h_t1        when rd_state = T1 else
                 h_trailer   when rd_state = TRAILER else
                 h_hit;
-    
+
     --! memory of readout state
     process(i_clk, i_reset_n)
     begin
@@ -130,7 +131,7 @@ begin
         Epart           <= '0';
         --
     elsif rising_edge(i_clk) then
-        
+
         -- remember last state
         if ( rd_state /= WAITING ) then
             rd_state_last <= rd_state;
