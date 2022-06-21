@@ -49,3 +49,308 @@
 11:47:23.942 2022/06/17 [mhttpd,LOG] Program mhttpd on host localhost stopped
 11:47:23.962 2022/06/17 [Logger,LOG] Program Logger on host localhost stopped
 11:47:23.962 2022/06/17 [Sequencer,LOG] Program Sequencer on host localhost stopped
+12:54:51.986 2022/06/17 [Logger,LOG] Program Logger on host localhost started
+12:54:51.990 2022/06/17 [mhttpd,LOG] Program mhttpd on host localhost started
+12:54:51.996 2022/06/17 [Logger,INFO] Equipment "ArduinoTestStation" history is enabled, but there are no Variables in ODB
+12:54:52.007 2022/06/17 [Sequencer,LOG] Program Sequencer on host localhost started
+12:54:52.525 2022/06/17 [Temperature and humidity,LOG] Program Temperature and humidity on host localhost started
+12:55:17.627 2022/06/17 [Temperature and humidity,LOG] Program Temperature and humidity on host localhost stopped
+12:55:17.750 2022/06/17 [Sequencer,LOG] Program Sequencer on host localhost stopped
+12:55:17.771 2022/06/17 [Logger,LOG] Program Logger on host localhost stopped
+12:55:17.813 2022/06/17 [mhttpd,LOG] Program mhttpd on host localhost stopped
+12:57:22.584 2022/06/17 [Logger,LOG] Program Logger on host localhost started
+12:57:22.589 2022/06/17 [mhttpd,LOG] Program mhttpd on host localhost started
+12:57:22.592 2022/06/17 [Logger,INFO] Equipment "ArduinoTestStation" history is enabled, but there are no Variables in ODB
+12:57:22.608 2022/06/17 [Sequencer,LOG] Program Sequencer on host localhost started
+12:57:23.124 2022/06/17 [Temperature and humidity,LOG] Program Temperature and humidity on host localhost started
+12:57:55.641 2022/06/17 [Temperature and humidity,LOG] Program Temperature and humidity on host localhost stopped
+12:57:55.755 2022/06/17 [Logger,LOG] Program Logger on host localhost stopped
+12:57:55.775 2022/06/17 [Sequencer,LOG] Program Sequencer on host localhost stopped
+12:57:55.823 2022/06/17 [mhttpd,LOG] Program mhttpd on host localhost stopped
+13:07:52.977 2022/06/17 [Logger,LOG] Program Logger on host localhost started
+13:07:52.977 2022/06/17 [mhttpd,LOG] Program mhttpd on host localhost started
+13:07:52.988 2022/06/17 [Sequencer,LOG] Program Sequencer on host localhost started
+13:07:53.184 2022/06/17 [Logger,INFO] Equipment "ArduinoTestStation" history is enabled, but there are no Variables in ODB
+13:07:53.541 2022/06/17 [Temperature and humidity,LOG] Program Temperature and humidity on host localhost started
+13:11:10.668 2022/06/17 [Temperature and humidity,LOG] Program Temperature and humidity on host localhost stopped
+13:11:11.353 2022/06/17 [mhttpd,LOG] Program mhttpd on host localhost stopped
+13:11:11.374 2022/06/17 [Sequencer,LOG] Program Sequencer on host localhost stopped
+13:11:11.586 2022/06/17 [Logger,LOG] Program Logger on host localhost stopped
+13:21:19.581 2022/06/17 [mhttpd,LOG] Program mhttpd on host localhost started
+13:21:19.616 2022/06/17 [mhttpd,ERROR] [mhttpd.cxx:15688:mongoose_listen,ERROR] Cannot mg_bind address "localhost:8080"
+13:21:19.618 2022/06/17 [mhttpd,ERROR] [mhttpd.cxx:15878:mongoose_init,ERROR] Failed to listen on a TCP port enabled in ODB /WebServer
+13:21:19.620 2022/06/17 [mhttpd,LOG] Program mhttpd on host localhost stopped
+13:21:53.667 2022/06/17 [mhttpd,LOG] Program mhttpd on host localhost started
+13:22:07.781 2022/06/17 [mhttpd,LOG] Program mhttpd on host localhost stopped
+13:22:10.041 2022/06/17 [Logger,LOG] Program Logger on host localhost started
+13:22:10.072 2022/06/17 [Logger,INFO] Equipment "ArduinoTestStation" history is enabled, but there are no Variables in ODB
+13:22:17.388 2022/06/17 [Logger,LOG] Program Logger on host localhost stopped
+13:22:21.225 2022/06/17 [Logger,LOG] Program Logger on host localhost started
+13:22:21.234 2022/06/17 [Logger,INFO] Equipment "ArduinoTestStation" history is enabled, but there are no Variables in ODB
+13:22:26.275 2022/06/17 [mhttpd,LOG] Program mhttpd on host localhost started
+13:22:32.508 2022/06/17 [mhist,ERROR] [midas.cxx:2176:cm_check_connect,ERROR] cm_disconnect_experiment not called at end of program
+13:22:33.358 2022/06/17 [Logger,INFO] Client 'mhist' on buffer 'SYSMSG' removed by cm_periodic_tasks because process pid 1510 does not exist
+13:22:33.359 2022/06/17 [Logger,INFO] Client 'mhist' on database 'ODB' pid 1510 does not exist and db_cleanup called by cm_periodic_tasks removed it
+13:22:46.030 2022/06/17 [Temperature and humidity,LOG] Program Temperature and humidity on host localhost started
+13:22:59.220 2022/06/17 [Temperature and humidity,LOG] Program Temperature and humidity on host localhost stopped
+13:30:16.799 2022/06/17 [mhttpd,LOG] Program mhttpd on host localhost stopped
+13:30:20.794 2022/06/17 [Logger,LOG] Program Logger on host localhost stopped
+13:32:13.139 2022/06/17 [mhttpd,LOG] Program mhttpd on host localhost started
+13:32:16.169 2022/06/17 [Logger,LOG] Program Logger on host localhost started
+13:32:16.188 2022/06/17 [Logger,INFO] Equipment "ArduinoTestStation" history is enabled, but there are no Variables in ODB
+13:32:19.501 2022/06/17 [Logger,LOG] Program Logger on host localhost stopped
+13:32:22.899 2022/06/17 [Logger,LOG] Program Logger on host localhost started
+13:32:22.919 2022/06/17 [Logger,INFO] Equipment "ArduinoTestStation" history is enabled, but there are no Variables in ODB
+13:32:25.371 2022/06/17 [mhist,ERROR] [midas.cxx:2342:cm_check_connect,ERROR] cm_disconnect_experiment not called at end of program
+13:32:26.026 2022/06/17 [Logger,INFO] Client 'mhist' on buffer 'SYSMSG' removed by cm_periodic_tasks because process pid 5215 does not exist
+13:32:26.028 2022/06/17 [Logger,INFO] Client 'mhist' on database 'ODB' removed by db_cleanup called by cm_periodic_tasks because pid 5215 does not exist
+13:33:04.682 2022/06/17 [Temperature and humidity,LOG] Program Temperature and humidity on host localhost started
+13:33:27.822 2022/06/17 [Logger,INFO] Equipment "ArduinoTestStation" history is enabled, but there are no Variables in ODB
+13:33:28.039 2022/06/17 [mhttpd,ERROR] [system.cxx:5036:recv_tcp2,ERROR] unexpected connection closure
+13:33:28.040 2022/06/17 [mhttpd,ERROR] [system.cxx:5090:ss_recv_net_command,ERROR] error receiving network command header, see messages
+13:33:28.041 2022/06/17 [mhttpd,ERROR] [midas.cxx:12966:rpc_client_call,ERROR] call to "Temperature and humidity" on "localhost" RPC "rc_transition": error, ss_recv_net_command() status 411
+13:33:28.043 2022/06/17 [mhttpd,ERROR] [midas.cxx:11560:rpc_client_connect,ERROR] cannot connect to host "localhost", port 46442: connect() returned -1, errno 111 (Connection refused)
+13:33:28.044 2022/06/17 [mhttpd,ERROR] [midas.cxx:7120:cm_shutdown,ERROR] Cannot connect to client 'Temperature and humidity' on host 'localhost', port 46442
+13:33:28.045 2022/06/17 [mhttpd,ERROR] [midas.cxx:7123:cm_shutdown,ERROR] Killing and Deleting client 'Temperature and humidity' pid 5553
+13:33:28.048 2022/06/17 [mhttpd,INFO] Client 'Temperature and humidity' on 'ODB' removed by db_cleanup2 called by cm_cleanup because pid 5553 does not exist
+13:33:28.110 2022/06/17 [mhttpd,ERROR] [midas.cxx:5246:cm_transition,ERROR] Could not start a run: cm_transition() status 503, message '(null)'
+13:33:28.119 2022/06/17 [Logger,INFO] Deleting previous file "/software/mu3e/midas_installations/midas_v1/mu3eSummer22/packages/online/run00002.mid.lz4"
+13:33:28.120 2022/06/17 [Logger,LOG] File '/software/mu3e/midas_installations/midas_v1/mu3eSummer22/packages/online/run00002.mid' CRC32C checksum: 0x309ad42a, 141237 bytes
+13:33:28.121 2022/06/17 [Logger,LOG] File '/software/mu3e/midas_installations/midas_v1/mu3eSummer22/packages/online/run00002.mid.lz4' CRC32C checksum: 0x68980ea8, 23033 bytes
+13:33:28.123 2022/06/17 [Logger,INFO] Client 'Temperature and humidity' on buffer 'SYSMSG' removed by cm_periodic_tasks because process pid 5553 does not exist
+13:33:28.212 2022/06/17 [mhttpd,INFO] Run #2 start aborted
+13:46:11.658 2022/06/17 [Logger1,LOG] Program Logger1 on host localhost started
+13:46:11.685 2022/06/17 [Sequencer,LOG] Program Sequencer on host localhost started
+13:46:11.741 2022/06/17 [Logger1,LOG] Program Logger1 on host localhost stopped
+13:46:11.796 2022/06/17 [mhttpd1,LOG] Program mhttpd1 on host localhost started
+13:46:11.798 2022/06/17 [mhttpd1,ERROR] [mhttpd.cxx:15688:mongoose_listen,ERROR] Cannot mg_bind address "localhost:8080"
+13:46:11.799 2022/06/17 [mhttpd1,ERROR] [mhttpd.cxx:15688:mongoose_listen,ERROR] Cannot mg_bind address "[::1]:8080"
+13:46:11.801 2022/06/17 [mhttpd1,ERROR] [mhttpd.cxx:15878:mongoose_init,ERROR] Failed to listen on a TCP port enabled in ODB /WebServer
+13:46:11.802 2022/06/17 [mhttpd1,LOG] Program mhttpd1 on host localhost stopped
+13:46:12.183 2022/06/17 [Temperature and humidity,LOG] Program Temperature and humidity on host localhost started
+13:46:12.185 2022/06/17 [Temperature and humidity,INFO] Client 'Temperature and humidity' on buffer 'SYSTEM' removed by bm_open_buffer because process pid 5553 does not exist
+13:46:36.770 2022/06/17 [Logger,INFO] Equipment "ArduinoTestStation" history is enabled, but there are no Variables in ODB
+13:46:37.071 2022/06/17 [mhttpd,ERROR] [system.cxx:5036:recv_tcp2,ERROR] unexpected connection closure
+13:46:37.072 2022/06/17 [mhttpd,ERROR] [system.cxx:5090:ss_recv_net_command,ERROR] error receiving network command header, see messages
+13:46:37.074 2022/06/17 [mhttpd,ERROR] [midas.cxx:12966:rpc_client_call,ERROR] call to "Temperature and humidity" on "localhost" RPC "rc_transition": error, ss_recv_net_command() status 411
+13:46:37.075 2022/06/17 [mhttpd,ERROR] [midas.cxx:11560:rpc_client_connect,ERROR] cannot connect to host "localhost", port 33263: connect() returned -1, errno 111 (Connection refused)
+13:46:37.076 2022/06/17 [mhttpd,ERROR] [midas.cxx:7120:cm_shutdown,ERROR] Cannot connect to client 'Temperature and humidity' on host 'localhost', port 33263
+13:46:37.077 2022/06/17 [mhttpd,ERROR] [midas.cxx:7123:cm_shutdown,ERROR] Killing and Deleting client 'Temperature and humidity' pid 12051
+13:46:37.128 2022/06/17 [Logger,INFO] Deleting previous file "/software/mu3e/midas_installations/midas_v1/mu3eSummer22/packages/online/run00003.mid.lz4"
+13:46:37.130 2022/06/17 [Logger,LOG] File '/software/mu3e/midas_installations/midas_v1/mu3eSummer22/packages/online/run00003.mid' CRC32C checksum: 0xf67cc2b3, 154685 bytes
+13:46:37.131 2022/06/17 [Logger,LOG] File '/software/mu3e/midas_installations/midas_v1/mu3eSummer22/packages/online/run00003.mid.lz4' CRC32C checksum: 0x54bf2aad, 24306 bytes
+13:46:37.133 2022/06/17 [Logger,LOG] Program Logger on host localhost stopped
+13:46:37.154 2022/06/17 [Sequencer,LOG] Program Sequencer on host localhost stopped
+13:46:37.299 2022/06/17 [mhttpd,INFO] Client 'Temperature and humidity' on 'ODB' removed by db_cleanup2 called by cm_cleanup because pid 12051 does not exist
+13:46:37.301 2022/06/17 [mhttpd,ERROR] [midas.cxx:5246:cm_transition,ERROR] Could not start a run: cm_transition() status 503, message '(null)'
+13:46:37.303 2022/06/17 [mhttpd,INFO] Run #3 start aborted
+13:46:37.304 2022/06/17 [mhttpd,LOG] Program mhttpd on host localhost stopped
+13:47:04.014 2022/06/17 [Logger,INFO] Client 'Temperature and humidity' on buffer 'SYSMSG' removed by bm_open_buffer because process pid 12051 does not exist
+13:47:04.015 2022/06/17 [mhttpd,LOG] Program mhttpd on host localhost started
+13:47:04.018 2022/06/17 [Logger,LOG] Program Logger on host localhost started
+13:47:04.025 2022/06/17 [Logger,INFO] Equipment "ArduinoTestStation" history is enabled, but there are no Variables in ODB
+13:47:04.034 2022/06/17 [Sequencer,LOG] Program Sequencer on host localhost started
+13:47:04.528 2022/06/17 [Temperature and humidity,LOG] Program Temperature and humidity on host localhost started
+13:47:04.530 2022/06/17 [Temperature and humidity,INFO] Client 'Temperature and humidity' on buffer 'SYSTEM' removed by bm_open_buffer because process pid 12051 does not exist
+13:47:10.635 2022/06/17 [Temperature and humidity,LOG] Program Temperature and humidity on host localhost stopped
+13:47:10.739 2022/06/17 [Logger,LOG] Program Logger on host localhost stopped
+13:47:10.759 2022/06/17 [Sequencer,LOG] Program Sequencer on host localhost stopped
+13:47:11.422 2022/06/17 [mhttpd,LOG] Program mhttpd on host localhost stopped
+13:47:29.584 2022/06/17 [Logger,LOG] Program Logger on host localhost started
+13:47:29.592 2022/06/17 [mhttpd,LOG] Program mhttpd on host localhost started
+13:47:29.603 2022/06/17 [Logger,INFO] Equipment "ArduinoTestStation" history is enabled, but there are no Variables in ODB
+13:47:29.610 2022/06/17 [Sequencer,LOG] Program Sequencer on host localhost started
+13:47:30.127 2022/06/17 [Temperature and humidity,LOG] Program Temperature and humidity on host localhost started
+13:47:43.898 2022/06/17 [Logger,INFO] Equipment "ArduinoTestStation" history is enabled, but there are no Variables in ODB
+13:47:44.124 2022/06/17 [mhttpd,ERROR] [system.cxx:5078:recv_tcp2,ERROR] unexpected connection closure
+13:47:44.124 2022/06/17 [mhttpd,ERROR] [system.cxx:5132:ss_recv_net_command,ERROR] error receiving network command header, see messages
+13:47:44.126 2022/06/17 [mhttpd,ERROR] [midas.cxx:13678:rpc_client_call,ERROR] call to "Temperature and humidity" on "localhost" RPC "rc_transition": error, ss_recv_net_command() status 411
+13:47:44.127 2022/06/17 [mhttpd,ERROR] [midas.cxx:12220:rpc_client_connect,ERROR] cannot connect to host "localhost", port 37885: connect() returned -1, errno 111 (Connection refused)
+13:47:44.127 2022/06/17 [mhttpd,ERROR] [midas.cxx:7446:cm_shutdown,ERROR] Cannot connect to client 'Temperature and humidity' on host 'localhost', port 37885
+13:47:44.128 2022/06/17 [mhttpd,ERROR] [midas.cxx:7449:cm_shutdown,ERROR] Killing and Deleting client 'Temperature and humidity' pid 12533
+13:47:44.130 2022/06/17 [mhttpd,INFO] Client 'Temperature and humidity' on database 'ODB' pid 12533 does not exist and db_cleanup2 called by cm_cleanup removed it
+13:47:44.178 2022/06/17 [Logger,INFO] Deleting previous file "/software/mu3e/midas_installations/midas_v1/mu3eSummer22/packages/online/run00004.mid.lz4"
+13:47:44.179 2022/06/17 [Logger,LOG] File '/software/mu3e/midas_installations/midas_v1/mu3eSummer22/packages/online/run00004.mid' CRC32C checksum: 0xa4e0ddfd, 154671 bytes
+13:47:44.181 2022/06/17 [Logger,LOG] File '/software/mu3e/midas_installations/midas_v1/mu3eSummer22/packages/online/run00004.mid.lz4' CRC32C checksum: 0xb926fee6, 23638 bytes
+13:47:44.182 2022/06/17 [Logger,LOG] Program Logger on host localhost stopped
+13:47:44.202 2022/06/17 [Sequencer,LOG] Program Sequencer on host localhost stopped
+13:47:45.009 2022/06/17 [mhttpd,ERROR] [midas.cxx:5269:cm_transition,ERROR] Could not start a run: cm_transition() status 503, message '(null)'
+13:47:45.011 2022/06/17 [mhttpd,INFO] Run #4 start aborted
+13:47:45.013 2022/06/17 [mhttpd,LOG] Program mhttpd on host localhost stopped
+13:48:44.397 2022/06/17 [mhttpd,INFO] Client 'Temperature and humidity' on buffer 'SYSMSG' removed by bm_open_buffer because process pid 12533 does not exist
+13:48:44.398 2022/06/17 [mhttpd,LOG] Program mhttpd on host localhost started
+13:49:28.206 2022/06/17 [Logger,LOG] Program Logger on host localhost started
+13:49:28.224 2022/06/17 [Logger,INFO] Equipment "ArduinoTestStation" history is enabled, but there are no Variables in ODB
+13:49:54.602 2022/06/17 [ODBEdit,LOG] Program ODBEdit on host localhost started
+13:52:33.657 2022/06/17 [ODBEdit,LOG] Program ODBEdit on host localhost started
+13:52:33.761 2022/06/17 [ODBEdit,INFO] Client 'mhttpd' on database 'ODB' pid 13362 timed out and db_cleanup called by cm_periodic_tasks removed it (idle 29.9s,TO 10s)
+13:52:33.763 2022/06/17 [ODBEdit,INFO] Client 'Logger' on database 'ODB' pid 13535 timed out and db_cleanup called by cm_periodic_tasks removed it (idle 30.2s,TO 10s)
+13:53:13.653 2022/06/17 [mhttpd,LOG] Program mhttpd on host localhost stopped
+13:53:16.836 2022/06/17 [Logger,LOG] Program Logger on host localhost stopped
+13:55:21.636 2022/06/17 [ODBEdit,LOG] Program ODBEdit on host localhost started
+13:58:35.825 2022/06/17 [ODBEdit,LOG] Program ODBEdit on host localhost started
+14:01:57.494 2022/06/17 [Logger,LOG] Program Logger on host localhost started
+14:01:57.497 2022/06/17 [mhttpd,LOG] Program mhttpd on host localhost started
+14:01:57.518 2022/06/17 [Sequencer,LOG] Program Sequencer on host localhost started
+14:01:58.014 2022/06/17 [Temperature and humidity,LOG] Program Temperature and humidity on host localhost started
+14:01:58.017 2022/06/17 [Temperature and humidity,INFO] Client 'Temperature and humidity' on buffer 'SYSTEM' removed by bm_open_buffer because process pid 12533 does not exist
+14:02:16.788 2022/06/17 [mhttpd,INFO] Run #5 started
+14:02:16.790 2022/06/17 [Logger,ERROR] [odb.cxx:11565:db_get_record,ERROR] struct size mismatch for "/Equipment/ArduinoTestStation/Variables" (expected size: 4, size in ODB: 28)
+14:02:16.791 2022/06/17 [Logger,ERROR] [history.cxx:102:xread,ERROR] Error: Truncated read from file "/software/mu3e/midas_installations/midas_v1/mu3eSummer22/packages/online/220617.hst", requested 280 bytes, read 68 bytes
+14:03:31.193 2022/06/17 [Temperature and humidity,LOG] Program Temperature and humidity on host localhost stopped
+14:03:31.319 2022/06/17 [Logger,LOG] Program Logger on host localhost stopped
+14:03:31.349 2022/06/17 [Sequencer,LOG] Program Sequencer on host localhost stopped
+14:03:32.280 2022/06/17 [mhttpd,LOG] Program mhttpd on host localhost stopped
+14:04:25.391 2022/06/17 [mhttpd,LOG] Program mhttpd on host localhost started
+14:04:28.753 2022/06/17 [Logger,LOG] Program Logger on host localhost started
+14:04:31.268 2022/06/17 [Logger,LOG] Program Logger on host localhost stopped
+14:04:34.946 2022/06/17 [Logger,LOG] Program Logger on host localhost started
+14:05:00.705 2022/06/17 [mhttpd,INFO] Run #5 stopped
+14:05:16.359 2022/06/17 [Temperature and humidity,LOG] Program Temperature and humidity on host localhost started
+14:05:26.673 2022/06/17 [mhttpd,INFO] Run #6 started
+14:05:51.597 2022/06/17 [Logger,LOG] File '/software/mu3e/midas_installations/midas_v1/mu3eSummer22/packages/online/run00006.mid' CRC32C checksum: 0x0df37803, 164456 bytes
+14:05:51.602 2022/06/17 [Logger,LOG] File '/software/mu3e/midas_installations/midas_v1/mu3eSummer22/packages/online/run00006.mid.lz4' CRC32C checksum: 0xb1ad3e0a, 26486 bytes
+14:05:51.722 2022/06/17 [mhttpd,INFO] Run #6 stopped
+14:05:54.570 2022/06/17 [Temperature and humidity,LOG] Program Temperature and humidity on host localhost stopped
+14:24:30.975 2022/06/17 [mhttpd,INFO] Run #7 started
+14:25:21.049 2022/06/17 [Logger,LOG] File '/software/mu3e/midas_installations/midas_v1/mu3eSummer22/packages/online/run00007.mid' CRC32C checksum: 0x0b487d8f, 154488 bytes
+14:25:21.050 2022/06/17 [Logger,LOG] File '/software/mu3e/midas_installations/midas_v1/mu3eSummer22/packages/online/run00007.mid.lz4' CRC32C checksum: 0xd2eefb8f, 25312 bytes
+14:25:21.137 2022/06/17 [mhttpd,INFO] Run #7 stopped
+14:30:29.395 2022/06/17 [mhttpd,INFO] Run #8 started
+14:30:38.206 2022/06/17 [Logger,LOG] File '/software/mu3e/midas_installations/midas_v1/mu3eSummer22/packages/online/run00008.mid' CRC32C checksum: 0x6a4fd169, 154456 bytes
+14:30:38.207 2022/06/17 [Logger,LOG] File '/software/mu3e/midas_installations/midas_v1/mu3eSummer22/packages/online/run00008.mid.lz4' CRC32C checksum: 0xbcc69f58, 25378 bytes
+14:30:38.308 2022/06/17 [mhttpd,INFO] Run #8 stopped
+14:30:46.474 2022/06/17 [Logger1,LOG] Program Logger1 on host localhost started
+14:30:46.476 2022/06/17 [Logger1,LOG] Program Logger1 on host localhost stopped
+14:30:46.515 2022/06/17 [Sequencer,LOG] Program Sequencer on host localhost started
+14:30:46.618 2022/06/17 [mhttpd1,LOG] Program mhttpd1 on host localhost started
+14:30:46.620 2022/06/17 [mhttpd1,ERROR] [mhttpd.cxx:15688:mongoose_listen,ERROR] Cannot mg_bind address "localhost:8080"
+14:30:46.621 2022/06/17 [mhttpd1,ERROR] [mhttpd.cxx:15688:mongoose_listen,ERROR] Cannot mg_bind address "[::1]:8080"
+14:30:46.622 2022/06/17 [mhttpd1,ERROR] [mhttpd.cxx:15878:mongoose_init,ERROR] Failed to listen on a TCP port enabled in ODB /WebServer
+14:30:46.624 2022/06/17 [mhttpd1,LOG] Program mhttpd1 on host localhost stopped
+14:30:47.035 2022/06/17 [Temperature and humidity,LOG] Program Temperature and humidity on host localhost started
+14:30:53.944 2022/06/17 [mhttpd,INFO] Run #9 started
+14:31:49.438 2022/06/17 [Logger,LOG] File '/software/mu3e/midas_installations/midas_v1/mu3eSummer22/packages/online/run00009.mid' CRC32C checksum: 0xedce026d, 169288 bytes
+14:31:49.440 2022/06/17 [Logger,LOG] File '/software/mu3e/midas_installations/midas_v1/mu3eSummer22/packages/online/run00009.mid.lz4' CRC32C checksum: 0xff2bafd4, 26607 bytes
+14:31:49.548 2022/06/17 [mhttpd,INFO] Run #9 stopped
+14:31:54.574 2022/06/17 [Temperature and humidity,LOG] Program Temperature and humidity on host localhost stopped
+14:31:54.699 2022/06/17 [Sequencer,LOG] Program Sequencer on host localhost stopped
+14:31:54.757 2022/06/17 [Logger,LOG] Program Logger on host localhost stopped
+14:31:55.359 2022/06/17 [mhttpd,LOG] Program mhttpd on host localhost stopped
+14:34:02.805 2022/06/17 [Logger,LOG] Program Logger on host localhost started
+14:34:02.809 2022/06/17 [mhttpd,LOG] Program mhttpd on host localhost started
+14:34:02.828 2022/06/17 [Sequencer,LOG] Program Sequencer on host localhost started
+14:34:03.348 2022/06/17 [Temperature and humidity,LOG] Program Temperature and humidity on host localhost started
+14:34:08.474 2022/06/17 [mhttpd,INFO] Run #10 started
+14:34:15.617 2022/06/17 [mhttpd,ERROR] [history.cxx:1032:hs_count_events,ERROR] cannot find recent history file
+14:34:15.618 2022/06/17 [mhttpd,ERROR] [history.cxx:1032:hs_count_events,ERROR] cannot find recent history file
+14:34:16.653 2022/06/17 [mhttpd,ERROR] [history.cxx:1032:hs_count_events,ERROR] cannot find recent history file
+14:34:16.654 2022/06/17 [mhttpd,ERROR] [history.cxx:1032:hs_count_events,ERROR] cannot find recent history file
+14:34:17.674 2022/06/17 [mhttpd,ERROR] [history.cxx:1032:hs_count_events,ERROR] cannot find recent history file
+14:34:17.676 2022/06/17 [mhttpd,ERROR] [history.cxx:1032:hs_count_events,ERROR] cannot find recent history file
+14:34:18.702 2022/06/17 [mhttpd,ERROR] [history.cxx:1032:hs_count_events,ERROR] cannot find recent history file
+14:34:18.704 2022/06/17 [mhttpd,ERROR] [history.cxx:1032:hs_count_events,ERROR] cannot find recent history file
+14:34:19.725 2022/06/17 [mhttpd,ERROR] [history.cxx:1032:hs_count_events,ERROR] cannot find recent history file
+14:34:19.727 2022/06/17 [mhttpd,ERROR] [history.cxx:1032:hs_count_events,ERROR] cannot find recent history file
+14:34:20.754 2022/06/17 [mhttpd,ERROR] [history.cxx:1032:hs_count_events,ERROR] cannot find recent history file
+14:34:20.756 2022/06/17 [mhttpd,ERROR] [history.cxx:1032:hs_count_events,ERROR] cannot find recent history file
+14:34:21.781 2022/06/17 [mhttpd,ERROR] [history.cxx:1032:hs_count_events,ERROR] cannot find recent history file
+14:34:21.782 2022/06/17 [mhttpd,ERROR] [history.cxx:1032:hs_count_events,ERROR] cannot find recent history file
+14:34:22.808 2022/06/17 [mhttpd,ERROR] [history.cxx:1032:hs_count_events,ERROR] cannot find recent history file
+14:34:22.809 2022/06/17 [mhttpd,ERROR] [history.cxx:1032:hs_count_events,ERROR] cannot find recent history file
+14:34:23.831 2022/06/17 [mhttpd,ERROR] [history.cxx:1032:hs_count_events,ERROR] cannot find recent history file
+14:34:23.833 2022/06/17 [mhttpd,ERROR] [history.cxx:1032:hs_count_events,ERROR] cannot find recent history file
+14:34:24.850 2022/06/17 [mhttpd,ERROR] [history.cxx:1032:hs_count_events,ERROR] cannot find recent history file
+14:34:24.852 2022/06/17 [mhttpd,ERROR] [history.cxx:1032:hs_count_events,ERROR] cannot find recent history file
+14:34:25.880 2022/06/17 [mhttpd,ERROR] [history.cxx:1032:hs_count_events,ERROR] cannot find recent history file
+14:34:25.881 2022/06/17 [mhttpd,ERROR] [history.cxx:1032:hs_count_events,ERROR] cannot find recent history file
+14:34:26.905 2022/06/17 [mhttpd,ERROR] [history.cxx:1032:hs_count_events,ERROR] cannot find recent history file
+14:34:26.906 2022/06/17 [mhttpd,ERROR] [history.cxx:1032:hs_count_events,ERROR] cannot find recent history file
+14:41:12.681 2022/06/17 [Logger,LOG] File '/software/mu3e/midas_installations/midas_v1/mu3eSummer22/packages/online/run00010.mid' CRC32C checksum: 0x40089d6f, 216536 bytes
+14:41:12.683 2022/06/17 [Logger,LOG] File '/software/mu3e/midas_installations/midas_v1/mu3eSummer22/packages/online/run00010.mid.lz4' CRC32C checksum: 0x3cc158bf, 34803 bytes
+14:41:12.775 2022/06/17 [mhttpd,INFO] Run #10 stopped
+14:41:22.374 2022/06/17 [Temperature and humidity,LOG] Program Temperature and humidity on host localhost stopped
+14:41:22.500 2022/06/17 [Sequencer,LOG] Program Sequencer on host localhost stopped
+14:41:22.522 2022/06/17 [Logger,LOG] Program Logger on host localhost stopped
+14:41:23.550 2022/06/17 [mhttpd,LOG] Program mhttpd on host localhost stopped
+14:42:00.951 2022/06/17 [Logger,LOG] Program Logger on host localhost started
+14:42:00.952 2022/06/17 [mhttpd,LOG] Program mhttpd on host localhost started
+14:42:00.968 2022/06/17 [Sequencer,LOG] Program Sequencer on host localhost started
+14:42:01.487 2022/06/17 [Temperature and humidity,LOG] Program Temperature and humidity on host localhost started
+14:42:18.101 2022/06/17 [mhttpd,INFO] Run #11 started
+14:44:56.470 2022/06/17 [Logger,LOG] File '/software/mu3e/midas_installations/midas_v1/mu3eSummer22/packages/online/run00011.mid' CRC32C checksum: 0xcd929f77, 187628 bytes
+14:44:56.471 2022/06/17 [Logger,LOG] File '/software/mu3e/midas_installations/midas_v1/mu3eSummer22/packages/online/run00011.mid.lz4' CRC32C checksum: 0x09fc5f3f, 29564 bytes
+14:44:56.580 2022/06/17 [mhttpd,INFO] Run #11 stopped
+14:45:08.827 2022/06/17 [Temperature and humidity,LOG] Program Temperature and humidity on host localhost stopped
+14:45:08.966 2022/06/17 [Sequencer,LOG] Program Sequencer on host localhost stopped
+14:45:09.002 2022/06/17 [Logger,LOG] Program Logger on host localhost stopped
+14:45:09.920 2022/06/17 [mhttpd,LOG] Program mhttpd on host localhost stopped
+11:05:03.504 2022/06/20 [Logger,LOG] Program Logger on host localhost started
+11:05:03.509 2022/06/20 [mhttpd,LOG] Program mhttpd on host localhost started
+11:05:03.534 2022/06/20 [Sequencer,LOG] Program Sequencer on host localhost started
+11:05:04.066 2022/06/20 [Temperature and humidity,LOG] Program Temperature and humidity on host localhost started
+11:05:29.556 2022/06/20 [Sequencer,INFO] Client 'Temperature and humidity' on buffer 'SYSMSG' removed by cm_periodic_tasks (idle 10.5s, timeout 10s)
+11:05:29.558 2022/06/20 [Sequencer,INFO] Client 'Temperature and humidity' on database 'ODB' pid 26417 timed out and db_cleanup called by cm_periodic_tasks removed it (idle 10.5s,TO 10s)
+11:08:48.704 2022/06/20 [Sequencer,LOG] Program Sequencer on host localhost stopped
+11:08:48.775 2022/06/20 [Logger,LOG] Program Logger on host localhost stopped
+11:08:49.721 2022/06/20 [mhttpd,LOG] Program mhttpd on host localhost stopped
+11:16:15.979 2022/06/20 [Logger,LOG] Program Logger on host localhost started
+11:16:15.986 2022/06/20 [mhttpd,LOG] Program mhttpd on host localhost started
+11:16:16.005 2022/06/20 [Sequencer,LOG] Program Sequencer on host localhost started
+11:16:16.501 2022/06/20 [Temperature and humidity,LOG] Program Temperature and humidity on host localhost started
+11:16:16.503 2022/06/20 [Temperature and humidity,INFO] Client 'Temperature and humidity' on buffer 'SYSTEM' removed by bm_open_buffer because process pid 26417 does not exist
+11:17:30.583 2022/06/20 [Temperature and humidity,LOG] Program Temperature and humidity on host localhost stopped
+11:17:30.727 2022/06/20 [Logger,LOG] Program Logger on host localhost stopped
+11:17:30.727 2022/06/20 [Sequencer,LOG] Program Sequencer on host localhost stopped
+11:17:30.766 2022/06/20 [mhttpd,LOG] Program mhttpd on host localhost stopped
+11:17:32.824 2022/06/20 [Logger,LOG] Program Logger on host localhost started
+11:17:32.837 2022/06/20 [mhttpd,LOG] Program mhttpd on host localhost started
+11:17:32.854 2022/06/20 [Sequencer,LOG] Program Sequencer on host localhost started
+11:17:33.374 2022/06/20 [Temperature and humidity,LOG] Program Temperature and humidity on host localhost started
+11:26:29.659 2022/06/20 [Temperature and humidity,LOG] Program Temperature and humidity on host localhost stopped
+11:26:29.800 2022/06/20 [Sequencer,LOG] Program Sequencer on host localhost stopped
+11:26:29.820 2022/06/20 [Logger,LOG] Program Logger on host localhost stopped
+11:26:29.847 2022/06/20 [mhttpd,LOG] Program mhttpd on host localhost stopped
+11:28:22.584 2022/06/20 [Logger,LOG] Program Logger on host localhost started
+11:28:22.590 2022/06/20 [mhttpd,LOG] Program mhttpd on host localhost started
+11:28:22.608 2022/06/20 [Sequencer,LOG] Program Sequencer on host localhost started
+11:28:23.130 2022/06/20 [Temperature and humidity,LOG] Program Temperature and humidity on host localhost started
+11:28:44.226 2022/06/20 [Temperature and humidity,LOG] Program Temperature and humidity on host localhost stopped
+11:28:44.315 2022/06/20 [mhttpd,LOG] Program mhttpd on host localhost stopped
+11:28:44.382 2022/06/20 [Sequencer,LOG] Program Sequencer on host localhost stopped
+11:28:44.436 2022/06/20 [Logger,LOG] Program Logger on host localhost stopped
+11:29:03.063 2022/06/20 [Temperature and humidity,LOG] Program Temperature and humidity on host localhost started
+11:29:07.838 2022/06/20 [Temperature and humidity,LOG] Program Temperature and humidity on host localhost stopped
+11:34:01.288 2022/06/20 [Temperature and humidity,LOG] Program Temperature and humidity on host localhost started
+11:34:03.399 2022/06/20 [Temperature and humidity,LOG] Program Temperature and humidity on host localhost stopped
+11:45:10.272 2022/06/20 [mhttpd,LOG] Program mhttpd on host localhost started
+11:45:14.877 2022/06/20 [mhttpd,LOG] Program mhttpd on host localhost stopped
+11:45:17.234 2022/06/20 [mhttpd,LOG] Program mhttpd on host localhost started
+11:46:58.444 2022/06/20 [mhttpd,LOG] Program mhttpd on host localhost stopped
+11:47:32.581 2022/06/20 [mhttpd,LOG] Program mhttpd on host localhost started
+11:47:47.096 2022/06/20 [mhttpd,LOG] Program mhttpd on host localhost stopped
+11:47:49.255 2022/06/20 [mhttpd,LOG] Program mhttpd on host localhost started
+11:48:48.122 2022/06/20 [Logger,LOG] Program Logger on host localhost started
+11:48:48.150 2022/06/20 [Sequencer,LOG] Program Sequencer on host localhost started
+11:48:48.233 2022/06/20 [mhttpd1,LOG] Program mhttpd1 on host localhost started
+11:48:48.234 2022/06/20 [mhttpd1,ERROR] [mhttpd.cxx:15688:mongoose_listen,ERROR] Cannot mg_bind address "localhost:8080"
+11:48:48.236 2022/06/20 [mhttpd1,ERROR] [mhttpd.cxx:15688:mongoose_listen,ERROR] Cannot mg_bind address "[::1]:8080"
+11:48:48.237 2022/06/20 [mhttpd1,ERROR] [mhttpd.cxx:15878:mongoose_init,ERROR] Failed to listen on a TCP port enabled in ODB /WebServer
+11:48:48.239 2022/06/20 [mhttpd1,LOG] Program mhttpd1 on host localhost stopped
+11:48:58.161 2022/06/20 [Sequencer,INFO] Client 'Temperature and humidity' on database 'ODB' pid 7092 timed out and db_cleanup called by cm_periodic_tasks removed it (idle 10.0s,TO 10s)
+11:48:58.282 2022/06/20 [Logger,INFO] Client 'Temperature and humidity' on buffer 'SYSMSG' removed by cm_periodic_tasks (idle 10.0s, timeout 10s)
+11:49:35.272 2022/06/20 [Temperature and humidity,LOG] Program Temperature and humidity on host localhost started
+11:49:35.445 2022/06/20 [Sequencer,LOG] Program Sequencer on host localhost stopped
+11:49:35.466 2022/06/20 [mhttpd,LOG] Program mhttpd on host localhost stopped
+11:49:35.466 2022/06/20 [Logger,LOG] Program Logger on host localhost stopped
+11:49:39.000 2022/06/20 [Logger,LOG] Program Logger on host localhost started
+11:49:39.009 2022/06/20 [mhttpd,LOG] Program mhttpd on host localhost started
+11:49:39.028 2022/06/20 [Sequencer,LOG] Program Sequencer on host localhost started
+11:49:41.313 2022/06/20 [Temperature and humidity,LOG] Program Temperature and humidity on host localhost started
+11:49:41.315 2022/06/20 [Temperature and humidity,INFO] Client 'Temperature and humidity' on buffer 'SYSTEM' removed by bm_open_buffer because process pid 7092 does not exist
+11:49:53.795 2022/06/20 [Logger,ERROR] [odb.cxx:10394:db_save_json,ERROR] Cannot open file "/software/mu3e/midas_installations/midas_v1/mu3eSummer22/packages/online/last.json", fopen() errno 13 (Permission denied)
+11:49:53.966 2022/06/20 [mhttpd,INFO] Run #12 started
+11:53:22.612 2022/06/20 [Temperature and humidity,LOG] Program Temperature and humidity on host localhost stopped
+11:53:22.725 2022/06/20 [Sequencer,LOG] Program Sequencer on host localhost stopped
+11:53:22.744 2022/06/20 [Logger,LOG] Program Logger on host localhost stopped
+11:53:23.710 2022/06/20 [mhttpd,LOG] Program mhttpd on host localhost stopped
