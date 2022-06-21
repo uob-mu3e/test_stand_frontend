@@ -1,1 +1,0 @@
-/usr/bin/c++      CMakeFiles/frontend.dir/FE.cpp.o  -o frontend  -L/software/mu3e/midas_installations/midas_v1/mu3eSummer22/packages/midas/lib -rdynamic -lmfe -lmidas -ldl -lpthread -lutil -lrt -Wl,-rpath,/software/mu3e/midas_installations/midas_v1/mu3eSummer22/packages/midas/lib 

@@ -2,4 +2,4 @@
 *.hst
 *.idf
 *.idx
-online/build/
+**/online/build/**
