@@ -30,6 +30,7 @@ port (
     i_miso_transition_count     : in  std_logic_vector(31 downto 0);
     i_fifos_full                : in  std_logic_vector(N_MODULES*N_ASICS - 1 downto 0);
     i_cc_diff                   : in  std_logic_vector(14 downto 0);
+    i_ch_rate                   : in  work.util.slv32_array_t(127 downto 0);
 
     -- outputs
     o_cntreg_ctrl               : out std_logic_vector(31 downto 0);
@@ -54,6 +55,7 @@ architecture rtl of scifi_reg_mapping is
     signal fifos_full               : std_logic_vector(N_MODULES*N_ASICS - 1 downto 0);
     signal counters156              : work.util.slv32_array_t(10 * N_MODULES*N_ASICS-1 downto 0);
     signal counter156               : std_logic_vector(31 downto 0);
+    signal ch_rate                  : work.util.slv32_array_t(127 downto 0);
 
     -- data path ctrl
     signal cntreg_ctrl          : std_logic_vector(31 downto 0);
@@ -114,6 +116,14 @@ begin
         generic map ( W => counters156(i)'length )
         port map (
             i_d => i_counters(i), o_q => counters156(i),
+            i_reset_n => i_reset_n, i_clk => i_clk--,
+        );
+    end generate;
+    gen_ch_rate : for i in 127 downto 0 generate
+        e_ch_rate : entity work.ff_sync
+        generic map ( W => ch_rate(i)'length )
+        port map (
+            i_d => i_ch_rate(i), o_q => ch_rate(i),
             i_reset_n => i_reset_n, i_clk => i_clk--,
         );
     end generate;
@@ -255,6 +265,11 @@ begin
                 o_reg_rdata <= link_data_reg;
             end if;
 
+            loopChRate : for i in 127 downto 0 loop
+                if ( i_reg_re = '1' and regaddr = SCIFI_CH_RATE_REGISTER_R + 1 ) then
+                    o_reg_rdata <= ch_rate(i);
+                end if;
+            end loop;
     end if;
     end process;
 

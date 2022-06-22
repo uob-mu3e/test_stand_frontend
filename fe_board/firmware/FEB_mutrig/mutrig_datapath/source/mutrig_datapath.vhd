@@ -484,6 +484,20 @@ begin
             i_reset_n    => not i_rst_core--,
         );
 
+        e_channel_rate : entity work.ch_rate
+        generic map(
+            num_ch => 32
+        )
+        port map(
+            i_hit       => s_buf_data(i),
+            i_en        => s_buf_we(i),
+
+            o_ch_rate   => o_ch_rate((i+1)*32 - 1 downto i*32),
+
+            i_clk       => i_clk_125,
+            i_reset_n   => i_reset_125_n--,
+        );
+
         u_mux_fifo : entity work.ip_dcfifo_v2
         generic map (
             g_ADDR_WIDTH => 10,
@@ -672,20 +686,6 @@ begin
         -- when i_en_lapse_counter = '0' else
         --"00" & s_A_buf_data(33 downto 21) & CC_corrected_A(14 downto 0) & s_A_buf_data(5 downto 0) when ( s_A_buf_data(33 downto 32) = "00" ) else
         --"00" & s_A_buf_data;
-
-    e_channel_rate_1 : entity work.ch_rate
-    generic map(
-        num_ch => 128
-    )
-    port map(
-        i_hit       => fifo_data(35 downto 0),
-        i_en        => fifo_we(0),
-
-        o_ch_rate   => o_ch_rate,
-
-        i_clk       => i_clk_125,
-        i_reset_n   => i_reset_125_n--,
-    );
 
     e_fifo_out_1 : entity work.ip_dcfifo_v2
     generic map (
