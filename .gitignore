@@ -8,3 +8,6 @@
 *.log
 *.txt
 *.TXT
+*.png
+exptab
+*.json
