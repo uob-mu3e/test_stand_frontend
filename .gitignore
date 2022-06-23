@@ -11,3 +11,4 @@
 *.png
 exptab
 *.json
+!CMakeLists.txt
