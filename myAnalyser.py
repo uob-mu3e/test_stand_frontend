@@ -12,9 +12,10 @@ import matplotlib.pyplot as plt
 
 
 def main():
-    # FILE I/O
+    """
+    FILE I/O and driver
+    """
     try:
-        print(f"online/run{sys.argv[1].zfill(5)}.mid")
         mfile = midas.file_reader.MidasFile(f"online/run{sys.argv[1].zfill(5)}.mid")
     except IndexError:
         print("Please provide a run number as an argument.")
@@ -23,7 +24,7 @@ def main():
 
 def read_plot_file(mfile):
     """
-    parse file and produce and save plots
+    Parse file and produce and save plots
     """
     # DATAFRAME INITIALIZATION
     data = {
@@ -47,10 +48,19 @@ def read_plot_file(mfile):
         data["Temp"].append(data_tmp[0])
         data["Flow"].append(data_tmp[1])
         data["PWM"].append(data_tmp[2])
-        # data["Setpoint"].append(data_tmp[4])
-        data["Relative Humidity"].append(data_tmp[5])
-        data["Ambient Temperature"].append(data_tmp[6])
 
+        """
+        Variable _A_, not necessary for A&J's project but might be useful to add back in?
+        TODO: put this back in the original Arduino firmware. FE.cpp seems to contain it already.
+        """
+        # data["Average Airflow"].append(data_tmp[3])
+
+        # data["Setpoint"].append(data_tmp[4])  # commented out in FE.cpp so not relevant anymore
+        data["Relative Humidity"].append(data_tmp[4])
+        data["Ambient Temperature"].append(data_tmp[5])
+
+        plt.clf()
+        plt.tight_layout()
         plt.scatter(
             range(1, len(data["Temp"]) + 1),
             data["Temp"],
@@ -103,8 +113,7 @@ def read_plot_file(mfile):
         plt.xlabel("time (s)")
         plt.xlim()
         plt.ylim(-5, 50)
-        plt.show()
-        lt.savefig("run9.png")
+        plt.savefig(f"online/run{sys.argv[1]}.png", bbox_inches="tight")
 
     # print("Overall size of event,type ID and bytes")
     # print((header.serial_number, header.event_id, header.event_data_size_bytes))
