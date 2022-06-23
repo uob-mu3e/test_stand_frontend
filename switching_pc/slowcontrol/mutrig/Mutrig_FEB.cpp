@@ -300,6 +300,13 @@ int MutrigFEB::ReadBackCounters(mappedFEB & FEB){
         variables_counters["nWordsLVDS"][nASIC] = val[nASIC * 10 + 7];
         variables_counters["nDatasyncloss"][nASIC] = val[nASIC * 10 + 9];
    }
+   // get rate per channel in counters
+   vector<uint32_t> ch_rate(128);
+   feb_sc.FEB_read(FEB, SCIFI_CH_RATE_REGISTER_R, ch_rate);
+   for(size_t i_ch = 0; i_ch < ch_rate.size(); i_ch++){
+        odb variables_counters(odb_prefix + "/Variables/Counters");
+        variables_counters["Rate"][i_ch] = ch_rate[i_ch];
+   }
 
    return SUCCESS;
 }

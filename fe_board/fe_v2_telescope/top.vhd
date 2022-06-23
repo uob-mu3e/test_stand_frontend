@@ -102,7 +102,7 @@ port (
 
     -- LEDs, test points and buttons
     PushButton                  : in    std_logic_vector(1 downto 0);
-    FPGA_Test                   : out   std_logic_vector(7 downto 0);
+    FPGA_Test                   : in    std_logic_vector(7 downto 0);
 
     --LCD
     lcd_csn                     : out   std_logic;--//2.5V    //LCD Chip Select
@@ -254,8 +254,8 @@ begin
 ----MUPIX SUB-DETECTOR FIRMWARE ------------------------------------
 --------------------------------------------------------------------
 --------------------------------------------------------------------
-    threshold_trigger <= gate_in ;
-    time_over_th      <= pulse_train_in;
+    threshold_trigger <= FPGA_Test(3);--gate_in;
+    time_over_th      <= FPGA_Test(3);--pulse_train_in;
 
     clock_A <= mp_ctrl_clock(0);
     clock_B <= mp_ctrl_clock(0);
@@ -576,14 +576,14 @@ begin
     -- correct connection; for now we use it to know 2.1 from 2.0
 
 
-    FPGA_Test(0) <= transceiver_pll_clock(0);
-    FPGA_Test(1) <= lvds_firefly_clk;
-    FPGA_Test(2) <= clk_125_top;
-    FPGA_Test(3) <= Trig0_TTL;
-    FPGA_Test(4) <= Trig1_TTL;
-    FPGA_Test(5) <= gate_in;
-    FPGA_Test(6) <= pulse_train_in;
-    FPGA_Test(7) <= triggerclk;
+--    FPGA_Test(0) <= transceiver_pll_clock(0);
+--    FPGA_Test(1) <= lvds_firefly_clk;
+--    FPGA_Test(2) <= clk_125_top;
+--    FPGA_Test(3) <= Trig0_TTL;
+--    FPGA_Test(4) <= Trig1_TTL;
+--    FPGA_Test(5) <= gate_in;
+--    FPGA_Test(6) <= pulse_train_in;
+--    FPGA_Test(7) <= triggerclk;
 
     lcd_data(5 downto 2) <= Trig0_TTL_reg & Trig1_TTL_reg & Trig2_TTL_reg & Trig3_TTL_reg;
 

@@ -101,11 +101,11 @@ begin
     i_CC_u      <=  unsigned(i_CC);
 
                     -- check if i_CC_u did not lapse but the interal counter did
-    s_o_CC      <=  i_CC_u - (nLapses - 1) when i_CC_u  < 32767 and i_CC_u  > upper and CC_fpga < lower and nLapses > 0 else
-                    -- this case should never happen
-                    i_CC_u - (nLapses + 1) when CC_fpga < 32768 and CC_fpga > upper and i_CC_u  < lower else
-                    i_CC_u - nLapses;
-
+--    s_o_CC      <=  i_CC_u - (nLapses - 1) when i_CC_u  < 32767 and i_CC_u  > upper and CC_fpga < lower and nLapses > 0 else
+--                    -- this case should never happen
+--                    i_CC_u - (nLapses + 1) when CC_fpga < 32768 and CC_fpga > upper and i_CC_u  < lower else
+--                    i_CC_u - nLapses;
+    s_o_CC      <= i_CC_u - nLapses;
     o_CC        <=  std_logic_vector(s_o_CC);
 
 end architecture;

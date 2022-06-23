@@ -424,5 +424,6 @@ begin
     FPGA_Test(0) <= transceiver_pll_clock(0);
     FPGA_Test(1) <= clk_125;
     FPGA_Test(2) <= clk_125_top;
+    FPGA_Test(3) <= pll_test;
 
 end architecture;
