@@ -217,6 +217,11 @@ architecture arch of fe_block_v2 is
     signal programming_addr_ena     : std_logic;
     signal programming_addr_ena_reg : std_logic;
 
+    signal nios_reboot_156          : std_logic;
+    signal nios_reboot_156_prev     : std_logic;
+    signal nios_reboot_50_delay     : std_logic_vector(5 downto 0);
+    signal nios_reboot_50           : std_logic;
+
 begin
 
     process(i_clk_156)
@@ -224,6 +229,24 @@ begin
     if rising_edge(i_clk_156) then
         o_run_state_156 <= run_state_156_resetsys;
         run_state_156   <= run_state_156_resetsys;
+    end if;
+    end process;
+
+    process(i_nios_clk) -- i_clk_156 will be gone during reboot
+    begin
+    if rising_edge(i_nios_clk) then
+        nios_reboot_156_prev    <= nios_reboot_156;
+        nios_reboot_50_delay(5) <= '0';
+
+        for I in 0 to 4 loop 
+            nios_reboot_50_delay(I) <= nios_reboot_50_delay(I+1);
+        end loop;
+
+        if(nios_reboot_156 = '1' and nios_reboot_156_prev = '0') then
+            nios_reboot_50_delay <= (others => '1');
+        end if;
+
+        nios_reboot_50 <= nios_reboot_50_delay(0);
     end if;
     end process;
 
@@ -350,6 +373,8 @@ begin
         o_programming_data_ena      => programming_data_ena,
         o_programming_addr          => programming_addr,
         o_programming_addr_ena      => programming_addr_ena,
+
+        o_nios_reboot               => nios_reboot_156,
         i_testout                   => i_testout--,
     );
 
@@ -632,7 +657,6 @@ begin
         i_reset_n                       => nios_reset_n,
         i_reset_156_n                   => reset_156_n,
         i_reset_125_rx_n                => reset_125_RRX_n,
-        i_lvds_align_reset_n            => i_testin,
 
         --rx
         i_data_fast_serial              => i_ffly2_rx & i_ffly1_rx,

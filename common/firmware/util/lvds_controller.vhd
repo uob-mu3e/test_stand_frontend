@@ -29,7 +29,8 @@ port (
     o_fifo_reset :      out std_logic;
     o_rx_reset :        out std_logic;
     o_cda_reset :       out std_logic; -- not available in ArriaV
-    o_align_clicks :    out std_logic_vector(7 downto 0)
+    o_align_clicks :    out std_logic_vector(7 downto 0);
+    o_lvds_state :      out std_logic_vector(3 downto 0)--;
 );
 END ENTITY;
 
