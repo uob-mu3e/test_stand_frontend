@@ -64,6 +64,7 @@ architecture arch of swb_data_path is
 
     --! data link signals
     signal rx : work.mu3e.link_array_t(g_NLINKS_DATA-1 downto 0);
+    signal rx_zero_suppressed : work.mu3e.link_array_t(g_NLINKS_DATA-1 downto 0);
     signal rx_ren, rx_mask_n, rx_rdempty : std_logic_vector(g_NLINKS_DATA-1 downto 0) := (others => '0');
     signal rx_q : work.mu3e.link_array_t(g_NLINKS_DATA-1 downto 0);
 
@@ -89,6 +90,9 @@ architecture arch of swb_data_path is
     --! status counters
     signal link_to_fifo_cnt : work.util.slv32_array_t((g_NLINKS_DATA*5)-1 downto 0);
     signal events_to_farm_cnt : std_logic_vector(31 downto 0);
+
+    signal use_header_suppression : std_logic;
+    signal use_subhdr_suppression : std_logic;
 
 begin
 
@@ -207,6 +211,42 @@ begin
     END GENERATE gen_link_data;
 
 
+    --! generate zero suppression
+    --! ------------------------------------------------------------------------
+    --! ------------------------------------------------------------------------
+    --! ------------------------------------------------------------------------
+
+    lbl: process (i_clk, i_reset_n) is
+    begin
+        if(rising_edge(i_clk)) then
+            if(i_reset_n = '0') then
+                use_subhdr_suppression <= '0';
+                use_header_suppression <= '0';
+            else
+                use_header_suppression <= '1' when (stream_en = '1' and i_writeregs(SWB_READOUT_STATE_REGISTER_W)(USE_BIT_HEAD_SUPPRESS) = '1') else '0';
+                use_subhdr_suppression <= '1' when (stream_en = '1' and i_writeregs(SWB_READOUT_STATE_REGISTER_W)(USE_BIT_SUBHDR_SUPPRESS) = '1') else '0';
+            end if;
+        end if;
+    end process;
+
+    gen_z_pix: If DATA_TYPE = "00" generate
+        gen_zero_suppression : FOR i in 0 to g_NLINKS_DATA - 1 GENERATE
+            zero_suppression_inst: entity work.zero_suppression
+            port map (
+                i_reset_n              => i_reset_n,
+                i_clk                  => i_clk,
+                i_ena_subh_suppression => use_subhdr_suppression, 
+                i_ena_head_suppression => use_header_suppression, 
+                i_data                 => rx(i),
+                o_data                 => rx_zero_suppressed(i)
+            );
+        end GENERATE gen_zero_suppression;
+    end generate gen_z_pix;
+
+    gen_z_not_pix: If DATA_TYPE /= "00" generate
+        rx_zero_suppressed <= rx;
+    end generate gen_z_not_pix;
+
     --! generate link_to_fifo_32
     --! ------------------------------------------------------------------------
     --! ------------------------------------------------------------------------
@@ -225,7 +265,7 @@ begin
             LINK_FIFO_ADDR_WIDTH => LINK_FIFO_ADDR_WIDTH--,
         )
         port map (
-            i_rx            => rx(i),
+            i_rx            => rx_zero_suppressed(i),
             i_linkid        => work.mudaq.link_36_to_std(i),
 
             o_q             => rx_q(i),
@@ -243,7 +283,6 @@ begin
         );
 
     END GENERATE gen_link_fifos;
-
 
     --! stream merger
     --! ------------------------------------------------------------------------
