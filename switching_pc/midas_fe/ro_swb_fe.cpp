@@ -269,10 +269,10 @@ INT begin_of_run(INT run_number, char *error)
     }
 
     // zero suppression settings
-    if(stream_setting["subheader_zerosuppress"]) {
+    if(stream_settings["subheader_zerosuppress"]) {
         readout_state_regs = SET_USE_BIT_SUBHDR_SUPPRESS(readout_state_regs);
     }
-    if(stream_setting["header_zerosuppress"]) {
+    if(stream_settings["header_zerosuppress"]) {
         readout_state_regs = SET_USE_BIT_HEAD_SUPPRESS(readout_state_regs);
     }
     
