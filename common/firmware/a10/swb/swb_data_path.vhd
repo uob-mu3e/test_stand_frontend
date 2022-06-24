@@ -223,8 +223,8 @@ begin
                 use_subhdr_suppression <= '0';
                 use_header_suppression <= '0';
             else
-                use_header_suppression <= '1' when (stream_en = '1' and i_writeregs(SWB_READOUT_STATE_REGISTER_W)(USE_BIT_HEAD_SUPPRESS) = '1') else '0';
-                use_subhdr_suppression <= '1' when (stream_en = '1' and i_writeregs(SWB_READOUT_STATE_REGISTER_W)(USE_BIT_SUBHDR_SUPPRESS) = '1') else '0';
+                use_header_suppression <= stream_en and i_writeregs(SWB_READOUT_STATE_REGISTER_W)(USE_BIT_HEAD_SUPPRESS);
+                use_subhdr_suppression <= stream_en and i_writeregs(SWB_READOUT_STATE_REGISTER_W)(USE_BIT_SUBHDR_SUPPRESS);
             end if;
         end if;
     end process;
