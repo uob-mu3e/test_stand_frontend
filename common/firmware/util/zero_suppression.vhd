@@ -20,7 +20,7 @@ port (
 );
 end entity;
 
-architecture arch of reset_ctrl is
+architecture arch of zero_suppression is
 
     signal subh_suppression : std_logic;
     signal head_suppression : std_logic;
@@ -28,11 +28,12 @@ architecture arch of reset_ctrl is
     signal data_subh_suppressed : work.mu3e.link_t;
     signal data_head_suppressed : work.mu3e.link_t;
 
-    signal data_buffer      : work.mu3e.link_array_t(4 downto 0);
+    signal data_buffer      : work.mu3e.link_array_t(5 downto 0);
     signal next_subhdr      : work.mu3e.link_t;
     signal next_hit         : work.mu3e.link_t;
     type   subhdr_suppression_state_t is (head, ts0,ts1,d0,d1, waitingForFirstHit, waitingForMoreHits);
-    signal subhdr_suppression_state : subhdr_suppression_state_t;
+    signal subhdr_suppression_state   : subhdr_suppression_state_t;
+    signal sending_data_buffer        : std_logic;
     signal is_subh          : std_logic;
     signal event_had_hit    : std_logic;
 
@@ -46,9 +47,15 @@ begin
     process(i_clk, i_reset_n)
     begin
     if ( i_reset_n = '0' ) then
-        o_data <= work.mu3e.LINK_IDLE;
-        subhdr_suppression_state <= head;
-        event_had_hit <= '0';
+        o_data                      <= work.mu3e.LINK_IDLE;
+        subhdr_suppression_state    <= head;
+        event_had_hit               <= '0';
+        data_buffer                 <= (others => work.mu3e.LINK_IDLE);
+        data_subh_suppressed        <= work.mu3e.LINK_IDLE;
+        data_head_suppressed        <= work.mu3e.LINK_IDLE;
+        next_hit                    <= work.mu3e.LINK_IDLE;
+        next_subhdr                 <= work.mu3e.LINK_IDLE;
+        sending_data_buffer         <= '0';
 
     elsif rising_edge(i_clk) then
         -- default to idle
@@ -107,7 +114,7 @@ begin
                         data_subh_suppressed <= i_data;
                         subhdr_suppression_state <= head;
                     elsif(is_subh = '1') then  -- subh with hits done --> send last hit of prev. subh
-                        next_subhdr <= i_data
+                        next_subhdr <= i_data;
                         subhdr_suppression_state <= waitingForFirstHit;
                         data_subh_suppressed <= next_hit;
                     else -- --> we have a hit --> send saved hit, save new hit
@@ -125,20 +132,29 @@ begin
         -- --------------------------------------------------
         -- gernerate header suppressed datastream
 
-        if(data_subh_suppressed.idle = '0') then
-            for I in 0 to 3 loop
+        if(data_buffer(0).sop='0') then 
+            for I in 0 to 4 loop
                 data_buffer(I) <= data_buffer(I+1);
             end loop;
-            data_buffer(4) <= data_subh_suppressed;
+            data_buffer(5) <= data_subh_suppressed;
             data_head_suppressed <= data_buffer(0);
+            event_had_hit <= '0';
+        else 
+            -- start of packet waiting at the end of data_buffer
+            -- wait for eop or hit
 
-            if(data_subh_suppressed.eop = '1') then
-                if(event_had_hit = '0') then
-                    data_buffer(4 downto 0) <= (others => work.mu3e.LINK_IDLE); 
-                else
-                    event_had_hit <= '0';
-                end if;
+            if(data_subh_suppressed.eop = '1') then -- eop --> throw everything away 
+                data_buffer <= (others => work.mu3e.LINK_IDLE);
             end if;
+
+            if(event_had_hit = '1') then -- hit --> start sending again until the next sop is at the end of data_buffer
+                for I in 0 to 4 loop
+                    data_buffer(I) <= data_buffer(I+1);
+                end loop;
+                data_buffer(5) <= data_subh_suppressed;
+                data_head_suppressed <= data_buffer(0);
+            end if; 
+            
         end if;
 
 
