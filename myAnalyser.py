@@ -4,6 +4,7 @@ Analyse environmental variables collected through MIDAS
 """
 
 import sys
+import subprocess
 
 sys.path.append("midas/python/")
 import midas.file_reader
@@ -16,7 +17,14 @@ def main():
     FILE I/O and driver
     """
     try:
-        mfile = midas.file_reader.MidasFile(f"online/run{sys.argv[1].zfill(5)}.mid")
+        file_path = f"online/run{sys.argv[1].zfill(5)}.mid"
+        unzip_command = f"unlz4 {file_path}.lz4"
+        process = subprocess.Popen(
+            unzip_command.split(), stdout=subprocess.PIPE, stderr=subprocess.PIPE
+        )
+        stdout, stderr = process.communicate()
+        print(stderr.decode("UTF-8", "ignore").strip("\n"))
+        mfile = midas.file_reader.MidasFile(file_path)
     except IndexError:
         print("Please provide a run number as an argument.")
     read_plot_file(mfile)
