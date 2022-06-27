@@ -37,6 +37,7 @@ architecture arch of signal_tap_emulator is
     signal fifo_full    : std_logic;
     signal fifo_halffull: std_logic;
     signal data_reg     : std_logic_vector(DATA_WIDTH_g-1 downto 0);
+    signal fifo_dataout : std_logic_vector(DATA_WIDTH_g-1 downto 0);
 
     type trigger_state_t  is (idle, recording_2nd_half_of_triggerdata, wait_for_readout_and_reset);
     signal trigger_state: trigger_state_t;
@@ -45,6 +46,7 @@ begin
 
     o_trigger_cnt <= std_logic_vector(to_unsigned(trigger_cnt, trigger_cnt'length));
     fifo_halffull <= fifo_usedw(SAMPLE_WIDTH_g-1);
+    o_trigger_data <= fifo_dataout when fifo_empty = '0' else (others => '1');
 
     -- copy the file and insert your trigger condition (or condition entity) here
     -- trigger <= true when ..... else false;
@@ -115,7 +117,7 @@ begin
         wrreq        => fifo_write,
         empty        => fifo_empty,
         full         => fifo_full,
-        q            => o_trigger_data,
+        q            => fifo_dataout,
         usedw        => fifo_usedw
       );
 
