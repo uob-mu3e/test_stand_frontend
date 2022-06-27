@@ -165,6 +165,7 @@ void SMB_t::menu_SMB_main() {
         printf("  [8] => data\n");
         printf("  [9] => monitor test\n");
         printf("  [a] => counters\n");
+        printf("  [b] => lapse correction menu\n");
         printf("  [m] => set ASIC mask\n");
         printf("  [s] => get slow control registers\n");
         printf("  [d] => get datapath status\n");
@@ -253,6 +254,9 @@ void SMB_t::menu_SMB_main() {
             case 'a':
                 menu_counters();
                 break;
+            case 'b':
+                menu_lapse();
+                break;
             case 's': //get slowcontrol registers
                 //printf("dummyctrl_reg:    0x%08X\n", regs.ctrl.dummy);
                 printf("dummyctrl_reg:    0x%08X\n", sc.ram->data[SCIFI_CTRL_DUMMY_REGISTER_W]);
@@ -301,6 +305,30 @@ void SMB_t::menu_SMB_main() {
 		}
 		printf("setting mask to 0x%08x\n", value);
 		sc.ram->data[SCIFI_CTRL_DP_REGISTER_W] = value;
+                break;
+            case 'q':
+                return;
+            default:
+                printf("invalid command: '%c'\n", cmd);
+        }
+    }
+}
+
+void SMB_t::menu_lapse() {
+    while(1) {
+        printf("CTRL_LAPSE = 0x%08X\n", sc.ram->data[SCIFI_CTRL_LAPSE_COUNTER_REGISTER_W]);
+        printf("  [1] => enable injection\n");
+        printf("  [2] => disable injection\n");
+
+
+        printf("Select entry ...\n");
+        char cmd = wait_key();
+        switch(cmd) {
+            case '1':
+                sc.ram->data[SCIFI_CTRL_LAPSE_COUNTER_REGISTER_W] = sc.ram->data[SCIFI_CTRL_LAPSE_COUNTER_REGISTER_W] | (1<<31);
+                break;
+            case '2':
+                sc.ram->data[SCIFI_CTRL_LAPSE_COUNTER_REGISTER_W] = sc.ram->data[SCIFI_CTRL_LAPSE_COUNTER_REGISTER_W] & ~(1<<31);
                 break;
             case 'q':
                 return;

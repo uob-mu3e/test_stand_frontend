@@ -681,7 +681,9 @@ begin
         i_upper_bnd => i_upper_bnd, i_lower_bnd => i_lower_bnd, o_CC => CC_corrected_A, o_cnt => open );
 
     -- to fifo_out_1
-    fifo_data(35 downto 0) <= "00" & link_data when i_link_data_reg(31) = '1' else "00" & s_A_buf_data;
+    fifo_data(35 downto 0) <=   "00" & link_data when i_link_data_reg(31) = '1' else
+                                "00" & s_A_buf_data(33 downto 21) & CC_corrected_A(14 downto 0) & s_A_buf_data(5 downto 0) when s_A_buf_data(33 downto 32) = "00" and i_en_lapse_counter = '1' else
+                                "00" & s_A_buf_data;
     fifo_we(0)             <= link_en          when i_link_data_reg(31) = '1' else s_A_buf_wr;
         -- when i_en_lapse_counter = '0' else
         --"00" & s_A_buf_data(33 downto 21) & CC_corrected_A(14 downto 0) & s_A_buf_data(5 downto 0) when ( s_A_buf_data(33 downto 32) = "00" ) else

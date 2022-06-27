@@ -253,6 +253,9 @@ begin
             if ( i_reg_we = '1' and regaddr = SCIFI_CTRL_LAPSE_COUNTER_REGISTER_W ) then
                 ctrl_lapse_counter_reg <= i_reg_wdata;
             end if;
+            if ( i_reg_re = '1' and regaddr = SCIFI_CTRL_LAPSE_COUNTER_REGISTER_W ) then
+                o_reg_rdata <= ctrl_lapse_counter_reg;
+            end if;
 
             if ( i_reg_re = '1' and regaddr = SCIFI_CC_DIFF_REGISTER_R ) then
                 o_reg_rdata(14 downto 0) <= cc_diff;

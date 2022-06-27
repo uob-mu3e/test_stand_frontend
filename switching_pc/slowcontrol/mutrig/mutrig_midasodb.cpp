@@ -85,6 +85,7 @@ int setup_db(std::string prefix, MutrigFEB & FEB_interface, uint32_t nasics, uin
         {"nErrorsPRBS", std::array<uint32_t, 255>()},
         {"nWordsPRBS", std::array<uint32_t, 255>()},
         {"nDatasyncloss", std::array<uint32_t, 255>()},
+        {"Rate", std::array<uint32_t,128>()}, //add rate
     };
     variables_counters.connect(prefix + "/Variables/Counters");
     variables_counters["nHits"].resize(nasics);
@@ -96,6 +97,7 @@ int setup_db(std::string prefix, MutrigFEB & FEB_interface, uint32_t nasics, uin
     variables_counters["nErrorsPRBS"].resize(nasics);
     variables_counters["nWordsPRBS"].resize(nasics);
     variables_counters["nDatasyncloss"].resize(nasics);
+    variables_counters["Rate"].resize(nasics); //add rate
 
     variables_counters.connect(prefix + "/Variables/Counters");
 
