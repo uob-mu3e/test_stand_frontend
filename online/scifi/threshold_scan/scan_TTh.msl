@@ -1,13 +1,17 @@
+#########################################################
+# Authors Y. Demets, C. Martin Perez, 2022
+#########################################################
+
 th_start = 0
-num_th =  35
-num_ch = 5 
+num_th =  3 #35
+num_ch = 3 #32
 num_asic = 1
 
-PARAM filename
+#PARAM filename
+filename = test27June
 
-#TODO: send HighTHR config
-
-    
+#TODO: send HighTHR_PLLlock config
+ 
 LOOP i_ch, $num_ch
 
       LOOP i_asic , $num_asic
@@ -22,6 +26,7 @@ LOOP i_ch, $num_ch
             ODBSET /Sequencer/Variables/SciFi/TThres_scan/$i_ch_unique/Rate[*], 0 
 
         ENDLOOP
+
 ENDLOOP
 
 LOOP i_th, $num_th
@@ -48,25 +53,20 @@ LOOP i_th, $num_th
         ENDLOOP
 
         # Send configuration and wait
-        #ODBSET /Equipment/SciFiCentral/Commands/SciFiConfig, 1
-        #WAIT SECONDS, 10
+        ODBSET /Equipment/SciFiCentral/Commands/SciFiConfig, 1
+        WAIT SECONDS, 5
 
         LOOP i_asic, $num_asic
 
             i_ch_unique = (($i_asic-1)*$num_ch)+($i_ch-1)
-
-            # Mask all channels again
-            ODBSET /Equipment/SciFiCentral/Settings/ASICs/Channels/$i_ch_unique/mask, 1
             
-            # Get rates and store in the sequencer tree - dummy
-            #rate=1528
-            #ODBGET /Equipment/SciFiCentral/Variables/Counters/Rate, $rate 
-            #ODBSET /Sequencer/Variables/SciFi/TThres_scan/$i_ch_unique/Rate[$this_th], $rate
-
             # Get rates and store in the sequencer tree
             ODBGET /Equipment/SciFiCentral/Variables/Counters/Rate[$i_ch_unique], rate 
-            ODBSET /Sequencer/Variables/SciFi/TThres_scan/$i_ch_unique/Rate[$this_th], rate
-
+            rate_final = 125000001 - $rate
+            ODBSET /Sequencer/Variables/SciFi/TThres_scan/$i_ch_unique/Rate[$this_th], $rate_final
+            
+            # Mask all channels again
+            ODBSET /Equipment/SciFiCentral/Settings/ASICs/Channels/$i_ch_unique/mask, 1
 
         ENDLOOP 
        
@@ -74,6 +74,6 @@ LOOP i_th, $num_th
 
 ENDLOOP
 
-CAT outputfile, thre_scan_, $filename, .json
+CAT outputfile, thr_scan_test.json
 ODBSAVE /Sequencer/Variables/SciFi/TThres_scan/, $outputfile
 
