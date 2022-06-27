@@ -1,6 +1,6 @@
 th_start = 0
 num_th =  35
-num_ch = 5 
+num_ch = 32 
 num_asic = 1
 
 PARAM filename

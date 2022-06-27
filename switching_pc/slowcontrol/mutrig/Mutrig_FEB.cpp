@@ -303,8 +303,8 @@ int MutrigFEB::ReadBackCounters(mappedFEB & FEB){
    // get rate per channel in counters
    vector<uint32_t> ch_rate(128);
    feb_sc.FEB_read(FEB, SCIFI_CH_RATE_REGISTER_R, ch_rate);
+   odb variables_counters(odb_prefix + "/Variables/Counters");
    for(size_t i_ch = 0; i_ch < ch_rate.size(); i_ch++){
-        odb variables_counters(odb_prefix + "/Variables/Counters");
         variables_counters["Rate"][i_ch] = ch_rate[i_ch];
    }
 
