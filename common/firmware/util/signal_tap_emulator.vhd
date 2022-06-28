@@ -44,7 +44,7 @@ architecture arch of signal_tap_emulator is
 
 begin
 
-    o_trigger_cnt <= std_logic_vector(to_unsigned(trigger_cnt, trigger_cnt'length));
+    o_trigger_cnt <= std_logic_vector(to_unsigned(trigger_cnt, 32));
     fifo_halffull <= fifo_usedw(SAMPLE_WIDTH_g-1);
     o_trigger_data <= fifo_dataout when fifo_empty = '0' else (others => '1');
 
