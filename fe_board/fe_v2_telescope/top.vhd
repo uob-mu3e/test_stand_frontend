@@ -492,7 +492,6 @@ begin
 
     e_fe_block : entity work.fe_block_v2
     generic map (
-        HARDCODE_ID_g   => true,
         NIOS_CLK_MHZ_g  => 50.0--,
     )
     port map (

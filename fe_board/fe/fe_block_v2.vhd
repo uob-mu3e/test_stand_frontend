@@ -15,7 +15,6 @@ generic (
     NIOS_CLK_MHZ_g : real;
     N_LINKS : positive := 1;
     USE_FIREFLY_2 : boolean  := false;
-    HARDCODE_ID_g : boolean := false;
     SC_READ_DELAY_g : positive := 7--;
 );
 port (
@@ -223,18 +222,7 @@ architecture arch of fe_block_v2 is
     signal nios_reboot_50_delay     : std_logic_vector(5 downto 0);
     signal nios_reboot_50           : std_logic;
 
-    signal fpga_id                  : std_logic_vector(15 downto 0);
-
 begin
-
-    -- remove me after cosmic run
-    generate_id0 : if ( HARDCODE_ID_g = true ) generate
-        fpga_id <= X"000E";
-    end generate;
-    generate_id1 : if ( HARDCODE_ID_g = false ) generate
-        fpga_id <= fpga_id_reg;
-    end generate;
-    
 
     process(i_clk_156)
     begin
@@ -536,7 +524,7 @@ begin
         feb_mapping                => feb_mapping--,
     )
     port map (
-        fpga_ID_in                 => fpga_id,
+        fpga_ID_in                 => fpga_id_reg,
         FEB_type_in                => i_fpga_type,
 
         run_state                  => run_state_156,
