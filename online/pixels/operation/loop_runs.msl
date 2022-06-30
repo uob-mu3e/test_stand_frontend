@@ -1,0 +1,19 @@
+COMMENT "Script to keep running without modifying anything. Set the number of loops and how long for each loop."
+
+PARAM num_loops, "Number of loops"
+PARAM run_time, "Time-length of each run (in s)"
+
+_i = 0
+LOOP $num_loops
+  #ODBSET /Equipment/SwitchingCentral/Commands/MupixChipToConfigure, 999
+  #ODBSET /Equipment/SwitchingCentral/Commands/MupixConfig, 1
+  #WAIT ODBValue, /Equipment/SwitchingCentral/Commands/MupixConfig, <, 1
+  WAIT 30
+  CAT run_descr, "Run stabilized, loop number ", $_i
+  RUNDESCRIPTION $run_descr
+  TRANSITION start
+  WAIT seconds, $run_time
+  TRANSITION stop
+  _i = $_i +1
+ENDLOOP
+

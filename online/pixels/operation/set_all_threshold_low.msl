@@ -1,0 +1,10 @@
+COMMENT Script for setting the threshold low values for all chips to the desired value. Note that that is not the effective threshold, this will be displayed.
+
+PARAM th_low, "Threshold Low"
+
+ODBSET /Equipment/PixelsCentral/Settings/VDACS/*/ThLow, $th_low
+
+ODBGET /Equipment/PixelsCentral/Settings/VDACS/0/Baseline, baseline
+effective_threshold = $th_low - $baseline
+CAT message, "The effective threshold is ", $effective_threshold
+MESSAGE $message, 1

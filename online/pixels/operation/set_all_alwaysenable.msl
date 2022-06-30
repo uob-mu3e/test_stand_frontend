@@ -1,0 +1,6 @@
+COMMENT Script for setting the AlwayEnable for every chip.
+
+PARAM enable, "AlwayEnable"
+
+ODBSET /Equipment/PixelsCentral/Settings/CONFDACS/*/AlwaysEnable, $enable
+

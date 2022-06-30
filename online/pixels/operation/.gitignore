@@ -1,0 +1,6 @@
+*.pdf
+*.png
+output/*
+output.json
+ana_output/*
+*.xml
