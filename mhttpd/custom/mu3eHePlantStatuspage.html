@@ -244,7 +244,7 @@
 </table>
 
 <!-- Status of some components -->
-<table class="mtable" style="border-spacing:1px;text-align: center;">
+<table class="mtable" style="border-spacing:1px;text-align: left;">
     <tr>
         <td>Bypass valve (ON: valve closed; OFF: valve open):</td>
         <td><div class="modbbox" data-odb-path="/Equipment/HePlant/Variables/Output[0]" data-formula="x > 0" style="width: 30px; height: 30px; border: 1px solid black" data-color="lightgreen" data-background-color="red"></div></td>
@@ -267,11 +267,11 @@
         </td>
     </tr>
     <tr>
-        <td>Helium purity ok (&lt;0.4% O<sub>2</sub>):</td>
-        <td><div class="modbbox" data-odb-path="/Equipment/HePlant/Variables/Input[10]" data-formula="x < 0.4" style="width: 30px; height: 30px; border: 1px solid black" data-color="lightgreen" data-background-color="red"></div></td>
+        <td>Helium purity ok (&lt;1.0% O<sub>2</sub>):</td>
+        <td><div class="modbbox" data-odb-path="/Equipment/HePlant/Variables/Input[10]" data-formula="x < 1.0" style="width: 30px; height: 30px; border: 1px solid black" data-color="lightgreen" data-background-color="red"></div></td>
         <td colspan="2">
-            <div class="mhaxis" style="width: 500px; height: 22px;" data-min-value="0" data-max-value="24" ></div>
-            <div class="modbhbar" style="width: 500px; height: 18px; color: lightgreen; background-color: lightgrey;" data-odb-path="/Equipment/HePlant/Variables/Input[10]" data-min-value="0" data-max-value="24" data-print-value="1" data-format="f2"></div>
+            <div class="mhaxis" style="width: 500px; height: 22px;" data-min-value="0.1" data-max-value="24" data-log="1"></div>
+            <div class="modbhbar" style="width: 500px; height: 18px; color: lightblue; background-color: lightgrey;" data-odb-path="/Equipment/HePlant/Variables/Input[10]" data-min-value="0.1" data-max-value="24" data-log="1" data-print-value="1" data-format="f2"></div>
         </td>
     </tr>
 </table>

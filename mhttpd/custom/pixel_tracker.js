@@ -166,7 +166,7 @@ var chip_clicked = function (ladname, chip) {
     document.getElementById("chip_dacs_header").style["visibility"] = "visible"
     document.getElementById("chip_dacs").style["visibility"] = "visible"
     document.getElementById("configure_chip_div").style["visibility"] = "visible"
-    document.getElementById("pixel_configure_update").style["visibility"] = "hidden"
+    //document.getElementById("pixel_configure_update").style["visibility"] = "hidden"
 
     var table = document.getElementById("pixel_parameters");
     table.style["visibility"] = "visible"
@@ -332,7 +332,7 @@ var ladder_clicked = function(ladname) {
     document.getElementById("chip_dacs_header").style["visibility"] = "hidden"
     document.getElementById("chip_dacs").style["visibility"] = "hidden"
     document.getElementById("configure_chip_div").style["visibility"] = "hidden"
-    document.getElementById("pixel_configure_update").style["visibility"] = "hidden"
+    //document.getElementById("pixel_configure_update").style["visibility"] = "hidden"
     document.getElementById("qctestdiv").style["visibility"] = "hidden";
     reset_table("pixel_parameters", 0)
     reset_table("Bias_tab", 0)
@@ -425,7 +425,7 @@ function configureChip(evt) {
         else
             px_mask.push(true)
     }*/
-    document.getElementById("pixel_configure_update").style["visibility"] = "visible"
+    //document.getElementById("pixel_configure_update").style["visibility"] = "visible"
     /*mjsonrpc_db_paste(mask_names, px_mask).then(function () {
         mjsonrpc_db_paste(["/Equipment/SwitchingCentral/Commands/MupixConfig"], [true])
     }).catch(function(error) {
@@ -437,7 +437,7 @@ function configureChip(evt) {
     for (var i = 0; i < pos; ++i)
         chip_select_mask |= (0x1 << i);
 
-    document.getElementById("pixel_configure_update_content").textContent = "Configuring chip number " + parseInt(current_lad_chips[current_chip_selected]["json_node"]["MIDAS_ID"])
+    //document.getElementById("pixel_configure_update_content").textContent = "Configuring chip number " + parseInt(current_lad_chips[current_chip_selected]["json_node"]["MIDAS_ID"])
 
     document.getElementById("debug").textContent = "0x" + chip_select_mask.toString(16);
     mjsonrpc_db_paste(["/Equipment/SwitchingCentral/Commands/MupixChipToConfigure"], [parseInt(current_lad_chips[current_chip_selected]["json_node"]["MIDAS_ID"])]).then(function () {
@@ -463,8 +463,8 @@ function resetDACs(evt) {
             daclist.push("/Equipment/PixelsCentral/Settings/" + odb_dacName + "/" + num + "/" + dac)
             dacvalues.push(mupix_dacs[dacName][dac])
         }
-        document.getElementById("pixel_configure_update").style["visibility"] = "visible"
-        document.getElementById("pixel_configure_update_content").textContent = "Resetting chip number " + num
+        //document.getElementById("pixel_configure_update").style["visibility"] = "visible"
+        //document.getElementById("pixel_configure_update_content").textContent = "Resetting chip number " + num
         mjsonrpc_db_paste(daclist, dacvalues).catch(function(error) {
             mjsonrpc_error_alert(error);
          });
@@ -639,12 +639,16 @@ var list_chips_configuration = function (ele, direction) {
 
 var change_qc_image = function () {
 
-    /*var xmlhttp = new XMLHttpRequest();
+    lad_id = parseInt(parseInt(current_lad_chips[current_chip_selected]["json_node"]["MIDAS_ID"])/3)
+    if (lad_id > 19)
+        lad_id -= 2
+    /*file_name = "http://mu3ebe:8081//home/mu3e/online/online/pixels/qctest/ladder/ana_output/ladder_" + lad_id  + "_chip_" + parseInt(current_lad_chips[current_chip_selected]["json_node"]["MIDAS_ID"])%3 + ".png";
+    var xmlhttp = new XMLHttpRequest();
     //xmlhttp.responseType = "arraybuffer";
     xmlhttp.onreadystatechange = function(){
       if(xmlhttp.status==200 && xmlhttp.readyState==4){
-        document.getElementById("QC").src = xmlhttp.responseText;
-        //document.getElementById("QC").setAttribute('src', "http://mu3ebe:8081/home/mu3e/online/online/pixels/qctest/ladder/output/IV_"+String((current_chip_selected))+".png")
+        //document.getElementById("QC").src = xmlhttp.responseText;
+        document.getElementById("QC").setAttribute('src', "http://mu3ebe:8081/home/mu3e/online/online/pixels/qctest/ladder/output/IV_"+String((current_chip_selected))+".png")
     }
       else {
           document.getElementById("QC").textContent = "NOOOOOOO IMAGE!!!" ;
@@ -652,10 +656,7 @@ var change_qc_image = function () {
     }
     xmlhttp.open("GET","http://mu3ebe:8081//home/mu3e/online/online/pixels/qctest/ladder/output/IV_"+String((current_chip_selected))+".png",true);
     xmlhttp.send();*/
-    lad_id = parseInt(parseInt(current_lad_chips[current_chip_selected]["json_node"]["MIDAS_ID"])/3)
-    if (lad_id > 17)
-        lad_id += 2
-    document.getElementById("QC").src="http://mu3ebe:8081//home/mu3e/online/online/pixels/qctest/ladder/ana_output/ladder_" + lad_id  + "_chip_" + parseInt(current_lad_chips[current_chip_selected]["json_node"]["MIDAS_ID"])%3 + ".png";
+   document.getElementById("QC").src="http://mu3ebe:8081//home/mu3e/online/online/pixels/qctest/ladder/ana_output/ladder_" + lad_id  + "_chip_" + parseInt(current_lad_chips[current_chip_selected]["json_node"]["MIDAS_ID"])%3 + ".png";
     document.getElementById("qctestdiv").style["visibility"] = "visible";
 
 }
@@ -665,19 +666,80 @@ var update_qc_dacs_link = function() {
     opt_vpvco = current_lad_chips[current_chip_selected]["json_node"]["opt_VPVCO"]
     opt_vnvco = current_lad_chips[current_chip_selected]["json_node"]["opt_VNVCO"]
     if (opt_vpvco == 0) {
-        document.getElementById("pixel_configure_update_content").textContent = "VPVCO and VNVCO not optimized for chip " + chip_id
+        //document.getElementById("pixel_configure_update_content").textContent = "VPVCO and VNVCO not optimized for chip " + chip_id
         return
     }
     else {
         link_vpvco = "/Equipment/PixelsCentral/Settings/BIASDACS/" + parseInt(current_lad_chips[current_chip_selected]["json_node"]["MIDAS_ID"]) + "/VPVCO"
         link_vnvco = "/Equipment/PixelsCentral/Settings/BIASDACS/" + parseInt(current_lad_chips[current_chip_selected]["json_node"]["MIDAS_ID"]) + "/VNVCO"
         mjsonrpc_db_paste([link_vpvco, link_vnvco], [opt_vpvco, opt_vnvco]).then(function () {
-            document.getElementById("pixel_configure_update_content").textContent = "VPVCO for chip " + chip_id + " set to " + opt_vpvco
-            document.getElementById("pixel_configure_update_content").textContent += ", VNVCO for chip " + chip_id + " set to " + opt_vnvco
+            //document.getElementById("pixel_configure_update_content").textContent = "VPVCO for chip " + chip_id + " set to " + opt_vpvco
+            //document.getElementById("pixel_configure_update_content").textContent += ", VNVCO for chip " + chip_id + " set to " + opt_vnvco
         }).catch(function(error) {
             mjsonrpc_error_alert(error);
         });
         }
+}
+
+var updateAllChipQC = function () {
+	/*links = []
+	opt_vals = []
+
+	for (int chip_n = 0; chip_n < 120; ++chip_n) {
+
+		if (chip_n >= 54 && chip_n < 60) {
+			continue;
+		}
+		if (chip_n >= 114) {
+			continue;
+		}
+
+		on_chip_n = chip_n % 3;
+		if (chip_n >= 60) {
+			on_chip_n = 2 - on_chip_n;
+		}
+		
+		on_lad_n = parseInt(chip_n/3);
+		on_lad_n = on_lad_n % 20;
+		if (on_lad_n >= 8)
+			on_lad_n = on_lad_n -8;
+		
+		dir = ""
+		if (chip_n < 60) {
+			dir = "US"
+		}
+		else {
+			dir = "DS"
+		}
+
+		lay = "0"
+		if (chip_n >= 24 && chip_n < 60) {
+			lay = "1"
+		}
+		if (chip_ >= 84) {
+			lay = "1"
+		}
+		ladname = "L" + lay + "_" + dir + "_L" + on_lad_n; 
+
+		opt_vpvco = lads[ladname]["json_node"]["Chips"][on_chip_n.toString()]["json_node"]["opt_VPVCO"]
+		opt_vnvco = lads[ladname]["json_node"]["Chips"][on_chip_n.toString()]["json_node"]["opt_VNVCO"]
+    		if (opt_vpvco == 0) {
+        		continue;
+    		}
+
+		links.push("/Equipment/PixelsCentral/Settings/BIASDACS/" + chip_n.toString() + "/VPVCO";
+		links.push("/Equipment/PixelsCentral/Settings/BIASDACS/" + chip_n.toString() + "/VNVCO";
+		opt_vals.push(opt_vpvco);
+		opt_vals.push(opt_vnvco);
+
+	}
+	 mjsonrpc_db_paste(links, opt_vals).then(function () {
+            //document.getElementById("pixel_configure_update_content").textContent = "VPVCO for chip " + chip_id + " set to " + opt_vpvco
+            //document.getElementById("pixel_configure_update_content").textContent += ", VNVCO for chip " + chip_id + " set to " + opt_vnvco
+        }).catch(function(error) {
+            mjsonrpc_error_alert(error);
+        });*/
+
 }
 
 var setup_listeners = function () {
@@ -696,37 +758,44 @@ var setup = function () {
     list_chips_configuration(document.getElementById("multiple_chip_configuration_ds"), "Downstream")
 
     //setup_listeners()
-    create_ladder_legend()
+    //create_ladder_legend()
 }
 
 var load_json = function () {
     var xmlhttp2 = new XMLHttpRequest();
     xmlhttp2.onreadystatechange = function(){
       if(xmlhttp2.status==200 && xmlhttp2.readyState==4){
-        var words = xmlhttp2.responseText;//.split(' ');
-        document.getElementById("debug").textContent += "OPEN! - ";
+        var words = xmlhttp2.response;//.split(' ');
+        document.getElementById("debug").textContent += "OPEN Mupix DACs! - ";
         document.getElementById("debug").textContent += words;
         mupix_dacs = JSON.parse(words);
+        //mupix_dacs = words;
       }
       else {
-          document.getElementById("debug").textContent += "NOOOOOOO!!!" ;
+          document.getElementById("debug").textContent += "NO Mupix DACs!!!" ;
       }
     }
 
     var xmlhttp = new XMLHttpRequest();
     xmlhttp.onreadystatechange = function(){
       if(xmlhttp.status==200 && xmlhttp.readyState==4){
-        var words = xmlhttp.responseText;//.split(' ');
-        json_config = JSON.parse(words);
-        xmlhttp2.open("GET","mupix_default_dacs.json",true);
+        var wordsa = xmlhttp.responseText;//.split(' ');
+        document.getElementById("debug").textContent += "OPEN Tracker config! - ";
+        //document.getElementById("debug").textContent += wordsa;
+        json_config = JSON.parse(wordsa);
+        //json_config = wordsa;
+        document.getElementById("debug").textContent += json_config;
+        xmlhttp2.open("GET","mupix_default_dacs.json",false);
+        xmlhttp2.setRequestHeader("Content-type", "application/json;charset=utf-8");
         xmlhttp2.send();
         setup();
       }
       else {
-          document.getElementById("debug").textContent += "NOOOOOOO!!!" ;
+          document.getElementById("debug").textContent += "NO Tracker Config!!!" ;
       }
     }
-    xmlhttp.open("GET","mupix_configuration.json",true);
+    xmlhttp.open("GET","mupix_configuration.json",false);
+    xmlhttp.setRequestHeader("Content-type", "text/plain;charset=utf-8");
     xmlhttp.send();
 }
 

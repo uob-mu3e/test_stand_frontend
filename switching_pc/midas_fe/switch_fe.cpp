@@ -374,9 +374,9 @@ void setup_odb(){
 
     // add custom pages to ODB
     odb custom("/Custom");
-    custom["DAQ"]["Links"] = "links.html";
+    //custom["DAQ"]["Links"] = "links.html";
     custom["DAQ"]["FEBs"] = "febs.html";
-    //custom["DAQcounters&"] = "daqcounters.html";
+    custom["DAQcounters&"] = "daqcounters.html";
     custom["DAQ"]["Data Flow"] = "dataflow.html";
     custom["DAQ"]["Pixel LVDS"] = "pixel_lvds.html";
 

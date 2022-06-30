@@ -2,13 +2,13 @@
 # Authors Y. Demets, C. Martin Perez, 2022
 #########################################################
 
-th_start = 0
-num_th =  3 #35
+th_start = 27
+num_th =  5 #35
 num_ch = 3 #32
 num_asic = 1
 
 #PARAM filename
-filename = test27June
+filename = test30June_1
 
 #TODO: send HighTHR_PLLlock config
  
@@ -29,12 +29,12 @@ LOOP i_ch, $num_ch
 
 ENDLOOP
 
-LOOP i_th, $num_th
+LOOP i_th, $num_th 
 
-    this_th = $i_th-1
+    this_th = $th_start+$i_th-1
 
     # Mask and set threshold for all channels
-    ODBSET /Equipment/SciFiCentral/Settings/ASICs/Channels/*/mask, 1
+    #ODBSET /Equipment/SciFiCentral/Settings/ASICs/Channels/*/mask, 1
     ODBSET /Equipment/SciFiCentral/Settings/ASICs/Channels/*/tthresh, $this_th
 
     LOOP i_ch, $num_ch
@@ -48,13 +48,13 @@ LOOP i_th, $num_th
             ODBSET /Sequencer/Variables/SciFi/TThres_scan/$i_ch_unique/Threshold[$this_th], $this_th
 
             # Unmask channels
-            ODBSET /Equipment/SciFiCentral/Settings/ASICs/Channels/$i_ch_unique/mask, 0
+            #ODBSET /Equipment/SciFiCentral/Settings/ASICs/Channels/$i_ch_unique/mask, 0
            
         ENDLOOP
 
         # Send configuration and wait
         ODBSET /Equipment/SciFiCentral/Commands/SciFiConfig, 1
-        WAIT SECONDS, 5
+        WAIT SECONDS, 25
 
         LOOP i_asic, $num_asic
 
@@ -62,11 +62,11 @@ LOOP i_th, $num_th
             
             # Get rates and store in the sequencer tree
             ODBGET /Equipment/SciFiCentral/Variables/Counters/Rate[$i_ch_unique], rate 
-            rate_final = 125000001 - $rate
-            ODBSET /Sequencer/Variables/SciFi/TThres_scan/$i_ch_unique/Rate[$this_th], $rate_final
+            #rate_final = 125000001 - $rate
+            ODBSET /Sequencer/Variables/SciFi/TThres_scan/$i_ch_unique/Rate[$this_th], $rate
             
             # Mask all channels again
-            ODBSET /Equipment/SciFiCentral/Settings/ASICs/Channels/$i_ch_unique/mask, 1
+            #ODBSET /Equipment/SciFiCentral/Settings/ASICs/Channels/$i_ch_unique/mask, 1
 
         ENDLOOP 
        
@@ -74,6 +74,6 @@ LOOP i_th, $num_th
 
 ENDLOOP
 
-CAT outputfile, thr_scan_test.json
+CAT outputfile, thr_scan_, $filename, .json
 ODBSAVE /Sequencer/Variables/SciFi/TThres_scan/, $outputfile
 
