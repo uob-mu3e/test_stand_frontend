@@ -280,14 +280,12 @@ int MutrigFEB::ReadBackCounters(mappedFEB & FEB){
     
     // get ASICs from ODB
     odb odb_set_str(odb_prefix+"/Settings/Daq");
+    odb variables_counters(odb_prefix + "/Variables/Counters");
     uint32_t num_asics_per_module = odb_set_str["num_asics_per_module"];
     uint32_t num_modules_per_feb = odb_set_str["num_modules_per_feb"];
     uint32_t num_asics_per_feb = num_asics_per_module * num_modules_per_feb;
 
-   for(auto nASIC = 0 + FEB.SB_Port() * num_asics_per_feb; nASIC < num_asics_per_feb + FEB.SB_Port() * num_asics_per_feb; nASIC++){
-
-        odb variables_counters(odb_prefix + "/Variables/Counters");
-
+    for(auto nASIC = 0 + FEB.SB_Port() * num_asics_per_feb; nASIC < num_asics_per_feb + FEB.SB_Port() * num_asics_per_feb; nASIC++){
         // db_set_value_index
         variables_counters["nHits"][nASIC] = val[nASIC * 10 + 0];
         // For time we always get the first lower bits of time 1
@@ -304,7 +302,6 @@ int MutrigFEB::ReadBackCounters(mappedFEB & FEB){
    vector<uint32_t> ch_rate(128);
    feb_sc.FEB_read(FEB, SCIFI_CH_RATE_REGISTER_R, ch_rate);
    for(size_t i_ch = 0; i_ch < ch_rate.size(); i_ch++){
-        odb variables_counters(odb_prefix + "/Variables/Counters");
         variables_counters["Rate"][i_ch] = ch_rate[i_ch];
    }
 

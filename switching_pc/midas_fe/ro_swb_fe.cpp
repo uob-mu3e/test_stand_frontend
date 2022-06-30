@@ -149,6 +149,8 @@ void setup_odb(){
         {"readout_pixel_us", false},       // bool
         {"readout_all", false},        // bool
         {"use_merger", false},         // bool
+        {"subheader_zerosuppress", false}, // bool
+        {"header_zerosuppress", false}, // bool
         {"dma_buf_nwords", int(dma_buf_nwords)},
         {"dma_buf_size", int(dma_buf_size)}
     };
@@ -264,6 +266,14 @@ INT begin_of_run(INT run_number, char *error)
         readout_state_regs = SET_USE_BIT_PIXEL_US(readout_state_regs);
     } else if ( stream_settings["readout_all"] ) {
         readout_state_regs = SET_USE_BIT_ALL(readout_state_regs);
+    }
+
+    // zero suppression settings
+    if(stream_settings["subheader_zerosuppress"]) {
+        readout_state_regs = SET_USE_BIT_SUBHDR_SUPPRESS(readout_state_regs);
+    }
+    if(stream_settings["header_zerosuppress"]) {
+        readout_state_regs = SET_USE_BIT_HEAD_SUPPRESS(readout_state_regs);
     }
     
     // write readout register
