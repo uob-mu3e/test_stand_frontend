@@ -18,11 +18,12 @@ generic (
     SKIP_DOUBLE_SUB      : boolean := false;
     LINK_FIFO_ADDR_WIDTH : positive := 10;
     -- Data type: "00" = pixel, "01" = scifi, "10" = tiles
-    DATA_TYPE            : std_logic_vector(1 downto 0)    := "00"--;
+    DATA_TYPE            : std_logic_vector(1 downto 0) := "00"--;
 );
 port (
     i_rx            : in  work.mu3e.link_t;
     i_linkid        : in  std_logic_vector(5 downto 0);
+    i_use_merger    : in  std_logic := '0';
 
     o_q             : out work.mu3e.link_t;
     i_ren           : in  std_logic;
@@ -43,7 +44,7 @@ end entity;
 
 architecture arch of link_to_fifo is
 
-    type link_to_fifo_type is (idle, write_ts_0, write_ts_1, write_data, skip_data);
+    type link_to_fifo_type is (idle, write_ts_0, write_ts_1, write_d0, write_d1, write_data, skip_data);
     signal link_to_fifo_state : link_to_fifo_type;
     signal cnt_skip_data, cnt_sub, cnt_events : std_logic_vector(31 downto 0);
 
@@ -127,9 +128,28 @@ begin
                 rx_wen <= '1';
 
             when write_ts_1 =>
-                link_to_fifo_state <= write_data;
+                -- if we are on the SWB and we have pixel data we have extra debug data
+                if ( not is_FARM and DATA_TYPE = "00" ) then
+                    link_to_fifo_state <= write_d0;
+                else
+                    link_to_fifo_state <= write_data;
+                end if;
                 rx.t1 <= '1';
                 rx_wen <= '1';
+
+            when write_d0 =>
+                link_to_fifo_state <= write_d1;
+                rx.d0 <= '1';
+                if ( i_use_merger = '0' ) then
+                    rx_wen <= '1';
+                end if;
+
+            when write_d1 =>
+                link_to_fifo_state <= write_data;
+                rx.d1 <= '1';
+                if ( i_use_merger = '0' ) then
+                    rx_wen <= '1';
+                end if;
 
             when write_data =>
                 if ( i_rx.eop = '1' ) then

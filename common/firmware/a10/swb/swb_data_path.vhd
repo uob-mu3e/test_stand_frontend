@@ -267,6 +267,7 @@ begin
         port map (
             i_rx            => rx_zero_suppressed(i),
             i_linkid        => work.mudaq.link_36_to_std(i),
+            i_use_merger    => i_writeregs(SWB_READOUT_STATE_REGISTER_W)(USE_BIT_MERGER),
 
             o_q             => rx_q(i),
             i_ren           => rx_ren(i),
