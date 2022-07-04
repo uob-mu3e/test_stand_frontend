@@ -1,4 +1,3 @@
-<<<<<<< HEAD
 # Mu3e online repository
 
 - for latest version use tag `release/22.03`
