@@ -96,3 +96,17 @@ resources
 # temporal files in qctesting
 /online/pixels/qctests/ladder/Eval/output/temp/*
 
+*mid*
+*.hst
+*.idf
+*.idx
+**/online/build/**
+*.un*
+*.SHM
+*.log
+*.txt
+*.TXT
+*.png
+exptab
+*.json
+!CMakeLists.txt

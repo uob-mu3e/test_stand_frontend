@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 # Mu3e online repository
 
 - for latest version use tag `release/22.03`
@@ -38,3 +39,4 @@
 - [setup #1](docs/setup1.md)
 - [code style](docs/style.md)
 - [git faq](docs/git.md)
+- [arduino firmware repository](https://github.com/uob-hep-cad/mu3e)
