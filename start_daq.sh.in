@@ -1,14 +1,10 @@
 #!/bin/bash
 
-PREFIX="@CMAKE_INSTALL_PREFIX@"
-SOURCE="@PROJECT_SOURCE_DIR@"
-BINDIR="${PREFIX}/bin"
-LIBDIR="${PREFIX}/lib"
+SOURCE="/software/mu3e"
 
-source "${PREFIX}/set_env.sh"
+source "${SOURCE}/midas_installations/midas_v1/mu3eSummer22/packages/set_env.sh.in"
 
-cd "${SOURCE}/online"
-
+cd "${SOURCE}/midas_installations/midas_v1/mu3eSummer22/packages/online"
 
 #create custom pages for DAQ slow control
 #odbedit -d Custom -c 'create STRING SC'
