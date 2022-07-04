@@ -2,30 +2,213 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <link rel="stylesheet" href="midas.css">
+    <link rel="stylesheet" href="midas.css"> 
     <script src="controls.js"></script>
     <script src="midas.js"></script>
     <script src="mhttpd.js"></script>
-    <title>In-cage Environment</title>
+    <title>Helium 2 g/s system</title>
+
     <style>
         th, td {
             padding: 10px;
         }
     </style>
+	
+    <script>
+
+	function precise(x, prec) {
+            return Number.parseFloat(x).toPrecision(prec);
+        }
+
+
+        // Update the sensor values and trigger updates of derived variables
+        var pIn = 1, pComp = 1, pOut = 1;
+        function updatepIn   (value) { pIn = value; };
+        function updatepComp (value) { pComp = value; };
+        function updatepOut  (value) { pOut = value; };
+
+        var TIn = 1, TComp = 1, TOut = 1;
+        function updateTIn   (value) { TIn   = value; updateRhoIn(); };
+        function updateTComp (value) { TComp = value; updateRhoComp(); };
+	function updateTOut  (value) { TOut  = value; updateRhoOut(); };
+
+        // Calculation of the air content
+        const O2inAir = 0.20942; // https://en.wikipedia.org/wiki/Atmosphere_of_Earth
+        const O2calib = 0.949; // Value for this sensor. TODO implement this into DB
+        var airContent = 1;
+        function calcAirConc(O2conc) { return  O2conc / O2inAir * O2calib; };
+        function updateAirConc(value) { airContent = calcAirConc(value); document.getElementById("airContent").innerHTML = precise(airContent,3) +" %"; };
+
+        // Calculate the molar mass from the air content
+        const Mhelium = 4.0026; // g/mol
+        const Mair = 28.949; // g/mol Caveat: this is the molar mass for dry air TODO implement correction using an RH value
+        var Mgas = 1;
+        function calcMolarMass(x) { return (0.01 * x) * Mair + (1 - 0.01*x) * Mhelium;};
+        function updateMolarMass(value) { Mgas = calcMolarMass(airContent); document.getElementById("Mgas").innerHTML = precise(Mgas,4); };
+
+        // Calculate gas density
+        const R = 8.314; // J/mol*K
+        const CtoK = 273.13;
+        function gasDensity(p, M, T) {
+            let ret = p * 1e5 * M * 1e-3 / (R * (T+CtoK));
+            //console.log("p: "+p+" M: "+M+" R: "+R+" T: "+T+" T(K): "+(T+CtoK)+" rho: "+ret);
+            return ret;
+        };
+        var RhoIn = 1, RhoComp = 1, RhoOut = 1;
+        function updateRhoIn()   { RhoIn = gasDensity(pIn, Mgas, TIn); document.getElementById("rhoIn").innerHTML = precise(RhoIn,4); };
+        function updateRhoComp() { RhoComp = gasDensity(pComp, Mgas, TComp); document.getElementById("rhoComp").innerHTML = precise(RhoComp,4); };
+        function updateRhoOut()  { RhoOut = gasDensity(pOut, Mgas, TOut); document.getElementById("rhoOut").innerHTML = precise(RhoOut,4); };
+
+        // Calculate deltaP from Venturis
+        var deltaPVenturiIn = 1, deltaPVenturiOut = 1;
+        function updateDeltaPVenturiIn(value)  { deltaPVenturiIn = value;  updateMdotIn(); updateMdotGasIn(); };
+        function updateDeltaPVenturiOut(value) { deltaPVenturiOut = value; updateMdotOut(); updateMdotGasOut();};
+
+        // Calculate mass flow
+        // These values come from our calibration and have to be regarded as estimates
+        // p0 is the zero offset and depends on the sensor (and its drift)
+        const p1 = 0.024;
+        const p2 = 0.1092;
+
+        function calcMdot(deltaP, p0) { return ( (-p1 + Math.sqrt(p1*p1 - 4*p2*(p0-deltaP)))/(2*p2) ); };
+        var mdotIn = 1, mdotOut = 1;
+        // p0 values updated from averages collected 8.8.21 19:35 to 20:35
+        function updateMdotIn()  { mdotIn = calcMdot(deltaPVenturiIn, 0); document.getElementById("mdotIn").innerHTML = precise(mdotIn, 4); };
+        function updateMdotOut() { mdotOut = calcMdot(deltaPVenturiOut, 0); document.getElementById("mdotOut").innerHTML = precise(mdotOut, 4); };
+
+        // Convert dm/dt to current gas
+        var mdotGasIn = 1, mdotGasOut = 1;
+        const rhoCalib = 0.157; // kg/m3 This was the condition during the Venturi tube calibration
+        function calcMdotGas(dmdt, rho) { return Math.sqrt(rho / rhoCalib) * dmdt; }
+        function updateMdotGasIn()  { mdotGasIn = calcMdotGas(mdotIn, RhoIn); document.getElementById("mdotGasIn").innerHTML = precise(mdotGasIn, 3) + " g/s"; }
+        function updateMdotGasOut()  { mdotGasOut = calcMdotGas(mdotOut, RhoOut); document.getElementById("mdotGasOut").innerHTML = precise(mdotGasOut, 3) + " g/s"; }
+
+
+
+
+    </script>
 
 </head>
-<body class="mcss" onload="mhttpd_init('Services/Cage');">
+
+
+<body class="mcss" onload="mhttpd_init('Test/He system');">
 
     <!-- header and side navigation will be filled in mhttpd_start -->
-    <div id="mheader"></div>
-    <div id="msidenav"></div>
+    	<div id="mheader"></div>
+    	<div id="msidenav"></div>
 
-    <div id="mmain">
+    	<div id="mmain">
+
+	<div class="modb" data-odb-path="/Equipment/HePlant/Variables/Input[7]" onchange="updateTIn(this.value);">
+        <div class="modb" data-odb-path="/Equipment/HePlant/Variables/Input[8]" onchange="updateTComp(this.value);">
+        <div class="modb" data-odb-path="/Equipment/HePlant/Variables/Input[9]" onchange="updateTOut(this.value);">
+
+        <div class="modb" data-odb-path="/Equipment/HePlant/Variables/Input[2]" onchange="updatepIn(this.value);">
+        <div class="modb" data-odb-path="/Equipment/HePlant/Variables/Input[3]" onchange="updatepComp(this.value);">
+        <div class="modb" data-odb-path="/Equipment/HePlant/Variables/Input[4]" onchange="updatepOut(this.value);">
+	
+	<div class="modb" data-odb-path="/Equipment/HePlant/Variables/Input[10]" onchange="updateAirConc(this.value); updateMolarMass(airContent);">
+
+	<div class="modb" data-odb-path="/Equipment/HePlant/Variables/Input[5]" onchange="updateDeltaPVenturiIn(this.value);">
+	<div class="modb" data-odb-path="/Equipment/HePlant/Variables/Input[6]" onchange="updateDeltaPVenturiOut(this.value);">
+	
+
         <table class="mtable">
-            <tr><th class="mtableheader">Environment inside cage</th></tr>
+            <tr><th class="mtableheader">Helium 2 g/s system</th></tr>
             <tr><td>
-                <div style="position:relative;margin:auto">
-                    <img src="helium_2gs_system.png">
+                <div style="position:relative;width:1000px;margin:auto">
+                    <img src="helium_2gs_system.png" style="width:100%">
+
+
+		    <!-- Bypass status -->
+	   	    	<div class="modbbox" data-odb-path="/Equipment/HePlant/Variables/Output[0]" 
+			data-formula="x < 1" style="width: 12px; height: 12px; border: 1px solid black; position:absolute;top:36.6%;left:20.05%;" 
+			data-color="lightgreen" data-background-color="red" ></div>
+
+                    <!-- Chiller status -->
+
+		    	<div class="modbbox" data-odb-path="/Equipment/HePlant/Variables/Input[0]" 
+			data-formula="x > 0" style="width: 12px; height: 12px; border: 1px solid black; position:absolute;top:84.6%;left:15.95%;" 
+			data-color="lightgreen" data-background-color="red" ></div>
+
+                    	<div class="modbbox" data-odb-path="/Equipment/HePlant/Variables/Input[1]" 
+			data-formula="x > 0" style="width: 12px; height: 12px; border: 1px solid black; position:absolute;top:84.1%;left:26.05%;" 
+			data-color="lightgreen" data-background-color="red" ></div>
+
+                    <!-- Inflowing gas properties -->
+
+                        <div class="text" style="font-size: 12px; position:absolute; top:55.7%; left:0.5%;"> Temperature: </div>
+                        <div class="text" style="font-size: 12px; position:absolute; top:58.7%; left:0.5%;"> Pressure: </div>
+                        <div class="text" style="font-size: 12px; position:absolute; top:61.7%; left:0.5%;"> &#916p (flow): </div>
+                        <div class="text" style="font-size: 12px; position:absolute; top:64.7%; left:0.5%;"> mass flow: </div>
+
+		    	<div class="modbvalue" data-odb-path="/Equipment/HePlant/Variables/Input[7]"
+                        data-format="%f1&deg;C"
+                       	data-formula="x"
+                       	style="font-size: 12px; position:absolute; top:55.7%; left:8.6%;"></div>
+
+			<div class="modbvalue" data-odb-path="/Equipment/HePlant/Variables/Input[2]"
+                        data-format="%f mbar"
+                        data-formula="x*1000"
+                        style="font-size: 12px; position:absolute; top:58.7%; left:8.6%;"></div>
+
+			<div class="modbvalue" data-odb-path="/Equipment/HePlant/Variables/Input[5]"
+                        data-format="%f2 mbar"
+                        data-formula="x"
+                        style="font-size: 12px; position:absolute; top:61.7%; left:8.6%;"></div>
+
+                        <div id="mdotGasIn" style="font-size: 12px; position:absolute; top:64.7%; left:8.6%;"> </div>
+
+                    <!-- Outflowing gas properties -->
+
+		    	<div class="text" style="font-size: 12px; position:absolute; top:25.7%; left:27.4%;"> Temperature: </div>
+			<div class="text" style="font-size: 12px; position:absolute; top:28.7%; left:27.4%;"> Pressure: </div>
+			<div class="text" style="font-size: 12px; position:absolute; top:31.7%; left:27.4%;"> &#916p (flow): </div>
+			<div class="text" style="font-size: 12px; position:absolute; top:34.7%; left:27.4%;"> mass flow: </div>
+
+                        <div class="modbvalue" data-odb-path="/Equipment/HePlant/Variables/Input[9]"
+                        data-format="%f1&deg;C"
+                        data-formula="x"
+                        style="font-size: 12px; position:absolute; top:25.7%; left:35.5%;"></div>
+
+                        <div class="modbvalue" data-odb-path="/Equipment/HePlant/Variables/Input[4]"
+                        data-format="%f mbar"
+                        data-formula="x*1000"
+			style="font-size: 12px; position:absolute; top:28.7%; left:35.5%;"></div>
+
+                        <div class="modbvalue" data-odb-path="/Equipment/HePlant/Variables/Input[6]"
+                        data-format="%f2 mbar"
+                        data-formula="x"
+                        style="font-size: 12px; position:absolute; top:31.7%; left:35.5%;"></div>
+
+                        <div id="mdotGasOut" style="font-size: 12px; position:absolute; top:34.7%; left:35.5%;"> </div>
+
+		    <!-- O2 sensor , boolean green when below c(O2)< 1% -->
+
+                        <div class="modbbox" data-odb-path="/Equipment/HePlant/Variables/Input[10]" 
+			data-formula="x < 1" style="width: 12px; height: 12px; border: 1px solid black; position:absolute;top:65.4%;left:86.5%;" 
+                        data-color="lightgreen" data-background-color="red" ></div> 
+
+                        <div class="text" style="font-size: 12px; position:absolute; top:65.1%; left:88.5%;"> c(O2): </div>
+			<div class="text" style="font-size: 12px; position:absolute; top:68.1%; left:88.5%;"> c(air): </div>
+
+                        <div class="modbvalue" data-odb-path="/Equipment/HePlant/Variables/Input[10]"
+                        data-format="%f2 %"
+                        data-formula="x"
+                        style="font-size: 12px; position:absolute; top:65.1%; left:92.5%;"></div>
+
+			<div id="airContent" style="font-size: 12px; position:absolute; top:68.1%; left:92.5%;"> </div>
+
+		    <!-- gas parameters -->
+                        <div id="Mgas"  style="font-size: 12px; position:absolute; top:71.1%; left:88.5%;"></div>
+                        <div id="rhoIn" style="font-size: 12px; position:absolute; top:74.1%; left:88.5%;"> </div>
+                        <div id="rhoOut"  style="font-size: 12px; position:absolute; top:77.1%; left:88.5%;"></div>
+                        <div id="rhoComp"  style="font-size: 12px; position:absolute; top:80.1%; left:88.5%;"></div>
+                        <div id="mdotIn" style="font-size: 12px; position:absolute; top:83.1%; left:88.5%;"> </div>
+                        <div id="mdotOut"  style="font-size: 12px; position:absolute; top:86.1%; left:88.5%;"></div>
+    
+
+
                 </div>
             </td></tr>
         </table>
