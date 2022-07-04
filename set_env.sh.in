@@ -1,54 +1,51 @@
 #!/bin/bash
 
-PREFIX="@CMAKE_INSTALL_PREFIX@"
-SOURCE="@PROJECT_SOURCE_DIR@"
-BINDIR="${PREFIX}/bin"
-BINDIRMIDAS="@MIDASSYS@/bin"
-LIBDIR="${PREFIX}/lib"
+PREFIX="/usr/local"
+SOURCE="/software/mu3e"
 
-PATH="${BINDIR}:${BINDIRMIDAS}:${PATH}"
-if [[ "$OSTYPE" == "darwin"* ]]; then
-    export DYLD_LIBRARY_PATH="${LIBDIR}${DYLD_LIBRARY_PATH:+:}${DYLD_LIBRARY_PATH}";
-fi
+# Setup MIDAS
+export MIDASSYS="${SOURCE}/midas_installations/midas_v1/mu3eSummer22/packages/midas"
+export MIDAS_EXPTAB="${MIDASSYS}/../online/exptab"
+export MIDAS_EXPT_NAME="mu3eUoB"
 
-export MIDASSYS=@MIDASSYS@
-export MIDAS_EXPTAB="${SOURCE}/online/exptab"
-export MIDAS_EXPT_NAME="Mu3e"
+# Create exptab file in if not present
 if [ ! -f "${MIDAS_EXPTAB}" ]; then
     echo "${MIDAS_EXPTAB} does not exist, creating default exptab with experiment name ${MIDAS_EXPT_NAME}"
     echo "#Exptname    Expt Directory             Username" >> ${MIDAS_EXPTAB}
     echo "${MIDAS_EXPT_NAME}    ${SOURCE}/online    ${USER}" >> ${MIDAS_EXPTAB}
 fi
 
-#Remove duplicates in $PATH
-if [ -n "$PATH" ]; then
-    old_PATH=$PATH:; PATH=
-    while [ -n "$old_PATH" ]; do
-        x=${old_PATH%%:*}         # the first remaining entry
-        case $PATH: in
-            *:"$x":*) ;;          # already there
-            *) PATH=$PATH:$x;;    # not there yet
-        esac
-        old_PATH=${old_PATH#*:}
-    done
-    PATH=${PATH#:}
-    unset old_PATH x
+# Setup QUARTUS
+export QSYS_ROOTDIR="${SOURCE}/QUARTUS/quartus/sopc_builder/bin"
+export QUARTUS_ROOTDIR="${SOURCE}/QUARTUS/quartus"
+export SOPC_KIT_NIOS2="${QUARTUS_ROOTDIR}/../nios2eds"
+export QUARTUS_ROOTDIR_OVERRIDE="$QUARTUS_ROOTDIR"
+
+# Setup ROOT
+source /software/root/v6.06.08/bin/thisroot.sh
+export ROOTSYS=/software/root/v6.06.08
+
+# Setup GEANT
+source /software/geant4/geant4.9.2.p02/env.sh
+
+# Modify $PATH and remove any duplicates in $PATH with awk
+BINNIOS="${SOPC_KIT_NIOS2}/bin"
+BINSDK2="${SOPC_KIT_NIOS2}/sdk2/bin"
+BINDIR="${PREFIX}/bin"
+BINDIRMIDAS="${MIDASSYS}/bin"
+BINGNU="${SOPC_KIT_NIOS2}/bin/gnu/H-x86_64-pc-linux-gnu/bin"
+LIBDIR="${PREFIX}/lib"
+
+PATH="${BINDIR}:${BINDIRMIDAS}:${BINNIOS}:${BINSDK2}:${BINGNU}:${QSYS_ROOTDIR}:${PATH}"
+if [[ "$OSTYPE" == "darwin"* ]]; then
+    export DYLD_LIBRARY_PATH="${LIBDIR}${DYLD_LIBRARY_PATH:+:}${DYLD_LIBRARY_PATH}";
 fi
+
+PATH="$(printf "%s" "${PATH}" | /usr/bin/awk -v RS=: -v ORS=: '!($0 in a) {a[$0]; print}')"
+export PATH
 
 # bash or zsh require a rehash to pick up new commands
 if test -n "${BASH}" -o -n "${ZSH_VERSION}"; then
     hash -r
 fi
 
-# setup mu3edisplay path
-ln -sf ~/analyzer/packages/mu3edisplay ~/online/online
-ln -sf ~/analyzer/packages/mu3edisplay/config ~/online/online
-
-#
-# [SR] Personal git-xy alias to be used by all of us, please add one for yourself
-#
-alias git-sr='env GIT_AUTHOR_NAME="Stefan Ritt" GIT_AUTHOR_EMAIL="stefan.ritt@psi.ch" git'
-alias git-mm='env GIT_AUTHOR_NAME="Martin Mueller" GIT_AUTHOR_EMAIL="mmarti04@students.uni-mainz.de" git'
-alias git-fw='env GIT_AUTHOR_NAME="Frederik Wauters" GIT_AUTHOR_EMAIL="fwauters@uni-mainz.de" git'
-alias git-nb='env GIT_AUTHOR_NAME="Niklaus Berger" GIT_AUTHOR_EMAIL="niberger@uni-mainz.de" git'
-alias git-mk='env GIT_AUTHOR_NAME="Marius Koeppel" GIT_AUTHOR_EMAIL="koeppel.ma@googlemail.com" git'
