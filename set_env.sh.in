@@ -5,10 +5,10 @@ SOURCE="/software/mu3e"
 
 # Setup MIDAS
 export MIDASSYS="${SOURCE}/midas_installations/midas_v1/mu3eSummer22/packages/midas"
-export MIDAS_EXPTAB="${MIDASSYS}/../online/exptab"
+export MIDAS_EXPTAB="${SOURCE}/midas_installations/midas_v1/mu3eSummer22/packages/online/exptab"
 export MIDAS_EXPT_NAME="mu3eUoB"
 
-# Create exptab file in if not present
+# Create exptab file in if not present, currently not correct
 if [ ! -f "${MIDAS_EXPTAB}" ]; then
     echo "${MIDAS_EXPTAB} does not exist, creating default exptab with experiment name ${MIDAS_EXPT_NAME}"
     echo "#Exptname    Expt Directory             Username" >> ${MIDAS_EXPTAB}
