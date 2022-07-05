@@ -46,6 +46,7 @@ port (
     i_lvds_data_in          : in  std_logic_vector(35 downto 0);
 
     i_reset                 : in  std_logic;
+    i_pin_reset             : in  std_logic;
     -- 156.25 MHz
     i_clk156                   : in  std_logic;
     i_clk125                : in  std_logic;
@@ -101,6 +102,7 @@ begin
     port map (
         i_reset_n           => datapath_reset_n,
         i_reset_n_regs      => not i_reset,
+        i_pin_reset         => i_pin_reset,
 
         i_clk156            => i_clk156,
         i_clk125            => i_clk125,

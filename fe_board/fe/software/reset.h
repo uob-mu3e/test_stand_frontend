@@ -26,6 +26,10 @@ void menu_reset() {
     alt_u32 payload = 0x0;
     char str[2] = {0};
 
+    char runStart[5] = {'1', '2', '3', '4', '5'};
+    int cnt = 0;
+    bool cntLoop = false;
+
     while(1) {
         printf("\n");
         printf("[reset] -------- menu --------\n");
@@ -90,9 +94,18 @@ void menu_reset() {
         printf("  [b] => reset pod\n");
         printf("  [c] => reset TX data\n");
         printf("  [p] => set payload   payload: 0x%08x\n", payload);
+        printf("  [l] => loop run start\n");
         printf("Select entry ...\n");
         reset_bypass_buffer = reset_bypass;
-        char cmd = wait_key();
+        char cmd;
+        if (cntLoop) {
+            usleep(100000);
+            cmd = runStart[cnt];
+            if (cnt == 4) cnt = 0;
+            else cnt++;
+        } else {
+            cmd = wait_key();
+        }
         switch(cmd) {
         case '0':
             if((0x0000FFFF&reset_bypass)==0x00000200){
@@ -157,6 +170,9 @@ void menu_reset() {
 
             printf("setting payload to 0x%08x\n", payload);
             reset_bypass_payload = payload;
+            break;
+        case 'l':
+            cntLoop = true;
             break;
         case 'q':
             return;

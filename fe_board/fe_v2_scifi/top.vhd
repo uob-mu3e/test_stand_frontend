@@ -425,5 +425,6 @@ begin
     FPGA_Test(1) <= clk_125;
     FPGA_Test(2) <= clk_125_top;
     FPGA_Test(3) <= pll_test;
+    FPGA_Test(5) <= run_state_125(RUN_STATE_BITPOS_SYNC);
 
 end architecture;
