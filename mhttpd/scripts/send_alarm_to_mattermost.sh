@@ -4,7 +4,7 @@ generate_post_data()
 {
   cat <<EOF
   {
-  "text": "Midas alarm triggered with message = $alarm_message", 
+  "text": "@all Midas alarm triggered with message = $alarm_message", 
   "icon_emoji":":rotating_light:", 
   "username":"Midas"}
 EOF
