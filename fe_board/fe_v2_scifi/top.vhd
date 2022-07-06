@@ -217,7 +217,7 @@ begin
     scifi_spi_sclk2  <= not scifi_int_spi_sclk; -- check google doc
     scifi_spi_mosi2  <= not scifi_int_spi_mosi;
 
-    scifi_int_spi_miso <=  (not scifi_spi_miso2) when (scifi_csn_buf(7 downto 4) /= x"F") else scifi_spi_miso;
+    scifi_int_spi_miso <= (not scifi_spi_miso2) when (scifi_int_csn(7 downto 4) /= x"F") else not scifi_spi_miso;
 
     -- LVDS inputs signflip in receiver block generic
 
@@ -424,5 +424,6 @@ begin
     FPGA_Test(0) <= transceiver_pll_clock(0);
     FPGA_Test(1) <= clk_125;
     FPGA_Test(2) <= clk_125_top;
+    FPGA_Test(3) <= pll_test;
 
 end architecture;

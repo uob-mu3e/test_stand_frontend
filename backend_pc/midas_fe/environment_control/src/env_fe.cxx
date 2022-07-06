@@ -168,6 +168,12 @@ INT frontend_init()
                                             "DS_central_RH"});
    env.define_history_panel("Water",       {"US_bottom_Water",
                                             "DS_bottom_Water"});
+                                            
+                                                
+  // Define the ODB structure
+    midas::odb custom("/Custom");
+    custom["Services"]["Cage"] = "environment_incage.html";
+    
                                     
    mdevice_mscb water("Water", "Input", DF_INPUT, "mscb334.mu3e", "", 100);
    water.set_threshold(0.005);
@@ -198,6 +204,8 @@ INT frontend_init()
                                               "DS_Out_T"});
    water.define_history_panel("Flow",        {"US_In_Flow",
                                               "DS_In_Flow"});
+                                              
+   custom["Services"]["SSW cooling"] = "ssf_cooling.html";
 
 
    // Pixel Temperatures

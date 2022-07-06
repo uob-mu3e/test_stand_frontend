@@ -45,4 +45,13 @@ package scifi_registers is
     -- lapse counting
     constant SCIFI_CTRL_LAPSE_COUNTER_REGISTER_W :   integer := 16#404B#;
 
+    -- cc diff
+    constant SCIFI_CC_DIFF_REGISTER_R            :   integer := 16#404C#;
+    
+    -- link data debug path
+    constant SCIFI_LINK_DATA_REGISTER_W          :   integer := 16#404D#;
+
+    -- ch rate register (times 128 at the moment)
+    constant SCIFI_CH_RATE_REGISTER_R            :   integer := 16#404E#;
+
 end package;

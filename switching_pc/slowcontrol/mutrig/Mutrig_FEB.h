@@ -41,9 +41,10 @@ class MutrigFEB : public MuFEB{
       //MIDAS callback for all setters below (DAQ related, mapped to functions on FEB / settings from the DAQ subdirectory).
       //Made static and using the user data argument as "this" to ease binding to C-style midas-callbacks
       static void on_settings_changed(odb o, void * userdata);
+      static void on_commands_changed(odb o, void * userdata);
 
       //Write all registers based on ODB values
-      int WriteAll();
+      int WriteAll(uint32_t nasics);
 
       //ASIC configuration:
       //Configure all asics under prefix (e.g. prefix="/Equipment/SciFi"), report any errors as equipment_name
@@ -67,7 +68,7 @@ class MutrigFEB : public MuFEB{
       //Foreach loop over all asics under this prefix. Call with a lambda function,
       //e.g. midasODB::MapForEach(hDB, "/Equipment/SciFi",[mudaqdev_ptr](Config c,int asic){mudaqdev_ptr->ConfigureAsic(c,asic);});
       //Function must return SUCCESS, otherwise loop is stopped.
-      int MapForEach(std::function<int(mutrig::MutrigConfig* /*mutrig config*/,int /*ASIC #*/)> func);
+      int MapForEach(std::function<int(mutrig::MutrigConfig* /*mutrig config*/,int /*ASIC #*/, int /*nModule #*/, int /*nASICperModule #*/)> func);
 
       //FEB registers and functions.
       //Parameter FPGA_ID refers to the physical FEB port, i.e. after mapping

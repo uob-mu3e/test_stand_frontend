@@ -46,7 +46,10 @@ architecture arch of swb_midas_event_builder is
 
     -- tagging fifo
     type event_tagging_state_type is (
-        event_head, event_num, event_tmp, event_size, bank_size, bank_flags, bank_name, bank_type, bank_length, bank_data, bank_set_length, event_set_size, bank_set_size, write_tagging_fifo, set_algin_word, bank_reserved, EVENT_IDLE--,
+        event_head, event_num, event_tmp, event_size, bank_size, bank_flags, 
+        bank_name, bank_type, bank_length, bank_data, bank_set_length, 
+        event_set_size, bank_set_size, write_tagging_fifo, set_algin_word, 
+        set_header_cnt, bank_reserved, EVENT_IDLE--,
     );
     signal event_tagging_state : event_tagging_state_type;
     signal e_size_add, b_size_add, b_length_add, w_ram_add_reg, w_ram_add, last_event_add, align_event_size : std_logic_vector(11 downto 0);
@@ -60,7 +63,8 @@ architecture arch of swb_midas_event_builder is
     signal r_ram_data : std_logic_vector(255 downto 0);
 
     -- midas event
-    signal event_id, trigger_mask : std_logic_vector(15 downto 0);
+    signal event_id, trigger_mask, shead_cnt : std_logic_vector(15 downto 0);
+    signal header_cnt : std_logic_vector(7 downto 0);
     signal serial_number, time_tmp, type_bank, flags, bank_size_cnt, event_size_cnt : std_logic_vector(31 downto 0);
 
     -- event readout state machine
@@ -151,6 +155,8 @@ begin
         w_ram_add_reg       <= (others => '0');
         last_event_add      <= (others => '0');
         align_event_size    <= (others => '0');
+        header_cnt          <= (others => '0');
+        shead_cnt           <= (others => '0');
 
         -- ram and tagging fifo write signals
         w_ram_en            <= '0';
@@ -305,19 +311,27 @@ begin
                     is_error <= '1';
                 end if;
                 if (  i_rx.eop = '1' ) then
+                    shead_cnt                   <= i_rx.data(23 downto 8);
+                    header_cnt                  <= i_rx.data(31 downto 24);
                     w_ram_data(31 downto 12)    <= x"FC000";
                     w_ram_data(11 downto 8)     <= "00" & i_rx.data(9 downto 8);
                     w_ram_data(7 downto 0)      <= x"9C";
+                    event_tagging_state <= set_header_cnt;
                 else
                     w_ram_data      <= i_rx.data;
                 end if;
                 event_size_cnt      <= event_size_cnt + 4;
                 bank_size_cnt       <= bank_size_cnt + 4;
-                if ( i_rx.eop = '1' or i_rx.err = '1' ) then
-                    event_tagging_state <= set_algin_word;
-                    align_event_size    <= w_ram_add + 1 - last_event_add;
-                end if;
             end if;
+
+        when set_header_cnt =>
+            w_ram_en            <= '1';
+            w_ram_add           <= w_ram_add + 1;
+            w_ram_data          <= x"FF" & shead_cnt & header_cnt;
+            event_size_cnt      <= event_size_cnt + 4;
+            bank_size_cnt       <= bank_size_cnt + 4;
+            event_tagging_state <= set_algin_word;
+            align_event_size    <= w_ram_add + 1 - last_event_add;
 
         when set_algin_word =>
             w_ram_en            <= '1';

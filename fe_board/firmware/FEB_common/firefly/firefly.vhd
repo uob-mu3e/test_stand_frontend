@@ -30,7 +30,8 @@ use ieee.std_logic_unsigned.all;
 
 entity firefly is
 generic (
-    I2C_DELAY_g             : positive := 50000000--;
+    I2C_DELAY_g             : positive := 50000000;
+    USE_FIREFLY_2           : boolean  := false--;
 );
 port (
     i_clk                   : in    std_logic;
@@ -41,7 +42,6 @@ port (
     i_reset_n               : in    std_logic;
     i_reset_156_n           : in    std_logic;
     i_reset_125_rx_n        : in    std_logic;
-    i_lvds_align_reset_n    : in    std_logic;
 
     --rx
     i_data_fast_serial      : in    std_logic_vector(      3 downto 0);
@@ -141,6 +141,7 @@ architecture rtl of firefly is
     signal lvds_rx_locked       : std_logic;
     signal lvds_align_clicks    : std_logic_vector(7 downto 0);
     signal lvds_o_ready         : std_logic;
+    signal lvds_controller_state: std_logic_vector(3 downto 0);
 
     -- lvds data signals
     signal lvds_in_10b                      : std_logic_vector(9 downto 0);
@@ -148,6 +149,7 @@ architecture rtl of firefly is
     signal lvds_8b10b_out                   : std_logic_vector(7 downto 0);
     signal lvds_rx_clk                      : std_logic;
     signal lvds_8b10b_out_in_clk125_global  : std_logic_vector(7 downto 0);
+    signal lvds_align_reset_n               : std_logic;
 
     -- avalon interface
     signal av_ctrl              : work.util.avalon_t;
@@ -193,8 +195,13 @@ begin
     begin
     if rising_edge(i_clk) then
         -- spending a round of registers for timing improvement
-        o_data_fast_parallel    <= av_rx_data_parallel;
-        o_datak                 <= av_rx_datak;
+        if ( USE_FIREFLY_2 ) then
+            o_data_fast_parallel    <= av_rx_data_parallel(31 downto 0) & av_rx_data_parallel(127 downto 96) & av_rx_data_parallel(95 downto 64) & av_rx_data_parallel(63 downto 32);
+            o_datak                 <= av_rx_datak(3 downto 0)          & av_rx_datak(15 downto 12)          & av_rx_datak(11 downto 8)          & av_rx_datak(7 downto 4);
+        else
+            o_data_fast_parallel    <= av_rx_data_parallel;
+            o_datak                 <= av_rx_datak;
+        end if;
     end if;
     end process;
 
@@ -392,7 +399,7 @@ begin
     e_lvds_controller : entity work.lvds_controller
     port map(
         i_clk               => i_clk_lvds,                      -- controller MUST run on 125 Global. DO NOT CHANGE TO lvds_rx_clk !!!
-        i_areset_n          => i_lvds_align_reset_n,
+        i_areset_n          => lvds_align_reset_n,
         i_data              => lvds_8b10b_out_in_clk125_global, -- feed alignment with 8b10b decoded data in global clk domain
         i_cda_max           => lvds_cda_max,
         i_dpa_locked        => lvds_dpa_locked,
@@ -404,7 +411,8 @@ begin
         o_fifo_reset        => lvds_fifo_reset,
         o_rx_reset          => lvds_rx_reset,
         o_cda_reset         => open, --not available on ArriaV
-        o_align_clicks      => lvds_align_clicks
+        o_align_clicks      => lvds_align_clicks,
+        o_lvds_state        => lvds_controller_state--,
     );
 
     process (lvds_rx_clk)
@@ -490,6 +498,8 @@ begin
         o_loopback        => rx_seriallpbken,
         o_tx_reset        => open,
         o_rx_reset        => open,
+        o_lvds_align_reset_n    => lvds_align_reset_n,
+        i_lvds_controller_state => lvds_controller_state,
 
         i_tx_status       => av_tx_ready,
         i_rx_ready        => av_rx_ready,
@@ -540,34 +550,67 @@ begin
         q       => lvds_8b10b_out_in_clk125_global--,
     );
 
-    sync_fifo2 : entity work.ip_dcfifo
-    generic map (
-        ADDR_WIDTH  => 4,
-        DATA_WIDTH  => 220,
-        SHOWAHEAD   => "OFF",
-        DEVICE      => "Arria V"--,
-    )
-    port map (
-        aclr            => not i_lvds_align_reset_n,--'0',
-        data            =>  disperr
-                            & errdetect & syncstatus
-                            & rx_is_lockedtodata & rx_is_lockedtoref
-                            & locked(3 downto 0) & x"00"--tx_ready
-                            & rx_data_parallel & rx_datak,
-        rdclk           => i_clk,
-        rdreq           => '1',
-        wrclk           => rx_clk(0),
-        wrreq           => '1',
-        q(15 downto 0)      => av_rx_datak,
-        q(143 downto 16)    => av_rx_data_parallel,
-        q(151 downto 144)   => open,--av_tx_ready,
-        q(155 downto 152)   => av_locked(3 downto 0),
-        q(163 downto 156)   => av_rx_is_lockedtoref,
-        q(171 downto 164)   => av_rx_is_lockedtodata,
-        q(187 downto 172)   => av_syncstatus,
-        q(203 downto 188)   => av_errdetect,
-        q(219 downto 204)   => av_disperr--,
-    );
+    GEN_FIREFLY_1: if not USE_FIREFLY_2 generate
+        sync_fifo2 : entity work.ip_dcfifo
+        generic map (
+            ADDR_WIDTH  => 4,
+            DATA_WIDTH  => 220,
+            SHOWAHEAD   => "OFF",
+            DEVICE      => "Arria V"--,
+        )
+        port map (
+            aclr            => not lvds_align_reset_n,--'0',
+            data            =>  disperr
+                                & errdetect & syncstatus
+                                & rx_is_lockedtodata & rx_is_lockedtoref
+                                & locked(3 downto 0) & x"00"--tx_ready
+                                & rx_data_parallel & rx_datak,
+            rdclk           => i_clk,
+            rdreq           => '1',
+            wrclk           => rx_clk(0),
+            wrreq           => '1',
+            q(15 downto 0)      => av_rx_datak,
+            q(143 downto 16)    => av_rx_data_parallel,
+            q(151 downto 144)   => open,--av_tx_ready,
+            q(155 downto 152)   => av_locked(3 downto 0),
+            q(163 downto 156)   => av_rx_is_lockedtoref,
+            q(171 downto 164)   => av_rx_is_lockedtodata,
+            q(187 downto 172)   => av_syncstatus,
+            q(203 downto 188)   => av_errdetect,
+            q(219 downto 204)   => av_disperr--,
+        );
+    end generate;
+
+    GEN_FIREFLY_2: if USE_FIREFLY_2 generate
+        sync_fifo2 : entity work.ip_dcfifo
+        generic map (
+            ADDR_WIDTH  => 4,
+            DATA_WIDTH  => 220,
+            SHOWAHEAD   => "OFF",
+            DEVICE      => "Arria V"--,
+        )
+        port map (
+            aclr            => not lvds_align_reset_n,--'0',
+            data            =>  disperr
+                                & errdetect & syncstatus
+                                & rx_is_lockedtodata & rx_is_lockedtoref
+                                & locked(3 downto 0) & x"00"--tx_ready
+                                & rx_data_parallel & rx_datak,
+            rdclk           => i_clk,
+            rdreq           => '1',
+            wrclk           => rx_clk(1),
+            wrreq           => '1',
+            q(15 downto 0)      => av_rx_datak,
+            q(143 downto 16)    => av_rx_data_parallel,
+            q(151 downto 144)   => open,--av_tx_ready,
+            q(155 downto 152)   => av_locked(3 downto 0),
+            q(163 downto 156)   => av_rx_is_lockedtoref,
+            q(171 downto 164)   => av_rx_is_lockedtodata,
+            q(187 downto 172)   => av_syncstatus,
+            q(203 downto 188)   => av_errdetect,
+            q(219 downto 204)   => av_disperr--,
+        );
+    end generate;
 
     sync_fifo3 : entity work.ip_dcfifo
     generic map (

@@ -53,6 +53,7 @@ architecture rtl of hitsorter_wide is
 signal running_last:   std_logic;
 signal running_read:   std_logic;
 signal running_read_last:   std_logic;
+signal running_read_last2:   std_logic;
 signal running_seq:	   std_logic;
 
 signal tslow 	: ts_t;
@@ -119,6 +120,7 @@ signal block_empty_del2 : std_logic;
 signal stopwrite : std_logic;
 signal stopwrite_del1 : std_logic;
 signal stopwrite_del2 : std_logic;
+signal stopwrite_del3 : std_logic;
 
 signal blockchange : std_logic;
 signal blockchange_del1 : std_logic;
@@ -143,30 +145,28 @@ signal credittemp : integer range -256 to 255;
 signal hitcounter_sum_m3_mem : hitcounter_sum3_type;
 signal hitcounter_sum_mem : integer;
 signal hitcounter_sum : integer;
+signal creditchange_reg : integer;
 
 signal readcommand: 	command_t;
 signal readcommand_last1: command_t;
 signal readcommand_last2: command_t;
 signal readcommand_last3: command_t;
 signal readcommand_last4: command_t;
-signal readcommand_reg  : command_t;
-signal readcommand_reg2 : command_t;
 
 signal readcommand_ena:	std_logic;
 signal readcommand_ena_last1:	std_logic;
 signal readcommand_ena_last2:	std_logic;
 signal readcommand_ena_last3:	std_logic;
 signal readcommand_ena_last4:	std_logic;
-signal readcommand_ena_reg  :	std_logic;
-signal readcommand_ena_reg2 :	std_logic;
 
 signal outoverflow:	std_logic_vector(15 downto 0);
 signal overflow_last1:	std_logic_vector(15 downto 0);
 signal overflow_last2:	std_logic_vector(15 downto 0);
 signal overflow_last3:	std_logic_vector(15 downto 0);
 signal overflow_last4:	std_logic_vector(15 downto 0);
-signal outoverflow_reg:	std_logic_vector(15 downto 0);
-signal outoverflow_reg2:std_logic_vector(15 downto 0);
+
+signal header_counter: std_logic_vector(15 downto 0);
+signal subheader_counter: std_logic_vector(15 downto 0);
 
 signal memmultiplex: nots_t;
 signal tscounter: std_logic_vector(47 downto 0); --47 bit, LSB would run at double frequency, but not needed
@@ -175,13 +175,15 @@ signal tscounter: std_logic_vector(47 downto 0); --47 bit, LSB would run at doub
 signal terminate_output : std_logic;
 signal terminated_output : std_logic;
 
+signal debug_subheadercounter : std_logic_vector(15 downto 0);
+signal debug_hitcounter 	  : std_logic_vector(15 downto 0);
+
 -- diagnostics
 signal noutoftime       : reg_array;
 signal noverflow        : reg_array;
 signal nintime          : reg_array;
 signal nout             : reg32;
 signal delay            : ts_t;
-signal zero_suppression : std_logic;
 
 -- copy of diagnostics (timing)
 signal noutoftime2: reg_array;
@@ -193,7 +195,8 @@ constant TSONE : ts_t := "00000000001";
 constant TSZERO : ts_t := "00000000000";
 constant TSTHREE : ts_t := "00000000011";
 --constant DELAY : ts_t := "01100000000";
-constant WINDOWSIZE : ts_t := "11000000000";
+constant WINDOWSIZE : ts_t := "10000000000";
+constant READOFFSET : ts_t := "00100000011";
 
 
         COMPONENT scfifo
@@ -237,6 +240,7 @@ if(reset_n = '0') then
 	running_last 	<= '0';
 	running_read	<= '0';
 	running_read_last	<= '0';
+	running_read_last2	<= '0';
 	running_seq		<= '0';
 	
 	runstartup		<= '0';
@@ -249,11 +253,12 @@ if(reset_n = '0') then
 	tsreadmemdelay <= TSZERO;
 elsif (writeclk'event and writeclk = '1') then
 
-	tsread	  <= tslow - "11";
+	tsread	  <= tslow - READOFFSET;
 	tsreadmemdelay <= tsread;
 
 	running_last	<= running;
 	running_read_last  <= running_read;
+	running_read_last2	<= running_read_last;
 
 	if(running = '0') then
 		runstartup		<= '0';
@@ -270,13 +275,13 @@ elsif (writeclk'event and writeclk = '1') then
 	if(running = '1' and runstartup = '1') then
 		tslow <= TSONE;
 		tshi  <= WINDOWSIZE;
-		if(currentts = delay) then
+		if(currentts = WINDOWSIZE + delay - "11") then
 			runstartup <= '0';
 		end if;
 	elsif(running = '1' and running_last = '1' and runshutdown = '0') then
 		tslow <= tslow + '1';
 		tshi  <= tshi  + '1';
-		if(running_read = '0' and tslow >= TSTHREE) then
+		if(running_read = '0' and tslow >= READOFFSET) then
 			running_read	<= '1';
 			running_seq		<= '1';
 		end if;
@@ -405,7 +410,7 @@ genmem: for i in NCHIPS-1 downto 0 generate
 			cmemwriteaddr_hitwriter(i)(k)  <= hit_last2(i)(COUNTERMEMADDRRANGE);
 		end loop;
 		
-		counterfrommem := fromcmem(i)(conv_integer(hit_last1(i)(COUNTERMEMSELRANGE)));
+		counterfrommem := fromcmem(i)(conv_integer(hit_last2(i)(COUNTERMEMSELRANGE)));
 		
 		for k in NMEMS-1 downto 0 loop
 			cmemwren_hitwriter(i)(k) <= '0'; 		
@@ -537,7 +542,7 @@ process(reset_n, writeclk)
 	
 	variable countersum_temp : integer;
 	
-	variable creditchange : integer;
+	variable creditchange : integer range -2048 to 2047;
 	
 begin
 if (reset_n = '0') then
@@ -570,7 +575,7 @@ elsif (writeclk'event and writeclk = '1') then
 	mem_countchips_m1	<= (others => '0');
 	mem_countchips_m2	<= (others => '0');
 
-
+	
 	if(running_read = '1')then
 		cmemreadaddr_hitreader	<= tsread(COUNTERMEMADDRRANGE)+'1';
 		
@@ -584,16 +589,17 @@ elsif (writeclk'event and writeclk = '1') then
 		
 		mem_overflow <= mem_ov;
 	
+		
 		mem_nonemptycount := (others => '0');
-
 		mem_ne := '0';
 
-		for i in NCHIPS-1 downto 0 loop
-			mem_ne := mem_ne or mem_nechips(i);
-			mem_nonemptycount := mem_nonemptycount + mem_nechips(i);
-		end loop;
-		mem_nnonempty 	<= mem_nonemptycount;
-		
+		if(running_read_last2 = '1') then
+			for i in NCHIPS-1 downto 0 loop
+				mem_ne := mem_ne or mem_nechips(i);
+				mem_nonemptycount := mem_nonemptycount + mem_nechips(i);
+			end loop;
+			mem_nnonempty 	<= mem_nonemptycount;
+		end if;
 		
 		blockchange	<= '0';
 		if((or_reduce(tsread(TSNONBLOCKRANGE))) = '0' and running_read_last = '1') then -- no block change at startup
@@ -685,12 +691,16 @@ elsif (writeclk'event and writeclk = '1') then
 		mem_overflow_del2 	<= mem_overflow_del1;
 		stopwrite_del2		<= stopwrite_del1;
 		blockchange_del2	<= blockchange_del1;
+
+		-- one more delay cycle for stopwrite, as it supresses the NEXT block
+		stopwrite_del3		<= stopwrite_del2;
 		
 		tofifo_counters <=  tsread - "100" & hashits & mem_overflow_del2 & mem_countchips_m2;
 		--X"000000000000" &
-	
 		creditchange := 1;
-		if(stopwrite_del2 = '0' and (hashits = '1' or block_empty_del2 = '1')) then
+
+		
+		if(stopwrite_del3 = '0' and (hashits = '1' or block_empty_del2 = '1')) then
 			write_counterfifo <= '1';
 			if(hitcounter_sum_mem < 48) then -- limit number of hits per ts
 				creditchange := creditchange - hitcounter_sum_mem;
@@ -705,19 +715,20 @@ elsif (writeclk'event and writeclk = '1') then
 				creditchange := creditchange  -1;
 			end if;
 
-		elsif(stopwrite_del2 ='1' and blockchange_del2 = '1' and block_empty_del2 = '1') then -- we were overfull but just got an empty block
+		elsif(stopwrite_del3 ='1' and blockchange_del2 = '1' and block_empty_del2 = '1') then -- we were overfull but just got an empty block
 			write_counterfifo <= '1';
 			creditchange := creditchange  -1;
-		elsif(stopwrite_del2 ='1' and blockchange_del2 = '1') then -- we were overfull and have suppressed hits
+		elsif(stopwrite_del3 ='1' and blockchange_del2 = '1') then -- we were overfull and have suppressed hits
 			write_counterfifo <= '1';
 			tofifo_counters <= tsread - "100" & "0" & "1" & counter2chipszero;
 			creditchange := creditchange  -1;
 		end if;
 		credittemp <= credittemp + creditchange;
-		if(credittemp > 127) then
+		creditchange_reg  <= creditchange;
+		if(credittemp  + creditchange > 127) then
 			credits <= 127;
 			credittemp <= 127;
-		elsif(credittemp < -128) then
+		elsif(credittemp +creditchange < -128) then
 			credits <= -128;
 			credittemp <= -128;
 		else
@@ -738,42 +749,14 @@ seq:entity work.sequencer_ng
 		from_fifo						=> fromfifo_counters,
 		fifo_empty						=> counterfifo_empty,
 		read_fifo						=> read_counterfifo,
-		outcommand						=> readcommand_reg,
-		command_enable					=> readcommand_ena_reg,
-		outoverflow						=> outoverflow_reg
+		outcommand						=> readcommand,
+		command_enable					=> readcommand_ena,
+		outoverflow						=> outoverflow
 		);
-process(writeclk, reset_n)
-begin
-    if(reset_n = '0') then
-    
-    elsif rising_edge(writeclk) then
-        readcommand_ena <= '0';
-        if(readcommand_ena_reg = '1' 
-         or readcommand_reg2(COMMANDBITS-1 downto COMMANDBITS-4) = COMMAND_FOOTER(COMMANDBITS-1 downto COMMANDBITS-4) -- do not wait for more if trailer
-         or  readcommand_reg(COMMANDBITS-1 downto COMMANDBITS-4) = COMMAND_FOOTER(COMMANDBITS-1 downto COMMANDBITS-4)) then
-            readcommand_reg2 <= readcommand_reg;
-            readcommand_ena_reg2 <= readcommand_ena_reg;
-            outoverflow_reg2 <= outoverflow_reg;
-            if(readcommand_reg2(COMMANDBITS-1 downto COMMANDBITS-4) = COMMAND_SUBHEADER(COMMANDBITS-1 downto COMMANDBITS-4) 
-             and readcommand_reg(COMMANDBITS-1 downto COMMANDBITS-4) = COMMAND_SUBHEADER(COMMANDBITS-1 downto COMMANDBITS-4)
-             and zero_suppression = '1') then
-                -- throw away subheader in readcommand_reg2 by doing nothing here
-			elsif(readcommand_reg2(COMMANDBITS-1 downto COMMANDBITS-4) = COMMAND_SUBHEADER(COMMANDBITS-1 downto COMMANDBITS-4) 
-             and readcommand_reg(COMMANDBITS-1 downto COMMANDBITS-4) = COMMAND_FOOTER(COMMANDBITS-1 downto COMMANDBITS-4)
-             and zero_suppression = '1') then
-				-- throw away footer in readcommand_reg2 by doing nothing here
-            else
-                readcommand <= readcommand_reg2;
-                readcommand_ena <= readcommand_ena_reg2;
-                outoverflow <= outoverflow_reg2;
-            end if;
-        end if;
-    end if;
-end process;
 
 -- The ouput command has the TS in the LSBs, followed by four bits hit address
 -- four bits channel/chip ID and the MSB inciating command (1) or hit (0)	
-				
+
 -- And the reading (use writeclk for the moment, FIFO comes after)
 process(writeclk, reset_n)
 begin
@@ -789,6 +772,10 @@ if(reset_n = '0') then
 	nout							<= (others => '0');
 	terminate_output				<= '0';
 	terminated_output				<= '0';
+	header_counter					<= (others => '0');	
+	subheader_counter				<= (others => '0');	
+	debug_subheadercounter			<= (others => '0');
+	debug_hitcounter				<= (others => '0');
 elsif(writeclk'event and writeclk = '1') then
     noutoftime2 <= noutoftime;
     noverflow2  <= noverflow;
@@ -832,13 +819,29 @@ elsif(writeclk'event and writeclk = '1') then
 		data_out		<= tscounter(47 downto 16);
 		out_type		<= MERGER_FIFO_PAKET_START_MARKER;
 	when COMMAND_HEADER2(COMMANDBITS-1 downto COMMANDBITS-4) =>
-		data_out		<= tscounter(15 downto 0) & X"0000";
+		data_out		<= tscounter(15 downto 0) & header_counter;
 		out_type		<= "0000";
+		if(readcommand_ena_last4 = '1') then
+ 			header_counter <= header_counter + '1';
+		end if;
+	when COMMAND_DEBUGHEADER1(COMMANDBITS-1 downto COMMANDBITS-4) =>
+		data_out		<= "0" & debug_subheadercounter(14 downto 0) & debug_hitcounter;
+		out_type		<= "0000";
+		debug_subheadercounter <= (others => '0');
+		debug_hitcounter	   <= (others => '0');
+	when COMMAND_DEBUGHEADER2(COMMANDBITS-1 downto COMMANDBITS-4) =>
+		data_out		<= x"0AFEBABE";
+		out_type		<= "0000";
+
 	when COMMAND_SUBHEADER(COMMANDBITS-1 downto COMMANDBITS-4) =>
 		data_out		<= "111111" & "000" & readcommand_last4(TIMESTAMPSIZE-1 downto 4) & overflow_last4;
 		out_type		<= "0000";
+		if(readcommand_ena_last4 = '1') then
+ 			subheader_counter <= subheader_counter + '1';
+			debug_subheadercounter <= debug_subheadercounter + '1';
+		end if;
 	when COMMAND_FOOTER(COMMANDBITS-1 downto COMMANDBITS-4) =>
-		data_out 		<= (others => '0');
+		data_out 		<= header_counter & overflow_last4;
 		out_type		<= MERGER_FIFO_PAKET_END_MARKER;
 		if(runshutdown = '1')then
 			terminate_output <= '1';
@@ -850,6 +853,7 @@ elsif(writeclk'event and writeclk = '1') then
 		out_is_hit		<= '1';
 		if(readcommand_ena_last4 = '1') then
 			nout <= nout + '1';
+			debug_hitcounter <= debug_hitcounter + '1';
 		end if;
 	end case;
 	if(terminate_output = '1') then
@@ -883,7 +887,6 @@ e_mp_sorter_reg_mapping: entity work.mp_sorter_reg_mapping
         i_noverflow         => noverflow2,
         i_nout              => nout2,
         i_credit            => credits32,
-        o_zero_suppression  => zero_suppression,
         o_sorter_delay      => delay--,
     );
 end architecture RTL;

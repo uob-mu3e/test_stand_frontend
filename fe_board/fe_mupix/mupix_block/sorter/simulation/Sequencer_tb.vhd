@@ -384,7 +384,10 @@ begin
     tofifo_counters(HASMEMBIT)              <= '1';
     tofifo_counters(7 downto 0)             <= "00000001";
     write_counterfifo   <= '1';    
-    wait for 9*WRITECLK_PERIOD;
+    wait for WRITECLK_PERIOD;
+    tofifo_counters     <= (others => '0');
+    write_counterfifo   <= '0';
+    wait for 8*WRITECLK_PERIOD;
     tofifo_counters(TSINFIFORANGE)          <= "00000010000";
     tofifo_counters(HASMEMBIT)              <= '1';
     tofifo_counters(MEMOVERFLOWBIT)         <= '1';

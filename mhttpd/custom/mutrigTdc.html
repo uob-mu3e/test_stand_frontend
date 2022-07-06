@@ -416,7 +416,7 @@ function loadFromDisk(event) {
 }
 
 function configure() {
-	var paths       = ["/Equipment/Switching/Settings/SciFiConfig"];
+	var paths       = ["/Equipment/SciFiCentral/Commands/SciFiConfig"];
 	var values      = [1];
 
 	mjsonrpc_db_paste(paths, values).then(function(rpc) {
@@ -586,11 +586,10 @@ function readback() {
     load();
 }
 
-
     </script> 
 	</head>
 
-	<body class="mcss" onload=init('mutrigTdc')>
+	<body class="mcss" onload="init('mutrigTdc');">
 
 	<header id="mheader"></header>
 	<nav id="msidenav"></nav>
@@ -607,24 +606,24 @@ function readback() {
 						<td></td>
 					</tr>
 					<tr>
-						<td colspan=2><label for="dummy_data">DUMMY DATA</label></td>
+						<td colspan=2><label for="dummy_data">DataGen enable</label></td>
 						<td><input type="checkbox" name="modbcheckbox" id="dummy_data" data-odb-path="/Equipment/SciFiCentral/Settings/Daq/dummy_data" title="Enable dummy data generator on FPGA"></input></td>
 						<td></td>
 					</tr>
 					<tr>
-						<td colspan=2><label for="dummy_data_fast">DUMMY FAST</label></td>
+						<td colspan=2><label for="dummy_data_fast">DataGen Short</label></td>
 						<td><input type="checkbox" name="modbcheckbox" id="dummy_data_fast" data-odb-path="/Equipment/SciFiCentral/Settings/Daq/dummy_data_fast" title="Produce short events in dummy data generator on FPGA"></input></td>
 						<td></td>
 					</tr>
 					<tr>
-						<td colspan><label for="dummy_data_n">DUMMY NUM</label></td>
+						<td colspan><label for="dummy_data_n">DataGen nHits</label></td>
 						<td></td>
-						<!--<td><input type="number"  name="modbnumber" id="dummy_data_n" min="0" max="255" step="1" size="3" value="254"  data-odb-path="/Equipment/SciFiCentral/Settings/Daq/dummy_data_n" data-odb-editable="1" /></td> -->
+						<td><input type="number"  name="modbnumber" id="dummy_data_n" min="0" max="255" step="1" size="3" value="254"  data-odb-path="/Equipment/SciFiCentral/Settings/Daq/dummy_data_n" data-odb-editable="1" /></td>
 						<!-- FIXME: odb connection seems to be broken once id is set, thus we can not save this field to json at the moment-->
 						<td><div name="modbvalue" data-odb-path="/Equipment/SciFiCentral/Settings/Daq/dummy_data_n" data-odb-editable="1" title="Number of hits to be generated per ASIC using the FPGAs dummy data generator"></div></td>
 					</tr>
 					<tr>
-						<td colspan=2><label for="prbs_decode_disable">PRBS decoder disable</label></td>
+						<td colspan=2><label for="prbs_decode_disable">bypass PRBS FPGA</label></td>
 						<td><input type="checkbox" name="modbcheckbox" id="prbs_decode_disable" data-odb-path="/Equipment/SciFiCentral/Settings/Daq/prbs_decode_disable" title="bypass PRBS decoder on the FPGA"></input></td>
 						<td></td>
 					</tr>
@@ -640,7 +639,7 @@ function readback() {
 					</tr>
 					<tr>
 						<td colspan=2><label for="lvds_waitforall_sticky">Send TDC injections</label></td>
-                                                <td><input type="checkbox" name="modbcheckbox" id="send_tdc_injections" data-odb-path="/Equipment/Switching/Settings/SciFiTDCTest" title="Set the register on the FEB to send a 100 kHz differential signal to the TDC. To be used with the 'PLL test'."></input></td>
+                                                <td><input type="checkbox" name="modbcheckbox" id="send_tdc_injections" data-odb-path="/Equipment/SciFiCentral/Commands/SciFiTDCTest" title="Set the register on the FEB to send a 100 kHz differential signal to the TDC. To be used with the 'PLL test'."></input></td>
                                                 <td></td>
 					</tr>
 					<tr>
@@ -1130,7 +1129,7 @@ title="1: disable TDC test input to this channel. (0 enables TDC input and short
                     <button class="button_2" type="submit" onclick="storeODB()">Set ODB</button>
 		    <button class="button_2" type="submit" onclick="loadODB(false)">Reload ODB</button>
 		    <button name="modbbutton" class="button_2" id="config"
-			    data-odb-path="/Equipment/Switching/Settings/SciFiConfig"
+			    data-odb-path="/Equipment/SciFiCentral/Commands/SciFiConfig"
 			    data-odb-value="1">
 			Configure
 		    </button>
@@ -1145,7 +1144,7 @@ title="1: disable TDC test input to this channel. (0 enables TDC input and short
                    </div>
                <div style="text-align:center;">
                     <button name="modbbutton" class="button_2" id="config"
-			        data-odb-path="/Equipment/Switching/Settings/SciFiAllOff"
+			        data-odb-path="/Equipment/SciFiCentral/Commands/SciFiAllOff"
 			        data-odb-value="1">
                     Configure all off
 		            </button>

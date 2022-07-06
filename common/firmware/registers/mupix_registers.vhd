@@ -120,6 +120,5 @@ constant MUPIX_LVDS_STATUS_BLOCK_LENGTH     : integer := 36;
     constant MP_SORTER_NOUT_REGISTER_R              :  integer := 16#1024#;
     constant MP_SORTER_CREDIT_REGISTER_R            :  integer := 16#1025#;
     constant MP_SORTER_DELAY_REGISTER_W             :  integer := 16#1028#;       -- DOC: Minimum round-trip delay from sync reset going off to hit with TS > 0 appearing at sorter input in 8 ns steps | MP_FEB
-    constant MP_SORTER_ZERO_SUPPRESSION_REGISTER_W  :  integer := 16#1029#;
 
 end package;

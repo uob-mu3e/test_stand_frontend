@@ -91,15 +91,19 @@ architecture arch of tb_swb_block is
     resets_n(RESET_BIT_SC_SECONDARY)                        <= '0', '1' after (1.0 us / CLK_MHZ);
     resets_n(RESET_BIT_EVENT_COUNTER)                       <= '0', '1' after (1.0 us / CLK_MHZ);
 
-    writeregs(DATAGENERATOR_DIVIDER_REGISTER_W)             <= x"00000002";
-    writeregs(SWB_READOUT_STATE_REGISTER_W)(USE_BIT_GEN_LINK)   <= '1';
-    writeregs(SWB_READOUT_STATE_REGISTER_W)(USE_BIT_TEST_ERROR) <= '0';
-    writeregs(SWB_READOUT_STATE_REGISTER_W)(USE_BIT_STREAM)     <= '0';
-    writeregs(SWB_READOUT_STATE_REGISTER_W)(USE_BIT_MERGER)     <= '1';
+    writeregs(DATAGENERATOR_DIVIDER_REGISTER_W)                         <= x"00000002";
+    writeregs(SWB_READOUT_STATE_REGISTER_W)(USE_BIT_GEN_LINK)           <= '1';
+    writeregs(SWB_READOUT_STATE_REGISTER_W)(USE_BIT_TEST_DATA)          <= '0';
+    writeregs(SWB_READOUT_STATE_REGISTER_W)(USE_BIT_TEST_ERROR)         <= '0';
+    writeregs(SWB_READOUT_STATE_REGISTER_W)(USE_BIT_STREAM)             <= '0';
+    writeregs(SWB_READOUT_STATE_REGISTER_W)(USE_BIT_MERGER)             <= '1';
+    writeregs(SWB_READOUT_STATE_REGISTER_W)(USE_BIT_SUBHDR_SUPPRESS)    <= '1';
+    writeregs(SWB_READOUT_STATE_REGISTER_W)(USE_BIT_HEAD_SUPPRESS)      <= '1';
+
 
     writeregs(SWB_LINK_MASK_PIXEL_REGISTER_W)(4 downto 0)   <= '1' & x"F";--x"00000048";
     writeregs(SWB_LINK_MASK_PIXEL_REGISTER_W)(9 downto 5)   <= '1' & x"F";--x"00000048";
-    writeregs(SWB_LINK_MASK_SCIFI_REGISTER_W)(1 downto 0)   <= "01";
+    writeregs(SWB_LINK_MASK_SCIFI_REGISTER_W)(1 downto 0)   <= "00";
     writeregs(FEB_ENABLE_REGISTER_W)                        <= x"0000001F";--x"00000048";
     writeregs(SWB_READOUT_LINK_REGISTER_W)                  <= x"00000001";
     writeregs(GET_N_DMA_WORDS_REGISTER_W)                   <= (others => '1');
@@ -125,6 +129,7 @@ architecture arch of tb_swb_block is
         g_NLINKS_FARM_SCIFI     => g_NLINKS_FARM_SCIFI,
         g_NLINKS_DATA_SCIFI     => g_NLINKS_DATA_SCIFI,
         g_SC_SEC_SKIP_INIT      => '1',
+        g_ADD_SUB               => true,
         SWB_ID                  => SWB_ID--,
     )
     port map (

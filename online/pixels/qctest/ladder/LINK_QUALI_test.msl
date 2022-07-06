@@ -46,7 +46,7 @@ ODBSET /Equipment/PixelsCentral/QCTests/Ladder/LINKQUALIcheck/Input/HV_curr_limi
 
 # Definitions
 start_magic_value = 11
-stop_magic_value = 40
+stop_magic_value = 13
 
 waiting_time = 5
 

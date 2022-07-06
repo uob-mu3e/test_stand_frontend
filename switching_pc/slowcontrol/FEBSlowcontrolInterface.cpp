@@ -49,18 +49,18 @@ int FEBSlowcontrolInterface::FEB_write(const mappedFEB & FEB, const uint32_t sta
     if(broadcast)
         FPGA_ID = ADDRS::BROADCAST_ADDR;
 
-     if(startaddr >= pow(2,16)){
-        cout << "Address out of range: " << std::hex << startaddr << endl;
+    if(startaddr >= pow(2,16)){
+        cout << "FEB_write Address out of range: " << std::hex << startaddr << endl;
         return ERRCODES::ADDR_INVALID;
-     }
+    }
 
     if(FPGA_ID > 15 and FPGA_ID != ADDRS::BROADCAST_ADDR){
-        cout << "FPGA ID out of range: " << FPGA_ID << endl;
+        cout << "FEB_write  ID out of range: " << FPGA_ID << endl;
         return ERRCODES::ADDR_INVALID;
-     }
+    }
 
     if(!data.size()){
-        cout << "Length zero" << endl;
+        cout << "FEB_write Length zero" << endl;
         return ERRCODES::SIZE_ZERO;
      }
 
@@ -174,17 +174,17 @@ int FEBSlowcontrolInterface::FEB_read(const mappedFEB & FEB, const uint32_t star
     uint32_t FPGA_ID = FEB.SB_Port();
 
      if(startaddr >= pow(2,16)){
-        cout << "Address out of range: " << std::hex << startaddr << endl;
+        cout << "FEB_read Address out of range: " << std::hex << startaddr << endl;
         return ERRCODES::ADDR_INVALID;
      }
 
     if(FPGA_ID > 15){
-        cout << "FPGA ID out of range: " << FPGA_ID << endl;
+        cout << "FEB_read FPGA ID out of range: " << FPGA_ID << endl;
         return ERRCODES::ADDR_INVALID;
      }
 
     if(!data.size()){
-        cout << "Length zero" << endl;
+        cout << "FEB_read Length zero" << endl;
         return ERRCODES::SIZE_ZERO;
      }
 
@@ -354,13 +354,13 @@ int FEBSlowcontrolInterface::FEBsc_NiosRPC(const mappedFEB & FEB, uint16_t comma
     vector<uint32_t> readback(1,0);
     while(1){
         if(++timeout_cnt >= 500) return ERRCODES::NIOS_RPC_TIMEOUT;
-        std::this_thread::sleep_for(std::chrono::milliseconds(2));
         status=FEB_read(FEB, CMD_LEN_REGISTER_RW, readback);
         if(status < 0)
             return status;
 
         if(timeout_cnt > 5) printf("MudaqDevice::FEBsc_NiosRPC(): Polling for command %x @%d: %x, %x\n",command,timeout_cnt,readback[0],readback[0]&0xffff0000);
         if((readback[0]&0xffff0000) == 0) break;
+        std::this_thread::sleep_for(std::chrono::milliseconds(10));
     }
     return readback[0]&0xffff;
 }

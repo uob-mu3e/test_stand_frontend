@@ -44,7 +44,9 @@ const array<const string, MAX_N_SWITCHINGBOARDS> sssonames = {"Names SCSO","Name
 void create_ssso_names_in_odb(odb & settings, int switch_id);
 
 //// SSCN
-constexpr int num_swb_counters_data_path = 10;
+constexpr int num_cosmic_febs = 10; // for the cosmic run we only readout the 10 pixel febs
+constexpr int num_swb_counters_global = 6;
+constexpr int num_swb_counters_data_path = 8;
 constexpr int num_swb_counters_per_feb = 9;
 constexpr int num_swb_counters_per_tree_layer = 1;
 constexpr int num_swb_tree_layers = 3;
@@ -52,7 +54,7 @@ constexpr int out_nodes_per_tree_layer[num_swb_tree_layers] = { 4, 2, 1 };
 constexpr int num_swb_counters_per_node = 4;
 constexpr int num_swb_counters_node_total = 4 * 4 + 2 * 4 + 1 * 4;
  // TODO: the detector parts need to be added to the read_counters function
-constexpr int num_swb_detector_types = 3;
+constexpr int num_swb_detector_types = 2;
 const array<const string, MAX_N_SWITCHINGBOARDS> sscn = {"SCCN","SUCN","SDCN","SFCN"};
 const array<const string, MAX_N_SWITCHINGBOARDS> sscnnames = {"Names SCCN","Names SUCN","Names SDCN","Names SFCN"};
 

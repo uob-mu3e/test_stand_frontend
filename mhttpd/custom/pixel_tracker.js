@@ -430,12 +430,12 @@ function configureChip(evt) {
         mjsonrpc_db_paste(["/Equipment/SwitchingCentral/Commands/MupixConfig"], [true])
     }).catch(function(error) {
         mjsonrpc_error_alert(error);
-    });
+    });*/
     var chip_select_mask = 0xfff;
     var pos = current_lad_chips[current_chip_selected]["json_node"]["MIDAS_ID"];
     chip_select_mask &= ((~0x1) << pos);
     for (var i = 0; i < pos; ++i)
-        chip_select_mask |= (0x1 << i);*/
+        chip_select_mask |= (0x1 << i);
 
     document.getElementById("pixel_configure_update_content").textContent = "Configuring chip number " + parseInt(current_lad_chips[current_chip_selected]["json_node"]["MIDAS_ID"])
 

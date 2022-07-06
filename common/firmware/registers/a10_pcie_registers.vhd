@@ -82,6 +82,9 @@ package a10_pcie_registers is
         constant USE_BIT_TEST_ERROR                             : integer := 10; -- DOC: Readout state for testing an error handling in the time merger using generated data |  SWB & FARM
         constant USE_BIT_DDR                                    : integer := 11; -- DOC: Readout state for using the ddr memory | FARM
         constant USE_BIT_ALL                                    : integer := 12; -- DOC: Readout state to only readout all data in round robin via DMA (for debugging) |  SWB
+        constant USE_BIT_TEST_DATA                              : integer := 13; -- DOC: Readout state where link data is real data from mem file (for simulation |  SWB
+        constant USE_BIT_SUBHDR_SUPPRESS                        : integer := 14; -- DOC: Readout state where subheaders are suppressed | SWB
+        constant USE_BIT_HEAD_SUPPRESS                          : integer := 15; -- DOC: Readout state where headers are suppressed | SWB
     constant SWB_READOUT_LINK_REGISTER_W                    : integer := 16#14#; -- DOC: Not used at the moment |  SWB & FARM
     constant SWB_COUNTER_REGISTER_W                         : integer := 16#15#; -- DOC: Addr register to readout counter values from the SWB, to have more information about the counter look at a10_counter.md | SWB
 

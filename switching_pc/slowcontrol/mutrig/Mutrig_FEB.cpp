@@ -67,9 +67,9 @@ using midas::odb;
 #define FEB_REPLY_ERROR   1
 
 
-int MutrigFEB::WriteAll(){
+int MutrigFEB::WriteAll(uint32_t nasics){
 
-    if(GetNumASICs() == 0) return 0;
+    if ( nasics == 0 ) return 0;
     //initial Shadow register values
 
     //as a starting point, set all mask bits to 1. in the shadow register and override after.
@@ -78,24 +78,40 @@ int MutrigFEB::WriteAll(){
         m_reg_shadow[i][FE_DPCTRL_REG] = 0x1FFFFFFF;
     }
 
+    // setup watches settings
     odb odb_set_str(odb_prefix+"/Settings/Daq");
-    // use lambda function for passing this
-//    odb_set_str.watch([this](odb &o){
-//        on_settings_changed(o, this);
-//    });
+    //use lambda function for passing this
+    odb_set_str.watch([this](odb &o){
+        on_settings_changed(o, this);
+    });
+
+    // setup watches commands
+    odb odb_com_str(odb_prefix+"/Commands");
+    //use lambda function for passing this
+    odb_com_str.watch([this](odb &o){
+        on_commands_changed(o, this);
+    });
+
     return 0;
 }
 
 
-int MutrigFEB::MapForEach(std::function<int(mutrig::MutrigConfig* /*mutrig config*/,int /*ASIC #*/)> func)
+int MutrigFEB::MapForEach(std::function<int(mutrig::MutrigConfig* /*mutrig config*/,int /*ASIC #*/, int /*nModule #*/, int /*nASICperModule #*/)> func)
 {
     INT status = DB_SUCCESS;
+    // get asics from ODB
+    odb odb_set_str(odb_prefix+"/Settings/Daq");
+    odb settings_asics(odb_prefix + "/Settings/ASICs");
+    uint32_t nasics = odb_set_str["num_asics"];
+    uint32_t num_modules_per_feb = odb_set_str["num_modules_per_feb"];
+    uint32_t num_asics_per_module = odb_set_str["num_asics_per_module"];
+
     //Iterate over ASICs
-    for(unsigned int asic = 0; asic < GetNumASICs(); ++asic) {
+    for(unsigned int asic = 0; asic < nasics; ++asic) {
         //ddprintf("mutrig_midasodb: Mapping %s, asic %d\n",prefix, asic);
-        mutrig::MutrigConfig config(mutrig::midasODB::MapConfigFromDB(odb_prefix,asic));
+        mutrig::MutrigConfig config(mutrig::midasODB::MapConfigFromDB(settings_asics, asic));
         //note: this needs to be passed as pointer, otherwise there is a memory corruption after exiting the lambda
-        status=func(&config,asic);
+        status=func(&config, asic, num_modules_per_feb, num_asics_per_module);
         if (status != SUCCESS) break;
     }
     return status;
@@ -106,11 +122,18 @@ int MutrigFEB::MapForEach(std::function<int(mutrig::MutrigConfig* /*mutrig confi
 //Configure all asics under prefix (e.g. prefix="/Equipment/SciFi")
 int MutrigFEB::ConfigureASICs(){
     cm_msg(MINFO, "setup_mutrig" , "Configuring MuTRiG asics under prefix %s/Settings/ASICs/", odb_prefix.c_str());
-    int status = MapForEach([this](mutrig::MutrigConfig* config, int asic){
+    int status = MapForEach([this](mutrig::MutrigConfig* config, int asic, int nModule, int nASICperModule){
             uint32_t rpc_status;
+
+            // TODO: rework FEB mapping
+            uint32_t FEB_ID = asic / (nASICperModule * nModule);
+            if ( FEB_ID > febs.size() - 1 ) {
+                printf(" [skipped -nofeb]\n");
+                return FE_SUCCESS;
+            }
             
             //mapping
-            mappedFEB FEB = febs[FPGAid_from_ID(asic)];
+            mappedFEB FEB = febs[FEB_ID];
             uint16_t SB_ID=FEB.SB_Number();
             uint16_t SP_ID=FEB.SB_Port();
             uint16_t FA_ID=ASICid_from_ID(asic);
@@ -148,7 +171,7 @@ int MutrigFEB::ConfigureASICs(){
                 payload.push_back(vector<uint32_t>(reinterpret_cast<uint32_t*>(config->bitpattern_w),reinterpret_cast<uint32_t*>(config->bitpattern_w)+config->length_32bits));
                 // TODO: we make modulo number of asics per module here since each FEB has only # ASIC from 0 to asics per module but
                 // here we loop until total number of asics which is asics per module times # of FEBs
-                rpc_status = feb_sc.FEBsc_NiosRPC(FEB, feb::CMD_MUTRIG_ASIC_CFG | (asic % GetASICSPerFEB()), payload);
+                rpc_status = feb_sc.FEBsc_NiosRPC(FEB, feb::CMD_MUTRIG_ASIC_CFG | (asic % (nModule * nASICperModule)), payload);
             } catch(std::exception& e) {
                 cm_msg(MERROR, "setup_mutrig", "Communication error while configuring MuTRiG %d: %s", asic, e.what());
                 set_equipment_status(equipment_name.c_str(), "SB-FEB Communication error", "red");
@@ -164,6 +187,7 @@ int MutrigFEB::ConfigureASICs(){
     });//MapForEach
     return status; //status of foreach function, SUCCESS when no error.
 }
+
 
 int MutrigFEB::ChangeTDCTest(bool o){
     cm_msg(MINFO, "SciFi ChangeTDCTest" , o ? "Turning on test pulses" : "Turning off test pulses");
@@ -188,13 +212,17 @@ int MutrigFEB::ChangeTDCTest(bool o){
     }
     return status;
 }
+
+
 int MutrigFEB::ConfigureASICsAllOff(){
-    cm_msg(MINFO, "ConfigureASICsAllOff" , "Configuring all SciFi ASICs in the ALL_OFF Mode");
+    cm_msg(MINFO, "ConfigureASICsAllOff" , "Configuring all SciFi ASICs of nFEBs: %d in the ALL_OFF Mode", febs.size());
     int status = SUCCESS;
     for(size_t FPGA_ID = 0; FPGA_ID < febs.size(); FPGA_ID++){
         auto FEB = febs[FPGA_ID];
         if(!FEB.IsScEnabled())
             continue; //skip disabled fibers
+        if(FEB.SB_Number()!= SB_number)
+            continue; //skip commands not for this SB
         auto rpc_ret = feb_sc.FEBsc_NiosRPC(FEB, feb::CMD_MUTRIG_ASIC_OFF, {});
         if (rpc_ret < 0){
             cm_msg(MERROR, "ConfigureASICsAllOff" , "Received negative return value from FEBsc_NiosRPC()");
@@ -203,6 +231,7 @@ int MutrigFEB::ConfigureASICsAllOff(){
     }
     return status;
 }
+
 
 int MutrigFEB::ResetCounters(mappedFEB & FEB){
 
@@ -213,94 +242,72 @@ int MutrigFEB::ResetCounters(mappedFEB & FEB){
     return rpc_ret;
 }
 
+
 int MutrigFEB::ReadBackCounters(mappedFEB & FEB){
 
-   if(!FEB.IsScEnabled())
-       return SUCCESS; //skip disabled fibers
-   if(FEB.SB_Number()!= SB_number)
-       return SUCCESS; //skip commands not for this SB
+    if(!FEB.IsScEnabled())
+        return SUCCESS; //skip disabled fibers
+    if(FEB.SB_Number()!= SB_number)
+        return SUCCESS; //skip commands not for this SB
 
-   auto rpc_ret = feb_sc.FEBsc_NiosRPC(FEB, feb::CMD_MUTRIG_CNT_READ, {});
-   //retrieve results
+    auto rpc_ret = feb_sc.FEBsc_NiosRPC(FEB, feb::CMD_MUTRIG_CNT_READ, {});
+    //retrieve results
 
-   if(rpc_ret < 0) {
-       cm_msg(MINFO, "ReadBackCounters", "RPC Returned %d for FPGA_ID %u", rpc_ret, FEB.SB_Port());
-       return SUCCESS; // TODO: Proper error code
+    if(rpc_ret < 0) {
+        cm_msg(MINFO, "ReadBackCounters", "RPC Returned %d for FPGA_ID %u", rpc_ret, FEB.SB_Port());
+        return SUCCESS; // TODO: Proper error code
+    }
+
+    // rpc_ret is number of total ASICs n
+    // Scifi Counters per ASIC N_ASICS_TOTAL
+    // mutrig store:
+    //  0: s_eventcounter
+    //  1: s_timecounter low
+    //  2: s_timecounter high
+    //  3: s_crcerrorcounter
+    //  4: s_framecounter
+    //  5: s_prbs_wrd_cnt
+    //  6: s_prbs_err_cnt
+    // rx
+    //  7: s_receivers_runcounter
+    //  8: s_receivers_errorcounter
+    //  9: s_receivers_synclosscounter
+   
+    // we have 10 counters per ASIC
+    // read them back
+    vector<uint32_t> val(rpc_ret*10);
+    feb_sc.FEB_read(FEB, FEBSlowcontrolInterface::OFFSETS::FEBsc_RPC_DATAOFFSET, val);
+    
+    // get ASICs from ODB
+    odb odb_set_str(odb_prefix+"/Settings/Daq");
+    odb variables_counters(odb_prefix + "/Variables/Counters");
+    uint32_t num_asics_per_module = odb_set_str["num_asics_per_module"];
+    uint32_t num_modules_per_feb = odb_set_str["num_modules_per_feb"];
+    uint32_t num_asics_per_feb = num_asics_per_module * num_modules_per_feb;
+
+    for(auto nASIC = 0 + FEB.SB_Port() * num_asics_per_feb; nASIC < num_asics_per_feb + FEB.SB_Port() * num_asics_per_feb; nASIC++){
+        // db_set_value_index
+        variables_counters["nHits"][nASIC] = val[nASIC * 10 + 0];
+        // For time we always get the first lower bits of time 1
+        variables_counters["Time"][nASIC] = val[1];
+        variables_counters["nBadFrames"][nASIC] = val[nASIC * 10 + 3];
+        variables_counters["nFrames"][nASIC] = val[nASIC * 10 + 4];
+        variables_counters["nErrorsPRBS"][nASIC] = val[nASIC * 10 + 6];
+        variables_counters["nWordsPRBS"][nASIC] = val[nASIC * 10 + 5];
+        variables_counters["nErrorsLVDS"][nASIC] = val[nASIC * 10 + 8];
+        variables_counters["nWordsLVDS"][nASIC] = val[nASIC * 10 + 7];
+        variables_counters["nDatasyncloss"][nASIC] = val[nASIC * 10 + 9];
    }
-
-   // rpc_ret is number of ASICs n, times 5 counters,
-   // times (1 nominator + 2 denominator values)
-   // The vector val is filled like
-   // asic 1 counter 1 nominator
-   // asic 1 counter 1 denominator upper 32 bit
-   // asic 1 counter 1 denominator lower 32 bit
-   // asic 1 counter 2 nominator
-   // [...]
-   // asic n counter 5 denominator lower 32 bit
-   vector<uint32_t> val(rpc_ret*5*3);
-
-   feb_sc.FEB_read(FEB, FEBSlowcontrolInterface::OFFSETS::FEBsc_RPC_DATAOFFSET,
-                   val);
-
-   static std::array<std::array<uint32_t,9>,8> last_counters;
-
-   uint32_t value;
-   uint32_t odbval;
-   for(auto nASIC=0 + FEB.SB_Port() * GetASICSPerFEB(); nASIC < rpc_ret + FEB.SB_Port() * GetASICSPerFEB(); nASIC++){
-
- 
-       odb variables_counters(odb_prefix + "/Variables/Counters");
-
-       // db_set_value_index
-       value=val[nASIC*15+0];
-       odbval=value-last_counters[nASIC][0];
-       variables_counters["nHits"][nASIC] = odbval;
-       last_counters[nASIC][0]=value;
-
-       value=val[nASIC*15+2];
-       odbval=value-last_counters[nASIC][1];
-       variables_counters["Time"][nASIC] = odbval;
-       last_counters[nASIC][1]=value;
-
-       value=val[nASIC*15+3];
-       odbval=value-last_counters[nASIC][2];
-       variables_counters["nBadFrames"][nASIC] = odbval;
-       last_counters[nASIC][2]=value;
-
-       value=val[nASIC*15+5];
-       odbval=value-last_counters[nASIC][3];
-       variables_counters["nFrames"][nASIC] = odbval;
-       last_counters[nASIC][3]=value;
-
-       value=val[nASIC*15+6];
-       odbval=value-last_counters[nASIC][4];
-       variables_counters["nErrorsPRBS"][nASIC] = odbval;
-       last_counters[nASIC][4]=value;
-
-       value=val[nASIC*15+8];
-       odbval=value-last_counters[nASIC][5];
-       variables_counters["nWordsPRBS"][nASIC] = odbval;
-       last_counters[nASIC][5]=value;
-
-       value=val[nASIC*15+9];
-       odbval=value-last_counters[nASIC][6];
-       variables_counters["nErrorsLVDS"][nASIC] = odbval;
-       last_counters[nASIC][6]=value;
-
-       value=val[nASIC*15+11];
-       odbval=value-last_counters[nASIC][7];
-       variables_counters["nWordsLVDS"][nASIC] = odbval;
-       last_counters[nASIC][7]=value;
-
-       value=val[nASIC*15+12];
-       odbval=value-last_counters[nASIC][8];
-       variables_counters["nDatasyncloss"][nASIC] = odbval;
-       last_counters[nASIC][8]=value;
-
+   // get rate per channel in counters
+   vector<uint32_t> ch_rate(128);
+   feb_sc.FEB_read(FEB, SCIFI_CH_RATE_REGISTER_R, ch_rate);
+   for(size_t i_ch = 0; i_ch < ch_rate.size(); i_ch++){
+        variables_counters["Rate"][i_ch] = ch_rate[i_ch];
    }
 
    return SUCCESS;
 }
+
 
 int MutrigFEB::ReadBackDatapathStatus(mappedFEB & FEB){
 
@@ -337,15 +344,52 @@ int MutrigFEB::ReadBackDatapathStatus(mappedFEB & FEB){
 }
 
 
+// MIDAS callback function commands changed
+void MutrigFEB::on_commands_changed(odb o, void * userdata)
+{
+    std::string name = o.get_name();
+    bool value = o;
 
+    if (value)
+        cm_msg(MINFO, "MutrigFEB::on_commands_changed", "Setting changed (%s)", name.c_str());
 
+    MutrigFEB* _this=static_cast<MutrigFEB*>(userdata);
+
+    if (name == "SciFiConfig" && o) {
+          int status=_this->ConfigureASICs();
+          if(status!=SUCCESS){ 
+              cm_msg(MERROR, "SciFiConfig" , "ASIC Configuration failed.");
+         	//TODO: what to do? 
+          }
+       o = false;
+       return;
+    }
+    if (name == "SciFiAllOff" && o) {
+        int status=_this->ConfigureASICsAllOff();
+        if(status!=SUCCESS){
+            cm_msg(MERROR, "SciFiAllOff" , "ASIC all off configuration failed. Return value was %d, expected %d.", status, SUCCESS);
+            //TODO: what to do?
+        }
+       o = false;
+       return;
+    }
+    if (name == "SciFiTDCTest") {
+          int status=_this->ChangeTDCTest(o);
+          if(status!=SUCCESS){
+              cm_msg(MERROR, "SciFiConfig" , "Changing SciFi test pulses failed");
+          }
+          return;
+    }
+}
 
 // MIDAS callback function for FEB register Setter functions
 void MutrigFEB::on_settings_changed(odb o, void * userdata)
 {
     std::string name = o.get_name();
+    bool value = o;
 
-    cm_msg(MINFO, "MutrigFEB::on_settings_changed", "Setting changed (%s)", name.c_str());
+    if (value)
+        cm_msg(MINFO, "MutrigFEB::on_settings_changed", "Setting changed (%s)", name.c_str());
 
     MutrigFEB* _this=static_cast<MutrigFEB*>(userdata);
 

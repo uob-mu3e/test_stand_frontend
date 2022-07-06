@@ -47,7 +47,7 @@ architecture rtl of data_generator_a10 is
     signal overflow_time    : std_logic_vector(14 downto 0);
     signal reset            : std_logic;
 
-    type data_header_states is (sop, t0, t1, sbhdr, sbhdr2, dthdr, trailer, overflow);
+    type data_header_states is (sop, t0, t1, d0, d1, sbhdr, sbhdr2, dthdr, trailer, overflow);
     signal data_header_state:   data_header_states;
 
     signal lsfr_chipID, lsfr_tot, lsfr_chipID_reg, lsfr_tot_reg : std_logic_vector (5 downto 0);
@@ -176,6 +176,20 @@ begin
                     o_data.data <= global_time(15 downto 0) & x"AFFE";
                 end if;
                 o_data.datak <= "0000";
+                if ( DATA_TYPE = "00" ) then
+                    data_header_state <= d0;
+                else
+                    data_header_state <= sbhdr;
+                end if;
+
+            when d0 =>
+                o_data.data <=  x"AFFED1D1";
+                o_data.datak <= "0000";
+                data_header_state <= d1;
+
+            when d1 =>
+                o_data.data <=  x"AFFED2D2";
+                o_data.datak <= "0000";
                 data_header_state <= sbhdr;
 
             when sbhdr =>
@@ -187,9 +201,9 @@ begin
                     o_data.data(15 downto 0)    <= lsfr_overflow;
                 else
                     if ( DATA_TYPE = "00" ) then
-                        o_data.data <= DATA_SUB_HEADER_ID & "000" & global_time(10 downto 4) & lsfr_overflow;
+                        o_data.data <= DATA_SUB_HEADER_ID & "000" & global_time(10-4 downto 4-4) & lsfr_overflow;
                     elsif ( DATA_TYPE = "01" ) then
-                        o_data.data <= DATA_SUB_HEADER_ID & global_time(13 downto 4) & lsfr_overflow;
+                        o_data.data <= DATA_SUB_HEADER_ID & global_time(13-4 downto 4-4) & lsfr_overflow;
                     end if;
                 end if;
                 o_data.datak <= "0000";
@@ -205,9 +219,9 @@ begin
                     o_data.data(15 downto 0)    <= lsfr_overflow;
                 else
                     if ( DATA_TYPE = "00" ) then
-                        o_data.data <= DATA_SUB_HEADER_ID & "000" & global_time(10 downto 4) & lsfr_overflow;
+                        o_data.data <= DATA_SUB_HEADER_ID & "000" & global_time(10-4 downto 4-4) & lsfr_overflow;
                     elsif ( DATA_TYPE = "01" ) then
-                        o_data.data <= DATA_SUB_HEADER_ID & global_time(13 downto 4) & lsfr_overflow;
+                        o_data.data <= DATA_SUB_HEADER_ID & global_time(13-4 downto 4-4) & lsfr_overflow;
                     end if;
                 end if;
                 o_data.datak <= "0000";

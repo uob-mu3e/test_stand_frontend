@@ -9,8 +9,8 @@ use ieee.numeric_std.all;
 
 package mu3e is
 
-    --                                data  datak  idl   sop  dthdr sbhdr  eop  err t0  t1
-    constant LINK_LENGTH : positive := 32  +  4  +  1  +  1  +  1  +  1  +  1  + 1 + 1 + 1;
+    --                                data  datak  idl   sop  dthdr sbhdr  eop  err t0  t1  d0  d1
+    constant LINK_LENGTH : positive := 32  +  4  +  1  +  1  +  1  +  1  +  1  + 1 + 1 + 1 + 1 + 1;
     
     -- TODO: think about to add a linkID
 
@@ -25,6 +25,8 @@ package mu3e is
         err     : std_logic; -- package has an error
         t0      : std_logic; -- time stamp upper bits
         t1      : std_logic; -- time stamp lower bits
+        d0      : std_logic; -- sorter debug word 0
+        d1      : std_logic; -- sorter debug word 1
     end record;
     type link_array_t is array(natural range <>) of link_t;
 
@@ -136,6 +138,12 @@ package body mu3e is
         link.t1 := '0';
         length := length + 1;
 
+        link.d0 := '0';
+        length := length + 1;
+        
+        link.d1 := '0';
+        length := length + 1;
+
         assert ( length = LINK_LENGTH ) severity failure;
         return link;
     end function;
@@ -175,6 +183,12 @@ package body mu3e is
         link.t1 := slv(43);
         length := length + 1;
 
+        link.d0 := slv(44);
+        length := length + 1;
+        
+        link.d1 := slv(45);
+        length := length + 1;
+
         assert ( length = LINK_LENGTH ) severity failure;
         return link;
     end function;
@@ -212,6 +226,12 @@ package body mu3e is
         length := length + 1;
         
         slv(43) := link.t1;
+        length := length + 1;
+
+        slv(44) := link.d0;
+        length := length + 1;
+
+        slv(45) := link.d1;
         length := length + 1;
 
         assert ( length = LINK_LENGTH ) severity failure;

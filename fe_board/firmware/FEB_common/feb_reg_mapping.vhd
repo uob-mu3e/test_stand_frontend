@@ -54,6 +54,7 @@ port (
     o_programming_data_ena      : out std_logic;
     o_programming_addr          : out std_logic_vector(31 downto 0);
     o_programming_addr_ena      : out std_logic;
+    o_nios_reboot               : out std_logic;
 
     i_testout                   : in  std_logic_vector(31 downto 0)--;
 );
@@ -85,7 +86,10 @@ architecture rtl of feb_reg_mapping is
     signal addr_ena_del             : std_logic_vector(5 downto 0);
 
     signal testout                  : std_logic_vector(31 downto 0);
+    signal nios_reboot              : std_logic;
 begin
+
+    o_nios_reboot <= nios_reboot;
 
     process(i_clk_156)
 
@@ -97,6 +101,7 @@ begin
         o_programming_ctrl <= (others => '0');
         o_programming_data_ena  <= '0';
         o_programming_addr_ena  <= '0';
+        nios_reboot             <= '0';
 
     elsif rising_edge(i_clk_156) then
         o_reg_rdata         <= X"CCCCCCCC";
@@ -292,6 +297,14 @@ begin
             o_reg_rdata(1 downto 0) <= i_si45_intr_n;
             o_reg_rdata(3 downto 2) <= i_si45_lol_n;
             o_reg_rdata(31 downto 4) <= (others => '0');
+        end if;
+
+        if ( regaddr = REBOOT_REGISTER_RW and i_reg_re = '1' ) then
+            o_reg_rdata(0)              <= nios_reboot;
+            o_reg_rdata(31 downto 0)    <= (others => '0');
+        end if;
+        if ( regaddr = REBOOT_REGISTER_RW and i_reg_we = '1' ) then
+            nios_reboot <= i_reg_wdata(0);
         end if;
 
         -- testout

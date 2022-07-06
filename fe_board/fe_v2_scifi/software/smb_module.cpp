@@ -15,33 +15,22 @@ char wait_key(useconds_t us = 100000);
 #include "include/scifi_registers.h"
 
 //write slow control pattern over SPI, returns 0 if readback value matches written, otherwise -1. Does not include CSn line switching.
-int SMB_t::spi_write_pattern(alt_u32 spi_slave, const alt_u8* bitpattern) {
+int SMB_t::spi_write_pattern(alt_u32 spi_slave, const alt_u8* bitpattern, bool print) {
     char tx_string[681]; //cmp
     char rx_string[681]; //cmp
     int result_i=0;
     int status=0;
+    int return_code=0;
     uint16_t rx_pre=0xff00;
-    uint16_t nb=MUTRIG_CONFIG_LEN_BYTES;
-    do{
-        nb--;
+
+    for ( int nb = MUTRIG_CONFIG_LEN_BYTES-1; nb>=0; nb--) {
+
         //do spi transaction, one byte at a time
         alt_u8 rx = 0xCC;
         alt_u8 tx = bitpattern[nb];
 
-        alt_avalon_spi_command(SPI_BASE, spi_slave, 1, &tx, 0, &rx, nb==0?0:ALT_AVALON_SPI_COMMAND_MERGE);
+        return_code = alt_avalon_spi_command(SPI_BASE, spi_slave, 1, &tx, 0, &rx, nb==0?0:ALT_AVALON_SPI_COMMAND_MERGE);
         rx = IORD_8DIRECT(SPI_BASE, 0);
-
-        //printf("tx:%2.2X rx:%2.2x nb:%d\n",tx,rx,nb);//cmp
-        char result_hex[3]; //cmp
-        char tx_hex[3]; //cmp
-        sprintf(result_hex,"%2.2X",rx); //cmp
-        sprintf(tx_hex,"%2.2X",tx); //cmp
-        rx_string[result_i] = result_hex[0]; //cmp
-        tx_string[result_i] = tx_hex[0]; //cmp
-        result_i++; //cmp
-        rx_string[result_i] = result_hex[1]; //cmp
-        tx_string[result_i] = tx_hex[1]; //cmp
-        result_i++; //cmp
 
         //pattern is not in full units of bytes, so shift back while receiving to check the correct configuration state
         unsigned char rx_check= (rx_pre | rx ) >> (8-MUTRIG_CONFIG_LEN_BITS%8);
@@ -49,17 +38,36 @@ int SMB_t::spi_write_pattern(alt_u32 spi_slave, const alt_u8* bitpattern) {
             rx_check &= 0xff>>(8-MUTRIG_CONFIG_LEN_BITS%8);
         };
 
+        if (print) {
+            //printf("tx:%2.2X rx:%2.2x nb:%d\n",tx,rx,nb);//cmp
+            char result_hex[3]; //cmp
+            char tx_hex[3]; //cmp
+            sprintf(result_hex,"%2.2X",rx_check); //cmp
+            sprintf(tx_hex,"%2.2X",tx); //cmp
+            rx_string[result_i] = result_hex[0]; //cmp
+            tx_string[result_i] = tx_hex[0]; //cmp
+            result_i++; //cmp
+            rx_string[result_i] = result_hex[1]; //cmp
+            tx_string[result_i] = tx_hex[1]; //cmp
+            result_i++; //cmp
+        }
+
         if(rx_check!=bitpattern[nb]){
             //printf("Error in byte %d: received %2.2x expected %2.2x\n",nb,rx_check,bitpattern[nb]);
             status=-1;
         }
+
+        if(return_code < 0 && print)
+            printf("ERROR SPI TX RET = %x \n" , return_code);
+
         rx_pre=rx<<8;
-    }while(nb>0);
-    //rx_string[680]=0; //cmp
-    //tx_string[680]=0; //cmp
-    printf("TX = %s\n", tx_string); //cmp
-    printf("RX = %s\n", rx_string); //cmp
-    //printf("Status = %u\n", status); //cmp
+    }
+
+    if (print) {
+        printf("TX = %s\n", tx_string);
+        printf("RX = %s\n", rx_string);
+        printf("Status = %i\n", status);
+    }
     return status;
 }
 
@@ -76,13 +84,13 @@ void SMB_t::print_config(const alt_u8* bitpattern) {
 
 
 //configure ASIC
-alt_u16 SMB_t::configure_asic(alt_u32 asic, const alt_u8* bitpattern) {
+alt_u16 SMB_t::configure_asic(alt_u32 asic, const alt_u8* bitpattern, bool print) {
     printf("[SMB] chip_configure(%u)\n", asic); //cmp
 
     int ret;
-    ret = spi_write_pattern(asic, bitpattern);
+    ret = spi_write_pattern(asic, bitpattern, print);
     //     usleep(1e5);
-    ret = spi_write_pattern(asic, bitpattern);
+    ret = spi_write_pattern(asic, bitpattern, print);
 
     if(ret != 0) {
         //Commented out for headless operation
@@ -98,7 +106,7 @@ alt_u16 SMB_t::configure_asic(alt_u32 asic, const alt_u8* bitpattern) {
 //#include "../../../../common/include/feb.h"
 using namespace mu3e::daq::feb;
 //TODO: add list&document in specbook
-alt_u16 SMB_t::sc_callback(alt_u16 cmd, volatile alt_u32* data, alt_u16 n) {
+alt_u16 SMB_t::sc_callback(alt_u16 cmd, volatile alt_u32* data, alt_u16 n, bool print=false) {
     alt_u16 status=FEB_REPLY_SUCCESS;
     alt_u16 asic = cmd & 0x000F;
     switch (cmd & 0xFFF0){
@@ -107,8 +115,8 @@ alt_u16 SMB_t::sc_callback(alt_u16 cmd, volatile alt_u32* data, alt_u16 n) {
             break;
 
         case CMD_MUTRIG_ASIC_OFF:
-            for(alt_u8 asic = 0; asic < 8; asic++){
-                if(sc_callback(CMD_MUTRIG_ASIC_CFG | asic, (alt_u32*) config_ALL_OFF, 0) == FEB_REPLY_ERROR)
+            for(alt_u8 asic = 0; asic < 8; asic++) {
+                if(sc_callback(CMD_MUTRIG_ASIC_CFG | asic, (alt_u32*) config_ALL_OFF, 0, print) == FEB_REPLY_ERROR)
                     status=FEB_REPLY_ERROR;
             }
             return status;
@@ -128,9 +136,16 @@ alt_u16 SMB_t::sc_callback(alt_u16 cmd, volatile alt_u32* data, alt_u16 n) {
             break;
 
         default:
-            //printf("[sc_callback] unknown command: 0x%X\n", cmd);
-            //Commented out for headless
-            return FEB_REPLY_ERROR;
+            if((cmd & 0xFFF0) == CMD_MUTRIG_ASIC_CFG) {
+                int asic = cmd & 0x000F;
+                return configure_asic(asic, (alt_u8*)data, print);
+            }
+            else {
+                //printf("[sc_callback] unknown command: 0x%X\n", cmd);
+                //Commented out for headless
+                return FEB_REPLY_ERROR;
+            }
+            break;
     }
     return 0;
 }
@@ -142,22 +157,31 @@ void SMB_t::menu_SMB_main() {
     char str[2] = {0};
 
     while(1) {
+        printf("MISO REG = 0x%08X\n", ram->data[SCIFI_CNT_MISO_TRANSITION_REGISTER_R]);
+        printf("CC Diff = 0x%08X\n", ram->data[SCIFI_CC_DIFF_REGISTER_R]);
+        printf("CTRL DP = 0x%08X\n", ram->data[SCIFI_CTRL_DP_REGISTER_W]);
+        printf("CNT CTRL = 0x%08X\n", ram->data[SCIFI_CNT_CTRL_REGISTER_W]);
+        printf("Link Data = 0x%08X\n", ram->data[SCIFI_LINK_DATA_REGISTER_W]);
         //        TODO: Define menu
         printf("  [0] => Write ALL_OFF config to all ASICs\n");
         printf("  [1] => Write PRBS_single config to all ASICs\n");
         printf("  [2] => Write PLL test config to all ASICs\n");
         printf("  [3] => Write no TDC power config to all ASICs\n");
+        printf("  [4] => Write DCR config to all ASICs\n");
+        printf("  [5] => Write high TThreshold config to all ASICs\n");
+        printf("  [6] => Write mask PLL test\n");
+        printf("  [7] => injection setup\n");
         printf("  [8] => data\n");
         printf("  [9] => monitor test\n");
         printf("  [a] => counters\n");
+        printf("  [b] => lapse correction menu\n");
         printf("  [m] => set ASIC mask\n");
         printf("  [s] => get slow control registers\n");
         printf("  [d] => get datapath status\n");
         printf("  [f] => dummy generator settings\n");
-        //printf("  [7] => datapath settings\n");
         printf("  [r] => reset things\n");
-        //printf(" [b] test led off");
-        //printf("[n] test led on");
+        printf("  [w] => enable length replace\n");
+        printf("  [u] => disable length replace\n");
         printf("  [q] => exit\n");
 
         printf("Select entry ...\n");
@@ -167,28 +191,66 @@ void SMB_t::menu_SMB_main() {
             case '0':
                 sc.ram->data[SCIFI_CNT_CTRL_REGISTER_W] = sc.ram->data[SCIFI_CNT_CTRL_REGISTER_W] & ~(1<<31);
                 for(alt_u8 asic = 0; asic < 8; asic++)
-                    sc_callback(CMD_MUTRIG_ASIC_CFG | asic, (alt_u32*) config_ALL_OFF, 0);
+                    sc_callback(CMD_MUTRIG_ASIC_CFG | asic, (alt_u32*) config_ALL_OFF, 0, true);
                 break;
             case '1':
                 sc.ram->data[SCIFI_CNT_CTRL_REGISTER_W] = sc.ram->data[SCIFI_CNT_CTRL_REGISTER_W] & ~(1<<31);
                 for(alt_u8 asic = 0; asic < 8; asic++)
-                    sc_callback(CMD_MUTRIG_ASIC_CFG | asic, (alt_u32*) config_PRBS_single, 0);
+                    sc_callback(CMD_MUTRIG_ASIC_CFG | asic, (alt_u32*) config_PRBS_single, 0, true);
                 break;
-            case 't':
-                sc.ram->data[SCIFI_CNT_CTRL_REGISTER_W] = sc.ram->data[SCIFI_CNT_CTRL_REGISTER_W] | (1<<31);
+            case 'w':
+                sc.ram->data[SCIFI_CTRL_DP_REGISTER_W] = sc.ram->data[SCIFI_CTRL_DP_REGISTER_W] | (1<<28);
                 break;
-            case 'y':
-                sc.ram->data[SCIFI_CNT_CTRL_REGISTER_W] = sc.ram->data[SCIFI_CNT_CTRL_REGISTER_W] & ~(1<<31);
+            case 'u':
+                sc.ram->data[SCIFI_CTRL_DP_REGISTER_W] = sc.ram->data[SCIFI_CTRL_DP_REGISTER_W] & ~(1<<28);
+                break;
+            case 'e':
+                sc.ram->data[SCIFI_CTRL_DP_REGISTER_W] = sc.ram->data[SCIFI_CTRL_DP_REGISTER_W] | (1<<31);
+                break;
+            case 'p':
+                sc.ram->data[SCIFI_LINK_DATA_REGISTER_W] = sc.ram->data[SCIFI_LINK_DATA_REGISTER_W] | (1<<31);
+                // readout link 2
+                sc.ram->data[SCIFI_LINK_DATA_REGISTER_W] = sc.ram->data[SCIFI_LINK_DATA_REGISTER_W] | (1<<3);
+                break;
+            case 'o':
+                sc.ram->data[SCIFI_LINK_DATA_REGISTER_W] = sc.ram->data[SCIFI_LINK_DATA_REGISTER_W] & ~(1<<31);
+                sc.ram->data[SCIFI_LINK_DATA_REGISTER_W] = sc.ram->data[SCIFI_LINK_DATA_REGISTER_W] & ~(1<<0);
+                sc.ram->data[SCIFI_LINK_DATA_REGISTER_W] = sc.ram->data[SCIFI_LINK_DATA_REGISTER_W] & ~(1<<1);
+                sc.ram->data[SCIFI_LINK_DATA_REGISTER_W] = sc.ram->data[SCIFI_LINK_DATA_REGISTER_W] & ~(1<<2);
+                sc.ram->data[SCIFI_LINK_DATA_REGISTER_W] = sc.ram->data[SCIFI_LINK_DATA_REGISTER_W] & ~(1<<3);
+                break;
+            case 'i':
+                sc.ram->data[SCIFI_CTRL_DP_REGISTER_W] = sc.ram->data[SCIFI_CTRL_DP_REGISTER_W] & ~(1<<31);
                 break;
             case '2':
                 for(alt_u8 asic = 0; asic < 8; asic++)
-                    sc_callback(CMD_MUTRIG_ASIC_CFG | asic, (alt_u32*) config_plltest, 0);
+                    sc_callback(CMD_MUTRIG_ASIC_CFG | asic, (alt_u32*) config_plltest, 0, true);
                 sc.ram->data[SCIFI_CNT_CTRL_REGISTER_W] = sc.ram->data[SCIFI_CNT_CTRL_REGISTER_W] | (1<<31);
                 break;
             case '3':
                 sc.ram->data[SCIFI_CNT_CTRL_REGISTER_W] = sc.ram->data[SCIFI_CNT_CTRL_REGISTER_W] & ~(1<<31);
                 for(alt_u8 asic = 0; asic < 8; asic++)
-                    sc_callback(CMD_MUTRIG_ASIC_CFG | asic, (alt_u32*) no_tdc_power, 0);
+                    sc_callback(CMD_MUTRIG_ASIC_CFG | asic, (alt_u32*) no_tdc_power, 0, true);
+                break;
+            case '4':
+                sc.ram->data[SCIFI_CNT_CTRL_REGISTER_W] = sc.ram->data[SCIFI_CNT_CTRL_REGISTER_W] & ~(1<<31);
+                for(alt_u8 asic = 0; asic < 8; asic++) {
+                    sc_callback(CMD_MUTRIG_ASIC_CFG | asic, (alt_u32*) config_DCR, 0);
+                }
+                break;
+             case '5':
+                sc.ram->data[SCIFI_CNT_CTRL_REGISTER_W] = sc.ram->data[SCIFI_CNT_CTRL_REGISTER_W] & ~(1<<31);
+                for(alt_u8 asic = 0; asic < 8; asic++) {
+                    sc_callback(CMD_MUTRIG_ASIC_CFG | asic, (alt_u32*) config_HighTTh, 0);
+                }
+                break;
+            case '6':
+                for(alt_u8 asic = 0; asic < 8; asic++)
+                    sc_callback(CMD_MUTRIG_ASIC_CFG | asic, (alt_u32*) config_plltest_mask, 0, true);
+                sc.ram->data[SCIFI_CNT_CTRL_REGISTER_W] = sc.ram->data[SCIFI_CNT_CTRL_REGISTER_W] | (1<<31);
+                break;
+            case '7':
+                menu_pll_injection();
                 break;
             case '8':
                 printf("buffer_full / frame_desync / rx_pll_lock : 0x%03X\n", sc.ram->data[SCIFI_MON_STATUS_REGISTER_R]);
@@ -201,12 +263,9 @@ void SMB_t::menu_SMB_main() {
             case 'a':
                 menu_counters();
                 break;
-                //case 'b':
-                //    sc.ram->data[SCIFI_CNT_CTRL_REGISTER_W]=0xFFFFFFFF;
-                //    break;
-                //case 'n':
-                //    sc.ram->data[SCIFI_CNT_CTRL_REGISTER_W]=0x00000000;
-                //    break;
+            case 'b':
+                menu_lapse();
+                break;
             case 's': //get slowcontrol registers
                 //printf("dummyctrl_reg:    0x%08X\n", regs.ctrl.dummy);
                 printf("dummyctrl_reg:    0x%08X\n", sc.ram->data[SCIFI_CTRL_DUMMY_REGISTER_W]);
@@ -242,8 +301,6 @@ void SMB_t::menu_SMB_main() {
             case 'f':
                 menu_reg_dummyctrl();
                 break;
-                //case 'p':
-                //    break;
             case 'r':
                 menu_reset();
 		break;
@@ -266,6 +323,104 @@ void SMB_t::menu_SMB_main() {
     }
 }
 
+void SMB_t::menu_lapse() {
+    while(1) {
+        printf("CTRL_LAPSE = 0x%08X\n", sc.ram->data[SCIFI_CTRL_LAPSE_COUNTER_REGISTER_W]);
+        printf("  [1] => enable injection\n");
+        printf("  [2] => disable injection\n");
+
+
+        printf("Select entry ...\n");
+        char cmd = wait_key();
+        switch(cmd) {
+            case '1':
+                sc.ram->data[SCIFI_CTRL_LAPSE_COUNTER_REGISTER_W] = sc.ram->data[SCIFI_CTRL_LAPSE_COUNTER_REGISTER_W] | (1<<31);
+                break;
+            case '2':
+                sc.ram->data[SCIFI_CTRL_LAPSE_COUNTER_REGISTER_W] = sc.ram->data[SCIFI_CTRL_LAPSE_COUNTER_REGISTER_W] & ~(1<<31);
+                break;
+            case 'q':
+                return;
+            default:
+                printf("invalid command: '%c'\n", cmd);
+        }
+    }
+}
+
+void SMB_t::menu_pll_injection() {
+    while(1) {
+        printf("CNT CTRL = 0x%08X\n", sc.ram->data[SCIFI_CNT_CTRL_REGISTER_W]);
+        printf("  [1] => enable injection\n");
+        printf("  [2] => disable injection\n");
+        printf("  [3] => set 100kHz\n");
+        printf("  [4] => set 10kHz\n");
+        printf("  [5] => set 1kHz\n");
+        printf("  [6] => set 0.1kHz\n");
+        printf("  [7] => set by hand\n");
+        printf("  [8] => send pulse\n");
+
+
+        printf("Select entry ...\n");
+        char cmd = wait_key();
+        switch(cmd) {
+            case '1':
+                sc.ram->data[SCIFI_CNT_CTRL_REGISTER_W] = sc.ram->data[SCIFI_CNT_CTRL_REGISTER_W] | (1<<31);
+                break;
+            case '2':
+                sc.ram->data[SCIFI_CNT_CTRL_REGISTER_W] = sc.ram->data[SCIFI_CNT_CTRL_REGISTER_W] & ~(1<<31);
+                break;
+            case '3':
+                sc.ram->data[SCIFI_CNT_CTRL_REGISTER_W] = sc.ram->data[SCIFI_CNT_CTRL_REGISTER_W] & ~(1<<30);
+                sc.ram->data[SCIFI_CNT_CTRL_REGISTER_W] = sc.ram->data[SCIFI_CNT_CTRL_REGISTER_W] & ~(1<<29);
+                sc.ram->data[SCIFI_CNT_CTRL_REGISTER_W] = sc.ram->data[SCIFI_CNT_CTRL_REGISTER_W] & ~(1<<28);
+                sc.ram->data[SCIFI_CNT_CTRL_REGISTER_W] = sc.ram->data[SCIFI_CNT_CTRL_REGISTER_W] & ~(1<<27);
+                sc.ram->data[SCIFI_CNT_CTRL_REGISTER_W] = sc.ram->data[SCIFI_CNT_CTRL_REGISTER_W] & ~(1<<26);
+                sc.ram->data[SCIFI_CNT_CTRL_REGISTER_W] = sc.ram->data[SCIFI_CNT_CTRL_REGISTER_W] | (1<<30);
+                break;
+            case '4':
+                sc.ram->data[SCIFI_CNT_CTRL_REGISTER_W] = sc.ram->data[SCIFI_CNT_CTRL_REGISTER_W] & ~(1<<30);
+                sc.ram->data[SCIFI_CNT_CTRL_REGISTER_W] = sc.ram->data[SCIFI_CNT_CTRL_REGISTER_W] & ~(1<<29);
+                sc.ram->data[SCIFI_CNT_CTRL_REGISTER_W] = sc.ram->data[SCIFI_CNT_CTRL_REGISTER_W] & ~(1<<28);
+                sc.ram->data[SCIFI_CNT_CTRL_REGISTER_W] = sc.ram->data[SCIFI_CNT_CTRL_REGISTER_W] & ~(1<<27);
+                sc.ram->data[SCIFI_CNT_CTRL_REGISTER_W] = sc.ram->data[SCIFI_CNT_CTRL_REGISTER_W] & ~(1<<26);
+                sc.ram->data[SCIFI_CNT_CTRL_REGISTER_W] = sc.ram->data[SCIFI_CNT_CTRL_REGISTER_W] | (1<<29);
+                break;
+            case '5':
+                sc.ram->data[SCIFI_CNT_CTRL_REGISTER_W] = sc.ram->data[SCIFI_CNT_CTRL_REGISTER_W] & ~(1<<30);
+                sc.ram->data[SCIFI_CNT_CTRL_REGISTER_W] = sc.ram->data[SCIFI_CNT_CTRL_REGISTER_W] & ~(1<<29);
+                sc.ram->data[SCIFI_CNT_CTRL_REGISTER_W] = sc.ram->data[SCIFI_CNT_CTRL_REGISTER_W] & ~(1<<28);
+                sc.ram->data[SCIFI_CNT_CTRL_REGISTER_W] = sc.ram->data[SCIFI_CNT_CTRL_REGISTER_W] & ~(1<<27);
+                sc.ram->data[SCIFI_CNT_CTRL_REGISTER_W] = sc.ram->data[SCIFI_CNT_CTRL_REGISTER_W] & ~(1<<26);
+                sc.ram->data[SCIFI_CNT_CTRL_REGISTER_W] = sc.ram->data[SCIFI_CNT_CTRL_REGISTER_W] | (1<<28);
+                break;
+            case '6':
+                sc.ram->data[SCIFI_CNT_CTRL_REGISTER_W] = sc.ram->data[SCIFI_CNT_CTRL_REGISTER_W] & ~(1<<30);
+                sc.ram->data[SCIFI_CNT_CTRL_REGISTER_W] = sc.ram->data[SCIFI_CNT_CTRL_REGISTER_W] & ~(1<<29);
+                sc.ram->data[SCIFI_CNT_CTRL_REGISTER_W] = sc.ram->data[SCIFI_CNT_CTRL_REGISTER_W] & ~(1<<28);
+                sc.ram->data[SCIFI_CNT_CTRL_REGISTER_W] = sc.ram->data[SCIFI_CNT_CTRL_REGISTER_W] & ~(1<<27);
+                sc.ram->data[SCIFI_CNT_CTRL_REGISTER_W] = sc.ram->data[SCIFI_CNT_CTRL_REGISTER_W] & ~(1<<26);
+                sc.ram->data[SCIFI_CNT_CTRL_REGISTER_W] = sc.ram->data[SCIFI_CNT_CTRL_REGISTER_W] | (1<<27);
+                break;
+            case '7':
+                sc.ram->data[SCIFI_CNT_CTRL_REGISTER_W] = sc.ram->data[SCIFI_CNT_CTRL_REGISTER_W] & ~(1<<30);
+                sc.ram->data[SCIFI_CNT_CTRL_REGISTER_W] = sc.ram->data[SCIFI_CNT_CTRL_REGISTER_W] & ~(1<<29);
+                sc.ram->data[SCIFI_CNT_CTRL_REGISTER_W] = sc.ram->data[SCIFI_CNT_CTRL_REGISTER_W] & ~(1<<28);
+                sc.ram->data[SCIFI_CNT_CTRL_REGISTER_W] = sc.ram->data[SCIFI_CNT_CTRL_REGISTER_W] & ~(1<<27);
+                sc.ram->data[SCIFI_CNT_CTRL_REGISTER_W] = sc.ram->data[SCIFI_CNT_CTRL_REGISTER_W] & ~(1<<26);
+                sc.ram->data[SCIFI_CNT_CTRL_REGISTER_W] = sc.ram->data[SCIFI_CNT_CTRL_REGISTER_W] | (1<<26);
+                break;
+            case '8':
+                sc.ram->data[SCIFI_CNT_CTRL_REGISTER_W] = sc.ram->data[SCIFI_CNT_CTRL_REGISTER_W] & ~(1<<25);
+                sc.ram->data[SCIFI_CNT_CTRL_REGISTER_W] = sc.ram->data[SCIFI_CNT_CTRL_REGISTER_W] | (1<<25);
+                sc.ram->data[SCIFI_CNT_CTRL_REGISTER_W] = sc.ram->data[SCIFI_CNT_CTRL_REGISTER_W] & ~(1<<25);
+                break;
+            case 'q':
+                return;
+            default:
+                printf("invalid command: '%c'\n", cmd);
+        }
+    }
+}
 void SMB_t::menu_SMB_monitors() {
 
     while(1) {
@@ -483,13 +638,14 @@ void SMB_t::menu_counters(){
     printf("\n\n\n\n\n\n\n\n\n\n\n\n\n\n");
         for ( uint32_t mod = 0; mod < 2; mod++ ) {
             printf("ASIC %i to %i\n", mod * 4, 3 + mod * 4);
-            for ( uint32_t selected = 0; selected < 5; selected++ ) {
+            for ( uint32_t selected = 0; selected < 6; selected++ ) {
                 switch ( selected ) {
                     case 0: printf("Events / 8ns        "); break;
                     case 1: printf("CRC-Errors / Frame  "); break;
                     case 2: printf("PRBS-Errors / Words "); break;
                     case 3: printf("LVDS-Errors / Words "); break;
                     case 4: printf("# SYNCLOSS  / -     "); break;
+                    case 5: printf("Frame / 8ns         "); break;
                 }
                 // loop over asics
                 for ( uint32_t asic = 0; asic < 4; asic++ ) {
@@ -506,7 +662,7 @@ void SMB_t::menu_counters(){
                         lastTS = curDeNom;
                     } else if ( selected == 1 ) {
                         // get frame
-                        sc.ram->data[SCIFI_CNT_ADDR_REGISTER_W] = 4;
+                        sc.ram->data[SCIFI_CNT_ADDR_REGISTER_W] = 4 + asic * 10 + mod * 4 * 10;
                         curDeNom = sc.ram->data[SCIFI_CNT_VALUE_REGISTER_R];
                         // get crc errors
                         sc.ram->data[SCIFI_CNT_ADDR_REGISTER_W] = counter_map[selected] + asic * 10 + mod * 4 * 10;
@@ -516,7 +672,7 @@ void SMB_t::menu_counters(){
                         lastFrame[mod * asic] = curDeNom;
                     } else if ( selected == 2 ) {
                         // get words
-                        sc.ram->data[SCIFI_CNT_ADDR_REGISTER_W] = 5;
+                        sc.ram->data[SCIFI_CNT_ADDR_REGISTER_W] = 5 + asic * 10 + mod * 4 * 10;
                         curDeNom = sc.ram->data[SCIFI_CNT_VALUE_REGISTER_R];
                         // get prbs errors
                         sc.ram->data[SCIFI_CNT_ADDR_REGISTER_W] = counter_map[selected] + asic * 10 + mod * 4 * 10;
@@ -526,7 +682,7 @@ void SMB_t::menu_counters(){
                         lastWords[mod * asic] = curDeNom;
                     } else if ( selected == 3 ) {
                         // get words
-                        sc.ram->data[SCIFI_CNT_ADDR_REGISTER_W] = 5;
+                        sc.ram->data[SCIFI_CNT_ADDR_REGISTER_W] = 5 + asic * 10 + mod * 4 * 10;
                         curDeNom = sc.ram->data[SCIFI_CNT_VALUE_REGISTER_R];
                         // get lvds errors
                         sc.ram->data[SCIFI_CNT_ADDR_REGISTER_W] = counter_map[selected] + asic * 10 + mod * 4 * 10;
@@ -539,6 +695,14 @@ void SMB_t::menu_counters(){
                         sc.ram->data[SCIFI_CNT_ADDR_REGISTER_W] = counter_map[selected] + asic * 10 + mod * 4 * 10;
                         curNom = sc.ram->data[SCIFI_CNT_VALUE_REGISTER_R];
                         printf("| %10u / %10u |", curNom, counter_map[selected] + asic * 10 + mod * 4 * 10);
+                    } else if ( selected == 5 ) {
+                        // get time
+                        sc.ram->data[SCIFI_CNT_ADDR_REGISTER_W] = 1;
+                        curDeNom = sc.ram->data[SCIFI_CNT_VALUE_REGISTER_R];
+                        // get frame
+                        sc.ram->data[SCIFI_CNT_ADDR_REGISTER_W] = 4 + asic * 10 + mod * 4 * 10;
+                        curNom = sc.ram->data[SCIFI_CNT_VALUE_REGISTER_R];
+                        printf("| %10u / %10u |", curNom, curDeNom);
                     }
                 }
                 printf("\n");
@@ -566,24 +730,13 @@ alt_u16 SMB_t::reset_counters(){
 }
 //write counter values of all channels to memory address *data and following. Return number of asic channels written.
 alt_u16 SMB_t::store_counters(volatile alt_u32* data){
-    for(uint8_t i=0;i<4*n_MODULES;i++){
-        for(uint8_t selected=0;selected<5; selected++){
-            //sc.ram->data[SCIFI_CNT_CTRL_REGISTER_W] = (sc.ram->data[SCIFI_CNT_CTRL_REGISTER_W] & ~0xF) | ((selected&0x7) + (i<<3));
-            //*data = sc.ram->data[SCIFI_CNT_NOM_REGISTER_REGISTER_R];
-            //printf("%u: %8.8x\n", sc.ram->data[SCIFI_CNT_CTRL_REGISTER_W], *data);
-            //data++;
-            //*data = sc.ram->data[SCIFI_CNT_DENOM_UPPER_REGISTER_R];
-            //printf("%u: %8.8x\n", sc.ram->data[SCIFI_CNT_DENOM_UPPER_REGISTER_R],*data);
-            //data++;
-            //*data = sc.ram->data[SCIFI_CNT_DENOM_LOWER_REGISTER_R];
-            //printf("%u: %8.8x\n", sc.ram->data[SCIFI_CNT_DENOM_LOWER_REGISTER_R],*data);
-            //data++;
-            //*data=(sc.ram->regs.SMB.counters.denom>>32)&0xffffffff;
-            //printf("%u: %8.8x\n", sc.ram->regs.SMB.counters.ctrl,*data);
-            //data++;
-            //*data=(sc.ram->regs.SMB.counters.denom    )&0xffffffff;
-            //printf("%u: %8.8x\n", sc.ram->regs.SMB.counters.ctrl,*data);
-            //data++;
+    for ( uint32_t mod = 0; mod < n_MODULES; mod++ ) {
+        for ( uint32_t asic = 0; asic < 4; asic++ ) {
+            for ( uint32_t cnt = 0; cnt < 10; cnt++ ) {
+                sc.ram->data[SCIFI_CNT_ADDR_REGISTER_W] = mod * 4 * 10 + asic * 10 + cnt;
+                *data = sc.ram->data[SCIFI_CNT_VALUE_REGISTER_R];
+                data++;
+            }
         }
     }
     return 4*n_MODULES; //return number of asic channels written so we can parse correctly later

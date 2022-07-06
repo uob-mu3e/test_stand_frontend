@@ -45,6 +45,7 @@ signal 		reg_rdata     					: std_logic_vector(31 downto 0);
 signal		reg_we        					: std_logic;
 signal 		reg_wdata     					: std_logic_vector(31 downto 0);
 
+signal 		currentblock					: std_logic_vector(6 downto 0);
 
 begin
 
@@ -137,6 +138,22 @@ elsif(tsclk'event and tsclk = '1') then
 	end if;
 end if;
 end process;
+
+subheadtest: process(reset_n, tsclk)
+begin
+if(reset_n = '0') then
+	currentblock	<= (others => '1');
+elsif(tsclk'event and tsclk = '1') then
+	if(running = '1') then
+		if(out_ena = '1' and data_out(31 downto 24) = X"FC")then
+			currentblock 	<= data_out(22 downto 16);
+			assert(data_out(22 downto 16) = currentblock + '1') report"Subheader Mismatch" severity error;
+		end if;
+	end if;
+end if;
+end process;
+
+
 	
 hitgen: process
 begin
@@ -1380,6 +1397,63 @@ begin
 		hit_in(i)		<= X"00000000";
 	end loop;
 	hit_ena_in		<= (others => '0');
+	wait for WRITECLK_PERIOD;
+	hit_in(0)		<= X"70CCC1A1";
+	hit_ena_in(0)	<= '1';	
+	wait for WRITECLK_PERIOD;
+	hit_in(0)		<= X"71CCC1A1";
+	hit_ena_in(0)	<= '1';	
+	wait for WRITECLK_PERIOD;
+	hit_in(0)		<= X"72CCC1A1";
+	hit_ena_in(0)	<= '1';
+	wait for WRITECLK_PERIOD;
+	hit_in(0)		<= X"73CCC1A1";
+	hit_ena_in(0)	<= '1';	
+	wait for WRITECLK_PERIOD;
+	hit_in(0)		<= X"74CCC1A1";
+	hit_ena_in(0)	<= '1';
+	wait for WRITECLK_PERIOD;
+	hit_in(0)		<= X"75CCC1A1";
+	hit_ena_in(0)	<= '1';
+	wait for WRITECLK_PERIOD;
+	hit_in(0)		<= X"76CCC1A1";
+	hit_ena_in(0)	<= '1';
+	wait for WRITECLK_PERIOD;
+	hit_in(0)		<= X"77CCC1A1";
+	hit_ena_in(0)	<= '1';
+	wait for WRITECLK_PERIOD;
+	hit_in(0)		<= X"78CCC1A1";
+	hit_ena_in(0)	<= '1';
+	wait for WRITECLK_PERIOD;
+	hit_in(0)		<= X"79CCC1A1";
+	hit_ena_in(0)	<= '1';	
+	wait for WRITECLK_PERIOD;
+	hit_in(0)		<= X"7ACCC1A1";
+	hit_ena_in(0)	<= '1';	
+	wait for WRITECLK_PERIOD;
+	hit_in(0)		<= X"7BCCC1A1";
+	hit_ena_in(0)	<= '1';	
+	wait for WRITECLK_PERIOD;
+	hit_in(0)		<= X"7CCCC1A1";
+	hit_ena_in(0)	<= '1';
+	wait for WRITECLK_PERIOD;
+	hit_in(0)		<= X"7DCCC1A1";
+	hit_ena_in(0)	<= '1';	
+	wait for WRITECLK_PERIOD;
+	hit_in(0)		<= X"7ECCC1A1";
+	hit_ena_in(0)	<= '1';	
+	wait for WRITECLK_PERIOD;
+	hit_in(0)		<= X"7FCCC1A1";
+	hit_ena_in(0)	<= '1';	
+	wait for WRITECLK_PERIOD;
+	hit_in(0)		<= X"80CCC1A1";
+	hit_ena_in(0)	<= '1';
+	wait for WRITECLK_PERIOD;
+	hit_in(0)		<= X"81CCC1A1";
+	hit_ena_in(0)	<= '1';	
+	wait for WRITECLK_PERIOD;
+	hit_in(0)		<= X"00000000";
+	hit_ena_in(0)	<= '0';	
     wait for 1900*WRITECLK_PERIOD;
 	hit_in(0)		<= X"12345FFF";
 	hit_ena_in(0)	<= '1';

@@ -60,6 +60,10 @@ architecture rtl of mutrig_store is
     signal s_fifofull_almost : std_logic;
     -- save data loss implementation
     signal s_have_dropped    : std_logic;
+    
+    -- simulation signals
+    signal hit_type : std_logic;
+    signal channel : std_logic_vector(4 downto 0);
 
 begin
 
@@ -165,8 +169,8 @@ begin
         --selection of output data
         if ( i_end_of_frame = '1' ) then -- the MSB of the event data is '0' for frame info data
             ----------- TRAILER -----------
-            --                   4bit - & 2bit identifier   & filler           & hit-dropped-flag & 1bit l2 overflow & 1bit crc_error   & frame id
-            s_full_event_data <= "0000" & "11"              & X"0000000"&"000" & s_have_dropped   & i_frame_info(11) & i_crc_error      & i_frame_number;
+            --                   4bit - & 2bit identifier   & filler            & had bad trailer  & hit-dropped-flag & 1bit l2 overflow & 1bit crc_error   & frame id
+            s_full_event_data <= "0000" & "11"              & X"0000000" & "00" & i_frame_info(10) & s_have_dropped   & i_frame_info(11) & i_crc_error      & i_frame_number;
         elsif ( i_frame_info_rdy= '1' ) then -- by defenition the first thing that happens
             ----------- HEADER -----------
             --                   4bit - & 2bit identifier   & filler             & frame id
@@ -185,6 +189,11 @@ begin
         end if;
     end if;
     end process;
+    
+    -- simulation signals
+    hit_type <= i_frame_info(14);
+    channel  <= i_event_data(47 downto 43);
+    
 
     rst_sync_clear : entity work.reset_sync
     port map( i_reset_n => not i_aclear, o_reset_n => s_clear_rxclk_n, i_clk => i_clk_deser);

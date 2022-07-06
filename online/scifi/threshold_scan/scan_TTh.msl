@@ -1,0 +1,79 @@
+th_start = 0
+num_th =  35
+num_ch = 32 
+num_asic = 1
+
+PARAM filename
+
+#TODO: send HighTHR config
+
+    
+LOOP i_ch, $num_ch
+
+      LOOP i_asic , $num_asic
+            
+            # Initialize measurement arrays at startup to store tmp
+            i_ch_unique = (($i_asic-1)*$num_ch)+($i_ch-1)
+            ODBCREATE /Sequencer/Variables/SciFi/TThres_scan/$i_ch_unique/Threshold, FLOAT, $num_th
+            ODBCREATE /Sequencer/Variables/SciFi/TThres_scan/$i_ch_unique/Rate, FLOAT, $num_th
+
+            # Erase any previously stored array
+            ODBSET /Sequencer/Variables/SciFi/TThres_scan/$i_ch_unique/Threshold[*], 0
+            ODBSET /Sequencer/Variables/SciFi/TThres_scan/$i_ch_unique/Rate[*], 0 
+
+        ENDLOOP
+ENDLOOP
+
+LOOP i_th, $num_th
+
+    this_th = $i_th-1
+
+    # Mask and set threshold for all channels
+    ODBSET /Equipment/SciFiCentral/Settings/ASICs/Channels/*/mask, 1
+    ODBSET /Equipment/SciFiCentral/Settings/ASICs/Channels/*/tthresh, $this_th
+
+    LOOP i_ch, $num_ch
+
+        LOOP i_asic , $num_asic
+            
+            i_ch_unique = (($i_asic-1)*$num_ch)+($i_ch-1)
+
+            # Set threshold in ODB and store in sequencer tree
+            ODBSET /Equipment/SciFiCentral/Settings/ASICs/Channels/$i_ch_unique/tthresh, $this_th
+            ODBSET /Sequencer/Variables/SciFi/TThres_scan/$i_ch_unique/Threshold[$this_th], $this_th
+
+            # Unmask channels
+            ODBSET /Equipment/SciFiCentral/Settings/ASICs/Channels/$i_ch_unique/mask, 0
+           
+        ENDLOOP
+
+        # Send configuration and wait
+        #ODBSET /Equipment/SciFiCentral/Commands/SciFiConfig, 1
+        #WAIT SECONDS, 10
+
+        LOOP i_asic, $num_asic
+
+            i_ch_unique = (($i_asic-1)*$num_ch)+($i_ch-1)
+
+            # Mask all channels again
+            ODBSET /Equipment/SciFiCentral/Settings/ASICs/Channels/$i_ch_unique/mask, 1
+            
+            # Get rates and store in the sequencer tree - dummy
+            #rate=1528
+            #ODBGET /Equipment/SciFiCentral/Variables/Counters/Rate, $rate 
+            #ODBSET /Sequencer/Variables/SciFi/TThres_scan/$i_ch_unique/Rate[$this_th], $rate
+
+            # Get rates and store in the sequencer tree
+            ODBGET /Equipment/SciFiCentral/Variables/Counters/Rate[$i_ch_unique], rate 
+            ODBSET /Sequencer/Variables/SciFi/TThres_scan/$i_ch_unique/Rate[$this_th], rate
+
+
+        ENDLOOP 
+       
+    ENDLOOP
+
+ENDLOOP
+
+CAT outputfile, thre_scan_, $filename, .json
+ODBSAVE /Sequencer/Variables/SciFi/TThres_scan/, $outputfile
+

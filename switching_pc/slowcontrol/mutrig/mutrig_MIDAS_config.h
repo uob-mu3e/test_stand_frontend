@@ -30,6 +30,7 @@ typedef int INT;
 #ifndef MUTRIG_DAQ_DEFINED
 #define MUTRIG_DAQ_DEFINED
 
+
 typedef struct {
     BOOL dummy_config;
     BOOL dummy_data;
@@ -53,7 +54,9 @@ static odb MUTRIG_DAQ_SETTINGS = {
     {"reset_counters", false},
     {"LVDS_waitforall", false},
     {"LVDS_waitforall_sticky", false},
-    {"num_asics", 16},
+    {"num_asics", 0},
+    {"num_modules_per_feb", 0},
+    {"num_asics_per_module", 0},
     {"mask", { false, false, false, false,
                 false, false, false, false,
                 false, false, false, false,
@@ -62,6 +65,12 @@ static odb MUTRIG_DAQ_SETTINGS = {
     {"resetskew_cphase", {false, false, false, false}},
     {"resetskew_cdelay", {false, false, false, false}},
     {"resetskew_phases", {false, false, false, false}},
+};
+
+static odb ScifiCentralCommands = {
+    {"SciFiConfig", false},
+    {"SciFiAllOff", false},
+    {"SciFiTDCTest", false}
 };
 
 #endif

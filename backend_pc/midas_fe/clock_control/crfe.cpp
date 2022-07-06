@@ -644,7 +644,7 @@ void setup_odb(){
 
     odb custom;
     custom.connect("/Custom");
-    custom["Clock and Reset"] = "cr.html";
+    custom["DAQ"]["Clock and Reset"] = "cr.html";
 }
 
 void setup_watches(){

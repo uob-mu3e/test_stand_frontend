@@ -179,18 +179,12 @@ function RoundRobinRo(x,y, name){
     this.y = y;
     this.name = name;
 
-    this.FarmFifo = new Fifo(this.x+100, this.y+20,"FarmFifo",0,0,false);
-    this.DebugFifo = new Fifo(this.x+100, this.y+60,"DebugFifo",0,0,false);
-    this.FarmEventRate = new RateMeter(this.x+240, this.y+20,0, 61036, 61036,"Evs");
-
-    this.EventBuilder = new EventBuilder(this.x+240, this.y+80, "Debug Event Builder");
+    this.DebugFifo = new Fifo(this.x+100, this.y+20,"DebugFifo",0,0,false);
+    this.EventBuilder = new EventBuilder(this.x+240, this.y+20, "Debug Event Builder");
 
     this.draw = function(){
-        this.FarmFifo.draw();
         this.DebugFifo.draw();
         canvas_arrow(this.x+190, this.y+25, this.x+230, this.y+25,"Blue");
-        this.FarmEventRate.draw();
-        canvas_arrow(this.x+190, this.y+70, this.x+230, this.y+70,"Blue");
         this.EventBuilder.draw();
 
         cc.fillStyle = "Black";
@@ -201,9 +195,6 @@ function RoundRobinRo(x,y, name){
         cc.beginPath();
         cc.arc(this.x+40, this.y+60, 38, 2*Math.PI, false);
         cc.stroke();
-
-
-
     }
 }
 
@@ -291,14 +282,11 @@ for(var i=0; i <12; i++){
     febs[i] = new FEBInput(0,i*100,"FEB" + i);
 }
 
-var rrro = new Array(3);
-rrro[0] = new RoundRobinRo(500, 50, "Round Robin RO Pixel US");
-rrro[1] = new RoundRobinRo(500, 250, "Round Robin RO Pixel DS");
-rrro[2] = new RoundRobinRo(500, 450, "Round Robin RO Fibre");
+var rrro = new RoundRobinRo(500, 50, "Round Robin RO Debug");
 
 var tree = new Array(3);
-tree[0] = new TreeRo(500, 650, "Tree Pixel US");
-// tree[1] = new TreeRo(500, 650, "Tree Pixel DS");
+tree[0] = new TreeRo(500, 200, "Tree Pixel US");
+tree[1] = new TreeRo(500, 850, "Tree Pixel DS");
 // tree[2] = new TreeRo(500, 650, "Tree Pixel Fibre");
 
 var gts = new GlobalTS(1100, 50);
@@ -333,11 +321,11 @@ function draw(){
     for(var i=0; i < 12; i++){
         febs[i].draw();
     }
-    for(var i=0; i <3; i++){
-        rrro[i].draw();
-    }
+
+    rrro.draw();
 
     tree[0].draw();
+    tree[1].draw();
 
     dma.draw();
 
@@ -359,44 +347,42 @@ function update_sccn(valuex){
 
     // TODO: add other detectors
     // first we do one detector
-    rrro[0].FarmFifo.fullcounter = value[2]; // SWB_STREAM_FIFO_FULL_CNT
-    rrro[0].DebugFifo.halffullcounter = value[3]; // SWB_STREAM_DEBUG_FIFO_ALFULL_CNT
-    rrro[0].EventBuilder.idleNotHeaderCount = value[4]; // SWB_BANK_BUILDER_IDLE_NOT_HEADER_CNT
-    rrro[0].EventBuilder.skippedEventRate.updateRate(value[5], gts.GlobalTSDiff); // SWB_BANK_BUILDER_SKIP_EVENT_CNT
-    rrro[0].EventBuilder.eventRate.updateRate(value[6], gts.GlobalTSDiff); // SWB_BANK_BUILDER_EVENT_CNT
-    rrro[0].EventBuilder.bankBuilderTagFfifoFullCount = value[7]; // SWB_BANK_BUILDER_TAG_FIFO_FULL_CNT
-    rrro[0].FarmEventRate.updateRate(value[8], gts.GlobalTSDiff); // SWB_EVENTS_TO_FARM_CNT
+    rrro.DebugFifo.halffullcounter = 0; // SWB_STREAM_DEBUG_FIFO_ALFULL_CNT --> we dont have this for now
+    rrro.EventBuilder.idleNotHeaderCount = value[2]; // SWB_BANK_BUILDER_IDLE_NOT_HEADER_CNT
+    rrro.EventBuilder.skippedEventRate.updateRate(value[3], gts.GlobalTSDiff); // SWB_BANK_BUILDER_SKIP_EVENT_CNT
+    rrro.EventBuilder.eventRate.updateRate(value[4], gts.GlobalTSDiff); // SWB_BANK_BUILDER_EVENT_CNT
+    rrro.EventBuilder.bankBuilderTagFfifoFullCount = value[5]; // SWB_BANK_BUILDER_TAG_FIFO_FULL_CNT
 
     // TODO: add SWB_MERGER_DEBUG_FIFO_ALFULL_CNT
 
-    // setup input link fifos
-    var offeset = 10;
-    for(var i=0; i < 5; i++){
-        offeset += 1;
-        febs[i].linkfifo.halffullcounter = value[offeset + 0]; // SWB_LINK_FIFO_ALMOST_FULL_CNT
-        febs[i].linkfifo.fullcounter = value[offeset + 1]; // SWB_LINK_FIFO_FULL_CNT
-        febs[i].skippedRate.updateRate(value[offeset + 2], gts.GlobalTSDiff); // SWB_SKIP_EVENT_CNT
-        febs[i].eventRate.updateRate(value[offeset + 3], gts.GlobalTSDiff); // SWB_EVENT_CNT
-        febs[i].subheaderRate.updateRate(value[offeset + 4], gts.GlobalTSDiff); // SWB_SUB_HEADER_CNT
-        // TODO: add ReadBackMergerRate
+    var offeset = 6;
+    for ( var d = 0; d < 2; d++ ) {
+        // skip the stream fifo
         offeset += 8;
-    }
-
-    // update offeset for the not used febs
-    // TODO: needs to be changed if we add more counters
-    offeset += 9 * 29;
-
-    // setup tree counters
-    for ( var layer = 0; layer < tree[0].layerFifos.length; layer++ ) {
-        offeset += 1;
-        for ( var fifo = 0; fifo < tree[0].Outlayer[layer].length; fifo++ ) {
+        // setup input link fifos
+        for(var i=0; i < 5; i++){
             offeset += 1;
-            // TODO: add fifo flags tree[0].Outlayer[layer][fifo][0]
-            console.log("L", layer, "F", fifo, value[offeset + 0], offeset);
-            tree[0].Outlayer[layer][fifo][1].updateRate(value[offeset + 0], gts.GlobalTSDiff); // Evs
-            tree[0].Outlayer[layer][fifo][2].updateRate(value[offeset + 1], gts.GlobalTSDiff); // Subh
-            tree[0].Outlayer[layer][fifo][3].updateRate(value[offeset + 2], gts.GlobalTSDiff); // Hits
-            offeset += 3;
+            febs[i+d*5].linkfifo.halffullcounter = value[offeset + 0]; // SWB_LINK_FIFO_ALMOST_FULL_CNT
+            febs[i+d*5].linkfifo.fullcounter = value[offeset + 1]; // SWB_LINK_FIFO_FULL_CNT
+            febs[i+d*5].skippedRate.updateRate(value[offeset + 2], gts.GlobalTSDiff); // SWB_SKIP_EVENT_CNT
+            febs[i+d*5].eventRate.updateRate(value[offeset + 3], gts.GlobalTSDiff); // SWB_EVENT_CNT
+            febs[i+d*5].subheaderRate.updateRate(value[offeset + 4], gts.GlobalTSDiff); // SWB_SUB_HEADER_CNT
+            // TODO: add ReadBackMergerRate
+            offeset += 3+5;
+        }
+
+        // setup tree counters
+        for ( var layer = 0; layer < tree[0].layerFifos.length; layer++ ) {
+            offeset += 1;
+            for ( var fifo = 0; fifo < tree[0].Outlayer[layer].length; fifo++ ) {
+                offeset += 1;
+                // TODO: add fifo flags tree[0].Outlayer[layer][fifo][0]
+                console.log("L", layer, "F", fifo, value[offeset + 0], offeset);
+                tree[d].Outlayer[layer][fifo][1].updateRate(value[offeset + 0], gts.GlobalTSDiff); // Evs
+                tree[d].Outlayer[layer][fifo][2].updateRate(value[offeset + 1], gts.GlobalTSDiff); // Subh
+                tree[d].Outlayer[layer][fifo][3].updateRate(value[offeset + 2], gts.GlobalTSDiff); // Hits
+                offeset += 3;
+            }
         }
     }
 

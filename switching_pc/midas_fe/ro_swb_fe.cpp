@@ -34,7 +34,7 @@ const char *frontend_file_name = __FILE__;
 BOOL frontend_call_loop = FALSE;
 
 /* Overwrite equipment struct in ODB from values in code*/
-BOOL equipment_common_overwrite = FALSE;
+BOOL equipment_common_overwrite = TRUE;
 
 /* a frontend status page is displayed with this frequency in ms */
 INT display_period = 0;
@@ -149,6 +149,8 @@ void setup_odb(){
         {"readout_pixel_us", false},       // bool
         {"readout_all", false},        // bool
         {"use_merger", false},         // bool
+        {"subheader_zerosuppress", false}, // bool
+        {"header_zerosuppress", false}, // bool
         {"dma_buf_nwords", int(dma_buf_nwords)},
         {"dma_buf_size", int(dma_buf_size)}
     };
@@ -265,9 +267,20 @@ INT begin_of_run(INT run_number, char *error)
     } else if ( stream_settings["readout_all"] ) {
         readout_state_regs = SET_USE_BIT_ALL(readout_state_regs);
     }
+
+    // zero suppression settings
+    if(stream_settings["subheader_zerosuppress"]) {
+        readout_state_regs = SET_USE_BIT_SUBHDR_SUPPRESS(readout_state_regs);
+    }
+    if(stream_settings["header_zerosuppress"]) {
+        readout_state_regs = SET_USE_BIT_HEAD_SUPPRESS(readout_state_regs);
+    }
     
     // write readout register
     mu.write_register(SWB_READOUT_STATE_REGISTER_W, readout_state_regs);
+
+    // set event id for this frontedn
+    mu.write_register(FARM_EVENT_ID_REGISTER_W, eventID);
 
     // link masks 
     // Note: link masks are already set via ODB watch
