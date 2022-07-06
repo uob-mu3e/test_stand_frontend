@@ -151,8 +151,8 @@ void setup_odb(){
         {"readout_pixel_us", false},       // bool
         {"readout_all", false},        // bool
         {"use_merger", false},         // bool
-        {"subheader_zerosuppress", 0x0}, // int
-        {"header_zerosuppress", 0x0}, // int
+        {"subheader_zerosuppress", false}, // bool // todo: put to int once swb firmware updated in cosmic run
+        {"header_zerosuppress", false}, // bool
         {"dma_buf_nwords", int(dma_buf_nwords)},
         {"dma_buf_size", int(dma_buf_size)},
         {"readout_timeout", 1000},
@@ -273,13 +273,22 @@ INT begin_of_run(INT run_number, char *error)
     }
 
     // zero suppression settings
-    if(stream_settings["subheader_zerosuppress"]) {
+
+    // todo: put this in once swb firmware updated in cosmic run 2022
+    /*if(stream_settings["subheader_zerosuppress"]) {
         cm_msg(MINFO,"ro_swb_fe", "Set subheader zerosuppression to %i", (int) stream_settings["subheader_zerosuppress"]);
         mu.write_register(SWB_SUBHEAD_SUPPRESS_REGISTER_W, stream_settings["subheader_zerosuppress"]);
     }
     if(stream_settings["header_zerosuppress"]) {
         cm_msg(MINFO,"ro_swb_fe", "Set header zerosuppression to %i", (int) stream_settings["header_zerosuppress"]);
         mu.write_register(SWB_HEAD_SUPPRESS_REGISTER_W, stream_settings["header_zerosuppress"]);
+    }*/
+
+    if(stream_settings["subheader_zerosuppress"]) {
+        readout_state_regs = SET_USE_BIT_SUBHDR_SUPPRESS(readout_state_regs);
+    }
+    if(stream_settings["header_zerosuppress"]) {
+        readout_state_regs = SET_USE_BIT_HEAD_SUPPRESS(readout_state_regs);
     }
     
     // write readout register
