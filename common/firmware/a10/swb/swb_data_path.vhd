@@ -91,8 +91,8 @@ architecture arch of swb_data_path is
     signal link_to_fifo_cnt : work.util.slv32_array_t((g_NLINKS_DATA*5)-1 downto 0);
     signal events_to_farm_cnt : std_logic_vector(31 downto 0);
 
-    signal use_header_suppression : std_logic;
-    signal use_subhdr_suppression : std_logic;
+    signal use_header_suppression : std_logic_vector(g_NLINKS_DATA-1 downto 0);
+    signal use_subhdr_suppression : std_logic_vector(g_NLINKS_DATA-1 downto 0);
 
 begin
 
@@ -220,11 +220,15 @@ begin
     begin
         if(rising_edge(i_clk)) then
             if(i_reset_n = '0') then
-                use_subhdr_suppression <= '0';
-                use_header_suppression <= '0';
+                use_subhdr_suppression <= (others => '0');
+                use_header_suppression <= (others => '0');
             else
-                use_header_suppression <= stream_en and i_writeregs(SWB_READOUT_STATE_REGISTER_W)(USE_BIT_HEAD_SUPPRESS);
-                use_subhdr_suppression <= stream_en and i_writeregs(SWB_READOUT_STATE_REGISTER_W)(USE_BIT_SUBHDR_SUPPRESS);
+                --use_header_suppression <= stream_en and i_writeregs(SWB_READOUT_STATE_REGISTER_W)(USE_BIT_HEAD_SUPPRESS);
+                --use_subhdr_suppression <= stream_en and i_writeregs(SWB_READOUT_STATE_REGISTER_W)(USE_BIT_SUBHDR_SUPPRESS);
+                for i in 0 to g_NLINKS_DATA - 1 loop
+                    use_header_suppression(i) <= stream_en and i_writeregs(SWB_SUBHEAD_SUPPRESS_REGISTER_W)(i);
+                    use_subhdr_suppression(i) <= stream_en and i_writeregs(SWB_HEAD_SUPPRESS_REGISTER_W)(i);
+                end loop;                
             end if;
         end if;
     end process;
@@ -235,8 +239,8 @@ begin
             port map (
                 i_reset_n              => i_reset_n,
                 i_clk                  => i_clk,
-                i_ena_subh_suppression => use_subhdr_suppression, 
-                i_ena_head_suppression => use_header_suppression, 
+                i_ena_subh_suppression => use_subhdr_suppression(i), 
+                i_ena_head_suppression => use_header_suppression(i), 
                 i_data                 => rx(i),
                 o_data                 => rx_zero_suppressed(i)
             );
