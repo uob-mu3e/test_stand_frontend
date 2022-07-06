@@ -19,7 +19,6 @@ generic (
 port (
     i_reset_n           : in  std_logic;
     i_reset_n_regs      : in  std_logic;
-    i_pin_reset         : in  std_logic;
 
     i_clk156            : in  std_logic;
     i_clk125            : in  std_logic;
@@ -188,7 +187,7 @@ begin
     process(i_clk125)
     begin
     if(rising_edge(i_clk125)) then
-        if(i_run_state_125=RUN_STATE_SYNC or i_pin_reset = '1') then
+        if(i_run_state_125=RUN_STATE_SYNC) then
             ena3_counter <= (others => '0');
             ena4_counter <= (others => '0');
             reset_125_n <= '0';
@@ -425,7 +424,7 @@ begin
     elsif(rising_edge(i_clk125))then
             lvds_link_mask_reg  <= lvds_link_mask;
 
-            if(i_sync_reset_cnt = '1' or i_pin_reset = '1')then
+            if(i_sync_reset_cnt = '1')then
                 counter125 <= (others => '0');
             else
                 counter125 <= counter125 + 1;
@@ -554,7 +553,7 @@ begin
         else
             running         <= '0';
         end if;
-        if(i_run_state_125 = RUN_STATE_IDLE or i_pin_reset = '1') then
+        if(i_run_state_125 = RUN_STATE_IDLE) then
             sorter_reset_n  <= '0';
         else
             sorter_reset_n  <= '1';

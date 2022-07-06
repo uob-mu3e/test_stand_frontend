@@ -246,7 +246,6 @@ architecture rtl of top is
 
     signal threshold_trigger         : std_logic;
     signal time_over_th              : std_logic;
-    signal pin_reset                 : std_logic;
 
 begin
 
@@ -257,7 +256,6 @@ begin
 --------------------------------------------------------------------
     threshold_trigger <= FPGA_Test(3);--gate_in;
     time_over_th      <= FPGA_Test(3);--pulse_train_in;
-    pin_reset         <= FPGA_Test(5);
 
     clock_A <= mp_ctrl_clock(0);
     clock_B <= mp_ctrl_clock(0);
@@ -333,7 +331,6 @@ begin
         i_lvds_data_in          => data_in_A(5 downto 1) & data_in_B(4 downto 1) & data_in_C(5 downto 1) & data_in_D(4 downto 1) & "000000000" & "000000000",
 
         i_reset                 => not pb_db(1),
-        i_pin_reset             => pin_reset,
         -- 156.25 MHz
         i_clk156                => transceiver_pll_clock(0),
         i_clk125                => lvds_firefly_clk,

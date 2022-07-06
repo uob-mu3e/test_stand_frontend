@@ -73,7 +73,7 @@ architecture arch of scifi_path is
 
     -- MuTrig PLL test
     signal s_testpulse : std_logic_vector(4 downto 0);
-    signal testpulse_reg : std_logic;
+    signal testpulse_reg : std_logic_vector(4 downto 0);
 
     -- rx signals
     signal rx_pll_lock                  : std_logic;
@@ -227,31 +227,26 @@ begin
     generic map ( P => 125000 )
     port map ( o_clk => s_testpulse(2), i_reset_n => i_reset_125_n, i_clk => i_clk_125 );
 
-    -- 200 kHz for PLL test
+    -- 0.1 kHz for PLL test
     e_test_pulse_0_1 : entity work.clkdiv
     generic map ( P => 625 )
     port map ( o_clk => s_testpulse(3), i_reset_n => i_reset_125_n, i_clk => i_clk_125 );
 
-    -- 1 Hz for PLL test
-    e_test_pulse_1Hz : entity work.clkdiv
-    generic map ( P => 125000000 )
-    port map ( o_clk => s_testpulse(4), i_reset_n => i_reset_125_n, i_clk => i_clk_125 );
-
---    -- injection by hand
---    process(i_clk_125, i_reset_125_n)
---    begin
---    if ( i_reset_125_n /= '1' ) then
---        s_testpulse(4) <= '0';
---        testpulse_reg  <= '0';
---        --
---    elsif rising_edge(i_clk_125) then
---        testpulse_reg <= s_testpulse(4);
---        s_testpulse(4) <= '0';
---        if ( testpulse_reg = '0' and s_cntreg_ctrl(25) = '1' ) then
---            s_testpulse(4) <= '1';
---        end if;
---    end if;
---    end process;
+    -- injection by hand
+    process(i_clk_125, i_reset_125_n)
+    begin
+    if ( i_reset_125_n /= '1' ) then
+        s_testpulse(4) <= '0';
+        testpulse_reg  <= '0';
+        --
+    elsif rising_edge(i_clk_125) then
+        testpulse_reg <= s_testpulse(4);
+        s_testpulse(4) <= '0';
+        if ( testpulse_reg = '0' and s_cntreg_ctrl(25) = '1' ) then
+            s_testpulse(4) <= '1';
+        end if;
+    end if;
+    end process;
 
     -- MUX for output testpulse
     o_pll_test <= '0'               when s_cntreg_ctrl(31) = '0' else
