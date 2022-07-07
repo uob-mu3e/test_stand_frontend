@@ -12,7 +12,6 @@ if(NOT CMAKE_BUILD_TYPE)
 endif()
 message(STATUS "CMAKE_BUILD_TYPE: ${CMAKE_BUILD_TYPE}")
 
-
 # MU3E_ONLINE_GIT_REF
 #find_package(Git 1.8 REQUIRED)
 #execute_process(
@@ -31,8 +30,16 @@ add_compile_options(
     "-Wformat=2"
 )
 
+set(Boost_NO_SYSTEM_PATHS TRUE)
+if (Boost_NO_SYSTEM_PATHS)
+    set(BOOST_ROOT "/cvmfs/sft.cern.ch/lcg/releases/LCG_102/Boost/1.78.0/x86_64-centos7-gcc11-opt")
+    set(BOOST_INCLUDE_DIRS "${BOOST_ROOT}/include")
+    set(BOOST_LIBRARY_DIRS "${BOOST_ROOT}/lib")
+endif (Boost_NO_SYSTEM_PATHS)
+include_directories(${BOOST_INCLUDE_DIRS})
+
 # required packages
-find_package(Boost 1.49 REQUIRED COMPONENTS thread system program_options)
+find_package(Boost 1.66 REQUIRED COMPONENTS thread system program_options)
 find_package(Git 1.8 REQUIRED)
 find_package(ROOT REQUIRED COMPONENTS
     RIO Hist Tree Net
@@ -125,3 +132,4 @@ install(FILES ${CMAKE_CURRENT_BINARY_DIR}/setup_odb.sh DESTINATION ./)
 configure_file(start_daq.sh.in start_daq.sh @ONLY)
 install(FILES ${CMAKE_CURRENT_BINARY_DIR}/start_daq.sh DESTINATION bin
 PERMISSIONS OWNER_READ OWNER_WRITE OWNER_EXECUTE GROUP_READ GROUP_EXECUTE WORLD_READ WORLD_EXECUTE)
+
