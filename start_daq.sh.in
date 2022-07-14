@@ -2,7 +2,7 @@
 
 SOURCE="/software/mu3e"
 
-source "${SOURCE}/midas_installations/midas_v1/mu3eSummer22/packages/set_env.sh.in"
+source "${SOURCE}/midas_installations/midas_v1/mu3eSummer22/packages/set_env.sh"
 
 cd "${SOURCE}/midas_installations/midas_v1/mu3eSummer22/packages/online"
 
@@ -24,7 +24,7 @@ sleep 0.2
 xterm -hold -e "mserver" &
 sleep 0.2
 # Start front-ends before the logger!
-xterm -hold -e "crfe" &
+xterm -hold -e "../backend_pc/midas_fe/clock_control/crfe" &
 sleep 0.2
 if [[ "$CUDA" = "TRUE" ]]; then
     xterm -hold -e "msysmon-nvidia" &
@@ -32,7 +32,7 @@ else
     xterm -hold -e "msysmon" &
 fi
 sleep 0.2
-xterm -hold -e "switch_fe" &
+xterm -hold -e "../switching_pc/midas_fe/switch_fe" &
 sleep 0.2
 xterm -hold -e "mlogger" &
 #xterm -hold -e "switch_fe" &
