@@ -320,10 +320,6 @@ static int mudaq_setup_dma(struct pci_dev* pdev, struct mudaq* mu) {
     size_t ctrl_size = MUDAQ_BUFFER_CTRL_SIZE;
     const char* name = "dma_ctrl";
 
-    if ((rv = pci_set_dma_mask(pdev, DMA_BIT_MASK(64))) < 0) return rv;
-    if ((rv = pci_set_consistent_dma_mask(pdev, DMA_BIT_MASK(64))) < 0)
-        return rv;
-
 #if LINUX_VERSION_CODE >= \
     KERNEL_VERSION(5, 0, 0)  // remove `dma_zalloc_coherent` function
     ctrl_internal =
@@ -331,6 +327,25 @@ static int mudaq_setup_dma(struct pci_dev* pdev, struct mudaq* mu) {
 #else
     ctrl_internal =
         dma_zalloc_coherent(&pdev->dev, ctrl_size, &ctrl_addr, GFP_KERNEL);
+#endif
+
+    // Note: Linux kernel version 5.18.x dropped support for pci_set_dma_mask
+    // and pci_set_consistent_dma_mask linux/pci-dma-compat no longer exists and
+    // thus not defined in linux/pci.h instead, include the header file
+    // linux/dma_mapping.h
+    // https://elixir.bootlin.com/linux/v5.17.15/source/include/linux/pci.h#L2464
+    // https://elixir.bootlin.com/linux/v5.17.15/source/include/linux/pci-dma-compat.h#L113
+    // https://elixir.bootlin.com/linux/v2.6.32.31/C/ident/pci_set_dma_mask#L713
+
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(5, 18, 0)
+#include <linux/dma-mapping.h>
+    if ((rv = dma_set_mask(&pdev->dev, DMA_BIT_MASK(64))) < 0) return rv;
+    if ((rv = dma_set_coherent_mask(&pdev->dev, DMA_BIT_MASK(64))) < 0)
+        return rv;
+#else
+    if ((rv = pci_set_dma_mask(pdev, DMA_BIT_MASK(64))) < 0) return rv;
+    if ((rv = pci_set_consistent_dma_mask(pdev, DMA_BIT_MASK(64))) < 0)
+        return rv;
 #endif
 
     if (IS_ERR_OR_NULL(ctrl_internal)) {
