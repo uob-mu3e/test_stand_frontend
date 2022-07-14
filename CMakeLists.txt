@@ -133,3 +133,5 @@ configure_file(start_daq.sh.in start_daq.sh @ONLY)
 install(FILES ${CMAKE_CURRENT_BINARY_DIR}/start_daq.sh DESTINATION bin
 PERMISSIONS OWNER_READ OWNER_WRITE OWNER_EXECUTE GROUP_READ GROUP_EXECUTE WORLD_READ WORLD_EXECUTE)
 
+# teststand frontend in online
+add_subdirectory(online)
