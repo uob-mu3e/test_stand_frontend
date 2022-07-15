@@ -1,5 +1,12 @@
 #!/bin/bash
 
+#### UoBristol setup ####
+
+source /cvmfs/sft.cern.ch/lcg/releases/gcc/11.1.0/x86_64-centos7/setup.sh
+export GCC_HOME="/cvmfs/sft.cern.ch/lcg/releases/LCG_102/gcc/11/x86_64-centos7"
+
+#### General setup ####
+
 PREFIX="/usr/local"
 SOURCE="/software/mu3e"
 
