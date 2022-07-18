@@ -1,37 +1,42 @@
 <?xml version="1.0" encoding="ISO-8859-1"?>
 <RunSequence xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="">
-<Set l="5" name="th_start">27</Set>
-<Set l="6" name="num_th">5</Set>
-<Set l="7" name="num_ch">3</Set>
-<Set l="8" name="num_asic">1</Set>
-<Set l="11" name="filename">test30June_1</Set>
-<Loop l="15" le="30" var="i_ch" n="$num_ch">
-<Loop l="17" le="28" var="i_asic" n="$num_asic">
-<Set l="20" name="i_ch_unique">(($i_asic-1)*$num_ch)+($i_ch-1)</Set>
-<ODBCreate l="21" size="$num_th" path="/Sequencer/Variables/SciFi/TThres_scan/$i_ch_unique/Threshold" type="FLOAT"></ODBCreate>
-<ODBCreate l="22" size="$num_th" path="/Sequencer/Variables/SciFi/TThres_scan/$i_ch_unique/Rate" type="FLOAT"></ODBCreate>
+<Set l="5" name="thr_start">0</Set>
+<Set l="6" name="num_thr">32</Set>
+<Set l="7" name="num_ch">32</Set>
+<Set l="8" name="num_asic">4</Set>
+<Set l="10" name="filename">test6Jul_allch</Set>
+<Loop l="14" le="30" var="i_ch" n="$num_ch">
+<Loop l="16" le="28" var="i_asic" n="$num_asic">
+<Set l="18" name="i_ch_unique">(($i_asic-1)*$num_ch)+($i_ch-1)+128</Set>
+<ODBCreate l="21" size="$num_thr" path="/Sequencer/Variables/SciFi/TThres_scan/$i_ch_unique/Threshold" type="FLOAT"></ODBCreate>
+<ODBCreate l="22" size="$num_thr" path="/Sequencer/Variables/SciFi/TThres_scan/$i_ch_unique/Rate" type="FLOAT"></ODBCreate>
 <ODBSet l="25" path="/Sequencer/Variables/SciFi/TThres_scan/$i_ch_unique/Threshold[*]">0</ODBSet>
 <ODBSet l="26" path="/Sequencer/Variables/SciFi/TThres_scan/$i_ch_unique/Rate[*]">0</ODBSet>
 </Loop>
 </Loop>
-<Loop l="32" le="75" var="i_th" n="$num_th">
-<Set l="34" name="this_th">$th_start+$i_th-1</Set>
-<ODBSet l="38" path="/Equipment/SciFiCentral/Settings/ASICs/Channels/*/tthresh">$this_th</ODBSet>
-<Loop l="40" le="73" var="i_ch" n="$num_ch">
-<Loop l="42" le="53" var="i_asic" n="$num_asic">
-<Set l="44" name="i_ch_unique">(($i_asic-1)*$num_ch)+($i_ch-1)</Set>
-<ODBSet l="47" path="/Equipment/SciFiCentral/Settings/ASICs/Channels/$i_ch_unique/tthresh">$this_th</ODBSet>
-<ODBSet l="48" path="/Sequencer/Variables/SciFi/TThres_scan/$i_ch_unique/Threshold[$this_th]">$this_th</ODBSet>
+<Loop l="32" le="101" var="i_th" n="$num_thr">
+<Set l="34" name="current_thr">$thr_start+($i_th-1)</Set>
+<ODBSet l="37" path="/Equipment/SciFiCentral/Settings/ASICs/Channels/*/mask">1</ODBSet>
+<ODBSet l="40" path="/Equipment/SciFiCentral/Settings/ASICs/Channels/*/tthresh">$current_thr</ODBSet>
+<Loop l="42" le="99" var="i_ch" n="$num_ch">
+<Loop l="44" le="57" var="i_asic" n="$num_asic">
+<Set l="46" name="i_ch_unique">(($i_asic-1)*$num_ch)+($i_ch-1)+128</Set>
+<ODBSet l="52" path="/Sequencer/Variables/SciFi/TThres_scan/$i_ch_unique/Threshold[$current_thr]">$current_thr</ODBSet>
+<ODBSet l="55" path="/Equipment/SciFiCentral/Settings/ASICs/Channels/$i_ch_unique/mask">0</ODBSet>
 </Loop>
-<ODBSet l="56" path="/Equipment/SciFiCentral/Commands/SciFiConfig">1</ODBSet>
-<Wait l="57" for="SECONDS">25</Wait>
-<Loop l="59" le="71" var="i_asic" n="$num_asic">
-<Set l="61" name="i_ch_unique">(($i_asic-1)*$num_ch)+($i_ch-1)</Set>
-<ODBGet l="64" path="/Equipment/SciFiCentral/Variables/Counters/Rate[$i_ch_unique]">rate</ODBGet>
-<ODBSet l="66" path="/Sequencer/Variables/SciFi/TThres_scan/$i_ch_unique/Rate[$this_th]">$rate</ODBSet>
+<ODBSet l="60" path="/Equipment/SciFiCentral/Commands/SciFiConfig">1</ODBSet>
+<Wait l="61" for="SECONDS">22</Wait>
+<ODBSet l="64" path="/Equipment/SciFiCentral/Settings/Daq/reset_asics">1</ODBSet>
+<Wait l="65" for="SECONDS">2</Wait>
+<Loop l="67" le="97" var="i_asic" n="$num_asic">
+<Set l="69" name="i_ch_unique">(($i_asic-1)*$num_ch)+($i_ch-1)+128</Set>
+<Set l="70" name="i_ch_unique_rate">(($i_asic-1)*$num_ch)+($i_ch-1)</Set>
+<ODBGet l="85" path="/Equipment/SciFiCentral/Variables/Counters/Rate[$i_ch_unique_rate]">rate</ODBGet>
+<ODBSet l="89" path="/Sequencer/Variables/SciFi/TThres_scan/$i_ch_unique/Rate[$current_thr]">$rate</ODBSet>
+<Cat l="91" name="outputfile">"thr_scan_","$filename",".json"</Cat>
+<ODBSave l="92" path="/Sequencer/Variables/SciFi/TThres_scan/">$outputfile</ODBSave>
+<ODBSet l="95" path="/Equipment/SciFiCentral/Settings/ASICs/Channels/$i_ch_unique/mask">1</ODBSet>
 </Loop>
 </Loop>
 </Loop>
-<Cat l="77" name="outputfile">"thr_scan_","$filename",".json"</Cat>
-<ODBSave l="78" path="/Sequencer/Variables/SciFi/TThres_scan/">$outputfile</ODBSave>
 </RunSequence>

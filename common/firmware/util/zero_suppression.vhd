@@ -35,6 +35,8 @@ architecture arch of zero_suppression is
     signal subhdr_suppression_state   : subhdr_suppression_state_t;
     signal sending_data_buffer        : std_logic;
     signal is_subh          : std_logic;
+    signal reset0_n         : std_logic;
+    signal reset1_n         : std_logic;
 
 begin
 
@@ -43,9 +45,17 @@ begin
 
     is_subh <= '1' when (i_data.data(31 downto 26) = "111111" and i_data.datak = "0000") else '0';
     
-    process(i_clk, i_reset_n)
+    process(i_clk)
     begin
-    if ( i_reset_n = '0' ) then
+      if rising_edge(i_clk) then
+        reset0_n <= i_reset_n;
+        reset1_n <= reset0_n;
+      end if;
+    end process;
+    
+    process(i_clk, reset1_n)
+    begin
+    if ( reset1_n = '0' ) then
         o_data                      <= work.mu3e.LINK_IDLE;
         subhdr_suppression_state    <= head;
         data_buffer                 <= (others => work.mu3e.LINK_IDLE);

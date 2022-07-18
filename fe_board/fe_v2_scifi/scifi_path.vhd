@@ -72,7 +72,8 @@ end entity;
 architecture arch of scifi_path is
 
     -- MuTrig PLL test
-    signal s_testpulse : std_logic_vector(3 downto 0);
+    signal s_testpulse : std_logic_vector(4 downto 0);
+    signal testpulse_reg : std_logic_vector(4 downto 0);
 
     -- rx signals
     signal rx_pll_lock                  : std_logic;
@@ -231,12 +232,29 @@ begin
     generic map ( P => 625 )
     port map ( o_clk => s_testpulse(3), i_reset_n => i_reset_125_n, i_clk => i_clk_125 );
 
+    -- injection by hand
+    process(i_clk_125, i_reset_125_n)
+    begin
+    if ( i_reset_125_n /= '1' ) then
+        s_testpulse(4) <= '0';
+        testpulse_reg  <= '0';
+        --
+    elsif rising_edge(i_clk_125) then
+        testpulse_reg <= s_testpulse(4);
+        s_testpulse(4) <= '0';
+        if ( testpulse_reg = '0' and s_cntreg_ctrl(25) = '1' ) then
+            s_testpulse(4) <= '1';
+        end if;
+    end if;
+    end process;
+
     -- MUX for output testpulse
     o_pll_test <= '0'               when s_cntreg_ctrl(31) = '0' else
                   s_testpulse(0)    when s_cntreg_ctrl(30) = '1' else
                   s_testpulse(1)    when s_cntreg_ctrl(29) = '1' else
                   s_testpulse(2)    when s_cntreg_ctrl(28) = '1' else
                   s_testpulse(3)    when s_cntreg_ctrl(27) = '1' else
+                  s_testpulse(4)    when s_cntreg_ctrl(26) = '1' else
                   '0';
     o_test_led(1) <= s_cntreg_ctrl(0);
 

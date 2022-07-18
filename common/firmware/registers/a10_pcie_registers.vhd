@@ -93,6 +93,9 @@ package a10_pcie_registers is
         subtype FARM_DATA_TYPE_ADDR_RANGE                       is integer range 1 downto 0;    -- DOC: Data type: "00" = pixel, "01" = scifi, "10" = tiles | FARM
         subtype FARM_EVENT_ID_ADDR_RANGE                        is integer range 17 downto 2;    -- DOC: midas event id | FARM
 
+    constant SWB_SUBHEAD_SUPPRESS_REGISTER_W                : integer := 16#18#; -- DOC: subheader suppression per link | SWB
+    constant SWB_HEAD_SUPPRESS_REGISTER_W                   : integer := 16#19#; -- DOC: header suppression per link | SWB
+
     constant DDR_CONTROL_W                                 : integer := 16#20#; -- DOC: Control register for the ddr_memory_controller | FARM
         constant DDR_BIT_ENABLE_A                              : integer := 0;  -- DOC: Enable statemachine of DDR-A | FARM
         constant DDR_BIT_COUNTERTEST_A                         : integer := 1;  -- DOC: Enable counter test (1) or dataflow (0) of DDR-A | FARM
