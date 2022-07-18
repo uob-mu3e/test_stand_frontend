@@ -1,0 +1,6 @@
+COMMENT Script for setting the VPDAC for every chip.
+
+PARAM biasblock_on, "BiasBlock_on"
+
+ODBSET /Equipment/PixelsCentral/Settings/BIASDACS/*/BiasBlock_on, $biasblock_on
+

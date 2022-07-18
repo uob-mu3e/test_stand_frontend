@@ -132,10 +132,10 @@ bb = 0
 
 for chip_number in range(120):
 
-    if chip_number >= 54 and chip_number < 60:
-        continue
-    if chip_number >= 114:
-        continue
+    #if chip_number >= 54 and chip_number < 60:
+    #    continue
+    #if chip_number >= 114:
+    #    continue
 
 
     g_chip_number = chip_number + feb_number*12

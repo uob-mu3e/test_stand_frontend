@@ -1,0 +1,6 @@
+COMMENT Script for setting the VPDAC for every chip.
+
+PARAM vpdac, "VPDAC"
+
+ODBSET /Equipment/PixelsCentral/Settings/BIASDACS/*/VPDAC, $vpdac
+

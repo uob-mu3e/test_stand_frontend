@@ -1,7 +1,10 @@
 python3 mask_single_link.py 2 0
+python3 mask_single_link.py 2 1
+python3 mask_single_link.py 2 2
 python3 mask_single_link.py 22 1
 python3 mask_single_link.py 38 1
 python3 mask_single_link.py 38 2
+python3 mask_single_link.py 39 0
 python3 mask_single_link.py 45 0
 python3 mask_single_link.py 45 1
 python3 mask_single_link.py 45 2
@@ -10,3 +13,5 @@ python3 mask_single_link.py 38 0
 python3 mask_single_link.py 76 2
 python3 mask_single_link.py 88 0
 python3 mask_single_link.py 106 0
+python3 mask_single_link.py 33 1
+python3 mask_single_link.py 42 2
