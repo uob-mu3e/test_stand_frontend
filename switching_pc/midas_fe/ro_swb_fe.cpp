@@ -47,6 +47,8 @@ uint32_t dma_buf_nwords = dma_buf_size/sizeof(uint32_t);
 uint32_t cnt_loop = 0;
 uint32_t reset_regs = 0;
 uint32_t readout_state_regs = 0;
+uint32_t readout_timeout = 1000;
+uint32_t use_timeout = true;
 
 /* maximum event size produced by this frontend */
 INT max_event_size = dma_buf_size; // we fix this for now to 32MB
@@ -149,10 +151,12 @@ void setup_odb(){
         {"readout_pixel_us", false},       // bool
         {"readout_all", false},        // bool
         {"use_merger", false},         // bool
-        {"subheader_zerosuppress", false}, // bool
+        {"subheader_zerosuppress", false}, // bool // todo: put to int once swb firmware updated in cosmic run
         {"header_zerosuppress", false}, // bool
         {"dma_buf_nwords", int(dma_buf_nwords)},
-        {"dma_buf_size", int(dma_buf_size)}
+        {"dma_buf_size", int(dma_buf_size)},
+        {"readout_timeout", 1000},
+        {"use_timeout", true}
     };
 
     stream_settings.connect(path_s);
@@ -269,6 +273,17 @@ INT begin_of_run(INT run_number, char *error)
     }
 
     // zero suppression settings
+
+    // todo: put this in once swb firmware updated in cosmic run 2022
+    /*if(stream_settings["subheader_zerosuppress"]) {
+        cm_msg(MINFO,"ro_swb_fe", "Set subheader zerosuppression to %i", (int) stream_settings["subheader_zerosuppress"]);
+        mu.write_register(SWB_SUBHEAD_SUPPRESS_REGISTER_W, stream_settings["subheader_zerosuppress"]);
+    }
+    if(stream_settings["header_zerosuppress"]) {
+        cm_msg(MINFO,"ro_swb_fe", "Set header zerosuppression to %i", (int) stream_settings["header_zerosuppress"]);
+        mu.write_register(SWB_HEAD_SUPPRESS_REGISTER_W, stream_settings["header_zerosuppress"]);
+    }*/
+
     if(stream_settings["subheader_zerosuppress"]) {
         readout_state_regs = SET_USE_BIT_SUBHDR_SUPPRESS(readout_state_regs);
     }
@@ -286,6 +301,10 @@ INT begin_of_run(INT run_number, char *error)
     // Note: link masks are already set via ODB watch
     mu.write_register(SWB_LINK_MASK_PIXEL_REGISTER_W, stream_settings["mask_n_pixel"]);
     mu.write_register(SWB_LINK_MASK_SCIFI_REGISTER_W, stream_settings["mask_n_scifi"]);
+
+    // get readout timeout
+    readout_timeout = stream_settings["readout_timeout"];
+    use_timeout = stream_settings["use_timeout"];
 
     // release reset
     mu.write_register_wait(RESET_REGISTER_W, 0x0, 100);
@@ -328,17 +347,17 @@ INT end_of_run(INT run_number, char *error)
     //TODO: in readout th poll on run end reg from febs
     //write variable and check this one here and then disable readout th
     //also check if readout th is disabled by midas at run end
-    while ( (mu.read_register_ro(0x1C) & 1) == 0 && timeout_cnt < 100 ) {
-        timeout_cnt++;
-        usleep(1000);
+    //we wait here longer than in the readout thread
+    while ( (mu.read_register_ro(EVENT_BUILD_STATUS_REGISTER_R) & 1) == 0 && timeout_cnt++ < (2 * readout_timeout) ) {
+        ss_sleep(10);
     };
 
     if(timeout_cnt>=100) {
-            //cm_msg(MERROR, "ro_swb_fe", "DMA did not finish");
-            cm_msg(MINFO, "ro_swb_fe", "DMA did not finish");
-            set_equipment_status(equipment[0].name, "DMA did not finish", "var(--mred)");
-            // TODO: at the moment we dont care
-            //return CM_TRANSITION_CANCELED;
+        //cm_msg(MERROR, "ro_swb_fe", "DMA did not finish");
+        cm_msg(MINFO, "ro_swb_fe", "DMA did not finish");
+        set_equipment_status(equipment[0].name, "DMA did not finish", "var(--mred)");
+        // TODO: at the moment we dont care
+        //return CM_TRANSITION_CANCELED;
     }else{
         cm_msg(MINFO, "ro_swb_fe", "DMA is finished\n");
     }
@@ -462,11 +481,10 @@ INT read_stream_thread(void *param) {
         mu.enable_continous_readout(0);
         // wait for requested data
         cnt_loop = 0;
-        while ( (mu.read_register_ro(EVENT_BUILD_STATUS_REGISTER_R) & 0x1) == 0x0 ) { 
-            if ( cnt_loop > 1000 ) break;
-            cnt_loop++; 
-            ss_sleep(10); 
-        }
+        while ( (mu.read_register_ro(EVENT_BUILD_STATUS_REGISTER_R) & 1) == 0 ) {
+            if ( use_timeout && cnt_loop++ >= readout_timeout ) break;
+            ss_sleep(10);
+        };
 
         // disable dma
         mu.disable();
