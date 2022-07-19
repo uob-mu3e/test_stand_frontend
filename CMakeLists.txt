@@ -129,6 +129,9 @@ install(FILES ${CMAKE_CURRENT_BINARY_DIR}/make_links.sh DESTINATION ./)
 configure_file(setup_odb.sh.in setup_odb.sh @ONLY)
 install(FILES ${CMAKE_CURRENT_BINARY_DIR}/setup_odb.sh DESTINATION ./)
 
+configure_file(setup_feb.sh.in setup_feb.sh @ONLY)
+install(FILES ${CMAKE_CURRENT_BINARY_DIR}/setup_feb.sh DESTINATION ./)
+
 configure_file(start_daq.sh.in start_daq.sh @ONLY)
 install(FILES ${CMAKE_CURRENT_BINARY_DIR}/start_daq.sh DESTINATION bin
 PERMISSIONS OWNER_READ OWNER_WRITE OWNER_EXECUTE GROUP_READ GROUP_EXECUTE WORLD_READ WORLD_EXECUTE)
