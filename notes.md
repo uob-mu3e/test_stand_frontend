@@ -18,7 +18,7 @@ To recompile, run `make -j12` again in the `build` directory
 Tested on latest long-term kernel from elrepo `kernel-lt` and `kernel-lt-devel`
 
 ### Running the software
-If running for the first time, make sure to `source ./build/setup_odb.sh` once.
+If running for the first time, make sure to source `./build/setup_odb.sh` and `./build/setup_feb.sh` once.
 ```bash
 cd build
 ./start_daq.sh
