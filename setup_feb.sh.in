@@ -1,0 +1,11 @@
+#!/bin/bash
+
+SOURCE="/software/mu3e/midas_installations/midas_v1/mu3eSummer22/packages"
+odbedit -c clean
+
+value=1 # 1 for pixels
+
+for num in {0..33}
+do
+    odbedit -c "set /Equipment/LinksCentral/Settings/FEBType[${num}] ${value}"
+done
