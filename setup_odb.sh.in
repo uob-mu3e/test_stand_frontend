@@ -1,6 +1,6 @@
 #!/bin/bash
 
-SOURCE="software/mu3e/midas_installations/midas_v1/mu3eSummer22/packages/"
+SOURCE="/software/mu3e/midas_installations/midas_v1/mu3eSummer22/packages"
 odbedit -c clean
 
 odbedit -c 'mkdir Custom'
