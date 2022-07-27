@@ -1,0 +1,25 @@
+#!/bin/sh
+
+DEFAULT_TEMP=15    # Edit this variable to set default setpoint temperature in deg Celsius
+
+LOCATION="Equipment/ArduinoTestStation/Variables"
+declare -a varArray=("_S_" "_V_" "_C_")
+
+for var in ${varArray[@]}; do
+    varExist=$(odbedit -c "ls ${LOCATION}" | grep "${var}")
+    if [ -z "$varExist" ]
+    then
+        echo "Variable ${var} doesn't exist, creating it."
+        odbedit -c "create FLOAT ${LOCATION}/${var}" > /dev/null
+    fi
+    if [ $var = "_S_" ] 
+    then
+        value=$DEFAULT_TEMP
+    else
+        value=0
+    fi
+    echo "Setting default value ${var} = ${value}"
+    odbedit -c "set ${LOCATION}/${var} ${value}" > /dev/null
+done
+
+
