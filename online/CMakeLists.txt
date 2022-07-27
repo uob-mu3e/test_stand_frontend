@@ -16,6 +16,6 @@ if (${CMAKE_SYSTEM_NAME} MATCHES Linux)
 endif() 
 
 add_executable(teststand-frontend teststand-frontend.cpp)
-add_executable(myAnalyser myAnalyser.cpp)
+# add_executable(myAnalyser myAnalyser.cpp)
 target_include_directories(teststand-frontend PRIVATE ${INC_PATH})
 target_link_libraries(teststand-frontend mfe midas ${CMAKE_DL_LIBS} ${LIBS})
