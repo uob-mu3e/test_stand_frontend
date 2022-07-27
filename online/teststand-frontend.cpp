@@ -20,48 +20,40 @@
 #include <string>
 #include <typeinfo>
 
-// #include "/software/mu3e/midas_installations/midas_v1/mu3eSummer22/packages/midas/include/odbxx.h"
 #include "arduino-station.h"
-#include "odbxx.h"
 #include "mfe.h"
 #include "midas.h"
+#include "odbxx.h"
 
-using namespace std;
-
-void Com(float setpoint) {
-    string SP = to_string(setpoint);
-    string command = "s" + SP;
-    ofstream ard("/dev/ttyACM0");  // opens arduino
-    if (ard) {
-        ard << command << '\n';
-    }
+// send_command_ard()
+// - access the device file for arduino and send a command through tty
+// - e.g. s15, v12, c2.5
+void send_command_ard(float value, std::string command) {
+    command = command + std::__cxx11::to_string(value);
+    std::ofstream ard("/dev/ttyACM0");
+    if (ard) ard << command << '\n';
+    return;
 }
 
-/*-- Globals -------------------------------------------------------*/
+//-- Globals -------------------------------------------------------
+// serial_port: open and configure arduino
+// *frontend_name: pointer variable for name of client as seen by other MIDAS
+// clients *frontend_file_name: the frontend file name, don't change it
+// frontend_call_loop: frontend_loop is called periodically if this variable is
+// TRUE display_period: a frontend status page is displayed with this frequency
+// in ms max_event_size: maximum event size produced by this frontend
+// max_event_size_frag: maximum event size for fragmented events (EQ_FRAGMENTED)
+// event_buffer_size: buffer size to hold events
 INT serial_port = setting_arduino();
-
-/* The frontend name (client name) as seen by other MIDAS clients   */
-const char *frontend_name = "Temperature and humidity";  // The frontend name
-
-/* The frontend file name, don't change it */
+const char *frontend_name = "Temperature and humidity";
 const char *frontend_file_name = __FILE__;
-
-/* frontend_loop is called periodically if this variable is TRUE    */
 BOOL frontend_call_loop = FALSE;
-
-/* a frontend status page is displayed with this frequency in ms */
 INT display_period = 1000;
-
-/* maximum event size produced by this frontend */
 INT max_event_size = 10000;
-
-/* maximum event size for fragmented events (EQ_FRAGMENTED) */
 INT max_event_size_frag = 5 * 1024 * 1024;
-
-/* buffer size to hold events */
 INT event_buffer_size = 100 * 10000;
 
-/*-- Function declarations -----------------------------------------*/
+//-- Function declarations -----------------------------------------
 
 INT frontend_init(void);
 INT frontend_exit(void);
@@ -70,47 +62,36 @@ INT end_of_run(INT run_number, char *error);
 INT pause_run(INT run_number, char *error);
 INT resume_run(INT run_number, char *error);
 INT frontend_loop(void);
-
 INT interrupt_configure(INT cmd, INT source, POINTER_T adr);
 INT poll_event(INT source, INT count, BOOL test);
 INT read_periodic_event(char *pevent, INT off);
 
-/*-- Equipment list ------------------------------------------------*/
+//-- Equipment list ------------------------------------------------
 BOOL equipment_common_overwrite = TRUE;
 EQUIPMENT equipment[] = {
-
     {
-        "ArduinoTestStation", /* equipment name */
+        "ArduinoTestStation",  // equipment name
         {
-            9,
-            0,
-            /* event ID, trigger mask */  // The event ID that needs to be
-                                          // unique to each of the 'Equipments'
-                                          // used
-            "SYSTEM",    /* event buffer */
-            EQ_PERIODIC, /* equipment type */
-            0,           /* event source */
-            "MIDAS",     /* format */
-            TRUE,        /* enabled */
-            RO_RUNNING |
-                RO_TRANSITIONS | /* read when running and on transitions */
-                RO_ODB,          /* and update ODB */
-            1000,                /* read every sec */
-            0,                   /* stop run after this event limit */
-            0,                   /* number of sub events */
-            1,
-            /* log history */  // Boolean to determine whether the history log
-                               // data will be taken for a particular variable
-                               // or not. MUST be a 1 or 0.
-            "",
+            9,            // unique event ID
+            0,            // trigger mask
+            "SYSTEM",     // event buffer
+            EQ_PERIODIC,  // equipment type
+            0,            // event source
+            "MIDAS",      // format
+            TRUE,         // enabled
+            RO_RUNNING | RO_TRANSITIONS |
+                RO_ODB,  // read when running, transitions, update ODB
+            1000,        // read every sec
+            0,           // stop run after this event limit
+            0,           // number of sub events
+            1,           // log history (bool)
+            "",          // device driver list
             "",
             "",
         },
-        read_periodic_event, /* readout routine */
+        read_periodic_event,  // readout routine function name
     },
-    {""}
-
-};
+    {""}};
 
 /********************************************************************\
               Callback routines for system transitions
@@ -137,43 +118,30 @@ EQUIPMENT equipment[] = {
   resume_run:     When a run is resumed. Should enable trigger events.
 \********************************************************************/
 
-/*-- Frontend Init -------------------------------------------------*/
-
+//-- Frontend Init -------------------------------------------------
+// - Toggles human readable output
+// - Put any hardware initialization here
+// - Print message and return FE_ERR_HW if frontend should not be started
 INT frontend_init() {
-    /* put any hardware initialization here */
-    /* print message and return FE_ERR_HW if frontend should not be started */
-    unsigned char data[] = "m";  // sets human readable output
+    unsigned char data[] = "r";
     write_data(serial_port, data, sizeof(data));
-
     return SUCCESS;
 }
 
-/*-- Frontend Exit -------------------------------------------------*/
+//-- Frontend Exit -------------------------------------------------
 
 INT frontend_exit() {
     close(serial_port);
     return SUCCESS;
 }
 
-/*-- Begin of Run --------------------------------------------------*/
+//-- Begin of Run --------------------------------------------------
+// - Put in here anything to run at beginning of the run
+// - ODB variables are already set with odbedit in a shell script, avoid doing
+// it twice
 
 INT begin_of_run(INT run_number, char *error) {
-    ifstream myReadFile;
-    string setpoint;
 
-    // myReadFile.open("setpoint.txt");
-    // myReadFile >> setpoint;
-    // getline(myReadFile, setpoint);
-    // cout << setpoint;
-
-    unsigned char data[] = "s15";
-
-    // strcpy(data, setpoint.c_str());
-
-    // unsigned char* data_uchar = reinterpret_cast<unsigned char*>(data);
-    write_data(serial_port, data, sizeof(data));
-
-    /* put here clear scalers etc. */
     return SUCCESS;
 }
 
@@ -183,54 +151,19 @@ INT end_of_run(INT run_number, char *error) { return SUCCESS; }
 
 /*-- Pause Run -----------------------------------------------------*/
 
-INT pause_run(INT run_number, char *error) {
-    // midas::odb exp("/");
-    // exp["set_point"] = 10;
+INT pause_run(INT run_number, char *error) { return SUCCESS; }
 
-    // float setpoint=exp["set_point"];
-    // cout << "The setpoint is: " << setpoint << endl;
-
-    // char hostname[20];
-    // char str[128];
-    // int size,status;
-    // size = sizeof(hostname);
-    // sprintf(str,"/setpoint",equipment[FIFO].name);
-    // status = db_get_value(hDB, 0, str, hostname, &size, TID_STRING, FALSE);
-
-    //  ifstream myReadFile;
-    // string setpoint;
-
-    // myReadFile.open("setpoint.txt");
-    // myReadFile >> setpoint;
-    // getline(myReadFile, setpoint);
-    // cout << setpoint;
-
-    // char* data = new char[setpoint.size() + 1];
-    // strcpy(data, setpoint.c_str());
-
-    // unsigned char data_1[10];
-    //  strcpy((char*)data_1, setpoint.c_str());
-
-    // unsigned char* data_uchar = reinterpret_cast<unsigned char*>(data);
-    //  write_data(serial_port, data_1, sizeof(data_1));
-    // unsigned char data2[] = "s15";
-    // write_data(serial_port, data2, sizeof(data2));
-    return SUCCESS;
-}
-
-/*-- Resume Run ----------------------------------------------------*/
+//-- Resume Run ----------------------------------------------------
 
 INT resume_run(INT run_number, char *error) { return SUCCESS; }
 
-/*-- Frontend Loop -------------------------------------------------*/
+//-- Frontend Loop -------------------------------------------------
+// - if frontend_call_loop is true, this routine gets called when
+//   the frontend is idle or once between every event
 
-INT frontend_loop() {
-    /* if frontend_call_loop is true, this routine gets called when
-       the frontend is idle or once between every event */
-    return SUCCESS;
-}
+INT frontend_loop() { return SUCCESS; }
 
-/*------------------------------------------------------------------*/
+//------------------------------------------------------------------
 
 /********************************************************************\
 
@@ -238,31 +171,25 @@ INT frontend_loop() {
 
 \********************************************************************/
 
-/*-- Event readout -------------------------------------------------*/
+//-- Event readout -------------------------------------------------
 // THE FRONTEND CODE WHICH CONTROLS AND TAKES DATA FROM THE SENSORS
 
-/*-- Trigger event routines ----------------------------------------*/
+//-- Trigger event routines ----------------------------------------
+// Polling routine for events. Returns TRUE if event
+// is available. If test equals TRUE, don't return. The test
+// flag is used to time the polling
 
-INT poll_event(INT source, INT count, BOOL test)
-/* Polling routine for events. Returns TRUE if event
-   is available. If test equals TRUE, don't return. The test
-   flag is used to time the polling */
-{
-    int i;
+INT poll_event(INT source, INT count, BOOL test) {
     DWORD flag;
-
-    for (i = 0; i < count; i++) {
-        /* poll hardware and set flag to TRUE if new event is available */
+    for (int i = 0; i < count; i++) {
         flag = TRUE;
-
         if (flag)
             if (!test) return TRUE;
     }
-
     return 0;
 }
 
-/*-- Interrupt configuration ---------------------------------------*/
+//-- Interrupt configuration ---------------------------------------
 
 INT interrupt_configure(INT cmd, INT source, POINTER_T adr) {
     switch (cmd) {
@@ -278,66 +205,53 @@ INT interrupt_configure(INT cmd, INT source, POINTER_T adr) {
     return SUCCESS;
 }
 
-/*-- Periodic event ------------------------------------------------*/
+//-- Periodic event ------------------------------------------------
+// - Init bank structure (commented out bk_init32a(pevent);)
+// - Reads Arduino into vector
+// - Fills midas data banks
+// - Create SCLR bank for each variable
+// - Read odb variables (S)etpoint, (V)oltage, (C)urrent
+// every loop and send to arduino to adjust (is this expensive if the value
+// hasn't been changed?)
 INT read_periodic_event(char *pevent, INT off) {
-    float *pdata;  // Pointer to the data
-
-    /* init bank structure */
+    float *pdata;
     bk_init(pevent);
-    // bk_init32a(pevent);
-
-    // Reads Arduino
-    vector<double> v;
-
-    while (v.size() != 7) {
-        read_data1(serial_port, v);
-
-        // Fills midas data banks
-        if (v.size() == 7) {
-            // cout << v[0]<< '\t' <<v[1]<< '\t' <<v[2]<< '\t' << v[4] << '\t'
-            // << v[5] << '\t' << v[6] << '\t' << endl;
-
+    std::vector<double> data_stream;
+    const int data_stream_size = 7;
+    while (data_stream.size() != data_stream_size) {
+        read_data1(serial_port, data_stream);
+        if (data_stream.size() == data_stream_size) {
             midas::odb exp("/Equipment/ArduinoTestStation/Variables");
-            Com(exp["_S_"]);
 
-            /* create SCLR bank */
+            send_command_ard(exp["_S_"], "s");
+            send_command_ard(exp["_V_"], "v");
+            send_command_ard(exp["_C_"], "c");
+
             bk_create(pevent, "_T_", TID_FLOAT, (void **)&pdata);
-            *pdata++ = (float)v[0];
+            *pdata++ = (float)data_stream[0];
             bk_close(pevent, pdata);
 
-            /* create SCLR bank */
             bk_create(pevent, "_F_", TID_FLOAT, (void **)&pdata);
-            *pdata++ = (float)v[1];
+            *pdata++ = (float)data_stream[1];
             bk_close(pevent, pdata);
 
-            /* create SCLR bank */
             bk_create(pevent, "_P_", TID_FLOAT, (void **)&pdata);
-            *pdata++ = (float)v[2];
+            *pdata++ = (float)data_stream[2];
             bk_close(pevent, pdata);
 
-            /* create SCLR bank */
             bk_create(pevent, "_A_", TID_FLOAT, (void **)&pdata);
-            *pdata++ = (float)v[3];
+            *pdata++ = (float)data_stream[3];
             bk_close(pevent, pdata);
 
-            /* create SCLR bank */
-            // bk_create(pevent, "_S_", TID_FLOAT, (void**)&pdata);
-            //*pdata++ = (float)v[4];
-            // bk_close(pevent, pdata);
-
-            /* create SCLR bank */
             bk_create(pevent, "_RH_", TID_FLOAT, (void **)&pdata);
-            *pdata++ = (float)v[5];
+            *pdata++ = (float)data_stream[5];
             bk_close(pevent, pdata);
 
-            /* create SCLR bank */
             bk_create(pevent, "_AT_", TID_FLOAT, (void **)&pdata);
-            *pdata++ = (float)v[6];
+            *pdata++ = (float)data_stream[6];
             bk_close(pevent, pdata);
         }
     }
-
-    v.clear();
-
+    data_stream.clear();
     return bk_size(pevent);
 }
