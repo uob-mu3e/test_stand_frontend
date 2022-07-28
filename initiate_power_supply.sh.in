@@ -5,18 +5,19 @@ LOCATION="Equipment/ArduinoTestStation/Variables"
 odbedit -c "set ${LOCATION}/_V_ 12" > /dev/null
 
 # this puts the channel into CC mode
-sleep 0.3
+sleep 1
 cat > /dev/ttyACM0 <<EOF
 c3
 EOF
 
+sleep 1
 # put it back into CV mode
 cat > /dev/ttyACM0 <<EOF
 v12
 EOF
 
 # turn the power supply on
-sleep 0.3
+sleep 1
 cat > /dev/ttyACM0 <<EOF
 o
 EOF
