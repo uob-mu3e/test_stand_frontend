@@ -139,17 +139,14 @@ INT frontend_exit() {
 // - Put in here anything to run at beginning of the run
 // - ODB variables are already set with odbedit in a shell script, avoid doing
 // it twice
+// - it is also easier to set odb variables with shell script (no need to recompile)
+INT begin_of_run(INT run_number, char *error) { return SUCCESS; }
 
-INT begin_of_run(INT run_number, char *error) {
-
-    return SUCCESS;
-}
-
-/*-- End of Run ----------------------------------------------------*/
+//-- End of Run ----------------------------------------------------
 
 INT end_of_run(INT run_number, char *error) { return SUCCESS; }
 
-/*-- Pause Run -----------------------------------------------------*/
+//-- Pause Run -----------------------------------------------------
 
 INT pause_run(INT run_number, char *error) { return SUCCESS; }
 
