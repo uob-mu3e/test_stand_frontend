@@ -7,28 +7,29 @@ if [ "$CUR_DIR" != "$MIDAS_ROOT" ]; then
 else
     source "./set_env.sh"
     # test stand stuff
-    source "./create_setpoint.sh"
+    source "./setup_odb.sh"
+    source "./setup_feb.sh"
     # /path/to/online directory
     cd "../online"
 
-    #create custom pages for DAQ slow control
-    #odbedit -d Custom -c 'create STRING SC'
-    #odbedit -c 'set Custom/SC sc.html'
-    #odbedit -d Custom -c 'create STRING SciFi-ASICs'
-    #odbedit -c 'set Custom/SciFi-ASICs mutrigTdc.html'
-    #odbedit -d Custom -c 'create STRING MALIBU'
-    #odbedit -c 'set Custom/MALIBU TileGUI/MALIBUMonitor/Monitor.html'
-    #odbedit -d Custom -c 'create STRING MuPix'
-    #odbedit -c 'set Custom/MuPix MuPixTB.html'
-    #set Analysis
-    #odbedit -d Custom -c 'create STRING TileAna '
-    #odbedit -c 'set Custom/TileAna ana_mutrig/mutrig/tile_ana.html'
+    ### Create custom pages for DAQ slow control
+    # odbedit -d Custom -c 'create STRING SC'
+    # odbedit -c 'set Custom/SC sc.html'
+    # odbedit -d Custom -c 'create STRING SciFi-ASICs'
+    # odbedit -c 'set Custom/SciFi-ASICs mutrigTdc.html'
+    # odbedit -d Custom -c 'create STRING MALIBU'
+    # odbedit -c 'set Custom/MALIBU TileGUI/MALIBUMonitor/Monitor.html'
+    # odbedit -d Custom -c 'create STRING MuPix'
+    # odbedit -c 'set Custom/MuPix MuPixTB.html'
+    # set Analysis
+    # odbedit -d Custom -c 'create STRING TileAna '
+    # odbedit -c 'set Custom/TileAna ana_mutrig/mutrig/tile_ana.html'
 
     xterm -hold -e "mhttpd" &
     sleep 0.2
     xterm -hold -e "mserver" &
     sleep 0.2
-    # Start front-ends before the logger!
+    ### Start front-ends before the logger!
     xterm -hold -e "../build/backend_pc/midas_fe/clock_control/crfe" &
     sleep 0.2
     if [[ "$CUDA" = "TRUE" ]]; then
@@ -41,6 +42,7 @@ else
     sleep 0.2
     xterm -hold -e "mlogger" &
     xterm -hold -e "msequencer" &
-    xterm -hold -e "./build/teststand-frontend" &
+    xterm -hold -e "../build/online/teststand-frontend" &
+    source "../build/initiate_power_supply.sh"
     sleep 2
 fi
