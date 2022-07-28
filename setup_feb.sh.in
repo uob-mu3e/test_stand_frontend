@@ -7,5 +7,5 @@ value=1 # 1 for pixels
 
 for num in {0..33}
 do
-    odbedit -c "set /Equipment/LinksCentral/Settings/FEBType[${num}] ${value}"
+    odbedit -c "set /Equipment/LinksCentral/Settings/FEBType[${num}] ${value}" > /dev/null
 done
