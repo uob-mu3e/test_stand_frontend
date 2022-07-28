@@ -136,8 +136,8 @@ configure_file(start_daq.sh.in start_daq.sh @ONLY)
 install(FILES ${CMAKE_CURRENT_BINARY_DIR}/start_daq.sh DESTINATION bin
 PERMISSIONS OWNER_READ OWNER_WRITE OWNER_EXECUTE GROUP_READ GROUP_EXECUTE WORLD_READ WORLD_EXECUTE)
 
-configure_file(create_setpoint.sh.in create_setpoint.sh @ONLY)
-install(FILES ${CMAKE_CURRENT_BINARY_DIR}/create_setpoint.sh DESTINATION bin
+configure_file(initiate_power_supply.sh.in initiate_power_supply.sh @ONLY)
+install(FILES ${CMAKE_CURRENT_BINARY_DIR}/initiate_power_supply.sh DESTINATION bin
 PERMISSIONS OWNER_READ OWNER_WRITE OWNER_EXECUTE GROUP_READ GROUP_EXECUTE WORLD_READ WORLD_EXECUTE)
 
 # teststand frontend in online
