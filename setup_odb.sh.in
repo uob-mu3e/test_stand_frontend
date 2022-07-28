@@ -1,35 +1,71 @@
 #!/bin/bash
 
-SOURCE="/software/mu3e/midas_installations/midas_v1/mu3eSummer22/packages"
+### DAQ & ANALYZER ###
+# create & define custom path
+SOURCE="$(cat ../source)"
 odbedit -c clean
 
+LOCATION_DAQ="Custom"
+
+# mkdir does nothing if target already exists so can rerun without data loss
 odbedit -c 'mkdir Custom'
-odbedit -d Custom -c 'create STRING Path'
-odbedit -c "set Custom/Path $SOURCE/mhttpd/custom"
 
+declare -a varArray_DAQ=("Path" "OnlineAna" "Mu3eDisplay")
+for var in ${varArray_DAQ[@]}; do
+    varExist_DAQ=$(odbedit -c "ls ${LOCATION_DAQ}" | grep "${var}")
+    if [ -z "$varExist_DAQ" ]
+    then
+        echo "Variable ${var} doesn't exist, creating it."
+        odbedit -c "create STRING ${LOCATION_DAQ}/${var}" > /dev/null
+    fi
+done
 
-# create custom page for manalyzer
-odbedit -d Custom -c 'create STRING OnlineAna'
-odbedit -d Custom -c 'create STRING Mu3eDisplay'
-odbedit -c 'set Custom/OnlineAna manalyzer/OnlineAna.html'
-odbedit -c 'set Custom/Mu3eDisplay manalyzer/Mu3eDisplay.html'
+# set string values
+odbedit -c "set Custom/Path $SOURCE/mhttpd/custom" > /dev/null
+odbedit -c 'set Custom/OnlineAna manalyzer/OnlineAna.html' > /dev/null
+odbedit -c 'set Custom/Mu3eDisplay manalyzer/Mu3eDisplay.html' > /dev/null
 
 #set mhttpd to run http
-odbedit -c 'set "WebServer/insecure port passwords" "n"'
-odbedit -c 'set "WebServer/insecure port host list" "n"'
-odbedit -c 'set "WebServer/Enable insecure port" "y"'
-odbedit -c 'set "Experiment/Security/Enable non-localhost RPC" "y"'
-odbedit -c 'set "Experiment/Security/Disable RPC hosts check" "y"'
-odbedit -c 'set "WebServer/Enable IPv6" "n"'
+odbedit -c 'set "WebServer/insecure port passwords" "n"' > /dev/null
+odbedit -c 'set "WebServer/insecure port host list" "n"' > /dev/null
+odbedit -c 'set "WebServer/Enable insecure port" "y"' > /dev/null
+odbedit -c 'set "Experiment/Security/Enable non-localhost RPC" "y"' > /dev/null
+odbedit -c 'set "Experiment/Security/Disable RPC hosts check" "y"' > /dev/null
+odbedit -c 'set "WebServer/Enable IPv6" "n"' > /dev/null
 
-odbedit -c 'set Logger/History/FILE/Active y'
-odbedit -c 'set Logger/History/MIDAS/Active n'
+odbedit -c 'set Logger/History/FILE/Active y' > /dev/null
+odbedit -c 'set Logger/History/MIDAS/Active n' > /dev/null
 
-odbedit -c 'set Programs/Logger/Required y'
-odbedit -c 'set "Programs/Logger/Start command" "mlogger -D"'
+odbedit -c 'set Programs/Logger/Required y' > /dev/null
+odbedit -c 'set "Programs/Logger/Start command" "mlogger -D"' > /dev/null
 
-odbedit -c 'set Programs/mserver/Required y'
-odbedit -c 'set "Programs/mserver/Start command" "mserver -D"'
+odbedit -c 'set Programs/mserver/Required y' > /dev/null
+odbedit -c 'set "Programs/mserver/Start command" "mserver -D"' > /dev/null
 
-odbedit -c 'set Programs/msysmon/Required y'
-odbedit -c 'set "Programs/msysmon/Start command" "msysymon-nvidia -D"'
+odbedit -c 'set Programs/msysmon/Required y' > /dev/null
+odbedit -c 'set "Programs/msysmon/Start command" "msysymon-nvidia -D"' > /dev/null
+
+### TEST STAND and ARDUINO POWER SUPPLY CONTROL ###
+DEFAULT_TEMP=15    # Edit this variable to set default setpoint temperature in deg Celsius
+
+LOCATION_TS="Equipment/ArduinoTestStation/Variables"
+declare -a varArray_TS=("_S_" "_V_" "_C_")
+
+for var in ${varArray_TS[@]}; do
+    varExist_TS=$(odbedit -c "ls ${LOCATION_TS}" | grep "${var}")
+    if [ -z "$varExist_TS" ]
+    then
+        echo "Variable ${var} doesn't exist, creating it."
+        odbedit -c "create FLOAT ${LOCATION_TS}/${var}" > /dev/null
+    fi
+    if [ $var = "_S_" ] 
+    then
+        value=$DEFAULT_TEMP
+    else
+        value=0
+    fi
+    echo "Setting default value ${var} = ${value}"
+    odbedit -c "set ${LOCATION_TS}/${var} ${value}" > /dev/null
+done
+
+
