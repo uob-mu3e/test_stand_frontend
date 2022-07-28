@@ -25,15 +25,6 @@
 #include "midas.h"
 #include "odbxx.h"
 
-// send_command_ard()
-// - access the device file for arduino and send a command through tty
-// - e.g. s15, v12, c2.5
-void send_command_ard(float value, std::string command) {
-    command = command + std::__cxx11::to_string(value);
-    std::ofstream ard("/dev/ttyACM0");
-    if (ard) ard << command << '\n';
-    return;
-}
 
 //-- Globals -------------------------------------------------------
 // serial_port: open and configure arduino
@@ -54,7 +45,7 @@ INT max_event_size_frag = 5 * 1024 * 1024;
 INT event_buffer_size = 100 * 10000;
 
 //-- Function declarations -----------------------------------------
-
+void send_command_ard(float value, std::string command);
 INT frontend_init(void);
 INT frontend_exit(void);
 INT begin_of_run(INT run_number, char *error);
@@ -200,6 +191,16 @@ INT interrupt_configure(INT cmd, INT source, POINTER_T adr) {
             break;
     }
     return SUCCESS;
+}
+
+// send_command_ard()
+// - access the device file for arduino and send a command through tty
+// - e.g. s15, v12, c2.5
+void send_command_ard(float value, std::string command) {
+    command = command + std::__cxx11::to_string(value);
+    std::ofstream ard("/dev/ttyACM0");
+    if (ard) ard << command << '\n';
+    return;
 }
 
 //-- Periodic event ------------------------------------------------
