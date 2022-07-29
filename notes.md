@@ -21,7 +21,7 @@ git pull bitbucket online
 ### Compiling first time
 
 ```bash
-source set_env.sh.in
+source midas_env.sh
 mkdir build && cd build
 cmake3 ..
 make -j12
@@ -32,10 +32,9 @@ respective subdirectories. All shell scripts stored in the top-level directory
 (with `*.sh.in` extension) are copied into `build` with extensionl `*.sh` with
 appropriate execute permissions.
 
-To recompile, make sure to source `set_env.sh.in` (or `./build/set_env.sh` if
-it exists) and run `make -j12` again in the `build` directory. One can also add
-to their `~/.bashrc` the contents of `set_env.sh.in` to have all the required
-environmental variables set at log in.
+To recompile, make sure to source `midas_env.sh` and run `make -j12` again in
+the `build` directory. One can also add to their `~/.bashrc` the contents of
+`midas_env.sh` to have all the required environmental variables set at log in.
 
 ### Kernel version
 
