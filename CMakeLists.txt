@@ -32,7 +32,9 @@ add_compile_options(
 
 set(Boost_NO_SYSTEM_PATHS TRUE)
 if (Boost_NO_SYSTEM_PATHS)
-    set(BOOST_ROOT "/cvmfs/sft.cern.ch/lcg/releases/LCG_102/Boost/1.78.0/x86_64-centos7-gcc11-opt")
+    if(DEFINED ENV{CVMFS_ROOT})
+        set(BOOST_ROOT "$ENV{CVMFS_ROOT}/sft.cern.ch/lcg/releases/LCG_102/Boost/1.78.0/x86_64-centos7-gcc11-opt")
+    endif()
     set(BOOST_INCLUDE_DIRS "${BOOST_ROOT}/include")
     set(BOOST_LIBRARY_DIRS "${BOOST_ROOT}/lib")
 endif (Boost_NO_SYSTEM_PATHS)
