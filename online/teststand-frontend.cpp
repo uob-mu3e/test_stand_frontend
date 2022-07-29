@@ -1,9 +1,8 @@
 /********************************************************************\
 
-  Name:         frontend.c
+  Name:         teststand-frontend.cpp
   Created by:   Midas template adapted by Bristol students and A. Loreti
   Contents:     Slow control Bristol
-
 
 \********************************************************************/
 
@@ -82,7 +81,19 @@ EQUIPMENT equipment[] = {
         },
         read_periodic_event,  // readout routine function name
     },
-    {""}};
+    {""}
+};
+
+//-- General functions ------------------------------------------------
+// send_command_ard()
+// - access the device file for arduino and send a command through tty
+// - e.g. s15, v12, c2.5
+void send_command_ard(float value, std::string command) {
+    command = command + std::__cxx11::to_string(value);
+    std::ofstream ard("/dev/ttyACM0");
+    if (ard) ard << command << '\n';
+    return;
+}
 
 /********************************************************************\
               Callback routines for system transitions
@@ -107,6 +118,7 @@ EQUIPMENT equipment[] = {
   pause_run:      When a run is paused. Should disable trigger events.
 
   resume_run:     When a run is resumed. Should enable trigger events.
+
 \********************************************************************/
 
 //-- Frontend Init -------------------------------------------------
@@ -120,7 +132,6 @@ INT frontend_init() {
 }
 
 //-- Frontend Exit -------------------------------------------------
-
 INT frontend_exit() {
     close(serial_port);
     return SUCCESS;
@@ -134,21 +145,17 @@ INT frontend_exit() {
 INT begin_of_run(INT run_number, char *error) { return SUCCESS; }
 
 //-- End of Run ----------------------------------------------------
-
 INT end_of_run(INT run_number, char *error) { return SUCCESS; }
 
 //-- Pause Run -----------------------------------------------------
-
 INT pause_run(INT run_number, char *error) { return SUCCESS; }
 
 //-- Resume Run ----------------------------------------------------
-
 INT resume_run(INT run_number, char *error) { return SUCCESS; }
 
 //-- Frontend Loop -------------------------------------------------
 // - if frontend_call_loop is true, this routine gets called when
 //   the frontend is idle or once between every event
-
 INT frontend_loop() { return SUCCESS; }
 
 //------------------------------------------------------------------
@@ -166,7 +173,6 @@ INT frontend_loop() { return SUCCESS; }
 // Polling routine for events. Returns TRUE if event
 // is available. If test equals TRUE, don't return. The test
 // flag is used to time the polling
-
 INT poll_event(INT source, INT count, BOOL test) {
     DWORD flag;
     for (int i = 0; i < count; i++) {
@@ -178,7 +184,6 @@ INT poll_event(INT source, INT count, BOOL test) {
 }
 
 //-- Interrupt configuration ---------------------------------------
-
 INT interrupt_configure(INT cmd, INT source, POINTER_T adr) {
     switch (cmd) {
         case CMD_INTERRUPT_ENABLE:
@@ -191,16 +196,6 @@ INT interrupt_configure(INT cmd, INT source, POINTER_T adr) {
             break;
     }
     return SUCCESS;
-}
-
-// send_command_ard()
-// - access the device file for arduino and send a command through tty
-// - e.g. s15, v12, c2.5
-void send_command_ard(float value, std::string command) {
-    command = command + std::__cxx11::to_string(value);
-    std::ofstream ard("/dev/ttyACM0");
-    if (ard) ard << command << '\n';
-    return;
 }
 
 //-- Periodic event ------------------------------------------------
