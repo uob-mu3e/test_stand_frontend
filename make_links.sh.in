@@ -1,7 +1,7 @@
 #!/bin/bash
 
-SOURCE="/software/mu3e"
-ONLINE_DIR="${SOURCE}/midas_installations/midas_v1/mu3eSummer22/online"
+SOURCE="@PROJECT_SOURCE_DIR@"
+ONLINE_DIR="${SOURCE}/online"
 
 cd "$ONLINE_DIR"
 ln -sf "@MIDASSYS@/resources"

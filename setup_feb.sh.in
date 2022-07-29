@@ -1,6 +1,6 @@
 #!/bin/bash
 
-SOURCE="/software/mu3e/midas_installations/midas_v1/mu3eSummer22/packages"
+SOURCE="@PROJECT_SOURCE_DIR@"
 odbedit -c clean
 
 value=1 # 1 for pixels

@@ -1,48 +1,45 @@
 #!/bin/bash
 
-CUR_DIR=$(pwd -P)
-MIDAS_ROOT="$(echo $MIDASSYS | cut -d\/ -f1-7)/build"
-if [ "$CUR_DIR" != "$MIDAS_ROOT" ]; then
-    echo "Please run this inside the working directory of MIDAS."
+SOURCE="@PROJECT_SOURCE_DIR@"
+
+cd "${SOURCE}"
+source "./set_env.sh"
+# test stand stuff
+source "./setup_odb.sh"
+source "./setup_feb.sh"
+# /path/to/online directory
+cd "${SOURCE}/online"
+
+### Create custom pages for DAQ slow control
+# odbedit -d Custom -c 'create STRING SC'
+# odbedit -c 'set Custom/SC sc.html'
+# odbedit -d Custom -c 'create STRING SciFi-ASICs'
+# odbedit -c 'set Custom/SciFi-ASICs mutrigTdc.html'
+# odbedit -d Custom -c 'create STRING MALIBU'
+# odbedit -c 'set Custom/MALIBU TileGUI/MALIBUMonitor/Monitor.html'
+# odbedit -d Custom -c 'create STRING MuPix'
+# odbedit -c 'set Custom/MuPix MuPixTB.html'
+# set Analysis
+# odbedit -d Custom -c 'create STRING TileAna '
+# odbedit -c 'set Custom/TileAna ana_mutrig/mutrig/tile_ana.html'
+
+xterm -hold -e "mhttpd" &
+sleep 0.2
+xterm -hold -e "mserver" &
+sleep 0.2
+### Start front-ends before the logger!
+xterm -hold -e "${SOURCE}/build/backend_pc/midas_fe/clock_control/crfe" &
+sleep 0.2
+if [[ "$CUDA" = "TRUE" ]]; then
+    xterm -hold -e "msysmon-nvidia" &
 else
-    source "./set_env.sh"
-    # test stand stuff
-    source "./setup_odb.sh"
-    source "./setup_feb.sh"
-    # /path/to/online directory
-    cd "../online"
-
-    ### Create custom pages for DAQ slow control
-    # odbedit -d Custom -c 'create STRING SC'
-    # odbedit -c 'set Custom/SC sc.html'
-    # odbedit -d Custom -c 'create STRING SciFi-ASICs'
-    # odbedit -c 'set Custom/SciFi-ASICs mutrigTdc.html'
-    # odbedit -d Custom -c 'create STRING MALIBU'
-    # odbedit -c 'set Custom/MALIBU TileGUI/MALIBUMonitor/Monitor.html'
-    # odbedit -d Custom -c 'create STRING MuPix'
-    # odbedit -c 'set Custom/MuPix MuPixTB.html'
-    # set Analysis
-    # odbedit -d Custom -c 'create STRING TileAna '
-    # odbedit -c 'set Custom/TileAna ana_mutrig/mutrig/tile_ana.html'
-
-    xterm -hold -e "mhttpd" &
-    sleep 0.2
-    xterm -hold -e "mserver" &
-    sleep 0.2
-    ### Start front-ends before the logger!
-    xterm -hold -e "../build/backend_pc/midas_fe/clock_control/crfe" &
-    sleep 0.2
-    if [[ "$CUDA" = "TRUE" ]]; then
-        xterm -hold -e "msysmon-nvidia" &
-    else
-        xterm -hold -e "msysmon" &
-    fi
-    sleep 0.2
-    xterm -hold -e "../build/switching_pc/midas_fe/switch_fe" &
-    sleep 0.2
-    xterm -hold -e "mlogger" &
-    xterm -hold -e "msequencer" &
-    xterm -hold -e "../build/online/teststand-frontend" &
-    source "../build/initiate_power_supply.sh"
-    sleep 2
+    xterm -hold -e "msysmon" &
 fi
+sleep 0.2
+xterm -hold -e "${SOURCE}/build/switching_pc/midas_fe/switch_fe" &
+sleep 0.2
+xterm -hold -e "mlogger" &
+xterm -hold -e "msequencer" &
+xterm -hold -e "${SOURCE}/build/online/teststand-frontend" &
+source "${SOURCE}/build/initiate_power_supply.sh"
+sleep 2

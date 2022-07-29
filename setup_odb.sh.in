@@ -2,7 +2,7 @@
 
 ### DAQ & ANALYZER ###
 # create & define custom path
-SOURCE="$(cat ../source)"
+SOURCE="@PROJECT_SOURCE_DIR@"
 odbedit -c clean
 
 LOCATION_DAQ="Custom"
