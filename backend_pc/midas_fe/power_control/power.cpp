@@ -50,7 +50,7 @@ BOOL equipment_common_overwrite = FALSE;
 INT display_period = 1000;
 
 /* maximum event size produced by this frontend */
-INT max_event_size = 10000;
+INT max_event_size = 1000;
 
 /* maximum event size for fragmented events (EQ_FRAGMENTED) */
 INT max_event_size_frag = 5 * 1024 * 1024;
@@ -81,7 +81,7 @@ INT read_hameg_power6(char *pevent, INT off);
 INT read_hameg_power7(char *pevent, INT off);
 INT read_hameg_power8(char *pevent, INT off);
 INT read_hameg_power9(char *pevent, INT off);
-INT read_power(float* pdata, const std::string& eqn);
+INT read_power(float* pdata, const std::string eqn);
 
 void setup_history();
 
@@ -419,7 +419,7 @@ INT frontend_exit()
 
 
 
-INT read_power(float* pdata,const std::string& eq_name)
+INT read_power(float* pdata,const std::string eq_name)
 {
 	
    INT error = CM_SUCCESS;
@@ -428,12 +428,13 @@ INT read_power(float* pdata,const std::string& eq_name)
 		if( !d->Initialized() ) continue;
 
 		if(d->GetName()!=eq_name) continue;
-      error = d->GetReadStatus();
+        error = d->GetReadStatus();
 		if(error == FE_SUCCESS)
 		{
 			std::vector<float> voltage = d->GetVoltage();
 			std::vector<float> current = d->GetCurrent();
 			if(voltage.size() != current.size()) { continue; cm_msg(MERROR, "read_power", "Number of channel reads not consistent"); }
+			printf("device: %s, voltage: %f \n",eq_name.c_str(),voltage[1]);
 			for(unsigned int iChannel =0; iChannel < voltage.size(); iChannel++)
 			{
 				*pdata++ = voltage.at(iChannel);
@@ -486,7 +487,6 @@ INT read_hameg_power(char *pevent, INT off [[maybe_unused]], std::string eq_name
 
   bk_create(pevent, LVH_str.c_str(), TID_FLOAT, (void **)&pdata);
   read_power(pdata,eq_name);
-  //printf("creating bank %s\n",LVH_str.c_str());
   bk_close(pevent, pdata);
   return bk_size(pevent);
 }

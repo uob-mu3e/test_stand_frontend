@@ -128,8 +128,6 @@ INT frontend_init()
    env.define_var(1,  3, "US_top_O2");
    env.define_var(1,  4, "US_top_RH");
    env.define_var(1,  5, "US_FEC0_T");
-   env.define_var(1,  6, "US_L1-2_temperature");
-   env.define_var(1,  7, "US_L1-6_temperature");
    
    // SCS3000 msc400 Port 1
    env.define_var(1,  9, "DS_bottom_Water");
@@ -149,6 +147,10 @@ INT frontend_init()
    env.define_var(1,  28, "DS_central_O2");
    env.define_var(1,  29, "DS_bottom_RH");
    env.define_var(1,  30, "DS_central_RH");
+   
+   // LM35 sensors for MuPix temperature
+   env.define_var(1,  6, "US_L1-2_temperature");
+   env.define_var(1,  7, "US_L1-6_temperature");
    env.define_var(1,  32, "DS_L1-2_temperature");
    env.define_var(1,  33, "DS_L1-6_temperature");
    
