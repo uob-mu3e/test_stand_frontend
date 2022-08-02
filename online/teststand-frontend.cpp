@@ -24,7 +24,6 @@
 #include "midas.h"
 #include "odbxx.h"
 
-
 //-- Globals -------------------------------------------------------
 // serial_port: open and configure arduino
 // *frontend_name: pointer variable for name of client as seen by other MIDAS
@@ -122,12 +121,15 @@ void send_command_ard(float value, std::string command) {
 \********************************************************************/
 
 //-- Frontend Init -------------------------------------------------
-// - Toggles human readable output
 // - Put any hardware initialization here
 // - Print message and return FE_ERR_HW if frontend should not be started
 INT frontend_init() {
-    unsigned char data[] = "r";
-    write_data(serial_port, data, sizeof(data));
+    // unsigned char data[] = "r";
+    // write_data(serial_port, data, sizeof(data));
+
+    midas::odb custom("/Custom");
+    custom["TS"]["Variables"] = "test_stand.html";
+
     return SUCCESS;
 }
 
@@ -206,6 +208,7 @@ INT interrupt_configure(INT cmd, INT source, POINTER_T adr) {
 // - Read odb variables (S)etpoint, (V)oltage, (C)urrent
 // every loop and send to arduino to adjust (is this expensive if the value
 // hasn't been changed?)
+// - don't read and update current (messes things up)
 INT read_periodic_event(char *pevent, INT off) {
     float *pdata;
     bk_init(pevent);
@@ -217,8 +220,8 @@ INT read_periodic_event(char *pevent, INT off) {
             midas::odb exp("/Equipment/ArduinoTestStation/Variables");
 
             send_command_ard(exp["_S_"], "s");
+            // send_command_ard(exp["_C_"], "c");
             send_command_ard(exp["_V_"], "v");
-            send_command_ard(exp["_C_"], "c");
 
             bk_create(pevent, "_T_", TID_FLOAT, (void **)&pdata);
             *pdata++ = (float)data_stream[0];
@@ -232,16 +235,16 @@ INT read_periodic_event(char *pevent, INT off) {
             *pdata++ = (float)data_stream[2];
             bk_close(pevent, pdata);
 
-            bk_create(pevent, "_A_", TID_FLOAT, (void **)&pdata);
+            bk_create(pevent, "_M_", TID_FLOAT, (void **)&pdata);
             *pdata++ = (float)data_stream[3];
             bk_close(pevent, pdata);
 
-            bk_create(pevent, "_RH_", TID_FLOAT, (void **)&pdata);
-            *pdata++ = (float)data_stream[5];
+            bk_create(pevent, "_H_", TID_FLOAT, (void **)&pdata);
+            *pdata++ = (float)data_stream[4];
             bk_close(pevent, pdata);
 
-            bk_create(pevent, "_AT_", TID_FLOAT, (void **)&pdata);
-            *pdata++ = (float)data_stream[6];
+            bk_create(pevent, "_A_", TID_FLOAT, (void **)&pdata);
+            *pdata++ = (float)data_stream[5];
             bk_close(pevent, pdata);
         }
     }
