@@ -46,7 +46,7 @@ odbedit -c 'set Programs/msysmon/Required y' > /dev/null
 odbedit -c 'set "Programs/msysmon/Start command" "msysymon-nvidia -D"' > /dev/null
 
 ### TEST STAND and ARDUINO POWER SUPPLY CONTROL ###
-DEFAULT_TEMP=15    # Edit this variable to set default setpoint temperature in deg Celsius
+DEFAULT_TEMP=25    # Edit this variable to set default setpoint temperature in deg Celsius
 
 LOCATION_TS="Equipment/ArduinoTestStation/Variables"
 declare -a varArray_TS=("_S_" "_V_" "_C_")
