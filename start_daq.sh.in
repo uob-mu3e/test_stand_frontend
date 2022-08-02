@@ -2,7 +2,7 @@
 
 SOURCE="@PROJECT_SOURCE_DIR@"
 
-cd "${SOURCE}"
+cd "${SOURCE}/build"
 source "./set_env.sh"
 # test stand stuff
 source "./setup_odb.sh"
