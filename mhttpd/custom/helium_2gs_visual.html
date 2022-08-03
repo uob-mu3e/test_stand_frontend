@@ -1,0 +1,362 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <link rel="stylesheet" href="midas.css"> 
+    <script src="controls.js"></script>
+    <script src="midas.js"></script>
+    <script src="mhttpd.js"></script>
+    <title>Helium 2 g/s system</title>
+
+    <style>
+        th, td {
+            padding: 10px;
+        }
+	.measurement {font-size:10px;}
+	.modbvalue {font-size:10px;}
+	.mbutton {font-size:10px;}
+	.comment {font-size:10px; font-style:italic}
+    </style>
+	
+    <script>
+	
+	// Turbo compressor requests
+
+	function confirmCompressorOn() {
+	    dlgConfirm("Are you sure to turn on the compressor?", turnCompressorOn);
+	}
+
+        function confirmCompressorOff() {
+            dlgConfirm("Are you sure to turn off the compressor?", throttleCompressorDown);
+        }
+
+	function turnCompressorOn(flag) {
+ 	    if (flag) {
+		modbset("/Equipment/HePlant/Variables/Output[2]", 20000); //Set to minimum speed
+	    	modbset("/Equipment/HePlant/Variables/Output[1]", 1); 
+	    }
+	}
+	
+        function throttleCompressorDown(flag) {
+            if (flag) {
+	    	modbset("/Equipment/HePlant/Variables/Output[2]", 20000); //Set to minimum speed
+		dlgWait(20, "Compressor is throttled down.", turnCompressorOff, 1); //waits for 15 seconds to throttle down compressor before turning off
+	    }
+        }
+
+	function turnCompressorOff(flag) {
+	    if (flag) {
+		modbset("/Equipment/HePlant/Variables/Output[1]",0);
+	    }
+	}
+
+        function validateCompressorSpeed(level) {
+            if (level > 170000) {
+                dlgAlert("Value cannot be above 170000");
+		return false;
+            }
+	    else {
+		return true;
+	    }
+      	}
+
+        // Bypass requests
+
+        function confirmBypassOpen() {
+            dlgConfirm("Are you sure to open the bypass?", bypassOpen);
+        }
+
+        function confirmBypassClose() {
+            dlgConfirm("Are you sure to close the bypass?", bypassClose);
+        }
+        
+	function bypassOpen(flag) {
+            if (flag) {
+                modbset("/Equipment/HePlant/Variables/Output[0]", 0); 
+            }
+        }
+
+        function bypassClose(flag) {
+            if (flag) {
+                modbset("/Equipment/HePlant/Variables/Output[0]", 1);
+            }
+        }
+	
+		    
+	//Defines how many digits of a value will be displayed
+	function precise(x, prec) {
+            return Number.parseFloat(x).toPrecision(prec);
+        }
+
+
+        // Update the sensor values and trigger updates of derived variables
+        var pIn = 1, pComp = 1, pOut = 1;
+        function updatepIn   (value) { pIn = value; };
+        function updatepComp (value) { pComp = value; updatePiCompressor()};
+        function updatepOut  (value) { pOut = value; };
+
+        var TIn = 1, TComp = 1, TOut = 1;
+        function updateTIn   (value) { TIn   = value; updateRhoIn(); };
+        function updateTComp (value) { TComp = value; updateRhoComp(); };
+	function updateTOut  (value) { TOut  = value; updateRhoOut(); };
+
+        // Calculation of the air content
+        const O2inAir = 0.20942; // https://en.wikipedia.org/wiki/Atmosphere_of_Earth
+        const O2calib = 0.949; // Value for this sensor. TODO implement this into DB
+        var airContent = 1;
+        function calcAirConc(O2conc) { return  O2conc / O2inAir * O2calib; };
+        function updateAirConc(value) { airContent = calcAirConc(value); document.getElementById("airContent").innerHTML = precise(airContent,3) +" %"; };
+
+        // Calculate the molar mass from the air content
+        const Mhelium = 4.0026; // g/mol
+        const Mair = 28.949; // g/mol Caveat: this is the molar mass for dry air TODO implement correction using an RH value
+        var Mgas = 1;
+        function calcMolarMass(x) { return (0.01 * x) * Mair + (1 - 0.01*x) * Mhelium;};
+        function updateMolarMass(value) { Mgas = calcMolarMass(airContent); document.getElementById("Mgas").innerHTML = "M = " + precise(Mgas,3) + " kg/mol"; };
+
+        // Calculate gas density
+        const R = 8.314; // J/mol*K
+        const CtoK = 273.13;
+        function gasDensity(p, M, T) {
+            let ret = p * 1e5 * M * 1e-3 / (R * (T+CtoK));
+            //console.log("p: "+p+" M: "+M+" R: "+R+" T: "+T+" T(K): "+(T+CtoK)+" rho: "+ret);
+            return ret;
+        };
+        var RhoIn = 1, RhoComp = 1, RhoOut = 1;
+        function updateRhoIn()   { RhoIn = gasDensity(pIn, Mgas, TIn); document.getElementById("rhoIn").innerHTML = "&#961(in) = " + precise(RhoIn,3) + " kg/m&#179"; };
+        function updateRhoComp() { RhoComp = gasDensity(pComp, Mgas, TComp); document.getElementById("rhoComp").innerHTML = "&#961(tc) = " + precise(RhoComp,3) + " kg/m&#179"; };
+        function updateRhoOut()  { RhoOut = gasDensity(pOut, Mgas, TOut); document.getElementById("rhoOut").innerHTML = "&#961(out) = " + precise(RhoOut,3) + " kg/m&#179"; };
+
+        // Calculate deltaP from Venturis
+        var deltaPVenturiIn = 1, deltaPVenturiOut = 1;
+        function updateDeltaPVenturiIn(value)  { deltaPVenturiIn = value;  updateMdotIn(); updateMdotGasIn(); };
+        function updateDeltaPVenturiOut(value) { deltaPVenturiOut = value; updateMdotOut(); updateMdotGasOut();};
+
+        // Calculate mass flow
+        // These values come from our calibration and have to be regarded as estimates
+        // p0 is the zero offset and depends on the sensor (and its drift)
+        const p1 = 0.024;
+        const p2 = 0.1092;
+
+        function calcMdot(deltaP, p0) { return ( (-p1 + Math.sqrt(p1*p1 - 4*p2*(p0-deltaP)))/(2*p2) ); };
+        var mdotIn = 1, mdotOut = 1;
+        // p0 values updated from averages collected 8.8.21 19:35 to 20:35
+        function updateMdotIn()  { mdotIn = calcMdot(deltaPVenturiIn, 0); document.getElementById("mdotIn").innerHTML = precise(mdotIn, 3) + " g/s"; };
+        function updateMdotOut() { mdotOut = calcMdot(deltaPVenturiOut, 0); document.getElementById("mdotOut").innerHTML = precise(mdotOut, 3) + " g/s"; };
+
+        // Convert dm/dt to current gas
+        var mdotGasIn = 1, mdotGasOut = 1;
+        const rhoCalib = 0.157; // kg/m3 This was the condition during the Venturi tube calibration
+        function calcMdotGas(dmdt, rho) { return Math.sqrt(rho / rhoCalib) * dmdt; }
+        function updateMdotGasIn()  { mdotGasIn = calcMdotGas(mdotIn, RhoIn); document.getElementById("mdotGasIn").innerHTML = precise(mdotGasIn, 3) + " g/s"; }
+        function updateMdotGasOut()  { mdotGasOut = calcMdotGas(mdotOut, RhoOut); document.getElementById("mdotGasOut").innerHTML = precise(mdotGasOut, 3) + " g/s"; }
+
+        // Calculation of the compression ratio &Pi; across the compressor
+        var PiCompressor = 1;
+        function updatePiCompressor() {
+            PiCompressor = pComp/pIn;
+            document.getElementById("PiCompressor").innerHTML = precise(PiCompressor,4);
+        };
+
+    </script>
+
+</head>
+
+
+<body class="mcss" onload="mhttpd_init('Test/He system');">
+
+    <!-- header and side navigation will be filled in mhttpd_start -->
+    	<div id="mheader"></div>
+    	<div id="msidenav"></div>
+
+    	<div id="mmain">
+
+	<div class="modb" data-odb-path="/Equipment/HePlant/Variables/Input[7]" onchange="updateTIn(this.value);">
+        <div class="modb" data-odb-path="/Equipment/HePlant/Variables/Input[8]" onchange="updateTComp(this.value);">
+        <div class="modb" data-odb-path="/Equipment/HePlant/Variables/Input[9]" onchange="updateTOut(this.value);">
+
+        <div class="modb" data-odb-path="/Equipment/HePlant/Variables/Input[2]" onchange="updatepIn(this.value);">
+        <div class="modb" data-odb-path="/Equipment/HePlant/Variables/Input[3]" onchange="updatepComp(this.value);">
+        <div class="modb" data-odb-path="/Equipment/HePlant/Variables/Input[4]" onchange="updatepOut(this.value);">
+	
+	<div class="modb" data-odb-path="/Equipment/HePlant/Variables/Input[10]" onchange="updateAirConc(this.value); updateMolarMass(airContent);">
+
+	<div class="modb" data-odb-path="/Equipment/HePlant/Variables/Input[5]" onchange="updateDeltaPVenturiIn(this.value);">
+	<div class="modb" data-odb-path="/Equipment/HePlant/Variables/Input[6]" onchange="updateDeltaPVenturiOut(this.value);">
+	
+
+        <table class="mtable">
+            <tr><th class="mtableheader">Helium 2 g/s system</th></tr>
+            <tr><td>
+                <div style="position:relative;width:1000px;margin:auto">
+                    <img src="helium_2gs_system.png" style="width:100%">
+
+
+		    <!-- Bypass status -->
+	   	    	<div class="modbbox" data-odb-path="/Equipment/HePlant/Variables/Output[0]" 
+			data-formula="x < 1" style="width: 12px; height: 12px; border: 1px solid black; position:absolute;top:223px;left:202px;" 
+			data-color="lightgreen" data-background-color="red" ></div>
+
+                        <button class="mbutton" onclick="confirmBypassOpen()"
+                        style="position:absolute; top:249px; left:70px">
+                        OPEN</button>
+
+                        <button class="mbutton" onclick="confirmBypassClose()"
+                        style="position:absolute; top:249px; left:8px">
+                        CLOSE</button>
+
+
+
+                    <!-- Chiller status -->
+
+		    	<div class="modbbox" data-odb-path="/Equipment/HePlant/Variables/Input[0]" 
+			data-formula="x > 0" style="width: 12px; height: 12px; border: 1px solid black; position:absolute;top:508px;left:162px;" 
+			data-color="lightgreen" data-background-color="red" ></div>
+
+                    	<div class="modbbox" data-odb-path="/Equipment/HePlant/Variables/Input[1]" 
+			data-formula="x > 0" style="width: 12px; height: 12px; border: 1px solid black; position:absolute;top:505px;left:262px;" 
+			data-color="lightgreen" data-background-color="red" ></div>
+
+                    <!-- Inflowing gas properties -->
+
+                        <div class="measurement" style="position:absolute; top:323px; left:8px;"> Temperature: </div>
+                        <div class="measurement" style="position:absolute; top:338px; left:8px;"> Pressure: </div>
+                        <div class="measurement" style="position:absolute; top:353px; left:8px;"> &#916p (flow): </div>
+                        <div class="measurement" style="position:absolute; top:368px; left:8px;"> &#7745 (gas): </div>
+			<div class="measurement" style="position:absolute; top:383px; left:8px;"> &#7745 (He): </div>
+
+			<div class="modbvalue" data-odb-path="/Equipment/HePlant/Variables/Input[7]"
+                        data-format="%f1&deg;C"
+                       	data-formula="x"
+                       	style="position:absolute; top:323px; left:85px;"></div>
+
+			<div class="modbvalue" data-odb-path="/Equipment/HePlant/Variables/Input[2]"
+                        data-format="%f mbar"
+                        data-formula="x*1000"
+                        style="position:absolute; top:338px; left:85px;"></div>
+
+			<div class="modbvalue" data-odb-path="/Equipment/HePlant/Variables/Input[5]"
+                        data-format="%f2 mbar"
+                        data-formula="x"
+                        style="position:absolute; top:353px; left:85px;"></div>
+
+                        <div class="measurement" id="mdotGasIn" 
+			style="position:absolute; top:368px; left:85px;"> </div>
+
+			<div class="measurement" id="mdotIn"
+                        style="position:absolute; top:383px; left:85px;"> </div>
+
+
+                    <!-- Outflowing gas properties -->
+
+		    	<div class="measurement" style="position:absolute; top:158px; left:273px;"> Temperature: </div>
+			<div class="measurement" style="position:absolute; top:173px; left:273px;"> Pressure: </div>
+			<div class="measurement" style="position:absolute; top:188px; left:273px;"> &#916p (flow): </div>
+			<div class="measurement" style="position:absolute; top:203px; left:273px;"> &#7745 (gas): </div>
+                        <div class="measurement" style="position:absolute; top:218px; left:273px;"> &#7745 (He): </div>
+
+                        <div class="modbvalue" data-odb-path="/Equipment/HePlant/Variables/Input[9]"
+                        data-format="%f1&deg;C"
+                        data-formula="x"
+                        style="position:absolute; top:158px; left:350px;"></div>
+
+                        <div class="modbvalue" data-odb-path="/Equipment/HePlant/Variables/Input[4]"
+                        data-format="%f mbar"
+                        data-formula="x*1000"
+			style="position:absolute; top:173px; left:350px;"></div>
+
+                        <div class="modbvalue" data-odb-path="/Equipment/HePlant/Variables/Input[6]"
+                        data-format="%f2 mbar"
+                        data-formula="x"
+                        style="position:absolute; top:188px; left:350px;"></div>
+
+                        <div class="measurement" id="mdotGasOut" 
+			style="position:absolute; top:203px; left:350px;"> </div>
+
+                        <div class="measurement" id="mdotOut"
+                        style="position:absolute; top:218px; left:350px;"> </div>
+
+		    <!-- Turbo compressor -->
+
+                        <div class="measurement" style="position:absolute; top:473px; left:8px;"> Temperature: </div>
+                        <div class="measurement" style="position:absolute; top:488px; left:8px;"> Pressure: </div>
+                        <div class="measurement" style="position:absolute; top:503px; left:8px;"> &#928 (ratio): </div>
+			<div class="measurement" style="position:absolute; top:538px; left:8px;"> TC speed: </div>
+
+                        <div class="modbvalue" data-odb-path="/Equipment/HePlant/Variables/Input[8]"
+                        data-format="%f1&deg;C"
+                        data-formula="x"
+                        style="position:absolute; top:473px; left:85px;"></div>
+
+                        <div class="modbvalue" data-odb-path="/Equipment/HePlant/Variables/Input[3]"
+                        data-format="%f mbar"
+                        data-formula="x*1000"
+                        style="position:absolute; top:488px; left:85px;"></div>
+
+                        <div class="measurement" id="PiCompressor"
+                        style="position:absolute; top:503px; left:85px;"></div>
+
+			<button class="mbutton" onclick="confirmCompressorOn()" 
+			style="position:absolute; top:518px; left:5px">
+			ON</button>
+
+			<button class="mbutton" onclick="confirmCompressorOff()"
+                        style="position:absolute; top:518px; left:48px">
+                        OFF</button>
+			
+                        <div class="modbbox" data-odb-path="/Equipment/HePlant/Variables/Output[1]" 
+                        data-formula="x > 0" style="position:absolute;top:521px; left:98px; width: 12px; height: 12px; border: 1px solid black;" 
+                        data-color="lightgreen" data-background-color="red" ></div>
+
+
+			<div class="modbvalue" data-odb-path="/Equipment/HePlant/Variables/Output[2]" 
+			data-odb-editable="1" data-validate="validateCompressorSpeed"
+			data-confirm="Are you sure to change the value?"
+			style="position:absolute; top:538px; left:64px"></div>
+
+                        <div class="modbhbar"
+                        style="position:absolute; top:555px; left:5px; width: 140px; height: 12px; color: lightblue; background-color: lightgrey; font-size:10px"
+                        data-odb-path="/Equipment/HePlant/Variables/Input[12]"
+                        data-min-value="0" data-max-value="240000" data-log="0" data-print-value="1" data-format="f"></div>
+
+	            	<div class="mhaxis" style="position:absolute; top:567px; left:5px; width: 140px; height: 25px; vertical-align:top" data-min-value="0" data-max-value="240000" ></div>
+
+		    <!-- O2 sensor , boolean green when below c(O2)< 1% -->
+
+                        <div class="modbbox" data-odb-path="/Equipment/HePlant/Variables/Input[10]" 
+			data-formula="x < 1" style="width: 12px; height: 12px; border: 1px solid black; position:absolute;top:393px;left:858px;" 
+                        data-color="lightgreen" data-background-color="red" ></div> 
+
+                        <div class="measurement" style="position:absolute; top:393px; left:876px;"> c(O2): </div>
+			<div class="measurement" style="position:absolute; top:408px; left:876px;"> c(air): </div>
+
+                        <div class="modbvalue" data-odb-path="/Equipment/HePlant/Variables/Input[10]"
+                        data-format="%f2 %"
+                        data-formula="x"
+                        style="position:absolute; top:393px; left:913px;"></div>
+
+			<div class="measurement" id="airContent" 
+			style="position:absolute; top:408px; left:913px;"> </div>
+
+			<div class="comment" style="position:absolute; top:423px; left:858px;"> target value is an oxygen concentration below 1% </div>
+
+		    <!-- Gas properties -->
+
+                        <div class="measurement" id="Mgas" 
+			style="position:absolute; top:513px; left:530px;"></div>
+                        
+			<div class="measurement" id="rhoIn" 
+			style="position:absolute; top:528px; left:530px;"> </div>
+                        
+                        <div class="measurement" id="rhoComp"  
+			style="position:absolute; top:543px; left:530px;"></div>
+
+			<div class="measurement" id="rhoOut"  
+			style="position:absolute; top:558px; left:530px;"></div>
+                        
+
+                </div>
+            </td></tr>
+        </table>
+    </div>
+</body>

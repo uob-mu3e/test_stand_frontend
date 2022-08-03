@@ -148,6 +148,12 @@ INT frontend_init()
    env.define_var(1,  29, "DS_bottom_RH");
    env.define_var(1,  30, "DS_central_RH");
    
+   // LM35 sensors for MuPix temperature
+   env.define_var(1,  6, "US_L1-2_temperature");
+   env.define_var(1,  7, "US_L1-6_temperature");
+   env.define_var(1,  32, "DS_L1-2_temperature");
+   env.define_var(1,  33, "DS_L1-6_temperature");
+   
 
    // define associated history panels
    env.define_history_panel("Oxygen",      {"US_top_O2",
@@ -157,8 +163,12 @@ INT frontend_init()
                                            "DS_central_O2"});
    env.define_history_panel("Temperature", {"US_central_PCMini52_T",
                                             "US_FEC0_T",
-                                            "DS_FEC2_T",
-                                           "DS_top_T"});
+                                       	    "DS_FEC2_T",
+                                            "DS_top_T",
+					    "US_L1-2_temperature",
+					    "US_L1-6_temperature",
+					    "DS_L1-2_temperature",
+					    "DS_L1-6_temperature"});
    env.define_history_panel("Humidity",    {"US_central_PCMini52_RH",
                                             "US_top_RH",
                                             "DS_top_RH",

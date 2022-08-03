@@ -21,31 +21,36 @@ CAT power_set_state_path_2, /Equipment/HAMEG, $hameg_id, /Variables/Set State[, 
 
 ODBGET $power_get_state_path_1, now_state_hameg_channel_1
 IF $now_state_hameg_channel_1 == 0
-#   ODBSET $power_set_state_path_1, 1
-    WAIT 3
+    ODBSET $power_set_state_path_1, 1
+    WAIT 10
 ENDIF
 
 ODBGET $power_get_state_path_2, now_state_hameg_channel_2
 IF $now_state_hameg_channel_2 == 0
-#   ODBSET $power_set_state_path_2, 1
-    WAIT 3
+    ODBSET $power_set_state_path_2, 1
+    WAIT 10
 ENDIF
-
 
 
 start_magic_value = 11
 stop_magic_value = 40
 
 
+# Empty everything
+ODBSET  /Equipment/PixelsCentral/QCTests/Ladder_FEB_level/Link_Quali_test/Output/*/opt_VPVCO, 0
+ODBSET  /Equipment/PixelsCentral/QCTests/Ladder_FEB_level/Link_Quali_test/Output/*/opt_VNVCO, 0
+ODBSET  /Equipment/PixelsCentral/QCTests/Ladder_FEB_level/Link_Quali_test/Output/*/ErrorRate, 0
+ODBSET  /Equipment/PixelsCentral/QCTests/Ladder_FEB_level/Link_Quali_test/Output/*/Scan/VPVCO[*], 0
+ODBSET  /Equipment/PixelsCentral/QCTests/Ladder_FEB_level/Link_Quali_test/Output/*/Scan/error_rate[*], 0
+ODBSET  /Equipment/PixelsCentral/QCTests/Ladder_FEB_level/Link_Quali_test/Output/*/Scan/error_rate_linkA[*], 0
+ODBSET  /Equipment/PixelsCentral/QCTests/Ladder_FEB_level/Link_Quali_test/Output/*/Scan/error_rate_linkB[*], 0
+ODBSET  /Equipment/PixelsCentral/QCTests/Ladder_FEB_level/Link_Quali_test/Output/*/Scan/error_rate_linkC[*], 0
+ODBSET /Equipment/PixelsCentral/QCTests/Ladder_FEB_level/Link_Quali_test/Buffers/init_errors[*], 0
+ODBSET /Equipment/PixelsCentral/QCTests/Ladder_FEB_level/Link_Quali_test/Buffers/final_errors[*], 0
+
+
 # Set errors to maximum
 ODBSET /Equipment/PixelsCentral/QCTests/Ladder_FEB_level/Link_Quali_test/Output/*/ErrorRate, 10000000000000
-# Check the init errors
-LOOP i, 12
-    _i = $i - 1 
-    ODBGET /Equipment/PixelsCentral/QCTests/Ladder_FEB_level/Link_Quali_test/Output/$_i/ErrorRate, msg_init_norm
-    CAT msg_init_norm, init norm of is , $msg_init_norm
-    MSG $msg_init_norm
-ENDLOOP
 
 
 LOOP this_magic, ($stop_magic_value-$start_magic_value) + 1
@@ -64,15 +69,15 @@ LOOP this_magic, ($stop_magic_value-$start_magic_value) + 1
         ENDLOOP
     ENDLOOP
 
-    ODBSET /Equipment/SwitchingCentral/Commands/MupixChipToConfigure, 999
-    #ODBSET /Equipment/SwitchingCentral/Commands/MupixConfig, 1
-    # TODO check waiting time
-    WAIT 5
 
+    ODBSET /Equipment/SwitchingCentral/Commands/MupixChipToConfigure, 999
+    ODBSET /Equipment/SwitchingCentral/Commands/MupixConfig, 1
+    # TODO check waiting time
+    WAIT ODBvalue, /Equipment/SwitchingCentral/Commands/MupixConfig, <, 1
 
     # Chips loaded with new values. Get initial value of errors and save in buffer
     LOOP i, 36
-        this_lvds = ($i - 1)*6 + 2
+        this_lvds = ($i - 1)*6 + 2*($feb_id+1) + 216*$feb_id
         _i = $i-1
         ODBGET /Equipment/PixelsCentral/Variables/PCLS[$this_lvds], this_error_link
         ODBSET /Equipment/PixelsCentral/QCTests/Ladder_FEB_level/Link_Quali_test/Buffers/init_errors[$_i], $this_error_link
@@ -89,16 +94,15 @@ LOOP this_magic, ($stop_magic_value-$start_magic_value) + 1
     ENDLOOP
 
 
-    # Calculate differences and save in output. Update optimum values if necessary 
+
+   # Calculate differences and save in output. Update optimum values if necessary
     LOOP i, 12
         chip = $i - 1
         chipl0 = $chip*3 + 0
         chipl1 = $chip*3 + 1
         chipl2 = $chip*3 + 2
-
+        
         ODBGET /Equipment/PixelsCentral/QCTests/Ladder_FEB_level/Link_Quali_test/Output/$chip/ErrorRate, last_norm
-        CAT msg_last_norm, last_norm is, $last_norm
-        MSG $msg_last_norm
 
         ODBGET /Equipment/PixelsCentral/QCTests/Ladder_FEB_level/Link_Quali_test/Buffers/init_errors[$chipl0], this_error0A
         ODBGET /Equipment/PixelsCentral/QCTests/Ladder_FEB_level/Link_Quali_test/Buffers/init_errors[$chipl1], this_error0B
@@ -112,22 +116,7 @@ LOOP this_magic, ($stop_magic_value-$start_magic_value) + 1
         diffB = ($this_errorB - $this_error0B)/$waiting_time
         diffC = ($this_errorC - $this_error0C)/$waiting_time
 
-        CAT msg_chip, $chip 
-        MSG $msg_chip
-
-        CAT msg_this_errorA, diffA, $diffA
-        MSG $msg_this_errorA
-
-        CAT msg_this_errorB, diffB, $diffB
-        MSG $msg_this_errorB
-
-        CAT msg_this_errorC, diffC, $diffC
-        MSG $msg_this_errorC
-
         norm = sqrt($diffA*$diffA + $diffB*$diffB + $diffC*$diffC)
-
-        CAT msg_norm, norm, $norm
-        MSG $msg_norm
 
         # Save all
         _this_magic = $this_magic - 1
@@ -159,6 +148,10 @@ ENDLOOP
 
 
 ODBSET /Equipment/SwitchingCentral/Commands/MupixChipToConfigure, 999
-# ODBSET /Equipment/SwitchingCentral/Commands/MupixConfig, 1
+ODBSET /Equipment/SwitchingCentral/Commands/MupixConfig, 1
 # TODO check waiting time
-WAIT 30 
+WAIT ODBvalue, /Equipment/SwitchingCentral/Commands/MupixConfig, <, 1
+
+#Save output to json file
+CAT output_file_name, Link_quality_output_FEB, $feb_id, .json
+ODBSAVE /Equipment/PixelsCentral/QCTests/Ladder_FEB_level/Link_Quali_test, $output_file_name

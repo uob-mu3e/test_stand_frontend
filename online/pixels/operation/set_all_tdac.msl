@@ -1,0 +1,5 @@
+COMMENT Script for setting the tdac path for every chip.
+
+ODBSET /Equipment/PixelsCentral/Settings/FEBS/*/MP_LVDS_LINK_MASK, "0xFFFFFFFF"
+ODBSET /Equipment/PixelsCentral/Settings/FEBS/*/MP_LVDS_LINK_MASK2, "0xFFFFFFFF"
+

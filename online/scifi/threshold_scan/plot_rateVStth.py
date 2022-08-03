@@ -1,7 +1,7 @@
 import json
 import matplotlib.pyplot as plt
 
-with open('thre_scan_test.json') as jsonfile:
+with open('thr_scan_test6Jul_allch.json') as jsonfile:
     data = json.load(jsonfile)
     jsonfile.close()
 

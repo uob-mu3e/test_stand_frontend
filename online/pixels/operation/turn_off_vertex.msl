@@ -1,0 +1,54 @@
+COMMENT Script for turning off Cosmic Run Pixel Detector (LV and HV)
+
+ODBSET /Equipment/MuPix HV/Variables/Demand[1], 0
+ODBSET /Equipment/MuPix HV/Variables/Demand[0], 0
+ODBSET /Equipment/MuPix HV/Variables/Demand[2], 0
+ODBSET /Equipment/MuPix HV/Variables/Demand[3], 0
+ODBSET /Equipment/MuPix HV/Variables/Demand[4], 0
+ODBSET /Equipment/MuPix HV/Variables/Demand[5], 0
+ODBSET /Equipment/MuPix HV/Variables/Demand[6], 0
+ODBSET /Equipment/MuPix HV/Variables/Demand[7], 0
+ODBSET /Equipment/MuPix HV/Variables/Demand[9], 0
+ODBSET /Equipment/MuPix HV/Variables/Demand[8], 0
+ODBSET /Equipment/MuPix HV/Variables/Demand[10], 0
+ODBSET /Equipment/MuPix HV/Variables/Demand[11], 0
+ODBSET /Equipment/MuPix HV/Variables/Demand[12], 0
+ODBSET /Equipment/MuPix HV/Variables/Demand[15], 0
+ODBSET /Equipment/MuPix HV/Variables/Demand[13], 0
+ODBSET /Equipment/MuPix HV/Variables/Demand[14], 0
+ODBSET /Equipment/MuPix HV/Variables/Demand[16], 0
+ODBSET /Equipment/MuPix HV/Variables/Demand[17], 0
+ODBSET /Equipment/MuPix HV/Variables/Demand[18], 0
+ODBSET /Equipment/MuPix HV/Variables/Demand[19], 0
+ODBSET /Equipment/MuPix HV/Variables/Demand[20], 0
+ODBSET /Equipment/MuPix HV/Variables/Demand[21], 0
+ODBSET /Equipment/MuPix HV/Variables/Demand[23], 0
+ODBSET /Equipment/MuPix HV/Variables/Demand[22], 0
+ODBSET /Equipment/MuPix HV/Variables/Demand[26], 0
+ODBSET /Equipment/MuPix HV/Variables/Demand[24], 0
+ODBSET /Equipment/MuPix HV/Variables/Demand[25], 0
+ODBSET /Equipment/MuPix HV/Variables/Demand[27], 0
+ODBSET /Equipment/MuPix HV/Variables/Demand[28], 0
+ODBSET /Equipment/MuPix HV/Variables/Demand[29], 0
+ODBSET /Equipment/MuPix HV/Variables/Demand[30], 0
+ODBSET /Equipment/MuPix HV/Variables/Demand[31], 0
+
+WAIT SECONDS, 10
+
+ODBSET /Equipment/HAMEG1/Variables/Set State[*], 0
+ODBSET /Equipment/HAMEG2/Variables/Set State[*], 0
+ODBSET /Equipment/HAMEG3/Variables/Set State[*], 0
+ODBSET /Equipment/HAMEG8/Variables/Set State[*], 0
+ODBSET /Equipment/HAMEG4/Variables/Set State[0], 0
+ODBSET /Equipment/HAMEG4/Variables/Set State[1], 0
+
+WAIT SECONDS, 30
+
+ODBSET /Equipment/MuPix HV/Common/Enabled, 0
+
+WAIT SECONDS, 5
+
+ODBSET /Equipment/HAMEG0/Variables/Set State[0], 0
+ODBSET /Equipment/HAMEG0/Variables/Set State[1], 0
+
+WAIT SECONDS, 10

@@ -1,0 +1,154 @@
+PARAM hameg_id_0, "0 : HAMEG ID"
+PARAM channel_id_0, "0 : CHANNEL ID"
+PARAM hameg_id_1, "1 : HAMEG ID"
+PARAM channel_id_1, "1 : CHANNEL ID"
+PARAM hameg_id_2, "2 : HAMEG ID"
+PARAM channel_id_2, "2 : CHANNEL ID"
+PARAM hameg_id_3, "3 : HAMEG ID"
+PARAM channel_id_3, "3 : CHANNEL ID"
+PARAM hameg_id_4, "4 : HAMEG ID"
+PARAM channel_id_4, "4 : CHANNEL ID"
+PARAM hameg_id_5, "5 : HAMEG ID"
+PARAM channel_id_5, "5 : CHANNEL ID"
+PARAM hameg_id_6, "6 : HAMEG ID"
+PARAM channel_id_6, "6 : CHANNEL ID"
+PARAM hameg_id_7, "7 : HAMEG ID"
+PARAM channel_id_7, "7 : CHANNEL ID"
+PARAM hameg_id_8, "8 : HAMEG ID"
+PARAM channel_id_8, "8 : CHANNEL ID"
+PARAM hameg_id_9, "9 : HAMEG ID"
+PARAM channel_id_9, "9 : CHANNEL ID"
+PARAM hameg_id_10, "10 : HAMEG ID"
+PARAM channel_id_10, "10 : CHANNEL ID"
+PARAM hameg_id_11, "11 : HAMEG ID"
+PARAM channel_id_11, "11 : CHANNEL ID"
+PARAM hameg_id_12, "12 : HAMEG ID"
+PARAM channel_id_12, "12 : CHANNEL ID"
+PARAM hameg_id_13, "13 : HAMEG ID"
+PARAM channel_id_13, "13 : CHANNEL ID"
+PARAM hameg_id_14, "14 : HAMEG ID"
+PARAM channel_id_14, "14 : CHANNEL ID"
+PARAM hameg_id_15, "15 : HAMEG ID"
+PARAM channel_id_15, "15 : CHANNEL ID"
+PARAM hameg_id_16, "16 : HAMEG ID"
+PARAM channel_id_16, "16 : CHANNEL ID"
+PARAM hameg_id_17, "17 : HAMEG ID"
+PARAM channel_id_17, "17 : CHANNEL ID"
+PARAM hameg_id_18, "18 : HAMEG ID"
+PARAM channel_id_18, "18 : CHANNEL ID"
+PARAM hameg_id_19, "19 : HAMEG ID"
+PARAM channel_id_19, "19 : CHANNEL ID"
+PARAM hameg_id_20, "20 : HAMEG ID"
+PARAM channel_id_20, "20 : CHANNEL ID"
+PARAM hameg_id_21, "21 : HAMEG ID"
+PARAM channel_id_21, "21 : CHANNEL ID"
+PARAM hameg_id_22, "22 : HAMEG ID"
+PARAM channel_id_22, "22 : CHANNEL ID"
+PARAM hameg_id_23, "23 : HAMEG ID"
+PARAM channel_id_23, "23 : CHANNEL ID"
+PARAM hameg_id_24, "24 : HAMEG ID"
+PARAM channel_id_24, "24 : CHANNEL ID"
+PARAM hameg_id_25, "25 : HAMEG ID"
+PARAM channel_id_25, "25 : CHANNEL ID"
+PARAM hameg_id_26, "26 : HAMEG ID"
+PARAM channel_id_26, "26 : CHANNEL ID"
+PARAM hameg_id_27, "27 : HAMEG ID"
+PARAM channel_id_27, "27 : CHANNEL ID"
+PARAM hameg_id_28, "28 : HAMEG ID"
+PARAM channel_id_28, "28 : CHANNEL ID"
+PARAM hameg_id_29, "29 : HAMEG ID"
+PARAM channel_id_29, "29 : CHANNEL ID"
+PARAM hameg_id_30, "30 : HAMEG ID"
+PARAM channel_id_30, "30 : CHANNEL ID"
+PARAM hameg_id_31, "31 : HAMEG ID"
+PARAM channel_id_31, "31 : CHANNEL ID"
+PARAM hameg_id_32, "32 : HAMEG ID"
+PARAM channel_id_32, "32 : CHANNEL ID"
+PARAM hameg_id_33, "33 : HAMEG ID"
+PARAM channel_id_33, "33 : CHANNEL ID"
+PARAM hameg_id_34, "34 : HAMEG ID"
+PARAM channel_id_34, "34 : CHANNEL ID"
+PARAM hameg_id_35, "35 : HAMEG ID"
+PARAM channel_id_35, "35 : CHANNEL ID"
+PARAM hameg_id_36, "36 : HAMEG ID"
+PARAM channel_id_36, "36 : CHANNEL ID"
+PARAM hameg_id_37, "37 : HAMEG ID"
+PARAM channel_id_37, "37 : CHANNEL ID"
+
+
+ODBSET /Equipment/PixelsCentral/QCTests/Ladder_FEB_level/LV_map/0/hameg_id, $hameg_id_0
+ODBSET /Equipment/PixelsCentral/QCTests/Ladder_FEB_level/LV_map/0/channel_id, $channel_id_0
+ODBSET /Equipment/PixelsCentral/QCTests/Ladder_FEB_level/LV_map/1/hameg_id, $hameg_id_1
+ODBSET /Equipment/PixelsCentral/QCTests/Ladder_FEB_level/LV_map/1/channel_id, $channel_id_1
+ODBSET /Equipment/PixelsCentral/QCTests/Ladder_FEB_level/LV_map/2/hameg_id, $hameg_id_2
+ODBSET /Equipment/PixelsCentral/QCTests/Ladder_FEB_level/LV_map/2/channel_id, $channel_id_2
+ODBSET /Equipment/PixelsCentral/QCTests/Ladder_FEB_level/LV_map/3/hameg_id, $hameg_id_3
+ODBSET /Equipment/PixelsCentral/QCTests/Ladder_FEB_level/LV_map/3/channel_id, $channel_id_3
+ODBSET /Equipment/PixelsCentral/QCTests/Ladder_FEB_level/LV_map/4/hameg_id, $hameg_id_4
+ODBSET /Equipment/PixelsCentral/QCTests/Ladder_FEB_level/LV_map/4/channel_id, $channel_id_4
+ODBSET /Equipment/PixelsCentral/QCTests/Ladder_FEB_level/LV_map/5/hameg_id, $hameg_id_5
+ODBSET /Equipment/PixelsCentral/QCTests/Ladder_FEB_level/LV_map/5/channel_id, $channel_id_5
+ODBSET /Equipment/PixelsCentral/QCTests/Ladder_FEB_level/LV_map/6/hameg_id, $hameg_id_6
+ODBSET /Equipment/PixelsCentral/QCTests/Ladder_FEB_level/LV_map/6/channel_id, $channel_id_6
+ODBSET /Equipment/PixelsCentral/QCTests/Ladder_FEB_level/LV_map/7/hameg_id, $hameg_id_7
+ODBSET /Equipment/PixelsCentral/QCTests/Ladder_FEB_level/LV_map/7/channel_id, $channel_id_7
+ODBSET /Equipment/PixelsCentral/QCTests/Ladder_FEB_level/LV_map/8/hameg_id, $hameg_id_8
+ODBSET /Equipment/PixelsCentral/QCTests/Ladder_FEB_level/LV_map/8/channel_id, $channel_id_8
+ODBSET /Equipment/PixelsCentral/QCTests/Ladder_FEB_level/LV_map/9/hameg_id, $hameg_id_9
+ODBSET /Equipment/PixelsCentral/QCTests/Ladder_FEB_level/LV_map/9/channel_id, $channel_id_9
+ODBSET /Equipment/PixelsCentral/QCTests/Ladder_FEB_level/LV_map/10/hameg_id, $hameg_id_10
+ODBSET /Equipment/PixelsCentral/QCTests/Ladder_FEB_level/LV_map/10/channel_id, $channel_id_10
+ODBSET /Equipment/PixelsCentral/QCTests/Ladder_FEB_level/LV_map/11/hameg_id, $hameg_id_11
+ODBSET /Equipment/PixelsCentral/QCTests/Ladder_FEB_level/LV_map/11/channel_id, $channel_id_11
+ODBSET /Equipment/PixelsCentral/QCTests/Ladder_FEB_level/LV_map/12/hameg_id, $hameg_id_12
+ODBSET /Equipment/PixelsCentral/QCTests/Ladder_FEB_level/LV_map/12/channel_id, $channel_id_12
+ODBSET /Equipment/PixelsCentral/QCTests/Ladder_FEB_level/LV_map/13/hameg_id, $hameg_id_13
+ODBSET /Equipment/PixelsCentral/QCTests/Ladder_FEB_level/LV_map/13/channel_id, $channel_id_13
+ODBSET /Equipment/PixelsCentral/QCTests/Ladder_FEB_level/LV_map/14/hameg_id, $hameg_id_14
+ODBSET /Equipment/PixelsCentral/QCTests/Ladder_FEB_level/LV_map/14/channel_id, $channel_id_14
+ODBSET /Equipment/PixelsCentral/QCTests/Ladder_FEB_level/LV_map/15/hameg_id, $hameg_id_15
+ODBSET /Equipment/PixelsCentral/QCTests/Ladder_FEB_level/LV_map/15/channel_id, $channel_id_15
+ODBSET /Equipment/PixelsCentral/QCTests/Ladder_FEB_level/LV_map/16/hameg_id, $hameg_id_16
+ODBSET /Equipment/PixelsCentral/QCTests/Ladder_FEB_level/LV_map/16/channel_id, $channel_id_16
+ODBSET /Equipment/PixelsCentral/QCTests/Ladder_FEB_level/LV_map/17/hameg_id, $hameg_id_17
+ODBSET /Equipment/PixelsCentral/QCTests/Ladder_FEB_level/LV_map/17/channel_id, $channel_id_17
+ODBSET /Equipment/PixelsCentral/QCTests/Ladder_FEB_level/LV_map/18/hameg_id, $hameg_id_18
+ODBSET /Equipment/PixelsCentral/QCTests/Ladder_FEB_level/LV_map/18/channel_id, $channel_id_18
+ODBSET /Equipment/PixelsCentral/QCTests/Ladder_FEB_level/LV_map/19/hameg_id, $hameg_id_19
+ODBSET /Equipment/PixelsCentral/QCTests/Ladder_FEB_level/LV_map/19/channel_id, $channel_id_19
+ODBSET /Equipment/PixelsCentral/QCTests/Ladder_FEB_level/LV_map/20/hameg_id, $hameg_id_20
+ODBSET /Equipment/PixelsCentral/QCTests/Ladder_FEB_level/LV_map/20/channel_id, $channel_id_20
+ODBSET /Equipment/PixelsCentral/QCTests/Ladder_FEB_level/LV_map/21/hameg_id, $hameg_id_21
+ODBSET /Equipment/PixelsCentral/QCTests/Ladder_FEB_level/LV_map/21/channel_id, $channel_id_21
+ODBSET /Equipment/PixelsCentral/QCTests/Ladder_FEB_level/LV_map/22/hameg_id, $hameg_id_22
+ODBSET /Equipment/PixelsCentral/QCTests/Ladder_FEB_level/LV_map/22/channel_id, $channel_id_22
+ODBSET /Equipment/PixelsCentral/QCTests/Ladder_FEB_level/LV_map/23/hameg_id, $hameg_id_23
+ODBSET /Equipment/PixelsCentral/QCTests/Ladder_FEB_level/LV_map/23/channel_id, $channel_id_23
+ODBSET /Equipment/PixelsCentral/QCTests/Ladder_FEB_level/LV_map/24/hameg_id, $hameg_id_24
+ODBSET /Equipment/PixelsCentral/QCTests/Ladder_FEB_level/LV_map/24/channel_id, $channel_id_24
+ODBSET /Equipment/PixelsCentral/QCTests/Ladder_FEB_level/LV_map/25/hameg_id, $hameg_id_25
+ODBSET /Equipment/PixelsCentral/QCTests/Ladder_FEB_level/LV_map/25/channel_id, $channel_id_25
+ODBSET /Equipment/PixelsCentral/QCTests/Ladder_FEB_level/LV_map/26/hameg_id, $hameg_id_26
+ODBSET /Equipment/PixelsCentral/QCTests/Ladder_FEB_level/LV_map/26/channel_id, $channel_id_26
+ODBSET /Equipment/PixelsCentral/QCTests/Ladder_FEB_level/LV_map/27/hameg_id, $hameg_id_27
+ODBSET /Equipment/PixelsCentral/QCTests/Ladder_FEB_level/LV_map/27/channel_id, $channel_id_27
+ODBSET /Equipment/PixelsCentral/QCTests/Ladder_FEB_level/LV_map/28/hameg_id, $hameg_id_28
+ODBSET /Equipment/PixelsCentral/QCTests/Ladder_FEB_level/LV_map/28/channel_id, $channel_id_28
+ODBSET /Equipment/PixelsCentral/QCTests/Ladder_FEB_level/LV_map/29/hameg_id, $hameg_id_29
+ODBSET /Equipment/PixelsCentral/QCTests/Ladder_FEB_level/LV_map/29/channel_id, $channel_id_29
+ODBSET /Equipment/PixelsCentral/QCTests/Ladder_FEB_level/LV_map/30/hameg_id, $hameg_id_30
+ODBSET /Equipment/PixelsCentral/QCTests/Ladder_FEB_level/LV_map/30/channel_id, $channel_id_30
+ODBSET /Equipment/PixelsCentral/QCTests/Ladder_FEB_level/LV_map/31/hameg_id, $hameg_id_31
+ODBSET /Equipment/PixelsCentral/QCTests/Ladder_FEB_level/LV_map/31/channel_id, $channel_id_31
+ODBSET /Equipment/PixelsCentral/QCTests/Ladder_FEB_level/LV_map/32/hameg_id, $hameg_id_32
+ODBSET /Equipment/PixelsCentral/QCTests/Ladder_FEB_level/LV_map/32/channel_id, $channel_id_32
+ODBSET /Equipment/PixelsCentral/QCTests/Ladder_FEB_level/LV_map/33/hameg_id, $hameg_id_33
+ODBSET /Equipment/PixelsCentral/QCTests/Ladder_FEB_level/LV_map/33/channel_id, $channel_id_33
+ODBSET /Equipment/PixelsCentral/QCTests/Ladder_FEB_level/LV_map/34/hameg_id, $hameg_id_34
+ODBSET /Equipment/PixelsCentral/QCTests/Ladder_FEB_level/LV_map/34/channel_id, $channel_id_34
+ODBSET /Equipment/PixelsCentral/QCTests/Ladder_FEB_level/LV_map/35/hameg_id, $hameg_id_35
+ODBSET /Equipment/PixelsCentral/QCTests/Ladder_FEB_level/LV_map/35/channel_id, $channel_id_35
+ODBSET /Equipment/PixelsCentral/QCTests/Ladder_FEB_level/LV_map/36/hameg_id, $hameg_id_36
+ODBSET /Equipment/PixelsCentral/QCTests/Ladder_FEB_level/LV_map/36/channel_id, $channel_id_36
+ODBSET /Equipment/PixelsCentral/QCTests/Ladder_FEB_level/LV_map/37/hameg_id, $hameg_id_37
+ODBSET /Equipment/PixelsCentral/QCTests/Ladder_FEB_level/LV_map/37/channel_id, $channel_id_37

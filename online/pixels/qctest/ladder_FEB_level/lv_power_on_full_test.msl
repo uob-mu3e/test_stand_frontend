@@ -1,0 +1,277 @@
+# Author J. Guzmán-Funck, June 2022, Cosmic Run. jose.guzman-funck19@imperial.ac.uk || pepe.guzmanfunck@gmail.com
+# 
+# LV power ON test for the full FEB
+#
+#
+# Description:
+# - All BiasBlock_on --> 0. Turn on (BiasBlock_on --> 5) individually from chip in position 0 to chip in position 2.
+#
+#
+#
+# Note: 
+# - LV is turned on for every ladder at the same time --> COOLING IS NECESSARY
+# - Beware that there are folders also for ladders 18 and 19 which are not connected
+
+
+
+PARAM file_ID, "File ID"
+PARAM order, "0 : from 0 to 2 / 1: from 2 to 0"
+PARAM start_condition, "0: all off, chip on / 1: all on, chip off"
+
+
+# Empty buffers
+LOOP _i, 38
+    i = $_i - 1 
+    
+    LOOP _j, 3
+        j = _j - 1
+
+        ODBSET /Equipment/PixelsCentral/QCTests/Ladder_FEB_level/LV_power_on_test/Output/$i/current_increase[$j], -99
+    ENDLOOP
+ENDLOOP
+
+
+
+# Turn ON LV
+LOOP _ladder, 38
+    ladder = $_ladder - 1
+
+    ODBGET /Equipment/PixelsCentral/QCTests/Ladder_FEB_level/LV_map/$ladder/hameg_id, this_hameg_id
+    ODBGET /Equipment/PixelsCentral/QCTests/Ladder_FEB_level/LV_map/$ladder/channel_id, this_channel_id
+
+    CAT power_get_state_path, /Equipment/HAMEG, $this_hameg_id, /Variables/State[, $this_channel_id,]
+    CAT power_set_state_path, /Equipment/HAMEG, $this_hameg_id, /Variables/Set State[, $this_channel_id,]
+
+    # Skip ladders 18 and 19
+    skip = 0
+    IF $ladder == 18
+        skip = 1
+    ENDIF
+    IF $ladder == 19
+        skip = 1
+    ENDIF
+    # Skip ladders 18 and 19
+    IF $skip == 1
+        MESSAGE "Skipping 18 and 19"
+    ELSE
+        # Do stuff
+        ODBGET $power_get_state_path, now_state_hameg_channel
+
+        IF $now_state_hameg_channel == 0
+            ODBSET $power_set_state_path, 1
+            WAIT ODBValue, $power_get_state_path, >, 0
+        ENDIF
+    ENDIF
+ENDLOOP
+
+
+
+# Given the power schematics in LV_map, we can only test one chip at a time every two ladders. Testing scheme:
+#L         0   2   4   6   8  10  12  14  16  (18)  20  22  24  26  28  30   32   34   36   (38)
+#L2        1   3   5   7   9  11  13  15  17  (19)  21  23  25  27  29  31   33   35   37   (39)
+
+# 1st run: 0,  6, 12, 18, 24, 30, 36, 42, 48, (54), 60, 66, 72, 78, 84, 90,  96, 102, 108, (114)
+# 2nd run: 1,  7, 13, 19, 25, 31, 37, 43, 49, (55), 61, 67, 73, 79, 85, 91,  97, 103, 109, (115)
+# 3rd run: 2,  8, 14, 20, 26, 32, 38, 44, 50, (56), 62, 68, 74, 80, 86, 92,  98, 104, 110, (116)
+# 4rd run: 3,  9, 15, 21, 27, 33, 39, 45, 51, (57), 63, 69, 75, 81, 87, 93,  99, 105, 111, (117)
+# 5rd run: 4, 10, 16, 22, 28, 34, 40, 46, 52, (58), 64, 70, 76, 82, 88, 94, 100, 106, 112, (118)
+# 6rd run: 5, 11, 17, 23, 29, 35, 41, 47, 53, (59), 65, 71, 77, 83, 89, 95, 101, 107, 113, (119)
+
+IF $start_condition == 0
+     initial_bias = 0
+     later_bias = 5
+ELSE
+     initial_bias = 5
+     later_bias = 0
+ENDIF
+
+# Turn BiasBlock_on to zero or 5
+ODBSET /Equipment/PixelsCentral/Settings/BIASDACS/*/BiasBlock_on, $initial_bias
+ODBSET /Equipment/PixelsCentral/Settings/Daq/mask[*], 0
+
+ODBSET /Equipment/SwitchingCentral/Commands/MupixChipToConfigure, 999
+ODBSET /Equipment/SwitchingCentral/Commands/MupixConfig, 1
+WAIT ODBValue, /Equipment/SwitchingCentral/Commands/MupixConfig, <, 1
+WAIT 30
+MESSAGE "All BiasBlock_on turned to 0"
+
+
+
+# Modify masking
+ODBSET /Equipment/PixelsCentral/Settings/Daq/mask[*], 1
+
+
+
+LOOP _run, 6
+    run = $_run - 1
+
+
+    # Read current & BiasBlock_on --> 5 for chips in run
+    LOOP _l, 19
+        l = $_l - 1
+        IF $order == 0
+            chip = $run + $l * 6
+        ELSE
+            chip = (5 - $run) + $l * 6
+        ENDIF
+        ladder = $chip/3 - ($chip%3)/3
+        ODBSET /Equipment/PixelsCentral/QCTests/Ladder_FEB_level/LV_power_on_test/ladder_tmp, $ladder
+        ODBGET /Equipment/PixelsCentral/QCTests/Ladder_FEB_level/LV_power_on_test/ladder_tmp, ladder
+        chip_p = $chip - $ladder*3
+
+        skip = 0
+        IF $ladder == 18
+            skip = 1
+        ENDIF
+        IF $ladder == 19
+            skip = 1
+        ENDIF
+        # Skip ladders 18 and 19
+        IF $skip == 1
+            MESSAGE "Skipping 18 and 19"
+        ELSE
+            # Read current from HAMEG
+            ODBGET /Equipment/PixelsCentral/QCTests/Ladder_FEB_level/LV_map/$ladder/hameg_id, this_hameg_id
+            ODBGET /Equipment/PixelsCentral/QCTests/Ladder_FEB_level/LV_map/$ladder/channel_id, this_channel_id
+
+            CAT power_get_current_path, /Equipment/HAMEG, $this_hameg_id, /Variables/Current[, $this_channel_id,]
+
+            ODBGET $power_get_current_path, init_current
+
+            # Save current
+            ODBSET /Equipment/PixelsCentral/QCTests/Ladder_FEB_level/LV_power_on_test/Output/$ladder/current_increase[$chip_p], $init_current
+
+            # BiasBlock_on --> 5/0
+            ODBSET  /Equipment/PixelsCentral/Settings/BIASDACS/$chip/BiasBlock_on, $later_bias
+            # Masking --> 0
+            ODBSET /Equipment/PixelsCentral/Settings/Daq/mask[$chip], 0
+        ENDIF
+    ENDLOOP
+
+
+    # Push config
+    ODBSET /Equipment/SwitchingCentral/Commands/MupixChipToConfigure, 999
+    ODBSET /Equipment/SwitchingCentral/Commands/MupixConfig, 1
+    WAIT ODBValue, /Equipment/SwitchingCentral/Commands/MupixConfig, <, 1
+    WAIT 30
+
+
+    # Read current, BiasBlock_on --> 0 
+    LOOP _l, 19
+        l = $_l - 1
+        IF $order == 0
+            chip = $run + $l * 6
+        ELSE
+            chip = (5 - $run) + $l * 6
+        ENDIF
+        ladder = $chip/3 - ($chip%3)/3
+        ODBSET /Equipment/PixelsCentral/QCTests/Ladder_FEB_level/LV_power_on_test/ladder_tmp, $ladder
+        ODBGET /Equipment/PixelsCentral/QCTests/Ladder_FEB_level/LV_power_on_test/ladder_tmp, ladder
+        chip_p = $chip - $ladder * 3
+
+        skip = 0
+        IF $ladder == 18
+            skip = 1
+        ENDIF
+        IF $ladder == 19
+            skip = 1
+        ENDIF
+        # Skip ladders 18 and 19
+        IF $skip == 1
+            MESSAGE "Skipping 18 and 19"
+        ELSE
+
+            ODBGET /Equipment/PixelsCentral/QCTests/Ladder_FEB_level/LV_map/$ladder/hameg_id, this_hameg_id
+            ODBGET /Equipment/PixelsCentral/QCTests/Ladder_FEB_level/LV_map/$ladder/channel_id, this_channel_id
+
+            CAT power_get_current_path, /Equipment/HAMEG, $this_hameg_id, /Variables/Current[, $this_channel_id,]
+
+            ODBGET $power_get_current_path, current
+
+            # Save current_difference
+            ODBGET /Equipment/PixelsCentral/QCTests/Ladder_FEB_level/LV_power_on_test/Output/$ladder/current_increase[$chip_p], prev_current
+            curr_diff = $current - $prev_current
+            ODBSET /Equipment/PixelsCentral/QCTests/Ladder_FEB_level/LV_power_on_test/Output/$ladder/current_increase[$chip_p], $curr_diff
+
+            ODBSET  /Equipment/PixelsCentral/Settings/BIASDACS/$chip/BiasBlock_on, $initial_bias
+        ENDIF
+    ENDLOOP
+    
+
+    # Push config
+    ODBSET /Equipment/SwitchingCentral/Commands/MupixChipToConfigure, 999
+    ODBSET /Equipment/SwitchingCentral/Commands/MupixConfig, 1
+    WAIT ODBValue, /Equipment/SwitchingCentral/Commands/MupixConfig, <, 1
+    WAIT 30
+
+
+    # Masking to 1
+    LOOP _l, 19
+        l = $_l - 1
+        IF $order == 0
+            chip = $run + $l * 6
+        ELSE
+            chip = (5 - $run) + $l * 6
+        ENDIF
+        ladder = $chip/3 - ($chip%3)/3
+
+        skip = 0
+        IF $ladder == 18
+            skip = 1
+        ENDIF
+        IF $ladder == 19
+            skip = 1
+        ENDIF
+        # Skip ladders 18 and 19
+        IF $skip == 1
+            MESSAGE "Skipping 18 and 19"
+        ELSE
+            ODBSET /Equipment/PixelsCentral/Settings/Daq/mask[$chip], 1
+        ENDIF
+    ENDLOOP
+ENDLOOP
+
+
+
+ODBSET /Equipment/PixelsCentral/Settings/Daq/mask[*], 0
+
+
+
+# Turn off LV
+LOOP _ladder, 38
+    ladder = $_ladder - 1
+
+    ODBGET /Equipment/PixelsCentral/QCTests/Ladder_FEB_level/LV_map/$ladder/hameg_id, this_hameg_id
+    ODBGET /Equipment/PixelsCentral/QCTests/Ladder_FEB_level/LV_map/$ladder/channel_id, this_channel_id
+
+    CAT power_get_state_path, /Equipment/HAMEG, $this_hameg_id, /Variables/State[, $this_channel_id,]
+    CAT power_set_state_path, /Equipment/HAMEG, $this_hameg_id, /Variables/Set State[, $this_channel_id,]
+
+    # Si no es 18 o 19 hacer. Si es no hacer nada
+    skip = 0
+    IF $ladder == 18
+        skip = 1
+    ENDIF
+    IF $ladder == 19
+        skip = 1
+    ENDIF
+    # Skip ladders 18 and 19
+    IF $skip == 1
+        MESSAGE "Skipping 18 and 19"
+    ELSE
+        # Do stuff
+        ODBGET $power_get_state_path, now_state_hameg_channel
+
+        IF $now_state_hameg_channel == 0
+            ODBSET $power_set_state_path, 0
+            WAIT ODBValue, $power_get_state_path, <, 1
+        ENDIF
+    ENDIF
+ENDLOOP
+
+MSG "LV power ON test done"
+
+
+# Save output to json file
+CAT output_file_name, Output/LV_power_on_test, $file_ID, .json
+ODBSAVE /Equipment/PixelsCentral/QCTests/Ladder_FEB_level/LV_power_on_test, $output_file_name

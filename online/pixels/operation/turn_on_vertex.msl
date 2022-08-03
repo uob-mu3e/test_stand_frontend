@@ -1,0 +1,71 @@
+COMMENT Script for turning on Cosmic Run Pixel Detector (LV and HV, no configure)
+
+ODBSET /Equipment/HAMEG1/Variables/Set State[*], 1
+ODBSET /Equipment/HAMEG2/Variables/Set State[*], 1
+ODBSET /Equipment/HAMEG3/Variables/Set State[*], 1
+ODBSET /Equipment/HAMEG8/Variables/Set State[*], 1
+ODBSET /Equipment/HAMEG4/Variables/Set State[0], 1
+ODBSET /Equipment/HAMEG4/Variables/Set State[1], 1
+
+WAIT SECONDS, 30
+
+ODBSET /Equipment/HAMEG0/Variables/Set State[0], 1
+ODBSET /Equipment/HAMEG0/Variables/Set State[1], 1
+
+WAIT SECONDS, 10
+
+ODBSET /Equipment/MuPix HV/Common/Enabled, 1
+
+WAIT SECONDS, 5
+
+ODBSET /Equipment/MuPix HV/Variables/Demand[1], 20
+ODBSET /Equipment/MuPix HV/Variables/Demand[2], 20
+ODBSET /Equipment/MuPix HV/Variables/Demand[3], 20
+ODBSET /Equipment/MuPix HV/Variables/Demand[4], 20
+ODBSET /Equipment/MuPix HV/Variables/Demand[7], 20
+ODBSET /Equipment/MuPix HV/Variables/Demand[9], 20
+ODBSET /Equipment/MuPix HV/Variables/Demand[10], 20
+ODBSET /Equipment/MuPix HV/Variables/Demand[11], 20
+ODBSET /Equipment/MuPix HV/Variables/Demand[12], 20
+ODBSET /Equipment/MuPix HV/Variables/Demand[13], 20
+ODBSET /Equipment/MuPix HV/Variables/Demand[14], 20
+ODBSET /Equipment/MuPix HV/Variables/Demand[16], 20
+ODBSET /Equipment/MuPix HV/Variables/Demand[18], 20
+ODBSET /Equipment/MuPix HV/Variables/Demand[19], 20
+ODBSET /Equipment/MuPix HV/Variables/Demand[20], 20
+ODBSET /Equipment/MuPix HV/Variables/Demand[22], 20
+ODBSET /Equipment/MuPix HV/Variables/Demand[26], 20
+ODBSET /Equipment/MuPix HV/Variables/Demand[28], 20
+ODBSET /Equipment/MuPix HV/Variables/Demand[30], 20
+ODBSET /Equipment/MuPix HV/Variables/Demand[31], 20
+WAIT SECONDS, 2
+ODBSET /Equipment/MuPix HV/Variables/Demand[0], 0
+ODBSET /Equipment/MuPix HV/Variables/Demand[5], 0
+ODBSET /Equipment/MuPix HV/Variables/Demand[6], 0
+ODBSET /Equipment/MuPix HV/Variables/Demand[8], 0
+ODBSET /Equipment/MuPix HV/Variables/Demand[15], 0
+ODBSET /Equipment/MuPix HV/Variables/Demand[17], 0
+ODBSET /Equipment/MuPix HV/Variables/Demand[21], 0
+ODBSET /Equipment/MuPix HV/Variables/Demand[23], 0
+ODBSET /Equipment/MuPix HV/Variables/Demand[24], 0
+ODBSET /Equipment/MuPix HV/Variables/Demand[25], 0
+ODBSET /Equipment/MuPix HV/Variables/Demand[27], 0
+ODBSET /Equipment/MuPix HV/Variables/Demand[29], 0
+
+WAIT SECONDS, 10
+
+ODBSET /Equipment/LinksCentral/Settings/LinkMask[0], 3
+ODBSET /Equipment/LinksCentral/Settings/LinkMask[1], 3
+ODBSET /Equipment/LinksCentral/Settings/LinkMask[2], 3
+ODBSET /Equipment/LinksCentral/Settings/LinkMask[3], 3
+ODBSET /Equipment/LinksCentral/Settings/LinkMask[4], 3
+ODBSET /Equipment/LinksCentral/Settings/LinkMask[5], 3
+ODBSET /Equipment/LinksCentral/Settings/LinkMask[6], 3
+ODBSET /Equipment/LinksCentral/Settings/LinkMask[7], 3
+ODBSET /Equipment/LinksCentral/Settings/LinkMask[8], 3
+ODBSET /Equipment/LinksCentral/Settings/LinkMask[9], 3
+ODBSET /Equipment/LinksCentral/Settings/LinkMask[10], 0
+ODBSET /Equipment/LinksCentral/Settings/LinkMask[11], 0
+
+ODBSET /Equipment/PixelsCentral/Common/Enabled, 1
+

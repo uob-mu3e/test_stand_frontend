@@ -1,0 +1,19 @@
+COMMENT "Script to reconfigure the detector and start a new run a given number of times. One should analyze the link errors and noisy pixels to check the stability of the system"
+
+PARAM num_loops, "Number of loops"
+PARAM run_time, "Time-length of each run (in s)"
+
+_i = 0
+LOOP $num_loops
+  ODBSET /Equipment/SwitchingCentral/Commands/MupixChipToConfigure, 999
+  ODBSET /Equipment/SwitchingCentral/Commands/MupixConfig, 1
+  WAIT ODBValue, /Equipment/SwitchingCentral/Commands/MupixConfig, <, 1
+  WAIT 5
+  CAT run_descr, "Stability test, loop number ", $_i
+  RUNDESCRIPTION $run_descr
+  TRANSITION start
+  WAIT seconds, $run_time
+  TRANSITION stop
+  _i = $_i +1
+ENDLOOP
+

@@ -1,0 +1,22 @@
+COMMENT Script to mask all links of all FEBs: no pixel data should be received
+
+ODBSET /Equipment/PixelsCentral/Settings/FEBS/0/MP_LVDS_LINK_MASK, -1
+ODBSET /Equipment/PixelsCentral/Settings/FEBS/0/MP_LVDS_LINK_MASK2, 15
+ODBSET /Equipment/PixelsCentral/Settings/FEBS/1/MP_LVDS_LINK_MASK, -1
+ODBSET /Equipment/PixelsCentral/Settings/FEBS/1/MP_LVDS_LINK_MASK2, 15
+ODBSET /Equipment/PixelsCentral/Settings/FEBS/2/MP_LVDS_LINK_MASK, -1
+ODBSET /Equipment/PixelsCentral/Settings/FEBS/2/MP_LVDS_LINK_MASK2, 15
+ODBSET /Equipment/PixelsCentral/Settings/FEBS/3/MP_LVDS_LINK_MASK, -1
+ODBSET /Equipment/PixelsCentral/Settings/FEBS/3/MP_LVDS_LINK_MASK2, 15
+ODBSET /Equipment/PixelsCentral/Settings/FEBS/4/MP_LVDS_LINK_MASK, -1
+ODBSET /Equipment/PixelsCentral/Settings/FEBS/4/MP_LVDS_LINK_MASK2, 15
+ODBSET /Equipment/PixelsCentral/Settings/FEBS/5/MP_LVDS_LINK_MASK, -1
+ODBSET /Equipment/PixelsCentral/Settings/FEBS/5/MP_LVDS_LINK_MASK2, 15
+ODBSET /Equipment/PixelsCentral/Settings/FEBS/6/MP_LVDS_LINK_MASK, -1
+ODBSET /Equipment/PixelsCentral/Settings/FEBS/6/MP_LVDS_LINK_MASK2, 15
+ODBSET /Equipment/PixelsCentral/Settings/FEBS/7/MP_LVDS_LINK_MASK, -1
+ODBSET /Equipment/PixelsCentral/Settings/FEBS/7/MP_LVDS_LINK_MASK2, 15
+ODBSET /Equipment/PixelsCentral/Settings/FEBS/8/MP_LVDS_LINK_MASK, -1
+ODBSET /Equipment/PixelsCentral/Settings/FEBS/8/MP_LVDS_LINK_MASK2, 15
+ODBSET /Equipment/PixelsCentral/Settings/FEBS/9/MP_LVDS_LINK_MASK, -1
+ODBSET /Equipment/PixelsCentral/Settings/FEBS/9/MP_LVDS_LINK_MASK2, 15
