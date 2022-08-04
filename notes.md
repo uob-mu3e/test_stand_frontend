@@ -144,3 +144,35 @@ edited, the changes will be reflected in the next loop.
 ### Python analyser
 
 Slow control variables can be plotted using `./online/myAnalyser.py`
+
+
+### Setting up A10 & FEB
+
+Main instruction found on [bitbucket](https://bitbucket.org/mu3e/online/wiki/FEB%20to%20A10%20Dev%20Board%20Lab%20Setup). Here's a quick version:
+
+## Connect hardware
+
+- Signal generator goes into CON4 and CON5 on the FEB (golden/round, top right), each signal running 125 MHz but one needs to be inverse of the other.
+- JTAG connection goes into CON7.
+- Firefly optical cable goes into the port right above CON7.
+
+## Compiling FPGA firmware
+
+- Caveat: for some reason, our custom CVMFS `gcc` environment takes precedence over the sourced `nios2-elf-gcc` binary, even with the correct PATH hierachy set up.
+    - Workaround: remove the sourcing of `gcc` from CVMFS in `~/.bashrc`, open a new shell, and source only `./build/set_env.sh`
+- Navigate to `./fe_board/fe_v2_mupix` and run `make flow` (this can take a while).
+- After that run `make app`
+
+## JTAG chain
+
+The JTAG chain is difficult to set up. The correct order of operation is to
+
+1. Connect the USB Blaster into the board (and the PC)
+2. Power the FEB (15V 0.8A).
+3. Run `jtagconfig` and check for detection.
+
+If the error "...broken device chain" comes up, repeat 1 & 3 cyclicly until `jtagconfig` shows something other than the first entry which looks something like:
+
+```bash
+1) USB-Blaster [3-3]
+```
