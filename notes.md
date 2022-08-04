@@ -4,7 +4,7 @@
 ### Permissions
 
 It's probably best to set everything to 777. Additional permission should be
-given to users accessing the Arduino device file (location `/dev/ttyACM0`).
+given to users accessing the Arduino device file (location `/dev/ttyACM1`).
 Important point, otherwise test stand stuff won't work.
 
 Root permission also needed to
@@ -122,7 +122,7 @@ voltage is set after. But in the case it goes into CC mode, execute the
 following in a shell:
 
 ```bash
-cat > /dev/ttyACM0
+cat > /dev/ttyACM1
 v12
 ```
 
@@ -155,13 +155,25 @@ Main instruction found on [bitbucket](https://bitbucket.org/mu3e/online/wiki/FEB
 - Signal generator goes into CON4 and CON5 on the FEB (golden/round, top right), each signal running 125 MHz but one needs to be inverse of the other.
 - JTAG connection goes into CON7.
 - Firefly optical cable goes into the port right above CON7.
+- TODO: Clock signal should go into A10 as well.
+- TODO: Change optical link (4 different ports) (4 -> 1, or 1 -> 4),
 
 ## Compiling FPGA firmware
 
-- Caveat: for some reason, our custom CVMFS `gcc` environment takes precedence over the sourced `nios2-elf-gcc` binary, even with the correct PATH hierachy set up.
-    - Workaround: remove the sourcing of `gcc` from CVMFS in `~/.bashrc`, open a new shell, and source only `./build/set_env.sh`
 - Navigate to `./fe_board/fe_v2_mupix` and run `make flow` (this can take a while).
-- After that run `make app`
+- Caveat: for some reason, our custom CVMFS `gcc` environment takes precedence over the sourced `nios2-elf-gcc` binary, even with the correct PATH hierachy set up. (Workaround: remove the sourcing of `gcc` from CVMFS in `~/.bashrc` temporarily)
+    - More detail: Go into `~/.bashrc` and comment out these lines so that it looks like the section below, and then log back in and out or open a new shell, and source only `./build/set_env.sh`. After compilation is successful, uncomment those lines.
+
+```bash
+# export CVMFS_ROOT="/cvmfs"
+# source ${CVMFS_ROOT}/sft.cern.ch/lcg/releases/gcc/11.1.0/x86_64-centos7/setup.sh
+# export GCC_HOME="${CVMFS_ROOT}/sft.cern.ch/lcg/releases/LCG_102/gcc/11/x86_64-centos7"
+```
+
+- Now, run `make app`, if there are more errors to do with C++11 std, then proceed to the following workaround:
+    - Navigate to `./generated/software/hal_bsp/public.mk`.
+    - Add in `ALT_CFLAGS += -std=c++11` on a newline anywhere in the file, save and close.
+    - Recompile. The `.hex` file should be built and ready to be uploaded onto the board.
 
 ## JTAG chain
 
@@ -171,8 +183,16 @@ The JTAG chain is difficult to set up. The correct order of operation is to
 2. Power the FEB (15V 0.8A).
 3. Run `jtagconfig` and check for detection.
 
-If the error "...broken device chain" comes up, repeat 1 & 3 cyclicly until `jtagconfig` shows something other than the first entry which looks something like:
+If the error "...broken device chain" comes up, repeat 1 & 3 cyclicly until `jtagconfig` shows something like this
 
 ```bash
 1) USB-Blaster [3-3]
+  02A020DD   5AGT(FC7H3|MC7G3)/5AGXBA7D4/..
 ```
+
+## Uploading
+
+- Run `make CABLE=1 plm`
+- Run `make CABLE=1 app_upload`
+- No issue reported with these commands so far
+
