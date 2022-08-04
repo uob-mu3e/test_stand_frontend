@@ -235,17 +235,18 @@ INT read_periodic_event(char *pevent, INT off) {
             *pdata++ = (float)data_stream[2];
             bk_close(pevent, pdata);
 
-            bk_create(pevent, "_M_", TID_FLOAT, (void **)&pdata);
+            bk_create(pevent, "_A_", TID_FLOAT, (void **)&pdata);
             *pdata++ = (float)data_stream[3];
             bk_close(pevent, pdata);
 
-            bk_create(pevent, "_H_", TID_FLOAT, (void **)&pdata);
-            *pdata++ = (float)data_stream[4];
-            bk_close(pevent, pdata);
-
-            bk_create(pevent, "_A_", TID_FLOAT, (void **)&pdata);
+            bk_create(pevent, "_RH_", TID_FLOAT, (void **)&pdata);
             *pdata++ = (float)data_stream[5];
             bk_close(pevent, pdata);
+
+            bk_create(pevent, "_AT_", TID_FLOAT, (void **)&pdata);
+            *pdata++ = (float)data_stream[6];
+            bk_close(pevent, pdata);
+            // Note the order of readout: T F P A S RH AT
         }
     }
     data_stream.clear();
