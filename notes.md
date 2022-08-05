@@ -150,7 +150,7 @@ Slow control variables can be plotted using `./online/myAnalyser.py`
 
 Main instruction found on [bitbucket](https://bitbucket.org/mu3e/online/wiki/FEB%20to%20A10%20Dev%20Board%20Lab%20Setup). Here's a quick version:
 
-## Connect hardware
+#### Connect hardware
 
 - Signal generator goes into CON4 and CON5 on the FEB (golden/round, top right), each signal running 125 MHz but one needs to be inverse of the other.
 - JTAG connection goes into CON7.
@@ -158,7 +158,7 @@ Main instruction found on [bitbucket](https://bitbucket.org/mu3e/online/wiki/FEB
 - TODO: Clock signal should go into A10 as well.
 - TODO: Change optical link (4 different ports) (4 -> 1, or 1 -> 4),
 
-## Compiling FPGA firmware
+#### Compiling FPGA firmware
 
 - Navigate to `./fe_board/fe_v2_mupix` and run `make flow` (this can take a while).
 - Caveat: for some reason, our custom CVMFS `gcc` environment takes precedence over the sourced `nios2-elf-gcc` binary, even with the correct PATH hierachy set up. (Workaround: remove the sourcing of `gcc` from CVMFS in `~/.bashrc` temporarily)
@@ -175,7 +175,7 @@ Main instruction found on [bitbucket](https://bitbucket.org/mu3e/online/wiki/FEB
     - Add in `ALT_CFLAGS += -std=c++11` on a newline anywhere in the file, save and close.
     - Recompile. The `.hex` file should be built and ready to be uploaded onto the board.
 
-## JTAG chain
+#### JTAG chain
 
 The JTAG chain is difficult to set up. The correct order of operation is to
 
@@ -190,9 +190,21 @@ If the error "...broken device chain" comes up, repeat 1 & 3 cyclicly until `jta
   02A020DD   5AGT(FC7H3|MC7G3)/5AGXBA7D4/..
 ```
 
-## Uploading
+#### Uploading
 
 - Run `make CABLE=1 plm`
 - Run `make CABLE=1 app_upload`
 - No issue reported with these commands so far
 
+## WIP & TODOs
+- [x] Get JTAG connection working at least once
+- [x] Compile FPGA and upload onto A5
+- [ ] Get reading from A10 (switch-fe) should produce values
+- [x] Custom MIDAS page for teststand
+- [x] Arduino features (working decently for now), the drop in shell with `cat > /dev/ttyACM1` too slow/finicky. 
+- [ ] Just an idea: have a shell script to perform the Arduino commands (which takes in flags/commands/values). Maybe that's not neccessary, but it's less annoying than opening a second tty just to pipe commands into the device file.
+- [ ] Toggle on/off the power output within frontend
+- [ ] Change PSU channel within frontend
+- [ ] Ability to set current limit without leaving CV mode
+- [ ] Plot voltage and current using `myAnalyser.py`
+- [ ] Documentation on git usage and whatnot
