@@ -49,23 +49,31 @@ odbedit -c 'set "Programs/msysmon/Start command" "msysymon-nvidia -D"' > /dev/nu
 DEFAULT_TEMP=25    # Edit this variable to set default setpoint temperature in deg Celsius
 
 LOCATION_TS="Equipment/ArduinoTestStation/Variables"
-declare -a varArray_TS=("_S_" "_V_" "_C_")
+declare -a varArray_TS=("_S_" "_FV_" "_FP_" "_L_")
 
 for var in ${varArray_TS[@]}; do
     varExist_TS=$(odbedit -c "ls ${LOCATION_TS}" | grep "${var}")
     if [ -z "$varExist_TS" ]
     then
         echo "Variable ${var} doesn't exist, creating it."
-        odbedit -c "create FLOAT ${LOCATION_TS}/${var}" > /dev/null
+        if [ $var = "_L_" ]
+        then
+            odbedit -c "create BOOL ${LOCATION_TS}/${var}" > /dev/null
+        else
+            odbedit -c "create FLOAT ${LOCATION_TS}/${var}" > /dev/null
+        fi
     fi
     if [ $var = "_S_" ] 
     then
         value=$DEFAULT_TEMP
+    fi
+    if [ $var = "_L_" ] 
+    then
+        value=1
     else
         value=0
     fi
     echo "Setting default value ${var} = ${value}"
     odbedit -c "set ${LOCATION_TS}/${var} ${value}" > /dev/null
 done
-
 
