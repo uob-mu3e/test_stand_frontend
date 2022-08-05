@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<link rel="stylesheet" href="midas.css">
+<script src="controls.js"></script>
+<script src="midas.js"></script>
+<script src="mhttpd.js"></script>
+<title>Variables</title>
+</head>
+<body class="mcss" onload="mhttpd_init('TS/Variables');">
+
+<!-- header and side navigation will be filled in mhttpd_start -->
+<div id="mheader"></div>
+<div id="msidenav"></div>
+
+<div id="mmain">
+    <table class="mtable" cellpadding="6" style="margin-top: 5%">
+        <tr>
+            <th colspan="2" class="mtableheader">Test stand editable variables</th> </tr> <tr> <td style="width: 400px;"> Temperature setpoint (°C) </td>
+            <td> <div class="modbvalue" data-odb-path="/Equipment/ArduinoTestStation/Variables/_S_" data-odb-editable="1"></div> </td>
+        </tr>
+        <tr>
+            <td style="width: 400px;"> Target Voltage </td>
+            <td> <div class="modbvalue" data-odb-path="/Equipment/ArduinoTestStation/Variables/_FV_" data-odb-editable="1"></div> </td>
+        </tr>
+        <tr>
+            <td>PID control loop</td>
+            <td><input type="checkbox" class="modbcheckbox" data-odb-path="/Equipment/ArduinoTestStation/Variables/_L_"></input></td>
+        </tr>
+        <tr>
+            <td style="width: 400px;"> Target PWM </td>
+            <td> <div class="modbvalue" data-odb-path="/Equipment/ArduinoTestStation/Variables/_FP_" data-odb-editable="1"></div> </td>
+        </tr>
+    </table>
+    <table class="mtable" cellpadding="6" style="margin-top: 5%">
+        <tr> <th colspan="2" class="mtableheader">Test stand slow control variables</th> </tr>
+        <tr>
+            <td style="width: 400px;"> Flow </td>
+            <td> <div class="modbvalue" data-odb-path="/Equipment/ArduinoTestStation/Variables/_F_" data-odb-editable="0"></div> </td>
+        </tr>
+        <tr>
+            <td style="width: 400px;"> PWM </td>
+            <td> <div class="modbvalue" data-odb-path="/Equipment/ArduinoTestStation/Variables/_P_" data-odb-editable="0"></div> </td>
+        </tr>
+        <tr>
+            <td style="width: 400px;"> Average Flow </td>
+            <td> <div class="modbvalue" data-odb-path="/Equipment/ArduinoTestStation/Variables/_A_" data-odb-editable="0"></div> </td>
+        </tr>
+        <tr>
+            <td style="width: 400px;"> Humiditiy </td>
+            <td> <div class="modbvalue" data-odb-path="/Equipment/ArduinoTestStation/Variables/_RH_" data-odb-editable="0"></div> </td>
+        </tr>
+        <tr>
+            <td style="width: 400px;"> Ambient Temperature (°C) </td>
+            <td> <div class="modbvalue" data-odb-path="/Equipment/ArduinoTestStation/Variables/_AT_" data-odb-editable="0"></div> </td>
+        </tr>
+        <tr>
+            <td style="width: 400px;"> Voltage (V) </td>
+            <td> <div class="modbvalue" data-odb-path="/Equipment/ArduinoTestStation/Variables/_V_" data-odb-editable="0"></div> </td>
+        </tr>
+        <tr>
+            <td style="width: 400px;"> Current (A) </td>
+            <td> <div class="modbvalue" data-odb-path="/Equipment/ArduinoTestStation/Variables/_C_" data-odb-editable="0"></div> </td>
+        </tr>
+    </table>
+</div>
+
+</body>
+</html>
