@@ -1,3 +1,5 @@
+Notice: read [this file](notes.md) for notes, tips & tricks.
+
 # Mu3e online repository
 
 - for latest version use tag `release/22.03`
