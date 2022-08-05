@@ -12,15 +12,15 @@ load the mudaq, this file should be executed once (???) and is found in
 `./common/kerneldriver/load_mudaq.sh`
 
 
-## Git
+### Git
 
-### Pull and update from latest branch `online`
+#### Pull and update from latest branch `online`
 
 ```bash
 git pull bitbucket online
 ```
 
-### Git setup
+#### Git setup
 
 - Follow this [guide](https://docs.github.com/en/authentication/connecting-to-github-with-ssh/adding-a-new-ssh-key-to-your-github-account) and setup SSH authentication for git.
 - Work on the `main` branch on this repository, I did not streamline anything with the bitbucket repository.
