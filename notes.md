@@ -110,24 +110,45 @@ ssh -XYC -L 8007:localhost:8008 user@remote
 - Then navigate to a local web browser and visit `localhost:8007`
 - The port `8007` can be subsituted with any free port. 
 
-### PSU
+### Controlling the power supply through the Arduino
 
-When running the software, expect Channel 1 of the PSU to switch on (this
+This is done using `./build/arduino_interface.sh`. Run this with arbitrary
+arguments to display help on the usage of this script. Set up and power on the
+fan and the FEB (omit the `-o` flag to leave it turned off):
+
+```bash
+# Fan
+./build/arduino_interface.sh -p 1 -c 3 -v 12 -o
+```
+
+```bash
+# FEB
+./build/arduino_interface.sh -p 4 -c 0.8 -v 15 -o
+```
+
+When running this, we expect Channel 1 of the PSU to switch on (this
 controls the fan), the current limit set to 3 A, and the voltage to 12 V. It
 should be in constant voltage (CV) mode, where the indicator light on the panel
 is green. If it is red, it is in constant current (CC) mode.
 
 In theory, this shouldn't happen, the current limit is set first then constant
-voltage is set after. But in the case it goes into CC mode, execute the
-following in a shell:
+voltage is set after. But in the case it goes into CC mode, one can try setting
+the voltage again:
+
+```bash
+./build/arduino_interface -p 1 -v 12
+```
+
+This should force the voltage to 12 V and put the PSU in
+CV mode.
+
+Alternatively, talk directly to the Arduino with the drop in prompt
 
 ```bash
 cat > /dev/ttyACM1
-v12
 ```
 
-Then Ctrl-C to escape. This should force the voltage to 12 V and put the PSU in
-CV mode.
+And Ctrl-C to escape.
 
 The manual for the power supply (HMP4040) is [linked](https://scdn.rohde-schwarz.com/ur/pws/dl_downloads/dl_common_library/dl_manuals/gb_1/h/hmp_serie/HMPSeries_UserManual_en_02.pdf).
 

@@ -139,8 +139,10 @@ install(FILES ${CMAKE_CURRENT_BINARY_DIR}/start_daq.sh DESTINATION bin
 PERMISSIONS OWNER_READ OWNER_WRITE OWNER_EXECUTE GROUP_READ GROUP_EXECUTE WORLD_READ WORLD_EXECUTE)
 
 configure_file(initiate_power_supply.sh.in initiate_power_supply.sh @ONLY)
-install(FILES ${CMAKE_CURRENT_BINARY_DIR}/initiate_power_supply.sh DESTINATION bin
-PERMISSIONS OWNER_READ OWNER_WRITE OWNER_EXECUTE GROUP_READ GROUP_EXECUTE WORLD_READ WORLD_EXECUTE)
+install(FILES ${CMAKE_CURRENT_BINARY_DIR}/initiate_power_supply.sh DESTINATION ./)
+
+configure_file(arduino_interface.sh.in arduino_interface.sh @ONLY)
+install(FILES ${CMAKE_CURRENT_BINARY_DIR}/arduino_interface.sh DESTINATION ./)
 
 # teststand frontend in online
 add_subdirectory(online)

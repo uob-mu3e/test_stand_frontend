@@ -1,12 +1,15 @@
 #!/bin/bash
 
 SOURCE="@PROJECT_SOURCE_DIR@"
+BIN="@PROJECT_SOURCE_DIR@"/build
 
 cd "${SOURCE}/build"
 source "./set_env.sh"
+
 # test stand stuff
 source "./setup_odb.sh"
 source "./setup_feb.sh"
+
 # /path/to/online directory
 cd "${SOURCE}/online"
 
@@ -28,7 +31,7 @@ sleep 0.2
 xterm -hold -e "mserver" &
 sleep 0.2
 ### Start front-ends before the logger!
-xterm -hold -e "${SOURCE}/build/backend_pc/midas_fe/clock_control/crfe" &
+xterm -hold -e "${BIN}/backend_pc/midas_fe/clock_control/crfe" &
 sleep 0.2
 if [[ "$CUDA" = "TRUE" ]]; then
     xterm -hold -e "msysmon-nvidia" &
@@ -36,10 +39,9 @@ else
     xterm -hold -e "msysmon" &
 fi
 sleep 0.2
-xterm -hold -e "${SOURCE}/build/switching_pc/midas_fe/switch_fe" &
+xterm -hold -e "${BIN}/switching_pc/midas_fe/switch_fe" &
 sleep 0.2
 xterm -hold -e "mlogger" &
 xterm -hold -e "msequencer" &
-xterm -hold -e "${SOURCE}/build/online/teststand-frontend" &
-source "${SOURCE}/build/initiate_power_supply.sh"
-sleep 2
+xterm -hold -e "${BIN}/online/teststand-frontend" &
+

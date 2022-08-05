@@ -1,0 +1,105 @@
+#!/bin/bash
+
+fan_pwm=''
+temp_setpoint=''
+voltage=''
+current=''
+channel=''
+
+print_usage() {
+    printf "USAGE: ./arduino_interface [ -l | -r | -o | -b ] [ -v | -c | -s | -f | -p ] [arg...]
+    -l        Toggle PID loop
+    -r        Toggle verbose output
+    -o        Toggle selected channel
+    -b        Toggle broadcast
+    -v [arg]  Set voltage
+    -c [arg]  Set current
+    -s [arg]  Set temperature setpoint
+    -f [arg]  Set fan PWM value
+    -p [arg]  Select channel
+    "
+}
+
+loop() {
+    sleep 0.8
+cat > /dev/ttyACM1 <<EOF
+l
+EOF
+}
+
+verbose() {
+    sleep 0.8
+cat > /dev/ttyACM1 <<EOF
+r
+EOF
+}
+
+broadcast() {
+    sleep 0.8
+cat > /dev/ttyACM1 <<EOF
+b
+EOF
+}
+
+power() {
+    sleep 0.8
+cat > /dev/ttyACM1 <<EOF
+o
+EOF
+}
+
+set_fan() {
+    sleep 0.8
+cat > /dev/ttyACM1 <<EOF
+f${fan_pwm}
+EOF
+}
+
+set_temp_setpoint() {
+    sleep 0.8
+cat > /dev/ttyACM1 <<EOF
+s${temp_setpoint}
+EOF
+}
+
+set_voltage() {
+    sleep 0.8
+cat > /dev/ttyACM1 <<EOF
+v${voltage}
+EOF
+}
+
+set_current() {
+    sleep 0.8
+cat > /dev/ttyACM1 <<EOF
+c${current}
+EOF
+}
+
+set_channel() {
+    sleep 0.8
+cat > /dev/ttyACM1 <<EOF
+p${channel}
+EOF
+}
+
+while getopts 'lrbof:s:v:c:p:' flag; do
+    case "${flag}" in
+        l) loop ;;
+        o) power ;;
+        r) verbose ;;
+        b) broadcast ;;
+        f) fan_pwm="${OPTARG}"
+           set_fan ;;
+        s) temp_setpoint="${OPTARG}"
+           set_temp_setpoint ;;
+        v) voltage="${OPTARG}"
+           set_voltage ;;
+        c) current="${OPTARG}"
+           set_current ;;
+        p) channel="${OPTARG}"
+           set_channel ;;
+        *) print_usage
+        exit 1 ;;
+    esac
+done
