@@ -89,7 +89,7 @@ EQUIPMENT equipment[] = {
 // - e.g. s15, v12, c2.5
 void send_command_ard(float value, std::string command) {
     command = command + std::__cxx11::to_string(value);
-    std::ofstream ard("/dev/ttyACM0");
+    std::ofstream ard("/dev/ttyACM1");
     if (ard) ard << command << '\n';
     return;
 }
@@ -205,7 +205,7 @@ INT interrupt_configure(INT cmd, INT source, POINTER_T adr) {
 // - Reads Arduino into vector
 // - Fills midas data banks
 // - Create SCLR bank for each variable
-// - Read odb variables (S)etpoint, (V)oltage, (C)urrent
+// - Read odb variables (S)etpoint, (F)an (V)oltage
 // every loop and send to arduino to adjust (is this expensive if the value
 // hasn't been changed?)
 // - don't read and update current (messes things up)
@@ -213,15 +213,20 @@ INT read_periodic_event(char *pevent, INT off) {
     float *pdata;
     bk_init(pevent);
     std::vector<double> data_stream;
-    const int data_stream_size = 7;
+    const int data_stream_size = 9;
     while (data_stream.size() != data_stream_size) {
         read_data1(serial_port, data_stream);
         if (data_stream.size() == data_stream_size) {
             midas::odb exp("/Equipment/ArduinoTestStation/Variables");
 
-            send_command_ard(exp["_S_"], "s");
+            // TODO: still haven't found a way to monitor
+            // current variable without leaving constant voltage mode.
+            // maybe add delay? otherwise have to change current in tty
+
             // send_command_ard(exp["_C_"], "c");
-            send_command_ard(exp["_V_"], "v");
+            send_command_ard(exp["_S_"], "s");
+            send_command_ard(exp["_FV_"], "v");
+            if (!exp["_L_"]) send_command_ard(exp["_FP_"], "p");
 
             bk_create(pevent, "_T_", TID_FLOAT, (void **)&pdata);
             *pdata++ = (float)data_stream[0];
@@ -246,7 +251,15 @@ INT read_periodic_event(char *pevent, INT off) {
             bk_create(pevent, "_AT_", TID_FLOAT, (void **)&pdata);
             *pdata++ = (float)data_stream[6];
             bk_close(pevent, pdata);
-            // Note the order of readout: T F P A S RH AT
+
+            bk_create(pevent, "_V_", TID_FLOAT, (void **)&pdata);
+            *pdata++ = (float)data_stream[7];
+            bk_close(pevent, pdata);
+
+            bk_create(pevent, "_C_", TID_FLOAT, (void **)&pdata);
+            *pdata++ = (float)data_stream[8];
+            bk_close(pevent, pdata);
+            // Note the order of readout: T F P A S RH AT V C
         }
     }
     data_stream.clear();
