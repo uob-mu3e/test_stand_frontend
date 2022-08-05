@@ -36,7 +36,7 @@
 //     - current index position in the buf array.
 //     - input const char M.
 inline double get_value1(char* buf, int buf_length, int& i, char M) {
-    char buf_tmp[7] = "";
+    char buf_tmp[9] = "";
     int L = sizeof(buf_tmp) / sizeof(buf_tmp[0]);
     int j = 0;
     // do we need 43-44? it's repeated inside the while loop
@@ -70,7 +70,9 @@ inline void strip_stringAd(char* read_buf, int buf_length, std::vector<double>& 
                v_3 = get_value1(read_buf, buf_length, i, 'S'),
                v_4 = get_value1(read_buf, buf_length, i, 'R'),
                v_5 = get_value1(read_buf, buf_length, i, 'A'),
-               v_6 = get_value1(read_buf, buf_length, i, 'N');
+               v_6 = get_value1(read_buf, buf_length, i, 'V'),
+               v_7 = get_value1(read_buf, buf_length, i, 'C'),
+               v_8 = get_value1(read_buf, buf_length, i, 'N');
 
         v.push_back(v_0);
         v.push_back(v_1);
@@ -79,6 +81,8 @@ inline void strip_stringAd(char* read_buf, int buf_length, std::vector<double>& 
         v.push_back(v_4);
         v.push_back(v_5);
         v.push_back(v_6);
+        v.push_back(v_7);
+        v.push_back(v_8);
 
         // doesn't make sense to create the vector just to destroy it lol
         // double v0 = v[0], v1 = v[1], v2 = v[2], v3 = v[3], v4 = v[4], v5 =
@@ -102,7 +106,7 @@ inline void strip_stringAd(char* read_buf, int buf_length, std::vector<double>& 
 // - cfsetispeed()/cfsetospeed(): set baud rate
 int setting_arduino() {
     struct termios tty;
-    int serial_port = open("/dev/ttyACM0", O_RDWR | O_NOCTTY);
+    int serial_port = open("/dev/ttyACM1", O_RDWR | O_NOCTTY);
     if (serial_port < 0) {
         printf("Error %i from open: %s\n", errno, strerror(errno));
     } else {
@@ -201,7 +205,7 @@ inline int serialport_read_until(int fd, char* buf, char until, int buf_max) {
 // serialport_read_until(serial_port, dump, '\n', sizeof(dump));
 int read_data1(int serial_port, std::vector<double>& v) {
     tcflush(serial_port, TCIOFLUSH);
-    char read_buf[39] = {};
+    char read_buf[51] = {};
     int err1 =
         serialport_read_until(serial_port, read_buf, '\n', sizeof(read_buf));
     int err2 = 0;
