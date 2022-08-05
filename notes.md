@@ -12,11 +12,18 @@ load the mudaq, this file should be executed once (???) and is found in
 `./common/kerneldriver/load_mudaq.sh`
 
 
+## Git
+
 ### Pull and update from latest branch `online`
 
 ```bash
 git pull bitbucket online
 ```
+
+### Git setup
+
+- Follow this [guide](https://docs.github.com/en/authentication/connecting-to-github-with-ssh/adding-a-new-ssh-key-to-your-github-account) and setup SSH authentication for git.
+- Work on the `main` branch on this repository, I did not streamline anything with the bitbucket repository.
 
 ### Compiling first time
 
@@ -220,12 +227,12 @@ If the error "...broken device chain" comes up, repeat 1 & 3 cyclicly until `jta
 ## WIP & TODOs
 - [x] Get JTAG connection working at least once
 - [x] Compile FPGA and upload onto A5
-- [ ] Get reading from A10 (switch-fe) should produce values
+- [ ] Get reading from A10 (switch-fe should produce values)
 - [x] Custom MIDAS page for teststand
 - [x] Arduino features (working decently for now), the drop in shell with `cat > /dev/ttyACM1` too slow/finicky. 
-- [ ] Just an idea: have a shell script to perform the Arduino commands (which takes in flags/commands/values). Maybe that's not neccessary, but it's less annoying than opening a second tty just to pipe commands into the device file.
+- [x] Just an idea: have a shell script to perform the Arduino commands (which takes in flags/commands/values). Maybe that's not neccessary, but it's less annoying than opening a second tty just to pipe commands into the device file.
 - [ ] Toggle on/off the power output within frontend
 - [ ] Change PSU channel within frontend
 - [ ] Ability to set current limit without leaving CV mode
 - [ ] Plot voltage and current using `myAnalyser.py`
-- [ ] Documentation on git usage and whatnot
+- [x] Documentation on git usage and whatnot
